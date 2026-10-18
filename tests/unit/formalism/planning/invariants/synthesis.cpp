@@ -18,9 +18,15 @@
 #include "planning/parser.hpp"
 #include "tyr/formalism/formalism.hpp"
 
+#include <algorithm>
 #include <boost/json.hpp>
 #include <filesystem>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <gtest/gtest.h>
+#include <iterator>
+#include <set>
+#include <string>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 
@@ -63,26 +69,41 @@ tyr::formalism::planning::invariant::Invariant parse_invariant(tyr::formalism::p
                                                           std::move(atoms));
 }
 
-std::vector<tyr::formalism::planning::invariant::Invariant> parse_invariants(tyr::formalism::planning::Repository& repository,
-                                                                             const boost::json::object& case_object)
+std::vector<tyr::formalism::planning::invariant::Invariant>
+parse_invariants(tyr::formalism::planning::Repository& repository, const boost::json::object& case_object, const char* key)
 {
     auto result = std::vector<tyr::formalism::planning::invariant::Invariant> {};
-    for (const auto& invariant_value : ygg::common::as_array(case_object, "invariants", "case"))
+    for (const auto& invariant_value : ygg::common::as_array(case_object, key, "case"))
         result.push_back(parse_invariant(repository, ygg::common::as_object(invariant_value, "invariant")));
     return result;
 }
 
-void expect_invariant_sets_equal(std::vector<tyr::formalism::planning::invariant::Invariant> actual,
-                                 std::vector<tyr::formalism::planning::invariant::Invariant> expected)
+std::set<std::string> canonical_texts(const tyr::formalism::planning::invariant::InvariantList& invariants)
 {
-    EXPECT_EQ(actual.size(), expected.size());
-    EXPECT_TRUE(std::is_permutation(actual.begin(), actual.end(), expected.begin(), expected.end()));
-}
+    auto result = std::set<std::string> {};
+    for (const auto& invariant : invariants)
+        result.insert(tyr::formalism::planning::invariant::canonical_text(invariant));
+    return result;
 }
 
-TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis)
+/// Equal up to how each invariant numbers its variables. The expected invariants of the classical and IPC cases are tyr's own,
+/// each proven by Fast Downward's balance check (fixture_generation.py).
+void expect_invariant_sets_equal(const tyr::formalism::planning::invariant::InvariantList& actual,
+                                 const tyr::formalism::planning::invariant::InvariantList& expected)
 {
-    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / "tests/fixtures/formalism/invariants/synthesis.json");
+    const auto actual_texts = canonical_texts(actual);
+    const auto expected_texts = canonical_texts(expected);
+    auto only_actual = std::vector<std::string> {};
+    auto only_expected = std::vector<std::string> {};
+    std::ranges::set_difference(actual_texts, expected_texts, std::back_inserter(only_actual));
+    std::ranges::set_difference(expected_texts, actual_texts, std::back_inserter(only_expected));
+    EXPECT_TRUE(only_actual.empty() && only_expected.empty())
+        << "only tyr: " << fmt::format("{}", fmt::join(only_actual, " ")) << "\nonly expected: " << fmt::format("{}", fmt::join(only_expected, " "));
+}
+
+void check_suite(const std::filesystem::path& fixture)
+{
+    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
     {
@@ -97,10 +118,14 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis)
         auto& repository = *lifted_task.get_repository();
 
         auto actual = tyr::formalism::planning::invariant::synthesize_invariants(lifted_task.get_task().get_domain());
-        auto expected = parse_invariants(repository, case_object);
 
-        expect_invariant_sets_equal(actual, expected);
+        expect_invariant_sets_equal(actual, parse_invariants(repository, case_object, "invariants"));
     }
 }
+}
 
+TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis) { check_suite("tests/fixtures/formalism/invariants/synthesis.json"); }
+
+/// One domain file per IPC domain directory (up to five for directories with a domain file per problem).
+TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisIpc) { check_suite("tests/fixtures/formalism/invariants/ipc.json"); }
 }

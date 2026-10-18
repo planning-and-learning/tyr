@@ -195,6 +195,8 @@ std::vector<Part> canonical_parts(const Invariant& invariant)
     return best;
 }
 
+std::string text_of(const std::vector<Part>& parts) { return fmt::format("{{{}}}", fmt::join(parts | std::views::transform(&Part::text), ", ")); }
+
 /// The distinct invariants sorted by their text, so that the input order does not matter.
 std::vector<Info> analyze(const InvariantList& invariants)
 {
@@ -204,7 +206,7 @@ std::vector<Info> analyze(const InvariantList& invariants)
         if (std::ranges::any_of(infos, [&](const Info& info) { return *info.invariant == invariant; }))
             continue;
         auto info = Info { .invariant = &invariant, .num_rigid_variables = invariant.num_rigid_variables, .parts = canonical_parts(invariant) };
-        info.text = fmt::format("{{{}}}", fmt::join(info.parts | std::views::transform(&Part::text), ", "));
+        info.text = text_of(info.parts);
         infos.push_back(std::move(info));
     }
     std::ranges::sort(infos, {}, &Info::text);
@@ -528,6 +530,8 @@ std::vector<const Info*> pointers(const std::vector<Info>& infos)
 }
 
 }  // namespace
+
+std::string canonical_text(const Invariant& invariant) { return text_of(canonical_parts(invariant)); }
 
 InvariantList compute_invariant_order_greedy(const InvariantList& invariants)
 {

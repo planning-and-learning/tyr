@@ -20,8 +20,14 @@
 
 #include "tyr/formalism/planning/invariants/invariant.hpp"
 
+#include <string>
+
 namespace tyr::formalism::planning::invariant
 {
+
+/// The invariant as text, e.g. `{at(V0,*), on(V0)}`, with rigid variables renamed to give the smallest text: equal for
+/// invariants that differ only in how their variables are numbered.
+std::string canonical_text(const Invariant& invariant);
 
 /// Invariant orders for GroundTaskInstantiationOptions::invariant_order, computed from the invariants alone.
 ///

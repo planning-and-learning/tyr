@@ -6,6 +6,25 @@
             "task_file": "classical/tests/agricola/test-1.pddl",
             "invariants": [
                 {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "built_rooms",
+                            "parameters": [
+                                0,
+                                1
+                            ]
+                        },
+                        {
+                            "predicate": "space_rooms",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
                     "num_rigid_variables": 0,
                     "num_counted_variables": 1,
                     "atoms": [
@@ -54,18 +73,6 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "space_rooms",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
                     "num_rigid_variables": 0,
                     "num_counted_variables": 1,
                     "atoms": [
@@ -79,15 +86,8 @@
                 },
                 {
                     "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
+                    "num_counted_variables": 0,
                     "atoms": [
-                        {
-                            "predicate": "built_rooms",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        },
                         {
                             "predicate": "space_rooms",
                             "parameters": [
@@ -103,56 +103,6 @@
             "domain_file": "classical/tests/airport/domain.pddl",
             "task_file": "classical/tests/airport/test-1.pddl",
             "invariants": [
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "at-segment",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "facing",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "is-pushing",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "is-pushing",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
                 {
                     "num_rigid_variables": 1,
                     "num_counted_variables": 1,
@@ -175,18 +125,26 @@
                 },
                 {
                     "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
+                    "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "is-moving",
+                            "predicate": "at-segment",
                             "parameters": [
-                                0
+                                0,
+                                1
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
+                    "atoms": [
                         {
-                            "predicate": "is-pushing",
+                            "predicate": "facing",
                             "parameters": [
-                                0
+                                0,
+                                1
                             ]
                         }
                     ]
@@ -233,6 +191,48 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "is-moving",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "is-pushing",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "is-pushing",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "is-pushing",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -252,7 +252,13 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "shaker-level",
+                            "predicate": "handempty",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "holding",
                             "parameters": [
                                 0,
                                 1
@@ -284,13 +290,7 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "handempty",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "holding",
+                            "predicate": "shaker-level",
                             "parameters": [
                                 0,
                                 1
@@ -425,54 +425,6 @@
             "invariants": [
                 {
                     "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "at_kitchen_bread",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "at_kitchen_bread",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "at_kitchen_content",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "at_kitchen_content",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
@@ -485,48 +437,6 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "notexist",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "notexist",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "at_kitchen_sandwich",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "notexist",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
                     "num_rigid_variables": 0,
                     "num_counted_variables": 1,
                     "atoms": [
@@ -538,60 +448,6 @@
                         },
                         {
                             "predicate": "at_kitchen_sandwich",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "at_kitchen_content",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "at_kitchen_sandwich",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "at_kitchen_sandwich",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "notexist",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "no_gluten_sandwich",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "notexist",
                             "parameters": [
                                 0
                             ]
@@ -621,6 +477,48 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
+                            "predicate": "at_kitchen_bread",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "at_kitchen_bread",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "at_kitchen_content",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "at_kitchen_sandwich",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
                             "predicate": "at_kitchen_content",
                             "parameters": [
                                 0
@@ -639,7 +537,31 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "no_gluten_sandwich",
+                            "predicate": "at_kitchen_content",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "at_kitchen_content",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "at_kitchen_sandwich",
                             "parameters": [
                                 0
                             ]
@@ -673,6 +595,84 @@
                             "parameters": [
                                 0,
                                 1
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "at_kitchen_sandwich",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "notexist",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "no_gluten_sandwich",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "notexist",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "no_gluten_sandwich",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "notexist",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "notexist",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "notexist",
+                            "parameters": [
+                                0
                             ]
                         }
                     ]
@@ -735,25 +735,6 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "driving",
-                            "parameters": [
-                                1,
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "empty",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
                             "predicate": "at",
                             "parameters": [
                                 0,
@@ -775,6 +756,25 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "driving",
+                            "parameters": [
+                                1,
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "empty",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -783,18 +783,6 @@
             "domain_file": "classical/tests/ferry/domain.pddl",
             "task_file": "classical/tests/ferry/test-1.pddl",
             "invariants": [
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "at-ferry",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
                 {
                     "num_rigid_variables": 1,
                     "num_counted_variables": 1,
@@ -808,6 +796,18 @@
                         },
                         {
                             "predicate": "on",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "at-ferry",
                             "parameters": [
                                 0
                             ]
@@ -848,31 +848,11 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "at-robot",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
+                            "predicate": "arm-empty",
+                            "parameters": []
+                        },
                         {
-                            "predicate": "locked",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "locked",
+                            "predicate": "holding",
                             "parameters": [
                                 0
                             ]
@@ -903,11 +883,37 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "arm-empty",
-                            "parameters": []
+                            "predicate": "at-robot",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "locked",
+                            "parameters": [
+                                0
+                            ]
                         },
                         {
-                            "predicate": "holding",
+                            "predicate": "open",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "locked",
                             "parameters": [
                                 0
                             ]
@@ -933,17 +939,11 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
                     "atoms": [
                         {
                             "predicate": "locked",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "open",
                             "parameters": [
                                 0
                             ]
@@ -957,18 +957,6 @@
             "domain_file": "classical/tests/gripper/domain.pddl",
             "task_file": "classical/tests/gripper/test-1.pddl",
             "invariants": [
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "at-robby",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
                 {
                     "num_rigid_variables": 1,
                     "num_counted_variables": 1,
@@ -985,6 +973,18 @@
                             "parameters": [
                                 0,
                                 1
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "at-robby",
+                            "parameters": [
+                                0
                             ]
                         }
                     ]
@@ -1020,7 +1020,7 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "at_tent",
+                            "predicate": "at_car",
                             "parameters": [
                                 0,
                                 1
@@ -1046,7 +1046,7 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "at_car",
+                            "predicate": "at_tent",
                             "parameters": [
                                 0,
                                 1
@@ -1055,14 +1055,19 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 1,
+                    "num_rigid_variables": 0,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "walked",
+                            "predicate": "down",
                             "parameters": [
-                                0,
-                                1
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "up",
+                            "parameters": [
+                                0
                             ]
                         }
                     ]
@@ -1086,19 +1091,14 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
+                    "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "down",
+                            "predicate": "walked",
                             "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "up",
-                            "parameters": [
-                                0
+                                0,
+                                1
                             ]
                         }
                     ]
@@ -1138,14 +1138,57 @@
             "task_file": "classical/tests/miconic/test-1.pddl",
             "invariants": [
                 {
-                    "num_rigid_variables": 2,
-                    "num_counted_variables": 0,
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
                     "atoms": [
+                        {
+                            "predicate": "boarded",
+                            "parameters": [
+                                0
+                            ]
+                        },
                         {
                             "predicate": "origin",
                             "parameters": [
                                 0,
                                 1
+                            ]
+                        },
+                        {
+                            "predicate": "served",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "boarded",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "origin",
+                            "parameters": [
+                                0,
+                                1
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "lift-at",
+                            "parameters": [
+                                0
                             ]
                         }
                     ]
@@ -1177,57 +1220,14 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
+                    "num_rigid_variables": 2,
+                    "num_counted_variables": 0,
                     "atoms": [
-                        {
-                            "predicate": "lift-at",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "boarded",
-                            "parameters": [
-                                0
-                            ]
-                        },
                         {
                             "predicate": "origin",
                             "parameters": [
                                 0,
                                 1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "boarded",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "origin",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        },
-                        {
-                            "predicate": "served",
-                            "parameters": [
-                                0
                             ]
                         }
                     ]
@@ -1278,6 +1278,28 @@
             "task_file": "classical/tests/parcprinter/test-1.pddl",
             "invariants": [
                 {
+                    "num_rigid_variables": 2,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "hasimage",
+                            "parameters": [
+                                0,
+                                1,
+                                2
+                            ]
+                        },
+                        {
+                            "predicate": "notprintedwith",
+                            "parameters": [
+                                0,
+                                1,
+                                2
+                            ]
+                        }
+                    ]
+                },
+                {
                     "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
@@ -1286,6 +1308,48 @@
                             "parameters": [
                                 0,
                                 1
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 2,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "notprintedwith",
+                            "parameters": [
+                                2,
+                                0,
+                                1
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 2,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "notprintedwith",
+                            "parameters": [
+                                0,
+                                2,
+                                1
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 2,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "notprintedwith",
+                            "parameters": [
+                                0,
+                                1,
+                                2
                             ]
                         }
                     ]
@@ -1305,76 +1369,12 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 2,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "notprintedwith",
-                            "parameters": [
-                                2,
-                                0,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 2,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "notprintedwith",
-                            "parameters": [
-                                0,
-                                2,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 2,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "notprintedwith",
-                            "parameters": [
-                                0,
-                                1,
-                                2
-                            ]
-                        }
-                    ]
-                },
-                {
                     "num_rigid_variables": 0,
                     "num_counted_variables": 0,
                     "atoms": [
                         {
                             "predicate": "uninitialized",
                             "parameters": []
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 2,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "hasimage",
-                            "parameters": [
-                                0,
-                                1,
-                                2
-                            ]
-                        },
-                        {
-                            "predicate": "notprintedwith",
-                            "parameters": [
-                                0,
-                                1,
-                                2
-                            ]
                         }
                     ]
                 }
@@ -1409,58 +1409,6 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "at-process",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "queue-head",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "queue-tail",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "queue-size",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
                             "predicate": "activate",
                             "parameters": [
                                 0,
@@ -1476,6 +1424,30 @@
                         },
                         {
                             "predicate": "pending",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "advance-head",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "advance-tail",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "settled",
                             "parameters": [
                                 0
                             ]
@@ -1507,25 +1479,53 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
+                    "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "advance-head",
+                            "predicate": "at-process",
                             "parameters": [
-                                0
+                                0,
+                                1
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
+                    "atoms": [
                         {
-                            "predicate": "advance-tail",
+                            "predicate": "queue-head",
                             "parameters": [
-                                0
+                                0,
+                                1
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
+                    "atoms": [
                         {
-                            "predicate": "settled",
+                            "predicate": "queue-size",
                             "parameters": [
-                                0
+                                0,
+                                1
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "queue-tail",
+                            "parameters": [
+                                0,
+                                1
                             ]
                         }
                     ]
@@ -1602,21 +1602,15 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "reward",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
                     "num_rigid_variables": 0,
                     "num_counted_variables": 1,
                     "atoms": [
+                        {
+                            "predicate": "picked",
+                            "parameters": [
+                                0
+                            ]
+                        },
                         {
                             "predicate": "reward",
                             "parameters": [
@@ -1648,11 +1642,17 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "picked",
+                            "predicate": "reward",
                             "parameters": [
                                 0
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
                         {
                             "predicate": "reward",
                             "parameters": [
@@ -1682,35 +1682,23 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "at_soil_sample",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
                     "num_rigid_variables": 0,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
+                            "predicate": "at_rock_sample",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
                             "predicate": "at_soil_sample",
                             "parameters": [
                                 0
                             ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
+                        },
                         {
-                            "predicate": "at_rock_sample",
+                            "predicate": "full",
                             "parameters": [
                                 0
                             ]
@@ -1726,13 +1714,7 @@
                             "parameters": [
                                 0
                             ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
+                        },
                         {
                             "predicate": "empty",
                             "parameters": [
@@ -1752,13 +1734,7 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "empty",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "full",
+                            "predicate": "at_rock_sample",
                             "parameters": [
                                 0
                             ]
@@ -1786,6 +1762,30 @@
                 },
                 {
                     "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
+                        {
+                            "predicate": "at_rock_sample",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "at_soil_sample",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
@@ -1804,15 +1804,21 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
                     "atoms": [
                         {
-                            "predicate": "at_rock_sample",
+                            "predicate": "at_soil_sample",
                             "parameters": [
                                 0
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
                         {
                             "predicate": "empty",
                             "parameters": [
@@ -1828,89 +1834,17 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
                     "atoms": [
                         {
-                            "predicate": "at_rock_sample",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "at_soil_sample",
+                            "predicate": "empty",
                             "parameters": [
                                 0
                             ]
                         },
                         {
                             "predicate": "full",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "available",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "channel_free",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "available",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "channel_free",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "communicated_rock_data",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "available",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "channel_free",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "communicated_soil_data",
                             "parameters": [
                                 0
                             ]
@@ -1969,11 +1903,18 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "invariants": [
                 {
-                    "num_rigid_variables": 0,
+                    "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "at-robot",
+                            "predicate": "at",
+                            "parameters": [
+                                1,
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "clear",
                             "parameters": [
                                 0
                             ]
@@ -1998,7 +1939,7 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "clear",
+                            "predicate": "at-robot",
                             "parameters": [
                                 0
                             ]
@@ -2006,16 +1947,9 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 1,
+                    "num_rigid_variables": 0,
                     "num_counted_variables": 1,
                     "atoms": [
-                        {
-                            "predicate": "at",
-                            "parameters": [
-                                1,
-                                0
-                            ]
-                        },
                         {
                             "predicate": "clear",
                             "parameters": [
@@ -2041,52 +1975,11 @@
                                 0,
                                 1
                             ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
+                        },
                         {
-                            "predicate": "useable",
+                            "predicate": "carrying",
                             "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "useable",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
-                    "atoms": [
-                        {
-                            "predicate": "loose",
-                            "parameters": [
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "loose",
-                            "parameters": [
+                                1,
                                 0
                             ]
                         }
@@ -2102,11 +1995,34 @@
                                 0,
                                 1
                             ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "loose",
+                            "parameters": [
+                                0
+                            ]
                         },
                         {
-                            "predicate": "carrying",
+                            "predicate": "tightened",
                             "parameters": [
-                                1,
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "loose",
+                            "parameters": [
                                 0
                             ]
                         }
@@ -2131,17 +2047,11 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
-                    "num_counted_variables": 1,
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
                     "atoms": [
                         {
                             "predicate": "loose",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "tightened",
                             "parameters": [
                                 0
                             ]
@@ -2158,6 +2068,30 @@
                                 0
                             ]
                         },
+                        {
+                            "predicate": "useable",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "useable",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "num_rigid_variables": 1,
+                    "num_counted_variables": 0,
+                    "atoms": [
                         {
                             "predicate": "useable",
                             "parameters": [
@@ -2198,7 +2132,14 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "capacity",
+                            "predicate": "at",
+                            "parameters": [
+                                0,
+                                1
+                            ]
+                        },
+                        {
+                            "predicate": "in",
                             "parameters": [
                                 0,
                                 1
@@ -2211,14 +2152,7 @@
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "at",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        },
-                        {
-                            "predicate": "in",
+                            "predicate": "capacity",
                             "parameters": [
                                 0,
                                 1
@@ -2254,8 +2188,21 @@
             "invariants": [
                 {
                     "num_rigid_variables": 1,
-                    "num_counted_variables": 0,
+                    "num_counted_variables": 1,
                     "atoms": [
+                        {
+                            "predicate": "available",
+                            "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "in-highspeed-saw",
+                            "parameters": [
+                                0,
+                                1
+                            ]
+                        },
                         {
                             "predicate": "unused",
                             "parameters": [
@@ -2265,12 +2212,19 @@
                     ]
                 },
                 {
-                    "num_rigid_variables": 0,
+                    "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
                         {
-                            "predicate": "unused",
+                            "predicate": "empty",
                             "parameters": [
+                                0
+                            ]
+                        },
+                        {
+                            "predicate": "in-highspeed-saw",
+                            "parameters": [
+                                1,
                                 0
                             ]
                         }
@@ -2315,6 +2269,18 @@
                     ]
                 },
                 {
+                    "num_rigid_variables": 0,
+                    "num_counted_variables": 1,
+                    "atoms": [
+                        {
+                            "predicate": "unused",
+                            "parameters": [
+                                0
+                            ]
+                        }
+                    ]
+                },
+                {
                     "num_rigid_variables": 1,
                     "num_counted_variables": 1,
                     "atoms": [
@@ -2335,40 +2301,8 @@
                 },
                 {
                     "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
+                    "num_counted_variables": 0,
                     "atoms": [
-                        {
-                            "predicate": "empty",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "in-highspeed-saw",
-                            "parameters": [
-                                1,
-                                0
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "num_rigid_variables": 1,
-                    "num_counted_variables": 1,
-                    "atoms": [
-                        {
-                            "predicate": "available",
-                            "parameters": [
-                                0
-                            ]
-                        },
-                        {
-                            "predicate": "in-highspeed-saw",
-                            "parameters": [
-                                0,
-                                1
-                            ]
-                        },
                         {
                             "predicate": "unused",
                             "parameters": [
