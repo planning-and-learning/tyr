@@ -15,9 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <fmt/ranges.h>
 #include "planning/parser.hpp"
-#include "tyr/formalism/formalism.hpp"
-#include "tyr/planning/planning.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
+#include "tyr/formalism/planning/parser.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
+#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/lifted/task_grounder_decl.hpp"
+#include <yggdrasil/formatting/cista_formatters.hpp>
 
 #include <algorithm>
 #include <filesystem>

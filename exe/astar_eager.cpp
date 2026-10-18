@@ -22,7 +22,23 @@
 #include <fmt/ostream.h>
 #include <fstream>
 #include <queue>
-#include <tyr/tyr.hpp>
+#include <tyr/formalism/planning/formatter.hpp>
+#include <tyr/formalism/planning/parser.hpp>
+#include <tyr/planning/algorithms/astar_eager.hpp>
+#include <tyr/planning/algorithms/astar_eager/event_handler.hpp>
+#include <tyr/planning/algorithms/utils.hpp>
+#include <tyr/planning/factory.hpp>
+#include <tyr/planning/formatter.hpp>
+#include <tyr/planning/ground/task.hpp>
+#include <tyr/planning/heuristic.hpp>
+#include <tyr/planning/heuristics/blind.hpp>
+#include <tyr/planning/heuristics/goal_count.hpp>
+#include <tyr/planning/heuristics/lmcut.hpp>
+#include <tyr/planning/heuristics/rpg_add.hpp>
+#include <tyr/planning/heuristics/rpg_ff.hpp>
+#include <tyr/planning/heuristics/rpg_max.hpp>
+#include <tyr/planning/lifted/task.hpp>
+#include <tyr/planning/lifted/task_grounder_decl.hpp>
 #include <yggdrasil/core/memory.hpp>
 
 int main(int argc, char** argv)

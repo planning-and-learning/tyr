@@ -17,9 +17,20 @@
 
 #include "planning/metric.hpp"
 #include "planning/parser.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/planning/planning.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/heuristics/lmcut.hpp"
+#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
 #include "tyr/planning/state_delta.hpp"
+#include "tyr/planning/state_routing/dist_hash.hpp"
+#include "tyr/planning/state_routing/dist_hash_concepts.hpp"
 
 #include <algorithm>
 #include <concepts>

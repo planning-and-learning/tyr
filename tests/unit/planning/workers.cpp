@@ -16,8 +16,19 @@
  */
 
 #include "planning/parser.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/planning/planning.hpp"
+#include "tyr/planning/algorithms/iw.hpp"
+#include "tyr/planning/algorithms/iw/event_handler.hpp"
+#include "tyr/planning/algorithms/strategies/goal.hpp"
+#include "tyr/planning/algorithms/strategies/pruning.hpp"
+#include "tyr/planning/algorithms/utils.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/heuristics/blind.hpp"
+#include "tyr/planning/heuristics/goal_count.hpp"
+#include "tyr/planning/lifted/task.hpp"
 
 #include <barrier>
 #include <concepts>
