@@ -2,11 +2,9 @@ import pytest
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pytyr.formalism.planning import (
-    ExhaustiveObjective,
     GreedyCriterion,
     Parser,
     compute_all_mutex_groups,
-    compute_invariant_order_exhaustive,
     compute_invariant_order_greedy,
     compute_mutex_groups_in_order,
     synthesize_invariants,
@@ -32,11 +30,8 @@ def ferry():
 
 
 ALL_ORDERS = [
-    lambda invariants: compute_invariant_order_greedy(invariants, GreedyCriterion.GroupSize),
-    lambda invariants: compute_invariant_order_greedy(invariants, GreedyCriterion.TotalCoverage),
-    lambda invariants: compute_invariant_order_exhaustive(invariants, ExhaustiveObjective.FewestVariables),
-    lambda invariants: compute_invariant_order_exhaustive(invariants, ExhaustiveObjective.LargestVariables),
-    lambda invariants: compute_invariant_order_exhaustive(invariants, ExhaustiveObjective.Coverage),
+    lambda invariants: compute_invariant_order_greedy(invariants, GreedyCriterion.MaxGroupSize),
+    lambda invariants: compute_invariant_order_greedy(invariants, GreedyCriterion.MaxCoverage),
 ]
 
 
@@ -54,15 +49,7 @@ def test_ferry_orders(ferry):
         return [_predicate_names(i) for i in order]
 
     assert names(compute_invariant_order_greedy(invariants)) == [{"at", "on"}, {"at-ferry"}]
-    assert compute_invariant_order_greedy(invariants) == compute_invariant_order_greedy(invariants, GreedyCriterion.GroupSize)
-    assert names(compute_invariant_order_exhaustive(invariants)) == [{"at", "on"}, {"at-ferry"}]
-    assert compute_invariant_order_exhaustive(invariants) == compute_invariant_order_exhaustive(
-        invariants, ExhaustiveObjective.FewestVariables)
-    assert names(compute_invariant_order_exhaustive(invariants, ExhaustiveObjective.Coverage)) == [
-        {"empty-ferry", "on"},
-        {"at", "on"},
-        {"at-ferry"},
-    ]
+    assert compute_invariant_order_greedy(invariants) == compute_invariant_order_greedy(invariants, GreedyCriterion.MaxGroupSize)
 
 
 def _ground(formalism_task, invariant_order):
@@ -81,7 +68,7 @@ def _variable_predicates(variables):
 def test_grounding_follows_the_order(ferry):
     _, formalism_task, invariants = ferry
 
-    result = _ground(formalism_task, compute_invariant_order_exhaustive(invariants))
+    result = _ground(formalism_task, compute_invariant_order_greedy(invariants))
 
     assert _variable_predicates(result.task.get_fdr_context().get_variables()) == [
         ["at", "at", "on"], ["at", "at", "on"], ["at-ferry", "at-ferry"], ["empty-ferry"]]
@@ -132,8 +119,8 @@ def test_all_mutex_groups_are_the_proven_instances(ferry):
 
 def test_variables_trace_back_to_their_invariant(ferry):
     _, formalism_task, invariants = ferry
-    # Coverage keeps the ferry contents invariant, which has no rigid variable.
-    order = compute_invariant_order_exhaustive(invariants, ExhaustiveObjective.Coverage)
+    # Ferry contents first, so the order uses that invariant, which has no rigid variable.
+    order = sorted(invariants, key=lambda invariant: _predicate_names(invariant) != {"empty-ferry", "on"})
     result = _ground(formalism_task, order)
     ground = result.task.get_task()
     all_atoms = list(ground.get_fluent_atoms())

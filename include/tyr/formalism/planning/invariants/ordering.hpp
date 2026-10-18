@@ -37,34 +37,16 @@ namespace tyr::formalism::planning::invariant
 
 enum class GreedyCriterion
 {
-    /// The residual with the largest group a*n + b first, like Fast Downward's largest-first cover; ties: larger
-    /// total coverage n^r * (a*n + b).
-    GroupSize,
+    /// The residual with the largest group a*n + b first, like Fast Downward's largest-first cover, the greedy rule for
+    /// the fewest FDR variables: a residual adds n^r variables covering n^r * (a*n + b) atoms, i.e. a*n + b atoms per
+    /// variable. Ties: larger total coverage n^r * (a*n + b).
+    MaxGroupSize,
     /// The residual covering the most atoms, n^r * (a*n + b), first. Can prefer many small groups to one large group.
-    TotalCoverage,
+    MaxCoverage,
 };
 
 /// Repeatedly takes the best residual under `criterion`.
-InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, GreedyCriterion criterion = GreedyCriterion::GroupSize);
-
-/// FDR variables counted below: n^r per used invariant (groups of a*n + b atoms) plus n^arity per predicate left
-/// binary (groups of one atom).
-enum class ExhaustiveObjective
-{
-    /// Fewest FDR variables, binary ones included (the set cover Fast Downward approximates); ties: LargestVariables.
-    FewestVariables,
-    /// Largest FDR variables: the larger largest group, then more groups of that size, then the next size down to the
-    /// binary variables; ties: fewer FDR variables.
-    LargestVariables,
-    /// Fewest atoms left binary, then fewest invariant variables. Can pick many small groups to avoid few binary atoms.
-    Coverage,
-};
-
-/// The order optimizing `objective` over all predicate -> {invariant | binary} assignments that an order induces;
-/// remaining ties are broken as described above. Predicates that share no invariant are decided independently; a
-/// component with more than a million assignments falls back to the greedy order (GroupSize, or TotalCoverage for
-/// Coverage).
-InvariantViewList compute_invariant_order_exhaustive(const InvariantViewList& invariants, ExhaustiveObjective objective = ExhaustiveObjective::FewestVariables);
+InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, GreedyCriterion criterion = GreedyCriterion::MaxGroupSize);
 
 }
 

@@ -34,9 +34,7 @@ namespace
 {
 using formalism::planning::InvariantView;
 using formalism::planning::InvariantViewList;
-using formalism::planning::invariant::compute_invariant_order_exhaustive;
 using formalism::planning::invariant::compute_invariant_order_greedy;
-using formalism::planning::invariant::ExhaustiveObjective;
 using formalism::planning::invariant::GreedyCriterion;
 
 const auto tests_root = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests";
@@ -70,14 +68,11 @@ std::vector<std::set<std::string>> names(const InvariantViewList& order)
     return result;
 }
 
-/// Every variant: greedy GroupSize, TotalCoverage; exhaustive FewestVariables, LargestVariables, Coverage.
+/// Every criterion: MaxGroupSize, MaxCoverage.
 std::vector<InvariantViewList> all_orders(const InvariantViewList& invariants)
 {
-    return { compute_invariant_order_greedy(invariants, GreedyCriterion::GroupSize),
-             compute_invariant_order_greedy(invariants, GreedyCriterion::TotalCoverage),
-             compute_invariant_order_exhaustive(invariants, ExhaustiveObjective::FewestVariables),
-             compute_invariant_order_exhaustive(invariants, ExhaustiveObjective::LargestVariables),
-             compute_invariant_order_exhaustive(invariants, ExhaustiveObjective::Coverage) };
+    return { compute_invariant_order_greedy(invariants, GreedyCriterion::MaxGroupSize),
+             compute_invariant_order_greedy(invariants, GreedyCriterion::MaxCoverage) };
 }
 
 std::vector<std::filesystem::path> test_domains()
@@ -133,14 +128,7 @@ TEST(TyrFormalismPlanningInvariantOrderingTest, Ferry)
     using Names = std::vector<std::set<std::string>>;
     // Car positions have groups of locations + 1 atoms and cover cars * (locations + 1); ferry contents one group of cars + 1.
     EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants)), (Names { { "at", "on" }, { "at-ferry" } }));
-    EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants, GreedyCriterion::TotalCoverage)), (Names { { "at", "on" }, { "at-ferry" } }));
-    // Both cover everything with cars + 2 variables (empty-ferry single, or car positions without on); the car positions
-    // with on are the larger groups. Like Fast Downward's encoding.
-    EXPECT_EQ(names(compute_invariant_order_exhaustive(domain.invariants)), (Names { { "at", "on" }, { "at-ferry" } }));
-    EXPECT_EQ(names(compute_invariant_order_exhaustive(domain.invariants, ExhaustiveObjective::LargestVariables)), (Names { { "at", "on" }, { "at-ferry" } }));
-    // Ferry contents leave no atom single; car positions leave empty-ferry single.
-    EXPECT_EQ(names(compute_invariant_order_exhaustive(domain.invariants, ExhaustiveObjective::Coverage)),
-              (Names { { "empty-ferry", "on" }, { "at", "on" }, { "at-ferry" } }));
+    EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants, GreedyCriterion::MaxCoverage)), (Names { { "at", "on" }, { "at-ferry" } }));
 }
 
 TEST(TyrFormalismPlanningInvariantOrderingTest, Blocks)
@@ -150,11 +138,8 @@ TEST(TyrFormalismPlanningInvariantOrderingTest, Blocks)
     // "Where is the block" and "what is on the block" cover equally many atoms; on(?x, ?y) with the rigid variable
     // first decides for "where is the block".
     EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants)), (std::vector<std::set<std::string>> { { "holding", "on", "on-table" } }));
-    // Leaving arm-empty single costs as many variables as the arm variable, and keeps holding in the larger groups.
-    EXPECT_EQ(names(compute_invariant_order_exhaustive(domain.invariants)), (std::vector<std::set<std::string>> { { "holding", "on", "on-table" } }));
-    // Taking holding into the arm variable leaves fewer atoms single; the same tie-break picks on(?x, ?y).
-    EXPECT_EQ(names(compute_invariant_order_exhaustive(domain.invariants, ExhaustiveObjective::Coverage)),
-              (std::vector<std::set<std::string>> { { "arm-empty", "holding" }, { "holding", "on", "on-table" } }));
+    EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants, GreedyCriterion::MaxCoverage)),
+              (std::vector<std::set<std::string>> { { "holding", "on", "on-table" } }));
 }
 
 TEST(TyrFormalismPlanningInvariantOrderingTest, Airport)
@@ -163,16 +148,11 @@ TEST(TyrFormalismPlanningInvariantOrderingTest, Airport)
 
     using Names = std::vector<std::set<std::string>>;
     // One group of all moving and pushing airplanes (2n atoms) is larger than an airplane's state (n + 2 atoms), which
-    // covers more atoms in total. GroupSize takes the large group first, so is-parked is left to the airplane's state.
+    // covers more atoms in total. MaxGroupSize takes the large group first, so is-parked is left to the airplane's state.
     EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants)),
               (Names { { "airborne", "at-segment" }, { "is-moving", "is-pushing" }, { "facing" }, { "is-moving", "is-parked", "is-pushing" } }));
-    EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants, GreedyCriterion::TotalCoverage)),
+    EXPECT_EQ(names(compute_invariant_order_greedy(domain.invariants, GreedyCriterion::MaxCoverage)),
               (Names { { "airborne", "at-segment" }, { "is-moving", "is-parked", "is-pushing" }, { "facing" } }));
-    // The airplane states alone need fewer variables; adding the moving/pushing group gives larger ones.
-    EXPECT_EQ(names(compute_invariant_order_exhaustive(domain.invariants)),
-              (Names { { "airborne", "at-segment" }, { "facing" }, { "is-moving", "is-parked", "is-pushing" } }));
-    EXPECT_EQ(names(compute_invariant_order_exhaustive(domain.invariants, ExhaustiveObjective::LargestVariables)),
-              (Names { { "airborne", "at-segment" }, { "facing" }, { "is-moving", "is-pushing" }, { "is-moving", "is-parked", "is-pushing" } }));
 }
 
 }
