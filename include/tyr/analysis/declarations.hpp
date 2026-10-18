@@ -20,11 +20,9 @@
 
 #include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/analysis/variable_domain.hpp"
-#include "tyr/formalism/datalog/indices.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/indices.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
@@ -32,6 +30,7 @@
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/dependent_false.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
@@ -229,42 +228,6 @@ using ActionDomainView = ScopedView<formalism::planning::Action<LiftedTag>, Acti
 
 template<typename C>
 using ActionDomainViewMap = ygg::UnorderedMap<ygg::View<ygg::Index<formalism::planning::Action<LiftedTag>>, C>, ActionDomainView<C>>;
-
-struct ProgramVariableDomainsView
-{
-    using C = formalism::datalog::Repository;
-
-    PredicateDomainViewMap<formalism::StaticTag, C> static_predicate_domains;
-    PredicateDomainViewMap<formalism::FluentTag, C> fluent_predicate_domains;
-    FunctionDomainViewMap<formalism::StaticTag, C> static_function_domains;
-    FunctionDomainViewMap<formalism::FluentTag, C> fluent_function_domains;
-    RuleDomainViewMap<formalism::PredicateTag, C> predicate_rule_domains;
-    RuleDomainViewMap<formalism::FunctionTag, C> function_rule_domains;
-
-    template<formalism::RelationKind R>
-    const auto& get_rule_domains() const noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rule_domains;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rule_domains;
-        else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
-    }
-};
-
-struct TaskVariableDomainsView
-{
-    using C = formalism::planning::Repository;
-
-    PredicateDomainViewMap<formalism::StaticTag, C> static_predicate_domains;
-    PredicateDomainViewMap<formalism::FluentTag, C> fluent_predicate_domains;
-    PredicateDomainViewMap<formalism::DerivedTag, C> derived_predicate_domains;
-    FunctionDomainViewMap<formalism::StaticTag, C> static_function_domains;
-    FunctionDomainViewMap<formalism::FluentTag, C> fluent_function_domains;
-    ActionDomainViewMap<C> action_domains;
-    AxiomDomainViewMap<C> axiom_domains;
-};
 
 /**
  * Stratification

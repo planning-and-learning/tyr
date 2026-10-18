@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/domains_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"

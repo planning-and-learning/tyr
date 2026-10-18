@@ -19,6 +19,7 @@
 #define TYR_ANALYSIS_DOMAINS_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/domains_view.hpp"
 #include "tyr/analysis/program_analysis.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"

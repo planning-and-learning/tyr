@@ -16,6 +16,7 @@
  */
 
 #include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/domains_view.hpp"
 
 namespace tyr::analysis
 {

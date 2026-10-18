@@ -16,6 +16,7 @@
  */
 
 #include "bindings.hpp"
+#include "tyr/analysis/domains_view.hpp"
 #include "tyr/analysis/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
