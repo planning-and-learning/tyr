@@ -439,8 +439,6 @@ std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, Cop
 
 }
 
-#ifndef TYR_HEADER_INSTANTIATION
-
 namespace tyr::formalism::datalog
 {
 template<TaskKind T>
@@ -465,6 +463,8 @@ void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, Co
     if (const auto goal = element.get_goal())
         result.goal = copy(*goal, context).first.get_index();
 }
+
+#ifndef TYR_HEADER_INSTANTIATION
 
 extern template std::pair<PredicateView<StaticTag>, bool> copy(PredicateView<StaticTag> element, CopyContext& context);
 extern template std::pair<PredicateView<FluentTag>, bool> copy(PredicateView<FluentTag> element, CopyContext& context);
@@ -534,8 +534,8 @@ extern template std::pair<RuleView<GroundTag, FunctionTag>, bool> copy(RuleView<
 
 extern template void copy_except_rules(ProgramView<LiftedTag> element, ygg::Data<Program<LiftedTag>>& result, CopyContext& context);
 extern template void copy_except_rules(ProgramView<GroundTag> element, ygg::Data<Program<GroundTag>>& result, CopyContext& context);
-}
 
 #endif
+}
 
 #endif
