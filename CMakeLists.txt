@@ -126,8 +126,8 @@ add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Dependencies
 
-set(TYR_YGGDRASIL_REQUIRED_VERSION 0.4.0)
-set(TYR_LOKI_REQUIRED_VERSION 1.4.0)
+set(TYR_YGGDRASIL_REQUIRED_VERSION 0.4.1)
+set(TYR_LOKI_REQUIRED_VERSION 1.4.1)
 
 include("${PROJECT_SOURCE_DIR}/cmake/bootstrap_pyyggdrasil.cmake")
 
