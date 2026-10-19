@@ -100,7 +100,7 @@ struct BottomUpCase
     std::array<AtomsByPredicate, kConfigNames.size()> configs;
 };
 
-void PrintTo(const BottomUpCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ')'; }
+[[maybe_unused]] void PrintTo(const BottomUpCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ')'; }
 
 AtomBinding parse_atom_binding(const boost::json::object& object) { return AtomBinding { ygg::common::as_string(object, "objects", "atom binding") }; }
 
@@ -158,7 +158,7 @@ BottomUpCase parse_case(const boost::json::object& object)
     return result;
 }
 
-std::vector<BottomUpCase> load_cases()
+[[maybe_unused]] std::vector<BottomUpCase> load_cases()
 {
     const auto fixture_path = ygg::common::root_path() / kBottomUpFixture;
     auto file = std::ifstream(fixture_path, std::ios::binary);
@@ -193,7 +193,7 @@ std::vector<BottomUpCase> load_cases()
     return result;
 }
 
-void append_atoms_by_predicate(const tyr::datalog::TaggedFactSets<tyr::formalism::FluentTag>& fact_sets, AtomsByPredicate& result)
+[[maybe_unused]] void append_atoms_by_predicate(const tyr::datalog::TaggedFactSets<tyr::formalism::FluentTag>& fact_sets, AtomsByPredicate& result)
 {
     for (const auto& set : fact_sets.predicate.get_sets())
     {
