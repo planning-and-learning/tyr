@@ -87,7 +87,7 @@ add_gtest(
     "planning/state.cpp"
 )
 
-add_gtest(planning_applicability "planning/applicability.cpp" "planning/applicability_schema_ground.cpp" "planning/applicability_schema_lifted.cpp")
+add_gtest(planning_applicability "planning/applicability.cpp" "planning/applicability_schema.cpp")
 add_gtest(planning_plan_reconstruction "planning/plan_reconstruction.cpp")
 add_gtest(planning_search_engine "planning/search_engine.cpp")
 target_include_directories(planning_search_engine PRIVATE ${PROJECT_SOURCE_DIR}/src)
@@ -130,5 +130,5 @@ add_gtest(planning_algorithms_iw_novelty_table "planning/algorithms/iw/novelty_t
 add_gtest(planning_algorithms_serialized "planning/algorithms/serialized.cpp")
 target_link_libraries(planning_algorithms_serialized PRIVATE Boost::json)
 
-add_gtest(serialization_planning "serialization/planning.cpp" "serialization/planning_runtime_ground.cpp" "serialization/planning_runtime_lifted.cpp")
+add_gtest(serialization_planning "serialization/planning.cpp" "serialization/planning_runtime.cpp")
 target_link_libraries(serialization_planning PRIVATE Boost::json)
