@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_ALGORITHMS_UTILS_HPP_
 #define TYR_PLANNING_ALGORITHMS_UTILS_HPP_
 
+#include "tyr/planning/algorithms/declarations.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
@@ -36,35 +37,6 @@
 
 namespace tyr::planning
 {
-
-enum class DistHashMode : uint8_t
-{
-    RANDOM,
-    LMCUT,
-};
-
-enum class SearchStatus
-{
-    IN_PROGRESS,
-    OUT_OF_TIME,
-    OUT_OF_MEMORY,
-    OUT_OF_STATES,
-    FAILED,
-    EXHAUSTED,
-    CYCLE,
-    SOLVED,
-    UNSOLVABLE
-};
-
-enum class TransitionOutcome : uint8_t
-{
-    OPENED,
-    RELAXED,
-    DUPLICATE,
-    PRUNED,
-    DEAD_END,
-    GOAL,
-};
 
 inline ygg::float_t compute_successor_g_value(ygg::float_t source_g_value, ygg::float_t generated_successor_g_value, CostMode mode)
 {
