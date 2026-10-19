@@ -25,9 +25,13 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/axiom_evaluator.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/heuristics/goal_count.hpp"
+#include "tyr/planning/lifted/axiom_evaluator.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 #include <barrier>

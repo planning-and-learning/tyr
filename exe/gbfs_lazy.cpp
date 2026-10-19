@@ -29,6 +29,7 @@
 #include <tyr/planning/algorithms/utils.hpp>
 #include <tyr/planning/factory.hpp>
 #include <tyr/planning/formatter.hpp>
+#include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/heuristic.hpp>
 #include <tyr/planning/heuristics/blind.hpp>
@@ -37,6 +38,8 @@
 #include <tyr/planning/heuristics/rpg_add.hpp>
 #include <tyr/planning/heuristics/rpg_ff.hpp>
 #include <tyr/planning/heuristics/rpg_max.hpp>
+#include <tyr/planning/lifted/axiom_evaluator.hpp>
+#include <tyr/planning/lifted/successor_generator.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/lifted/task_grounder_decl.hpp>
 #include <yggdrasil/core/memory.hpp>

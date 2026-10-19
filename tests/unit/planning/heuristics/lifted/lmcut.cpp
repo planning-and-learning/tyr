@@ -26,6 +26,7 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 }
 
 #include "../heuristic.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 
 TEST(TyrPlanningLiftedLMCutHeuristicTest, GeneralCostModeThrows) { tyr::tests::expect_general_cost_mode_throws<tyr::LiftedTag>(); }
 

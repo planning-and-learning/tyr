@@ -20,9 +20,11 @@
 
 #include "planning/parser.hpp"
 #include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 #include <algorithm>
