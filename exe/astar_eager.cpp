@@ -134,7 +134,7 @@ int main(int argc, char** argv)
         std::cout << "[INPUT] Random seed: " << random_seed << std::endl;
         std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << std::endl;
 
-        auto parser_options = loki::ParserOptions();
+        auto parser_options = loki::semantic::ParserOptions();
         // parser_options.strict = true;
         auto parser = tyr::formalism::planning::Parser(domain_filepath, parser_options);
         auto domain = parser.get_domain();

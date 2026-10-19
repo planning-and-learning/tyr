@@ -19,6 +19,7 @@
 
 #include "bindings.hpp"
 
+#include <loki/loki.hpp>
 #include <nanobind/stl/filesystem.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
