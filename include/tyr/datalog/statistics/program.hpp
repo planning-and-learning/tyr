@@ -19,6 +19,7 @@
 #define TYR_DATALOG_STATISTICS_PROGRAM_HPP_
 
 #include <chrono>
+#include <yggdrasil/core/types.hpp>
 
 namespace tyr::datalog
 {
