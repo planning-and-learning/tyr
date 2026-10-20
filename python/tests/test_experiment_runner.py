@@ -524,7 +524,9 @@ def test_arrhenius_state_round_trip(tmp_path):
 )
 def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s, cpus_per_task, memory_per_cpu_mib):
     presets = run_search.REPO / "experiments/configs"
-    what_config = run_search.load_json(presets / "what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1.json")
+    what_config = run_search.load_json(
+        presets / f"what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-{cpus_per_task}.json"
+    )
     how_config = run_search.apply_how_overrides(
         run_search.load_json(presets / f"how/arrhenius-build-65536m-{wall_time_limit_s}s-{cpus_per_task}cpu.json"),
         argparse.Namespace(no_max_tasks=True),
@@ -558,6 +560,35 @@ def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s, cp
     assert restored[1]["memory_limit_mib"] == 65536
     assert restored[1]["cpus_per_task"] * restored[1]["memory_per_cpu_mib"] == 67584
     assert restored[2] == ["htg"]
+    assert restored[0] == what_config
+    assert restored[3] == what_config["configurations"]
+    assert len(restored[3]) == 2
+    for config, mode, name in zip(
+        restored[3],
+        ["shared", "hash-distributed"],
+        ["shared", "hash-random"],
+        strict=True,
+    ):
+        assert config["name"] == f"gbfs-lazy-lifted-hff-pref-{name}-{cpus_per_task}"
+        expected_args = [
+            "-H",
+            "rpg_ff",
+            "-R",
+            "0",
+            "--num-datalog-threads",
+            "1",
+            "--heuristic-cost-type",
+            "unit",
+            "--num-search-workers",
+            str(restored[1]["cpus_per_task"]),
+            "--state-repository-mode",
+            mode,
+            "--dist-hash-mode",
+            "random",
+        ]
+        if cpus_per_task > 1:
+            expected_args.append("--collect-destination-lock-statistics")
+        assert run_search.planner_command(config)[5:] == expected_args
 
     script = Path(command[-1]).read_text(encoding="utf-8")
     assert "#SBATCH --partition=fat\n" in script

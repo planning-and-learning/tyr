@@ -12,7 +12,7 @@
   },
   "configurations": [
     {
-      "name": "gbfs-lazy-lifted-hff-pref-sequential-1",
+      "name": "gbfs-lazy-lifted-hff-pref-shared-1",
       "task_kind": "lifted",
       "heuristic": "rpg_ff",
       "seed": 0,
@@ -23,6 +23,26 @@
         "unit",
         "--num-search-workers",
         "1",
+        "--state-repository-mode",
+        "shared",
+        "--dist-hash-mode",
+        "random"
+      ]
+    },
+    {
+      "name": "gbfs-lazy-lifted-hff-pref-hash-random-1",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "seed": 0,
+      "args": [
+        "--num-datalog-threads",
+        "1",
+        "--heuristic-cost-type",
+        "unit",
+        "--num-search-workers",
+        "1",
+        "--state-repository-mode",
+        "hash-distributed",
         "--dist-hash-mode",
         "random"
       ]

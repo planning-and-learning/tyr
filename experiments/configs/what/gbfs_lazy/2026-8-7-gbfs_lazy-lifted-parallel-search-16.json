@@ -12,41 +12,6 @@
   },
   "configurations": [
     {
-      "name": "gbfs-lazy-lifted-hff-pref-datalog-16",
-      "task_kind": "lifted",
-      "heuristic": "rpg_ff",
-      "seed": 0,
-      "args": [
-        "--num-datalog-threads",
-        "16",
-        "--heuristic-cost-type",
-        "unit",
-        "--num-search-workers",
-        "1",
-        "--dist-hash-mode",
-        "random"
-      ]
-    },
-    {
-      "name": "gbfs-lazy-lifted-hff-pref-shared-4x4",
-      "task_kind": "lifted",
-      "heuristic": "rpg_ff",
-      "seed": 0,
-      "args": [
-        "--num-datalog-threads",
-        "4",
-        "--heuristic-cost-type",
-        "unit",
-        "--num-search-workers",
-        "4",
-        "--state-repository-mode",
-        "shared",
-        "--dist-hash-mode",
-        "random",
-        "--collect-destination-lock-statistics"
-      ]
-    },
-    {
       "name": "gbfs-lazy-lifted-hff-pref-shared-16",
       "task_kind": "lifted",
       "heuristic": "rpg_ff",
@@ -60,25 +25,6 @@
         "16",
         "--state-repository-mode",
         "shared",
-        "--dist-hash-mode",
-        "random",
-        "--collect-destination-lock-statistics"
-      ]
-    },
-    {
-      "name": "gbfs-lazy-lifted-hff-pref-hash-random-4x4",
-      "task_kind": "lifted",
-      "heuristic": "rpg_ff",
-      "seed": 0,
-      "args": [
-        "--num-datalog-threads",
-        "4",
-        "--heuristic-cost-type",
-        "unit",
-        "--num-search-workers",
-        "4",
-        "--state-repository-mode",
-        "hash-distributed",
         "--dist-hash-mode",
         "random",
         "--collect-destination-lock-statistics"

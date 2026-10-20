@@ -1,0 +1,57 @@
+{
+  "name": "2026-8-7-gbfs_lazy-lifted-parallel-search-8",
+  "planner": "gbfs_lazy",
+  "suite_sets": {
+    "local": [
+      "ipc-satisficing-strips-test",
+      "ipc-satisficing-adl-test"
+    ],
+    "arrhenius": [
+      "htg"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "gbfs-lazy-lifted-hff-pref-shared-8",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "seed": 0,
+      "args": [
+        "--num-datalog-threads",
+        "1",
+        "--heuristic-cost-type",
+        "unit",
+        "--num-search-workers",
+        "8",
+        "--state-repository-mode",
+        "shared",
+        "--dist-hash-mode",
+        "random",
+        "--collect-destination-lock-statistics"
+      ]
+    },
+    {
+      "name": "gbfs-lazy-lifted-hff-pref-hash-random-8",
+      "task_kind": "lifted",
+      "heuristic": "rpg_ff",
+      "seed": 0,
+      "args": [
+        "--num-datalog-threads",
+        "1",
+        "--heuristic-cost-type",
+        "unit",
+        "--num-search-workers",
+        "8",
+        "--state-repository-mode",
+        "hash-distributed",
+        "--dist-hash-mode",
+        "random",
+        "--collect-destination-lock-statistics"
+      ]
+    }
+  ],
+  "parsers": [
+    "search",
+    "datalog"
+  ]
+}

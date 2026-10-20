@@ -10,7 +10,7 @@ file.
 
 ## Running locally
 
-From the repository root, run the five-configuration parallel-search smoke
+From the repository root, run the two-configuration parallel-search smoke
 experiment with:
 
 ```console
@@ -85,27 +85,38 @@ cmake --build build --target gbfs_lazy -j16
 
 End the compute session with `exit`, then return to the repository root on
 the login node, reload the compiler and any Python module used above, and
-activate `.venv`. Submit the HTG suite with the existing sequential lazy
-GBFS + hFF configuration and a **10-minute wall-clock limit per problem**:
+activate `.venv`. Submit the HTG suite with lazy GBFS + hFF using shared and
+hash-distributed state repositories at each of 1, 4, 8, and 16 search workers,
+with a **10-minute wall-clock limit per configuration and problem**:
 
 ```console
 module load buildenv-gcc/2026.03
 source .venv/bin/activate
 command -v Validate || command -v validate
 
-.venv/bin/python experiments/run_search.py \
-  --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1.json \
-  --how experiments/configs/how/arrhenius-build-65536m-600s-1cpu.json \
-  --suite htg \
-  --all
+for cores in 1 4 8 16; do
+  .venv/bin/python experiments/run_search.py \
+    --what "experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-${cores}.json" \
+    --how "experiments/configs/how/arrhenius-build-65536m-600s-${cores}cpu.json" \
+    --suite htg \
+    --all
+done
 ```
 
-This uses lifted tasks, `rpg_ff`, preferred actions, seed 0, one search
-worker, and one Datalog thread. It allocates one CPU and 66 GiB of Slurm memory:
-64 GiB for the planner plus 2 GiB for launcher overhead.
+Each what preset contains two configurations in report order: a shared state
+repository, then a hash-distributed state repository with random hashing.
+Both use lifted tasks, `rpg_ff`, preferred actions, unit heuristic costs,
+seed 0, and one Datalog thread per search worker. The loop runs eight
+configurations per problem overall. Each job allocates the matching number
+of CPUs and 66 GiB of Slurm memory: 64 GiB for the planner plus 2 GiB for
+launcher overhead.
 
-For **5 minutes per problem**, use
-`experiments/configs/how/arrhenius-build-65536m-300s-1cpu.json` instead.
+At one worker, both configurations use the sequential search engine; the
+shared configuration still uses the concurrent state repository. The 4-, 8-,
+and 16-worker configurations retain destination-lock statistics collection.
+
+For **5 minutes per configuration and problem**, replace `600s` with `300s`
+in the how filename.
 The standard `build` presets offer 5-, 10-, and 30-minute limits with each of
 1, 4, 8, and 16 CPUs. All reserve the same total memory on `fat`:
 
@@ -119,9 +130,8 @@ The standard `build` presets offer 5-, 10-, and 30-minute limits with each of
 Choose `arrhenius-build-65536m-<seconds>s-<cores>cpu.json`, with `<seconds>`
 set to `300`, `600`, or `1800` and `<cores>` set to `1`, `4`, `8`, or `16`.
 The how file sets the allocation; the what file sets the planner's thread
-counts. In particular, selecting an 8-CPU how file does not turn a sequential
-configuration into an 8-thread search. There is no 8-thread parallel-search
-what preset, but the parallel-Datalog what preset below includes 8 threads.
+counts. Match the CPU count in the how filename to the worker count in the
+parallel-search what filename, as in the loop above.
 
 Each run's wall-clock limit includes parsing, search, and plan validation.
 The 24-hour `scheduler_time_limit` is separate: Lab can group several
@@ -129,7 +139,8 @@ problem runs into one Slurm array task, so it must cover the whole group.
 
 The runner submits the experiment and its dependent parsing and reporting
 steps to Slurm. The resolved configuration is carried into each step. Check
-progress with `squeue -u "$USER"`. The report for the 10-minute command is:
+progress with `squeue -u "$USER"`. Each worker count gets a separate report;
+the 1-worker report from the 10-minute loop is:
 
 ```text
 experiments/data/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1--arrhenius-build-65536m-600s-1cpu-eval/report.html
@@ -140,9 +151,10 @@ experiments/data/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1--arrheniu
 | What preset | Purpose | Local how | Arrhenius how |
 |---|---|---|---|
 | `2026-1-8-gbfs_lazy-lifted-parallel-datalog` | lifted 1/2/4/8 inner Datalog threads | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-8cpu` |
-| `2026-8-7-gbfs_lazy-lifted-parallel-search-1` | lifted sequential baseline | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-1cpu` |
-| `2026-8-7-gbfs_lazy-lifted-parallel-search-4` | lifted 4-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-4cpu` |
-| `2026-8-7-gbfs_lazy-lifted-parallel-search-16` | lifted 16-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-16cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-1` | lifted shared and random hash-distributed search, 1 worker | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-1cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-4` | lifted shared and random hash-distributed search, 4 workers | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-4cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-8` | lifted shared and random hash-distributed search, 8 workers | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-8cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-16` | lifted shared and random hash-distributed search, 16 workers | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-16cpu` |
 | `2026-8-8-gbfs_lazy-ground-parallel-search-4` | ground sequential, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-4cpu` |
 
 The `build_dir` in the how file must contain the selected planner executable.
