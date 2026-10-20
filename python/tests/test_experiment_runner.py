@@ -99,7 +99,12 @@ def test_checked_in_presets_are_valid():
     for path in what_paths:
         run_search.validate_what(run_search.load_json(path))
     for path in how_paths:
-        run_search.validate_how(run_search.load_json(path))
+        config = run_search.validate_how(run_search.load_json(path))
+        if config["environment"] == "arrhenius":
+            assert config["partition"] == "fat", path
+            assert config["cpus_per_task"] in {1, 4, 8, 16}, path
+            assert config["memory_limit_mib"] == 65536, path
+            assert config["cpus_per_task"] * config["memory_per_cpu_mib"] == 67584, path
 
 
 @pytest.mark.parametrize("config", [local_how(), arrhenius_how()])
@@ -513,11 +518,15 @@ def test_arrhenius_state_round_trip(tmp_path):
 
 
 @pytest.mark.parametrize("wall_time_limit_s", [300, 600])
-def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s):
+@pytest.mark.parametrize(
+    ("cpus_per_task", "memory_per_cpu_mib"),
+    [(1, 67584), (4, 16896), (8, 8448), (16, 4224)],
+)
+def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s, cpus_per_task, memory_per_cpu_mib):
     presets = run_search.REPO / "experiments/configs"
     what_config = run_search.load_json(presets / "what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1.json")
     how_config = run_search.apply_how_overrides(
-        run_search.load_json(presets / f"how/arrhenius-build-11360m-{wall_time_limit_s}s-4cpu.json"),
+        run_search.load_json(presets / f"how/arrhenius-build-65536m-{wall_time_limit_s}s-{cpus_per_task}cpu.json"),
         argparse.Namespace(no_max_tasks=True),
     )
     suites = run_search.select_suites(what_config, how_config, None)
@@ -546,15 +555,17 @@ def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s):
     state = next(value for value in exported if value.startswith(f"{run_search.STATE_ENV}="))
     restored = run_search.decode_state(state.split("=", 1)[1])
     assert restored[1]["wall_time_limit_s"] == wall_time_limit_s
+    assert restored[1]["memory_limit_mib"] == 65536
+    assert restored[1]["cpus_per_task"] * restored[1]["memory_per_cpu_mib"] == 67584
     assert restored[2] == ["htg"]
 
     script = Path(command[-1]).read_text(encoding="utf-8")
-    assert "#SBATCH --partition=cpu\n" in script
+    assert "#SBATCH --partition=fat\n" in script
     assert "#SBATCH --account=naiss2026-4-697-cpu\n" in script
     assert "#SBATCH --qos=normal\n" in script
     assert "#SBATCH --time=24:00:00\n" in script
-    assert "#SBATCH --cpus-per-task=4\n" in script
-    assert "#SBATCH --mem-per-cpu=3000M\n" in script
+    assert f"#SBATCH --cpus-per-task={cpus_per_task}\n" in script
+    assert f"#SBATCH --mem-per-cpu={memory_per_cpu_mib}M\n" in script
     assert "#SBATCH --array=1-501\n" in script
     assert "RUNS_PER_TASK=2\n" in script
 

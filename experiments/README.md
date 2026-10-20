@@ -27,10 +27,12 @@ oversubscribe the machine. The example uses at most 16 cores.
 ## Running on Arrhenius
 
 Use a checkout of `main` on Arrhenius. The Slurm account is
-`naiss2026-4-697-cpu` and the partition is `cpu`; these are separate settings.
+`naiss2026-4-697-cpu` and the experiment partition is `fat`; these are separate
+settings.
 See the [Arrhenius scheduling documentation](https://user.naiss.se/arrhenius_hpc/job_management/scheduling/).
 
-Request a compute session for the 16-core build:
+Request a compute session on `cpu` for the 16-core build. This allocation is
+separate from the experiment jobs on `fat`:
 
 ```console
 interactive -A naiss2026-4-697-cpu -p cpu -n 1 -c 16 --mem=64G -t 02:00:00
@@ -93,18 +95,34 @@ command -v Validate || command -v validate
 
 .venv/bin/python experiments/run_search.py \
   --what experiments/configs/what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1.json \
-  --how experiments/configs/how/arrhenius-build-11360m-600s-4cpu.json \
+  --how experiments/configs/how/arrhenius-build-65536m-600s-1cpu.json \
   --suite htg \
   --all
 ```
 
 This uses lifted tasks, `rpg_ff`, preferred actions, seed 0, one search
-worker, and one Datalog thread. The four allocated CPUs provide a
-12,000 MiB Slurm memory reservation for the 11,360 MiB planner limit and
-launcher overhead; they do not change the planner's thread count.
+worker, and one Datalog thread. It allocates one CPU and 66 GiB of Slurm memory:
+64 GiB for the planner plus 2 GiB for launcher overhead.
 
 For **5 minutes per problem**, use
-`experiments/configs/how/arrhenius-build-11360m-300s-4cpu.json` instead.
+`experiments/configs/how/arrhenius-build-65536m-300s-1cpu.json` instead.
+The standard `build` presets offer 5-, 10-, and 30-minute limits with each of
+1, 4, 8, and 16 CPUs. All reserve the same total memory on `fat`:
+
+| CPUs | Planner limit | Slurm memory per CPU | Total Slurm memory |
+|---:|---:|---:|---:|
+| 1 | 64 GiB | 67,584 MiB | 66 GiB |
+| 4 | 64 GiB | 16,896 MiB | 66 GiB |
+| 8 | 64 GiB | 8,448 MiB | 66 GiB |
+| 16 | 64 GiB | 4,224 MiB | 66 GiB |
+
+Choose `arrhenius-build-65536m-<seconds>s-<cores>cpu.json`, with `<seconds>`
+set to `300`, `600`, or `1800` and `<cores>` set to `1`, `4`, `8`, or `16`.
+The how file sets the allocation; the what file sets the planner's thread
+counts. In particular, selecting an 8-CPU how file does not turn a sequential
+configuration into an 8-thread search. There is no 8-thread parallel-search
+what preset, but the parallel-Datalog what preset below includes 8 threads.
+
 Each run's wall-clock limit includes parsing, search, and plan validation.
 The 24-hour `scheduler_time_limit` is separate: Lab can group several
 problem runs into one Slurm array task, so it must cover the whole group.
@@ -114,26 +132,24 @@ steps to Slurm. The resolved configuration is carried into each step. Check
 progress with `squeue -u "$USER"`. The report for the 10-minute command is:
 
 ```text
-experiments/data/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1--arrhenius-build-11360m-600s-4cpu-eval/report.html
+experiments/data/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1--arrhenius-build-65536m-600s-1cpu-eval/report.html
 ```
 
 ## Presets
 
 | What preset | Purpose | Local how | Arrhenius how |
 |---|---|---|---|
-| `2026-1-8-gbfs_lazy-lifted-parallel-datalog` | lifted 1/2/4/8 inner Datalog threads | `local-build-2500m-1s` | `arrhenius-build-16000m-600s-8cpu` |
-| `2026-8-7-gbfs_lazy-lifted-parallel-search-1` | lifted sequential baseline | `local-build-2500m-1s` | `arrhenius-build-11360m-600s-4cpu` |
-| `2026-8-7-gbfs_lazy-lifted-parallel-search-4` | lifted 4-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `arrhenius-build-11360m-600s-4cpu` |
-| `2026-8-7-gbfs_lazy-lifted-parallel-search-16` | lifted 16-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `arrhenius-build-45440m-1800s-16cpu` |
-| `2026-8-8-gbfs_lazy-ground-parallel-search-4` | ground sequential, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `arrhenius-build-11360m-600s-4cpu` |
-
-Use `arrhenius-build-45440m-1800s-16cpu` with any of the three lifted
-parallel-search what presets for the final high-memory runs. The 11,360 MiB,
-600-second presets remain available for shorter profiling runs.
+| `2026-1-8-gbfs_lazy-lifted-parallel-datalog` | lifted 1/2/4/8 inner Datalog threads | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-8cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-1` | lifted sequential baseline | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-1cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-4` | lifted 4-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-4cpu` |
+| `2026-8-7-gbfs_lazy-lifted-parallel-search-16` | lifted 16-thread Datalog, shared search, and random HDA* | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-16cpu` |
+| `2026-8-8-gbfs_lazy-ground-parallel-search-4` | ground sequential, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-4cpu` |
 
 The `build_dir` in the how file must contain the selected planner executable.
 The build-specific `plain-kckp`, `delta-kckp`, and
-`delta-kckp-inner` how files remain available for implementation comparisons.
+`delta-kckp-inner` how files offer the same fixed memory allocation and CPU
+counts with 10-minute limits for implementation comparisons, for example
+`arrhenius-build-delta-kckp-65536m-600s-4cpu.json`.
 
 ## Configuration
 
