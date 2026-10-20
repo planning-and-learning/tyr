@@ -1,8 +1,11 @@
 import argparse
+from pathlib import Path
 
 import pytest
 
 pytest.importorskip("lab")
+
+from lab import environments
 
 from experiments import run_search
 from experiments.parser_search import SearchParser
@@ -24,7 +27,7 @@ def what(**overrides):
     result = {
         "name": "search",
         "planner": "gbfs_lazy",
-        "suite_sets": {"local": ["tiny"], "tetralith": ["ipc"]},
+        "suite_sets": {"local": ["tiny"], "arrhenius": ["ipc"]},
         "configurations": [configuration(), configuration(name="ground", task_kind="ground")],
         "parsers": ["search", "datalog"],
     }
@@ -47,17 +50,17 @@ def local_how(**overrides):
     return result
 
 
-def tetralith_how(**overrides):
+def arrhenius_how(**overrides):
     result = {
         "name": "cluster",
-        "environment": "tetralith",
+        "environment": "arrhenius",
         "build_dir": "build",
         "output_root": "results",
         "memory_limit_mib": 16000,
         "cpu_time_limit_s": 60,
         "wall_time_limit_s": 120,
         "account": "project",
-        "partition": "thin",
+        "partition": "cpu",
         "qos": "normal",
         "cpus_per_task": 8,
         "memory_per_cpu_mib": 2000,
@@ -99,7 +102,7 @@ def test_checked_in_presets_are_valid():
         run_search.validate_how(run_search.load_json(path))
 
 
-@pytest.mark.parametrize("config", [local_how(), tetralith_how()])
+@pytest.mark.parametrize("config", [local_how(), arrhenius_how()])
 def test_validate_how_accepts_valid_config(config):
     assert run_search.validate_how(config) is config
 
@@ -108,8 +111,8 @@ def test_validate_how_accepts_valid_config(config):
     ("config", "message"),
     [
         (local_how(local_processes=0), "local_processes"),
-        (local_how(partition="thin"), "Tetralith keys"),
-        (tetralith_how(account=""), "how.account"),
+        (local_how(partition="cpu"), "Arrhenius keys"),
+        (arrhenius_how(account=""), "how.account"),
     ],
 )
 def test_validate_how_rejects_invalid_config(config, message):
@@ -118,7 +121,7 @@ def test_validate_how_rejects_invalid_config(config, message):
 
 
 def test_cli_how_overrides_take_precedence():
-    config = tetralith_how()
+    config = arrhenius_how()
     args = argparse.Namespace(
         build_dir="build-cli",
         memory_limit_mib=8000,
@@ -134,7 +137,7 @@ def test_cli_how_overrides_take_precedence():
     assert overridden["memory_limit_mib"] == 8000
     assert overridden["cpu_time_limit_s"] is None
     assert overridden["max_tasks"] is None
-    assert config == tetralith_how()
+    assert config == arrhenius_how()
 
 
 def test_cli_can_switch_environment():
@@ -145,7 +148,7 @@ def test_cli_can_switch_environment():
         no_max_tasks=False,
     )
 
-    overridden = run_search.apply_how_overrides(tetralith_how(), args)
+    overridden = run_search.apply_how_overrides(arrhenius_how(), args)
 
     assert run_search.validate_how(overridden) is overridden
     assert overridden["environment"] == "local"
@@ -156,6 +159,7 @@ def test_cli_can_switch_environment():
 def test_suite_and_configuration_selection():
     config = what()
     assert run_search.select_suites(config, local_how(), None) == ["tiny"]
+    assert run_search.select_suites(config, arrhenius_how(), None) == ["ipc"]
     assert run_search.select_suites(config, local_how(), ["custom"]) == ["custom"]
     assert run_search.select_configurations(config, ["ground"]) == [config["configurations"][1]]
     with pytest.raises(run_search.ConfigError, match="unknown configurations: missing"):
@@ -495,9 +499,9 @@ def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path):
     assert props["unexplained_errors"] == ["Incomplete destination-lock aggregate statistics"]
 
 
-def test_tetralith_state_round_trip(tmp_path):
+def test_arrhenius_state_round_trip(tmp_path):
     what_config = what()
-    how_config = tetralith_how()
+    how_config = arrhenius_how()
     configurations = [what_config["configurations"][0]]
     encoded = run_search.encode_state(what_config, how_config, ["ipc"], configurations, tmp_path / "experiment")
 
@@ -506,6 +510,53 @@ def test_tetralith_state_round_trip(tmp_path):
     assert restored[:4] == (what_config, how_config, ["ipc"], configurations)
     assert restored[4] == (tmp_path / "experiment").resolve()
     assert f"{run_search.STATE_ENV}={encoded}" in run_search.make_environment(how_config, encoded).export
+
+
+@pytest.mark.parametrize("wall_time_limit_s", [300, 600])
+def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s):
+    presets = run_search.REPO / "experiments/configs"
+    what_config = run_search.load_json(presets / "what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1.json")
+    how_config = run_search.apply_how_overrides(
+        run_search.load_json(presets / f"how/arrhenius-build-11360m-{wall_time_limit_s}s-4cpu.json"),
+        argparse.Namespace(no_max_tasks=True),
+    )
+    suites = run_search.select_suites(what_config, how_config, None)
+    output_dir = tmp_path / "experiment"
+    encoded = run_search.encode_state(what_config, how_config, suites, what_config["configurations"], output_dir)
+    environment = run_search.make_environment(how_config, encoded)
+    experiment = run_search.Experiment(path=output_dir, environment=environment)
+    for _ in range(1001):
+        experiment.add_run()
+    experiment.add_step("start", experiment.start_runs)
+    submissions = []
+
+    def submit(command, **kwargs):
+        submissions.append(command)
+        return b"Submitted batch job 123\n"
+
+    monkeypatch.setattr(environments.subprocess, "check_output", submit)
+
+    environment.run_steps(experiment.steps)
+
+    assert len(submissions) == 1
+    command = submissions[0]
+    assert command[:2] == ["sbatch", "--export"]
+    exported = command[2].split(",")
+    assert "PATH" in exported
+    state = next(value for value in exported if value.startswith(f"{run_search.STATE_ENV}="))
+    restored = run_search.decode_state(state.split("=", 1)[1])
+    assert restored[1]["wall_time_limit_s"] == wall_time_limit_s
+    assert restored[2] == ["htg"]
+
+    script = Path(command[-1]).read_text(encoding="utf-8")
+    assert "#SBATCH --partition=cpu\n" in script
+    assert "#SBATCH --account=naiss2026-4-697-cpu\n" in script
+    assert "#SBATCH --qos=normal\n" in script
+    assert "#SBATCH --time=24:00:00\n" in script
+    assert "#SBATCH --cpus-per-task=4\n" in script
+    assert "#SBATCH --mem-per-cpu=3000M\n" in script
+    assert "#SBATCH --array=1-501\n" in script
+    assert "RUNS_PER_TASK=2\n" in script
 
 
 @pytest.mark.parametrize(

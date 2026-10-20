@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from lab.environments import LocalEnvironment, TetralithEnvironment
+from lab.environments import LocalEnvironment, ArrheniusEnvironment
 from lab.experiment import ARGPARSER, Experiment
 
 
@@ -79,7 +79,7 @@ def validate_what(config):
     if config["planner"] not in {"astar_eager", "gbfs_lazy"}:
         raise ConfigError("what.planner must be 'astar_eager' or 'gbfs_lazy'")
 
-    _object(config["suite_sets"], "what.suite_sets", {"local", "tetralith"})
+    _object(config["suite_sets"], "what.suite_sets", {"local", "arrhenius"})
     for environment, suites in config["suite_sets"].items():
         _string_list(suites, f"what.suite_sets.{environment}", allow_empty=True)
 
@@ -126,7 +126,7 @@ def validate_how(config):
         "wall_time_limit_s",
     }
     local = {"local_processes"}
-    tetralith = {
+    arrhenius = {
         "account",
         "partition",
         "qos",
@@ -135,12 +135,12 @@ def validate_how(config):
         "scheduler_time_limit",
         "max_tasks",
     }
-    _object(config, "how config", common, local | tetralith)
+    _object(config, "how config", common, local | arrhenius)
     for key in {"name", "environment", "build_dir", "output_root"}:
         _string(config[key], f"how.{key}")
 
-    if config["environment"] not in {"local", "tetralith"}:
-        raise ConfigError("how.environment must be 'local' or 'tetralith'")
+    if config["environment"] not in {"local", "arrhenius"}:
+        raise ConfigError("how.environment must be 'local' or 'arrhenius'")
 
     _positive_int(config["memory_limit_mib"], "how.memory_limit_mib")
     _optional_positive_int(config["cpu_time_limit_s"], "how.cpu_time_limit_s")
@@ -148,19 +148,19 @@ def validate_how(config):
 
     if config["environment"] == "local":
         missing = local - set(config)
-        unexpected = tetralith & set(config)
+        unexpected = arrhenius & set(config)
         if missing:
             raise ConfigError(f"local how config is missing: {', '.join(sorted(missing))}")
         if unexpected:
-            raise ConfigError(f"local how config has Tetralith keys: {', '.join(sorted(unexpected))}")
+            raise ConfigError(f"local how config has Arrhenius keys: {', '.join(sorted(unexpected))}")
         _positive_int(config["local_processes"], "how.local_processes")
     else:
-        missing = tetralith - set(config)
+        missing = arrhenius - set(config)
         unexpected = local & set(config)
         if missing:
-            raise ConfigError(f"Tetralith how config is missing: {', '.join(sorted(missing))}")
+            raise ConfigError(f"Arrhenius how config is missing: {', '.join(sorted(missing))}")
         if unexpected:
-            raise ConfigError(f"Tetralith how config has local keys: {', '.join(sorted(unexpected))}")
+            raise ConfigError(f"Arrhenius how config has local keys: {', '.join(sorted(unexpected))}")
         for key in {"account", "partition", "qos", "scheduler_time_limit"}:
             _string(config[key], f"how.{key}")
         _positive_int(config["cpus_per_task"], "how.cpus_per_task")
@@ -176,7 +176,7 @@ def apply_how_overrides(config, args):
     if environment and environment != config.get("environment"):
         environment_keys = {
             "local": {"local_processes"},
-            "tetralith": {
+            "arrhenius": {
                 "account",
                 "partition",
                 "qos",
@@ -290,15 +290,15 @@ def make_environment(how, encoded_state):
     if how["environment"] == "local":
         return LocalEnvironment(processes=how["local_processes"])
 
-    environment = TetralithEnvironment(
-        setup=TetralithEnvironment.DEFAULT_SETUP,
+    environment = ArrheniusEnvironment(
+        setup=ArrheniusEnvironment.DEFAULT_SETUP,
         partition=how["partition"],
         qos=how["qos"],
         time_limit_per_task=how["scheduler_time_limit"],
         memory_per_cpu=f"{how['memory_per_cpu_mib']}M",
         cpus_per_task=how["cpus_per_task"],
         extra_options=f"#SBATCH --account={how['account']}",
-        export=[*TetralithEnvironment.DEFAULT_EXPORT, f"{STATE_ENV}={encoded_state}"],
+        export=[*ArrheniusEnvironment.DEFAULT_EXPORT, f"{STATE_ENV}={encoded_state}"],
     )
     if how["max_tasks"] is not None:
         environment.MAX_TASKS = how["max_tasks"]
@@ -367,7 +367,7 @@ def add_arguments(parser):
     parser.add_argument("--suite", action="append", help="Replace the suite list selected by the environment.")
     parser.add_argument("--configuration", action="append", help="Run only the named configuration.")
 
-    parser.add_argument("--environment", choices=("local", "tetralith"))
+    parser.add_argument("--environment", choices=("local", "arrhenius"))
     parser.add_argument("--build-dir")
     parser.add_argument("--output-root")
     parser.add_argument("--output-dir", type=Path, help="Exact Lab experiment directory.")

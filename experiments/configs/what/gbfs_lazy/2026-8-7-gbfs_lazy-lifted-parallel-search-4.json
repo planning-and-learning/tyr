@@ -6,7 +6,7 @@
       "ipc-satisficing-strips-test",
       "ipc-satisficing-adl-test"
     ],
-    "tetralith": [
+    "arrhenius": [
       "htg"
     ]
   },
