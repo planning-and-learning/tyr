@@ -56,12 +56,11 @@ struct Data<::tyr::formalism::datalog::BooleanOperator<T>>
     {
     }
 
-    auto cista_members() noexcept { return std::tie(operator_kind, variant); }
-    auto cista_members() const noexcept { return std::tie(operator_kind, variant); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

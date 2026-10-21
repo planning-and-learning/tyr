@@ -61,12 +61,11 @@ struct Data<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, function, terms); }
-    auto cista_members() const noexcept { return std::tie(index, function, terms); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::function, &Data::terms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::function, &Data::terms> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 
@@ -91,12 +90,11 @@ struct Data<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, binding); }
-    auto cista_members() const noexcept { return std::tie(index, binding); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

@@ -52,12 +52,11 @@ struct Data<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, fterm, value); }
-    auto cista_members() const noexcept { return std::tie(index, fterm, value); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fterm, &Data::value> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fterm, &Data::value> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

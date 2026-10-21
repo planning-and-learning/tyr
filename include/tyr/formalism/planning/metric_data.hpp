@@ -58,12 +58,11 @@ struct Data<::tyr::formalism::planning::Metric>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, optimization_direction, fexpr); }
-    auto cista_members() const noexcept { return std::tie(index, optimization_direction, fexpr); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::optimization_direction, &Data::fexpr> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::optimization_direction, &Data::fexpr> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

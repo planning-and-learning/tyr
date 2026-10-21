@@ -48,12 +48,11 @@ struct Data<::tyr::formalism::planning::FDRFact<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(variable, value); }
-    auto cista_members() const noexcept { return std::tie(variable, value); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variable, &Data::value> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variable, &Data::value> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

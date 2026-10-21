@@ -62,12 +62,11 @@ struct Data<::tyr::formalism::datalog::NumericEffect<T, F>>
         set(fexpr_, fexpr);
     }
 
-    auto cista_members() noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
-    auto cista_members() const noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::fterm, &Data::fexpr> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::fterm, &Data::fexpr> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

@@ -73,12 +73,11 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, literals, numeric_effects, auxiliary_numeric_effect); }
-    auto cista_members() const noexcept { return std::tie(index, literals, numeric_effects, auxiliary_numeric_effect); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 
@@ -142,15 +141,14 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    auto cista_members() noexcept { return std::tie(index, add_facts, del_facts, numeric_effects, auxiliary_numeric_effect); }
-    auto cista_members() const noexcept { return std::tie(index, add_facts, del_facts, numeric_effects, auxiliary_numeric_effect); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {};
     }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

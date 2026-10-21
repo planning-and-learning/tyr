@@ -68,12 +68,11 @@ struct Data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, fact, true_child, dontcare_child); }
-    auto cista_members() const noexcept { return std::tie(index, fact, true_child, dontcare_child); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fact, &Data::true_child, &Data::dontcare_child> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fact, &Data::true_child, &Data::dontcare_child> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 }

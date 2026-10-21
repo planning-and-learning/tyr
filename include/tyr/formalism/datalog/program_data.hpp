@@ -190,38 +190,7 @@ struct Data<::tyr::formalism::datalog::Program<T>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
-    auto cista_members() noexcept
-    {
-        return std::tie(index,
-                        static_predicates,
-                        fluent_predicates,
-                        static_functions,
-                        fluent_functions,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        goal,
-                        predicate_rules,
-                        function_rules);
-    }
-    auto cista_members() const noexcept
-    {
-        return std::tie(index,
-                        static_predicates,
-                        fluent_predicates,
-                        static_functions,
-                        fluent_functions,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        goal,
-                        predicate_rules,
-                        function_rules);
-    }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::static_predicates, &Data::fluent_predicates, &Data::static_functions, &Data::fluent_functions, &Data::objects, &Data::static_atoms, &Data::fluent_atoms, &Data::static_fterm_values, &Data::fluent_fterm_values, &Data::goal, &Data::predicate_rules, &Data::function_rules> {}; }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::static_predicates,
@@ -239,7 +208,7 @@ struct Data<::tyr::formalism::datalog::Program<T>>
     }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

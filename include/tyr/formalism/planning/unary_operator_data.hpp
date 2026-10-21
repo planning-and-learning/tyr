@@ -59,12 +59,11 @@ struct Data<::tyr::formalism::planning::UnaryOperator<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, operator_kind, arg); }
-    auto cista_members() const noexcept { return std::tie(index, operator_kind, arg); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::arg> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::arg> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

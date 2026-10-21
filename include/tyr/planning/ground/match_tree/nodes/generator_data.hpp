@@ -51,12 +51,11 @@ struct Data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, elements); }
-    auto cista_members() const noexcept { return std::tie(index, elements); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::elements> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::elements> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 }

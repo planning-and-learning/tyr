@@ -135,34 +135,7 @@ struct Data<::tyr::formalism::planning::Domain>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    auto cista_members() noexcept
-    {
-        return std::tie(index,
-                        name,
-                        static_predicates,
-                        fluent_predicates,
-                        derived_predicates,
-                        static_functions,
-                        fluent_functions,
-                        auxiliary_function,
-                        constants,
-                        actions,
-                        axioms);
-    }
-    auto cista_members() const noexcept
-    {
-        return std::tie(index,
-                        name,
-                        static_predicates,
-                        fluent_predicates,
-                        derived_predicates,
-                        static_functions,
-                        fluent_functions,
-                        auxiliary_function,
-                        constants,
-                        actions,
-                        axioms);
-    }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::static_predicates, &Data::fluent_predicates, &Data::derived_predicates, &Data::static_functions, &Data::fluent_functions, &Data::auxiliary_function, &Data::constants, &Data::actions, &Data::axioms> {}; }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::name,
@@ -178,7 +151,7 @@ struct Data<::tyr::formalism::planning::Domain>
     }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

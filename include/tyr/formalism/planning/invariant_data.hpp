@@ -65,12 +65,11 @@ struct Data<::tyr::formalism::planning::Invariant>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, num_rigid_variables, num_counted_variables, atoms); }
-    auto cista_members() const noexcept { return std::tie(index, num_rigid_variables, num_counted_variables, atoms); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

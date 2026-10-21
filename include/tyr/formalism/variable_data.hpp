@@ -43,12 +43,11 @@ struct Data<::tyr::formalism::Variable>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, name); }
-    auto cista_members() const noexcept { return std::tie(index, name); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

@@ -48,12 +48,11 @@ struct Data<::tyr::planning::match_tree::Node<Tag>>
     {
     }
 
-    auto cista_members() noexcept { return std::tie(variant); }
-    auto cista_members() const noexcept { return std::tie(variant); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

@@ -48,12 +48,11 @@ struct Data<::tyr::formalism::planning::Literal<T, F>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, atom, polarity); }
-    auto cista_members() const noexcept { return std::tie(index, atom, polarity); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atom, &Data::polarity> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::polarity> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

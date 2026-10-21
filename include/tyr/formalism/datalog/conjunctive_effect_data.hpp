@@ -55,12 +55,11 @@ struct Data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, numeric_effects); }
-    auto cista_members() const noexcept { return std::tie(index, numeric_effects); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::numeric_effects> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::numeric_effects> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

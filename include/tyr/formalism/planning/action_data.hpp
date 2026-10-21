@@ -108,15 +108,14 @@ struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, name, original_name, variables, original_arity, condition, effects); }
-    auto cista_members() const noexcept { return std::tie(index, name, original_name, variables, original_arity, condition, effects); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {}; }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {};
     }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 
@@ -159,13 +158,12 @@ struct Data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, binding, condition, effects); }
-    auto cista_members() const noexcept { return std::tie(index, binding, condition, effects); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding, &Data::condition, &Data::effects> {}; }
     // Have to include effects because row only binds objects to non-effect quantified variables.
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding, &Data::condition, &Data::effects> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

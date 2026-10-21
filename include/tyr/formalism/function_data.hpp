@@ -45,12 +45,11 @@ struct Data<::tyr::formalism::Function<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, name, arity); }
-    auto cista_members() const noexcept { return std::tie(index, name, arity); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::arity> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name, &Data::arity> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

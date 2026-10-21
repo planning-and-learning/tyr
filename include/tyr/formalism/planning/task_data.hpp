@@ -149,38 +149,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    auto cista_members() noexcept
-    {
-        return std::tie(index,
-                        name,
-                        domain,
-                        derived_predicates,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        auxiliary_fterm_value,
-                        goal,
-                        metric,
-                        axioms);
-    }
-    auto cista_members() const noexcept
-    {
-        return std::tie(index,
-                        name,
-                        domain,
-                        derived_predicates,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        auxiliary_fterm_value,
-                        goal,
-                        metric,
-                        axioms);
-    }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::domain, &Data::derived_predicates, &Data::objects, &Data::static_atoms, &Data::fluent_atoms, &Data::static_fterm_values, &Data::fluent_fterm_values, &Data::auxiliary_fterm_value, &Data::goal, &Data::metric, &Data::axioms> {}; }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::name,
@@ -198,7 +167,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 
@@ -355,48 +324,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
 
     const auto& get_fluent_variables() const { return fluent_variables; }
 
-    auto cista_members() noexcept
-    {
-        return std::tie(index,
-                        name,
-                        domain,
-                        derived_predicates,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        derived_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        auxiliary_fterm_value,
-                        metric,
-                        axioms,
-                        fluent_variables,
-                        fluent_facts,
-                        goal,
-                        ground_actions,
-                        ground_axioms);
-    }
-    auto cista_members() const noexcept
-    {
-        return std::tie(index,
-                        name,
-                        domain,
-                        derived_predicates,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        derived_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        auxiliary_fterm_value,
-                        metric,
-                        axioms,
-                        fluent_variables,
-                        fluent_facts,
-                        goal,
-                        ground_actions,
-                        ground_axioms);
-    }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::domain, &Data::derived_predicates, &Data::objects, &Data::static_atoms, &Data::fluent_atoms, &Data::derived_atoms, &Data::static_fterm_values, &Data::fluent_fterm_values, &Data::auxiliary_fterm_value, &Data::metric, &Data::axioms, &Data::fluent_variables, &Data::fluent_facts, &Data::goal, &Data::ground_actions, &Data::ground_axioms> {}; }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::name,
@@ -419,7 +347,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

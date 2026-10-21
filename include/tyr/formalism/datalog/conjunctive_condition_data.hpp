@@ -86,15 +86,14 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
-    auto cista_members() noexcept { return std::tie(index, variables, static_literals, fluent_literals, numeric_constraints); }
-    auto cista_members() const noexcept { return std::tie(index, variables, static_literals, fluent_literals, numeric_constraints); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {};
     }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 
@@ -148,12 +147,11 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
-    auto cista_members() noexcept { return std::tie(index, static_literals, fluent_literals, numeric_constraints); }
-    auto cista_members() const noexcept { return std::tie(index, static_literals, fluent_literals, numeric_constraints); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 

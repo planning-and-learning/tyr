@@ -67,12 +67,11 @@ struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, variables, condition, effect); }
-    auto cista_members() const noexcept { return std::tie(index, variables, condition, effect); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::condition, &Data::effect> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 
@@ -109,12 +108,11 @@ struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() noexcept { return std::tie(index, condition, effect); }
-    auto cista_members() const noexcept { return std::tie(index, condition, effect); }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::condition, &Data::effect> {}; }
     void clear() noexcept
     {
-        std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
+        ygg::clear_members(*this);
     }
 };
 
