@@ -30,6 +30,7 @@
 #include <ranges>
 #include <type_traits>
 #include <tyr/planning/planning.hpp>
+#include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/type_casters.hpp>
 
