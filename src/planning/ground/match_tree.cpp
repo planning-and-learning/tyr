@@ -44,6 +44,7 @@
 #include <variant>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
+#include <yggdrasil/formalism/detail/basic_symbol_repository_impl.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning::match_tree
@@ -852,3 +853,15 @@ template class MatchTree<formalism::planning::Action<GroundTag>>;
 template class MatchTree<formalism::planning::Axiom<GroundTag>>;
 
 }
+
+// Tests intern match-tree nodes too; their insertion path needs basic_symbol_repository_impl.hpp.
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::AtomSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NumericConstraintSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::VariableSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NegativeFactSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::ElementGeneratorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::AtomSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NumericConstraintSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::VariableSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NegativeFactSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::ElementGeneratorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;

@@ -17,6 +17,8 @@
 
 #include "tyr/formalism/planning/repository.hpp"
 
+#include <yggdrasil/formalism/detail/basic_symbol_repository_impl.hpp>
+
 namespace tyr::formalism
 {
 namespace planning

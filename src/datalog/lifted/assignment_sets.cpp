@@ -29,6 +29,7 @@
 #include <cassert>
 #include <concepts>
 #include <limits>
+#include <numeric>
 #include <tuple>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
