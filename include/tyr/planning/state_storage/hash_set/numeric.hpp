@@ -36,7 +36,7 @@ struct NumericPackedStorage<Kind, HashSet> : ygg::comparison::Mixin<NumericPacke
     NumericPackedStorage() = default;
     explicit NumericPackedStorage(ygg::uint_t index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericPackedStorage::index> {}; }
 };
 
 template<TaskKind Kind, bool ThreadSafe>

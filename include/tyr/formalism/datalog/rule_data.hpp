@@ -165,7 +165,7 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>> : ::tyr::forma
 
     auto cista_members() noexcept { return std::tie(index, binding, body, this->head_member(), cost); }
     auto cista_members() const noexcept { return std::tie(index, binding, body, this->head_member(), cost); }
-    auto identifying_members() const noexcept { return std::tie(binding); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

@@ -181,20 +181,20 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
                         metric,
                         axioms);
     }
-    auto identifying_members() const noexcept
+    static constexpr auto identifying_members() noexcept
     {
-        return std::tie(name,
-                        domain,
-                        derived_predicates,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        auxiliary_fterm_value,
-                        goal,
-                        metric,
-                        axioms);
+        return ygg::Members<&Data::name,
+                            &Data::domain,
+                            &Data::derived_predicates,
+                            &Data::objects,
+                            &Data::static_atoms,
+                            &Data::fluent_atoms,
+                            &Data::static_fterm_values,
+                            &Data::fluent_fterm_values,
+                            &Data::auxiliary_fterm_value,
+                            &Data::goal,
+                            &Data::metric,
+                            &Data::axioms> {};
     }
     void clear() noexcept
     {
@@ -397,25 +397,25 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
                         ground_actions,
                         ground_axioms);
     }
-    auto identifying_members() const noexcept
+    static constexpr auto identifying_members() noexcept
     {
-        return std::tie(name,
-                        domain,
-                        derived_predicates,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        derived_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        auxiliary_fterm_value,
-                        metric,
-                        axioms,
-                        fluent_variables,
-                        fluent_facts,
-                        goal,
-                        ground_actions,
-                        ground_axioms);
+        return ygg::Members<&Data::name,
+                            &Data::domain,
+                            &Data::derived_predicates,
+                            &Data::objects,
+                            &Data::static_atoms,
+                            &Data::fluent_atoms,
+                            &Data::derived_atoms,
+                            &Data::static_fterm_values,
+                            &Data::fluent_fterm_values,
+                            &Data::auxiliary_fterm_value,
+                            &Data::metric,
+                            &Data::axioms,
+                            &Data::fluent_variables,
+                            &Data::fluent_facts,
+                            &Data::goal,
+                            &Data::ground_actions,
+                            &Data::ground_axioms> {};
     }
     void clear() noexcept
     {

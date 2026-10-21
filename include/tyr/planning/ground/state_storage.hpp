@@ -53,7 +53,7 @@ struct AtomUnpackedStorage<GroundTag>
     void clear() { indices.clear(); }
     void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
 
-    auto identifying_members() const noexcept { return std::tie(indices); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomUnpackedStorage::indices> {}; }
 };
 
 template<>
@@ -75,7 +75,7 @@ struct FactUnpackedStorage<GroundTag>
     void clear() { values.clear(); }
     void swap(FactUnpackedStorage& other) noexcept { values.swap(other.values); }
 
-    auto identifying_members() const noexcept { return std::tie(values); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&FactUnpackedStorage::values> {}; }
 };
 
 }

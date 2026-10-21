@@ -47,7 +47,7 @@ struct Data<::tyr::formalism::Function<T>>
 
     auto cista_members() noexcept { return std::tie(index, name, arity); }
     auto cista_members() const noexcept { return std::tie(index, name, arity); }
-    auto identifying_members() const noexcept { return std::tie(name, arity); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name, &Data::arity> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

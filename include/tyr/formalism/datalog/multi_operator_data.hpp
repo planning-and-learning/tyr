@@ -61,7 +61,7 @@ struct Data<::tyr::formalism::datalog::MultiOperator<T>>
 
     auto cista_members() noexcept { return std::tie(index, operator_kind, args); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, args); }
-    auto identifying_members() const noexcept { return std::tie(operator_kind, args); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::args> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

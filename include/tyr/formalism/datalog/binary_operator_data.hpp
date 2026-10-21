@@ -55,7 +55,7 @@ struct Data<::tyr::formalism::datalog::BinaryOperator<T, O>>
 
     auto cista_members() noexcept { return std::tie(index, operator_kind, lhs, rhs); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, lhs, rhs); }
-    auto identifying_members() const noexcept { return std::tie(operator_kind, lhs, rhs); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::lhs, &Data::rhs> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

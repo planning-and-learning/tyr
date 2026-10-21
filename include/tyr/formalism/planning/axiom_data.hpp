@@ -70,7 +70,7 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
 
     auto cista_members() noexcept { return std::tie(index, variables, body, head); }
     auto cista_members() const noexcept { return std::tie(index, variables, body, head); }
-    auto identifying_members() const noexcept { return std::tie(variables, body, head); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::body, &Data::head> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
@@ -118,7 +118,7 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
 
     auto cista_members() noexcept { return std::tie(index, binding, body, head); }
     auto cista_members() const noexcept { return std::tie(index, binding, body, head); }
-    auto identifying_members() const noexcept { return std::tie(binding); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

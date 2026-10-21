@@ -163,18 +163,18 @@ struct Data<::tyr::formalism::planning::Domain>
                         actions,
                         axioms);
     }
-    auto identifying_members() const noexcept
+    static constexpr auto identifying_members() noexcept
     {
-        return std::tie(name,
-                        static_predicates,
-                        fluent_predicates,
-                        derived_predicates,
-                        static_functions,
-                        fluent_functions,
-                        auxiliary_function,
-                        constants,
-                        actions,
-                        axioms);
+        return ygg::Members<&Data::name,
+                            &Data::static_predicates,
+                            &Data::fluent_predicates,
+                            &Data::derived_predicates,
+                            &Data::static_functions,
+                            &Data::fluent_functions,
+                            &Data::auxiliary_function,
+                            &Data::constants,
+                            &Data::actions,
+                            &Data::axioms> {};
     }
     void clear() noexcept
     {

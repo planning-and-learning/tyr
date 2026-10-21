@@ -76,7 +76,7 @@ struct Data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
 
     auto cista_members() noexcept { return std::tie(index, atom, true_child, false_child, dontcare_child); }
     auto cista_members() const noexcept { return std::tie(index, atom, true_child, false_child, dontcare_child); }
-    auto identifying_members() const noexcept { return std::tie(atom, true_child, false_child, dontcare_child); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::true_child, &Data::false_child, &Data::dontcare_child> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

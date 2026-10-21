@@ -52,7 +52,10 @@ struct MutableAction : ygg::comparison::Mixin<MutableAction>
             effects.emplace_back(num_variables, effect);
     }
 
-    auto identifying_members() const noexcept { return std::tie(num_variables, condition, effects); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&MutableAction::num_variables, &MutableAction::condition, &MutableAction::effects> {};
+    }
 };
 
 using MutableActionList = std::vector<MutableAction>;

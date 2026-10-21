@@ -58,7 +58,7 @@ struct Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism
 
     auto cista_members() noexcept { return std::tie(operator_kind, variant); }
     auto cista_members() const noexcept { return std::tie(operator_kind, variant); }
-    auto identifying_members() const noexcept { return std::tie(operator_kind, variant); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

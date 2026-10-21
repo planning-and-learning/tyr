@@ -222,20 +222,20 @@ struct Data<::tyr::formalism::datalog::Program<T>>
                         predicate_rules,
                         function_rules);
     }
-    auto identifying_members() const noexcept
+    static constexpr auto identifying_members() noexcept
     {
-        return std::tie(static_predicates,
-                        fluent_predicates,
-                        static_functions,
-                        fluent_functions,
-                        objects,
-                        static_atoms,
-                        fluent_atoms,
-                        static_fterm_values,
-                        fluent_fterm_values,
-                        goal,
-                        predicate_rules,
-                        function_rules);
+        return ygg::Members<&Data::static_predicates,
+                            &Data::fluent_predicates,
+                            &Data::static_functions,
+                            &Data::fluent_functions,
+                            &Data::objects,
+                            &Data::static_atoms,
+                            &Data::fluent_atoms,
+                            &Data::static_fterm_values,
+                            &Data::fluent_fterm_values,
+                            &Data::goal,
+                            &Data::predicate_rules,
+                            &Data::function_rules> {};
     }
     void clear() noexcept
     {

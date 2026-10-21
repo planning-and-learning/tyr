@@ -53,7 +53,7 @@ struct Data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
 
     auto cista_members() noexcept { return std::tie(index, elements); }
     auto cista_members() const noexcept { return std::tie(index, elements); }
-    auto identifying_members() const noexcept { return std::tie(elements); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::elements> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

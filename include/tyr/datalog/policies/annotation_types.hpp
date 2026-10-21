@@ -64,7 +64,7 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
     auto get_interval() const noexcept { return interval; }
     auto get_cost() const noexcept { return cost; }
 
-    auto identifying_members() const noexcept { return std::tie(key, interval, cost); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericSupport::key, &NumericSupport::interval, &NumericSupport::cost> {}; }
 };
 
 template<formalism::RelationKind R = formalism::PredicateTag>
@@ -82,7 +82,10 @@ public:
     auto get_cost() const noexcept { return cost; }
     const auto& get_numeric_supports() const noexcept { return numeric_supports; }
 
-    auto identifying_members() const noexcept { return std::tie(rule_key, cost, numeric_supports); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost, &WitnessAnnotation::numeric_supports> {};
+    }
 
 private:
     formalism::datalog::RuleBindingIndex<R> rule_key;
@@ -108,7 +111,7 @@ struct PredicateAchieverKey : ygg::comparison::Mixin<PredicateAchieverKey>
     {
     }
 
-    auto identifying_members() const noexcept { return std::tie(rule_key, head); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
 };
 
 using PendingPredicateAchieverBuckets = std::map<Cost, std::vector<PredicateAchieverKey>>;
@@ -193,7 +196,7 @@ public:
 
     auto get_cost() const noexcept { return m_cost; }
 
-    auto identifying_members() const noexcept { return std::tie(m_cost); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&BaseAnnotation::m_cost> {}; }
 
 private:
     Cost m_cost;

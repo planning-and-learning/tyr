@@ -69,7 +69,7 @@ struct Data<::tyr::planning::State<Kind>>
 
     auto cista_members() noexcept { return std::tie(index, fact_storage, atom_storage, numeric_storage); }
     auto cista_members() const noexcept { return std::tie(index, fact_storage, atom_storage, numeric_storage); }
-    auto identifying_members() const noexcept { return std::tie(fact_storage, numeric_storage); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fact_storage, &Data::numeric_storage> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

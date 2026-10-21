@@ -68,7 +68,14 @@ struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCo
             derived_literals.emplace_back(literal);
     }
 
-    auto identifying_members() const noexcept { return std::tie(num_parent_variables, num_variables, static_literals, fluent_literals, derived_literals); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&MutableConjunctiveCondition::num_parent_variables,
+                            &MutableConjunctiveCondition::num_variables,
+                            &MutableConjunctiveCondition::static_literals,
+                            &MutableConjunctiveCondition::fluent_literals,
+                            &MutableConjunctiveCondition::derived_literals> {};
+    }
 };
 
 using MutableConjunctiveConditionList = std::vector<MutableConjunctiveCondition>;

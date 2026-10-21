@@ -55,7 +55,7 @@ struct FFRPGHeuristic<Kind>::Impl :
 
         NumericCertificate(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval) : head(head), interval(interval) {}
 
-        auto identifying_members() const noexcept { return std::tie(head, interval); }
+        static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericCertificate::head, &NumericCertificate::interval> {}; }
     };
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :

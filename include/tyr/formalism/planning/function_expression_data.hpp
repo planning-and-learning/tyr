@@ -69,7 +69,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
 
     auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
-    auto identifying_members() const noexcept { return std::tie(variant); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
@@ -119,7 +119,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
 
     auto cista_members() noexcept { return std::tie(variant); }
     auto cista_members() const noexcept { return std::tie(variant); }
-    auto identifying_members() const noexcept { return std::tie(variant); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

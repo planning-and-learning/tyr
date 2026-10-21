@@ -39,7 +39,7 @@ struct InvariantParameter : ygg::comparison::Mixin<InvariantParameter>
     InvariantParameter() = default;
     explicit InvariantParameter(size_t index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&InvariantParameter::index> {}; }
 };
 
 struct VariableTerm : ygg::comparison::Mixin<VariableTerm>
@@ -49,7 +49,7 @@ struct VariableTerm : ygg::comparison::Mixin<VariableTerm>
     VariableTerm() = default;
     explicit VariableTerm(ParameterIndex index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&VariableTerm::index> {}; }
 };
 
 struct ObjectTerm : ygg::comparison::Mixin<ObjectTerm>
@@ -59,7 +59,7 @@ struct ObjectTerm : ygg::comparison::Mixin<ObjectTerm>
     ObjectTerm() = default;
     explicit ObjectTerm(ygg::Index<Object> index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&ObjectTerm::index> {}; }
 };
 
 using ConstraintTerm = std::variant<InvariantParameter, VariableTerm, ObjectTerm>;

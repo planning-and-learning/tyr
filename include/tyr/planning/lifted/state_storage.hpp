@@ -48,7 +48,7 @@ struct AtomUnpackedStorage<LiftedTag>
     void clear() { indices.clear(); }
     void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
 
-    auto identifying_members() const noexcept { return std::tie(indices); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomUnpackedStorage::indices> {}; }
 };
 
 template<>
@@ -76,7 +76,7 @@ struct FactUnpackedStorage<LiftedTag>
     void clear() { indices.clear(); }
     void swap(FactUnpackedStorage& other) noexcept { indices.swap(other.indices); }
 
-    auto identifying_members() const noexcept { return std::tie(indices); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&FactUnpackedStorage::indices> {}; }
 };
 
 }

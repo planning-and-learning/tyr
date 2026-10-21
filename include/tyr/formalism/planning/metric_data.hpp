@@ -60,7 +60,7 @@ struct Data<::tyr::formalism::planning::Metric>
 
     auto cista_members() noexcept { return std::tie(index, optimization_direction, fexpr); }
     auto cista_members() const noexcept { return std::tie(index, optimization_direction, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(optimization_direction, fexpr); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::optimization_direction, &Data::fexpr> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

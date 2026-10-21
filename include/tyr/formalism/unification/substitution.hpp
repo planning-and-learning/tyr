@@ -141,7 +141,7 @@ public:
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), std::nullopt); }
 
-    auto identifying_members() const noexcept { return std::tie(m_parameters, m_data); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&SubstitutionFunction::m_parameters, &SubstitutionFunction::m_data> {}; }
 
 private:
     void rebuild_positions()

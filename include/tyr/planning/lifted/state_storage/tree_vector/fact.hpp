@@ -39,7 +39,7 @@ struct FactPackedStorage<LiftedTag, TreeVector> : ygg::comparison::Mixin<FactPac
     FactPackedStorage() = default;
     explicit FactPackedStorage(ygg::TreeVectorIndex<ygg::uint_t> index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&FactPackedStorage::index> {}; }
 };
 
 template<bool ThreadSafe>

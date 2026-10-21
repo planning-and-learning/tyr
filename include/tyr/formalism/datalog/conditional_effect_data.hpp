@@ -68,7 +68,7 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>
 
     auto cista_members() noexcept { return std::tie(index, variables, condition, effect); }
     auto cista_members() const noexcept { return std::tie(index, variables, condition, effect); }
-    auto identifying_members() const noexcept { return std::tie(variables, condition, effect); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::condition, &Data::effect> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
@@ -109,7 +109,7 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>
 
     auto cista_members() noexcept { return std::tie(index, condition, effect); }
     auto cista_members() const noexcept { return std::tie(index, condition, effect); }
-    auto identifying_members() const noexcept { return std::tie(condition, effect); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::condition, &Data::effect> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

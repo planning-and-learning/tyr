@@ -42,7 +42,7 @@ struct MutableLiteral : ygg::comparison::Mixin<MutableLiteral<T>>
     MutableLiteral(MutableAtom<T> atom, bool polarity) : atom(std::move(atom)), polarity(polarity) {}
     MutableLiteral(LiteralView<LiftedTag, T> element) : atom(element.get_atom()), polarity(element.get_polarity()) {}
 
-    auto identifying_members() const noexcept { return std::tie(atom, polarity); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&MutableLiteral::atom, &MutableLiteral::polarity> {}; }
 };
 
 template<FactKind T>

@@ -33,7 +33,7 @@ struct WorkerStateIndex
 
     bool is_max() const noexcept { return worker.is_max() && state.is_max(); }
 
-    auto identifying_members() const noexcept { return std::tie(worker, state); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&WorkerStateIndex::worker, &WorkerStateIndex::state> {}; }
 };
 
 }

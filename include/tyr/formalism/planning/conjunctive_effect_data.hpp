@@ -75,7 +75,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
 
     auto cista_members() noexcept { return std::tie(index, literals, numeric_effects, auxiliary_numeric_effect); }
     auto cista_members() const noexcept { return std::tie(index, literals, numeric_effects, auxiliary_numeric_effect); }
-    auto identifying_members() const noexcept { return std::tie(literals, numeric_effects, auxiliary_numeric_effect); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
@@ -144,7 +144,10 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
 
     auto cista_members() noexcept { return std::tie(index, add_facts, del_facts, numeric_effects, auxiliary_numeric_effect); }
     auto cista_members() const noexcept { return std::tie(index, add_facts, del_facts, numeric_effects, auxiliary_numeric_effect); }
-    auto identifying_members() const noexcept { return std::tie(add_facts, del_facts, numeric_effects, auxiliary_numeric_effect); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {};
+    }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

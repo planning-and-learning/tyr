@@ -40,7 +40,7 @@ struct NumericPackedStorage<Kind, Tag> : ygg::comparison::Mixin<NumericPackedSto
     NumericPackedStorage() = default;
     explicit NumericPackedStorage(ygg::TreeVectorIndex<ygg::float_t> index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericPackedStorage::index> {}; }
 };
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>

@@ -70,7 +70,7 @@ struct Data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
 
     auto cista_members() noexcept { return std::tie(index, fact, true_child, dontcare_child); }
     auto cista_members() const noexcept { return std::tie(index, fact, true_child, dontcare_child); }
-    auto identifying_members() const noexcept { return std::tie(fact, true_child, dontcare_child); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fact, &Data::true_child, &Data::dontcare_child> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

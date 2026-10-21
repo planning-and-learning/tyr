@@ -145,7 +145,7 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
     {
     }
 
-    auto identifying_members() const noexcept { return std::tie(binding, interval); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&FunctionHeadUpdate::binding, &FunctionHeadUpdate::interval> {}; }
 };
 
 struct FunctionHeadUpdates

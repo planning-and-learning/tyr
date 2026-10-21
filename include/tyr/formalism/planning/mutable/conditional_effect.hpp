@@ -56,7 +56,13 @@ struct MutableConditionalEffect : ygg::comparison::Mixin<MutableConditionalEffec
     {
     }
 
-    auto identifying_members() const noexcept { return std::tie(num_parent_variables, num_variables, condition, effect); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&MutableConditionalEffect::num_parent_variables,
+                            &MutableConditionalEffect::num_variables,
+                            &MutableConditionalEffect::condition,
+                            &MutableConditionalEffect::effect> {};
+    }
 };
 
 using MutableConditionalEffectList = std::vector<MutableConditionalEffect>;

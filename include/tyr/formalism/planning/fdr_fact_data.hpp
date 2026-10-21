@@ -50,7 +50,7 @@ struct Data<::tyr::formalism::planning::FDRFact<T>>
 
     auto cista_members() noexcept { return std::tie(variable, value); }
     auto cista_members() const noexcept { return std::tie(variable, value); }
-    auto identifying_members() const noexcept { return std::tie(variable, value); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variable, &Data::value> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

@@ -54,7 +54,10 @@ struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffec
             literals.emplace_back(literal);
     }
 
-    auto identifying_members() const noexcept { return std::tie(num_parent_variables, num_variables, literals); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&MutableConjunctiveEffect::num_parent_variables, &MutableConjunctiveEffect::num_variables, &MutableConjunctiveEffect::literals> {};
+    }
 };
 
 using MutableConjunctiveEffectList = std::vector<MutableConjunctiveEffect>;

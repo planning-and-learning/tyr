@@ -62,7 +62,7 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, F>>
 
     auto cista_members() noexcept { return std::tie(index, function, terms); }
     auto cista_members() const noexcept { return std::tie(index, function, terms); }
-    auto identifying_members() const noexcept { return std::tie(function, terms); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::function, &Data::terms> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
@@ -91,7 +91,7 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>>
 
     auto cista_members() noexcept { return std::tie(index, binding); }
     auto cista_members() const noexcept { return std::tie(index, binding); }
-    auto identifying_members() const noexcept { return std::tie(binding); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

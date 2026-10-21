@@ -75,7 +75,7 @@ struct Data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
 
     auto cista_members() noexcept { return std::tie(index, variable, domain_children, dontcare_child); }
     auto cista_members() const noexcept { return std::tie(index, variable, domain_children, dontcare_child); }
-    auto identifying_members() const noexcept { return std::tie(variable, domain_children, dontcare_child); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variable, &Data::domain_children, &Data::dontcare_child> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

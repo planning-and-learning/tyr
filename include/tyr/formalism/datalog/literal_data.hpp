@@ -49,7 +49,7 @@ struct Data<::tyr::formalism::datalog::Literal<T, F>>
 
     auto cista_members() noexcept { return std::tie(index, atom, polarity); }
     auto cista_members() const noexcept { return std::tie(index, atom, polarity); }
-    auto identifying_members() const noexcept { return std::tie(atom, polarity); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::polarity> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

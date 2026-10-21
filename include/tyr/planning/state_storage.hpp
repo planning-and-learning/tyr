@@ -96,7 +96,7 @@ struct NumericUnpackedStorage
     void clear() { values.clear(); }
     void swap(NumericUnpackedStorage& other) noexcept { values.swap(other.values); }
 
-    auto identifying_members() const noexcept { return std::tie(values); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericUnpackedStorage::values> {}; }
 };
 
 }

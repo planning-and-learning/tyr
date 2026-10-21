@@ -79,7 +79,7 @@ struct Data<::tyr::formalism::planning::NumericEffect<T, F>>
 
     auto cista_members() noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, fterm, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(operator_kind, fterm, fexpr); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::fterm, &Data::fexpr> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

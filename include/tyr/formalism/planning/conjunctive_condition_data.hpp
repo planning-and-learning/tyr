@@ -98,7 +98,10 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
 
     auto cista_members() noexcept { return std::tie(index, variables, static_literals, fluent_literals, derived_literals, numeric_constraints); }
     auto cista_members() const noexcept { return std::tie(index, variables, static_literals, fluent_literals, derived_literals, numeric_constraints); }
-    auto identifying_members() const noexcept { return std::tie(variables, static_literals, fluent_literals, derived_literals, numeric_constraints); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::derived_literals, &Data::numeric_constraints> {};
+    }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());
@@ -181,7 +184,10 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
 
     auto cista_members() noexcept { return std::tie(index, positive_facts, negative_facts, static_literals, derived_literals, numeric_constraints); }
     auto cista_members() const noexcept { return std::tie(index, positive_facts, negative_facts, static_literals, derived_literals, numeric_constraints); }
-    auto identifying_members() const noexcept { return std::tie(positive_facts, negative_facts, static_literals, derived_literals, numeric_constraints); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&Data::positive_facts, &Data::negative_facts, &Data::static_literals, &Data::derived_literals, &Data::numeric_constraints> {};
+    }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

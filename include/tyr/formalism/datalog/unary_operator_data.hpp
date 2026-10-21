@@ -60,7 +60,7 @@ struct Data<::tyr::formalism::datalog::UnaryOperator<T>>
 
     auto cista_members() noexcept { return std::tie(index, operator_kind, arg); }
     auto cista_members() const noexcept { return std::tie(index, operator_kind, arg); }
-    auto identifying_members() const noexcept { return std::tie(operator_kind, arg); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::arg> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

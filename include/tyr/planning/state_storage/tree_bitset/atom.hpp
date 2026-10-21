@@ -40,7 +40,7 @@ struct AtomPackedStorage<Kind, TreeBitset> : ygg::comparison::Mixin<AtomPackedSt
     AtomPackedStorage() = default;
     explicit AtomPackedStorage(Index index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomPackedStorage::index> {}; }
 };
 
 /// Stores derived atoms, given as a bitset in ground and lifted tasks alike, as a bitset tree.

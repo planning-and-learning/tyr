@@ -67,7 +67,7 @@ struct Data<::tyr::formalism::planning::Invariant>
 
     auto cista_members() noexcept { return std::tie(index, num_rigid_variables, num_counted_variables, atoms); }
     auto cista_members() const noexcept { return std::tie(index, num_rigid_variables, num_counted_variables, atoms); }
-    auto identifying_members() const noexcept { return std::tie(num_rigid_variables, num_counted_variables, atoms); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

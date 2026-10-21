@@ -72,7 +72,10 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
             predicates.insert(atom.predicate);
     }
 
-    auto identifying_members() const noexcept { return std::tie(num_rigid_variables, num_counted_variables, atoms); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return ygg::Members<&MutableInvariant::num_rigid_variables, &MutableInvariant::num_counted_variables, &MutableInvariant::atoms> {};
+    }
 };
 
 using MutableInvariantList = std::vector<MutableInvariant>;

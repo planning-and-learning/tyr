@@ -59,7 +59,7 @@ struct MutableAtom : ygg::comparison::Mixin<MutableAtom<T>>
             terms.push_back(ygg::Data<Term>(object.get_index()));
     }
 
-    auto identifying_members() const noexcept { return std::tie(predicate, terms); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&MutableAtom::predicate, &MutableAtom::terms> {}; }
 };
 
 template<FactKind T>

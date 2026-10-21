@@ -78,7 +78,7 @@ public:
 
     Node<Kind> unpack() const { return Node<Kind>(m_state.unpack(), m_metric); }
 
-    auto identifying_members() const noexcept { return std::tie(m_state, m_metric); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&PackedNode::m_state, &PackedNode::m_metric> {}; }
 
 private:
     PackedStateView<Kind> m_state;

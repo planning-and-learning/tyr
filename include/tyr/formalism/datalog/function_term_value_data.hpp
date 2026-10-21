@@ -50,7 +50,7 @@ struct Data<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>>
 
     auto cista_members() noexcept { return std::tie(index, fterm, value); }
     auto cista_members() const noexcept { return std::tie(index, fterm, value); }
-    auto identifying_members() const noexcept { return std::tie(fterm, value); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fterm, &Data::value> {}; }
     void clear() noexcept
     {
         std::apply([](auto&... member) { (ygg::clear(member), ...); }, cista_members());

@@ -96,7 +96,7 @@ public:
     ::tyr::planning::NumericUnpackedStorage<Kind>& get_numeric_variables() noexcept;
     const ::tyr::planning::NumericUnpackedStorage<Kind>& get_numeric_variables() const noexcept;
 
-    auto identifying_members() const noexcept { return std::tie(m_fact_storage, m_numeric_storage); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Builder::m_fact_storage, &Builder::m_numeric_storage> {}; }
 
 private:
     ygg::Index<::tyr::planning::State<Kind>> m_index;

@@ -38,7 +38,7 @@ struct AtomPackedStorage<LiftedTag, HashSet> : ygg::comparison::Mixin<AtomPacked
     AtomPackedStorage() = default;
     explicit AtomPackedStorage(ygg::uint_t index) : index(index) {}
 
-    auto identifying_members() const noexcept { return std::tie(index); }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomPackedStorage::index> {}; }
 };
 
 template<bool ThreadSafe>
