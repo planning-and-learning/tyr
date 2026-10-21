@@ -37,7 +37,7 @@
 #include <span>
 #include <type_traits>
 #include <utility>
-#include <yggdrasil/containers/indexed_hash_set.hpp>
+#include <yggdrasil/containers/detail/indexed_hash_set_impl.hpp>
 #include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::planning::detail
