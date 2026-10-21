@@ -735,4 +735,23 @@ template void compute_model(ProgramExecutionContext<LiftedTag,
                                                     MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
                                                     TerminationPolicy<MaxAggregation>,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx);
+
+template void execute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx, ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(
+    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(
+    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag,
+                                                    MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                                    TerminationPolicy<MaxAggregation>,
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
 }

@@ -28,7 +28,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
-#include <oneapi/tbb/spin_mutex.h>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <tuple>
@@ -40,6 +40,7 @@
 #include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/core/spin_mutex.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
@@ -313,7 +314,7 @@ private:
     {
     };
 
-    using Mutex = std::conditional_t<ThreadSafe, oneapi::tbb::spin_mutex, NoMutex>;
+    using Mutex = std::conditional_t<ThreadSafe, ygg::SpinMutex, NoMutex>;
 
     struct Slot
     {
@@ -329,7 +330,7 @@ private:
     {
         if constexpr (ThreadSafe)
         {
-            const auto lock = oneapi::tbb::spin_mutex::scoped_lock(slot.mutex);
+            const auto lock = std::lock_guard(slot.mutex);
             return std::forward<Callback>(callback)();
         }
         else

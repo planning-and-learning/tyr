@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::tests
 {

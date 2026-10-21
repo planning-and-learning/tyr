@@ -25,6 +25,7 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/lifted/task_grounder_decl.hpp"
+#include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 #include <algorithm>

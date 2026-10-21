@@ -39,6 +39,7 @@
 #include <tyr/planning/plan.hpp>
 #include <utility>
 #include <vector>
+#include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 

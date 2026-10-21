@@ -26,6 +26,8 @@
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/solver.hpp"
 
+#include <yggdrasil/execution/onetbb.hpp>
+
 #include <concepts>
 
 namespace tyr::datalog
@@ -128,6 +130,19 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 void compute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
 {
     compute_model_impl(ctx);
+}
+
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void execute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context)
+{
+    execution_context.arena().execute([&] { compute_model(ctx); });
+}
+
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void execute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context)
+{
+    ctx.set_num_threads(execution_context.get_num_threads());
+    execution_context.arena().execute([&] { compute_model(ctx); });
 }
 
 }

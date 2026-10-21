@@ -21,7 +21,7 @@
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 
-#include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::datalog
 {
@@ -33,17 +33,10 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 void compute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx);
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void execute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context)
-{
-    execution_context.arena().execute([&] { compute_model(ctx); });
-}
+void execute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context);
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void execute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context)
-{
-    ctx.set_num_threads(execution_context.get_num_threads());
-    execution_context.arena().execute([&] { compute_model(ctx); });
-}
+void execute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context);
 
 }
 

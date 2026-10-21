@@ -54,6 +54,7 @@
 #include <tyr/planning/search_budget.hpp>
 #include <tyr/planning/state_repository.hpp>
 #include <vector>
+#include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 

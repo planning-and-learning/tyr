@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <utility>
+#include <yggdrasil/execution/onetbb.hpp>
 
 using Entity = tyr::planning::State<tyr::GroundTag>;
 using Index = ygg::Index<Entity>;

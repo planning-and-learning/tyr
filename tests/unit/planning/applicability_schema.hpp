@@ -41,6 +41,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/unique_object_pool.hpp>
+#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::tests
 {

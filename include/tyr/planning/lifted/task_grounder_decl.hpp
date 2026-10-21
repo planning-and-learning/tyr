@@ -22,7 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 
 #include <optional>
-#include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {

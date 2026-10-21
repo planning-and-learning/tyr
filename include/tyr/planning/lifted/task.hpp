@@ -29,7 +29,7 @@
 #include "tyr/planning/task.hpp"
 
 #include <memory>
-#include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {

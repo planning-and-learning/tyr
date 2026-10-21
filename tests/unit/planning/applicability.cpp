@@ -39,6 +39,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/unique_object_pool.hpp>
+#include <yggdrasil/execution/onetbb.hpp>
 
 template<typename Kind, typename State>
 concept HasBindingQuery = requires(tyr::planning::SuccessorGenerator<Kind>& generator, const tyr::planning::Node<Kind, State>& node) {

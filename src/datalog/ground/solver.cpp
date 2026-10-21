@@ -156,4 +156,26 @@ template void compute_model(ProgramExecutionContext<GroundTag,
                                                     MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
                                                     TerminationPolicy<MaxAggregation>,
                                                     RuleCostOverridePolicy<GroundTag>>& ctx);
+
+template void execute_model(ProgramExecutionContext<GroundTag, NoAnnotationPolicy, NoTerminationPolicy, RuleCostPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx, ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(
+    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<GroundTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(
+    ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<GroundTag>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<GroundTag,
+                                                    MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                                    TerminationPolicy<MaxAggregation>,
+                                                    RuleCostOverridePolicy<GroundTag>>& ctx, ygg::ExecutionContext& execution_context);
 }

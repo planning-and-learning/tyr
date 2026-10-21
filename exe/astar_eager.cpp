@@ -42,6 +42,7 @@
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/lifted/task_grounder_decl.hpp>
 #include <yggdrasil/core/memory.hpp>
+#include <yggdrasil/execution/onetbb.hpp>
 
 int main(int argc, char** argv)
 {

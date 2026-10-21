@@ -21,7 +21,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/task_grounder_decl.hpp"
 
-#include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {

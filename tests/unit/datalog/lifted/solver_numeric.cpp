@@ -18,6 +18,7 @@
 #include "solver_fixtures.hpp"
 
 #include <gtest/gtest.h>
+#include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::tests
 {

@@ -15,6 +15,7 @@
 #include <concepts>
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <yggdrasil/execution/onetbb.hpp>
 
 using Entity = tyr::planning::State<tyr::LiftedTag>;
 using Index = ygg::Index<Entity>;
