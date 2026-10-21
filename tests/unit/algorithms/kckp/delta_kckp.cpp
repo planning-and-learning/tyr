@@ -23,6 +23,7 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"

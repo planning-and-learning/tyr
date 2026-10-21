@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 
 #include "../../programs/common.hpp"

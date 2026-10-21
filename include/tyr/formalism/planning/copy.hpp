@@ -22,6 +22,7 @@
 #include "tyr/formalism/planning/copy_decl.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <yggdrasil/containers/tuple.hpp>

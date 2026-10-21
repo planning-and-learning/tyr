@@ -27,6 +27,7 @@
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <tyr/formalism/planning/formatter.hpp>
+#include <tyr/formalism/planning/interning.hpp>
 #include <tyr/formalism/planning/repository.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/owner.hpp>

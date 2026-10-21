@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 
 #include "../metric.hpp"

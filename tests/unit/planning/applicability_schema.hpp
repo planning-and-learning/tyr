@@ -9,6 +9,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"

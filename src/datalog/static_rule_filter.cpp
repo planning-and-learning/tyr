@@ -19,6 +19,7 @@
 
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 namespace tyr::datalog

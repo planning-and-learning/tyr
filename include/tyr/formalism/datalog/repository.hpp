@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_DATALOG_REPOSITORY_HPP_
 #define TYR_FORMALISM_DATALOG_REPOSITORY_HPP_
 
-#include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/indices.hpp"
@@ -36,7 +35,6 @@
 #include <yggdrasil/buffer/segmented_buffer.hpp>
 #include <yggdrasil/containers/tuple.hpp>
 #include <yggdrasil/formalism/builder.hpp>
-#include <yggdrasil/formalism/interning.hpp>
 #include <yggdrasil/formalism/relation_repository.hpp>
 #include <yggdrasil/formalism/repository.hpp>
 #include <yggdrasil/formalism/repository_factory.hpp>
@@ -48,13 +46,6 @@ namespace tyr::formalism::datalog
 {
 
 using ygg::formalism::checkout;
-using ygg::formalism::insert;
-
-template<typename T>
-void prepare_for_insert(Repository&, ygg::Data<T>& data)
-{
-    canonicalize(data);
-}
 
 template<RelationKind R>
 std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingIndex<R> binding, const Repository& repository)

@@ -4,6 +4,7 @@
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/variable_data.hpp"

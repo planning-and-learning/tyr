@@ -19,6 +19,7 @@
 
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/binding_data.hpp"
+#include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"

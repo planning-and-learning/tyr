@@ -28,6 +28,7 @@
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/views.hpp"

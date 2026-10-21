@@ -1,4 +1,5 @@
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/term_data.hpp"
 #include "tyr/formalism/term_view.hpp"

@@ -19,6 +19,7 @@
 
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"

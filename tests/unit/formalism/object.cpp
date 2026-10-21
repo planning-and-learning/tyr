@@ -3,6 +3,7 @@
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>

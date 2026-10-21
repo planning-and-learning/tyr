@@ -4,6 +4,7 @@
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>

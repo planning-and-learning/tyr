@@ -1,3 +1,4 @@
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/multi_operator_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/multi_operator_view.hpp"

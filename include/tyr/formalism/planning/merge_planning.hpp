@@ -24,6 +24,7 @@
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/copy_decl.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/merge_planning_decl.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 

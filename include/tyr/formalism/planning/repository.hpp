@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_PLANNING_REPOSITORY_HPP_
 
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/indices.hpp"
@@ -37,7 +36,6 @@
 #include <yggdrasil/buffer/segmented_buffer.hpp>
 #include <yggdrasil/containers/tuple.hpp>
 #include <yggdrasil/formalism/builder.hpp>
-#include <yggdrasil/formalism/interning.hpp>
 #include <yggdrasil/formalism/relation_repository.hpp>
 #include <yggdrasil/formalism/repository.hpp>
 #include <yggdrasil/formalism/repository_factory.hpp>
@@ -47,13 +45,6 @@ namespace tyr::formalism::planning
 {
 
 using ygg::formalism::checkout;
-using ygg::formalism::insert;
-
-template<typename T>
-void prepare_for_insert(Repository&, ygg::Data<T>& data)
-{
-    canonicalize(data);
-}
 
 }
 

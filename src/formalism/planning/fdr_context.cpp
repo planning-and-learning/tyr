@@ -25,6 +25,7 @@
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <cassert>
