@@ -86,6 +86,7 @@ add_library(
     formalism/planning/planning_task.cpp
 
     datalog/rule_splitting.cpp
+    datalog/static_literal_decomposition.cpp
     datalog/static_variable_elimination.cpp
     datalog/static_rule_filter.cpp
     datalog/policies/annotation.cpp

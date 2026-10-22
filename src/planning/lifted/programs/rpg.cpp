@@ -20,6 +20,7 @@
 
 #include "../../programs/common.hpp"
 #include "tyr/datalog/rule_splitting.hpp"
+#include "tyr/datalog/static_literal_decomposition.hpp"
 #include "tyr/datalog/static_variable_elimination.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -239,13 +240,14 @@ TranslationContext<LiftedTag> remap_translation_context(const TranslationContext
     return result;
 }
 
-/// The rules of the final program that stand for the actions of the source rules, through the static variable elimination and
-/// the splitting; the origins of the eliminated static variables are keyed by the final rules.
+/// The rules of the final program that stand for the actions of the source rules, through the static variable elimination, the
+/// static literal decomposition and the splitting; the origins of the eliminated static variables are keyed by the final rules.
 RPGProgram<LiftedTag>::RuleToActionMappings
 remap_rule_to_action(const RPGProgram<LiftedTag>::RuleToActionMappings& source,
                      const formalism::datalog::Repository& source_repository,
                      const datalog::StaticVariableElimination& elimination,
-                     const formalism::datalog::Repository& eliminated_repository,
+                     const datalog::StaticLiteralDecomposition& decomposition,
+                     const formalism::datalog::Repository& decomposed_repository,
                      const datalog::RuleSplitting& splitting,
                      formalism::datalog::CopyContext& context,
                      ygg::UnorderedMap<datalog::StaticVariableElimination::Rule, datalog::StaticVariableElimination::Origin>& static_variable_origins)
@@ -254,9 +256,10 @@ remap_rule_to_action(const RPGProgram<LiftedTag>::RuleToActionMappings& source,
     for (const auto& [rule, action] : source.predicate)
     {
         const auto eliminated = elimination.rules.at(rule);
-        const auto it = splitting.main_rules.find(eliminated);
+        const auto decomposed = decomposition.rules.at(eliminated);
+        const auto it = splitting.main_rules.find(decomposed);
         const auto final_rule =
-            it != splitting.main_rules.end() ? it->second : formalism::datalog::copy(ygg::make_view(eliminated, eliminated_repository), context).first.get_index();
+            it != splitting.main_rules.end() ? it->second : formalism::datalog::copy(ygg::make_view(decomposed, decomposed_repository), context).first.get_index();
         result.predicate.emplace(final_rule, action);
         if (const auto origin = elimination.origins.find(eliminated); origin != elimination.origins.end())
             static_variable_origins.emplace(final_rule, origin->second);
@@ -292,14 +295,17 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
     auto eliminated_repository = factory->create(task.get_num_objects());
     auto elimination = datalog::StaticVariableElimination {};
     const auto eliminated_program = datalog::eliminate_static_variables(source_program, eliminated_repository, elimination);
+    auto decomposed_repository = factory->create(task.get_num_objects());
+    auto decomposition = datalog::StaticLiteralDecomposition {};
+    const auto decomposed_program = datalog::decompose_static_literals(eliminated_program, decomposed_repository, decomposition);
 
     auto repository = factory->create_shared(task.get_num_objects());
-    const auto program = datalog::split_rules(eliminated_program, *repository, rule_splitting);
+    const auto program = datalog::split_rules(decomposed_program, *repository, rule_splitting);
     auto builder = formalism::datalog::Builder {};
     auto context = formalism::datalog::CopyContext { builder, *repository };
     translation_context = remap_translation_context(source_translation_context, context);
     rule_to_action = remap_rule_to_action(
-        source_rule_to_action, source_repository, elimination, eliminated_repository, rule_splitting, context, static_variable_origins);
+        source_rule_to_action, source_repository, elimination, decomposition, decomposed_repository, rule_splitting, context, static_variable_origins);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }
 
