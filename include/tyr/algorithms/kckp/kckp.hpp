@@ -193,15 +193,23 @@ struct Workspace
     std::span<const uint64_t> compatible_vertices(size_t depth) const noexcept;
 };
 
+/// Prunes nothing. A prune callback is called with the partition whose vertex was just bound (its bit already set) and the
+/// depth; returning true skips every completion of the partial solution.
+struct NoPrune
+{
+    constexpr bool operator()(ygg::uint_t, size_t, const Workspace&) const noexcept { return false; }
+};
+
 namespace detail
 {
-template<typename SelectPartition, typename UpdateCandidates, typename Callback>
+template<typename SelectPartition, typename UpdateCandidates, typename Callback, typename Prune = NoPrune>
 void complete_clique(const GraphLayout& layout,
                      size_t depth,
                      Workspace& workspace,
                      SelectPartition& select_partition,
                      UpdateCandidates& update_candidates,
-                     Callback& callback)
+                     Callback& callback,
+                     Prune& prune)
 {
     const auto partition = select_partition(depth, workspace);
     if (partition == std::numeric_limits<ygg::uint_t>::max())
@@ -222,8 +230,8 @@ void complete_clique(const GraphLayout& layout,
         else
         {
             workspace.partition_bits.set(partition);
-            if (update_candidates(vertex, depth, workspace))
-                complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback);
+            if (!prune(partition, depth, workspace) && update_candidates(vertex, depth, workspace))
+                complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback, prune);
             workspace.partition_bits.reset(partition);
         }
 
@@ -288,7 +296,8 @@ private:
         const auto& layout = m_graph.get_layout();
         auto select_partition = [&](size_t, const Workspace& current) { return choose_next_partition(first_partition, current); };
         auto update_compatible = [&](Vertex source, size_t depth, Workspace& current) { return update_candidates(first_partition, source, depth, current); };
-        detail::complete_clique(layout, 0, workspace, select_partition, update_compatible, callback);
+        auto prune = NoPrune {};
+        detail::complete_clique(layout, 0, workspace, select_partition, update_compatible, callback, prune);
     }
 
     const Graph& m_graph;

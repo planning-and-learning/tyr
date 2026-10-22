@@ -353,8 +353,8 @@ public:
 
     void reset();
 
-    template<typename Callback>
-    void for_each_clique(Callback&& callback, Workspace& workspace) const
+    template<typename Callback, typename Prune = NoPrune>
+    void for_each_clique(Callback&& callback, Workspace& workspace, Prune&& prune = {}) const
     {
         workspace.prepare(m_layout);
         const auto num_partitions = m_layout.num_partitions;
@@ -387,17 +387,17 @@ public:
         else
         {
             seed_without_anchor(workspace);
-            complete_from_seed<void>(std::forward<Callback>(callback), 0, workspace);
+            complete_from_seed<void>(std::forward<Callback>(callback), 0, workspace, prune);
         }
     }
 
-    template<typename Callback>
-    void for_each_delta_clique(Callback&& callback, Workspace& workspace) const
+    template<typename Callback, typename Prune = NoPrune>
+    void for_each_delta_clique(Callback&& callback, Workspace& workspace, Prune&& prune = {}) const
     {
         workspace.prepare(m_layout);
         if (m_iteration == 1)
         {
-            for_each_clique(std::forward<Callback>(callback), workspace);
+            for_each_clique(std::forward<Callback>(callback), workspace, prune);
             return;
         }
 
@@ -434,20 +434,20 @@ public:
                                            [&](Edge edge)
                                            {
                                                if (seed_from_prepared_anchor(edge, workspace))
-                                                   complete_from_seed<Edge>(callback, 0, workspace);
+                                                   complete_from_seed<Edge>(callback, 0, workspace, prune);
                                            });
     }
 
     /// Cliques that contain all anchor vertices (at most one per partition) and no delta vertex or edge.
-    template<typename Callback>
-    void for_each_hyperedge_clique(std::span<const Vertex> anchor, Callback&& callback, Workspace& workspace) const
+    template<typename Callback, typename Prune = NoPrune>
+    void for_each_hyperedge_clique(std::span<const Vertex> anchor, Callback&& callback, Workspace& workspace, Prune&& prune = {}) const
     {
         if (!seed_from_vertices(anchor, workspace))
             return;
         if (workspace.partial_solution_size == m_layout.num_partitions)
             callback(workspace.partial_solution);
         else
-            complete_from_seed<Hyperedge>(callback, 0, workspace);
+            complete_from_seed<Hyperedge>(callback, 0, workspace, prune);
     }
 
     const std::vector<Edge>& materialize_delta_edges();
@@ -460,14 +460,14 @@ public:
     bool seed_from_prepared_anchor(const Edge& edge, Workspace& workspace) const;
     bool seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const;
 
-    template<typename Anchor, typename Callback>
-    void complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const
+    template<typename Anchor, typename Callback, typename Prune = NoPrune>
+    void complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace, Prune&& prune = {}) const
     {
         assert(depth < m_layout.num_partitions);
         auto select_partition = [&](size_t current_depth, const Workspace& current) { return choose_best_partition(current_depth, current); };
         auto update_candidates = [&](Vertex source, size_t current_depth, Workspace& current)
         { return update_candidates_for<Anchor>(source, current_depth, current); };
-        detail::complete_clique(m_layout, depth, workspace, select_partition, update_candidates, callback);
+        detail::complete_clique(m_layout, depth, workspace, select_partition, update_candidates, callback, prune);
     }
 
     const GraphLayout& get_graph_layout() const noexcept { return m_layout; }

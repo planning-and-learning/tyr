@@ -40,6 +40,7 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -269,28 +270,79 @@ private:
         return set.insert(binding).second;
     }
 
-    template<typename Callback>
+    template<typename Callback, typename Prune>
     void for_each_relevant_clique(formalism::PredicateTag,
                                   kckp::DeltaKCKP& algorithm,
                                   Callback&& callback,
                                   kckp::Workspace& workspace,
-                                  [[maybe_unused]] bool enumerate_all)
+                                  [[maybe_unused]] bool enumerate_all,
+                                  Prune&& prune)
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         if (!enumerate_all)
         {
-            algorithm.for_each_delta_clique(std::forward<Callback>(callback), workspace);
+            algorithm.for_each_delta_clique(std::forward<Callback>(callback), workspace, prune);
             return;
         }
 #endif
-        algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
+        algorithm.for_each_clique(std::forward<Callback>(callback), workspace, prune);
     }
 
-    template<typename Callback>
-    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
+    template<typename Callback, typename Prune>
+    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool, Prune&&)
     {
         algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
+
+    /// Prunes a partial clique once the goal cutoff stopped the iteration, or once the vertex just bound completes the variables
+    /// of a literal of the conflicting condition (the literals the graph does not encode) that does not hold. Bindings
+    /// rejected this way are generated again by the delta that makes them applicable, as when the leaf rejects them.
+    /// Partitions are the rule's parameters.
+    auto make_literal_prune(formalism::PredicateTag, RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
+    {
+        struct Check
+        {
+            std::vector<ygg::uint_t> partitions;
+            std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag>> static_literal;
+            std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag>> fluent_literal;
+        };
+        const auto condition = wrctx.in().cws_rule().get_conflicting_overapproximation_condition();
+        auto checks = std::vector<Check> {};
+        const auto add = [&](auto literal, auto&& check)
+        {
+            for (const auto parameter : formalism::datalog::collect_parameters(literal))
+                check.partitions.push_back(ygg::uint_t(parameter));
+            if (!check.partitions.empty())
+                checks.push_back(std::move(check));
+        };
+        for (const auto literal : condition.template get_literals<formalism::StaticTag>())
+            add(literal, Check { {}, literal, std::nullopt });
+        for (const auto literal : condition.template get_literals<formalism::FluentTag>())
+            add(literal, Check { {}, std::nullopt, literal });
+
+        const auto& layout = wrctx.in().cws_rule().get_static_consistency_graph().get_graph_layout();
+        return [this, &wrctx, &layout, checks = std::move(checks)](ygg::uint_t partition, size_t, const kckp::Workspace& workspace)
+        {
+            if (goal_cutoff_stopped())
+                return true;
+            for (const auto& check : checks)
+            {
+                if (std::ranges::find(check.partitions, partition) == check.partitions.end()
+                    || !std::ranges::all_of(check.partitions, [&](auto p) { return workspace.partition_bits.test(p); }))
+                    continue;
+                auto& binding = wrctx.out().ground_context().binding;
+                binding.resize(layout.num_partitions);
+                for (const auto p : check.partitions)
+                    binding[p] = ygg::Index<formalism::Object>(layout.vertex_labels[workspace.partial_solution[p].index]);
+                const auto context = ApplicabilityContext { wrctx.in().fact_sets(), wrctx.out().ground_context() };
+                if (check.static_literal ? !is_applicable(*check.static_literal, context) : !is_applicable(*check.fluent_literal, context))
+                    return true;
+            }
+            return false;
+        };
+    }
+
+    auto make_literal_prune(formalism::FunctionTag, RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return kckp::NoPrune {}; }
 
     inline bool require_novel_binding(formalism::PredicateTag) noexcept
     {
@@ -322,6 +374,7 @@ private:
                                               auto wrctx = rctx.get_rule_worker_execution_context(stripe);
                                               auto& out = wrctx.out();
                                               auto& kckp_workspace = out.kckp_workspace();
+                                              auto prune = make_literal_prune(formalism::PredicateTag {}, wrctx);
                                               ++out.statistics().num_executions;
 
                                               for (auto edge_index = stripe; edge_index < delta_edges.size(); edge_index += kNumStripes)
@@ -331,7 +384,8 @@ private:
                                                   kckp_algorithm.template complete_from_seed<kckp::Edge>([&](auto&& clique)
                                                                                                          { process_clique(wrctx, clique, true); },
                                                                                                          0,
-                                                                                                         kckp_workspace);
+                                                                                                         kckp_workspace,
+                                                                                                         prune);
                                               }
                                           });
                 return true;
@@ -506,7 +560,8 @@ private:
                         process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all);
                 },
                 kckp_workspace,
-                enumerate_all);
+                enumerate_all,
+                make_literal_prune(R {}, wrctx));
         }
     }
 
@@ -529,6 +584,7 @@ private:
         auto& out = wrctx.out();
         const auto delta_sets = FactSets { rctx.stratum_in().program().facts().fact_sets, delta_fact_sets };
         const auto delta_context = ApplicabilityContext { delta_sets, out.ground_context() };
+        auto prune = make_literal_prune(formalism::PredicateTag {}, wrctx);
 
         for (size_t i = 0; i < literals.size(); ++i)
         {
@@ -549,7 +605,8 @@ private:
                                 return;  // An earlier literal's new atom anchors this clique.
                         process_binding(wrctx, true);
                     },
-                    out.kckp_workspace());
+                    out.kckp_workspace(),
+                    prune);
             }
         }
     }
