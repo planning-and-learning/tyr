@@ -417,14 +417,27 @@ private:
         auto& heads = out.head_bindings();
         heads.clear();
         auto missing = false;
-        for (const auto head_atom : in.cws_rule().get_rule().get_heads())
+        const auto head_atoms = in.cws_rule().get_rule().get_heads();
+        auto& lookups = out.head_lookups();
+        lookups.resize(head_atoms.size());
+        auto lookup_it = lookups.begin();
+        for (const auto head_atom : head_atoms)
         {
-            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
-            binding->relation = head_atom.get_predicate().get_index();
-            formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
-            formalism::canonicalize(*binding);
-            const auto head =
-                intern ? std::optional(formalism::datalog::insert(ground_context.destination, *binding).first) : ground_context.destination.find(*binding);
+            auto& lookup = *lookup_it++;
+            if (!lookup.valid || (intern && !lookup.head) || !grounds_to(head_atom.get_terms(), ground_context.binding, lookup.objects))
+            {
+                auto binding =
+                    formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
+                binding->relation = head_atom.get_predicate().get_index();
+                formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
+                formalism::canonicalize(*binding);
+                const auto head = intern ? std::optional(formalism::datalog::insert(ground_context.destination, *binding).first)
+                                         : ground_context.destination.find(*binding);
+                lookup.valid = true;
+                lookup.objects = binding->objects;
+                lookup.head = head ? std::optional(head->get_index()) : std::nullopt;
+            }
+            const auto head = lookup.head;
             if (!head)
             {
                 missing = true;
@@ -432,9 +445,33 @@ private:
             }
             if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
                 continue;
-            heads.push_back(head->get_index());
+            heads.push_back(*head);
         }
         return missing;
+    }
+
+    /// Whether the terms ground to objects under binding. objects is a grounding of the same terms, so constants match.
+    static bool grounds_to(formalism::datalog::TermListView terms,
+                           const ygg::IndexList<formalism::Object>& binding,
+                           const ygg::IndexList<formalism::Object>& objects)
+    {
+        auto position = size_t(0);
+        for (const auto term : terms)
+        {
+            const auto matches = visit(
+                [&]<typename Alternative>(Alternative arg)
+                {
+                    if constexpr (std::same_as<Alternative, formalism::ParameterIndex>)
+                        return binding[ygg::uint_t(arg)] == objects[position];
+                    else
+                        return true;
+                },
+                term.get_variant());
+            if (!matches)
+                return false;
+            ++position;
+        }
+        return true;
     }
 
     bool try_process_predicate_binding(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,

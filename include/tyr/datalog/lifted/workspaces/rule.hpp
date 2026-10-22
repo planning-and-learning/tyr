@@ -31,6 +31,7 @@
 
 #include <cassert>
 #include <deque>
+#include <optional>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -40,6 +41,14 @@
 
 namespace tyr::datalog
 {
+
+/// The last lookup of a head atom: its objects and the binding they ground to, if interned.
+struct HeadLookup
+{
+    bool valid = false;
+    ygg::IndexList<formalism::Object> objects;
+    std::optional<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head;
+};
 
 struct ApplicabilityCache
 {
@@ -93,6 +102,10 @@ struct RuleWorkspace<LiftedTag, R>
 
         /// Heads of the current binding that the rule updates
         std::vector<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head_bindings;
+
+        /// Per head atom. Consecutive cliques often bind a head's variables to the same objects.
+        /// Cleared per rule execution because the workspace repository is cleared between program executions.
+        std::vector<HeadLookup> head_lookups;
     };
 
     struct Solve
@@ -208,6 +221,8 @@ template<formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Iteration::clear() noexcept
 {
     head_updates.clear();
+    for (auto& lookup : head_lookups)
+        lookup.valid = false;
 }
 
 template<formalism::RelationKind R>
