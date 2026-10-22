@@ -20,6 +20,7 @@
 
 #include "../../programs/common.hpp"
 #include "tyr/datalog/rule_splitting.hpp"
+#include "tyr/datalog/static_variable_elimination.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -238,19 +239,27 @@ TranslationContext<LiftedTag> remap_translation_context(const TranslationContext
     return result;
 }
 
-/// The rules of the split program that stand for the actions of the source rules.
-RPGProgram<LiftedTag>::RuleToActionMappings remap_rule_to_action(const RPGProgram<LiftedTag>::RuleToActionMappings& source,
-                                                                 const formalism::datalog::Repository& source_repository,
-                                                                 const datalog::RuleSplitting& splitting,
-                                                                 formalism::datalog::CopyContext& context)
+/// The rules of the final program that stand for the actions of the source rules, through the static variable elimination and
+/// the splitting; the origins of the eliminated static variables are keyed by the final rules.
+RPGProgram<LiftedTag>::RuleToActionMappings
+remap_rule_to_action(const RPGProgram<LiftedTag>::RuleToActionMappings& source,
+                     const formalism::datalog::Repository& source_repository,
+                     const datalog::StaticVariableElimination& elimination,
+                     const formalism::datalog::Repository& eliminated_repository,
+                     const datalog::RuleSplitting& splitting,
+                     formalism::datalog::CopyContext& context,
+                     ygg::UnorderedMap<datalog::StaticVariableElimination::Rule, datalog::StaticVariableElimination::Origin>& static_variable_origins)
 {
     auto result = RPGProgram<LiftedTag>::RuleToActionMappings {};
     for (const auto& [rule, action] : source.predicate)
     {
-        const auto it = splitting.main_rules.find(rule);
-        result.predicate.emplace(
-            it != splitting.main_rules.end() ? it->second : formalism::datalog::copy(ygg::make_view(rule, source_repository), context).first.get_index(),
-            action);
+        const auto eliminated = elimination.rules.at(rule);
+        const auto it = splitting.main_rules.find(eliminated);
+        const auto final_rule =
+            it != splitting.main_rules.end() ? it->second : formalism::datalog::copy(ygg::make_view(eliminated, eliminated_repository), context).first.get_index();
+        result.predicate.emplace(final_rule, action);
+        if (const auto origin = elimination.origins.find(eliminated); origin != elimination.origins.end())
+            static_variable_origins.emplace(final_rule, origin->second);
     }
     for (const auto& [rule, action] : source.function)
         result.function.emplace(formalism::datalog::copy(ygg::make_view(rule, source_repository), context).first.get_index(), action);
@@ -262,7 +271,8 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
                             bool split_rules,
                             TranslationContext<LiftedTag>& translation_context,
                             RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action,
-                            datalog::RuleSplitting& rule_splitting)
+                            datalog::RuleSplitting& rule_splitting,
+                            ygg::UnorderedMap<datalog::StaticVariableElimination::Rule, datalog::StaticVariableElimination::Origin>& static_variable_origins)
 {
     require_unit_cost(cost_mode);
 
@@ -279,12 +289,17 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
     auto source_rule_to_action = RPGProgram<LiftedTag>::RuleToActionMappings {};
     const auto source_program = create_program(task, source_translation_context, source_rule_to_action, source_repository);
 
+    auto eliminated_repository = factory->create(task.get_num_objects());
+    auto elimination = datalog::StaticVariableElimination {};
+    const auto eliminated_program = datalog::eliminate_static_variables(source_program, eliminated_repository, elimination);
+
     auto repository = factory->create_shared(task.get_num_objects());
-    const auto program = datalog::split_rules(source_program, *repository, rule_splitting);
+    const auto program = datalog::split_rules(eliminated_program, *repository, rule_splitting);
     auto builder = formalism::datalog::Builder {};
     auto context = formalism::datalog::CopyContext { builder, *repository };
     translation_context = remap_translation_context(source_translation_context, context);
-    rule_to_action = remap_rule_to_action(source_rule_to_action, source_repository, rule_splitting, context);
+    rule_to_action = remap_rule_to_action(
+        source_rule_to_action, source_repository, elimination, eliminated_repository, rule_splitting, context, static_variable_origins);
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }
 
@@ -295,7 +310,8 @@ RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task,
     m_translation_context(),
     m_rule_to_action(),
     m_rule_splitting(),
-    m_datalog_program(create_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
+    m_datalog_program(
+        create_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting, m_static_variable_origins))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

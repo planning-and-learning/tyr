@@ -79,8 +79,18 @@ struct RPGPolicy<LiftedTag>
             {
                 workspace.binding.resize(origin->second.num_source_variables);
                 recover_split_binding(definition, workspace, witness);
-                return formalism::planning::ground(it->second, grounder_context).first;
             }
+            else
+                ygg::extend(ygg::make_view(witness.get_rule_key(), workspace.workspace_repository).get_objects(), workspace.binding);
+
+            const auto& static_origins = definition.rpg_program.get_static_variable_origins();
+            if (const auto origin = static_origins.find(witness.get_rule_key().relation); origin != static_origins.end())
+            {
+                auto source_binding = ygg::IndexList<formalism::Object> {};
+                datalog::restore_eliminated_variables(origin->second, workspace.binding, source_binding);
+                workspace.binding = std::move(source_binding);
+            }
+            return formalism::planning::ground(it->second, grounder_context).first;
         }
         const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
         ygg::extend(rule_binding.get_objects(), workspace.binding);
@@ -99,17 +109,6 @@ struct RPGPolicy<LiftedTag>
         for (const auto object : rule_binding.get_objects())
             workspace.binding[origin.source_positions[position++]] = object.get_index();
 
-        // The variables eliminated into static projections: the support stored for the kept objects.
-        for (const auto id : origin.static_projections)
-        {
-            const auto& projection = definition.rpg_program.get_rule_splitting().static_projections[id];
-            auto key = ygg::IndexList<formalism::Object> {};
-            for (const auto kept : projection.kept_positions)
-                key.push_back(workspace.binding[kept]);
-            for (const auto& [source_position, object] : projection.supports.at(key))
-                workspace.binding[source_position] = object;
-        }
-
         const auto& projection_rules = definition.rpg_program.get_rule_splitting().projection_rules;
         visit_witness_rule_instance(workspace,
                                     witness,
@@ -127,6 +126,21 @@ struct RPGPolicy<LiftedTag>
                                                 recover_split_binding(definition, workspace, *projection);
                                         }
                                     });
+    }
+
+    template<typename Workspace, typename Executor>
+    static bool is_action_applicable(const RPGDefinition<LiftedTag>& definition,
+                                     Workspace& workspace,
+                                     Executor& executor,
+                                     Action action,
+                                     const StateContext<LiftedTag>& state_context)
+    {
+        workspace.binding.clear();
+        ygg::extend(action.get_objects(), workspace.binding);
+
+        auto grounder_context =
+            formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
+        return executor.is_applicable(action.get_relation(), state_context, grounder_context, *definition.task->get_fdr_context());
     }
 
     template<formalism::RelationKind R, typename Workspace, typename Callback>
