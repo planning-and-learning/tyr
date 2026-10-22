@@ -376,7 +376,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
         binary->lhs = translate_lifted(element.get_left(), builder, context);
         binary->rhs = translate_lifted(element.get_right(), builder, context);
         return ygg::Data<FunctionExpression<LiftedTag>>(
-            ygg::Data<ArithmeticOperator<LiftedTag>>(operator_kind, planning::insert(context, *binary).first.get_index()));
+            ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -403,7 +403,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
         multi->operator_kind = operator_kind;
         translate_lifted(element.get_args(), builder, context, multi->args);
         return ygg::Data<FunctionExpression<LiftedTag>>(
-            ygg::Data<ArithmeticOperator<LiftedTag>>(operator_kind, planning::insert(context, *multi).first.get_index()));
+            ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -424,7 +424,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     minus->operator_kind = ArithmeticOperatorKind::Sub;
     minus->arg = translate_lifted(element.get_expression(), builder, context);
     return ygg::Data<FunctionExpression<LiftedTag>>(
-        ygg::Data<ArithmeticOperator<LiftedTag>>(ArithmeticOperatorKind::Sub, planning::insert(context, *minus).first.get_index()));
+        ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *minus).first.get_index()));
 }
 
 ygg::Data<FunctionExpression<LiftedTag>>
@@ -490,7 +490,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
         binary->operator_kind = operator_kind;
         binary->lhs = translate_lifted(element.get_left(), builder, context);
         binary->rhs = translate_lifted(element.get_right(), builder, context);
-        return ygg::Data<BooleanOperator<LiftedTag>>(operator_kind, planning::insert(context, *binary).first.get_index());
+        return ygg::Data<BooleanOperator<LiftedTag>>(planning::insert(context, *binary).first.get_index());
     };
 
     switch (element.get_comparator())
@@ -1019,7 +1019,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
         binary->lhs = translate_grounded(element.get_left(), builder, context);
         binary->rhs = translate_grounded(element.get_right(), builder, context);
         return ygg::Data<FunctionExpression<GroundTag>>(
-            ygg::Data<ArithmeticOperator<GroundTag>>(operator_kind, planning::insert(context, *binary).first.get_index()));
+            ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1046,7 +1046,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
         multi->operator_kind = operator_kind;
         translate_grounded(element.get_args(), builder, context, multi->args);
         return ygg::Data<FunctionExpression<GroundTag>>(
-            ygg::Data<ArithmeticOperator<GroundTag>>(operator_kind, planning::insert(context, *multi).first.get_index()));
+            ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1067,7 +1067,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
     minus->operator_kind = ArithmeticOperatorKind::Sub;
     minus->arg = translate_grounded(element.get_expression(), builder, context);
     return ygg::Data<FunctionExpression<GroundTag>>(
-        ygg::Data<ArithmeticOperator<GroundTag>>(ArithmeticOperatorKind::Sub, planning::insert(context, *minus).first.get_index()));
+        ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *minus).first.get_index()));
 }
 
 ygg::Data<FunctionExpression<GroundTag>>
@@ -1164,7 +1164,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
         binary->operator_kind = operator_kind;
         binary->lhs = translate_grounded(element.get_left(), builder, context);
         binary->rhs = translate_grounded(element.get_right(), builder, context);
-        return ygg::Data<BooleanOperator<GroundTag>>(operator_kind, planning::insert(context, *binary).first.get_index());
+        return ygg::Data<BooleanOperator<GroundTag>>(planning::insert(context, *binary).first.get_index());
     };
 
     switch (element.get_comparator())

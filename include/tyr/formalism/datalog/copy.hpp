@@ -327,7 +327,7 @@ template<TaskKind T>
 ArithmeticOperatorView<T> copy(ArithmeticOperatorView<T> element, CopyContext& context)
 {
     const auto data =
-        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(arg.get_operator(), copy(arg, context).first.get_index()); }, element.get_variant());
+        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -335,7 +335,7 @@ template<TaskKind T>
 BooleanOperatorView<T> copy(BooleanOperatorView<T> element, CopyContext& context)
 {
     const auto data =
-        visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(arg.get_operator(), copy(arg, context).first.get_index()); }, element.get_variant());
+        visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 

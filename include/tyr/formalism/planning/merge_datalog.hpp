@@ -594,14 +594,14 @@ std::pair<datalog::MultiOperatorView<T>, bool> merge_p2d(MultiOperatorView<T> el
 template<TaskKind T>
 ygg::Data<datalog::ArithmeticOperator<T>> merge_p2d(ArithmeticOperatorView<T> element, MergeDatalogContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<datalog::ArithmeticOperator<T>>(arg.get_operator(), merge_p2d(arg, context).first.get_index()); },
+    return visit([&](auto&& arg) { return ygg::Data<datalog::ArithmeticOperator<T>>(merge_p2d(arg, context).first.get_index()); },
                  element.get_variant());
 }
 
 template<TaskKind T>
 ygg::Data<datalog::BooleanOperator<T>> merge_p2d(BooleanOperatorView<T> element, MergeDatalogContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<datalog::BooleanOperator<T>>(arg.get_operator(), merge_p2d(arg, context).first.get_index()); },
+    return visit([&](auto&& arg) { return ygg::Data<datalog::BooleanOperator<T>>(merge_p2d(arg, context).first.get_index()); },
                  element.get_variant());
 }
 

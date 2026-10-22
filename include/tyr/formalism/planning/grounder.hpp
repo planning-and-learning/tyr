@@ -207,14 +207,14 @@ inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<Li
 
 inline BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(ground(arg, context).first.get_index()); },
                             element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 inline ArithmeticOperatorView<GroundTag> ground(ArithmeticOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(arg.get_operator(), ground(arg, context).first.get_index()); },
+    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(ground(arg, context).first.get_index()); },
                             element.get_variant());
     return ygg::make_view(data, context.destination);
 }

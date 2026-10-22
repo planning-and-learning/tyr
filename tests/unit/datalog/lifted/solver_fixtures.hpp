@@ -292,9 +292,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
         ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0))));
     const auto add_source_constraint = [&](ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>& condition)
     {
-        condition.numeric_constraints.emplace_back(
-            tyr::formalism::BooleanOperatorKind::Ge,
-            ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(source_comparison.get_index()));
+        condition.numeric_constraints.emplace_back(ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(source_comparison.get_index()));
     };
     auto source_body_data = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
     add_source_constraint(source_body_data);
@@ -452,8 +450,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
             tyr::formalism::BooleanOperatorKind::Ge,
             ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(value_term.get_index()),
             ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0))));
-        body_data.numeric_constraints.emplace_back(tyr::formalism::BooleanOperatorKind::Ge,
-                                                   ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(comparison.get_index()));
+        body_data.numeric_constraints.emplace_back(ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(comparison.get_index()));
     }
     const auto body = intern(std::move(body_data));
     auto rule_data = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();

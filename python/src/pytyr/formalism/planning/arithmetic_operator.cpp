@@ -36,7 +36,7 @@ void bind_arithmetic_operator_kind(nb::module_& m, RepositoryBinding& repository
     {
         using V = ygg::Data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str()).def(nb::init<ViewVariantT<V, Repository>>(), "variant"_a);
-        cls.def(nb::init<ArithmeticOperatorKind, VariantT<V>>(), "operator"_a, "variant"_a);
+        cls.def(nb::init<VariantT<V>>(), "variant"_a);
         ygg::add_print(cls);
         ygg::add_comparison(cls);
         ygg::add_hash(cls);

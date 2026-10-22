@@ -173,7 +173,7 @@ struct GroundQueueFixture
         const auto comparison = repository.insert(comparison_builder).first;
 
         auto condition_builder = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<GroundTag>>();
-        condition_builder.numeric_constraints.emplace_back(op, ygg::Data<tyr::formalism::datalog::BooleanOperator<GroundTag>>::Variant(comparison.get_index()));
+        condition_builder.numeric_constraints.emplace_back(ygg::Data<tyr::formalism::datalog::BooleanOperator<GroundTag>>::Variant(comparison.get_index()));
         canonicalize(condition_builder);
         return repository.insert(condition_builder).first;
     }

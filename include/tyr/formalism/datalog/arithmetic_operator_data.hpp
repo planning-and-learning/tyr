@@ -34,31 +34,27 @@ namespace ygg
 template<::tyr::TaskKind T>
 struct Data<::tyr::formalism::datalog::ArithmeticOperator<T>>
 {
-    using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
     using Variant = ::ygg::IndexVariant<::tyr::formalism::datalog::ArithmeticExpressionTypes<T>>;
 
-    OperatorType operator_kind = OperatorType::Sub;
     Variant variant;
 
     template<typename C>
     using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
-    Data(OperatorType operator_kind_, Variant variant_) : operator_kind(operator_kind_), variant(variant_)
+    explicit Data(Variant variant_) : variant(variant_)
     {
-        if (!variant.valid() || (variant.index() == 0 && !::tyr::formalism::is_unary(operator_kind))
-            || (variant.index() == 2 && !::tyr::formalism::is_multi(operator_kind)))
-            throw std::invalid_argument("ArithmeticOperator kind does not match operator form");
+        if (!variant.valid())
+            throw std::invalid_argument("ArithmeticOperator requires a valid variant");
     }
     template<typename C>
     Data(const ViewVariant<C>& variant_) :
-        operator_kind(std::visit([](const auto& view) { return view.get_operator(); }, variant_)),
         variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
+    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
+    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
     void clear() noexcept
     {
         ygg::clear_members(*this);
