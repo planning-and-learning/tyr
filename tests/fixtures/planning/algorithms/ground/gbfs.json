@@ -3375,8 +3375,8 @@
             "domain_file": "numeric/tests/fo-counters/domain.pddl",
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 124,
-                "num_expanded": 46,
+                "num_generated_successors": 117,
+                "num_expanded": 43,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3392,8 +3392,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 124,
-                "num_expanded": 46,
+                "num_generated_successors": 117,
+                "num_expanded": 43,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3409,8 +3409,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 45,
-                "num_expanded": 12,
+                "num_generated_successors": 40,
+                "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3426,8 +3426,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 35,
-                "num_expanded": 10,
+                "num_generated_successors": 31,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3443,7 +3443,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 26,
+                "num_generated_successors": 24,
                 "num_expanded": 7,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -3460,8 +3460,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 45,
-                "num_expanded": 12,
+                "num_generated_successors": 40,
+                "num_expanded": 11,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3986,8 +3986,8 @@
             "domain_file": "numeric/tests/block-grouping/domain.pddl",
             "task_file": "numeric/tests/block-grouping/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 91,
-                "num_expanded": 6,
+                "num_generated_successors": 184,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4000,8 +4000,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 91,
-                "num_expanded": 6,
+                "num_generated_successors": 184,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4014,8 +4014,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 91,
-                "num_expanded": 6,
+                "num_generated_successors": 184,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4028,8 +4028,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 91,
-                "num_expanded": 6,
+                "num_generated_successors": 184,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4042,7 +4042,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 29,
+                "num_generated_successors": 38,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4056,8 +4056,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 91,
-                "num_expanded": 6,
+                "num_generated_successors": 184,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4075,150 +4075,154 @@
             "domain_file": "numeric/tests/counters/domain.pddl",
             "task_file": "numeric/tests/counters/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 3474,
-                "num_expanded": 2848,
+                "num_generated_successors": 3430,
+                "num_expanded": 2751,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 12,
                     "length": 12,
                     "actions": [
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c3)",
-                        "(increment c3)",
-                        "(increment c3)"
-                    ]
-                }
-            },
-            "blind_general": {
-                "num_generated_successors": 3474,
-                "num_expanded": 2848,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 12,
-                    "length": 12,
-                    "actions": [
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c3)",
-                        "(increment c3)",
-                        "(increment c3)"
-                    ]
-                }
-            },
-            "hmax_unit": {
-                "num_generated_successors": 721,
-                "num_expanded": 274,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 12,
-                    "length": 12,
-                    "actions": [
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c3)",
-                        "(increment c3)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c3)"
-                    ]
-                }
-            },
-            "hadd_unit": {
-                "num_generated_successors": 148,
-                "num_expanded": 31,
-                "num_deadends": 0,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 12,
-                    "length": 12,
-                    "actions": [
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
                         "(increment c3)",
                         "(increment c3)",
                         "(increment c3)",
-                        "(decrement c1)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(increment c2)",
                         "(decrement c0)",
                         "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c1)",
                         "(decrement c0)"
                     ]
                 }
             },
-            "hff_unit": {
-                "num_generated_successors": 310,
-                "num_expanded": 79,
+            "blind_general": {
+                "num_generated_successors": 3430,
+                "num_expanded": 2751,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 16,
-                    "length": 16,
+                    "cost": 12,
+                    "length": 12,
                     "actions": [
-                        "(decrement c2)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(increment c2)",
                         "(decrement c0)",
                         "(decrement c0)",
+                        "(decrement c0)"
+                    ]
+                }
+            },
+            "hmax_unit": {
+                "num_generated_successors": 682,
+                "num_expanded": 241,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 12,
+                    "length": 12,
+                    "actions": [
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
                         "(decrement c0)",
-                        "(decrement c2)",
-                        "(decrement c1)",
                         "(decrement c0)",
                         "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(decrement c0)"
+                    ]
+                }
+            },
+            "hadd_unit": {
+                "num_generated_successors": 157,
+                "num_expanded": 36,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 12,
+                    "length": 12,
+                    "actions": [
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c1)",
                         "(decrement c1)",
                         "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c1)"
+                    ]
+                }
+            },
+            "hff_unit": {
+                "num_generated_successors": 338,
+                "num_expanded": 74,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 20,
+                    "length": 20,
+                    "actions": [
+                        "(increment c3)",
+                        "(increment c1)",
+                        "(increment c1)",
+                        "(increment c1)",
+                        "(increment c1)",
                         "(increment c2)",
                         "(increment c2)",
                         "(increment c3)",
+                        "(increment c2)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c3)",
                         "(decrement c1)",
+                        "(increment c3)",
+                        "(decrement c1)",
+                        "(decrement c1)",
+                        "(decrement c0)",
                         "(decrement c0)",
                         "(increment c3)"
                     ]
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 721,
-                "num_expanded": 274,
+                "num_generated_successors": 682,
+                "num_expanded": 241,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 12,
                     "length": 12,
                     "actions": [
-                        "(decrement c1)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
                         "(decrement c0)",
                         "(decrement c0)",
                         "(increment c3)",
                         "(increment c3)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(increment c3)"
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(decrement c0)"
                     ]
                 }
             }
@@ -4323,7 +4327,7 @@
             "domain_file": "numeric/tests/drone/domain.pddl",
             "task_file": "numeric/tests/drone/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 53,
+                "num_generated_successors": 56,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4331,15 +4335,15 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
+                        "(visit x0y0z0)",
                         "(increase_z)",
                         "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
+                        "(decrease_z)"
                     ]
                 }
             },
             "blind_general": {
-                "num_generated_successors": 53,
+                "num_generated_successors": 56,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -4347,16 +4351,16 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
+                        "(visit x0y0z0)",
                         "(increase_z)",
                         "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
+                        "(decrease_z)"
                     ]
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 41,
-                "num_expanded": 17,
+                "num_generated_successors": 31,
+                "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4371,8 +4375,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 40,
-                "num_expanded": 18,
+                "num_generated_successors": 39,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4387,8 +4391,8 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 25,
-                "num_expanded": 7,
+                "num_generated_successors": 19,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4403,8 +4407,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 31,
-                "num_expanded": 12,
+                "num_generated_successors": 25,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4507,8 +4511,8 @@
             "domain_file": "numeric/tests/ext-plant-watering/domain.pddl",
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 6961,
-                "num_expanded": 4391,
+                "num_generated_successors": 7418,
+                "num_expanded": 4870,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4527,8 +4531,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 6961,
-                "num_expanded": 4391,
+                "num_generated_successors": 7418,
+                "num_expanded": 4870,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4547,8 +4551,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 3520,
-                "num_expanded": 1134,
+                "num_generated_successors": 3677,
+                "num_expanded": 1112,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

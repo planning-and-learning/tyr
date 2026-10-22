@@ -3305,8 +3305,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 120,
-                "num_expanded": 43,
+                "num_generated_successors": 117,
+                "num_expanded": 42,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3322,8 +3322,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 59,
-                "num_expanded": 17,
+                "num_generated_successors": 56,
+                "num_expanded": 16,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3339,8 +3339,8 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 68,
-                "num_expanded": 20,
+                "num_generated_successors": 65,
+                "num_expanded": 19,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3356,8 +3356,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 120,
-                "num_expanded": 43,
+                "num_generated_successors": 117,
+                "num_expanded": 42,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3902,8 +3902,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 100,
-                "num_expanded": 6,
+                "num_generated_successors": 179,
+                "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3944,8 +3944,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 100,
-                "num_expanded": 6,
+                "num_generated_successors": 179,
+                "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3971,18 +3971,18 @@
                     "cost": 12,
                     "length": 12,
                     "actions": [
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
                         "(increment c3)",
                         "(increment c3)",
-                        "(increment c3)"
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)"
                     ]
                 }
             },
@@ -3995,42 +3995,42 @@
                     "cost": 12,
                     "length": 12,
                     "actions": [
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
                         "(increment c3)",
                         "(increment c3)",
-                        "(increment c3)"
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)"
                     ]
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 2946,
-                "num_expanded": 2134,
+                "num_generated_successors": 2947,
+                "num_expanded": 2131,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 12,
                     "length": 12,
                     "actions": [
-                        "(decrement c1)",
-                        "(decrement c0)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
                         "(decrement c0)",
                         "(increment c3)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
                         "(increment c3)",
-                        "(increment c3)"
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(decrement c0)",
+                        "(decrement c0)"
                     ]
                 }
             },
@@ -4043,18 +4043,18 @@
                     "cost": 12,
                     "length": 12,
                     "actions": [
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
                         "(decrement c0)",
                         "(decrement c0)",
                         "(decrement c0)",
                         "(increment c3)",
+                        "(increment c2)",
                         "(increment c3)",
+                        "(increment c2)",
                         "(increment c3)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)"
+                        "(increment c2)"
                     ]
                 }
             },
@@ -4073,36 +4073,36 @@
                         "(decrement c0)",
                         "(increment c3)",
                         "(increment c3)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)"
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c3)",
+                        "(increment c2)"
                     ]
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 2946,
-                "num_expanded": 2134,
+                "num_generated_successors": 2947,
+                "num_expanded": 2131,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 12,
                     "length": 12,
                     "actions": [
-                        "(decrement c1)",
-                        "(decrement c0)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
                         "(decrement c0)",
                         "(increment c3)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
                         "(increment c3)",
-                        "(increment c3)"
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(decrement c0)",
+                        "(decrement c0)"
                     ]
                 }
             }
@@ -4215,10 +4215,10 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
+                        "(visit x0y0z0)",
                         "(increase_z)",
                         "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
+                        "(decrease_z)"
                     ]
                 }
             },
@@ -4231,10 +4231,10 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
+                        "(visit x0y0z0)",
                         "(increase_z)",
                         "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
+                        "(decrease_z)"
                     ]
                 }
             },

@@ -744,9 +744,9 @@
                 },
                 "solution_arity": 0,
                 "num_generated_successors": 20,
-                "num_expanded": 6,
+                "num_expanded": 15,
                 "num_deadends": 0,
-                "num_pruned": 71
+                "num_pruned": 164
             }
         },
         {

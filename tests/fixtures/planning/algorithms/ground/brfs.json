@@ -667,8 +667,8 @@
             "domain_file": "numeric/tests/fo-counters/domain.pddl",
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "default": {
-                "num_generated_successors": 124,
-                "num_expanded": 46,
+                "num_generated_successors": 117,
+                "num_expanded": 43,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -788,8 +788,8 @@
             "domain_file": "numeric/tests/block-grouping/domain.pddl",
             "task_file": "numeric/tests/block-grouping/test-1.pddl",
             "default": {
-                "num_generated_successors": 91,
-                "num_expanded": 6,
+                "num_generated_successors": 184,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -807,26 +807,26 @@
             "domain_file": "numeric/tests/counters/domain.pddl",
             "task_file": "numeric/tests/counters/test-1.pddl",
             "default": {
-                "num_generated_successors": 3474,
-                "num_expanded": 2848,
+                "num_generated_successors": 3430,
+                "num_expanded": 2751,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
                     "cost": 12,
                     "length": 12,
                     "actions": [
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c1)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
-                        "(decrement c0)",
                         "(increment c3)",
                         "(increment c3)",
-                        "(increment c3)"
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c3)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(increment c2)",
+                        "(decrement c0)",
+                        "(decrement c0)",
+                        "(decrement c0)"
                     ]
                 }
             }
@@ -856,7 +856,7 @@
             "domain_file": "numeric/tests/drone/domain.pddl",
             "task_file": "numeric/tests/drone/test-1.pddl",
             "default": {
-                "num_generated_successors": 53,
+                "num_generated_successors": 56,
                 "num_expanded": 24,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -864,10 +864,10 @@
                     "cost": 4,
                     "length": 4,
                     "actions": [
+                        "(visit x0y0z0)",
                         "(increase_z)",
                         "(visit x0y0z1)",
-                        "(decrease_z)",
-                        "(visit x0y0z0)"
+                        "(decrease_z)"
                     ]
                 }
             }
@@ -895,8 +895,8 @@
             "domain_file": "numeric/tests/ext-plant-watering/domain.pddl",
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "default": {
-                "num_generated_successors": 6961,
-                "num_expanded": 4391,
+                "num_generated_successors": 7418,
+                "num_expanded": 4870,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

@@ -843,7 +843,7 @@
                         "(move_block_down b1)"
                     ]
                 },
-                "num_generated_successors": 15,
+                "num_generated_successors": 34,
                 "num_expanded": 2,
                 "num_deadends": 0,
                 "num_pruned": 0
@@ -890,7 +890,7 @@
             "default": {
                 "status": "EXHAUSTED",
                 "maximum_effective_width": 0,
-                "num_generated_successors": 9,
+                "num_generated_successors": 6,
                 "num_expanded": 9,
                 "num_deadends": 0,
                 "num_pruned": 22
