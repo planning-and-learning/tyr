@@ -19,10 +19,14 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
 #include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/axiom_evaluator.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/lmcut.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
+#include "tyr/planning/lifted/axiom_evaluator.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 
@@ -31,6 +35,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <yggdrasil/execution/onetbb.hpp>
 #include <type_traits>
 
 #if defined(TYR_PROFILE_GROUND)

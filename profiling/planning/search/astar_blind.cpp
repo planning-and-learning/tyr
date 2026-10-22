@@ -19,8 +19,12 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/factory.hpp"
+#include "tyr/planning/ground/axiom_evaluator.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
+#include "tyr/planning/lifted/axiom_evaluator.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 #include <algorithm>
@@ -34,6 +38,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <yggdrasil/execution/onetbb.hpp>
 #include <string_view>
 #include <vector>
 
