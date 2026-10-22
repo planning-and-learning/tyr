@@ -66,6 +66,20 @@ auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate
     return tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>(predicate, terms);
 }
 
+auto intern_invariant(tyr::formalism::planning::Repository& repository, const tyr::formalism::planning::MutableInvariant& invariant)
+{
+    auto data = ygg::Data<tyr::formalism::planning::Invariant>(invariant.num_rigid_variables, invariant.num_counted_variables, {});
+    for (const auto& atom : invariant.atoms)
+    {
+        auto terms = ygg::DataList<tyr::formalism::Term> {};
+        for (const auto& term : atom.terms)
+            terms.push_back(term);
+        auto atom_data = ygg::Data<tyr::formalism::planning::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>>(atom.predicate.get_index(), std::move(terms));
+        data.atoms.push_back(tyr::formalism::planning::insert(repository, atom_data).first.get_index());
+    }
+    return tyr::formalism::planning::insert(repository, data).first;
+}
+
 tyr::formalism::planning::MutableInvariant parse_invariant(tyr::formalism::planning::Repository& repository, const boost::json::object& invariant_object)
 {
     auto atoms = std::vector<tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>> {};
@@ -214,4 +228,56 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisIpc) { check_suite("tests/
 
 /// Every domain of ipc.json and synthesis.json, so that any change to an order shows up in review.
 TEST(TyrTests, TyrFormalismPlanningInvariantOrders) { check_orders("tests/fixtures/formalism/invariants/orders.json"); }
+
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderCountsDistinctVariables)
+{
+    namespace planning = tyr::formalism::planning;
+    namespace invariant = planning::invariant;
+    auto repository = planning::RepositoryFactory().create();
+    auto object_data = ygg::Data<tyr::formalism::Object>(std::string("fixed"));
+    const auto object = repository.insert(object_data).first;
+    auto repeated_atom = atom(repository, "repeated", { 0, 1, 1, 1 });
+    repeated_atom.terms.back() = ygg::Data<tyr::formalism::Term>(object.get_index());
+
+    const auto repeated = intern_invariant(repository, planning::MutableInvariant(1, 1, { repeated_atom }));
+    const auto linear = intern_invariant(repository, planning::MutableInvariant(1, 1, { atom(repository, "p", { 0, 1 }), atom(repository, "q", { 0, 1 }) }));
+    const auto quadratic = intern_invariant(repository, planning::MutableInvariant(1, 2, { atom(repository, "pair", { 0, 1, 2 }) }));
+    const auto expected = planning::InvariantViewList { quadratic, linear, repeated };
+    for (const auto criterion : { invariant::GreedyCriterion::MaxGroupSize, invariant::GreedyCriterion::MaxCoverage })
+    {
+        EXPECT_EQ(invariant::compute_invariant_order_greedy({ repeated, linear, quadratic }, criterion), expected);
+        EXPECT_EQ(invariant::compute_invariant_order_greedy({ quadratic, linear, repeated }, criterion), expected);
+    }
+}
+
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderMultipliesCoverage)
+{
+    namespace planning = tyr::formalism::planning;
+    namespace invariant = planning::invariant;
+    auto repository = planning::RepositoryFactory().create();
+    const auto linear = intern_invariant(repository, planning::MutableInvariant(2, 1, { atom(repository, "linear", { 0, 1, 2 }) }));
+    const auto quadratic = intern_invariant(repository, planning::MutableInvariant(1, 2, { atom(repository, "quadratic", { 0, 1, 2 }) }));
+
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ linear, quadratic }, invariant::GreedyCriterion::MaxGroupSize),
+              (planning::InvariantViewList { quadratic, linear }));
+    // Both cover n^3 atoms, so coverage ties go to the invariant interned first.
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ quadratic, linear }, invariant::GreedyCriterion::MaxCoverage),
+              (planning::InvariantViewList { linear, quadratic }));
+}
+
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderRecomputesResidualPolynomial)
+{
+    namespace planning = tyr::formalism::planning;
+    namespace invariant = planning::invariant;
+    auto repository = planning::RepositoryFactory().create();
+    const auto shared = atom(repository, "shared", { 0, 1 });
+    const auto residual = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "tail", { 0 }) }));
+    const auto winner = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "pair", { 0, 1 }) }));
+    const auto linear = intern_invariant(repository, planning::MutableInvariant(0, 1, { atom(repository, "p", { 0 }), atom(repository, "q", { 0 }) }));
+    const auto singleton = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "fixed", {}) }));
+
+    for (const auto criterion : { invariant::GreedyCriterion::MaxGroupSize, invariant::GreedyCriterion::MaxCoverage })
+        EXPECT_EQ(invariant::compute_invariant_order_greedy({ residual, winner, linear, singleton }, criterion),
+                  (planning::InvariantViewList { winner, linear, residual }));
+}
 }

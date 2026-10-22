@@ -23,6 +23,7 @@
 #include <compare>
 #include <cstddef>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -63,34 +64,29 @@ private:
     std::vector<std::size_t> m_coefficients;  // no trailing zeros, so the size is the degree + 1
 };
 
-bool is_counted(const ygg::Data<Term>& term, std::size_t num_rigid_variables)
+std::pair<Polynomial, Polynomial> score_residual(InvariantView invariant, const ygg::UnorderedSet<PredicateView<FluentTag>>& taken)
 {
-    return std::visit(
-        [&]<typename T>(const T& arg)
-        {
-            if constexpr (std::is_same_v<T, ParameterIndex>)
-                return static_cast<ygg::uint_t>(arg) >= num_rigid_variables;
-            return false;
-        },
-        term.variant);
-}
-
-/// Residual atoms, i.e. those whose predicate no earlier invariant took: a with and b without the counted variable.
-std::pair<std::size_t, std::size_t> count_residual(InvariantView invariant, const ygg::UnorderedSet<PredicateView<FluentTag>>& taken)
-{
-    auto a = std::size_t { 0 };
-    auto b = std::size_t { 0 };
+    auto group_size = Polynomial {};
+    auto coverage = Polynomial {};
+    const auto r = invariant.get_num_rigid_variables();
     for (const auto atom : invariant.get_atoms())
     {
         if (taken.contains(atom.get_predicate()))
             continue;
-        const auto terms = atom.get_terms();
-        if (std::ranges::any_of(terms, [&](const auto term) { return is_counted(term.get_data(), invariant.get_num_rigid_variables()); }))
-            ++a;
-        else
-            ++b;
+        auto counted = std::vector<ParameterIndex> {};
+        for (const auto term : atom.get_terms())
+            std::visit(
+                [&]<typename T>(const T& arg)
+                {
+                    if constexpr (std::is_same_v<T, ParameterIndex>)
+                        if (static_cast<ygg::uint_t>(arg) >= r && std::ranges::find(counted, arg) == counted.end())
+                            counted.push_back(arg);
+                },
+                term.get_data().variant);
+        group_size.add(counted.size(), 1);
+        coverage.add(r + counted.size(), 1);
     }
-    return { a, b };
+    return { std::move(group_size), std::move(coverage) };
 }
 }
 
@@ -113,12 +109,9 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
         {
             if (used[i])
                 continue;
-            const auto [a, b] = count_residual(candidates[i], taken);
-            if (a == 0 && b < 2)
+            const auto [group_size, coverage] = score_residual(candidates[i], taken);
+            if (group_size <= Polynomial().add(0, 1))
                 continue;  // groups of one atom carry no mutex information
-            const auto r = candidates[i].get_num_rigid_variables();
-            const auto group_size = Polynomial().add(1, a).add(0, b);    // a*n + b
-            const auto coverage = Polynomial().add(r + 1, a).add(r, b);  // n^r * (a*n + b)
             const auto key = (criterion == GreedyCriterion::MaxGroupSize) ? std::pair(group_size, coverage) : std::pair(coverage, Polynomial {});
             // Ties: the invariant interned first, so the order does not depend on the input order.
             if (!best || key > best_key || (key == best_key && candidates[i].get_index() < candidates[*best].get_index()))

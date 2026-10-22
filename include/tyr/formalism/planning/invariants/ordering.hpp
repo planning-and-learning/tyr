@@ -26,20 +26,20 @@ namespace tyr::formalism::planning::invariant
 
 /// Invariant orders for GroundTaskInstantiationOptions::invariant_order, computed from the invariants alone.
 ///
-/// Sizes are polynomials in a common object count n: an invariant with r rigid variables has n^r instances, and its
-/// residual (the parts whose predicates no earlier invariant took) has a*n + b atoms per instance, with a parts with a
-/// counted variable and b parts without. Polynomials compare by degree, then coefficient. A residual without counted
-/// variable and with one part yields groups of one atom; such invariants are left out.
+/// Sizes are estimated under uniform object-domain growth, using a common object count n. Each residual atom (whose
+/// predicate no earlier invariant took) contributes n^k, where k is its number of distinct counted variables, including
+/// 1 when k is zero. Their sum G(n) estimates the group size; an invariant with r rigid variables has estimated coverage
+/// n^r * G(n). Polynomials compare asymptotically by degree, then coefficients from highest to lowest degree. Empty
+/// residuals and constant singleton groups carry no mutex information and are left out.
 ///
 /// The result depends only on the set of invariants, not on their order: ties go to the invariant interned first.
 
 enum class GreedyCriterion
 {
-    /// The residual with the largest group a*n + b first, like Fast Downward's largest-first cover, the greedy rule for
-    /// the fewest FDR variables: a residual adds n^r variables covering n^r * (a*n + b) atoms, i.e. a*n + b atoms per
-    /// variable. Ties: larger total coverage n^r * (a*n + b).
+    /// The residual with the largest estimated group G(n) first, a lifted proxy for Fast Downward's largest-first
+    /// ground mutex-group cover: prefer more atoms per FDR variable. Ties: larger estimated coverage n^r * G(n).
     MaxGroupSize,
-    /// The residual covering the most atoms, n^r * (a*n + b), first. Can prefer many small groups to one large group.
+    /// The residual with the largest estimated coverage n^r * G(n) first. Can prefer many small groups to one large group.
     MaxCoverage,
 };
 
