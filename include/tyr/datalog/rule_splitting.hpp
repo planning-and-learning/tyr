@@ -20,8 +20,11 @@
 
 #include "tyr/formalism/datalog/declarations.hpp"
 
+#include <utility>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/serialization/cista_equal_to.hpp>
+#include <yggdrasil/serialization/cista_hash.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
 
@@ -32,11 +35,21 @@ struct RuleSplitting
 {
     using Rule = ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
 
-    /// A rule that replaces part of a split source rule: the position of each of its variables among the source rule's variables.
+    /// A static relation over kept variables that replaces static literals over variables of a source rule that only they use.
+    /// Each tuple stores one assignment of the eliminated variables that supports it, as source rule positions and objects.
+    struct StaticProjection
+    {
+        std::vector<ygg::uint_t> kept_positions;
+        ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<std::pair<ygg::uint_t, ygg::Index<formalism::Object>>>> supports;
+    };
+
+    /// A rule that replaces part of a split source rule: the position of each of its variables among the source rule's variables,
+    /// and the static projections its body uses (indices into static_projections).
     struct Origin
     {
         size_t num_source_variables;
         std::vector<ygg::uint_t> source_positions;
+        std::vector<size_t> static_projections;
     };
 
     /// The main rule that replaces each split source rule; source rules index the source program's repository.
@@ -45,12 +58,14 @@ struct RuleSplitting
     ygg::UnorderedMap<Rule, Origin> origins;
     /// The projection rule that derives each projection predicate.
     ygg::UnorderedMap<ygg::Index<formalism::Predicate<formalism::FluentTag>>, Rule> projection_rules;
+    std::vector<StaticProjection> static_projections;
 };
 
 /// Copies the program into the repository and projects the variables of its predicate rules that occur in no head and only
 /// in some preconditions: the preconditions that use such a variable are replaced by an atom over their variables that the
-/// rest of the rule needs, which a projection rule of cost 0 derives. Rules with numeric constraints are copied unchanged.
-/// The minimal sum and max costs of every atom are preserved.
+/// rest of the rule needs. If they are all static, the atoms are computed once into a new static predicate; otherwise a
+/// projection rule of cost 0 derives them. Rules with numeric constraints are copied unchanged. The minimal sum and max
+/// costs of every atom are preserved.
 formalism::datalog::ProgramView<LiftedTag>
 split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, RuleSplitting& splitting);
 

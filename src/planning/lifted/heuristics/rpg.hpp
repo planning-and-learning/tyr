@@ -99,6 +99,17 @@ struct RPGPolicy<LiftedTag>
         for (const auto object : rule_binding.get_objects())
             workspace.binding[origin.source_positions[position++]] = object.get_index();
 
+        // The variables eliminated into static projections: the support stored for the kept objects.
+        for (const auto id : origin.static_projections)
+        {
+            const auto& projection = definition.rpg_program.get_rule_splitting().static_projections[id];
+            auto key = ygg::IndexList<formalism::Object> {};
+            for (const auto kept : projection.kept_positions)
+                key.push_back(workspace.binding[kept]);
+            for (const auto& [source_position, object] : projection.supports.at(key))
+                workspace.binding[source_position] = object;
+        }
+
         const auto& projection_rules = definition.rpg_program.get_rule_splitting().projection_rules;
         visit_witness_rule_instance(workspace,
                                     witness,
