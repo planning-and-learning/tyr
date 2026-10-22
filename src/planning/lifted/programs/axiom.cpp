@@ -19,6 +19,8 @@
 #include "tyr/planning/lifted/programs/axiom.hpp"
 
 #include "../../programs/common.hpp"
+#include "../../programs/translated_program.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -150,12 +152,27 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     return formalism::datalog::insert(repository, *program).first;
 }
 
+struct AxiomTables
+{
+    TranslationContext<LiftedTag> translation_context;
+
+    AxiomTables remap(SymbolRemapper& remapper) const { return { remapper.translation_context(translation_context) }; }
+};
+
 auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
 {
     auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
-    auto repository = factory->create_shared(task.get_num_objects());
-    auto program = create_program(task, translation_context, *repository);
-    return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
+    const auto num_objects = task.get_num_objects();
+    auto repository = factory->create_shared(num_objects);
+    auto tables = AxiomTables {};
+    const auto program = create_program(task, tables.translation_context, *repository);
+    auto source = TranslatedProgram<AxiomTables> { program, std::move(repository), std::move(tables) };
+
+    auto elimination = datalog::StaticVariableElimination {};
+    const auto eliminated = transform(source, *factory, num_objects, eliminate_static_variables_pass(elimination));
+    auto result = transform(eliminated, *factory, num_objects, decompose_static_literals_pass());
+    translation_context = std::move(result.tables.translation_context);
+    return datalog::Program<LiftedTag>(result.program, std::move(result.repository), std::move(factory));
 }
 }
 

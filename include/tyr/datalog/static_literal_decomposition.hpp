@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_STATIC_LITERAL_DECOMPOSITION_HPP_
 #define TYR_DATALOG_STATIC_LITERAL_DECOMPOSITION_HPP_
 
+#include "tyr/datalog/rule_mapping.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
 #include <yggdrasil/containers/associative_containers.hpp>
@@ -31,9 +32,8 @@ struct StaticLiteralDecomposition
 {
     using Rule = ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
 
-    /// The rule that replaces each predicate rule of the source program, rewritten or copied; source rules index the source
-    /// program's repository. Rewritten rules keep the variables of their source rules.
-    ygg::UnorderedMap<Rule, Rule> rules;
+    /// Rewritten rules keep the variables of their source rules.
+    RuleMapping rules;
 };
 
 /// Copies the program into the repository and replaces each positive static literal over three or more variables whose atoms

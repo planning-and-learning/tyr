@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_STATIC_VARIABLE_ELIMINATION_HPP_
 #define TYR_DATALOG_STATIC_VARIABLE_ELIMINATION_HPP_
 
+#include "tyr/datalog/rule_mapping.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
 #include <utility>
@@ -51,9 +52,7 @@ struct StaticVariableElimination
         std::vector<Projection> projections;
     };
 
-    /// The rule that replaces each predicate rule of the source program, rewritten or copied; source rules index the source
-    /// program's repository.
-    ygg::UnorderedMap<Rule, Rule> rules;
+    RuleMapping rules;
     /// The origin of every rewritten rule.
     ygg::UnorderedMap<Rule, Origin> origins;
 };

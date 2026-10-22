@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_RULE_SPLITTING_HPP_
 #define TYR_DATALOG_RULE_SPLITTING_HPP_
 
+#include "tyr/datalog/rule_mapping.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
 #include <vector>
@@ -39,8 +40,8 @@ struct RuleSplitting
         std::vector<ygg::uint_t> source_positions;
     };
 
-    /// The main rule that replaces each split source rule; source rules index the source program's repository.
-    ygg::UnorderedMap<Rule, Rule> main_rules;
+    /// The rule that replaces each source rule: the main rule of a split one, or its copy.
+    RuleMapping rules;
     /// The origin of every rule that splitting created, main rules and projection rules alike.
     ygg::UnorderedMap<Rule, Origin> origins;
     /// The projection rule that derives each projection predicate.

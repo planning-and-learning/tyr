@@ -408,7 +408,11 @@ eliminate_static_variables(formalism::datalog::ProgramView<LiftedTag> program, f
     auto output = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
     formalism::datalog::copy_except_rules(program, *output, context);
     for (const auto rule : program.get_rules<formalism::FunctionTag>())
-        output->function_rules.push_back(formalism::datalog::copy(rule, context).first.get_index());
+    {
+        const auto copy = formalism::datalog::copy(rule, context).first.get_index();
+        output->function_rules.push_back(copy);
+        result.rules.function.emplace(rule.get_index(), copy);
+    }
 
     // The static predicates come first in the repository, as the fact sets require.
     auto static_facts = PredicateFactSets<formalism::StaticTag>(ygg::make_view(output->static_predicates, repository), repository);
@@ -424,14 +428,14 @@ eliminate_static_variables(formalism::datalog::ProgramView<LiftedTag> program, f
         if (auto rewritten = eliminator.rewrite(formalism::datalog::copy(rule.get_body(), context).first, heads, rule.get_cost()))
         {
             output->predicate_rules.push_back(rewritten->first);
-            result.rules.emplace(rule.get_index(), rewritten->first);
+            result.rules.predicate.emplace(rule.get_index(), rewritten->first);
             result.origins.emplace(rewritten->first, std::move(rewritten->second));
         }
         else
         {
             const auto copy = formalism::datalog::copy(rule, context).first.get_index();
             output->predicate_rules.push_back(copy);
-            result.rules.emplace(rule.get_index(), copy);
+            result.rules.predicate.emplace(rule.get_index(), copy);
         }
     }
 

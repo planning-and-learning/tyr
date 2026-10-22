@@ -19,6 +19,8 @@
 #include "tyr/planning/lifted/programs/action.hpp"
 
 #include "../../programs/common.hpp"
+#include "../../programs/translated_program.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -59,7 +61,6 @@ auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action
 auto create_program(formalism::planning::TaskView<LiftedTag> task,
                     TranslationContext<LiftedTag>& translation_context,
                     ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& predicate_to_actions,
-                    ApplicableActionProgram<LiftedTag>::SchemaPrograms& schema_programs,
                     ApplicableActionProgram<LiftedTag>::EffectPredicates& effect_predicates,
                     formalism::datalog::Repository& repository)
 {
@@ -142,7 +143,6 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
             conj_cond.numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, context));
     };
 
-    auto action_rules = std::vector<ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>> {};
     for (const auto action : task.get_domain().get_actions())
     {
         const auto applicability_predicate = create_applicability_predicate(action, context).first;
@@ -175,7 +175,6 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         const auto new_rule = formalism::datalog::insert(repository, *rule).first.get_index();
 
         program->predicate_rules.push_back(new_rule);
-        action_rules.push_back(new_rule);
 
         // A rule per conditional effect with variables or a condition: its atoms are the bindings for which the effect fires.
         for (const auto cond_eff : action.get_effects())
@@ -214,18 +213,26 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         }
     }
 
-    const auto all_actions = formalism::datalog::insert(repository, *program).first;
-    for (const auto rule_index : action_rules)
-    {
-        const auto rule = ygg::make_view(rule_index, repository);
-        program->predicate_rules.clear();
-        program->predicate_rules.push_back(rule.get_index());
-        schema_programs.try_emplace(predicate_to_actions.at(rule.get_heads().front().get_predicate()),
-                                    formalism::datalog::insert(repository, *program).first,
-                                    translation_context.p2d);
-    }
-    return all_actions;
+    return formalism::datalog::insert(repository, *program).first;
 }
+
+struct ActionTables
+{
+    TranslationContext<LiftedTag> translation_context;
+    ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping predicate_to_actions;
+    ApplicableActionProgram<LiftedTag>::EffectPredicates effect_predicates;
+
+    ActionTables remap(SymbolRemapper& remapper) const
+    {
+        auto result = ActionTables { remapper.translation_context(translation_context), {}, {} };
+        for (const auto& [predicate, action] : predicate_to_actions)
+            result.predicate_to_actions.emplace(remapper.symbol(predicate), action);
+        for (const auto& [action, entries] : effect_predicates)
+            for (const auto& [effect, predicate] : entries)
+                result.effect_predicates[action].push_back({ effect, remapper.symbol(predicate) });
+        return result;
+    }
+};
 
 auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
                             TranslationContext<LiftedTag>& translation_context,
@@ -234,8 +241,35 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
                             ApplicableActionProgram<LiftedTag>::EffectPredicates& effect_predicates)
 {
     auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
-    auto repository = factory->create_shared(task.get_num_objects());
-    auto program = create_program(task, translation_context, mapping, schema_programs, effect_predicates, *repository);
+    const auto num_objects = task.get_num_objects();
+    auto source_repository = factory->create_shared(num_objects);
+    auto tables = ActionTables {};
+    const auto source_program = create_program(task, tables.translation_context, tables.predicate_to_actions, tables.effect_predicates, *source_repository);
+    auto source = TranslatedProgram<ActionTables> { source_program, std::move(source_repository), std::move(tables) };
+
+    auto elimination = datalog::StaticVariableElimination {};
+    const auto eliminated = transform(source, *factory, num_objects, eliminate_static_variables_pass(elimination));
+    auto result = transform(eliminated, *factory, num_objects, decompose_static_literals_pass());
+    const auto program = result.program;
+    auto repository = std::move(result.repository);
+    translation_context = std::move(result.tables.translation_context);
+    mapping = std::move(result.tables.predicate_to_actions);
+    effect_predicates = std::move(result.tables.effect_predicates);
+    auto builder = formalism::datalog::Builder {};
+    auto context = formalism::datalog::CopyContext { builder, *repository };
+
+    // A program per action schema with only its action rule.
+    auto schema = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
+    formalism::datalog::copy_except_rules(program, *schema, context);
+    for (const auto rule : program.get_rules<formalism::PredicateTag>())
+    {
+        const auto it = mapping.find(rule.get_heads().front().get_predicate());
+        if (it == mapping.end())
+            continue;  // A conditional effect's rule.
+        schema->predicate_rules.clear();
+        schema->predicate_rules.push_back(rule.get_index());
+        schema_programs.try_emplace(it->second, formalism::datalog::insert(*repository, *schema).first, translation_context.p2d);
+    }
     return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
 }
 }
