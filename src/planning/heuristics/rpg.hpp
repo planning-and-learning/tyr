@@ -132,19 +132,23 @@ public:
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    { materialize_goal(*m_definition, m_workspace, m_source_goal); }
+    {
+        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
+    }
 
     RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context) :
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    { materialize_goal(*m_definition, m_workspace, m_source_goal); }
+    {
+        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
+    }
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
         m_source_goal = goal;
-        materialize_goal(*m_definition, m_workspace, m_source_goal);
+        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state)
@@ -156,7 +160,7 @@ public:
     void print_summary(size_t verbosity) const { Policy::print_summary(m_workspace, verbosity); }
 
 protected:
-    void begin_state_evaluation() { m_workspace.clear_costs(); }
+    void begin_state_evaluation() { Policy::begin_state_evaluation(*m_definition, m_workspace, m_source_goal); }
 
     ygg::float_t evaluate_current_state(const ygg::Builder<State<Kind>>& state)
     {
