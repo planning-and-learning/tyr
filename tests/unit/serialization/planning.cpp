@@ -246,7 +246,7 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     canonicalize(binary_data);
     const auto binary = repository.insert(binary_data).first;
     const auto expression =
-        ygg::make_view(Expression(Expression::Variant(Arithmetic(tyr::formalism::ArithmeticOperatorKind::Sub, Arithmetic::Variant(binary.get_index())))),
+        ygg::make_view(Expression(Expression::Variant(Arithmetic(Arithmetic::Variant(binary.get_index())))),
                        repository);
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<tyr::formalism::planning::FunctionExpressionView<LiftedTag>>("expressions", "e");
