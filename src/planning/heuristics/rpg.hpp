@@ -213,12 +213,6 @@ protected:
 
     formalism::planning::ActionBindingView get_action_binding(typename Policy::Action action) const noexcept { return detail::to_action_binding(action); }
 
-    template<typename Executor>
-    bool is_action_applicable(Executor& executor, typename Policy::Action action, const StateContext<Kind>& state_context)
-    {
-        return Policy::is_action_applicable(*m_definition, m_workspace, executor, action, state_context);
-    }
-
     void append_planning_cut_frontier_atom(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
                                            formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& atoms)
     {

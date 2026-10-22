@@ -148,7 +148,7 @@ def find_solution(
         search_node = search_nodes[state_index]
 
         state_h_value = heuristic.evaluate(state)
-        preferred_actions = heuristic.get_preferred_actions()
+        relaxed_plan = heuristic.get_relaxed_plan()
 
         search_node.status = SearchNodeStatus.CLOSED
 
@@ -175,8 +175,8 @@ def find_solution(
             succ_search_node.parent = state_index
 
             action = labeled_succ_node.label
-            if action in preferred_actions:
-                pass  # the heuristic marked this labeled successor node as preferred
+            if relaxed_plan is not None and action in relaxed_plan:
+                pass  # the action is applicable and in the relaxed plan: a preferred successor
 
             if goal_strategy.is_dynamic_goal_satisfied(initial_state, succ_state):
                 search_result.goal_node = succ_node

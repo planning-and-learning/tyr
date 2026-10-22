@@ -45,7 +45,7 @@ public:
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override;
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override;
     [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
-    const ygg::UnorderedSet<formalism::planning::ActionBindingView>& get_preferred_actions() override;
+    const ygg::UnorderedSet<formalism::planning::ActionBindingView>* get_relaxed_plan() const override;
     void print_summary(size_t verbosity) const override;
 
 private:

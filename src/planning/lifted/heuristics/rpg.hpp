@@ -118,21 +118,6 @@ struct RPGPolicy<LiftedTag>
                                     });
     }
 
-    template<typename Workspace, typename Executor>
-    static bool is_action_applicable(const RPGDefinition<LiftedTag>& definition,
-                                     Workspace& workspace,
-                                     Executor& executor,
-                                     Action action,
-                                     const StateContext<LiftedTag>& state_context)
-    {
-        workspace.binding.clear();
-        ygg::extend(action.get_objects(), workspace.binding);
-
-        auto grounder_context =
-            formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
-        return executor.is_applicable(action.get_relation(), state_context, grounder_context, *definition.task->get_fdr_context());
-    }
-
     template<formalism::RelationKind R, typename Workspace, typename Callback>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
