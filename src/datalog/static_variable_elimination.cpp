@@ -23,10 +23,10 @@
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
-#include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
 
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -116,7 +116,6 @@ public:
 private:
     using StaticLiteral = formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag>;
     using Parameters = ygg::UnorderedSet<formalism::ParameterIndex>;
-    using Substitution = formalism::unification::SubstitutionFunction<ygg::Data<formalism::Term>>;
     using Tuple = ygg::IndexList<formalism::Object>;
 
     /// At most this many variables are kept, so that the consistency graph encodes the new static predicate exactly.
@@ -180,8 +179,63 @@ private:
         return it->second;
     }
 
+    /// Whether every eliminated variable is functionally determined by the kept variables, through literals in which each object
+    /// of a determined variable occurs with at most one object of the other variable. Then each kept tuple has exactly one
+    /// supporting assignment, and a projection would not reduce the enumeration.
+    template<typename Pattern>
+    bool determined_by_kept(const std::vector<Pattern>& positive,
+                            const std::vector<formalism::ParameterIndex>& kept,
+                            const std::vector<formalism::ParameterIndex>& eliminated)
+    {
+        auto determined = Parameters(kept.begin(), kept.end());
+        const auto position_of = [](const Pattern& pattern, formalism::ParameterIndex parameter) -> std::optional<size_t>
+        {
+            for (size_t k = 0; k < pattern.terms.size(); ++k)
+                if (formalism::unification::is_parameter(pattern.terms[k]) && formalism::unification::get_parameter(pattern.terms[k]) == parameter)
+                    return k;
+            return std::nullopt;
+        };
+        for (auto changed = true; changed;)
+        {
+            changed = false;
+            for (const auto variable : eliminated)
+            {
+                if (determined.contains(variable))
+                    continue;
+                for (const auto& pattern : positive)
+                {
+                    const auto target = position_of(pattern, variable);
+                    if (!target)
+                        continue;
+                    const auto determines = [&](size_t source)
+                    {
+                        auto image = ygg::UnorderedMap<ygg::Index<formalism::Object>, ygg::Index<formalism::Object>> {};
+                        for (const auto& tuple : tuples_of(pattern.predicate))
+                            if (const auto [it, inserted] = image.emplace(tuple[source], tuple[*target]); !inserted && it->second != tuple[*target])
+                                return false;
+                        return true;
+                    };
+                    const auto found = std::ranges::any_of(determined,
+                                                           [&](auto source)
+                                                           {
+                                                               const auto position = position_of(pattern, source);
+                                                               return position && determines(*position);
+                                                           });
+                    if (found)
+                    {
+                        determined.insert(variable);
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return std::ranges::all_of(eliminated, [&](auto variable) { return determined.contains(variable); });
+    }
+
     /// A literal over the kept variables of a new static predicate whose atoms are the kept parts of the assignments that satisfy
-    /// the literals, with one supporting assignment of the other variables per atom; nullopt if the join is too large. The
+    /// the literals, with one supporting assignment of the other variables per atom; nullopt if the join is too large or the
+    /// projection has as many atoms as assignments. The
     /// literals are joined by backtracking, always extending by the positive literal with the most bound terms. Earlier
     /// projections of the rule that the literals use contribute the variables they eliminated to the supports.
     std::optional<std::pair<StaticLiteral, StaticVariableElimination::Projection>>
@@ -220,83 +274,153 @@ private:
                 eliminated.push_back(p);
         std::ranges::sort(eliminated);
 
-        const auto ground = [](const Substitution& sigma, const Pattern& pattern)
+        if (determined_by_kept(positive, kept, eliminated))
+            return std::nullopt;
+
+        // The assignment of the covered variables, by parameter position.
+        auto num_parameters = size_t(0);
+        for (const auto p : covered)
+            num_parameters = std::max(num_parameters, size_t(ygg::uint_t(p)) + 1);
+        auto assignment = std::vector<std::optional<ygg::Index<formalism::Object>>>(num_parameters);
+        const auto object_of = [&](const ygg::Data<formalism::Term>& term)
+        {
+            return formalism::unification::is_parameter(term) ? assignment[ygg::uint_t(formalism::unification::get_parameter(term))]
+                                                              : std::optional(formalism::unification::get_object(term));
+        };
+        const auto ground = [&](const Pattern& pattern)
         {
             auto tuple = Tuple {};
             for (const auto& term : pattern.terms)
-                tuple.push_back(formalism::unification::get_object(
-                    formalism::unification::is_parameter(term) ? *sigma[formalism::unification::get_parameter(term)] : term));
+                tuple.push_back(*object_of(term));
             return tuple;
         };
 
         auto projection = StaticVariableElimination::Projection {};
         for (const auto p : kept)
             projection.kept_positions.push_back(ygg::uint_t(p));
-        const auto record = [&](const Substitution& sigma)
+        auto num_assignments = size_t(0);
+        const auto record = [&]
         {
             for (const auto& pattern : negative)
-                if (tuple_set_of(pattern.predicate).contains(ground(sigma, pattern)))
+                if (tuple_set_of(pattern.predicate).contains(ground(pattern)))
                     return;
+            ++num_assignments;
             auto key = Tuple {};
             for (const auto p : kept)
-                key.push_back(formalism::unification::get_object(*sigma[p]));
+                key.push_back(*assignment[ygg::uint_t(p)]);
             if (projection.supports.contains(key))
                 return;
             auto support = std::vector<std::pair<ygg::uint_t, ygg::Index<formalism::Object>>> {};
             for (const auto p : eliminated)
-                support.emplace_back(ygg::uint_t(p), formalism::unification::get_object(*sigma[p]));
+                support.emplace_back(ygg::uint_t(p), *assignment[ygg::uint_t(p)]);
             for (const auto& pattern : positive)
                 if (pattern.projection)
-                    for (const auto& pair : pattern.projection->supports.at(ground(sigma, pattern)))
+                    for (const auto& pair : pattern.projection->supports.at(ground(pattern)))
                         support.push_back(pair);
             projection.supports.emplace(std::move(key), std::move(support));
+        };
+
+        // An index nested-loop join: the tuples of a literal are indexed by the objects at its bound positions (constants and
+        // bound variables), built once per literal and set of bound positions; a partial assignment extends by the literal with
+        // the fewest matching tuples, so the work follows the matches instead of the relations' sizes.
+        using Bucket = std::vector<uint32_t>;
+        using TupleIndex = ygg::UnorderedMap<Tuple, Bucket>;
+        auto indexes = ygg::UnorderedMap<uint64_t, std::unique_ptr<TupleIndex>> {};  // Behind pointers, so buckets stay in place.
+        const auto bound_mask = [&](const Pattern& pattern)
+        {
+            auto mask = uint64_t(0);
+            for (size_t k = 0; k < pattern.terms.size(); ++k)
+                if (object_of(pattern.terms[k]))
+                    mask |= uint64_t(1) << k;
+            return mask;
+        };
+        const auto bound_key = [&](const Pattern& pattern, uint64_t mask, const auto& objects_at)
+        {
+            auto key = Tuple {};
+            for (size_t k = 0; k < pattern.terms.size(); ++k)
+                if (mask & (uint64_t(1) << k))
+                    key.push_back(objects_at(k));
+            return key;
+        };
+        const auto candidates = [&](size_t i) -> const Bucket*
+        {
+            const auto& pattern = positive[i];
+            const auto mask = bound_mask(pattern);
+            auto& index = indexes[(uint64_t(i) << 48) | mask];
+            const auto& tuples = tuples_of(pattern.predicate);
+            if (!index)
+            {
+                index = std::make_unique<TupleIndex>();
+                for (uint32_t t = 0; t < tuples.size(); ++t)
+                    (*index)[bound_key(pattern, mask, [&](size_t k) { return tuples[t][k]; })].push_back(t);
+            }
+            const auto it = index->find(bound_key(pattern, mask, [&](size_t k) { return *object_of(pattern.terms[k]); }));
+            return it == index->end() ? nullptr : &it->second;
         };
 
         auto used = std::vector<bool>(positive.size(), false);
         auto steps = size_t(0);
         auto aborted = false;
-        auto element = std::vector<ygg::Data<formalism::Term>> {};
-        const auto extend = [&](const auto& self, const Substitution& sigma) -> void
+        auto newly_bound = std::vector<std::vector<ygg::uint_t>>(positive.size() + 1);
+        const auto extend = [&](const auto& self, size_t depth) -> void
         {
             auto next = std::optional<size_t> {};
-            auto next_bound = size_t(0);
+            const Bucket* next_candidates = nullptr;
             for (size_t i = 0; i < positive.size(); ++i)
             {
                 if (used[i])
                     continue;
-                const auto bound = size_t(std::ranges::count_if(positive[i].terms,
-                                                                [&](const auto& term) {
-                                                                    return !formalism::unification::is_parameter(term)
-                                                                           || sigma[formalism::unification::get_parameter(term)].has_value();
-                                                                }));
-                if (!next || bound > next_bound)
+                const auto* bucket = candidates(i);
+                if (!bucket)
+                    return;  // No tuple matches the assignment.
+                if (!next || bucket->size() < next_candidates->size())
                 {
                     next = i;
-                    next_bound = bound;
+                    next_candidates = bucket;
                 }
             }
             if (!next)
-                return record(sigma);
+                return record();
 
             const auto& pattern = positive[*next];
+            const auto& tuples = tuples_of(pattern.predicate);
+            auto& bound = newly_bound[depth];
             used[*next] = true;
-            for (const auto& tuple : tuples_of(pattern.predicate))
+            for (const auto t : *next_candidates)
             {
                 if (aborted || ++steps > max_join_steps)
                 {
                     aborted = true;
                     break;
                 }
-                element.clear();
-                for (const auto object : tuple)
-                    element.push_back(ygg::Data<formalism::Term>(object));
-                if (auto extended = formalism::unification::match(pattern.terms, element, sigma))
-                    self(self, *extended);
+                // Bind the unbound variables; a variable repeated in the literal must get the same object.
+                auto consistent = true;
+                for (size_t k = 0; k < pattern.terms.size() && consistent; ++k)
+                {
+                    const auto& term = pattern.terms[k];
+                    if (!formalism::unification::is_parameter(term))
+                        continue;
+                    auto& slot = assignment[ygg::uint_t(formalism::unification::get_parameter(term))];
+                    if (!slot)
+                    {
+                        slot = tuples[t][k];
+                        bound.push_back(ygg::uint_t(formalism::unification::get_parameter(term)));
+                    }
+                    else
+                        consistent = *slot == tuples[t][k];
+                }
+                if (consistent)
+                    self(self, depth + 1);
+                for (const auto p : bound)
+                    assignment[p].reset();
+                bound.clear();
             }
             used[*next] = false;
         };
-        extend(extend, Substitution(std::vector<formalism::ParameterIndex>(covered.begin(), covered.end())));
-        if (aborted)
+        extend(extend, 0);
+        // The projection replaces enumerating every satisfying assignment by enumerating its kept tuples: without fewer tuples
+        // than assignments (each kept tuple supported once) it saves nothing and only adds a relation.
+        if (aborted || projection.supports.size() >= num_assignments)
             return std::nullopt;
 
         auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::StaticTag>>(m_context.builder);
