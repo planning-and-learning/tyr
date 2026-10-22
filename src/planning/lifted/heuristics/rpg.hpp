@@ -164,9 +164,11 @@ struct RPGPolicy<LiftedTag>
     {
         const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
         const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(witness.get_rule_key().relation)];
-        auto binding = ygg::IndexList<formalism::Object> {};
-        ygg::extend(rule_binding.get_objects(), binding);
-        auto grounder_context = formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, binding };
+        // Visits nest (the callback can visit a witness of the instance's preconditions), so each checks out its own binding.
+        const auto binding = workspace.visit_bindings.get_or_allocate();
+        binding->clear();
+        ygg::extend(rule_binding.get_objects(), *binding);
+        auto grounder_context = formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, *binding };
         const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace, grounder_context);
         std::forward<Callback>(callback)(instance);
     }

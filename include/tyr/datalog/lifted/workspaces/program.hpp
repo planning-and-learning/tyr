@@ -40,6 +40,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <yggdrasil/containers/unique_object_pool.hpp>
 #include <yggdrasil/core/dependent_false.hpp>
 
 namespace tyr::datalog
@@ -100,6 +101,8 @@ public:
     formalism::datalog::Builder datalog_builder;
 
     ygg::IndexList<formalism::Object> binding;
+    /// Reusable bindings of rule instance visits, which nest.
+    ygg::UniqueObjectPool<ygg::IndexList<formalism::Object>, false> visit_bindings;
 
     std::vector<Scheduler<LiftedTag>> schedulers;
 
