@@ -23,6 +23,7 @@
 #include "tyr/planning/applicability_lifted_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <span>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
 
@@ -66,6 +67,21 @@ public:
     /// the parent into `delta`; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                            formalism::planning::ActionView<LiftedTag> action,
+                                           formalism::planning::GrounderContext& grounder,
+                                           formalism::planning::FDRContext& fdr,
+                                           ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                                           StateDelta& delta);
+
+    /// A conditional effect that fires, with the objects of its variables.
+    struct FiringEffect
+    {
+        formalism::planning::ConditionalEffectView<LiftedTag> effect;
+        std::span<const ygg::Index<formalism::Object>> extension;
+    };
+
+    /// apply_action_unregistered for the given firing effects, which must be all effects of the action binding that fire.
+    ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
+                                           std::span<const FiringEffect> firing_effects,
                                            formalism::planning::GrounderContext& grounder,
                                            formalism::planning::FDRContext& fdr,
                                            ygg::Builder<State<LiftedTag>>& successor_state_builder,

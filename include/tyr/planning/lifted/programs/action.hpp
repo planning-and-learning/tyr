@@ -50,11 +50,21 @@ public:
 
     using SchemaPrograms = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, SchemaProgram>;
 
+    /// The predicate whose atoms are the bindings of an action followed by the objects of a conditional effect's variables
+    /// for which the effect fires, for each conditional effect with variables or a condition.
+    struct EffectPredicate
+    {
+        formalism::planning::ConditionalEffectView<LiftedTag> effect;
+        formalism::datalog::PredicateView<formalism::FluentTag> predicate;
+    };
+    using EffectPredicates = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<EffectPredicate>>;
+
     explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
     const SchemaPrograms& get_schema_programs() const noexcept;
+    const EffectPredicates& get_effect_predicates() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
     const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
@@ -63,6 +73,7 @@ private:
     TranslationContext<LiftedTag> m_translation_context;
     AppPredicateToActionMapping m_predicate_to_actions;
     SchemaPrograms m_schema_programs;
+    EffectPredicates m_effect_predicates;
     datalog::Program<LiftedTag> m_datalog_program;
 };
 

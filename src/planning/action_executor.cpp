@@ -77,6 +77,44 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
     }
 }
 
+/// Applies the effect of a firing conditional effect whose variables the grounder context's binding already extends.
+inline void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> cond_effect,
+                                ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                                StateContext<LiftedTag>& state_context,
+                                const ApplicabilityContext& applicability_context,
+                                formalism::planning::GrounderContext& grounder_context,
+                                formalism::planning::FDRContext& fdr_context,
+                                ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
+                                ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects,
+                                std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& tmp_numeric_writes)
+{
+    const auto effect = cond_effect.get_effect();
+
+    for (const auto literal : effect.get_literals())
+        if (literal.get_polarity())
+            tmp_add_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).get_data());
+        else
+            tmp_del_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).get_data());
+
+    for (const auto numeric_effect : effect.get_numeric_effects())
+        visit(
+            [&](auto&& arg)
+            {
+                // Sequenced: both grounding and evaluation mutate the grounder context, and argument
+                // evaluation order is unspecified (gcc and clang disagree). Evaluating first preserves
+                // the historical gcc (right-to-left) index assignment order.
+                const auto value = evaluate(numeric_effect, applicability_context);
+                const auto fterm = ground(arg.get_fterm(), grounder_context).first.get_index();
+                successor_state_builder.set(fterm, value);
+                tmp_numeric_writes.push_back(fterm);
+            },
+            numeric_effect.get_variant());
+
+    /// Collect the increment (total-cost) in the state_context
+    if (effect.get_auxiliary_numeric_effect().has_value())
+        state_context.auxiliary_value = evaluate(effect.get_auxiliary_numeric_effect().value(), applicability_context);
+}
+
 inline void process_effects(formalism::planning::ActionView<LiftedTag> action,
                             const analysis::ActionDomain& action_domain,
                             ygg::Builder<State<LiftedTag>>& successor_state_builder,
@@ -106,33 +144,15 @@ inline void process_effects(formalism::planning::ActionView<LiftedTag> action,
                 grounder_context.binding.insert(grounder_context.binding.end(), extension.begin(), extension.end());
 
                 if (is_applicable(cond_effect.get_condition(), applicability_context))
-                {
-                    const auto effect = cond_effect.get_effect();
-
-                    for (const auto literal : effect.get_literals())
-                        if (literal.get_polarity())
-                            tmp_add_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).get_data());
-                        else
-                            tmp_del_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).get_data());
-
-                    for (const auto numeric_effect : effect.get_numeric_effects())
-                        visit(
-                            [&](auto&& arg)
-                            {
-                                // Sequenced: both grounding and evaluation mutate the grounder context, and argument
-                                // evaluation order is unspecified (gcc and clang disagree). Evaluating first preserves
-                                // the historical gcc (right-to-left) index assignment order.
-                                const auto value = evaluate(numeric_effect, applicability_context);
-                                const auto fterm = ground(arg.get_fterm(), grounder_context).first.get_index();
-                                successor_state_builder.set(fterm, value);
-                                tmp_numeric_writes.push_back(fterm);
-                            },
-                            numeric_effect.get_variant());
-
-                    /// Collect the increment (total-cost) in the state_context
-                    if (effect.get_auxiliary_numeric_effect().has_value())
-                        state_context.auxiliary_value = evaluate(effect.get_auxiliary_numeric_effect().value(), applicability_context);
-                }
+                    apply_lifted_effect(cond_effect,
+                                        successor_state_builder,
+                                        state_context,
+                                        applicability_context,
+                                        grounder_context,
+                                        fdr_context,
+                                        tmp_del_effects,
+                                        tmp_add_effects,
+                                        tmp_numeric_writes);
 
                 grounder_context.binding.resize(binding_size);
             });
@@ -267,6 +287,40 @@ bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<Lift
                                                  m_effect_families,
                                                  m_compatibility_workspace,
                                                  state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
+}
+
+ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
+                                                       std::span<const FiringEffect> firing_effects,
+                                                       formalism::planning::GrounderContext& grounder,
+                                                       formalism::planning::FDRContext& fdr,
+                                                       ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                                                       StateDelta& delta)
+{
+    return apply_action_unregistered_impl(state_context,
+                                          successor_state_builder,
+                                          m_del_effects,
+                                          m_add_effects,
+                                          m_numeric_writes,
+                                          delta,
+                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
+                                          {
+                                              auto applicability_context = ApplicabilityContext { tmp_state_context, grounder, fdr };
+                                              const auto binding_size = grounder.binding.size();
+                                              for (const auto& firing : firing_effects)
+                                              {
+                                                  grounder.binding.insert(grounder.binding.end(), firing.extension.begin(), firing.extension.end());
+                                                  apply_lifted_effect(firing.effect,
+                                                                      out_state,
+                                                                      tmp_state_context,
+                                                                      applicability_context,
+                                                                      grounder,
+                                                                      fdr,
+                                                                      del_effects,
+                                                                      add_effects,
+                                                                      numeric_writes);
+                                                  grounder.binding.resize(binding_size);
+                                              }
+                                          });
 }
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
