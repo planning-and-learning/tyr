@@ -83,23 +83,6 @@ template<formalism::FactKind T>
 ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, T> element, const ApplicabilityContext& context);
 
 /**
- * is_applicable_if_fires
- */
-
-bool is_applicable_if_fires(formalism::planning::ConditionalEffectView<LiftedTag> element,
-                            const ApplicabilityContext& context,
-                            formalism::planning::EffectFamilyList& ref_fluent_effect_families,
-                            analysis::CompatibilityWorkspace& compatibility_workspace,
-                            const analysis::ConditionalEffectDomain& effect_domains,
-                            size_t action_arity);
-
-bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<LiftedTag> elements,
-                            const ApplicabilityContext& context,
-                            formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                            analysis::CompatibilityWorkspace& compatibility_workspace,
-                            const analysis::ActionDomain& action_domains);
-
-/**
  * is_applicable
  */
 
@@ -141,14 +124,6 @@ bool is_applicable(formalism::planning::ConjunctiveConditionView<LiftedTag> elem
 bool is_applicable(formalism::planning::ConjunctiveEffectView<LiftedTag> element,
                    const ApplicabilityContext& context,
                    formalism::planning::EffectFamilyList& ref_fluent_effect_families);
-
-// Action
-
-bool is_applicable(formalism::planning::ActionView<LiftedTag> element,
-                   const ApplicabilityContext& context,
-                   formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                   analysis::CompatibilityWorkspace& compatibility_workspace,
-                   const analysis::ActionDomain& action_domains);
 
 // Axiom
 
@@ -246,73 +221,6 @@ template<formalism::FactKind T>
 ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
-}
-
-/**
- * is_applicable_if_fires
- */
-
-inline bool is_applicable_if_fires(formalism::planning::ConditionalEffectView<LiftedTag> element,
-                                   const ApplicabilityContext& context,
-                                   formalism::planning::EffectFamilyList& ref_fluent_effect_families,
-                                   analysis::CompatibilityWorkspace& compatibility_workspace,
-                                   const analysis::ConditionalEffectDomain& effect_domains,
-                                   size_t action_arity)
-{
-    const auto effect = element.get_effect();
-    if (effect.get_numeric_effects().empty() && !effect.get_auxiliary_numeric_effect().has_value())
-        return true;
-
-    const auto binding_size = context.grounder.binding.size();
-
-    bool applicable = true;
-
-    const auto prefix = std::span<const ygg::Index<formalism::Object>>(context.grounder.binding.data(), action_arity);
-    analysis::for_each_compatible_extension(effect_domains.payload,
-                                            prefix,
-                                            compatibility_workspace,
-                                            [&](auto extension)
-                                            {
-                                                if (!applicable)
-                                                    return;
-
-                                                context.grounder.binding.resize(binding_size);
-                                                context.grounder.binding.insert(context.grounder.binding.end(), extension.begin(), extension.end());
-
-                                                if (is_applicable(element.get_condition(), context)
-                                                    && !is_applicable(effect, context, ref_fluent_effect_families))
-                                                {
-                                                    applicable = false;
-                                                    return;
-                                                }
-                                            });
-
-    context.grounder.binding.resize(binding_size);
-
-    return applicable;
-}
-
-inline bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<LiftedTag> elements,
-                                   const ApplicabilityContext& context,
-                                   formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                                   analysis::CompatibilityWorkspace& compatibility_workspace,
-                                   const analysis::ActionDomain& action_domains)
-{
-    out_fluent_effect_families.clear();
-    const auto action_arity = context.grounder.binding.size();
-
-    for (const auto cond_effect : elements)
-    {
-        if (!is_applicable_if_fires(cond_effect,
-                                    context,
-                                    out_fluent_effect_families,
-                                    compatibility_workspace,
-                                    action_domains.payload.effect_domains.at(cond_effect.get_index()),
-                                    action_arity))
-            return false;
-    }
-
-    return true;
 }
 
 /**
@@ -446,18 +354,6 @@ inline bool is_applicable(formalism::planning::ConjunctiveEffectView<LiftedTag> 
 {
     return is_applicable(element.get_numeric_effects(), context, ref_fluent_effect_families)
            && (!element.get_auxiliary_numeric_effect().has_value() || is_applicable(element.get_auxiliary_numeric_effect().value(), context));
-}
-
-// Action
-
-inline bool is_applicable(formalism::planning::ActionView<LiftedTag> element,
-                          const ApplicabilityContext& context,
-                          formalism::planning::EffectFamilyList& out_fluent_effect_families,
-                          analysis::CompatibilityWorkspace& compatibility_workspace,
-                          const analysis::ActionDomain& action_domains)
-{
-    return is_applicable(element.get_condition(), context)
-           && is_applicable_if_fires(element.get_effects(), context, out_fluent_effect_families, compatibility_workspace, action_domains);
 }
 
 // Axiom

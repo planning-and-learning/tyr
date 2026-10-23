@@ -79,6 +79,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
 {
     using Program = ApplicableActionProgram<LiftedTag>;
     using ActionBindingMap = ygg::UnorderedMap<formalism::planning::ActionBindingView, formalism::planning::ActionView<GroundTag>>;
+    using StateKey = std::pair<const void*, ygg::uint_t>;
 
     struct SchemaEvaluator
     {
@@ -93,8 +94,9 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
         TaskPtr<LiftedTag> task;
         Program action_program;
-        /// Per action, whether each of its conditional effects (in order) has a rule in the action program.
-        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, std::vector<bool>> compiled_effects;
+        /// Per action, the effect predicate of each of its conditional effects, in order; none for those without a rule.
+        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, std::vector<std::optional<formalism::datalog::PredicateView<formalism::FluentTag>>>>
+            effect_predicates;
     };
 
     struct Evaluator
@@ -112,32 +114,57 @@ struct SuccessorGenerator<LiftedTag>::Impl
         ActionExecutor executor;
         StateDelta successor_delta;
 
-        /// The firing conditional effects of each action binding of the registered state whose facts the full action program
-        /// computed last (its repository and index): grouped by action and action objects, in the order of the action's
-        /// effects, from the atoms of the effect predicates. Built on the first successor of the state.
+        /// The state whose facts the workspace holds and the actions whose effects they include: all, or the action of the
+        /// schema program that computed them. A state builder's contents can change, so its facts hold only while enumerating.
+        std::optional<StateKey> facts_state;
+        std::optional<ygg::Index<formalism::planning::Action<LiftedTag>>> facts_action;
+        bool enumerating = false;
+
+        /// The firing conditional effects of each action binding in the facts, grouped by action and action objects, in the
+        /// order of the action's effects; read from the atoms of the effect predicates at an action's first successor.
         struct Firing
         {
             size_t position;  ///< Of the effect among the action's effects.
-            formalism::planning::ConditionalEffectView<LiftedTag> effect;
             ygg::IndexList<formalism::Object> extension;
         };
-        std::optional<std::pair<const void*, ygg::uint_t>> facts_state;
-        bool firing_effects_built = false;
         ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<Firing>>>
             firing_effects;
+        ygg::IndexList<formalism::Object> firing_key;
         std::vector<ActionExecutor::FiringEffect> firing_scratch;
     };
 
-    void build_firing_effects();
+    /// The firing effects of the action's bindings in the facts.
+    const ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<Evaluator::Firing>>&
+    get_firing_effects(formalism::planning::ActionView<LiftedTag> action);
 
-    /// The repository and index of a registered state, which identify it; nullopt for other state types.
+    /// Computes the facts of the node's state with the action's effects unless the workspace holds them.
     template<StateViewConcept<LiftedTag> S>
-    static std::optional<std::pair<const void*, ygg::uint_t>> state_key(const Node<LiftedTag, S>& node)
+    void require_action_facts(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action);
+
+    /// All effects of the action binding that fire in the facts, in the order of the action's effects (into firing_scratch).
+    std::span<const ActionExecutor::FiringEffect> collect_firing_effects(formalism::planning::ActionView<LiftedTag> action,
+                                                                         std::span<const ygg::Index<formalism::Object>> objects);
+
+    /// The repository and index of a registered state, or the address of a state builder.
+    template<StateViewConcept<LiftedTag> S>
+    static StateKey state_key(const Node<LiftedTag, S>& node)
     {
         if constexpr (requires { node.get_state().get_index(); node.get_state().get_state_repository(); })
-            return std::pair(static_cast<const void*>(node.get_state().get_state_repository().get()), ygg::uint_t(node.get_state().get_index()));
+            return { static_cast<const void*>(node.get_state().get_state_repository().get()), ygg::uint_t(node.get_state().get_index()) };
         else
-            return std::nullopt;
+            return { static_cast<const void*>(&node.get_state().get_state_builder()), std::numeric_limits<ygg::uint_t>::max() };
+    }
+
+    template<StateViewConcept<LiftedTag> S>
+    static constexpr bool is_registered = requires(const Node<LiftedTag, S>& node) { node.get_state().get_index(); };
+
+    /// Forgets the facts of a state builder after single-binding work, since the builder can change.
+    template<StateViewConcept<LiftedTag> S>
+    void end_single_binding_work()
+    {
+        if constexpr (!is_registered<S>)
+            if (!evaluator.enumerating)
+                evaluator.facts_state = std::nullopt;
     }
 
     Impl(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
@@ -196,6 +223,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
     template<StateViewConcept<LiftedTag> S>
     void compute_action_facts(const Node<LiftedTag, S>& node,
+                              formalism::datalog::ProgramView<LiftedTag> program,
                               const P2DTranslationContext<LiftedTag>& input_translation,
                               std::vector<datalog::Scheduler<LiftedTag>>& schedulers);
 
@@ -231,15 +259,10 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
 SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), action_program(task->get_task())
 {
-    const auto& effect_predicates = action_program.get_effect_predicates();
     for (const auto action : task->get_task().get_domain().get_actions())
-    {
-        auto& compiled = compiled_effects[action.get_index()];
-        const auto it = effect_predicates.find(action);
-        for (const auto cond_effect : action.get_effects())
-            compiled.push_back(it != effect_predicates.end()
-                               && std::ranges::any_of(it->second, [&](const auto& entry) { return entry.effect == cond_effect; }));
-    }
+        effect_predicates[action.get_index()].resize(action.get_effects().size());
+    for (const auto& [predicate, effect] : action_program.get_effect_predicate_to_effect_mapping())
+        effect_predicates.at(effect.action.get_index())[effect.position] = predicate;
 }
 
 SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
@@ -265,13 +288,19 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
 
 template<StateViewConcept<LiftedTag> S>
 void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<LiftedTag, S>& node,
+                                                               formalism::datalog::ProgramView<LiftedTag> program,
                                                                const P2DTranslationContext<LiftedTag>& input_translation,
                                                                std::vector<datalog::Scheduler<LiftedTag>>& schedulers)
 {
     evaluator.workspace.reset_evaluation();
-    // The effect atoms exist only after the full program, until the next evaluation (see generate_successor_state).
-    evaluator.facts_state = &schedulers == &evaluator.workspace.schedulers ? state_key(node) : std::nullopt;
-    evaluator.firing_effects_built = false;
+    evaluator.facts_state = state_key(node);
+    evaluator.facts_action = std::nullopt;
+    if (&schedulers != &evaluator.workspace.schedulers)
+        for (const auto rule : program.get_rules<formalism::PredicateTag>())
+            if (const auto it = definition->action_program.get_predicate_to_action_mapping().find(rule.get_heads().front().get_predicate());
+                it != definition->action_program.get_predicate_to_action_mapping().end())
+                evaluator.facts_action = it->second.get_index();
+    evaluator.firing_effects.clear();
 
     const auto state = node.get_state();
     insert_extended_state(state.get_state_builder(), *definition->task->get_repository(), input_translation, evaluator.workspace);
@@ -312,7 +341,21 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(
 {
     if (stop())
         return false;
-    compute_action_facts(node, input_translation, schedulers);
+    if (evaluator.enumerating)
+        throw std::logic_error("SuccessorGenerator: applicable action bindings are enumerated already.");
+    compute_action_facts(node, program, input_translation, schedulers);
+    evaluator.enumerating = true;
+    struct EndEnumeration
+    {
+        Evaluator& evaluator;
+        bool registered;
+        ~EndEnumeration()
+        {
+            evaluator.enumerating = false;
+            if (!registered)
+                evaluator.facts_state = std::nullopt;
+        }
+    } end_enumeration { evaluator, is_registered<S> };
 
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
     auto grounder_context =
@@ -341,10 +384,11 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(
                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
 
             // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
-            if (!evaluator.executor.is_applicable_if_fires(action, state_context, grounder_context, *definition->task->get_fdr_context()))
+            if (!evaluator.executor.is_applicable_if_fires(collect_firing_effects(action, scratch_binding.objects),
+                                                           state_context,
+                                                           grounder_context,
+                                                           *definition->task->get_fdr_context()))
                 continue;
-
-            assert(evaluator.executor.is_applicable(action, state_context, grounder_context, *definition->task->get_fdr_context()));
             if (!callback(scratch_binding))
                 return false;
         }
@@ -368,67 +412,82 @@ SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedT
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
     const auto action = ygg::make_view(binding.relation, *definition->task->get_repository());
 
-    if (!evaluator.facts_state || evaluator.facts_state != state_key(node))
-        return evaluator.executor.apply_action_unregistered(state_context, action, grounder_context, *definition->task->get_fdr_context(), out_state, out_delta);
+    require_action_facts(node, action);
+    const auto auxiliary_value = evaluator.executor.apply_action_unregistered(state_context,
+                                                                              collect_firing_effects(action, binding.objects),
+                                                                              grounder_context,
+                                                                              *definition->task->get_fdr_context(),
+                                                                              out_state,
+                                                                              out_delta);
+    end_single_binding_work<S>();
+    return auxiliary_value;
+}
 
-    if (!evaluator.firing_effects_built)
-        build_firing_effects();
-    const auto* firings = [&]() -> const std::vector<Evaluator::Firing>*
-    {
-        const auto per_action = evaluator.firing_effects.find(binding.relation);
-        if (per_action == evaluator.firing_effects.end())
-            return nullptr;
-        const auto per_binding = per_action->second.find(binding.objects);
-        return per_binding == per_action->second.end() ? nullptr : &per_binding->second;
-    }();
+template<StateViewConcept<LiftedTag> S>
+void SuccessorGenerator<LiftedTag>::Impl::require_action_facts(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action)
+{
+    // The facts of another state, or without the action's effects, come from the action's schema program.
+    if (evaluator.facts_state == state_key(node) && (!evaluator.facts_action || *evaluator.facts_action == action.get_index()))
+        return;
+    if (evaluator.enumerating)
+        throw std::logic_error("SuccessorGenerator: the state differs from the one whose applicable action bindings are enumerated.");
+    auto& schema = get_schema_evaluator(action);
+    compute_action_facts(node, schema.program, schema.input_translation, schema.schedulers);
+}
 
-    // The effects without a rule fire always; the others fire for their extensions, kept in the order of the action's effects.
-    const auto& compiled = definition->compiled_effects.at(binding.relation);
+std::span<const ActionExecutor::FiringEffect>
+SuccessorGenerator<LiftedTag>::Impl::collect_firing_effects(formalism::planning::ActionView<LiftedTag> action,
+                                                            std::span<const ygg::Index<formalism::Object>> objects)
+{
+    const auto& per_binding = get_firing_effects(action);
+    auto& key = evaluator.firing_key;
+    key.clear();
+    key.insert(key.end(), objects.begin(), objects.end());
+    const auto it = per_binding.find(key);
+    const auto firings = it == per_binding.end() ? std::span<const Evaluator::Firing> {} : std::span<const Evaluator::Firing>(it->second);
+
+    // Effects without a rule fire with the action; the others for the extensions of their atoms.
+    const auto& effect_predicates = definition->effect_predicates.at(action.get_index());
     auto& firing = evaluator.firing_scratch;
     firing.clear();
-    auto next = size_t(0);
+    auto next = firings.begin();
     auto position = size_t(0);
     for (const auto cond_effect : action.get_effects())
     {
-        if (!compiled[position])
+        if (!effect_predicates[position])
             firing.push_back({ cond_effect, {} });
-        else
-            for (; firings && next < firings->size() && (*firings)[next].position == position; ++next)
-                firing.push_back({ cond_effect, std::span<const ygg::Index<formalism::Object>>((*firings)[next].extension) });
+        for (; next != firings.end() && next->position == position; ++next)
+            firing.push_back({ cond_effect, std::span<const ygg::Index<formalism::Object>>(next->extension.data(), next->extension.size()) });
         ++position;
     }
-    return evaluator.executor.apply_action_unregistered(state_context, std::span(std::as_const(firing)), grounder_context, *definition->task->get_fdr_context(), out_state, out_delta);
+    return firing;
 }
 
-void SuccessorGenerator<LiftedTag>::Impl::build_firing_effects()
+const ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<SuccessorGenerator<LiftedTag>::Impl::Evaluator::Firing>>&
+SuccessorGenerator<LiftedTag>::Impl::get_firing_effects(formalism::planning::ActionView<LiftedTag> action)
 {
-    evaluator.firing_effects.clear();
+    const auto [it, inserted] = evaluator.firing_effects.try_emplace(action.get_index());
+    if (!inserted)
+        return it->second;
+
+    // An atom's objects are those of the action binding followed by the extension; effects in order keep each list in order.
     const auto& sets = evaluator.workspace.facts.fact_sets.predicate.get_sets();
-    for (const auto& [action, effect_predicates] : definition->action_program.get_effect_predicates())
+    const auto& effect_predicates = definition->effect_predicates.at(action.get_index());
+    for (size_t position = 0; position < effect_predicates.size(); ++position)
     {
-        auto& per_action = evaluator.firing_effects[action.get_index()];
-        for (const auto& [effect, predicate] : effect_predicates)
+        if (!effect_predicates[position])
+            continue;
+        for (const auto atom : sets[ygg::uint_t(effect_predicates[position]->get_index())].get_bindings())
         {
-            auto position = size_t(0);
-            for (const auto cond_effect : action.get_effects())
-            {
-                if (cond_effect == effect)
-                    break;
-                ++position;
-            }
-            for (const auto atom : sets[ygg::uint_t(predicate.get_index())].get_bindings())
-            {
-                auto objects = ygg::IndexList<formalism::Object> {};
-                ygg::extend(atom.get_objects(), objects);
-                auto prefix = ygg::IndexList<formalism::Object>(objects.begin(), objects.begin() + long(action.get_arity()));
-                auto extension = ygg::IndexList<formalism::Object>(objects.begin() + long(action.get_arity()), objects.end());
-                per_action[std::move(prefix)].push_back({ position, effect, std::move(extension) });
-            }
+            const auto objects = atom.get_objects();
+            auto prefix = ygg::IndexList<formalism::Object> {};
+            auto extension = ygg::IndexList<formalism::Object> {};
+            for (size_t i = 0; i < objects.size(); ++i)
+                (i < action.get_arity() ? prefix : extension).push_back(objects[i].get_index());
+            it->second[std::move(prefix)].push_back({ position, std::move(extension) });
         }
-        for (auto& [_, firings] : per_action)
-            std::ranges::stable_sort(firings, {}, &Evaluator::Firing::position);
     }
-    evaluator.firing_effects_built = true;
+    return it->second;
 }
 
 SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
@@ -659,8 +718,12 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Node<LiftedTag, 
         binding.objects.push_back(index);
     auto grounder = formalism::planning::GrounderContext { workspace.planning_builder, *task->get_repository(), binding.objects };
     const auto state = StateContext<LiftedTag>(*task, node.get_state().get_state_builder(), node.get_metric());
-    return evaluator.executor.is_applicable(action, state, grounder, *task->get_fdr_context()) ? ActionBindingStatus::APPLICABLE :
-                                                                                                 ActionBindingStatus::INAPPLICABLE;
+    if (!is_applicable(action.get_condition(), ApplicabilityContext { state, grounder, *task->get_fdr_context() }))
+        return ActionBindingStatus::INAPPLICABLE;
+    require_action_facts(node, action);
+    const auto applicable = evaluator.executor.is_applicable_if_fires(collect_firing_effects(action, binding.objects), state, grounder, *task->get_fdr_context());
+    end_single_binding_work<S>();
+    return applicable ? ActionBindingStatus::APPLICABLE : ActionBindingStatus::INAPPLICABLE;
 }
 
 template<StateViewConcept<LiftedTag> S>

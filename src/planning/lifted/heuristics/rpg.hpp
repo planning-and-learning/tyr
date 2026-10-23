@@ -27,6 +27,7 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
+#include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
 #include "tyr/planning/state_view.hpp"
@@ -134,10 +135,11 @@ struct RPGPolicy<LiftedTag>
                                     });
     }
 
+    /// Whether the precondition holds; the validity of the firing numeric effects is left to the successor generator.
     template<typename Workspace, typename Executor>
     static bool is_action_applicable(const RPGDefinition<LiftedTag>& definition,
                                      Workspace& workspace,
-                                     Executor& executor,
+                                     Executor&,
                                      Action action,
                                      const StateContext<LiftedTag>& state_context)
     {
@@ -146,7 +148,7 @@ struct RPGPolicy<LiftedTag>
 
         auto grounder_context =
             formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
-        return executor.is_applicable(action.get_relation(), state_context, grounder_context, *definition.task->get_fdr_context());
+        return planning::is_applicable(action.get_relation().get_condition(), planning::ApplicabilityContext { state_context, grounder_context, *definition.task->get_fdr_context() });
     }
 
     template<formalism::RelationKind R, typename Workspace, typename Callback>

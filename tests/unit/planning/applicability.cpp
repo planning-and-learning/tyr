@@ -150,23 +150,20 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto& schemas = action_program.get_schema_programs();
     ASSERT_EQ(schemas.size(), task->get_task().get_domain().get_actions().size());
 
-    // The rules of the conditional effects derive effect predicates and belong to no schema program.
-    auto effect_predicates = ygg::UnorderedSet<formalism::datalog::PredicateView<formalism::FluentTag>> {};
-    for (const auto& [_, predicates] : action_program.get_effect_predicates())
-        for (const auto& effect : predicates)
-            effect_predicates.insert(effect.predicate);
-    auto num_action_rules = size_t(0);
+    // Each schema program has its action rule and the rules of its conditional effects.
+    const auto& action_mapping = action_program.get_predicate_to_action_mapping();
+    const auto& effect_mapping = action_program.get_effect_predicate_to_effect_mapping();
+    auto expected_rules = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>> {};
     for (const auto rule : global_rules)
     {
         const auto predicate = rule.get_heads().front().get_predicate();
-        const auto it = action_program.get_predicate_to_action_mapping().find(predicate);
-        if (it == action_program.get_predicate_to_action_mapping().end())
-        {
-            EXPECT_TRUE(effect_predicates.contains(predicate));
-            continue;
-        }
-        ++num_action_rules;
-        const auto action = it->second;
+        const auto it = action_mapping.find(predicate);
+        expected_rules[it != action_mapping.end() ? it->second : effect_mapping.at(predicate).action].push_back(rule);
+    }
+    ASSERT_EQ(expected_rules.size(), schemas.size());
+
+    for (const auto& [action, rules] : expected_rules)
+    {
         SCOPED_TRACE(action.get_name().str());
         const auto& schema = schemas.at(action);
         const auto& data = schema.program.get_data();
@@ -178,15 +175,17 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
         EXPECT_TRUE(std::ranges::equal(data.fluent_functions, global_data.fluent_functions));
         EXPECT_TRUE(std::ranges::equal(data.objects, global_data.objects));
         const auto schema_rules = schema.program.get_rules<formalism::PredicateTag>();
-        ASSERT_EQ(schema_rules.size(), 1);
-        EXPECT_EQ(schema_rules.front(), rule);
-        EXPECT_EQ(&schema_rules.front().get_data(), &rule.get_data());
+        ASSERT_EQ(schema_rules.size(), rules.size());
+        for (size_t i = 0; i < rules.size(); ++i)
+        {
+            EXPECT_EQ(schema_rules[i], rules[i]);
+            EXPECT_EQ(&schema_rules[i].get_data(), &rules[i].get_data());
+        }
         EXPECT_TRUE(schema.program.get_rules<formalism::FunctionTag>().empty());
         ASSERT_EQ(schema.strata.data.size(), 1);
         EXPECT_TRUE(std::ranges::equal(schema.strata.data.front().predicate_rules, data.predicate_rules));
         EXPECT_TRUE(schema.strata.data.front().function_rules.empty());
     }
-    EXPECT_EQ(num_action_rules, schemas.size());
 }
 
 TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAcrossStates)

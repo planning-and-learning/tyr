@@ -53,25 +53,6 @@ public:
 
     // Lifted action API
 
-    bool is_applicable(formalism::planning::ActionView<LiftedTag> action,
-                       const StateContext<LiftedTag>& state_context,
-                       formalism::planning::GrounderContext& grounder,
-                       const formalism::planning::FDRContext& fdr);
-
-    bool is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
-                                const StateContext<LiftedTag>& state_context,
-                                formalism::planning::GrounderContext& grounder,
-                                const formalism::planning::FDRContext& fdr);
-
-    /// Applies the action into caller-owned storage without interning the successor and writes the exact changes relative to
-    /// the parent into `delta`; returns the updated auxiliary metric value.
-    ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                           formalism::planning::ActionView<LiftedTag> action,
-                                           formalism::planning::GrounderContext& grounder,
-                                           formalism::planning::FDRContext& fdr,
-                                           ygg::Builder<State<LiftedTag>>& successor_state_builder,
-                                           StateDelta& delta);
-
     /// A conditional effect that fires, with the objects of its variables.
     struct FiringEffect
     {
@@ -79,7 +60,14 @@ public:
         std::span<const ygg::Index<formalism::Object>> extension;
     };
 
-    /// apply_action_unregistered for the given firing effects, which must be all effects of the action binding that fire.
+    /// Whether the numeric effects of the firing effects of an action binding, which must be all that fire, are valid together.
+    bool is_applicable_if_fires(std::span<const FiringEffect> firing_effects,
+                                const StateContext<LiftedTag>& state_context,
+                                formalism::planning::GrounderContext& grounder,
+                                const formalism::planning::FDRContext& fdr);
+
+    /// Applies the firing effects of an action binding, which must be all that fire, into caller-owned storage without interning
+    /// the successor and writes the exact changes relative to the parent into `delta`; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                            std::span<const FiringEffect> firing_effects,
                                            formalism::planning::GrounderContext& grounder,
@@ -92,7 +80,6 @@ private:
     ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_add_effects;
     std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>> m_numeric_writes;
     formalism::planning::EffectFamilyList m_effect_families;
-    analysis::CompatibilityWorkspace m_compatibility_workspace;
 };
 }
 

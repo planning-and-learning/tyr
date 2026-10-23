@@ -115,50 +115,6 @@ inline void apply_lifted_effect(formalism::planning::ConditionalEffectView<Lifte
         state_context.auxiliary_value = evaluate(effect.get_auxiliary_numeric_effect().value(), applicability_context);
 }
 
-inline void process_effects(formalism::planning::ActionView<LiftedTag> action,
-                            const analysis::ActionDomain& action_domain,
-                            ygg::Builder<State<LiftedTag>>& successor_state_builder,
-                            StateContext<LiftedTag>& state_context,
-                            formalism::planning::GrounderContext& grounder_context,
-                            formalism::planning::FDRContext& fdr_context,
-                            analysis::CompatibilityWorkspace& compatibility_workspace,
-                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
-                            ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects,
-                            std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& tmp_numeric_writes)
-{
-    auto applicability_context = ApplicabilityContext { state_context, grounder_context, fdr_context };
-
-    for (const auto cond_effect : action.get_effects())
-    {
-        const auto& effect_domain = action_domain.payload.effect_domains.at(cond_effect.get_index()).payload;
-        const auto binding_size = grounder_context.binding.size();
-
-        const auto prefix = std::span<const ygg::Index<formalism::Object>>(grounder_context.binding.data(), action.get_arity());
-        analysis::for_each_compatible_extension(
-            effect_domain,
-            prefix,
-            compatibility_workspace,
-            [&](auto extension)
-            {
-                grounder_context.binding.resize(binding_size);
-                grounder_context.binding.insert(grounder_context.binding.end(), extension.begin(), extension.end());
-
-                if (is_applicable(cond_effect.get_condition(), applicability_context))
-                    apply_lifted_effect(cond_effect,
-                                        successor_state_builder,
-                                        state_context,
-                                        applicability_context,
-                                        grounder_context,
-                                        fdr_context,
-                                        tmp_del_effects,
-                                        tmp_add_effects,
-                                        tmp_numeric_writes);
-
-                grounder_context.binding.resize(binding_size);
-            });
-    }
-}
-
 /// Writes the exact changes of `successor` relative to `parent` at the touched variables and function terms into `delta`.
 /// Touched entries may repeat and need not change (e.g., adding a true fact, or deleting and re-adding it).
 template<TaskKind Kind>
@@ -265,28 +221,23 @@ template ygg::float_t ActionExecutor::apply_action_unregistered(const StateConte
 
 // Action binding API
 
-bool ActionExecutor::is_applicable(formalism::planning::ActionView<LiftedTag> action,
-                                   const StateContext<LiftedTag>& state_context,
-                                   formalism::planning::GrounderContext& grounder,
-                                   const formalism::planning::FDRContext& fdr)
-{
-    auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
-
-    return tyr::planning::is_applicable(action.get_condition(), applicability_context) && is_applicable_if_fires(action, state_context, grounder, fdr);
-}
-
-bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
+bool ActionExecutor::is_applicable_if_fires(std::span<const FiringEffect> firing_effects,
                                             const StateContext<LiftedTag>& state_context,
                                             formalism::planning::GrounderContext& grounder,
                                             const formalism::planning::FDRContext& fdr)
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
-
-    return tyr::planning::is_applicable_if_fires(action.get_effects(),
-                                                 applicability_context,
-                                                 m_effect_families,
-                                                 m_compatibility_workspace,
-                                                 state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
+    m_effect_families.clear();
+    const auto binding_size = grounder.binding.size();
+    for (const auto& firing : firing_effects)
+    {
+        grounder.binding.insert(grounder.binding.end(), firing.extension.begin(), firing.extension.end());
+        const auto applicable = tyr::planning::is_applicable(firing.effect.get_effect(), applicability_context, m_effect_families);
+        grounder.binding.resize(binding_size);
+        if (!applicable)
+            return false;
+    }
+    return true;
 }
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
@@ -320,35 +271,6 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                                                       numeric_writes);
                                                   grounder.binding.resize(binding_size);
                                               }
-                                          });
-}
-
-ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                                       formalism::planning::ActionView<LiftedTag> action,
-                                                       formalism::planning::GrounderContext& grounder,
-                                                       formalism::planning::FDRContext& fdr,
-                                                       ygg::Builder<State<LiftedTag>>& successor_state_builder,
-                                                       StateDelta& delta)
-{
-    return apply_action_unregistered_impl(state_context,
-                                          successor_state_builder,
-                                          m_del_effects,
-                                          m_add_effects,
-                                          m_numeric_writes,
-                                          delta,
-                                          [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
-                                          {
-                                              process_effects(
-                                                  action,
-                                                  state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
-                                                  out_state,
-                                                  tmp_state_context,
-                                                  grounder,
-                                                  fdr,
-                                                  m_compatibility_workspace,
-                                                  del_effects,
-                                                  add_effects,
-                                                  numeric_writes);
                                           });
 }
 

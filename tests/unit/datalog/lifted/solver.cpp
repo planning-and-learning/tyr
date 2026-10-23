@@ -181,9 +181,8 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                 solve_workspace(action_workspace);
                 // The fixtures predate the rules of the conditional effects, whose predicates are internal to the action program.
                 auto effect_predicates = std::set<std::string> {};
-                for (const auto& [_, predicates] : action_program.get_effect_predicates())
-                    for (const auto& effect : predicates)
-                        effect_predicates.insert(effect.predicate.get_name().str());
+                for (const auto& [predicate, _] : action_program.get_effect_predicate_to_effect_mapping())
+                    effect_predicates.insert(predicate.get_name().str());
                 auto atoms = collect_atoms_by_predicate(action_workspace);
                 std::erase_if(atoms, [&](const auto& entry) { return effect_predicates.contains(entry.predicate); });
                 return atoms;
