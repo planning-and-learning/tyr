@@ -19,9 +19,12 @@
 
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+
+#include <algorithm>
 
 namespace tyr::datalog
 {
@@ -53,6 +56,20 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleVie
         add(literal, ConflictingLiteralCheck { {}, literal, std::nullopt });
     for (const auto literal : conflicting_overapproximation_condition.template get_literals<formalism::FluentTag>())
         add(literal, ConflictingLiteralCheck { {}, std::nullopt, literal });
+
+    const auto collect_terms = [](auto constraint, auto& result, auto tag)
+    {
+        using F = decltype(tag);
+        auto terms = ygg::UnorderedSet<formalism::datalog::FunctionTermView<LiftedTag, F>> {};
+        formalism::datalog::collect_fterms(constraint, terms);
+        result.emplace_back(terms.begin(), terms.end());
+        std::ranges::sort(result.back(), {}, [](const auto term) { return term.get_index().value; });
+    };
+    for (const auto constraint : get_rule().get_body().get_numeric_constraints())
+    {
+        collect_terms(constraint, numeric_constraint_static_terms, formalism::StaticTag {});
+        collect_terms(constraint, numeric_constraint_fluent_terms, formalism::FluentTag {});
+    }
 }
 
 template struct ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>;

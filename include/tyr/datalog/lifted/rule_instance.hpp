@@ -23,6 +23,7 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 
 #include <optional>
+#include <vector>
 #include <yggdrasil/containers/variant.hpp>
 
 namespace tyr::datalog
@@ -54,6 +55,24 @@ public:
         return { effect.get_operator(),
                  formalism::datalog::ground_binding(effect.get_fterm(), m_grounder).first.get_index(),
                  formalism::datalog::ground(effect.get_fexpr(), m_grounder) };
+    }
+
+    /// The key of the body's numeric constraint at `position`: its operator, then the bindings of its static and fluent
+    /// function terms (or a marker for a term without binding).
+    void numeric_constraint_key(size_t position, formalism::datalog::BooleanOperatorView<LiftedTag> constraint, std::vector<uint64_t>& key) const
+    {
+        key.clear();
+        key.push_back(ygg::visit([](const auto op) { return uint64_t(op.get_index().value); }, constraint.get_variant()));
+        const auto append = [&](const auto& terms)
+        {
+            for (const auto term : terms)
+            {
+                const auto binding = formalism::datalog::try_ground_binding(term, m_grounder);
+                key.push_back(binding ? (uint64_t(binding->get_index().relation.value) << 32) | binding->get_index().row.value : ~uint64_t(0));
+            }
+        };
+        append(m_workspace.get_numeric_constraint_static_terms()[position]);
+        append(m_workspace.get_numeric_constraint_fluent_terms()[position]);
     }
 
     auto witness_key() const

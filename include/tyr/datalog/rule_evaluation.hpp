@@ -65,15 +65,17 @@ struct RuleEvaluationInput
     const PredicateAnnotations<>& predicate_annotations;
 };
 
-/// The costs and supports of the ground numeric constraints evaluated in the current iteration of a lifted program, by the
-/// index of the constraint's operator: the selector does not change during an iteration, and bindings that differ only in
-/// variables outside a constraint, also of other rules, ground it to the same operator.
+/// The costs and supports of the numeric constraints evaluated in the current iteration of a lifted program. A constraint
+/// is identified by its lifted operator and the bindings of its function terms, which determine its value: the selector
+/// does not change during an iteration, and bindings that differ only in other variables, also of other rules with the
+/// same constraint, share an entry without grounding the constraint again.
 struct NumericConstraintCache
 {
     struct Entry
     {
-        size_t epoch = 0;
         Cost cost = 0;
+        size_t key_begin = 0;
+        size_t key_size = 0;
         size_t selection_begin = 0;
         size_t selection_size = 0;
     };
@@ -84,11 +86,16 @@ struct NumericConstraintCache
         if (epoch == current_epoch)
             return;
         epoch = current_epoch;
+        table.clear();
+        entries.clear();
+        keys.clear();
         selections.clear();
     }
 
     size_t epoch = 0;
+    ygg::UnorderedMap<uint64_t, uint32_t> table;  ///< Key hash to entry.
     std::vector<Entry> entries;
+    std::vector<uint64_t> keys;
     std::vector<NumericSupportSelectorWorkspace::SelectionEntry> selections;
 };
 
@@ -97,6 +104,7 @@ struct RuleEvaluationWorkspace
     NumericSupportSelectorWorkspace selector;
     std::vector<NumericSupport> exact_supports;
     NumericConstraintCache* constraint_cache = nullptr;  ///< Of the evaluating thread; set before each evaluation of a lifted rule.
+    std::vector<uint64_t> constraint_key;
 };
 
 struct CandidateEvidence
@@ -406,32 +414,47 @@ Cost get_transition_credit(const CP& policy,
         return policy.get_cost(instance.witness_key().get_index(), head, interval);
 }
 
-/// The constraint's cost and supports (in workspace.selector.selection), from the cache for lifted rules.
-template<TaskKind Kind, typename Aggregation>
-Cost get_constraint_cost(formalism::datalog::BooleanOperatorView<GroundTag> constraint, const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
+/// The cost and supports (in workspace.selector.selection) of the rule's numeric constraint at `position`, from the cache
+/// for lifted rules.
+template<typename Aggregation, TaskKind Kind, formalism::RelationKind R>
+Cost get_constraint_cost(RuleInstance<Kind, R>& instance,
+                         size_t position,
+                         formalism::datalog::BooleanOperatorView<Kind> constraint,
+                         const RuleEvaluationInput& input,
+                         RuleEvaluationWorkspace& workspace)
 {
     auto& selection = workspace.selector.selection;
     if constexpr (!std::same_as<Kind, LiftedTag>)
     {
-        return input.selector.get_constraint_cost(constraint, selection, Aggregation {});
+        return input.selector.get_constraint_cost(instance.resolve(constraint), selection, Aggregation {});
     }
     else
     {
         if (!workspace.constraint_cache)
-            return input.selector.get_constraint_cost(constraint, selection, Aggregation {});
+            return input.selector.get_constraint_cost(instance.resolve(constraint), selection, Aggregation {});
         auto& cache = *workspace.constraint_cache;
-        const auto key = size_t(ygg::visit([](const auto op) { return op.get_index().value; }, constraint.get_variant()));
-        if (key >= cache.entries.size())
-            cache.entries.resize(key + 1);
-        auto& entry = cache.entries[key];
-        if (entry.epoch == cache.epoch)
+        auto& key = workspace.constraint_key;
+        instance.numeric_constraint_key(position, constraint, key);
+        auto hash = uint64_t(0x9e3779b97f4a7c15);
+        for (const auto word : key)
+            hash = (hash ^ word) * uint64_t(0x100000001b3) + (hash >> 29);
+        const auto [it, inserted] = cache.table.try_emplace(hash, uint32_t(cache.entries.size()));
+        if (!inserted)
         {
-            const auto begin = cache.selections.begin() + long(entry.selection_begin);
-            selection.assign(begin, begin + long(entry.selection_size));
-            return entry.cost;
+            const auto& entry = cache.entries[it->second];
+            const auto stored = std::span(cache.keys).subspan(entry.key_begin, entry.key_size);
+            if (std::ranges::equal(stored, key))
+            {
+                const auto begin = cache.selections.begin() + long(entry.selection_begin);
+                selection.assign(begin, begin + long(entry.selection_size));
+                return entry.cost;
+            }
+            // A hash collision: evaluate without caching.
+            return input.selector.get_constraint_cost(instance.resolve(constraint), selection, Aggregation {});
         }
-        const auto cost = input.selector.get_constraint_cost(constraint, selection, Aggregation {});
-        entry = { cache.epoch, cost, cache.selections.size(), selection.size() };
+        const auto cost = input.selector.get_constraint_cost(instance.resolve(constraint), selection, Aggregation {});
+        cache.entries.push_back({ cost, cache.keys.size(), key.size(), cache.selections.size(), selection.size() });
+        cache.keys.insert(cache.keys.end(), key.begin(), key.end());
         cache.selections.insert(cache.selections.end(), selection.begin(), selection.end());
         return cost;
     }
@@ -469,10 +492,10 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
             return std::nullopt;
     }
 
+    auto constraint_position = size_t(0);
     for (const auto constraint : instance.get_body().get_numeric_constraints())
     {
-        const auto resolved = instance.resolve(constraint);
-        const auto constraint_cost = rule_evaluation_detail::get_constraint_cost<Kind, Aggregation>(resolved, input, workspace);
+        const auto constraint_cost = rule_evaluation_detail::get_constraint_cost<Aggregation>(instance, constraint_position++, constraint, input, workspace);
         if (constraint_cost == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
