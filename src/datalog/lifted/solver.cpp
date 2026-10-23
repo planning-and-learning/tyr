@@ -303,14 +303,19 @@ private:
     /// Prunes a partial clique once the goal cutoff stopped the iteration, or once the vertex just bound completes the variables
     /// of a literal of the conflicting condition (the literals the graph does not encode) that does not hold. Bindings
     /// rejected this way are generated again by the delta that makes them applicable, as when the leaf rejects them.
-    /// Partitions are the rule's parameters.
-    auto make_literal_prune(formalism::PredicateTag, RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
+    /// Restricts the candidates of a partition that is the last unbound one of a positive static conflicting literal to the
+    /// vertices completing an atom of it (forward checking). Partitions are the rule's parameters.
+    struct LiteralPrune
     {
-        const auto& checks = wrctx.in().cws_rule().get_conflicting_literal_checks();
-        const auto& layout = wrctx.in().cws_rule().get_static_consistency_graph().get_graph_layout();
-        return [this, &wrctx, &layout, &checks](ygg::uint_t partition, size_t, const kckp::Workspace& workspace)
+        SolverPolicy& policy;
+        RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx;
+        const kckp::GraphLayout& layout;
+        const std::vector<typename ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>::ConflictingLiteralCheck>& checks;
+        const std::vector<typename ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>::StaticLiteralIndex>& indexes;
+
+        bool operator()(ygg::uint_t partition, size_t, const kckp::Workspace& workspace) const
         {
-            if (goal_cutoff_stopped())
+            if (policy.goal_cutoff_stopped())
                 return true;
             for (const auto& check : checks)
             {
@@ -326,7 +331,43 @@ private:
                     return true;
             }
             return false;
-        };
+        }
+
+        bool restrict(ygg::uint_t partition, size_t depth, kckp::Workspace& workspace) const
+        {
+            for (const auto& index : indexes)
+            {
+                if (workspace.partition_bits.test(index.target) || std::ranges::find(index.others, partition) == index.others.end()
+                    || !std::ranges::all_of(index.others, [&](auto p) { return workspace.partition_bits.test(p); }))
+                    continue;
+                auto& key = wrctx.out().restrict_key();
+                key.clear();
+                for (const auto p : index.others)
+                    key.push_back(workspace.partial_solution[p].index);
+                const auto it = index.targets.find(key);
+                if (it == index.targets.end())
+                    return false;
+                const auto& info = layout.info.infos[index.target];
+                auto row = ygg::BitsetSpan<uint64_t>(workspace.compatible_vertices(depth).data() + info.block_offset, info.num_bits);
+                auto& bits = wrctx.out().restrict_bits();
+                bits.clear();
+                for (const auto bit : it->second)
+                    if (row.test(bit))
+                        bits.push_back(bit);
+                if (bits.empty())
+                    return false;
+                row.reset();
+                for (const auto bit : bits)
+                    row.set(bit);
+            }
+            return true;
+        }
+    };
+
+    LiteralPrune make_literal_prune(formalism::PredicateTag, RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
+    {
+        const auto& cws = wrctx.in().cws_rule();
+        return LiteralPrune { *this, wrctx, cws.get_static_consistency_graph().get_graph_layout(), cws.get_conflicting_literal_checks(), cws.get_static_literal_indexes() };
     }
 
     auto make_literal_prune(formalism::FunctionTag, RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return kckp::NoPrune {}; }

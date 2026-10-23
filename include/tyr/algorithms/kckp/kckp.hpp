@@ -202,6 +202,16 @@ struct NoPrune
 
 namespace detail
 {
+/// A prune can also remove candidates of the next depth after a vertex is bound (restrict); false if a partition has none left.
+template<typename Prune>
+bool restrict_candidates(Prune& prune, ygg::uint_t partition, size_t depth, Workspace& workspace)
+{
+    if constexpr (requires { prune.restrict(partition, depth, workspace); })
+        return prune.restrict(partition, depth, workspace);
+    else
+        return true;
+}
+
 template<typename SelectPartition, typename UpdateCandidates, typename Callback, typename Prune = NoPrune>
 void complete_clique(const GraphLayout& layout,
                      size_t depth,
@@ -230,7 +240,7 @@ void complete_clique(const GraphLayout& layout,
         {
             if (workspace.partial_solution_size == layout.num_partitions)
                 callback(workspace.partial_solution);
-            else if (update_candidates(vertex, depth, workspace))
+            else if (update_candidates(vertex, depth, workspace) && restrict_candidates(prune, partition, depth + 1, workspace))
                 complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback, prune);
         }
         workspace.partition_bits.reset(partition);

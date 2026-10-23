@@ -94,6 +94,8 @@ public:
         auto& head_lookups() noexcept { return m_ws_worker.iteration.head_lookups; }
         auto& rule_evaluation_workspace() noexcept { return m_ws_worker.solve.rule_evaluation_workspace; }
         auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
+        auto& restrict_key() noexcept { return m_ws_worker.restrict_key; }
+        auto& restrict_bits() noexcept { return m_ws_worker.restrict_bits; }
         auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
 
         auto& ground_context() noexcept { return m_ground_context; }

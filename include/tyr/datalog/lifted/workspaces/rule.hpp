@@ -31,6 +31,7 @@
 
 #include <cassert>
 #include <deque>
+#include <functional>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -138,6 +139,9 @@ struct RuleWorkspace<LiftedTag, R>
 
         Iteration iteration;
         Solve solve;
+        /// Scratch of the forward checking of static literals.
+        std::vector<ygg::uint_t> restrict_key;
+        std::vector<ygg::uint_t> restrict_bits;
     };
 
     explicit RuleWorkspace(const ConstRuleWorkspace<LiftedTag, R>& cws);
@@ -168,17 +172,41 @@ public:
         std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag>> fluent_literal;
     };
 
+    struct VertexKeyHash
+    {
+        size_t operator()(const std::vector<ygg::uint_t>& key) const noexcept
+        {
+            auto hash = size_t(0x9e3779b97f4a7c15);
+            for (const auto vertex : key)
+                hash = (hash ^ vertex) * size_t(0x100000001b3) + (hash >> 29);
+            return hash;
+        }
+    };
+
+    /// A positive static conflicting literal seen from one of its partitions: given vertices of its other partitions
+    /// (in `others` order), the bits in the target partition of the vertices that complete an atom of the literal.
+    struct StaticLiteralIndex
+    {
+        ygg::uint_t target;
+        std::vector<ygg::uint_t> others;
+        ygg::UnorderedMap<std::vector<ygg::uint_t>, std::vector<ygg::uint_t>, VertexKeyHash, std::equal_to<>> targets;
+    };
+
     auto get_rule() const noexcept { return rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
     const auto& get_conflicting_literal_checks() const noexcept { return conflicting_literal_checks; }
+    const auto& get_static_literal_indexes() const noexcept { return static_literal_indexes; }
     /// The function terms of the body's numeric constraints, by position: their bindings determine a constraint's value.
     const auto& get_numeric_constraint_static_terms() const noexcept { return numeric_constraint_static_terms; }
     const auto& get_numeric_constraint_fluent_terms() const noexcept { return numeric_constraint_fluent_terms; }
 
-    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
+    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule,
+                       formalism::datalog::Repository& repository,
+                       kckp::Graph compatibility_graph,
+                       const PredicateFactSets<formalism::StaticTag>& static_facts);
 
 private:
     formalism::datalog::RuleView<LiftedTag, R> rule;
@@ -191,6 +219,7 @@ private:
     StaticConsistencyGraph static_consistency_graph;
 
     std::vector<ConflictingLiteralCheck> conflicting_literal_checks;
+    std::vector<StaticLiteralIndex> static_literal_indexes;
     std::vector<std::vector<formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag>>> numeric_constraint_static_terms;
     std::vector<std::vector<formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag>>> numeric_constraint_fluent_terms;
 };
