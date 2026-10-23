@@ -429,13 +429,25 @@ public:
         }
 
         // The rows of an anchor's source are shared by its edges into a target partition, and if one is empty, no edge seeds.
-        m_delta_graph.matrix.for_each_edge([&](Vertex source, ygg::uint_t target_partition)
-                                           { return prepare_anchor_source(source, target_partition, workspace); },
-                                           [&](Edge edge)
-                                           {
-                                               if (seed_from_prepared_anchor(edge, workspace))
-                                                   complete_from_seed<Edge>(callback, 0, workspace, prune);
-                                           });
+        // They are prepared at the first such edge: a source has delta edges into few of the target partitions.
+        auto source = Vertex(0);
+        auto target_partition = ygg::uint_t(0);
+        auto state = 0;  ///< 0: not prepared, 1: prepared, 2: an empty row
+        m_delta_graph.matrix.for_each_edge(
+            [&](Vertex next_source, ygg::uint_t next_target_partition)
+            {
+                source = next_source;
+                target_partition = next_target_partition;
+                state = 0;
+                return true;
+            },
+            [&](Edge edge)
+            {
+                if (state == 0)
+                    state = prepare_anchor_source(source, target_partition, workspace) ? 1 : 2;
+                if (state == 1 && seed_from_prepared_anchor(edge, workspace))
+                    complete_from_seed<Edge>(callback, 0, workspace, prune);
+            });
     }
 
     /// Cliques that contain all anchor vertices (at most one per partition) and no delta vertex or edge.
