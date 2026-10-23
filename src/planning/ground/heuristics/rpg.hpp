@@ -71,13 +71,6 @@ struct RPGPolicy<GroundTag>
         return it == mapping.end() ? std::nullopt : std::optional(it->second);
     }
 
-    template<typename Workspace, typename Executor>
-    static bool
-    is_action_applicable(const RPGDefinition<GroundTag>&, Workspace&, Executor& executor, Action action, const StateContext<GroundTag>& state_context)
-    {
-        return executor.is_applicable(action, state_context);
-    }
-
     template<formalism::RelationKind R, typename Workspace, typename Callback>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {

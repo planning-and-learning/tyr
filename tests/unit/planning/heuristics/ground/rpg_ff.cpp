@@ -29,7 +29,7 @@ inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuris
 
 namespace tyr::tests
 {
-TEST(TyrPlanningGroundFFRPGHeuristicTest, PreferredActionsDescribeLatestEvaluation) { expect_preferred_actions_reset_after_dead_end<GroundTag>(); }
-TEST(TyrPlanningGroundFFRPGHeuristicTest, WorkerPreferredActionsAreIndependent) { expect_worker_has_independent_preferred_actions<GroundTag>(); }
+TEST(TyrPlanningGroundFFRPGHeuristicTest, RelaxedPlanDescribesLatestEvaluation) { expect_relaxed_plan_reset_after_dead_end<GroundTag>(); }
+TEST(TyrPlanningGroundFFRPGHeuristicTest, WorkerRelaxedPlanIsIndependent) { expect_worker_has_independent_relaxed_plan<GroundTag>(); }
 TEST(TyrPlanningGroundFFRPGHeuristicTest, TraversesExactNumericHeadSupports) { expect_ff_traverses_exact_numeric_head_supports<GroundTag>(); }
 }
