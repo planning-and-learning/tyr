@@ -610,11 +610,14 @@ private:
         const auto delta_context = ApplicabilityContext { delta_sets, out.ground_context() };
         auto prune = make_literal_prune(formalism::PredicateTag {}, wrctx);
 
+        const auto& delta_objects = rctx.stratum_out().program().facts().delta_objects;
         for (size_t i = 0; i < literals.size(); ++i)
         {
-            for (const auto atom : delta_fact_sets.predicate.get_sets()[ygg::uint_t(infos[i].predicate)].get_bindings())
+            const auto& objects = delta_objects[ygg::uint_t(infos[i].predicate)];
+            const auto atom_arity = infos[i].position_mappings.arity;
+            for (size_t begin = 0; begin < objects.size(); begin += atom_arity)
             {
-                if (!match_anchor(graph.get_graph_layout(), infos[i], atom.get_objects(), out.anchor_vertices()))
+                if (!match_anchor(graph.get_graph_layout(), infos[i], std::span(objects).subspan(begin, atom_arity), out.anchor_vertices()))
                     continue;
 
                 kckp_algorithm.for_each_hyperedge_clique(
@@ -639,11 +642,11 @@ private:
     /// vertices is a per-worker scratch buffer, reused across anchors to avoid allocations.
     static bool match_anchor(const kckp::GraphLayout& layout,
                              const details::RuleToLiteralInfo<formalism::FluentTag>& info,
-                             const auto& objects,
+                             std::span<const ygg::Index<formalism::Object>> objects,
                              std::vector<kckp::Vertex>& vertices)
     {
         for (const auto& [position, object] : info.position_mappings.constant_positions)
-            if (objects[position].get_index() != object)
+            if (objects[position] != object)
                 return false;
 
         vertices.clear();
@@ -653,8 +656,8 @@ private:
             const auto& positions = parameter_to_positions[parameter];
             if (positions.empty())
                 continue;
-            const auto object = objects[positions.front()].get_index();
-            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position].get_index() == object; }))
+            const auto object = objects[positions.front()];
+            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position] == object; }))
                 return false;
             const auto vertex = layout.find_vertex(parameter, ygg::uint_t(object));
             if (!vertex)
