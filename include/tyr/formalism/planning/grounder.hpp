@@ -83,12 +83,6 @@ std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<L
 
 std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, GrounderContext& context);
 
-/// Grounds the action binding of the context with each effect grounded for the extensions that
-/// `for_each_extension(position, callback)` passes to `callback`, in order.
-template<typename ForEachExtension>
-std::pair<ActionView<GroundTag>, bool>
-ground(ActionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr, ForEachExtension&& for_each_extension);
-
 std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context);
 
 std::pair<AxiomView<GroundTag>, bool>
@@ -377,36 +371,6 @@ inline std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, G
 
     // Canonicalize and Serialize
     return planning::insert(context.destination, *binding);
-}
-
-template<typename ForEachExtension>
-std::pair<ActionView<GroundTag>, bool>
-ground(ActionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr, ForEachExtension&& for_each_extension)
-{
-    const auto binding = ground(element, context).first.get_index();
-
-    auto action = planning::checkout<Action<GroundTag>>(context.builder);
-
-    action->binding = binding;
-    action->condition = ground(element.get_condition(), context, fdr).first.get_index();
-
-    const auto binding_size = context.binding.size();
-
-    for (ygg::uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
-    {
-        const auto cond_effect = element.get_effects()[cond_effect_index];
-        for_each_extension(cond_effect_index,
-                           [&](std::span<const ygg::Index<Object>> extension)
-                           {
-                               context.binding.resize(binding_size);
-                               context.binding.insert(context.binding.end(), extension.begin(), extension.end());
-                               action->effects.push_back(ground(cond_effect, context, fdr).first.get_index());
-                           });
-    }
-
-    context.binding.resize(binding_size);
-
-    return planning::insert(context.destination, *action);
 }
 
 inline std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context)

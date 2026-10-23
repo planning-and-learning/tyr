@@ -22,6 +22,7 @@
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/static_extensions.hpp"
+#include "../programs/common.hpp"
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/planning/action_executor.hpp"
@@ -95,14 +96,6 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
         TaskPtr<LiftedTag> task;
         Program action_program;
-        /// The predicate and rule of a conditional effect in the action program.
-        struct EffectRule
-        {
-            formalism::datalog::PredicateView<formalism::FluentTag> predicate;
-            const datalog::ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>* rule;
-        };
-        /// Per action, the effect rule of each of its conditional effects, in order; none for those without variables and condition.
-        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, std::vector<std::optional<EffectRule>>> effect_rules;
     };
 
     struct Evaluator
@@ -126,27 +119,18 @@ struct SuccessorGenerator<LiftedTag>::Impl
         std::optional<ygg::Index<formalism::planning::Action<LiftedTag>>> facts_action;
         bool enumerating = false;
 
-        /// The firing conditional effects of each action binding in the facts, grouped by action and action objects, in the
-        /// order of the action's effects; read from the atoms of the effect predicates at an action's first successor.
-        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, EffectExtensionsByBinding> firing_effects;
+        /// The effect atoms of each action in the facts, grouped at the action's first successor.
+        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, EffectAtoms> effect_atoms;
         ygg::IndexList<formalism::Object> firing_key;
         std::vector<ActionExecutor::FiringEffect> firing_scratch;
     };
 
-    /// The firing effects of the action's bindings in the facts.
-    const EffectExtensionsByBinding& get_firing_effects(formalism::planning::ActionView<LiftedTag> action);
+    /// The rules of the action's conditional effects in the action program, in effect order.
+    std::span<const ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>> get_effect_rules(formalism::planning::ActionView<LiftedTag> action) const;
 
     /// Computes the facts of the node's state with the action's effects unless the workspace holds them.
     template<StateViewConcept<LiftedTag> S>
     void require_action_facts(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action);
-
-    /// Calls `callback` with the extension of each grounding of the action's effect at `position` for the action's objects: those that
-    /// fire in the facts (FluentTag) or that the static facts allow (StaticTag). An effect without a rule has the empty extension.
-    template<formalism::FactKind F, typename Callback>
-    void for_each_effect_extension(formalism::planning::ActionView<LiftedTag> action,
-                                   std::span<const ygg::Index<formalism::Object>> objects,
-                                   size_t position,
-                                   Callback&& callback);
 
     /// All effects of the action binding that fire in the facts, in the order of the action's effects (into firing_scratch).
     std::span<const ActionExecutor::FiringEffect> collect_firing_effects(formalism::planning::ActionView<LiftedTag> action,
@@ -264,14 +248,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     Evaluator evaluator;
 };
 
-SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), action_program(task->get_task())
-{
-    const auto& rules = action_program.get_datalog_program().get_const_program_workspace().get_rules<formalism::PredicateTag>();
-    for (const auto action : task->get_task().get_domain().get_actions())
-        effect_rules[action.get_index()].resize(action.get_effects().size());
-    for (const auto& [predicate, effect] : action_program.get_effect_predicate_to_effect_mapping())
-        effect_rules.at(effect.action.get_index())[effect.position] = EffectRule { predicate, &*rules[ygg::uint_t(effect.rule)] };
-}
+SuccessorGenerator<LiftedTag>::Impl::Definition::Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), action_program(task->get_task()) {}
 
 SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
     execution_context(std::move(execution_context_)),
@@ -308,7 +285,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
             if (const auto it = definition->action_program.get_predicate_to_action_mapping().find(rule.get_heads().front().get_predicate());
                 it != definition->action_program.get_predicate_to_action_mapping().end())
                 evaluator.facts_action = it->second.get_index();
-    evaluator.firing_effects.clear();
+    evaluator.effect_atoms.clear();
 
     const auto state = node.get_state();
     insert_extended_state(state.get_state_builder(), *definition->task->get_repository(), input_translation, evaluator.workspace);
@@ -443,67 +420,32 @@ void SuccessorGenerator<LiftedTag>::Impl::require_action_facts(const Node<Lifted
     compute_action_facts(node, schema.program, schema.input_translation, schema.schedulers);
 }
 
-template<formalism::FactKind F, typename Callback>
-void SuccessorGenerator<LiftedTag>::Impl::for_each_effect_extension(formalism::planning::ActionView<LiftedTag> action,
-                                                                    std::span<const ygg::Index<formalism::Object>> objects,
-                                                                    size_t position,
-                                                                    Callback&& callback)
+std::span<const ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>>
+SuccessorGenerator<LiftedTag>::Impl::get_effect_rules(formalism::planning::ActionView<LiftedTag> action) const
 {
-    const auto& effect_rule = definition->effect_rules.at(action.get_index())[position];
-    if (!effect_rule)
-    {
-        callback(std::span<const ygg::Index<formalism::Object>> {});
-        return;
-    }
-
-    if constexpr (std::same_as<F, formalism::FluentTag>)
-    {
-        const auto& per_binding = get_firing_effects(action);
-        auto& key = evaluator.firing_key;
-        key.clear();
-        key.insert(key.end(), objects.begin(), objects.end());
-        if (const auto it = per_binding.find(key); it != per_binding.end())
-            for (const auto& firing : it->second)
-                if (firing.position == position)
-                    callback(std::span<const ygg::Index<formalism::Object>>(firing.extension.data(), firing.extension.size()));
-    }
-    else
-        datalog::for_each_static_extension(*effect_rule->rule, objects, evaluator.static_extension_workspace, std::forward<Callback>(callback));
+    const auto& mapping = definition->action_program.get_action_to_effect_rules_mapping();
+    const auto it = mapping.find(action);
+    return it == mapping.end() ? std::span<const ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>> {} : std::span(it->second);
 }
 
 std::span<const ActionExecutor::FiringEffect>
 SuccessorGenerator<LiftedTag>::Impl::collect_firing_effects(formalism::planning::ActionView<LiftedTag> action,
                                                             std::span<const ygg::Index<formalism::Object>> objects)
 {
-    auto& firing = evaluator.firing_scratch;
-    firing.clear();
-    auto position = size_t(0);
-    for (const auto cond_effect : action.get_effects())
-        for_each_effect_extension<formalism::FluentTag>(action,
-                                                        objects,
-                                                        position++,
-                                                        [&](std::span<const ygg::Index<formalism::Object>> extension)
-                                                        { firing.push_back({ cond_effect, extension }); });
-    return firing;
-}
-
-const EffectExtensionsByBinding& SuccessorGenerator<LiftedTag>::Impl::get_firing_effects(formalism::planning::ActionView<LiftedTag> action)
-{
-    const auto [it, inserted] = evaluator.firing_effects.try_emplace(action.get_index());
-    if (!inserted)
-        return it->second;
-
-    // Effects in order keep each binding's list in order.
-    const auto& sets = evaluator.workspace.facts.fact_sets.predicate.get_sets();
-    const auto& effect_rules = definition->effect_rules.at(action.get_index());
-    for (size_t position = 0; position < effect_rules.size(); ++position)
-    {
-        if (!effect_rules[position])
-            continue;
-        for (const auto atom : sets[ygg::uint_t(effect_rules[position]->predicate.get_index())].get_bindings())
-            add_effect_atom(it->second, position, action.get_arity(), atom.get_objects());
-    }
-    return it->second;
+    auto [atoms, inserted] = evaluator.effect_atoms.try_emplace(action.get_index());
+    if (inserted)
+        atoms->second = group_effect_atoms(action,
+                                           get_effect_rules(action),
+                                           definition->action_program.get_datalog_program().get_program_repository(),
+                                           evaluator.workspace.facts.fact_sets.predicate);
+    auto& key = evaluator.firing_key;
+    key.clear();
+    key.insert(key.end(), objects.begin(), objects.end());
+    auto binding_atoms = std::span<const std::pair<size_t, ygg::IndexList<formalism::Object>>> {};
+    if (const auto it = atoms->second.find(key); it != atoms->second.end())
+        binding_atoms = it->second;
+    planning::collect_firing_effects(action, binding_atoms, evaluator.firing_scratch);
+    return evaluator.firing_scratch;
 }
 
 SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
@@ -824,18 +766,29 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
     // Without a state, an action has every grounding of its effects that the static facts allow.
     const auto action = binding.get_relation();
     const auto objects = ygg::IndexList<formalism::Object>(m_impl->evaluator.workspace.binding.begin(), m_impl->evaluator.workspace.binding.end());
-    const auto ground_action = formalism::planning::ground(action,
-                                                           grounder_context,
-                                                           *m_impl->definition->task->get_fdr_context(),
-                                                           [&](size_t position, auto&& callback)
-                                                           {
-                                                               m_impl->for_each_effect_extension<formalism::StaticTag>(
-                                                                   action,
-                                                                   std::span<const ygg::Index<formalism::Object>>(objects.data(), objects.size()),
-                                                                   position,
-                                                                   callback);
-                                                           })
-                                   .first;
+    const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().get_rules<formalism::PredicateTag>();
+    const auto effect_rules = m_impl->get_effect_rules(action);
+    auto atoms = std::vector<std::pair<size_t, ygg::IndexList<formalism::Object>>> {};
+    for (size_t k = 0; k < effect_rules.size(); ++k)
+        datalog::for_each_static_extension(*rules[ygg::uint_t(effect_rules[k])],
+                                           std::span<const ygg::Index<formalism::Object>>(objects.data(), objects.size()),
+                                           m_impl->evaluator.static_extension_workspace,
+                                           [&](auto extension) { atoms.emplace_back(k, ygg::IndexList<formalism::Object>(extension.begin(), extension.end())); });
+    auto firing_effects = std::vector<ActionExecutor::FiringEffect> {};
+    planning::collect_firing_effects(action, atoms, firing_effects);
+
+    auto& fdr = *m_impl->definition->task->get_fdr_context();
+    auto data = formalism::planning::checkout<formalism::planning::Action<GroundTag>>(grounder_context.builder);
+    data->binding = formalism::planning::ground(action, grounder_context).first.get_index();
+    data->condition = formalism::planning::ground(action.get_condition(), grounder_context, fdr).first.get_index();
+    for (const auto& firing : firing_effects)
+    {
+        grounder_context.binding.resize(action.get_arity());
+        grounder_context.binding.insert(grounder_context.binding.end(), firing.extension.begin(), firing.extension.end());
+        data->effects.push_back(formalism::planning::ground(firing.effect, grounder_context, fdr).first.get_index());
+    }
+    grounder_context.binding.resize(action.get_arity());
+    const auto ground_action = formalism::planning::insert(*m_impl->definition->task->get_repository(), *data).first;
     m_impl->evaluator.action_binding_to_ground_action.emplace(binding, ground_action);
     return ground_action;
 }

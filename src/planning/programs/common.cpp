@@ -17,6 +17,7 @@
 
 #include "common.hpp"
 
+#include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -34,6 +35,56 @@ namespace tyr::planning
 ::cista::offset::string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff)
 {
     return ::cista::offset::string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.get_index().get_value()) };
+}
+
+bool has_effect_predicate(formalism::planning::ConditionalEffectView<LiftedTag> effect)
+{
+    const auto condition = effect.get_condition();
+    return !effect.get_variables().empty() || !condition.get_literals<formalism::StaticTag>().empty()
+           || !condition.get_literals<formalism::FluentTag>().empty() || !condition.get_literals<formalism::DerivedTag>().empty()
+           || !condition.get_numeric_constraints().empty();
+}
+
+EffectAtoms group_effect_atoms(formalism::planning::ActionView<LiftedTag> action,
+                               std::span<const ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>> effect_rules,
+                               const formalism::datalog::Repository& repository,
+                               const datalog::PredicateFactSets<formalism::FluentTag>& facts)
+{
+    auto result = EffectAtoms {};
+    for (size_t k = 0; k < effect_rules.size(); ++k)
+    {
+        const auto predicate = ygg::make_view(effect_rules[k], repository).get_heads().back().get_predicate();
+        for (const auto atom : facts.get_sets()[ygg::uint_t(predicate.get_index())].get_bindings())
+        {
+            const auto objects = atom.get_objects();
+            auto binding = ygg::IndexList<formalism::Object> {};
+            auto extension = ygg::IndexList<formalism::Object> {};
+            for (size_t i = 0; i < objects.size(); ++i)
+                (i < action.get_arity() ? binding : extension).push_back(objects[i].get_index());
+            result[std::move(binding)].emplace_back(k, std::move(extension));
+        }
+    }
+    return result;
+}
+
+void collect_firing_effects(formalism::planning::ActionView<LiftedTag> action,
+                            std::span<const std::pair<size_t, ygg::IndexList<formalism::Object>>> atoms,
+                            std::vector<ActionExecutor::FiringEffect>& out)
+{
+    out.clear();
+    auto k = size_t(0);
+    for (const auto effect : action.get_effects())
+    {
+        if (!has_effect_predicate(effect))
+        {
+            out.push_back({ effect, {} });
+            continue;
+        }
+        for (const auto& [atom_k, extension] : atoms)
+            if (atom_k == k)
+                out.push_back({ effect, std::span<const ygg::Index<formalism::Object>>(extension.data(), extension.size()) });
+        ++k;
+    }
 }
 
 TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source, formalism::datalog::CopyContext& context)

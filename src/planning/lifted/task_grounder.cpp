@@ -23,6 +23,7 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
+#include "../programs/common.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
@@ -328,14 +329,12 @@ ground_pruned(formalism::planning::ConditionalEffectView<LiftedTag> element,
     return formalism::planning::insert(context.destination, *cond_effect).first;
 }
 
-/// Grounds the action binding of the context with each effect grounded for its extensions in `extensions` (empty for the effects
-/// without an effect predicate), dropping the parts that no reachable atom can satisfy.
+/// Grounds the action binding of the context with the given firing effects, dropping the parts that no reachable atom can satisfy.
 std::optional<formalism::planning::ActionView<GroundTag>>
 ground_pruned(formalism::planning::ActionView<LiftedTag> element,
               const ygg::UnorderedSet<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>& fluent_atoms,
               const ygg::UnorderedSet<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>& derived_atoms,
-              const std::vector<bool>& has_effect_predicates,
-              std::span<const EffectExtension> extensions,
+              std::span<const ActionExecutor::FiringEffect> firing_effects,
               const StaticState& static_state,
               formalism::planning::GrounderContext& context,
               const formalism::planning::FDRContext& fdr_context)
@@ -354,24 +353,15 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
 
     auto binding_size = context.binding.size();
 
-    const auto ground_effect = [&](formalism::planning::ConditionalEffectView<LiftedTag> cond_effect, const ygg::IndexList<formalism::Object>& extension)
+    for (const auto& firing : firing_effects)
     {
         // push the additional parameters to the end
         context.binding.resize(binding_size);
-        context.binding.insert(context.binding.end(), extension.begin(), extension.end());
+        context.binding.insert(context.binding.end(), firing.extension.begin(), firing.extension.end());
 
-        const auto ground_cond_effect_or_nullopt = ground_pruned(cond_effect, fluent_atoms, derived_atoms, static_state, context, fdr_context);
+        const auto ground_cond_effect_or_nullopt = ground_pruned(firing.effect, fluent_atoms, derived_atoms, static_state, context, fdr_context);
         if (ground_cond_effect_or_nullopt.has_value())
             action->effects.push_back(ground_cond_effect_or_nullopt->get_index());
-    };
-    auto next = extensions.begin();
-    for (ygg::uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
-    {
-        const auto cond_effect = element.get_effects()[cond_effect_index];
-        if (!has_effect_predicates[cond_effect_index])
-            ground_effect(cond_effect, {});
-        for (; next != extensions.end() && next->position == cond_effect_index; ++next)
-            ground_effect(cond_effect, next->extension);
     }
     context.binding.resize(binding_size);  ///< important to restore the binding in case of grounding other actions
 
@@ -615,28 +605,12 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto fluent_assign = ygg::UnorderedMap<ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue> {};
     auto derived_assign = ygg::UnorderedMap<ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool> {};
 
-    // The relaxed reachable groundings of the conditional effects per action binding, in the order of the action's effects.
-    auto effect_predicates = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>,
-                                               std::vector<std::optional<formalism::datalog::PredicateView<formalism::FluentTag>>>> {};
-    for (const auto action : task.get_domain().get_actions())
-        effect_predicates[action.get_index()].resize(action.get_effects().size());
-    for (const auto& [predicate, effect] : ground_program.get_effect_predicate_to_effect_mapping())
-        effect_predicates.at(effect.action.get_index())[effect.position] = predicate;
-    auto has_effect_predicates = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, std::vector<bool>> {};
-    auto effect_extensions = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, EffectExtensionsByBinding> {};
-    for (const auto action : task.get_domain().get_actions())
-    {
-        const auto& predicates = effect_predicates.at(action.get_index());
-        auto& has = has_effect_predicates[action.get_index()];
-        auto& per_binding = effect_extensions[action.get_index()];
-        for (size_t position = 0; position < predicates.size(); ++position)
-        {
-            has.push_back(predicates[position].has_value());
-            if (predicates[position])
-                for (const auto atom : workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(predicates[position]->get_index())].get_bindings())
-                    add_effect_atom(per_binding, position, action.get_arity(), atom.get_objects());
-        }
-    }
+    // The relaxed reachable groundings of the conditional effects of each action.
+    auto effect_atoms = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, EffectAtoms> {};
+    for (const auto& [action, rules] : ground_program.get_action_to_effect_rules_mapping())
+        effect_atoms.emplace(action.get_index(),
+                             group_effect_atoms(action, rules, ground_program.get_datalog_program().get_program_repository(), workspace.facts.fact_sets.predicate));
+    auto firing_effects = std::vector<ActionExecutor::FiringEffect> {};
 
     for_each_predicate_binding(
         [&](const auto binding)
@@ -652,14 +626,16 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                 auto grounder_context = formalism::planning::GrounderContext { workspace.planning_builder, *repository, workspace.binding };
 
-                const auto& per_binding = effect_extensions.at(action.get_index());
-                const auto extensions = per_binding.find(workspace.binding);
+                auto binding_atoms = std::span<const std::pair<size_t, ygg::IndexList<formalism::Object>>> {};
+                if (const auto atoms = effect_atoms.find(action.get_index()); atoms != effect_atoms.end())
+                    if (const auto it = atoms->second.find(workspace.binding); it != atoms->second.end())
+                        binding_atoms = it->second;
+                collect_firing_effects(action, binding_atoms, firing_effects);
                 const auto ground_action_or_nullopt =
                     ground_pruned(action,
                                   fluent_atoms_set,
                                   derived_atoms_set,
-                                  has_effect_predicates.at(action.get_index()),
-                                  extensions == per_binding.end() ? std::span<const EffectExtension> {} : std::span<const EffectExtension>(extensions->second),
+                                  firing_effects,
                                   static_state,
                                   grounder_context,
                                   *fdr_context);

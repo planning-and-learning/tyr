@@ -21,7 +21,6 @@
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/lifted/programs/effect_predicates.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 #include "tyr/planning/programs/action.hpp"
 
@@ -52,16 +51,18 @@ public:
     /// A program per action schema with its action rule and the rules of its conditional effects.
     using SchemaPrograms = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, SchemaProgram>;
 
-    /// The effect predicates of the conditional effects, whose atoms are bindings of applicable actions with the extensions for
-    /// which the effects fire.
-    using EffectPredicateToEffectMapping = planning::EffectPredicateToEffectMapping;
+    /// Per action, the rules of its conditional effects with variables or a condition, in the order of the effects. The last head of
+    /// a rule is its effect predicate, whose atoms are applicable bindings of the action followed by the objects of the effect's
+    /// variables for which the effect fires.
+    using ActionToEffectRulesMapping = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>,
+                                                         std::vector<ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>>>;
 
     explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
     const SchemaPrograms& get_schema_programs() const noexcept;
-    const EffectPredicateToEffectMapping& get_effect_predicate_to_effect_mapping() const noexcept;
+    const ActionToEffectRulesMapping& get_action_to_effect_rules_mapping() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
     const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
@@ -70,7 +71,7 @@ private:
     TranslationContext<LiftedTag> m_translation_context;
     AppPredicateToActionMapping m_predicate_to_actions;
     SchemaPrograms m_schema_programs;
-    EffectPredicateToEffectMapping m_effect_predicate_to_effect;
+    ActionToEffectRulesMapping m_action_to_effect_rules;
     datalog::Program<LiftedTag> m_datalog_program;
 };
 

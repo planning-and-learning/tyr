@@ -152,13 +152,18 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
 
     // Each schema program has its action rule and the rules of its conditional effects.
     const auto& action_mapping = action_program.get_predicate_to_action_mapping();
-    const auto& effect_mapping = action_program.get_effect_predicate_to_effect_mapping();
+    const auto& effect_rules = action_program.get_action_to_effect_rules_mapping();
     auto expected_rules = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>> {};
     for (const auto rule : global_rules)
     {
-        const auto predicate = rule.get_heads().front().get_predicate();
-        const auto it = action_mapping.find(predicate);
-        expected_rules[it != action_mapping.end() ? it->second : effect_mapping.at(predicate).action].push_back(rule);
+        if (const auto it = action_mapping.find(rule.get_heads().front().get_predicate()); it != action_mapping.end())
+        {
+            expected_rules[it->second].push_back(rule);
+            continue;
+        }
+        const auto owner = std::ranges::find_if(effect_rules, [&](const auto& entry) { return std::ranges::find(entry.second, rule.get_index()) != entry.second.end(); });
+        ASSERT_NE(owner, effect_rules.end());
+        expected_rules[owner->first].push_back(rule);
     }
     ASSERT_EQ(expected_rules.size(), schemas.size());
 

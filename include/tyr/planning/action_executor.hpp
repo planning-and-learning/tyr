@@ -18,8 +18,9 @@
 #ifndef TYR_PLANNING_ACTION_EXECUTOR_HPP_
 #define TYR_PLANNING_ACTION_EXECUTOR_HPP_
 
-#include "tyr/analysis/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability_lifted_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
