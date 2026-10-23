@@ -168,7 +168,6 @@ struct Workspace
     std::vector<uint64_t> anchor_source_data;  ///< The rows of the prepared anchor source, see DeltaKCKP::prepare_anchor_source.
     size_t compatible_row_blocks { 0 };
     boost::dynamic_bitset<> partition_bits;
-    boost::dynamic_bitset<> seed_bits;  ///< The partitions bound before complete_clique, by a seed.
     std::vector<Vertex> partial_solution;
     ygg::uint_t partial_solution_size { 0 };
     ygg::uint_t anchor_pi { std::numeric_limits<ygg::uint_t>::max() };
@@ -187,7 +186,6 @@ struct Workspace
         compatible_vertices_data.resize(layout.num_partitions * compatible_row_blocks);
         anchor_source_data.resize(compatible_row_blocks);
         partition_bits.resize(layout.num_partitions);
-        seed_bits.resize(layout.num_partitions);
         partial_solution.resize(layout.num_partitions);
     }
 
@@ -196,7 +194,7 @@ struct Workspace
 };
 
 /// Prunes nothing. A prune callback is called with the partition whose vertex was just bound (its bit already set) and the
-/// depth, also for the last vertex of a clique; returning true skips the partial solution and every completion of it.
+/// depth; returning true skips every completion of the partial solution.
 struct NoPrune
 {
     constexpr bool operator()(ygg::uint_t, size_t, const Workspace&) const noexcept { return false; }
@@ -204,16 +202,6 @@ struct NoPrune
 
 namespace detail
 {
-/// A prune can also remove candidates of the next depth after a vertex is bound (restrict); false if a partition has none left.
-template<typename Prune>
-bool restrict_candidates(Prune& prune, ygg::uint_t partition, size_t depth, Workspace& workspace)
-{
-    if constexpr (requires { prune.restrict(partition, depth, workspace); })
-        return prune.restrict(partition, depth, workspace);
-    else
-        return true;
-}
-
 template<typename SelectPartition, typename UpdateCandidates, typename Callback, typename Prune = NoPrune>
 void complete_clique(const GraphLayout& layout,
                      size_t depth,
@@ -223,9 +211,6 @@ void complete_clique(const GraphLayout& layout,
                      Callback& callback,
                      Prune& prune)
 {
-    if (depth == 0)
-        workspace.seed_bits = workspace.partition_bits;
-
     const auto partition = select_partition(depth, workspace);
     if (partition == std::numeric_limits<ygg::uint_t>::max())
         return;
@@ -240,15 +225,15 @@ void complete_clique(const GraphLayout& layout,
         workspace.partial_solution[partition] = vertex;
         ++workspace.partial_solution_size;
 
-        workspace.partition_bits.set(partition);
-        if (!prune(partition, depth, workspace))
+        if (workspace.partial_solution_size == layout.num_partitions)
+            callback(workspace.partial_solution);
+        else
         {
-            if (workspace.partial_solution_size == layout.num_partitions)
-                callback(workspace.partial_solution);
-            else if (update_candidates(vertex, depth, workspace) && restrict_candidates(prune, partition, depth + 1, workspace))
+            workspace.partition_bits.set(partition);
+            if (!prune(partition, depth, workspace) && update_candidates(vertex, depth, workspace))
                 complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback, prune);
+            workspace.partition_bits.reset(partition);
         }
-        workspace.partition_bits.reset(partition);
 
         --workspace.partial_solution_size;
     }
