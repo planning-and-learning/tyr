@@ -67,7 +67,10 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 class SolverPolicy<LiftedTag, AP, TP, CP>
 {
 public:
-    explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx), m_program_stopwatch(ctx.out().statistics().total_time)
+    explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) :
+        m_ctx(ctx),
+        m_program_stopwatch(ctx.out().statistics().total_time),
+        m_goal(ctx.out().goal_cutoff())
     {
         ++ctx.out().statistics().num_executions;
         initialize_goal_cutoff();
@@ -97,7 +100,7 @@ public:
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
-    using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using GoalAtom = GoalCutoffWorkspace::GoalAtom;
 
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
     /// constraints, propositional rules only, one stratum, and annotations without achievers.
@@ -118,14 +121,14 @@ private:
             for (const auto& rule : m_ctx.in().template get_rules<formalism::PredicateTag>())
                 min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
-            m_goal_atoms.clear();
-            m_goal_positions.clear();
+            m_goal.atoms.clear();
+            m_goal.positions.clear();
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-                if (m_goal_positions.emplace(literal.get_atom().get_row().get_index(), m_goal_atoms.size()).second)
-                    m_goal_atoms.push_back(literal.get_atom().get_row().get_index());
-            m_goal_final.assign(m_goal_atoms.size(), false);
+                if (m_goal.positions.emplace(literal.get_atom().get_row().get_index(), m_goal.atoms.size()).second)
+                    m_goal.atoms.push_back(literal.get_atom().get_row().get_index());
+            m_goal.final.assign(m_goal.atoms.size(), false);
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? Cost(0) : min_edge_cost;
-            m_goal_cutoff_enabled = !m_goal_atoms.empty();
+            m_goal_cutoff_enabled = !m_goal.atoms.empty();
         }
     }
 
@@ -144,10 +147,10 @@ private:
     /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
     void observe_goal_atom(size_t i, Cost tentative_cost)
     {
-        if (m_goal_final[i] || tentative_cost > m_goal_cutoff_bound)
+        if (m_goal.final[i] || tentative_cost > m_goal_cutoff_bound)
             return;
-        m_goal_final[i] = true;
-        if (++m_num_final_goals == m_goal_atoms.size())
+        m_goal.final[i] = true;
+        if (++m_num_final_goals == m_goal.atoms.size())
             m_goal_cutoff_stopped = true;
     }
 
@@ -158,15 +161,15 @@ private:
             return;
 
         m_goal_cutoff_bound = get_delta_cost(ctx) + m_min_edge_cost;
-        std::fill(m_goal_final.begin(), m_goal_final.end(), false);
+        std::fill(m_goal.final.begin(), m_goal.final.end(), false);
         m_num_final_goals = 0;
         const auto& program_out = ctx.out().program();
         const auto& facts = program_out.facts().fact_sets.predicate;
-        for (size_t i = 0; i < m_goal_atoms.size(); ++i)
+        for (size_t i = 0; i < m_goal.atoms.size(); ++i)
         {
-            if (facts.contains(m_goal_atoms[i]))
+            if (facts.contains(m_goal.atoms[i]))
                 observe_goal_atom(i, Cost(0));
-            else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
+            else if (const auto* annotation = program_out.annotations().find(m_goal.atoms[i]))
                 observe_goal_atom(i, get_cost(*annotation));
         }
     }
@@ -177,7 +180,7 @@ private:
         if (!m_goal_cutoff_enabled || m_goal_cutoff_stopped)
             return;
         for (const auto head : heads)
-            if (const auto it = m_goal_positions.find(head); it != m_goal_positions.end())
+            if (const auto it = m_goal.positions.find(head); it != m_goal.positions.end())
                 if (const auto* annotation = ctx.out().program().delta_annotations().find(head))
                     observe_goal_atom(it->second, get_cost(*annotation));
     }
@@ -787,9 +790,7 @@ private:
     bool m_goal_cutoff_stopped = false;
     Cost m_min_edge_cost = Cost(0);
     Cost m_goal_cutoff_bound = Cost(0);
-    std::vector<GoalAtom> m_goal_atoms;
-    ygg::UnorderedMap<GoalAtom, size_t> m_goal_positions;
-    std::vector<bool> m_goal_final;
+    GoalCutoffWorkspace& m_goal;
     size_t m_num_final_goals = 0;
 };
 

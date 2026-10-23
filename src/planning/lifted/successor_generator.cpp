@@ -40,10 +40,12 @@
 
 #include <algorithm>
 #include <cassert>
+#include <compare>
 #include <fmt/ostream.h>
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/serialization/cista_equal_to.hpp>
@@ -112,19 +114,47 @@ struct SuccessorGenerator<LiftedTag>::Impl
         ActionExecutor executor;
         StateDelta successor_delta;
 
-        /// The firing conditional effects of each action binding of the registered state whose facts the full action program
-        /// computed last (its repository and index): grouped by action and action objects, in the order of the action's
-        /// effects, from the atoms of the effect predicates. Built on the first successor of the state.
+        /// The firing conditional effects of the registered state whose facts the full action program computed last (its
+        /// repository and index), from the atoms of the effect predicates: sorted by action, action objects, position of the
+        /// effect among the action's effects, and atom order. Built on the first successor of the state.
         struct Firing
         {
-            size_t position;  ///< Of the effect among the action's effects.
+            ygg::Index<formalism::planning::Action<LiftedTag>> action;
+            size_t position;
             formalism::planning::ConditionalEffectView<LiftedTag> effect;
-            ygg::IndexList<formalism::Object> extension;
+            size_t objects_begin;  ///< In firing_objects: the action objects, then the extension.
+            size_t num_action_objects;
+            size_t num_objects;
         };
         std::optional<std::pair<const void*, ygg::uint_t>> facts_state;
         bool firing_effects_built = false;
-        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<Firing>>>
-            firing_effects;
+        std::vector<Firing> firing_effects;
+        std::vector<ygg::Index<formalism::Object>> firing_objects;
+
+        std::span<const ygg::Index<formalism::Object>> get_action_objects(const Firing& firing) const noexcept
+        {
+            return std::span(firing_objects).subspan(firing.objects_begin, firing.num_action_objects);
+        }
+
+        std::span<const ygg::Index<formalism::Object>> get_extension(const Firing& firing) const noexcept
+        {
+            return std::span(firing_objects).subspan(firing.objects_begin + firing.num_action_objects, firing.num_objects - firing.num_action_objects);
+        }
+
+        /// The order of action bindings in firing_effects: by action, then lexicographically by objects.
+        static std::strong_ordering compare(ygg::Index<formalism::planning::Action<LiftedTag>> lhs_action,
+                                            std::span<const ygg::Index<formalism::Object>> lhs_objects,
+                                            ygg::Index<formalism::planning::Action<LiftedTag>> rhs_action,
+                                            std::span<const ygg::Index<formalism::Object>> rhs_objects) noexcept
+        {
+            if (const auto cmp = lhs_action.value <=> rhs_action.value; cmp != 0)
+                return cmp;
+            return std::lexicographical_compare_three_way(lhs_objects.begin(),
+                                                          lhs_objects.end(),
+                                                          rhs_objects.begin(),
+                                                          rhs_objects.end(),
+                                                          [](auto lhs, auto rhs) { return lhs.value <=> rhs.value; });
+        }
         std::vector<ActionExecutor::FiringEffect> firing_scratch;
     };
 
@@ -373,14 +403,11 @@ SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedT
 
     if (!evaluator.firing_effects_built)
         build_firing_effects();
-    const auto* firings = [&]() -> const std::vector<Evaluator::Firing>*
-    {
-        const auto per_action = evaluator.firing_effects.find(binding.relation);
-        if (per_action == evaluator.firing_effects.end())
-            return nullptr;
-        const auto per_binding = per_action->second.find(binding.objects);
-        return per_binding == per_action->second.end() ? nullptr : &per_binding->second;
-    }();
+    const auto key = std::span<const ygg::Index<formalism::Object>>(binding.objects);
+    const auto order = [&](const Evaluator::Firing& f) { return Evaluator::compare(f.action, evaluator.get_action_objects(f), binding.relation, key); };
+    const auto first = std::ranges::partition_point(evaluator.firing_effects, [&](const auto& f) { return order(f) < 0; });
+    const auto last = std::partition_point(first, evaluator.firing_effects.end(), [&](const auto& f) { return order(f) == 0; });
+    const auto firings = std::span(first, last);
 
     // The effects without a rule fire always; the others fire for their extensions, kept in the order of the action's effects.
     const auto& compiled = definition->compiled_effects.at(binding.relation);
@@ -393,8 +420,8 @@ SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedT
         if (!compiled[position])
             firing.push_back({ cond_effect, {} });
         else
-            for (; firings && next < firings->size() && (*firings)[next].position == position; ++next)
-                firing.push_back({ cond_effect, std::span<const ygg::Index<formalism::Object>>((*firings)[next].extension) });
+            for (; next < firings.size() && firings[next].position == position; ++next)
+                firing.push_back({ cond_effect, evaluator.get_extension(firings[next]) });
         ++position;
     }
     return evaluator.executor.apply_action_unregistered(state_context, std::span(std::as_const(firing)), grounder_context, *definition->task->get_fdr_context(), out_state, out_delta);
@@ -402,11 +429,13 @@ SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedT
 
 void SuccessorGenerator<LiftedTag>::Impl::build_firing_effects()
 {
-    evaluator.firing_effects.clear();
+    auto& firings = evaluator.firing_effects;
+    auto& objects = evaluator.firing_objects;
+    firings.clear();
+    objects.clear();
     const auto& sets = evaluator.workspace.facts.fact_sets.predicate.get_sets();
     for (const auto& [action, effect_predicates] : definition->action_program.get_effect_predicates())
     {
-        auto& per_action = evaluator.firing_effects[action.get_index()];
         for (const auto& [effect, predicate] : effect_predicates)
         {
             auto position = size_t(0);
@@ -418,16 +447,21 @@ void SuccessorGenerator<LiftedTag>::Impl::build_firing_effects()
             }
             for (const auto atom : sets[ygg::uint_t(predicate.get_index())].get_bindings())
             {
-                auto objects = ygg::IndexList<formalism::Object> {};
-                ygg::extend(atom.get_objects(), objects);
-                auto prefix = ygg::IndexList<formalism::Object>(objects.begin(), objects.begin() + long(action.get_arity()));
-                auto extension = ygg::IndexList<formalism::Object>(objects.begin() + long(action.get_arity()), objects.end());
-                per_action[std::move(prefix)].push_back({ position, effect, std::move(extension) });
+                const auto begin = objects.size();
+                for (const auto object : atom.get_objects())
+                    objects.push_back(object.get_index());
+                firings.push_back({ action.get_index(), position, effect, begin, action.get_arity(), objects.size() - begin });
             }
         }
-        for (auto& [_, firings] : per_action)
-            std::ranges::stable_sort(firings, {}, &Evaluator::Firing::position);
     }
+    std::ranges::sort(firings,
+                      [&](const auto& lhs, const auto& rhs)
+                      {
+                          const auto cmp = Evaluator::compare(lhs.action, evaluator.get_action_objects(lhs), rhs.action, evaluator.get_action_objects(rhs));
+                          if (cmp != 0)
+                              return cmp < 0;
+                          return std::tie(lhs.position, lhs.objects_begin) < std::tie(rhs.position, rhs.objects_begin);
+                      });
     evaluator.firing_effects_built = true;
 }
 

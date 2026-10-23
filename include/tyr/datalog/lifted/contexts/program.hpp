@@ -82,6 +82,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
         auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
         auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
+        auto& goal_cutoff() noexcept { return m_ws.goal_cutoff; }
         template<formalism::RelationKind R>
         auto& get_rules() noexcept
         {
