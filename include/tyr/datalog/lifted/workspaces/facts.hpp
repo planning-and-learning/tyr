@@ -24,6 +24,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <span>
 #include <yggdrasil/core/closed_interval.hpp>
 
 namespace tyr::datalog
@@ -50,12 +51,12 @@ struct FactsWorkspace<LiftedTag>
     {
         if (!fact_sets.predicate.insert(binding))
             return false;
-        const auto view = ygg::make_view(binding, *m_repository);
-        assignment_sets.predicate.insert(view);
         delta_fact_sets.predicate.insert(binding);
         auto& objects = delta_objects[ygg::uint_t(binding.relation)];
-        for (const auto object : view.get_objects())
+        const auto begin = objects.size();
+        for (const auto object : ygg::make_view(binding, *m_repository).get_objects())
             objects.push_back(object.get_index());
+        assignment_sets.predicate.insert(binding.relation, std::span(objects).subspan(begin));
         return true;
     }
 
