@@ -36,6 +36,8 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <cassert>
+#include <oneapi/tbb/info.h>
+#include <oneapi/tbb/task_arena.h>
 #include <concepts>
 #include <optional>
 #include <utility>
@@ -82,6 +84,20 @@ public:
     CostBuckets cost_buckets;
     PendingPredicateAchievers pending_achievers;
     GoalCutoffWorkspace goal_cutoff;
+    /// Per thread slot of the task arena; valid for the iteration constraint_cache_epoch, which every iteration advances.
+    std::vector<NumericConstraintCache> constraint_caches;
+    size_t constraint_cache_epoch = 1;
+
+    NumericConstraintCache* get_constraint_cache() noexcept
+    {
+        const auto slot = oneapi::tbb::this_task_arena::current_thread_index();
+        const auto index = slot < 0 ? size_t(0) : size_t(slot);
+        if (index >= constraint_caches.size())
+            return nullptr;
+        auto& cache = constraint_caches[index];
+        cache.synchronize(constraint_cache_epoch);
+        return &cache;
+    }
 
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;

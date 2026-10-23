@@ -61,6 +61,7 @@ public:
         const auto& numeric_support_selector() const noexcept { return m_rctx.stratum_out().program().numeric_support_selector(); }
         const auto& cost_policy() const noexcept { return m_rctx.stratum_out().program().cost_policy(); }
         const auto& fact_sets() const noexcept { return m_fact_sets; }
+        NumericConstraintCache* constraint_cache() noexcept { return m_rctx.stratum_out().program().get_constraint_cache(); }
 
     private:
         RuleExecutionContext<R, AP, TP, CP>& m_rctx;
@@ -165,10 +166,7 @@ struct RuleExecutionContext
     void clear_iteration() noexcept
     {
         for (auto& worker : out().workers())
-        {
             worker.iteration.clear();
-            worker.solve.rule_evaluation_workspace.constraint_cache.invalidate();
-        }
     }
 
     auto get_rule_worker_execution_context(std::size_t worker_index = 0)
