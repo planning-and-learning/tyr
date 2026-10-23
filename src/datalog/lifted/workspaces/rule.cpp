@@ -58,6 +58,11 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleVie
     for (const auto literal : conflicting_overapproximation_condition.template get_literals<formalism::FluentTag>())
         add(literal, ConflictingLiteralCheck { {}, std::nullopt, literal });
 
+    arity = get_rule().get_arity();
+    for (const auto literal : nullary_condition.template get_literals<formalism::StaticTag>())
+        if (static_facts.contains(literal.get_atom().get_row().get_index()) != literal.get_polarity())
+            static_nullary = false;
+
     // Indexes of the positive static conflicting literals, from each of their partitions.
     const auto& layout = static_consistency_graph.get_graph_layout();
     for (const auto& check : conflicting_literal_checks)

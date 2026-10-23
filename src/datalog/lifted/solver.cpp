@@ -786,9 +786,9 @@ private:
                 const auto wrctx = rctx.get_rule_worker_execution_context();
                 const auto& fact_sets = wrctx.in().fact_sets();
                 const auto nullary_condition = rctx.in().cws_rule().get_nullary_condition();
-                const auto static_nullary = is_applicable(nullary_condition.template get_literals<formalism::StaticTag>(), fact_sets);
+                const auto static_nullary = rctx.in().cws_rule().get_static_nullary();
                 const auto dynamic_nullary = static_nullary && is_dynamically_applicable(nullary_condition, fact_sets);
-                if (!dynamic_nullary && rctx.in().cws_rule().get_rule().get_arity() > 0)
+                if (!dynamic_nullary && rctx.in().cws_rule().get_arity() > 0)
                 {
                     // No binding is applicable while the nullary condition fails. Its atoms are listened to, so the rule
                     // runs again once it holds, and the reset graph then enumerates all cliques.

@@ -216,6 +216,9 @@ public:
 
     auto get_rule() const noexcept { return rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
+    /// Whether the static literals of the nullary condition hold; static facts do not change.
+    bool get_static_nullary() const noexcept { return static_nullary; }
+    size_t get_arity() const noexcept { return arity; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
@@ -242,6 +245,8 @@ private:
 
     std::vector<ConflictingLiteralCheck> conflicting_literal_checks;
     std::vector<StaticLiteralIndex> static_literal_indexes;
+    bool static_nullary = true;
+    size_t arity = 0;
     std::vector<std::vector<formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag>>> numeric_constraint_static_terms;
     std::vector<std::vector<formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag>>> numeric_constraint_fluent_terms;
 };
