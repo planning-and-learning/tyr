@@ -167,14 +167,6 @@ public:
 
 }
 
-/// The facts added since the last update of a rule's consistency graphs.
-struct ConsistencyGraphDelta
-{
-    /// The objects of the new atoms, per fluent predicate, one atom after the other.
-    const std::vector<std::vector<ygg::Index<formalism::Object>>>& objects;
-    std::vector<uint64_t>& dirty_vertices;  ///< Scratch, one bit per vertex; all zero between updates.
-};
-
 class StaticConsistencyGraph
 {
 public:
@@ -186,8 +178,7 @@ public:
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                const kckp::GraphLayout& layout,
                                                kckp::DeltaGraph& delta_graph,
-                                               kckp::FullGraph& full_graph,
-                                               const ConsistencyGraphDelta* delta = nullptr) const;
+                                               kckp::FullGraph& full_graph) const;
 
     const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const kckp::Graph& get_graph() const noexcept;
@@ -213,9 +204,6 @@ private:
 
     details::RuleToRuleToConstraintInfos m_unary_overapproximation_indexed_constraints;
     details::RuleToRuleToConstraintInfos m_binary_overapproximation_indexed_constraints;
-
-    /// Per partition and object, the bit of its vertex in the partition, or NO_VERTEX.
-    std::vector<std::vector<ygg::uint_t>> m_object_to_bit;
 };
 
 extern std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>

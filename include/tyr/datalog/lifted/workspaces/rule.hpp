@@ -69,14 +69,13 @@ struct RuleWorkspace<LiftedTag, R>
     {
         explicit Common(const StaticConsistencyGraph& static_consistency_graph);
 
-        void initialize_iteration(const AssignmentSets& assignment_sets, const std::vector<std::vector<ygg::Index<formalism::Object>>>& delta_objects);
+        void initialize_iteration(const AssignmentSets& assignment_sets);
 
         void clear() noexcept;
 
         /// KCKP
         const StaticConsistencyGraph& static_consistency_graph;
         kckp::DeltaKCKP kckp;
-        std::vector<uint64_t> dirty_vertices;  ///< Scratch of the incremental consistency graph update.
 
         /// Statistics
         RuleStatistics statistics;
@@ -224,14 +223,10 @@ void RuleWorkspace<LiftedTag, R>::Common::clear() noexcept
 }
 
 template<formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentSets& assignment_sets, const std::vector<std::vector<ygg::Index<formalism::Object>>>& delta_objects)
+void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
 {
-    // After its first update, the rule has seen every fact but those of the delta: it listens to the predicates of its
-    // positive fluent literals and runs in the iteration after they change.
-    const auto delta = ConsistencyGraphDelta { delta_objects, dirty_vertices };
-    const auto* incremental = kckp.get_iteration() == 0 ? nullptr : &delta;
     kckp.update([&](auto& delta_graph, auto& full_graph)
-                { static_consistency_graph.initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph, incremental); });
+                { static_consistency_graph.initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph); });
 }
 
 template<formalism::RelationKind R>
