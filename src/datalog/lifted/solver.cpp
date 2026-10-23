@@ -328,7 +328,12 @@ private:
                     binding[p] = ygg::Index<formalism::Object>(layout.vertex_labels[workspace.partial_solution[p].index]);
                 const auto context = ApplicabilityContext { wrctx.in().fact_sets(), wrctx.out().ground_context() };
                 if (check.static_literal ? !is_applicable(*check.static_literal, context) : !is_applicable(*check.fluent_literal, context))
+                {
+                    // A complete binding rejected here counts as rejected, as when the leaf rejected it.
+                    if (workspace.partial_solution_size == layout.num_partitions)
+                        ++wrctx.out().statistics().num_rejected_rules;
                     return true;
+                }
             }
             return false;
         }
