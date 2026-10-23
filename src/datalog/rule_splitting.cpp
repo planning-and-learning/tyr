@@ -85,6 +85,7 @@ public:
             formalism::datalog::collect_parameters(head, head_parameters);
 
         auto projections = std::vector<std::pair<RuleSplitting::Predicate, std::vector<ygg::uint_t>>> {};
+        m_used_projections.clear();
         while (auto projection = choose_projection(body, head_parameters, variables.size()))
         {
             restrict_kept_variables(projection->rest, projection->kept, projection->projected);
@@ -99,7 +100,12 @@ public:
         const auto [main_rule, positions] = emit_rule(variables, body, heads, cost);
         m_splitting.origins.emplace(main_rule, RuleSplitting::Origin { variables.size(), positions });
         for (auto& [predicate, projection_positions] : projections)
-            m_splitting.projection_origins.emplace(std::pair(main_rule, predicate), RuleSplitting::Origin { variables.size(), std::move(projection_positions) });
+        {
+            [[maybe_unused]] const auto inserted =
+                m_splitting.projection_origins.emplace(std::pair(main_rule, predicate), RuleSplitting::Origin { variables.size(), std::move(projection_positions) })
+                    .second;
+            assert(inserted && "A rule uses each projection predicate once.");
+        }
         return main_rule;
     }
 
@@ -290,8 +296,11 @@ private:
         for (const auto variable : kept)
             key.kept.push_back(ygg::uint_t(local.at(variable)));
 
-        if (const auto it = m_projections.find(key); it != m_projections.end())
+        if (const auto it = m_projections.find(key); it != m_projections.end() && !m_used_projections.contains(it->second))
+        {
+            m_used_projections.insert(it->second);
             return { create_literal<formalism::FluentTag>(it->second, kept), std::move(positions) };
+        }
 
         const auto atom = create_projection_atom(kept);
         const auto [projection_rule, rule_positions] = emit_rule(variables, projected, { atom.get_atom() }, ygg::float_t(0));
@@ -299,6 +308,7 @@ private:
         m_program.predicate_rules.push_back(projection_rule);
         m_splitting.projection_rules.emplace(atom.get_atom().get_predicate().get_index(), projection_rule);
         m_projections.emplace(std::move(key), atom.get_atom().get_predicate().get_index());
+        m_used_projections.insert(atom.get_atom().get_predicate().get_index());
         return { atom, std::move(positions) };
     }
 
@@ -388,6 +398,9 @@ private:
     const PredicateFactSets<formalism::StaticTag>& m_static_facts;
     size_t m_num_projections = 0;
     std::map<ProjectionKey, RuleSplitting::Predicate> m_projections;
+    /// The projection predicates of the rule being split: a rule uses a shared projection at most once, since its origin is
+    /// kept per main rule and predicate.
+    ygg::UnorderedSet<RuleSplitting::Predicate> m_used_projections;
     ygg::UnorderedMap<std::pair<ygg::Index<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>
         m_domain_literals;
 };
