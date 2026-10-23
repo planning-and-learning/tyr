@@ -65,9 +65,9 @@ struct RuleEvaluationInput
     const PredicateAnnotations<>& predicate_annotations;
 };
 
-/// The costs and supports of the ground numeric constraints evaluated in the current iteration of a lifted program, by the
-/// index of the constraint's operator: the selector does not change during an iteration, and bindings that differ only in
-/// variables outside a constraint, also of other rules, ground it to the same operator.
+/// The costs and supports of the ground numeric constraints evaluated in the current execution of a lifted rule, by the
+/// index of the constraint's operator: the selector does not change during an execution, and bindings that differ only
+/// in variables outside a constraint ground it to the same operator.
 struct NumericConstraintCache
 {
     struct Entry
@@ -78,16 +78,14 @@ struct NumericConstraintCache
         size_t selection_size = 0;
     };
 
-    /// Discards the entries of earlier iterations.
-    void synchronize(size_t current_epoch) noexcept
+    /// Called at the start of every rule execution.
+    void invalidate() noexcept
     {
-        if (epoch == current_epoch)
-            return;
-        epoch = current_epoch;
+        ++epoch;
         selections.clear();
     }
 
-    size_t epoch = 0;
+    size_t epoch = 1;
     std::vector<Entry> entries;
     std::vector<NumericSupportSelectorWorkspace::SelectionEntry> selections;
 };
@@ -96,7 +94,7 @@ struct RuleEvaluationWorkspace
 {
     NumericSupportSelectorWorkspace selector;
     std::vector<NumericSupport> exact_supports;
-    NumericConstraintCache* constraint_cache = nullptr;  ///< Of the evaluating thread; set before each evaluation of a lifted rule.
+    NumericConstraintCache constraint_cache;
 };
 
 struct CandidateEvidence
@@ -406,7 +404,8 @@ Cost get_transition_credit(const CP& policy,
         return policy.get_cost(instance.witness_key().get_index(), head, interval);
 }
 
-/// The constraint's cost and supports (in workspace.selector.selection), from the cache for lifted rules.
+/// The constraint's cost and supports (in workspace.selector.selection), from the cache for lifted rules, which invalidate
+/// it at every execution.
 template<TaskKind Kind, typename Aggregation>
 Cost get_constraint_cost(formalism::datalog::BooleanOperatorView<GroundTag> constraint, const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
 {
@@ -417,9 +416,7 @@ Cost get_constraint_cost(formalism::datalog::BooleanOperatorView<GroundTag> cons
     }
     else
     {
-        if (!workspace.constraint_cache)
-            return input.selector.get_constraint_cost(constraint, selection, Aggregation {});
-        auto& cache = *workspace.constraint_cache;
+        auto& cache = workspace.constraint_cache;
         const auto key = size_t(ygg::visit([](const auto op) { return op.get_index().value; }, constraint.get_variant()));
         if (key >= cache.entries.size())
             cache.entries.resize(key + 1);

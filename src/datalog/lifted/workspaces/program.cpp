@@ -17,8 +17,6 @@
 
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 
-#include <algorithm>
-
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
@@ -89,9 +87,6 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
 
     initialize_rule_workspaces<formalism::PredicateTag>(const_workspace, predicate_rules);
     initialize_rule_workspaces<formalism::FunctionTag>(const_workspace, function_rules);
-
-    // Thread slots of an arena are below its concurrency; evaluations in a larger arena go without the cache.
-    constraint_caches.resize(size_t(std::max(1, oneapi::tbb::info::default_concurrency())));
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>

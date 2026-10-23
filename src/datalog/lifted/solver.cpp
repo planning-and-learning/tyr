@@ -88,7 +88,6 @@ public:
     bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
         auto& ctx = stratum();
-        ctx.out().program().advance_constraint_cache_epoch();
         begin_goal_cutoff_iteration(ctx);
         run_active_rules<formalism::PredicateTag>(ctx);
         run_active_rules<formalism::FunctionTag>(ctx);
@@ -235,8 +234,6 @@ private:
 
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        if (!in.cws_rule().get_numeric_constraint_fluent_terms().empty())
-            out.rule_evaluation_workspace().constraint_cache = in.constraint_cache();
         auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule(), out.ground_context() },
                                             in.numeric_support_selector(),
                                             in.annotations(),
@@ -522,8 +519,6 @@ private:
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        if (!in.cws_rule().get_numeric_constraint_fluent_terms().empty())
-            out.rule_evaluation_workspace().constraint_cache = in.constraint_cache();
         auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule(), out.ground_context() },
                                             in.numeric_support_selector(),
                                             in.annotations(),
