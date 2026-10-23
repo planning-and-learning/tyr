@@ -83,6 +83,9 @@ DeltaKCKP::DeltaKCKP(const Graph& graph, const PartitionedAdjacencyLayout& adjac
 
 void DeltaKCKP::reset()
 {
+    // Only update() changes the graphs, so they are still clean.
+    if (m_iteration == 0)
+        return;
     m_delta_graph.reset();
     m_full_graph.reset();
     m_delta_edges.clear();
