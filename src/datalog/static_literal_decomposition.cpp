@@ -77,7 +77,10 @@ private:
         auto parameters = std::vector<formalism::ParameterIndex>(parameter_set.begin(), parameter_set.end());
         std::ranges::sort(parameters);
         const auto arity = parameters.size();
-        if (arity < 3)
+        // Over at most two variables, a literal is exact in the consistency graph unless its atom has constants or repeated
+        // variables; those become a literal over its variables.
+        const auto is_plain = literal.get_atom().get_terms().size() == arity;
+        if (arity == 0 || (arity < 3 && is_plain))
             return std::nullopt;
 
         // The literal's relation over its variables.
@@ -101,6 +104,8 @@ private:
         }
         if (relation.empty())
             return std::nullopt;
+        if (arity < 3)
+            return std::vector<StaticLiteralIndex> { create_projection_literal(relation, parameters) };
 
         // The pairwise projections, and for the first variable its partners in every other.
         auto pairs = std::vector<ygg::UnorderedSet<std::uint64_t>>(arity * arity);
@@ -158,6 +163,38 @@ private:
             for (size_t j = i + 1; j < arity; ++j)
                 result.push_back(create_pair_literal(pairs[i * arity + j], parameters[i], parameters[j]));
         return result;
+    }
+
+    /// A literal over the parameters (in order) whose atoms are the tuples.
+    StaticLiteralIndex create_projection_literal(const ygg::UnorderedSet<Tuple>& tuples, const std::vector<formalism::ParameterIndex>& parameters)
+    {
+        auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::StaticTag>>(m_context.builder);
+        predicate->name = "__tyr_projection_" + std::to_string(m_num_predicates++);
+        predicate->arity = parameters.size();
+        const auto new_predicate = formalism::datalog::insert(m_context.destination, *predicate).first.get_index();
+        m_program.static_predicates.push_back(new_predicate);
+
+        auto sorted = std::vector<Tuple>(tuples.begin(), tuples.end());
+        std::ranges::sort(sorted);
+        for (const auto& tuple : sorted)
+        {
+            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>(m_context.builder);
+            binding->relation = new_predicate;
+            for (const auto object : tuple)
+                binding->objects.push_back(ygg::Index<formalism::Object>(object));
+            auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::StaticTag>>(m_context.builder);
+            atom->binding = formalism::datalog::insert(m_context.destination, *binding).first.get_index();
+            m_program.static_atoms.push_back(formalism::datalog::insert(m_context.destination, *atom).first.get_index());
+        }
+
+        auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>(m_context.builder);
+        atom->predicate = new_predicate;
+        for (const auto parameter : parameters)
+            atom->terms.push_back(ygg::Data<formalism::Term>(parameter));
+        auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>(m_context.builder);
+        literal->atom = formalism::datalog::insert(m_context.destination, *atom).first.get_index();
+        literal->polarity = true;
+        return formalism::datalog::insert(m_context.destination, *literal).first.get_index();
     }
 
     StaticLiteralIndex create_pair_literal(const ygg::UnorderedSet<std::uint64_t>& pairs, formalism::ParameterIndex first, formalism::ParameterIndex second)

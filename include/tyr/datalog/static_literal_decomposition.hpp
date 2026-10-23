@@ -38,8 +38,10 @@ struct StaticLiteralDecomposition
 
 /// Copies the program into the repository and replaces each positive static literal over three or more variables whose atoms
 /// are exactly the join of their pairwise projections (a join dependency, e.g. when one argument determines the others) by
-/// one new static literal per pair of its variables. The rules keep their meaning, and the consistency graph, which encodes
-/// pairs, then checks these literals completely instead of leaving them to an exact check per binding.
+/// one new static literal per pair of its variables, and each positive static literal over one or two variables whose atom
+/// has constants or repeated variables by a literal over just its variables. The rules keep their meaning, and the
+/// consistency graph, which encodes pairs of argument positions, then checks these literals completely instead of leaving
+/// them to an exact check per binding.
 formalism::datalog::ProgramView<LiftedTag>
 decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, StaticLiteralDecomposition& result);
 
