@@ -94,7 +94,7 @@ struct RPGPolicy<LiftedTag>
             if (const auto origin = origins.find(witness.get_rule_key().relation); origin != origins.end())
             {
                 workspace.binding.resize(origin->second.num_source_variables);
-                recover_split_binding(definition, workspace, witness);
+                recover_split_binding(definition, workspace, witness, origin->second, witness.get_rule_key().relation);
             }
             else
                 ygg::extend(ygg::make_view(witness.get_rule_key(), workspace.workspace_repository).get_objects(), workspace.binding);
@@ -113,33 +113,37 @@ struct RPGPolicy<LiftedTag>
         return formalism::planning::ground(it->second, grounder_context).first;
     }
 
-    /// Writes the objects that the witness of a split rule binds to its variables' positions among the source rule's variables,
-    /// and those of the projections it uses, through the witnesses of their atoms.
+    /// Writes the objects that the witness of a rule of a split source rule (with main rule `main`) binds to its variables'
+    /// positions among the source rule's variables (origin), and those of the projections it uses, through the witnesses of
+    /// their atoms.
     template<typename Workspace>
-    static void
-    recover_split_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<formalism::PredicateTag>& witness)
+    static void recover_split_binding(const RPGDefinition<LiftedTag>& definition,
+                                      Workspace& workspace,
+                                      const datalog::WitnessAnnotation<formalism::PredicateTag>& witness,
+                                      const datalog::RuleSplitting::Origin& origin,
+                                      datalog::RuleSplitting::Rule main)
     {
-        const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().relation);
         const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
         auto position = size_t(0);
         for (const auto object : rule_binding.get_objects())
             workspace.binding[origin.source_positions[position++]] = object.get_index();
 
-        const auto& projection_rules = definition.rpg_program.get_rule_splitting().projection_rules;
+        const auto& splitting = definition.rpg_program.get_rule_splitting();
         visit_witness_rule_instance(workspace,
                                     witness,
                                     [&](const auto& instance)
                                     {
                                         for (const auto literal : instance.get_body().template get_literals<formalism::FluentTag>())
                                         {
-                                            if (!projection_rules.contains(literal.get_atom().get_predicate().get_index()))
+                                            const auto predicate = literal.get_atom().get_predicate().get_index();
+                                            if (!splitting.projection_rules.contains(predicate))
                                                 continue;
                                             const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).get_index());
                                             const auto* projection =
                                                 annotation ? std::get_if<datalog::WitnessAnnotation<formalism::PredicateTag>>(annotation) : nullptr;
                                             assert(projection && "A derived projection atom has a witness.");
                                             if (projection)
-                                                recover_split_binding(definition, workspace, *projection);
+                                                recover_split_binding(definition, workspace, *projection, splitting.projection_origins.at(std::pair(main, predicate)), main);
                                         }
                                     });
     }
