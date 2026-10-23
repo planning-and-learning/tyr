@@ -168,6 +168,7 @@ struct Workspace
     std::vector<uint64_t> anchor_source_data;  ///< The rows of the prepared anchor source, see DeltaKCKP::prepare_anchor_source.
     size_t compatible_row_blocks { 0 };
     boost::dynamic_bitset<> partition_bits;
+    boost::dynamic_bitset<> seed_bits;  ///< The partitions bound before complete_clique, by a seed.
     std::vector<Vertex> partial_solution;
     ygg::uint_t partial_solution_size { 0 };
     ygg::uint_t anchor_pi { std::numeric_limits<ygg::uint_t>::max() };
@@ -186,6 +187,7 @@ struct Workspace
         compatible_vertices_data.resize(layout.num_partitions * compatible_row_blocks);
         anchor_source_data.resize(compatible_row_blocks);
         partition_bits.resize(layout.num_partitions);
+        seed_bits.resize(layout.num_partitions);
         partial_solution.resize(layout.num_partitions);
     }
 
@@ -221,6 +223,9 @@ void complete_clique(const GraphLayout& layout,
                      Callback& callback,
                      Prune& prune)
 {
+    if (depth == 0)
+        workspace.seed_bits = workspace.partition_bits;
+
     const auto partition = select_partition(depth, workspace);
     if (partition == std::numeric_limits<ygg::uint_t>::max())
         return;

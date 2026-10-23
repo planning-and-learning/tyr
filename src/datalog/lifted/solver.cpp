@@ -323,6 +323,11 @@ private:
                 if (std::ranges::find(check.partitions, partition) == check.partitions.end()
                     || !std::ranges::all_of(check.partitions, [&](auto p) { return workspace.partition_bits.test(p); }))
                     continue;
+                // restrict limited this partition to vertices completing an atom once its other partitions were bound,
+                // unless a seed bound all of them.
+                if (check.static_literal && check.static_literal->get_polarity()
+                    && std::ranges::any_of(check.partitions, [&](auto p) { return p != partition && !workspace.seed_bits.test(p); }))
+                    continue;
                 auto& binding = wrctx.out().ground_context().binding;
                 binding.resize(layout.num_partitions);
                 for (const auto p : check.partitions)
