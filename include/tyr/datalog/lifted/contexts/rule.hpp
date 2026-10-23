@@ -165,10 +165,7 @@ struct RuleExecutionContext
     void clear_iteration() noexcept
     {
         for (auto& worker : out().workers())
-        {
             worker.iteration.clear();
-            worker.solve.rule_evaluation_workspace.constraint_cache.invalidate();
-        }
     }
 
     auto get_rule_worker_execution_context(std::size_t worker_index = 0)

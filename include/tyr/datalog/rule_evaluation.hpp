@@ -65,36 +65,10 @@ struct RuleEvaluationInput
     const PredicateAnnotations<>& predicate_annotations;
 };
 
-/// The costs and supports of the ground numeric constraints evaluated in the current execution of a lifted rule, by the
-/// index of the constraint's operator: the selector does not change during an execution, and bindings that differ only
-/// in variables outside a constraint ground it to the same operator.
-struct NumericConstraintCache
-{
-    struct Entry
-    {
-        size_t epoch = 0;
-        Cost cost = 0;
-        size_t selection_begin = 0;
-        size_t selection_size = 0;
-    };
-
-    /// Called at the start of every rule execution.
-    void invalidate() noexcept
-    {
-        ++epoch;
-        selections.clear();
-    }
-
-    size_t epoch = 1;
-    std::vector<Entry> entries;
-    std::vector<NumericSupportSelectorWorkspace::SelectionEntry> selections;
-};
-
 struct RuleEvaluationWorkspace
 {
     NumericSupportSelectorWorkspace selector;
     std::vector<NumericSupport> exact_supports;
-    NumericConstraintCache constraint_cache;
 };
 
 struct CandidateEvidence
@@ -404,36 +378,6 @@ Cost get_transition_credit(const CP& policy,
         return policy.get_cost(instance.witness_key().get_index(), head, interval);
 }
 
-/// The constraint's cost and supports (in workspace.selector.selection), from the cache for lifted rules, which invalidate
-/// it at every execution.
-template<TaskKind Kind, typename Aggregation>
-Cost get_constraint_cost(formalism::datalog::BooleanOperatorView<GroundTag> constraint, const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
-{
-    auto& selection = workspace.selector.selection;
-    if constexpr (!std::same_as<Kind, LiftedTag>)
-    {
-        return input.selector.get_constraint_cost(constraint, selection, Aggregation {});
-    }
-    else
-    {
-        auto& cache = workspace.constraint_cache;
-        const auto key = size_t(ygg::visit([](const auto op) { return op.get_index().value; }, constraint.get_variant()));
-        if (key >= cache.entries.size())
-            cache.entries.resize(key + 1);
-        auto& entry = cache.entries[key];
-        if (entry.epoch == cache.epoch)
-        {
-            const auto begin = cache.selections.begin() + long(entry.selection_begin);
-            selection.assign(begin, begin + long(entry.selection_size));
-            return entry.cost;
-        }
-        const auto cost = input.selector.get_constraint_cost(constraint, selection, Aggregation {});
-        entry = { cache.epoch, cost, cache.selections.size(), selection.size() };
-        cache.selections.insert(cache.selections.end(), selection.begin(), selection.end());
-        return cost;
-    }
-}
-
 template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
 std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& instance,
                                                        const AP&,
@@ -469,7 +413,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
     for (const auto constraint : instance.get_body().get_numeric_constraints())
     {
         const auto resolved = instance.resolve(constraint);
-        const auto constraint_cost = rule_evaluation_detail::get_constraint_cost<Kind, Aggregation>(resolved, input, workspace);
+        const auto constraint_cost = input.selector.get_constraint_cost(resolved, workspace.selector.selection, Aggregation {});
         if (constraint_cost == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
