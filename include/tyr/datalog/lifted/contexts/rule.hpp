@@ -90,7 +90,6 @@ public:
 #endif
         auto& anchor_vertices() noexcept { return m_ws_worker.iteration.anchor_vertices; }
         auto& head_bindings() noexcept { return m_ws_worker.iteration.head_bindings; }
-        auto& head_lookups() noexcept { return m_ws_worker.iteration.head_lookups; }
         auto& rule_evaluation_workspace() noexcept { return m_ws_worker.solve.rule_evaluation_workspace; }
         auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
         auto& statistics() noexcept { return m_ws_worker.solve.statistics; }

@@ -67,10 +67,7 @@ public:
     /// bitsets are indexed by, so it must be identical on every platform.
     const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
-    bool requires_full_enumeration(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept
-    {
-        return ygg::uint_t(rule) < m_full_enumeration_rules.size() && m_full_enumeration_rules.test(ygg::uint_t(rule));
-    }
+    bool requires_full_enumeration(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept { return m_full_enumeration_rules.contains(rule); }
 
 private:
     void rebuild_sorted_active_rules();
@@ -81,9 +78,8 @@ private:
 
     boost::dynamic_bitset<> m_active_predicates;
     boost::dynamic_bitset<> m_active_functions;
-    /// By rule index; iterating the set bits gives the rules in sorted order.
-    boost::dynamic_bitset<> m_active_rules;
-    boost::dynamic_bitset<> m_full_enumeration_rules;
+    ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>> m_active_rules;
+    ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>> m_full_enumeration_rules;
     ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>> m_sorted_active_rules;
 };
 

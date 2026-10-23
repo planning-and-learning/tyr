@@ -41,21 +41,11 @@ void activate_relation(boost::dynamic_bitset<>& bitset, ygg::Index<Relation> rel
 template<typename Relation, formalism::RelationKind R>
 void collect_active_rules(const boost::dynamic_bitset<>& bitset,
                           const ygg::UnorderedMap<ygg::Index<Relation>, analysis::RuleIndexSet<R>>& listeners,
-                          boost::dynamic_bitset<>& active_rules)
+                          ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>& active_rules)
 {
     for (auto i = bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = bitset.find_next(i))
         if (const auto it = listeners.find(ygg::Index<Relation>(i)); it != listeners.end())
-            for (const auto rule : it->second)
-                active_rules.set(ygg::uint_t(rule));
-}
-
-template<formalism::RelationKind R>
-size_t num_rule_indices(const analysis::TypedRuleStratum<R>& rules)
-{
-    auto result = size_t(0);
-    for (const auto rule : rules)
-        result = std::max(result, size_t(ygg::uint_t(rule)) + 1);
-    return result;
+            active_rules.insert(it->second.begin(), it->second.end());
 }
 }
 
@@ -70,27 +60,26 @@ TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRul
     m_context(context),
     m_active_predicates(num_fluent_predicates),
     m_active_functions(num_fluent_functions),
-    m_active_rules(num_rule_indices(rules)),
-    m_full_enumeration_rules(num_rule_indices(rules))
+    m_active_rules(),
+    m_full_enumeration_rules()
 {
 }
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::activate_all()
 {
-    m_active_rules.reset();
-    m_full_enumeration_rules.reset();
+    m_active_rules.clear();
+    m_full_enumeration_rules.clear();
     for (const auto rule : m_rules)
-        m_active_rules.set(ygg::uint_t(rule));
+        m_active_rules.insert(rule);
     rebuild_sorted_active_rules();
 }
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::rebuild_sorted_active_rules()
 {
-    m_sorted_active_rules.clear();
-    for (auto i = m_active_rules.find_first(); i != boost::dynamic_bitset<>::npos; i = m_active_rules.find_next(i))
-        m_sorted_active_rules.push_back(ygg::Index<formalism::datalog::Rule<LiftedTag, R>>(ygg::uint_t(i)));
+    m_sorted_active_rules.set(m_active_rules.begin(), m_active_rules.end());
+    std::sort(m_sorted_active_rules.begin(), m_sorted_active_rules.end());
 }
 
 template<formalism::RelationKind R>
@@ -115,11 +104,11 @@ void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<formalism::Function<fo
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_finish_iteration()
 {
-    m_active_rules.reset();
-    m_full_enumeration_rules.reset();
+    m_active_rules.clear();
+    m_full_enumeration_rules.clear();
     collect_active_rules(m_active_predicates, m_listeners.predicates, m_active_rules);
     collect_active_rules(m_active_functions, m_listeners.functions, m_full_enumeration_rules);
-    m_active_rules |= m_full_enumeration_rules;
+    m_active_rules.insert(m_full_enumeration_rules.begin(), m_full_enumeration_rules.end());
     rebuild_sorted_active_rules();
 }
 

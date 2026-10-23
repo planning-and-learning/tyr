@@ -29,7 +29,6 @@
 #include <cassert>
 #include <concepts>
 #include <limits>
-#include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -258,10 +257,7 @@ private:
         // the lmcut fixture suite (4 tie orders x 2 acceptance rules), no variant improved more cases
         // than it worsened (interval-width orders changed nothing; reverse order and strictly-cheaper
         // acceptance were net negative), so plain insertion order stays.
-        // Insertion sort is stable and, unlike std::stable_sort, needs no buffer; selections are small.
-        for (size_t i = 1; i < selection.size(); ++i)
-            for (size_t j = i; j > 0 && selection[j] < selection[j - 1]; --j)
-                std::swap(selection[j], selection[j - 1]);
+        std::stable_sort(selection.begin(), selection.end());
 
         for (size_t pos = 0; pos < selection.size(); ++pos)
         {

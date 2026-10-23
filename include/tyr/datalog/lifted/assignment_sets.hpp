@@ -31,7 +31,6 @@
 #include <cassert>
 #include <limits>
 #include <optional>
-#include <span>
 #include <tuple>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
@@ -69,16 +68,12 @@ private:
     std::vector<size_t> m_touched_blocks;
     std::vector<ygg::uint_t> m_remapped_objects;
 
-    template<typename Objects>
-    void insert_ranks(const Objects& objects);
-
 public:
     PredicateAssignmentSet(formalism::datalog::PredicateView<T> predicate, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
     void reset() noexcept;
 
     void insert(formalism::datalog::PredicateBindingView<T> binding);
-    void insert(std::span<const ygg::Index<formalism::Object>> objects);
 
     bool operator[](const VertexAssignment& assignment) const noexcept;
     bool operator[](const EdgeAssignment& assignment) const noexcept;
@@ -106,7 +101,6 @@ public:
 
     void insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
     void insert(formalism::datalog::PredicateBindingView<T> binding);
-    void insert(ygg::Index<formalism::Predicate<T>> predicate, std::span<const ygg::Index<formalism::Object>> objects);
     void insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
 
     const PredicateAssignmentSet<T>& get_set(ygg::Index<formalism::Predicate<T>> index) const noexcept;

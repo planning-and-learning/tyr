@@ -40,21 +40,10 @@
 #include <optional>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/unique_object_pool.hpp>
 #include <yggdrasil/core/dependent_false.hpp>
 
 namespace tyr::datalog
 {
-
-/// The goal atoms of the solver's goal cutoff; kept across evaluations so that they reuse their storage.
-struct GoalCutoffWorkspace
-{
-    using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
-
-    std::vector<GoalAtom> atoms;
-    ygg::UnorderedMap<GoalAtom, size_t> positions;
-    std::vector<bool> final;
-};
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>
@@ -81,7 +70,6 @@ public:
     CP cost_policy;
     CostBuckets cost_buckets;
     PendingPredicateAchievers pending_achievers;
-    GoalCutoffWorkspace goal_cutoff;
 
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
     std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;
@@ -112,8 +100,6 @@ public:
     formalism::datalog::Builder datalog_builder;
 
     ygg::IndexList<formalism::Object> binding;
-    /// Reusable bindings of rule instance visits, which nest.
-    ygg::UniqueObjectPool<ygg::IndexList<formalism::Object>, false> visit_bindings;
 
     std::vector<Scheduler<LiftedTag>> schedulers;
 

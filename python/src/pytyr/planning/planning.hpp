@@ -685,19 +685,7 @@ public:
 
     HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 
-    /// A Python override returns None or a set; the set is kept here so the returned pointer stays valid until the next call.
-    const ygg::UnorderedSet<formalism::planning::ActionBindingView>* get_relaxed_plan() const override
-    {
-        constexpr uint64_t nb_hash = nanobind::detail::str_hash("get_relaxed_plan");
-        nanobind::detail::ticket nb_ticket(nb_trampoline, "get_relaxed_plan", nb_hash, false);
-        if (!nb_ticket.key.is_valid())
-            return Base::get_relaxed_plan();
-        m_relaxed_plan = nb::cast<std::optional<ygg::UnorderedSet<formalism::planning::ActionBindingView>>>(nb_trampoline.base().attr(nb_ticket.key)());
-        return m_relaxed_plan ? &*m_relaxed_plan : nullptr;
-    }
-
-private:
-    mutable std::optional<ygg::UnorderedSet<formalism::planning::ActionBindingView>> m_relaxed_plan;
+    const ygg::UnorderedSet<formalism::planning::ActionBindingView>& get_preferred_actions() override { return Base::get_preferred_actions(); }
 };
 
 template<TaskKind Kind>
@@ -714,12 +702,7 @@ void bind_heuristic(nb::module_& m, const std::string& name)
             [](T& self, const StateView<Kind>& state) { return self.evaluate(state); },
             "state"_a,
             nb::call_guard<nb::gil_scoped_release>())
-        .def("get_relaxed_plan",
-             [](const T& self) -> std::optional<ygg::UnorderedSet<formalism::planning::ActionBindingView>>
-             {
-                 const auto* plan = self.get_relaxed_plan();
-                 return plan ? std::optional(*plan) : std::nullopt;
-             });
+        .def("get_preferred_actions", &T::get_preferred_actions);
 }
 
 template<TaskKind Kind>

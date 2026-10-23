@@ -18,7 +18,6 @@
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 
 #include "tyr/datalog/lifted/assignment_sets.hpp"
-#include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
@@ -32,8 +31,7 @@ namespace tyr::datalog
 template<formalism::RelationKind R>
 ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule,
                                                      formalism::datalog::Repository& repository,
-                                                     kckp::Graph compatibility_graph,
-                                                     const PredicateFactSets<formalism::StaticTag>& static_facts) :
+                                                     kckp::Graph compatibility_graph) :
     rule(rule),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
     unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first),
@@ -43,22 +41,6 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleVie
     hyperedge_condition(create_hyperedge_conjunctive_condition(conflicting_overapproximation_condition, repository).first),
     static_consistency_graph(unary_overapproximation_condition, binary_overapproximation_condition, hyperedge_condition, std::move(compatibility_graph))
 {
-    const auto add = [&](auto literal, ConflictingLiteralCheck check)
-    {
-        for (const auto parameter : formalism::datalog::collect_parameters(literal))
-            check.partitions.push_back(ygg::uint_t(parameter));
-        if (!check.partitions.empty())
-            conflicting_literal_checks.push_back(std::move(check));
-    };
-    for (const auto literal : conflicting_overapproximation_condition.template get_literals<formalism::StaticTag>())
-        add(literal, ConflictingLiteralCheck { {}, literal, std::nullopt });
-    for (const auto literal : conflicting_overapproximation_condition.template get_literals<formalism::FluentTag>())
-        add(literal, ConflictingLiteralCheck { {}, std::nullopt, literal });
-
-    arity = get_rule().get_arity();
-    for (const auto literal : nullary_condition.template get_literals<formalism::StaticTag>())
-        if (static_facts.contains(literal.get_atom().get_row().get_index()) != literal.get_polarity())
-            static_nullary = false;
 }
 
 template struct ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>;

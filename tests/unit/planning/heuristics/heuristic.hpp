@@ -154,20 +154,20 @@ HeuristicContext<Kind> create_preferred_action_reset_context()
 }
 
 template<TaskKind Kind>
-void expect_relaxed_plan_reset_after_dead_end()
+void expect_preferred_actions_reset_after_dead_end()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = tyr::planning::FFRPGHeuristic<Kind>::create(context.task, context.execution_context);
     const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
 
     EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
-    EXPECT_FALSE(heuristic->get_relaxed_plan()->empty());
+    EXPECT_FALSE(heuristic->get_preferred_actions().empty());
 
     const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
     EXPECT_EQ(heuristic->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
-    EXPECT_TRUE(heuristic->get_relaxed_plan()->empty());
+    EXPECT_TRUE(heuristic->get_preferred_actions().empty());
 }
 
 template<TaskKind Kind>
@@ -206,24 +206,24 @@ void expect_worker_snapshots_configured_goal()
 }
 
 template<TaskKind Kind>
-void expect_worker_has_independent_relaxed_plan()
+void expect_worker_has_independent_preferred_actions()
 {
     auto context = create_preferred_action_reset_context<Kind>();
     auto heuristic = tyr::planning::FFRPGHeuristic<Kind>::create(context.task, context.execution_context);
     const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
 
     EXPECT_EQ(heuristic->evaluate(initial_node.get_state()), 1);
-    ASSERT_FALSE(heuristic->get_relaxed_plan()->empty());
+    ASSERT_FALSE(heuristic->get_preferred_actions().empty());
 
     auto worker = heuristic->make_worker(ygg::ExecutionContext::create(2));
-    EXPECT_TRUE(worker->get_relaxed_plan()->empty());
+    EXPECT_TRUE(worker->get_preferred_actions().empty());
 
     const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto dead_end = std::ranges::find_if(successors, [](const auto& successor) { return successor.label.get_relation().get_name().str() == "consume"; });
     ASSERT_NE(dead_end, successors.end());
     EXPECT_EQ(worker->evaluate(dead_end->node.get_state()), std::numeric_limits<ygg::float_t>::infinity());
-    EXPECT_TRUE(worker->get_relaxed_plan()->empty());
-    EXPECT_FALSE(heuristic->get_relaxed_plan()->empty());
+    EXPECT_TRUE(worker->get_preferred_actions().empty());
+    EXPECT_FALSE(heuristic->get_preferred_actions().empty());
 }
 
 template<TaskKind Kind>

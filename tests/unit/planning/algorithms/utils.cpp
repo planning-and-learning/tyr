@@ -61,11 +61,11 @@ TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueRejectsUnknownCostMode)
     EXPECT_THROW((void) tyr::planning::compute_successor_g_value(3.0, 9.0, static_cast<CostMode>(255)), std::runtime_error);
 }
 
-TEST(PlanningAlgorithmUtilsTest, BlindHeuristicHasNoRelaxedPlan)
+TEST(PlanningAlgorithmUtilsTest, BlindHeuristicHasNoPreferredActionsByDefault)
 {
     auto heuristic = tyr::planning::BlindHeuristic<GroundTag> {};
 
-    EXPECT_EQ(heuristic.get_relaxed_plan(), nullptr);
+    EXPECT_TRUE(heuristic.get_preferred_actions().empty());
 }
 
 TEST(PlanningAlgorithmUtilsTest, DefaultConstructedBasicSolverAdaptersRejectMissingRequiredMembers)

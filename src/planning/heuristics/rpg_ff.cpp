@@ -24,6 +24,7 @@
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+#include "tyr/planning/action_executor.hpp"
 
 #include <cassert>
 #include <tuple>
@@ -73,6 +74,7 @@ struct FFRPGHeuristic<Kind>::Impl :
     {
         Base::set_goal(goal);
         m_relaxed_plan.clear();
+        m_preferred_actions.clear();
     }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state)
@@ -80,33 +82,35 @@ struct FFRPGHeuristic<Kind>::Impl :
         m_numeric_support_workspace.clear();
         m_numeric_markings.clear();
         m_relaxed_plan.clear();
+        m_preferred_actions.clear();
         return Base::evaluate(state);
     }
 
-    ygg::float_t compute_result(const ygg::Builder<State<Kind>>&)
+    ygg::float_t compute_result(const ygg::Builder<State<Kind>>& state)
     {
         for (auto& bits : m_predicate_markings)
             bits.reset();
 
+        const auto state_context = StateContext<Kind>(this->get_task(), state, ygg::float_t(0));
         if (const auto& goal = this->m_workspace.tp.get_goal())
         {
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
             {
                 assert(literal.get_polarity());
-                extract_relaxed_plan(literal.get_atom().get_row());
+                extract_relaxed_plan(literal.get_atom().get_row(), state_context);
             }
 
             for (const auto constraint : goal->get_numeric_constraints())
-                extract_numeric_constraint_support(constraint);
+                extract_numeric_constraint_support(constraint, state_context);
         }
 
         return ygg::float_t(m_relaxed_plan.size());
     }
 
-    const auto& get_relaxed_plan() const noexcept { return m_relaxed_plan; }
+    const auto& get_preferred_actions() const noexcept { return m_preferred_actions; }
 
 private:
-    void extract_relaxed_plan(PredicateHead head)
+    void extract_relaxed_plan(PredicateHead head, const StateContext<Kind>& state_context)
     {
         if (mark(m_predicate_markings, head.get_index().relation, head.get_index().row))
             return;
@@ -117,10 +121,10 @@ private:
 
         const auto* witness = std::get_if<datalog::WitnessAnnotation<>>(annotation);
         if (witness)
-            extract_relaxed_plan(*witness);
+            extract_relaxed_plan(*witness, state_context);
     }
 
-    void extract_relaxed_plan(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval)
+    void extract_relaxed_plan(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval, const StateContext<Kind>& state_context)
     {
         if (!m_numeric_markings.emplace(head, interval).second)
             return;
@@ -131,27 +135,32 @@ private:
 
         const auto* witness = std::get_if<datalog::WitnessAnnotation<formalism::FunctionTag>>(annotation);
         if (witness)
-            extract_relaxed_plan(*witness);
+            extract_relaxed_plan(*witness, state_context);
     }
 
-    void extract_numeric_constraint_support(formalism::datalog::BooleanOperatorView<GroundTag> constraint)
+    void extract_numeric_constraint_support(formalism::datalog::BooleanOperatorView<GroundTag> constraint, const StateContext<Kind>& state_context)
     {
         const auto& selector = this->m_workspace.get_numeric_support_selector();
         selector.for_each_constraint_support(constraint,
                                              m_numeric_support_workspace.selection,
                                              datalog::SumAggregation {},
-                                             [&](const auto head, const auto interval, const auto&) { extract_relaxed_plan(head, interval); });
+                                             [&](const auto head, const auto interval, const auto&) { extract_relaxed_plan(head, interval, state_context); });
     }
 
     template<formalism::RelationKind R>
-    void extract_relaxed_plan(const datalog::WitnessAnnotation<R>& witness)
+    void extract_relaxed_plan(const datalog::WitnessAnnotation<R>& witness, const StateContext<Kind>& state_context)
     {
         if (const auto action = this->get_action(witness))
-            m_relaxed_plan.insert(this->get_action_binding(*action));
+        {
+            const auto action_binding = this->get_action_binding(*action);
+            m_relaxed_plan.insert(action_binding);
+            if (this->is_action_applicable(m_executor, *action, state_context))
+                m_preferred_actions.insert(action_binding);
+        }
 
-        this->for_each_witness_precondition(witness, [&](const auto precondition) { extract_relaxed_plan(precondition); });
+        this->for_each_witness_precondition(witness, [&](const auto precondition) { extract_relaxed_plan(precondition, state_context); });
         for (const auto& support : witness.get_numeric_supports())
-            extract_relaxed_plan(support.get_key(), support.get_interval());
+            extract_relaxed_plan(support.get_key(), support.get_interval(), state_context);
     }
 
     template<typename Relation, typename Row>
@@ -168,8 +177,10 @@ private:
 
     std::vector<boost::dynamic_bitset<>> m_predicate_markings;
     ygg::UnorderedSet<NumericCertificate> m_numeric_markings;
+    ActionExecutor m_executor;
     NumericSupportWorkspace m_numeric_support_workspace;
     ygg::UnorderedSet<formalism::planning::ActionBindingView> m_relaxed_plan;
+    ygg::UnorderedSet<formalism::planning::ActionBindingView> m_preferred_actions;
 };
 
 template<TaskKind Kind>
@@ -217,9 +228,9 @@ HeuristicPtr<Kind> FFRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr ex
 }
 
 template<TaskKind Kind>
-const ygg::UnorderedSet<formalism::planning::ActionBindingView>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
+const ygg::UnorderedSet<formalism::planning::ActionBindingView>& FFRPGHeuristic<Kind>::get_preferred_actions()
 {
-    return &m_impl->get_relaxed_plan();
+    return m_impl->get_preferred_actions();
 }
 
 template<TaskKind Kind>

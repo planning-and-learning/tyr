@@ -60,7 +60,6 @@ struct RuleToLiteralPositionMappings
 {
     std::vector<std::pair<ygg::uint_t, ygg::Index<formalism::Object>>> constant_positions;
     std::vector<std::vector<ygg::uint_t>> parameter_to_positions;
-    size_t arity = 0;  ///< Of the literal's atom.
 };
 
 template<formalism::FactKind T>

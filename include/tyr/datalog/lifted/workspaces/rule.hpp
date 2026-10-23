@@ -31,7 +31,6 @@
 
 #include <cassert>
 #include <deque>
-#include <optional>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -41,14 +40,6 @@
 
 namespace tyr::datalog
 {
-
-/// The last lookup of a head atom: its objects and the binding they ground to, if interned.
-struct HeadLookup
-{
-    bool valid = false;
-    ygg::IndexList<formalism::Object> objects;
-    std::optional<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head;
-};
 
 struct ApplicabilityCache
 {
@@ -102,10 +93,6 @@ struct RuleWorkspace<LiftedTag, R>
 
         /// Heads of the current binding that the rule updates
         std::vector<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head_bindings;
-
-        /// Per head atom. Consecutive cliques often bind a head's variables to the same objects.
-        /// Cleared per rule execution because the workspace repository is cleared between program executions.
-        std::vector<HeadLookup> head_lookups;
     };
 
     struct Solve
@@ -159,28 +146,13 @@ template<formalism::RelationKind R>
 struct ConstRuleWorkspace<LiftedTag, R>
 {
 public:
-    /// A literal of the conflicting condition and the partitions of its variables, checkable once they are all bound.
-    struct ConflictingLiteralCheck
-    {
-        std::vector<ygg::uint_t> partitions;
-        std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag>> static_literal;
-        std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag>> fluent_literal;
-    };
-
     auto get_rule() const noexcept { return rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
-    /// Whether the static literals of the nullary condition hold; static facts do not change.
-    bool get_static_nullary() const noexcept { return static_nullary; }
-    size_t get_arity() const noexcept { return arity; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
-    const auto& get_conflicting_literal_checks() const noexcept { return conflicting_literal_checks; }
 
-    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule,
-                       formalism::datalog::Repository& repository,
-                       kckp::Graph compatibility_graph,
-                       const PredicateFactSets<formalism::StaticTag>& static_facts);
+    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
 private:
     formalism::datalog::RuleView<LiftedTag, R> rule;
@@ -191,10 +163,6 @@ private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition;
 
     StaticConsistencyGraph static_consistency_graph;
-
-    std::vector<ConflictingLiteralCheck> conflicting_literal_checks;
-    bool static_nullary = true;
-    size_t arity = 0;
 };
 
 /**
@@ -240,8 +208,6 @@ template<formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Iteration::clear() noexcept
 {
     head_updates.clear();
-    for (auto& lookup : head_lookups)
-        lookup.valid = false;
 }
 
 template<formalism::RelationKind R>

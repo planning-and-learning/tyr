@@ -39,13 +39,12 @@ template<formalism::RelationKind R>
 void initialize_const_rule_workspaces(Program<LiftedTag>& program,
                                       formalism::datalog::Repository& program_repository,
                                       analysis::RuleCompatibilityGraphMap<R>& graphs,
-                                      const PredicateFactSets<formalism::StaticTag>& static_facts,
                                       std::vector<std::optional<ConstRuleWorkspace<LiftedTag, R>>>& workspaces)
 {
     const auto rules = program.get_program().template get_rules<R>();
     workspaces.resize(rules.size());
     for (const auto rule : rules)
-        workspaces[ygg::uint_t(rule.get_index())].emplace(rule, program_repository, std::move(graphs.at(rule.get_index())), static_facts);
+        workspaces[ygg::uint_t(rule.get_index())].emplace(rule, program_repository, std::move(graphs.at(rule.get_index())));
 }
 }
 
@@ -144,12 +143,10 @@ ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& prog
     initialize_const_rule_workspaces<formalism::PredicateTag>(program,
                                                                      *program.m_program_repository,
                                                                      program.m_analysis.compatibility_graphs.predicate_rules,
-                                                                     facts.fact_sets.predicate,
                                                                      predicate_rules);
     initialize_const_rule_workspaces<formalism::FunctionTag>(program,
                                                                     *program.m_program_repository,
                                                                     program.m_analysis.compatibility_graphs.function_rules,
-                                                                    facts.fact_sets.predicate,
                                                                     function_rules);
 }
 

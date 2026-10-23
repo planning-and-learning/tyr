@@ -263,9 +263,16 @@ def test_nested_width_search_solvers_expose_expected_defaults():
         assert siw_solver.options is not None
 
 
-def test_heuristics_without_a_relaxed_plan_return_none():
+def test_heuristics_expose_preferred_actions():
     for task_module in (planning.ground, planning.lifted):
-        assert task_module.BlindHeuristic().get_relaxed_plan() is None
+        heuristic = task_module.BlindHeuristic()
+
+        preferred_actions = heuristic.get_preferred_actions()
+
+        del heuristic
+        gc.collect()
+
+        assert list(preferred_actions) == []
 
 
 def test_search_result_exposes_all_result_fields():
@@ -538,47 +545,6 @@ def _make_components(task_module: ModuleType, task: Task, *, concurrent: bool = 
     )
     successor_generator = task_module.SuccessorGeneratorFactory().create(task, execution_context)
     return state_repository, axiom_evaluator, successor_generator
-
-
-def test_lazy_gbfs_reads_the_relaxed_plan_of_python_heuristics():
-    ground_task, lifted_task = _make_gripper_tasks()
-
-    for task_module, task in (
-        (planning.ground, ground_task),
-        (planning.lifted, lifted_task),
-    ):
-        for plan in (set(), None):
-            class RelaxedPlanHeuristic(task_module.Heuristic):
-                def __init__(self):
-                    super().__init__()
-                    self.num_plan_requests = 0
-
-                def set_goal(self, goal):
-                    pass
-
-                def evaluate(self, state):
-                    return 0.0
-
-                def make_worker(self, execution_context):
-                    return self
-
-                def get_relaxed_plan(self):
-                    self.num_plan_requests += 1
-                    return plan
-
-            heuristic = RelaxedPlanHeuristic()
-            state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
-            result = task_module.gbfs_lazy.find_solution(
-                task,
-                state_repository,
-                axiom_evaluator,
-                successor_generator,
-                heuristic,
-                task_module.gbfs_lazy.Options(),
-            )
-
-            assert result.status == planning.SearchStatus.SOLVED
-            assert heuristic.num_plan_requests == result.statistics.get_num_expanded()
 
 
 def test_parallel_search_is_available_through_python_bindings():

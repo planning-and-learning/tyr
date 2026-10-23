@@ -690,7 +690,6 @@ static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<
         info.position_mappings.parameter_to_positions = std::vector<std::vector<ygg::uint_t>>(arity);
 
         const auto terms = literal.get_atom().get_terms();
-        info.position_mappings.arity = terms.size();
 
         for (ygg::uint_t position = 0; position < terms.size(); ++position)
         {

@@ -17,8 +17,6 @@
 
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 
-#include <span>
-
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
@@ -219,20 +217,7 @@ template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
 {
     assert(binding.get_index().relation == m_predicate_index);
-    insert_ranks(binding.get_objects().get_data());
-}
-
-template<formalism::FactKind T>
-void PredicateAssignmentSet<T>::insert(std::span<const ygg::Index<formalism::Object>> objects)
-{
-    insert_ranks(objects);
-}
-
-template<formalism::FactKind T>
-template<typename Objects>
-void PredicateAssignmentSet<T>::insert_ranks(const Objects& objects)
-{
-    for_each_assignment_rank(m_hash, objects, m_remapped_objects, [&](size_t rank)
+    for_each_assignment_rank(m_hash, binding.get_objects().get_data(), m_remapped_objects, [&](size_t rank)
                              {
                                  const auto block = ygg::BitsetSpan<uint64_t>::block_index(rank);
                                  if (m_blocks[block] == 0)
@@ -332,12 +317,6 @@ template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
 {
     m_sets[ygg::uint_t(binding.get_index().relation)].insert(binding);
-}
-
-template<formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(ygg::Index<formalism::Predicate<T>> predicate, std::span<const ygg::Index<formalism::Object>> objects)
-{
-    m_sets[ygg::uint_t(predicate)].insert(objects);
 }
 
 template<formalism::FactKind T>

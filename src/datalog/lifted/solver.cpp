@@ -40,7 +40,6 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -67,10 +66,7 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 class SolverPolicy<LiftedTag, AP, TP, CP>
 {
 public:
-    explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) :
-        m_ctx(ctx),
-        m_program_stopwatch(ctx.out().statistics().total_time),
-        m_goal(ctx.out().goal_cutoff())
+    explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx), m_program_stopwatch(ctx.out().statistics().total_time)
     {
         ++ctx.out().statistics().num_executions;
         initialize_goal_cutoff();
@@ -92,7 +88,7 @@ public:
         run_active_rules<formalism::PredicateTag>(ctx);
         run_active_rules<formalism::FunctionTag>(ctx);
         // The rules consumed the facts committed since they last ran; the commit phase collects the next ones.
-        ctx.out().program().facts().reset_delta();
+        ctx.out().program().facts().delta_fact_sets.reset();
         reduce_worker_results<formalism::PredicateTag>(ctx, cost_buckets, pending_achievers);
         return reduce_worker_results<formalism::FunctionTag>(ctx, cost_buckets, pending_achievers);
     }
@@ -100,7 +96,7 @@ public:
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
-    using GoalAtom = GoalCutoffWorkspace::GoalAtom;
+    using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
 
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
     /// constraints, propositional rules only, one stratum, and annotations without achievers.
@@ -121,14 +117,14 @@ private:
             for (const auto& rule : m_ctx.in().template get_rules<formalism::PredicateTag>())
                 min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
-            m_goal.atoms.clear();
-            m_goal.positions.clear();
+            m_goal_atoms.clear();
+            m_goal_positions.clear();
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-                if (m_goal.positions.emplace(literal.get_atom().get_row().get_index(), m_goal.atoms.size()).second)
-                    m_goal.atoms.push_back(literal.get_atom().get_row().get_index());
-            m_goal.final.assign(m_goal.atoms.size(), false);
+                if (m_goal_positions.emplace(literal.get_atom().get_row().get_index(), m_goal_atoms.size()).second)
+                    m_goal_atoms.push_back(literal.get_atom().get_row().get_index());
+            m_goal_final.assign(m_goal_atoms.size(), false);
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? Cost(0) : min_edge_cost;
-            m_goal_cutoff_enabled = !m_goal.atoms.empty();
+            m_goal_cutoff_enabled = !m_goal_atoms.empty();
         }
     }
 
@@ -147,10 +143,10 @@ private:
     /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
     void observe_goal_atom(size_t i, Cost tentative_cost)
     {
-        if (m_goal.final[i] || tentative_cost > m_goal_cutoff_bound)
+        if (m_goal_final[i] || tentative_cost > m_goal_cutoff_bound)
             return;
-        m_goal.final[i] = true;
-        if (++m_num_final_goals == m_goal.atoms.size())
+        m_goal_final[i] = true;
+        if (++m_num_final_goals == m_goal_atoms.size())
             m_goal_cutoff_stopped = true;
     }
 
@@ -161,15 +157,15 @@ private:
             return;
 
         m_goal_cutoff_bound = get_delta_cost(ctx) + m_min_edge_cost;
-        std::fill(m_goal.final.begin(), m_goal.final.end(), false);
+        std::fill(m_goal_final.begin(), m_goal_final.end(), false);
         m_num_final_goals = 0;
         const auto& program_out = ctx.out().program();
         const auto& facts = program_out.facts().fact_sets.predicate;
-        for (size_t i = 0; i < m_goal.atoms.size(); ++i)
+        for (size_t i = 0; i < m_goal_atoms.size(); ++i)
         {
-            if (facts.contains(m_goal.atoms[i]))
+            if (facts.contains(m_goal_atoms[i]))
                 observe_goal_atom(i, Cost(0));
-            else if (const auto* annotation = program_out.annotations().find(m_goal.atoms[i]))
+            else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
                 observe_goal_atom(i, get_cost(*annotation));
         }
     }
@@ -180,7 +176,7 @@ private:
         if (!m_goal_cutoff_enabled || m_goal_cutoff_stopped)
             return;
         for (const auto head : heads)
-            if (const auto it = m_goal.positions.find(head); it != m_goal.positions.end())
+            if (const auto it = m_goal_positions.find(head); it != m_goal_positions.end())
                 if (const auto* annotation = ctx.out().program().delta_annotations().find(head))
                     observe_goal_atom(it->second, get_cost(*annotation));
     }
@@ -273,60 +269,28 @@ private:
         return set.insert(binding).second;
     }
 
-    template<typename Callback, typename Prune>
+    template<typename Callback>
     void for_each_relevant_clique(formalism::PredicateTag,
                                   kckp::DeltaKCKP& algorithm,
                                   Callback&& callback,
                                   kckp::Workspace& workspace,
-                                  [[maybe_unused]] bool enumerate_all,
-                                  Prune&& prune)
+                                  [[maybe_unused]] bool enumerate_all)
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         if (!enumerate_all)
         {
-            algorithm.for_each_delta_clique(std::forward<Callback>(callback), workspace, prune);
+            algorithm.for_each_delta_clique(std::forward<Callback>(callback), workspace);
             return;
         }
 #endif
-        algorithm.for_each_clique(std::forward<Callback>(callback), workspace, prune);
-    }
-
-    template<typename Callback, typename Prune>
-    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool, Prune&&)
-    {
         algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
 
-    /// Prunes a partial clique once the goal cutoff stopped the iteration, or once the vertex just bound completes the variables
-    /// of a literal of the conflicting condition (the literals the graph does not encode) that does not hold. Bindings
-    /// rejected this way are generated again by the delta that makes them applicable, as when the leaf rejects them.
-    /// Partitions are the rule's parameters.
-    auto make_literal_prune(formalism::PredicateTag, RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
+    template<typename Callback>
+    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
     {
-        const auto& checks = wrctx.in().cws_rule().get_conflicting_literal_checks();
-        const auto& layout = wrctx.in().cws_rule().get_static_consistency_graph().get_graph_layout();
-        return [this, &wrctx, &layout, &checks](ygg::uint_t partition, size_t, const kckp::Workspace& workspace)
-        {
-            if (goal_cutoff_stopped())
-                return true;
-            for (const auto& check : checks)
-            {
-                if (std::ranges::find(check.partitions, partition) == check.partitions.end()
-                    || !std::ranges::all_of(check.partitions, [&](auto p) { return workspace.partition_bits.test(p); }))
-                    continue;
-                auto& binding = wrctx.out().ground_context().binding;
-                binding.resize(layout.num_partitions);
-                for (const auto p : check.partitions)
-                    binding[p] = ygg::Index<formalism::Object>(layout.vertex_labels[workspace.partial_solution[p].index]);
-                const auto context = ApplicabilityContext { wrctx.in().fact_sets(), wrctx.out().ground_context() };
-                if (check.static_literal ? !is_applicable(*check.static_literal, context) : !is_applicable(*check.fluent_literal, context))
-                    return true;
-            }
-            return false;
-        };
+        algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
-
-    auto make_literal_prune(formalism::FunctionTag, RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return kckp::NoPrune {}; }
 
     inline bool require_novel_binding(formalism::PredicateTag) noexcept
     {
@@ -358,7 +322,6 @@ private:
                                               auto wrctx = rctx.get_rule_worker_execution_context(stripe);
                                               auto& out = wrctx.out();
                                               auto& kckp_workspace = out.kckp_workspace();
-                                              auto prune = make_literal_prune(formalism::PredicateTag {}, wrctx);
                                               ++out.statistics().num_executions;
 
                                               for (auto edge_index = stripe; edge_index < delta_edges.size(); edge_index += kNumStripes)
@@ -368,8 +331,7 @@ private:
                                                   kckp_algorithm.template complete_from_seed<kckp::Edge>([&](auto&& clique)
                                                                                                          { process_clique(wrctx, clique, true); },
                                                                                                          0,
-                                                                                                         kckp_workspace,
-                                                                                                         prune);
+                                                                                                         kckp_workspace);
                                               }
                                           });
                 return true;
@@ -401,27 +363,14 @@ private:
         auto& heads = out.head_bindings();
         heads.clear();
         auto missing = false;
-        const auto head_atoms = in.cws_rule().get_rule().get_heads();
-        auto& lookups = out.head_lookups();
-        lookups.resize(head_atoms.size());
-        auto lookup_it = lookups.begin();
-        for (const auto head_atom : head_atoms)
+        for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
-            auto& lookup = *lookup_it++;
-            if (!lookup.valid || (intern && !lookup.head) || !grounds_to(head_atom.get_terms(), ground_context.binding, lookup.objects))
-            {
-                auto binding =
-                    formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
-                binding->relation = head_atom.get_predicate().get_index();
-                formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
-                formalism::canonicalize(*binding);
-                const auto head = intern ? std::optional(formalism::datalog::insert(ground_context.destination, *binding).first)
-                                         : ground_context.destination.find(*binding);
-                lookup.valid = true;
-                lookup.objects = binding->objects;
-                lookup.head = head ? std::optional(head->get_index()) : std::nullopt;
-            }
-            const auto head = lookup.head;
+            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
+            binding->relation = head_atom.get_predicate().get_index();
+            formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
+            formalism::canonicalize(*binding);
+            const auto head =
+                intern ? std::optional(formalism::datalog::insert(ground_context.destination, *binding).first) : ground_context.destination.find(*binding);
             if (!head)
             {
                 missing = true;
@@ -429,33 +378,9 @@ private:
             }
             if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
                 continue;
-            heads.push_back(*head);
+            heads.push_back(head->get_index());
         }
         return missing;
-    }
-
-    /// Whether the terms ground to objects under binding. objects is a grounding of the same terms, so constants match.
-    static bool grounds_to(formalism::datalog::TermListView terms,
-                           const ygg::IndexList<formalism::Object>& binding,
-                           const ygg::IndexList<formalism::Object>& objects)
-    {
-        auto position = size_t(0);
-        for (const auto term : terms)
-        {
-            const auto matches = visit(
-                [&]<typename Alternative>(Alternative arg)
-                {
-                    if constexpr (std::same_as<Alternative, formalism::ParameterIndex>)
-                        return binding[ygg::uint_t(arg)] == objects[position];
-                    else
-                        return true;
-                },
-                term.get_variant());
-            if (!matches)
-                return false;
-            ++position;
-        }
-        return true;
     }
 
     bool try_process_predicate_binding(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
@@ -581,8 +506,7 @@ private:
                         process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all);
                 },
                 kckp_workspace,
-                enumerate_all,
-                make_literal_prune(R {}, wrctx));
+                enumerate_all);
         }
     }
 
@@ -605,16 +529,12 @@ private:
         auto& out = wrctx.out();
         const auto delta_sets = FactSets { rctx.stratum_in().program().facts().fact_sets, delta_fact_sets };
         const auto delta_context = ApplicabilityContext { delta_sets, out.ground_context() };
-        auto prune = make_literal_prune(formalism::PredicateTag {}, wrctx);
 
-        const auto& delta_objects = rctx.stratum_out().program().facts().delta_objects;
         for (size_t i = 0; i < literals.size(); ++i)
         {
-            const auto& objects = delta_objects[ygg::uint_t(infos[i].predicate)];
-            const auto atom_arity = infos[i].position_mappings.arity;
-            for (size_t begin = 0; begin < objects.size(); begin += atom_arity)
+            for (const auto atom : delta_fact_sets.predicate.get_sets()[ygg::uint_t(infos[i].predicate)].get_bindings())
             {
-                if (!match_anchor(graph.get_graph_layout(), infos[i], std::span(objects).subspan(begin, atom_arity), out.anchor_vertices()))
+                if (!match_anchor(graph.get_graph_layout(), infos[i], atom.get_objects(), out.anchor_vertices()))
                     continue;
 
                 kckp_algorithm.for_each_hyperedge_clique(
@@ -629,8 +549,7 @@ private:
                                 return;  // An earlier literal's new atom anchors this clique.
                         process_binding(wrctx, true);
                     },
-                    out.kckp_workspace(),
-                    prune);
+                    out.kckp_workspace());
             }
         }
     }
@@ -639,11 +558,11 @@ private:
     /// vertices is a per-worker scratch buffer, reused across anchors to avoid allocations.
     static bool match_anchor(const kckp::GraphLayout& layout,
                              const details::RuleToLiteralInfo<formalism::FluentTag>& info,
-                             std::span<const ygg::Index<formalism::Object>> objects,
+                             const auto& objects,
                              std::vector<kckp::Vertex>& vertices)
     {
         for (const auto& [position, object] : info.position_mappings.constant_positions)
-            if (objects[position] != object)
+            if (objects[position].get_index() != object)
                 return false;
 
         vertices.clear();
@@ -653,8 +572,8 @@ private:
             const auto& positions = parameter_to_positions[parameter];
             if (positions.empty())
                 continue;
-            const auto object = objects[positions.front()];
-            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position] == object; }))
+            const auto object = objects[positions.front()].get_index();
+            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position].get_index() == object; }))
                 return false;
             const auto vertex = layout.find_vertex(parameter, ygg::uint_t(object));
             if (!vertex)
@@ -693,22 +612,7 @@ private:
             auto rctx = ctx.get_rule_execution_context(rule_index);
             auto& rule_out = rctx.out();
 
-            // Three clock reads per execution: the start, the end of the initialization, and the end.
-            struct Timing
-            {
-                RuleStatistics& statistics;
-                std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-                std::optional<std::chrono::steady_clock::time_point> initialized;
-
-                ~Timing()
-                {
-                    const auto end = std::chrono::steady_clock::now();
-                    statistics.total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-                    if (initialized)
-                        statistics.process_generate_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end - *initialized);
-                }
-            };
-            auto timing = Timing { rule_out.statistics() };
+            const auto total_time = ygg::StopwatchScope(rule_out.statistics().total_time);
             ++rule_out.statistics().num_executions;
 
             rctx.clear_iteration();  ///< Clear iteration before generate
@@ -716,17 +620,18 @@ private:
                 return;
 
             {
+                const auto initialize_time = ygg::StopwatchScope(rule_out.statistics().initialize_time);
+
                 const auto wrctx = rctx.get_rule_worker_execution_context();
                 const auto& fact_sets = wrctx.in().fact_sets();
                 const auto nullary_condition = rctx.in().cws_rule().get_nullary_condition();
-                const auto static_nullary = rctx.in().cws_rule().get_static_nullary();
+                const auto static_nullary = is_applicable(nullary_condition.template get_literals<formalism::StaticTag>(), fact_sets);
                 const auto dynamic_nullary = static_nullary && is_dynamically_applicable(nullary_condition, fact_sets);
-                if (!dynamic_nullary && rctx.in().cws_rule().get_arity() > 0)
+                if (!dynamic_nullary && rctx.in().cws_rule().get_rule().get_arity() > 0)
                 {
                     // No binding is applicable while the nullary condition fails. Its atoms are listened to, so the rule
                     // runs again once it holds, and the reset graph then enumerates all cliques.
                     rule_out.kckp().reset();
-                    rule_out.statistics().initialize_time += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - timing.start);
                     return;
                 }
 
@@ -735,10 +640,12 @@ private:
                 for (auto& worker : rule_out.workers())
                     worker.solve.applicability_cache.static_nullary = static_nullary;
             }
-            timing.initialized = std::chrono::steady_clock::now();
-            rule_out.statistics().initialize_time += std::chrono::duration_cast<std::chrono::nanoseconds>(*timing.initialized - timing.start);
 
-            generate(rctx, enumerate_all);
+            {
+                const auto process_generate_time = ygg::StopwatchScope(rule_out.statistics().process_generate_time);
+
+                generate(rctx, enumerate_all);
+            }
         };
 
         // With one requested Datalog thread, run sequentially to pin the execution order to the scheduler's
@@ -805,7 +712,9 @@ private:
     bool m_goal_cutoff_stopped = false;
     Cost m_min_edge_cost = Cost(0);
     Cost m_goal_cutoff_bound = Cost(0);
-    GoalCutoffWorkspace& m_goal;
+    std::vector<GoalAtom> m_goal_atoms;
+    ygg::UnorderedMap<GoalAtom, size_t> m_goal_positions;
+    std::vector<bool> m_goal_final;
     size_t m_num_final_goals = 0;
 };
 

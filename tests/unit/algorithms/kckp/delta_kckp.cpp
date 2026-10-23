@@ -497,7 +497,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     const auto sequential_value = sequential_heuristic->evaluate(initial_state);
     const auto parallel_value = parallel_heuristic->evaluate(initial_state);
     EXPECT_EQ(parallel_value, sequential_value);
-    EXPECT_EQ(*parallel_heuristic->get_relaxed_plan(), *sequential_heuristic->get_relaxed_plan());
+    EXPECT_EQ(parallel_heuristic->get_preferred_actions(), sequential_heuristic->get_preferred_actions());
 
     using AnnotationPolicy = tyr::datalog::MinCostAnnotationPolicy<tyr::datalog::SumAggregation>;
     using Termination = tyr::datalog::TerminationPolicy<tyr::datalog::SumAggregation>;

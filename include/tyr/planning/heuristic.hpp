@@ -29,8 +29,8 @@ namespace tyr::planning
 {
 
 /**
- * A heuristic instance is a mutable evaluator owned by one search worker. Evaluation may reuse scratch storage, update statistics, and replace the
- * relaxed plan, so evaluate() is intentionally non-const and must not be called concurrently on the same instance. The relaxed plan describes the latest
+ * A heuristic instance is a mutable evaluator owned by one search worker. Evaluation may reuse scratch storage, update statistics, and replace preferred
+ * actions, so evaluate() is intentionally non-const and must not be called concurrently on the same instance. Preferred actions describe the latest
  * evaluation and must not be retained across another evaluation or reconfiguration.
  *
  * Evaluation consumes state contents through a builder and must not depend on repository registration or state identity.
@@ -55,9 +55,7 @@ public:
 
     [[nodiscard]] virtual HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const = 0;
 
-    /// The relaxed plan of the last evaluation, or nullptr if this heuristic does not compute one. An empty plan (e.g. in a goal state or a dead end) is
-    /// not nullptr. Searches decide which actions to prefer from it.
-    virtual const ygg::UnorderedSet<formalism::planning::ActionBindingView>* get_relaxed_plan() const { return nullptr; }
+    virtual const ygg::UnorderedSet<formalism::planning::ActionBindingView>& get_preferred_actions();
 
     virtual void print_summary([[maybe_unused]] size_t verbosity) const {}
 };

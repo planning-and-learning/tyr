@@ -17,8 +17,6 @@
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 
-#include <bit>
-#include <span>
 #include <stdexcept>
 
 namespace tyr::kckp
@@ -85,9 +83,6 @@ DeltaKCKP::DeltaKCKP(const Graph& graph, const PartitionedAdjacencyLayout& adjac
 
 void DeltaKCKP::reset()
 {
-    // Only update() changes the graphs, so they are still clean.
-    if (m_iteration == 0)
-        return;
     m_delta_graph.reset();
     m_full_graph.reset();
     m_delta_edges.clear();
@@ -235,21 +230,13 @@ ygg::uint_t DeltaKCKP::choose_best_partition(size_t depth, const Workspace& work
         if (workspace.partition_bits.test(partition))
             continue;
 
-        // Counting stops once it cannot beat the best partition; candidate rows are never empty, so one candidate is best.
         const auto& info = m_layout.info.infos[partition];
-        auto num_set_bits = ygg::uint_t(0);
-        for (const auto block : std::span(current_row.data() + info.block_offset, info.num_blocks))
-        {
-            num_set_bits += ygg::uint_t(std::popcount(block));
-            if (num_set_bits >= best_set_bits)
-                break;
-        }
+        const auto current = ygg::BitsetSpan<const uint64_t>(current_row.data() + info.block_offset, info.num_bits);
+        const auto num_set_bits = current.count();
         if (num_set_bits < best_set_bits)
         {
             best_set_bits = num_set_bits;
             best_partition = partition;
-            if (best_set_bits <= 1)
-                break;
         }
     }
     return best_partition;
