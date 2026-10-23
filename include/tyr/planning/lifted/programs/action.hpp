@@ -21,6 +21,7 @@
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/lifted/programs/effect_predicates.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 #include "tyr/planning/programs/action.hpp"
 
@@ -51,16 +52,9 @@ public:
     /// A program per action schema with its action rule and the rules of its conditional effects.
     using SchemaPrograms = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, SchemaProgram>;
 
-    /// The conditional effect of an effect predicate, whose atoms are the objects of an applicable binding of the action followed
-    /// by objects of the effect's variables for which the effect fires. Effects without variables and condition have none.
-    /// The static consistency graph of the rule relates the action's objects to the effect extensions that static facts allow.
-    struct Effect
-    {
-        formalism::planning::ActionView<LiftedTag> action;
-        size_t position;  ///< Among the action's effects.
-        ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>> rule;
-    };
-    using EffectPredicateToEffectMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, Effect>;
+    /// The effect predicates of the conditional effects, whose atoms are bindings of applicable actions with the extensions for
+    /// which the effects fire.
+    using EffectPredicateToEffectMapping = planning::EffectPredicateToEffectMapping;
 
     explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 

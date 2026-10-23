@@ -128,20 +128,13 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
         /// The firing conditional effects of each action binding in the facts, grouped by action and action objects, in the
         /// order of the action's effects; read from the atoms of the effect predicates at an action's first successor.
-        struct Firing
-        {
-            size_t position;  ///< Of the effect among the action's effects.
-            ygg::IndexList<formalism::Object> extension;
-        };
-        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<Firing>>>
-            firing_effects;
+        ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, EffectExtensionsByBinding> firing_effects;
         ygg::IndexList<formalism::Object> firing_key;
         std::vector<ActionExecutor::FiringEffect> firing_scratch;
     };
 
     /// The firing effects of the action's bindings in the facts.
-    const ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<Evaluator::Firing>>&
-    get_firing_effects(formalism::planning::ActionView<LiftedTag> action);
+    const EffectExtensionsByBinding& get_firing_effects(formalism::planning::ActionView<LiftedTag> action);
 
     /// Computes the facts of the node's state with the action's effects unless the workspace holds them.
     template<StateViewConcept<LiftedTag> S>
@@ -494,14 +487,13 @@ SuccessorGenerator<LiftedTag>::Impl::collect_firing_effects(formalism::planning:
     return firing;
 }
 
-const ygg::UnorderedMap<ygg::IndexList<formalism::Object>, std::vector<SuccessorGenerator<LiftedTag>::Impl::Evaluator::Firing>>&
-SuccessorGenerator<LiftedTag>::Impl::get_firing_effects(formalism::planning::ActionView<LiftedTag> action)
+const EffectExtensionsByBinding& SuccessorGenerator<LiftedTag>::Impl::get_firing_effects(formalism::planning::ActionView<LiftedTag> action)
 {
     const auto [it, inserted] = evaluator.firing_effects.try_emplace(action.get_index());
     if (!inserted)
         return it->second;
 
-    // An atom's objects are those of the action binding followed by the extension; effects in order keep each list in order.
+    // Effects in order keep each binding's list in order.
     const auto& sets = evaluator.workspace.facts.fact_sets.predicate.get_sets();
     const auto& effect_rules = definition->effect_rules.at(action.get_index());
     for (size_t position = 0; position < effect_rules.size(); ++position)
@@ -509,14 +501,7 @@ SuccessorGenerator<LiftedTag>::Impl::get_firing_effects(formalism::planning::Act
         if (!effect_rules[position])
             continue;
         for (const auto atom : sets[ygg::uint_t(effect_rules[position]->predicate.get_index())].get_bindings())
-        {
-            const auto objects = atom.get_objects();
-            auto prefix = ygg::IndexList<formalism::Object> {};
-            auto extension = ygg::IndexList<formalism::Object> {};
-            for (size_t i = 0; i < objects.size(); ++i)
-                (i < action.get_arity() ? prefix : extension).push_back(objects[i].get_index());
-            it->second[std::move(prefix)].push_back({ position, std::move(extension) });
-        }
+            add_effect_atom(it->second, position, action.get_arity(), atom.get_objects());
     }
     return it->second;
 }

@@ -24,6 +24,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/lifted/programs/effect_predicates.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 
 #include <vector>
@@ -47,6 +48,8 @@ public:
     const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
     const AppPredicateToAxiomMapping& get_predicate_to_axiom_mapping() const noexcept;
+    /// The effect predicates of the conditional effects, whose atoms are the relaxed reachable groundings of the effects.
+    const EffectPredicateToEffectMapping& get_effect_predicate_to_effect_mapping() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
     const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
     const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
@@ -55,6 +58,7 @@ private:
     TranslationContext<LiftedTag> m_translation_context;
     AppPredicateToActionMapping m_predicate_to_actions;
     AppPredicateToAxiomMapping m_predicate_to_axioms;
+    EffectPredicateToEffectMapping m_effect_predicate_to_effect;
 
     datalog::Program<LiftedTag> m_datalog_program;
 };

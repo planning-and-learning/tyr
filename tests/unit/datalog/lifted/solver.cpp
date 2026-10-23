@@ -135,6 +135,16 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
         tyr::datalog::execute_model(context, *execution_context);
     };
 
+    // The fixtures predate the predicates of the conditional effects, which are internal to the action and ground task programs.
+    const auto without_effect_predicates = [](AtomsByPredicate atoms, const tyr::planning::EffectPredicateToEffectMapping& mapping)
+    {
+        auto effect_predicates = std::set<std::string> {};
+        for (const auto& [predicate, _] : mapping)
+            effect_predicates.insert(predicate.get_name().str());
+        std::erase_if(atoms, [&](const auto& entry) { return effect_predicates.contains(entry.predicate); });
+        return atoms;
+    };
+
     const auto solve_program = [&](const auto& program)
     {
         auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(program);
@@ -179,13 +189,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                 }
 
                 solve_workspace(action_workspace);
-                // The fixtures predate the rules of the conditional effects, whose predicates are internal to the action program.
-                auto effect_predicates = std::set<std::string> {};
-                for (const auto& [predicate, _] : action_program.get_effect_predicate_to_effect_mapping())
-                    effect_predicates.insert(predicate.get_name().str());
-                auto atoms = collect_atoms_by_predicate(action_workspace);
-                std::erase_if(atoms, [&](const auto& entry) { return effect_predicates.contains(entry.predicate); });
-                return atoms;
+                return without_effect_predicates(collect_atoms_by_predicate(action_workspace), action_program.get_effect_predicate_to_effect_mapping());
             }
 
             if (config == "ground_task")
@@ -194,7 +198,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                 auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(program.get_datalog_program());
                 auto context = tyr::datalog::ProgramExecutionContext(workspace);
                 tyr::datalog::execute_model(context, *execution_context);
-                return collect_atoms_by_predicate(workspace);
+                return without_effect_predicates(collect_atoms_by_predicate(workspace), program.get_effect_predicate_to_effect_mapping());
             }
 
             throw std::runtime_error("unknown bottom-up fixture configuration: " + std::string(config));

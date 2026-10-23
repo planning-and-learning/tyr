@@ -18,7 +18,6 @@
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
 
-#include "tyr/analysis/domains.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
@@ -44,6 +43,7 @@
 #include <algorithm>
 #include <fmt/format.h>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -328,13 +328,15 @@ ground_pruned(formalism::planning::ConditionalEffectView<LiftedTag> element,
     return formalism::planning::insert(context.destination, *cond_effect).first;
 }
 
+/// Grounds the action binding of the context with each effect grounded for its extensions in `extensions` (empty for the effects
+/// without an effect predicate), dropping the parts that no reachable atom can satisfy.
 std::optional<formalism::planning::ActionView<GroundTag>>
 ground_pruned(formalism::planning::ActionView<LiftedTag> element,
               const ygg::UnorderedSet<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>& fluent_atoms,
               const ygg::UnorderedSet<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>& derived_atoms,
-              const analysis::ActionDomain& action_domains,
+              const std::vector<bool>& has_effect_predicates,
+              std::span<const EffectExtension> extensions,
               const StaticState& static_state,
-              analysis::CompatibilityWorkspace& compatibility_workspace,
               formalism::planning::GrounderContext& context,
               const formalism::planning::FDRContext& fdr_context)
 {
@@ -352,26 +354,24 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
 
     auto binding_size = context.binding.size();
 
+    const auto ground_effect = [&](formalism::planning::ConditionalEffectView<LiftedTag> cond_effect, const ygg::IndexList<formalism::Object>& extension)
+    {
+        // push the additional parameters to the end
+        context.binding.resize(binding_size);
+        context.binding.insert(context.binding.end(), extension.begin(), extension.end());
+
+        const auto ground_cond_effect_or_nullopt = ground_pruned(cond_effect, fluent_atoms, derived_atoms, static_state, context, fdr_context);
+        if (ground_cond_effect_or_nullopt.has_value())
+            action->effects.push_back(ground_cond_effect_or_nullopt->get_index());
+    };
+    auto next = extensions.begin();
     for (ygg::uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
         const auto cond_effect = element.get_effects()[cond_effect_index];
-        const auto& effect_domain = action_domains.payload.effect_domains.at(cond_effect.get_index()).payload;
-        context.binding.resize(binding_size);
-        const auto prefix = std::span<const ygg::Index<formalism::Object>>(context.binding.data(), element.get_arity());
-        analysis::for_each_compatible_extension(effect_domain,
-                                                prefix,
-                                                compatibility_workspace,
-                                                [&](auto extension)
-                                                {
-                                                    // push the additional parameters to the end
-                                                    context.binding.resize(binding_size);
-                                                    context.binding.insert(context.binding.end(), extension.begin(), extension.end());
-
-                                                    const auto ground_cond_effect_or_nullopt =
-                                                        ground_pruned(cond_effect, fluent_atoms, derived_atoms, static_state, context, fdr_context);
-                                                    if (ground_cond_effect_or_nullopt.has_value())
-                                                        action->effects.push_back(ground_cond_effect_or_nullopt->get_index());
-                                                });
+        if (!has_effect_predicates[cond_effect_index])
+            ground_effect(cond_effect, {});
+        for (; next != extensions.end() && next->position == cond_effect_index; ++next)
+            ground_effect(cond_effect, next->extension);
     }
     context.binding.resize(binding_size);  ///< important to restore the binding in case of grounding other actions
 
@@ -614,7 +614,29 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto fluent_assign = ygg::UnorderedMap<ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue> {};
     auto derived_assign = ygg::UnorderedMap<ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool> {};
-    auto compatibility_workspace = analysis::CompatibilityWorkspace {};
+
+    // The relaxed reachable groundings of the conditional effects per action binding, in the order of the action's effects.
+    auto effect_predicates = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>,
+                                               std::vector<std::optional<formalism::datalog::PredicateView<formalism::FluentTag>>>> {};
+    for (const auto action : task.get_domain().get_actions())
+        effect_predicates[action.get_index()].resize(action.get_effects().size());
+    for (const auto& [predicate, effect] : ground_program.get_effect_predicate_to_effect_mapping())
+        effect_predicates.at(effect.action.get_index())[effect.position] = predicate;
+    auto has_effect_predicates = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, std::vector<bool>> {};
+    auto effect_extensions = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, EffectExtensionsByBinding> {};
+    for (const auto action : task.get_domain().get_actions())
+    {
+        const auto& predicates = effect_predicates.at(action.get_index());
+        auto& has = has_effect_predicates[action.get_index()];
+        auto& per_binding = effect_extensions[action.get_index()];
+        for (size_t position = 0; position < predicates.size(); ++position)
+        {
+            has.push_back(predicates[position].has_value());
+            if (predicates[position])
+                for (const auto atom : workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(predicates[position]->get_index())].get_bindings())
+                    add_effect_atom(per_binding, position, action.get_arity(), atom.get_objects());
+        }
+    }
 
     for_each_predicate_binding(
         [&](const auto binding)
@@ -630,13 +652,15 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
                 auto grounder_context = formalism::planning::GrounderContext { workspace.planning_builder, *repository, workspace.binding };
 
+                const auto& per_binding = effect_extensions.at(action.get_index());
+                const auto extensions = per_binding.find(workspace.binding);
                 const auto ground_action_or_nullopt =
                     ground_pruned(action,
                                   fluent_atoms_set,
                                   derived_atoms_set,
-                                  lifted_task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
+                                  has_effect_predicates.at(action.get_index()),
+                                  extensions == per_binding.end() ? std::span<const EffectExtension> {} : std::span<const EffectExtension>(extensions->second),
                                   static_state,
-                                  compatibility_workspace,
                                   grounder_context,
                                   *fdr_context);
 

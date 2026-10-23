@@ -181,11 +181,9 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         for (const auto cond_eff : action.get_effects())
         {
             const auto effect_position = position++;
-            const auto condition = cond_eff.get_condition();
-            if (cond_eff.get_variables().empty() && condition.get_literals<formalism::StaticTag>().empty()
-                && condition.get_literals<formalism::FluentTag>().empty() && condition.get_literals<formalism::DerivedTag>().empty()
-                && condition.get_numeric_constraints().empty())
+            if (!has_effect_predicate(cond_eff))
                 continue;
+            const auto condition = cond_eff.get_condition();
 
             auto effect_predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(builder);
             effect_predicate->name = create_triggered_name(action, cond_eff);
@@ -212,7 +210,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
 
             const auto new_effect_rule = formalism::datalog::insert(repository, *effect_rule).first.get_index();
             program->predicate_rules.push_back(new_effect_rule);
-            effect_predicate_to_effect.emplace(new_effect_predicate, ApplicableActionProgram<LiftedTag>::Effect { action, effect_position, new_effect_rule });
+            effect_predicate_to_effect.emplace(new_effect_predicate, EffectPredicate { action, effect_position, new_effect_rule });
         }
     }
 
@@ -232,7 +230,7 @@ struct ActionTables
             result.predicate_to_actions.emplace(remapper.symbol(predicate), action);
         for (const auto& [predicate, effect] : effect_predicate_to_effect)
             result.effect_predicate_to_effect.emplace(remapper.symbol(predicate),
-                                                      ApplicableActionProgram<LiftedTag>::Effect { effect.action, effect.position, remapper.rule(effect.rule) });
+                                                      EffectPredicate { effect.action, effect.position, remapper.rule(effect.rule) });
         return result;
     }
 };
