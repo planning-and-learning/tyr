@@ -177,9 +177,6 @@ public:
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
     const auto& get_conflicting_literal_checks() const noexcept { return conflicting_literal_checks; }
-    /// The function terms of the body's numeric constraints, by position: their bindings determine a constraint's value.
-    const auto& get_numeric_constraint_static_terms() const noexcept { return numeric_constraint_static_terms; }
-    const auto& get_numeric_constraint_fluent_terms() const noexcept { return numeric_constraint_fluent_terms; }
 
     ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule,
                        formalism::datalog::Repository& repository,
@@ -199,8 +196,6 @@ private:
     std::vector<ConflictingLiteralCheck> conflicting_literal_checks;
     bool static_nullary = true;
     size_t arity = 0;
-    std::vector<std::vector<formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag>>> numeric_constraint_static_terms;
-    std::vector<std::vector<formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag>>> numeric_constraint_fluent_terms;
 };
 
 /**
