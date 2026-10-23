@@ -53,10 +53,12 @@ public:
 
     /// The conditional effect of an effect predicate, whose atoms are the objects of an applicable binding of the action followed
     /// by objects of the effect's variables for which the effect fires. Effects without variables and condition have none.
+    /// The static consistency graph of the rule relates the action's objects to the effect extensions that static facts allow.
     struct Effect
     {
         formalism::planning::ActionView<LiftedTag> action;
         size_t position;  ///< Among the action's effects.
+        ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>> rule;
     };
     using EffectPredicateToEffectMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, Effect>;
 

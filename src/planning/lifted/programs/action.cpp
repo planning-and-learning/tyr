@@ -192,7 +192,6 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
             effect_predicate->arity = action.get_arity() + cond_eff.get_arity();
             const auto new_effect_predicate = formalism::datalog::insert(repository, *effect_predicate).first;
             program->fluent_predicates.push_back(new_effect_predicate.get_index());
-            effect_predicate_to_effect.emplace(new_effect_predicate, ApplicableActionProgram<LiftedTag>::Effect { action, effect_position });
 
             auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(builder);
             auto effect_condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
@@ -211,7 +210,9 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
                 effect_atom->terms.push_back(ygg::Data<formalism::Term>(formalism::ParameterIndex(i)));
             effect_rule->heads.push_back(formalism::datalog::insert(repository, *effect_atom).first.get_index());
 
-            program->predicate_rules.push_back(formalism::datalog::insert(repository, *effect_rule).first.get_index());
+            const auto new_effect_rule = formalism::datalog::insert(repository, *effect_rule).first.get_index();
+            program->predicate_rules.push_back(new_effect_rule);
+            effect_predicate_to_effect.emplace(new_effect_predicate, ApplicableActionProgram<LiftedTag>::Effect { action, effect_position, new_effect_rule });
         }
     }
 
@@ -230,7 +231,8 @@ struct ActionTables
         for (const auto& [predicate, action] : predicate_to_actions)
             result.predicate_to_actions.emplace(remapper.symbol(predicate), action);
         for (const auto& [predicate, effect] : effect_predicate_to_effect)
-            result.effect_predicate_to_effect.emplace(remapper.symbol(predicate), effect);
+            result.effect_predicate_to_effect.emplace(remapper.symbol(predicate),
+                                                      ApplicableActionProgram<LiftedTag>::Effect { effect.action, effect.position, remapper.rule(effect.rule) });
         return result;
     }
 };

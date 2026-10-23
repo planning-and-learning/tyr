@@ -84,11 +84,11 @@ std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<L
 
 std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, GrounderContext& context);
 
-std::pair<ActionView<GroundTag>, bool> ground(ActionView<LiftedTag> element,
-                                              GrounderContext& context,
-                                              const analysis::ActionDomain& action_domains,
-                                              analysis::CompatibilityWorkspace& compatibility_workspace,
-                                              FDRContext& fdr);
+/// Grounds the action binding of the context with each effect grounded for the extensions that
+/// `for_each_extension(position, callback)` passes to `callback`, in order.
+template<typename ForEachExtension>
+std::pair<ActionView<GroundTag>, bool>
+ground(ActionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr, ForEachExtension&& for_each_extension);
 
 std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context);
 
@@ -380,11 +380,9 @@ inline std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, G
     return planning::insert(context.destination, *binding);
 }
 
-inline std::pair<ActionView<GroundTag>, bool> ground(ActionView<LiftedTag> element,
-                                                     GrounderContext& context,
-                                                     const analysis::ActionDomain& action_domains,
-                                                     analysis::CompatibilityWorkspace& compatibility_workspace,
-                                                     FDRContext& fdr)
+template<typename ForEachExtension>
+std::pair<ActionView<GroundTag>, bool>
+ground(ActionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr, ForEachExtension&& for_each_extension)
 {
     const auto binding = ground(element, context).first.get_index();
 
@@ -398,19 +396,13 @@ inline std::pair<ActionView<GroundTag>, bool> ground(ActionView<LiftedTag> eleme
     for (ygg::uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
         const auto cond_effect = element.get_effects()[cond_effect_index];
-        const auto& effect_domain = action_domains.payload.effect_domains.at(cond_effect.get_index()).payload;
-        context.binding.resize(binding_size);
-        const auto prefix = std::span<const ygg::Index<Object>>(context.binding.data(), element.get_arity());
-
-        analysis::for_each_compatible_extension(effect_domain,
-                                                prefix,
-                                                compatibility_workspace,
-                                                [&](auto extension)
-                                                {
-                                                    context.binding.resize(binding_size);
-                                                    context.binding.insert(context.binding.end(), extension.begin(), extension.end());
-                                                    action->effects.push_back(ground(cond_effect, context, fdr).first.get_index());
-                                                });
+        for_each_extension(cond_effect_index,
+                           [&](std::span<const ygg::Index<Object>> extension)
+                           {
+                               context.binding.resize(binding_size);
+                               context.binding.insert(context.binding.end(), extension.begin(), extension.end());
+                               action->effects.push_back(ground(cond_effect, context, fdr).first.get_index());
+                           });
     }
 
     context.binding.resize(binding_size);
