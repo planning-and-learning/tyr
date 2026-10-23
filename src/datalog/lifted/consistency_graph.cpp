@@ -33,10 +33,14 @@
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
+#include <algorithm>
 #include <cassert>
+#include <limits>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 
@@ -690,6 +694,7 @@ static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<
         info.position_mappings.parameter_to_positions = std::vector<std::vector<ygg::uint_t>>(arity);
 
         const auto terms = literal.get_atom().get_terms();
+        info.position_mappings.arity = terms.size();
 
         for (ygg::uint_t position = 0; position < terms.size(); ++position)
         {
@@ -889,6 +894,107 @@ static auto classify_adjacency(const kckp::GraphLayout& layout, const formalism:
     return result;
 }
 
+static constexpr auto NO_VERTEX = std::numeric_limits<ygg::uint_t>::max();
+
+/// Whether the atom's objects match the literal's constants and agree at the repeated positions of parameter p.
+static bool matches_literal_at(const details::RuleToLiteralInfo<formalism::FluentTag>& info, std::span<const ygg::Index<formalism::Object>> objects, ygg::uint_t p)
+{
+    for (const auto& [position, object] : info.position_mappings.constant_positions)
+        if (objects[position] != object)
+            return false;
+    const auto& positions = info.position_mappings.parameter_to_positions[p];
+    const auto object = objects[positions.front()];
+    return std::ranges::all_of(positions, [&](const auto position) { return objects[position] == object; });
+}
+
+/// Calls callback(objects) for each new atom of the literal.
+template<typename Callback>
+static void for_each_delta_atom(const details::RuleToLiteralInfo<formalism::FluentTag>& info, const ConsistencyGraphDelta& delta, Callback&& callback)
+{
+    const auto& objects = delta.objects[ygg::uint_t(info.predicate)];
+    const auto arity = info.position_mappings.arity;
+    for (size_t begin = 0; begin < objects.size(); begin += arity)
+        callback(std::span(objects).subspan(begin, arity));
+}
+
+static ygg::uint_t find_bit(const std::vector<ygg::uint_t>& object_to_bit, ygg::Index<formalism::Object> object) noexcept
+{
+    return object.value < object_to_bit.size() ? object_to_bit[object.value] : NO_VERTEX;
+}
+
+/// Calls callback(bit) for the vertex of partition p bound by each new atom of a positive literal among `literals`.
+template<typename Callback>
+static void for_each_delta_vertex(const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& indexed_literals,
+                                  const std::vector<ygg::uint_t>& literals,
+                                  ygg::uint_t p,
+                                  const ConsistencyGraphDelta& delta,
+                                  const std::vector<ygg::uint_t>& object_to_bit,
+                                  Callback&& callback)
+{
+    for (const auto literal : literals)
+    {
+        const auto& info = indexed_literals.infos[literal];
+        if (!info.polarity)
+            continue;
+        const auto position = info.position_mappings.parameter_to_positions[p].front();
+        for_each_delta_atom(info,
+                            delta,
+                            [&](const auto objects)
+                            {
+                                if (!matches_literal_at(info, objects, p))
+                                    return;
+                                if (const auto bit = find_bit(object_to_bit, objects[position]); bit != NO_VERTEX)
+                                    callback(bit);
+                            });
+    }
+}
+
+/// Calls callback(bi, bj) for the vertices of partitions pi and pj bound by each new atom of a positive literal among `literals`.
+template<typename Callback>
+static void for_each_delta_edge(const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& indexed_literals,
+                                const std::vector<ygg::uint_t>& literals,
+                                ygg::uint_t pi,
+                                ygg::uint_t pj,
+                                const ConsistencyGraphDelta& delta,
+                                const std::vector<ygg::uint_t>& object_to_bit_i,
+                                const std::vector<ygg::uint_t>& object_to_bit_j,
+                                Callback&& callback)
+{
+    for (const auto literal : literals)
+    {
+        const auto& info = indexed_literals.infos[literal];
+        if (!info.polarity)
+            continue;
+        const auto position_i = info.position_mappings.parameter_to_positions[pi].front();
+        const auto position_j = info.position_mappings.parameter_to_positions[pj].front();
+        for_each_delta_atom(info,
+                            delta,
+                            [&](const auto objects)
+                            {
+                                if (!matches_literal_at(info, objects, pi) || !matches_literal_at(info, objects, pj))
+                                    return;
+                                const auto bi = find_bit(object_to_bit_i, objects[position_i]);
+                                const auto bj = find_bit(object_to_bit_j, objects[position_j]);
+                                if (bi != NO_VERTEX && bj != NO_VERTEX)
+                                    callback(bi, bj);
+                            });
+    }
+}
+
+static auto compute_object_to_bit(const kckp::GraphLayout& layout)
+{
+    auto result = std::vector<std::vector<ygg::uint_t>>(layout.num_partitions);
+    for (ygg::uint_t p = 0; p < layout.num_partitions; ++p)
+        for (const auto vertex : layout.vertex_partitions[p])
+        {
+            const auto label = layout.vertex_labels[vertex];
+            if (label >= result[p].size())
+                result[p].resize(label + 1, NO_VERTEX);
+            result[p][label] = vertex - layout.info.infos[p].bit_offset;
+        }
+    return result;
+}
+
 StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition,
                                                formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition,
                                                formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition,
@@ -903,15 +1009,21 @@ StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveCo
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_hyperedge_indexed_literals(compute_indexed_literals(hyperedge_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
-    m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition))
+    m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition)),
+    m_object_to_bit(compute_object_to_bit(m_compatibility_graph.get_layout()))
 {
 }
 
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                                    const kckp::GraphLayout& layout,
                                                                    kckp::DeltaGraph& delta_graph,
-                                                                   kckp::FullGraph& full_graph) const
+                                                                   kckp::FullGraph& full_graph,
+                                                                   const ConsistencyGraphDelta* delta) const
 {
+    // With a delta, only candidates that its atoms or newly consistent vertices can make consistent are checked:
+    // facts only grow during an evaluation, so the other candidates keep their status. Conditions with numeric
+    // constraints keep the full check: every vertex and edge check evaluates all of them, over intervals that change
+    // without new atoms.
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
 
     /// 2. Monotonically update full consistent vertices partition
@@ -944,26 +1056,37 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
             else
             {
                 // Runtime-filtered case.
-                for_each_bit(
-                    [&](auto&& bit)
-                    {
-                        const auto v = info.bit_offset + bit;
-                        const auto vertex = details::Vertex(formalism::ParameterIndex(p), ygg::Index<formalism::Object>(layout.vertex_labels[v]));
+                const auto check_vertex = [&](ygg::uint_t bit)
+                {
+                    const auto v = info.bit_offset + bit;
+                    const auto vertex = details::Vertex(formalism::ParameterIndex(p), ygg::Index<formalism::Object>(layout.vertex_labels[v]));
 
-                        if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
-                            && consistent_numeric_constraints(vertex,
-                                                              unary_overapproximation_constraints,
-                                                              m_unary_overapproximation_indexed_constraints,
-                                                              assignment_sets))
-                        {
-                            /// Process delta consistent vertex.
-                            full_affected_partition.set(bit);
-                            delta_affected_partition.set(bit);
-                            delta_delta_partition.set(bit);
-                        }
-                    },
-                    [](auto&& a) noexcept { return ~a; },
-                    full_affected_partition);
+                    if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
+                        && consistent_numeric_constraints(vertex,
+                                                          unary_overapproximation_constraints,
+                                                          m_unary_overapproximation_indexed_constraints,
+                                                          assignment_sets))
+                    {
+                        /// Process delta consistent vertex.
+                        full_affected_partition.set(bit);
+                        delta_affected_partition.set(bit);
+                        delta_delta_partition.set(bit);
+                    }
+                };
+
+                if (delta && unary_overapproximation_constraints.empty())
+                    for_each_delta_vertex(m_unary_overapproximation_indexed_literals,
+                                          m_unary_overapproximation_indexed_literals.info_mappings.parameter_to_infos[p],
+                                          p,
+                                          *delta,
+                                          m_object_to_bit[p],
+                                          [&](ygg::uint_t bit)
+                                          {
+                                              if (!full_affected_partition.test(bit))
+                                                  check_vertex(bit);
+                                          });
+                else
+                    for_each_bit([&](auto&& bit) { check_vertex(ygg::uint_t(bit)); }, [](auto&& a) noexcept { return ~a; }, full_affected_partition);
             }
         }
     }
@@ -972,6 +1095,27 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     {
         const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
+        // The vertices whose edges can all change: newly consistent ones, and those of new atoms of literals over one
+        // parameter and constants, which every edge of the vertex checks.
+        if (delta && delta->dirty_vertices.size() < layout.info.num_blocks)
+            delta->dirty_vertices.resize(layout.info.num_blocks, 0);
+        const auto dirty_partition = [&](const auto& info) { return ygg::BitsetSpan<uint64_t>(delta->dirty_vertices.data() + info.block_offset, info.num_bits); };
+        if (delta)
+        {
+            for (ygg::uint_t p = 0; p < layout.num_partitions; ++p)
+            {
+                const auto& info = layout.info.infos[p];
+                auto dirty = dirty_partition(info);
+                dirty.copy_from(delta_graph.delta_partitions.get_bitset(info));
+                for_each_delta_vertex(m_binary_overapproximation_indexed_literals,
+                                      m_binary_overapproximation_indexed_literals.info_mappings.parameter_to_infos_with_constants[p],
+                                      p,
+                                      *delta,
+                                      m_object_to_bit[p],
+                                      [&](ygg::uint_t bit) { dirty.set(bit); });
+            }
+        }
 
         for (ygg::uint_t pi = 0; pi < layout.num_partitions; ++pi)
         {
@@ -1029,69 +1173,114 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                 assert(m_partitioned_adjacency_layout.is_runtime(pi, pj));
 
-                for (auto bi = full_affected_partition_i.find_first(); bi != ygg::BitsetSpan<const uint64_t>::npos;
-                     bi = full_affected_partition_i.find_next(bi))
+                const auto process_delta_edge = [&](ygg::uint_t bi, ygg::uint_t bj)
+                {
+                    const auto vi = offset_i + bi;
+                    const auto vj = offset_j + bj;
+
+                    // Set edges
+                    full_graph.matrix.get_runtime_bitset(vi, pj).set(bj);
+                    full_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
+                    delta_graph.matrix.get_runtime_bitset(vi, pj).set(bj);
+                    delta_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
+
+                    // Set/test affected partitions
+                    assert(full_affected_partition_i.test(bi));
+                    assert(full_affected_partition_j.test(bj));
+                    delta_affected_partition_i.set(bi);
+                    delta_affected_partition_j.set(bj);
+
+                    // Set touched partitions
+                    delta_graph.matrix.touched_partitions(vi, pj) = true;
+                    full_graph.matrix.touched_partitions(vi, pj) = true;
+                    delta_graph.matrix.touched_partitions(vj, pi) = true;
+                    full_graph.matrix.touched_partitions(vj, pi) = true;
+                };
+
+                const auto is_consistent_edge = [&](ygg::uint_t bi, ygg::uint_t bj)
+                {
+                    const auto vertex_i = details::Vertex(formalism::ParameterIndex(pi), ygg::Index<formalism::Object>(layout.vertex_labels[offset_i + bi]));
+                    const auto vertex_j = details::Vertex(formalism::ParameterIndex(pj), ygg::Index<formalism::Object>(layout.vertex_labels[offset_j + bj]));
+                    const auto edge = details::Edge(vertex_i, vertex_j);
+                    return consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
+                           && consistent_numeric_constraints(edge, binary_overapproximation_constraints, m_binary_overapproximation_indexed_constraints, assignment_sets);
+                };
+
+                /// Process the candidate edges of vertex bi of partition pi: statically compatible, to consistent vertices, not yet consistent.
+                const auto scan_row = [&](ygg::uint_t bi)
                 {
                     const auto vi = offset_i + bi;  ///< vi is consistent + delta
-
-                    const auto static_edges = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj);
-                    auto full_edges_i = full_graph.matrix.get_runtime_bitset(vi, pj);
-                    auto delta_edges_i = delta_graph.matrix.get_runtime_bitset(vi, pj);
-                    auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
-                    auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
-
-                    auto process_delta_edge = [&](auto&& bj)
-                    {
-                        const auto vj = offset_j + bj;
-
-                        // Set edges
-                        full_edges_i.set(bj);
-                        full_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
-
-                        delta_edges_i.set(bj);
-                        delta_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
-
-                        // Set/test affected partitions
-                        assert(full_affected_partition_i.test(bi));
-                        assert(full_affected_partition_j.test(bj));
-                        delta_affected_partition_i.set(bi);
-                        delta_affected_partition_j.set(bj);
-
-                        // Set touched partitions
-                        delta_touched_i = true;
-                        full_touched_i = true;
-                        delta_graph.matrix.touched_partitions(vj, pi) = true;
-                        full_graph.matrix.touched_partitions(vj, pi) = true;
-                    };
-
-                    const auto vertex_i = details::Vertex(formalism::ParameterIndex(pi), ygg::Index<formalism::Object>(layout.vertex_labels[vi]));
-
                     for_each_bit(
                         [&](auto&& bj)
                         {
-                            const auto vj = offset_j + bj;
-
-                            const auto vertex_j = details::Vertex(formalism::ParameterIndex(pj), ygg::Index<formalism::Object>(layout.vertex_labels[vj]));
-
-                            const auto edge = details::Edge(vertex_i, vertex_j);
-
-                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
-                                && consistent_numeric_constraints(edge,
-                                                                  binary_overapproximation_constraints,
-                                                                  m_binary_overapproximation_indexed_constraints,
-                                                                  assignment_sets))
-                            {
-                                /// Process delta consistent edge.
-                                process_delta_edge(bj);
-                            }
+                            if (is_consistent_edge(bi, ygg::uint_t(bj)))
+                                process_delta_edge(bi, ygg::uint_t(bj));
                         },
                         [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
-                        static_edges,
+                        m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj),
                         full_affected_partition_j,
-                        full_edges_i);
+                        full_graph.matrix.get_runtime_bitset(vi, pj));
+                };
+
+                const auto incremental = delta && binary_overapproximation_constraints.empty();
+                if (!incremental)
+                {
+                    for (auto bi = full_affected_partition_i.find_first(); bi != ygg::BitsetSpan<const uint64_t>::npos; bi = full_affected_partition_i.find_next(bi))
+                        scan_row(ygg::uint_t(bi));
+                    continue;
                 }
+
+                const auto dirty_i = dirty_partition(info_i);
+                const auto dirty_j = dirty_partition(info_j);
+
+                // Rows of dirty vertices of pi.
+                for_each_bit([&](auto&& bi) { scan_row(ygg::uint_t(bi)); }, [](auto&& a, auto&& b) noexcept { return a & b; }, dirty_i, full_affected_partition_i);
+
+                // Columns of dirty vertices of pj, to the vertices of pi the rows did not cover.
+                for_each_bit(
+                    [&](auto&& bj)
+                    {
+                        const auto vj = offset_j + ygg::uint_t(bj);
+                        for_each_bit(
+                            [&](auto&& bi)
+                            {
+                                if (is_consistent_edge(ygg::uint_t(bi), ygg::uint_t(bj)))
+                                    process_delta_edge(ygg::uint_t(bi), ygg::uint_t(bj));
+                            },
+                            [](auto&& a, auto&& b, auto&& c, auto&& d) noexcept { return a & b & ~c & ~d; },
+                            m_compatibility_graph.get_adjacency_matrix().get_bitset(vj, pi),
+                            full_affected_partition_i,
+                            full_graph.matrix.get_runtime_bitset(vj, pi),
+                            dirty_i);
+                    },
+                    [](auto&& a, auto&& b) noexcept { return a & b; },
+                    dirty_j,
+                    full_affected_partition_j);
+
+                // Edges of new atoms of literals over pi and pj between vertices that are not dirty.
+                for_each_delta_edge(m_binary_overapproximation_indexed_literals,
+                                    m_binary_overapproximation_indexed_literals.info_mappings.parameter_pairs_to_infos[pi][pj],
+                                    pi,
+                                    pj,
+                                    *delta,
+                                    m_object_to_bit[pi],
+                                    m_object_to_bit[pj],
+                                    [&](ygg::uint_t bi, ygg::uint_t bj)
+                                    {
+                                        if (dirty_i.test(bi) || dirty_j.test(bj) || !full_affected_partition_i.test(bi) || !full_affected_partition_j.test(bj))
+                                            return;
+                                        const auto vi = offset_i + bi;
+                                        if (!m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj).test(bj)
+                                            || full_graph.matrix.get_runtime_bitset(vi, pj).test(bj))
+                                            return;
+                                        if (is_consistent_edge(bi, bj))
+                                            process_delta_edge(bi, bj);
+                                    });
             }
         }
+
+        if (delta)
+            std::ranges::fill(delta->dirty_vertices, uint64_t(0));
     }
 }
 

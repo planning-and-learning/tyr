@@ -158,7 +158,8 @@ struct RuleExecutionContext
 
     void initialize()
     {
-        out().common().initialize_iteration(AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets });
+        out().common().initialize_iteration(AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets },
+                                            stratum_out().program().facts().delta_objects);
     }
 
     void clear_iteration() noexcept

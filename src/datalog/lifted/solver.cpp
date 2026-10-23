@@ -92,7 +92,7 @@ public:
         run_active_rules<formalism::PredicateTag>(ctx);
         run_active_rules<formalism::FunctionTag>(ctx);
         // The rules consumed the facts committed since they last ran; the commit phase collects the next ones.
-        ctx.out().program().facts().delta_fact_sets.reset();
+        ctx.out().program().facts().reset_delta();
         reduce_worker_results<formalism::PredicateTag>(ctx, cost_buckets, pending_achievers);
         return reduce_worker_results<formalism::FunctionTag>(ctx, cost_buckets, pending_achievers);
     }

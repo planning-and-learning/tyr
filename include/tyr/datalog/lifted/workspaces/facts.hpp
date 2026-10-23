@@ -34,6 +34,8 @@ struct FactsWorkspace<LiftedTag>
     TaggedFactSets<formalism::FluentTag> fact_sets;
     TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
     TaggedFactSets<formalism::FluentTag> delta_fact_sets;  ///< Facts committed since the rules last ran.
+    /// The objects of the predicate atoms of delta_fact_sets, per predicate, one atom after the other.
+    std::vector<std::vector<ygg::Index<formalism::Object>>> delta_objects;
 
     explicit FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
                             formalism::datalog::FunctionListView<formalism::FluentTag> functions,
@@ -48,8 +50,12 @@ struct FactsWorkspace<LiftedTag>
     {
         if (!fact_sets.predicate.insert(binding))
             return false;
-        assignment_sets.predicate.insert(ygg::make_view(binding, *m_repository));
+        const auto view = ygg::make_view(binding, *m_repository);
+        assignment_sets.predicate.insert(view);
         delta_fact_sets.predicate.insert(binding);
+        auto& objects = delta_objects[ygg::uint_t(binding.relation)];
+        for (const auto object : view.get_objects())
+            objects.push_back(object.get_index());
         return true;
     }
 
@@ -62,6 +68,7 @@ struct FactsWorkspace<LiftedTag>
     }
 
     void reset();
+    void reset_delta() noexcept;
 
 private:
     const formalism::datalog::Repository* m_repository;  ///< The workspace repository the bindings live in (or below).
