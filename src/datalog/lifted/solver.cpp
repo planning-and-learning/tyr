@@ -295,9 +295,9 @@ private:
     }
 
     template<typename Callback, typename Prune>
-    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool, Prune&&)
+    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool, Prune&& prune)
     {
-        algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
+        algorithm.for_each_clique(std::forward<Callback>(callback), workspace, prune);
     }
 
     /// Prunes a partial clique once the goal cutoff stopped the iteration, or once the vertex just bound completes the variables
@@ -305,13 +305,14 @@ private:
     /// rejected this way are generated again by the delta that makes them applicable, as when the leaf rejects them.
     /// Restricts the candidates of a partition that is the last unbound one of a positive static conflicting literal to the
     /// vertices completing an atom of it (forward checking). Partitions are the rule's parameters.
+    template<formalism::RelationKind R>
     struct LiteralPrune
     {
         SolverPolicy& policy;
-        RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx;
+        RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx;
         const kckp::GraphLayout& layout;
-        const std::vector<typename ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>::ConflictingLiteralCheck>& checks;
-        const std::vector<typename ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>::StaticLiteralIndex>& indexes;
+        const std::vector<typename ConstRuleWorkspace<LiftedTag, R>::ConflictingLiteralCheck>& checks;
+        const std::vector<typename ConstRuleWorkspace<LiftedTag, R>::StaticLiteralIndex>& indexes;
 
         bool operator()(ygg::uint_t partition, size_t, const kckp::Workspace& workspace) const
         {
@@ -369,13 +370,13 @@ private:
         }
     };
 
-    LiteralPrune make_literal_prune(formalism::PredicateTag, RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
+    template<formalism::RelationKind R>
+    LiteralPrune<R> make_literal_prune(R, RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx)
     {
         const auto& cws = wrctx.in().cws_rule();
-        return LiteralPrune { *this, wrctx, cws.get_static_consistency_graph().get_graph_layout(), cws.get_conflicting_literal_checks(), cws.get_static_literal_indexes() };
+        return LiteralPrune<R> { *this, wrctx, cws.get_static_consistency_graph().get_graph_layout(), cws.get_conflicting_literal_checks(), cws.get_static_literal_indexes() };
     }
 
-    auto make_literal_prune(formalism::FunctionTag, RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return kckp::NoPrune {}; }
 
     inline bool require_novel_binding(formalism::PredicateTag) noexcept
     {
@@ -639,7 +640,7 @@ private:
                 [&](auto&& clique)
                 {
                     if (!goal_cutoff_stopped())
-                        process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all, std::same_as<R, formalism::PredicateTag>);
+                        process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all, true);
                 },
                 kckp_workspace,
                 enumerate_all,
