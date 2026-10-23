@@ -369,7 +369,7 @@ private:
                                                   if (!kckp_algorithm.seed_from_anchor(delta_edges[edge_index], kckp_workspace))
                                                       continue;
                                                   kckp_algorithm.template complete_from_seed<kckp::Edge>([&](auto&& clique)
-                                                                                                         { process_clique(wrctx, clique, true); },
+                                                                                                         { process_clique(wrctx, clique, true, true); },
                                                                                                          0,
                                                                                                          kckp_workspace,
                                                                                                          prune);
@@ -384,14 +384,20 @@ private:
 
     bool try_generate_parallel(formalism::FunctionTag, RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return false; }
 
+    /// With literals_checked, the literals of the conflicting condition hold already (checked by the literal prune).
     template<formalism::RelationKind R>
-    bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
+    bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx,
+                                                   const ApplicabilityContext& applicability_context,
+                                                   bool literals_checked = false)
     {
         auto& in = wrctx.in();
         auto& applicability_cache = wrctx.out().applicability_cache();
         if (!applicability_cache.dynamic_nullary)
             applicability_cache.dynamic_nullary = is_dynamically_applicable(in.cws_rule().get_nullary_condition(), in.fact_sets());
-        return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
+        if (!applicability_cache.dynamic_nullary)
+            return false;
+        const auto condition = in.cws_rule().get_conflicting_overapproximation_condition();
+        return literals_checked ? is_applicable(condition.get_numeric_constraints(), applicability_context) : is_applicable(condition, applicability_context);
     }
 
     /// Collects the heads the binding can update: committed facts are final, but still receive achievers.
@@ -463,7 +469,8 @@ private:
 
     bool try_process_predicate_binding(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
                                        RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
-                                       const ApplicabilityContext& applicability_context)
+                                       const ApplicabilityContext& applicability_context,
+                                       bool literals_checked)
     {
         [[maybe_unused]] auto& in = wrctx.in();
         auto& out = wrctx.out();
@@ -471,7 +478,7 @@ private:
         if (!missing && out.head_bindings().empty())
             return true;
 
-        if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
+        if (!is_current_binding_dynamically_applicable(wrctx, applicability_context, literals_checked))
             return false;
 
         // Heads are interned only for applicable bindings.
@@ -487,38 +494,41 @@ private:
     void process_clique_head(formalism::PredicateTag,
                              RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
-                             const ApplicabilityContext& applicability_context)
+                             const ApplicabilityContext& applicability_context,
+                             bool literals_checked)
     {
         // A rejected binding is generated again by the delta that makes it applicable (see generate_hyperedge_cliques).
         // Bindings rejected by a numeric constraint are retried because its fluent reads trigger a full enumeration of the rule.
-        if (!try_process_predicate_binding(wrctx, input, applicability_context))
+        if (!try_process_predicate_binding(wrctx, input, applicability_context, literals_checked))
             ++wrctx.out().statistics().num_rejected_rules;
     }
 
     void process_clique_head(formalism::FunctionTag,
                              RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& wrctx,
                              RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
-                             const ApplicabilityContext& applicability_context)
+                             const ApplicabilityContext& applicability_context,
+                             bool literals_checked)
     {
         [[maybe_unused]] const auto& in = wrctx.in();
         auto& out = wrctx.out();
-        if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
+        if (!is_current_binding_dynamically_applicable(wrctx, applicability_context, literals_checked))
             return;
 
         assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
         insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
     }
 
+    /// literals_checked: the clique was completed under the literal prune (make_literal_prune).
     template<formalism::RelationKind R>
-    void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding)
+    void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding, bool literals_checked)
     {
         create_general_binding(clique, wrctx.in().cws_rule().get_static_consistency_graph(), wrctx.out().ground_context().binding);
-        process_binding(wrctx, require_novel_binding);
+        process_binding(wrctx, require_novel_binding, literals_checked);
     }
 
     /// Processes the binding in the worker's ground context.
     template<formalism::RelationKind R>
-    void process_binding(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, [[maybe_unused]] bool require_novel_binding)
+    void process_binding(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, [[maybe_unused]] bool require_novel_binding, bool literals_checked = false)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
@@ -540,7 +550,7 @@ private:
 
         const auto statically_applicable = [&]() {
             return applicability_cache.static_nullary
-                   && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
+                   && (literals_checked || is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context));
         };
 
         if (!statically_applicable())
@@ -556,7 +566,7 @@ private:
         }
 #endif
 
-        process_clique_head(R {}, wrctx, input, applicability_context);
+        process_clique_head(R {}, wrctx, input, applicability_context, literals_checked);
     }
 
     template<formalism::RelationKind R>
@@ -583,7 +593,7 @@ private:
                 [&](auto&& clique)
                 {
                     if (!goal_cutoff_stopped())
-                        process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all);
+                        process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all, std::same_as<R, formalism::PredicateTag>);
                 },
                 kckp_workspace,
                 enumerate_all,

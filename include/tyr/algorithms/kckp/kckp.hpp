@@ -194,7 +194,7 @@ struct Workspace
 };
 
 /// Prunes nothing. A prune callback is called with the partition whose vertex was just bound (its bit already set) and the
-/// depth; returning true skips every completion of the partial solution.
+/// depth, also for the last vertex of a clique; returning true skips the partial solution and every completion of it.
 struct NoPrune
 {
     constexpr bool operator()(ygg::uint_t, size_t, const Workspace&) const noexcept { return false; }
@@ -225,15 +225,15 @@ void complete_clique(const GraphLayout& layout,
         workspace.partial_solution[partition] = vertex;
         ++workspace.partial_solution_size;
 
-        if (workspace.partial_solution_size == layout.num_partitions)
-            callback(workspace.partial_solution);
-        else
+        workspace.partition_bits.set(partition);
+        if (!prune(partition, depth, workspace))
         {
-            workspace.partition_bits.set(partition);
-            if (!prune(partition, depth, workspace) && update_candidates(vertex, depth, workspace))
+            if (workspace.partial_solution_size == layout.num_partitions)
+                callback(workspace.partial_solution);
+            else if (update_candidates(vertex, depth, workspace))
                 complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback, prune);
-            workspace.partition_bits.reset(partition);
         }
+        workspace.partition_bits.reset(partition);
 
         --workspace.partial_solution_size;
     }
