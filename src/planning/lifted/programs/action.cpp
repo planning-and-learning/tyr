@@ -179,7 +179,8 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         // A rule per conditional effect with variables or a condition: its atoms are the bindings for which the effect fires.
         for (const auto cond_eff : action.get_effects())
         {
-            if (!has_effect_predicate(cond_eff))
+            // An effect without variables and condition fires with its action.
+            if (cond_eff.get_variables().empty() && cond_eff.get_condition().empty())
                 continue;
             const auto condition = cond_eff.get_condition();
 

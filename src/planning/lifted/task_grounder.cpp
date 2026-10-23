@@ -23,7 +23,7 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "../programs/common.hpp"
+#include "effect_atom_index.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
@@ -603,14 +603,11 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto fluent_assign = ygg::UnorderedMap<ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue> {};
     auto derived_assign = ygg::UnorderedMap<ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool> {};
 
-    // The relaxed reachable groundings of each conditional effect with a predicate, per binding of its action.
-    const auto& effect_to_predicate = ground_program.get_conditional_effect_to_predicate_mapping();
-    auto effect_atoms = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, EffectAtomsByBinding> {};
-    for (const auto action : task.get_domain().get_actions())
-        for (const auto effect : action.get_effects())
-            if (const auto it = effect_to_predicate.find(std::pair(action, effect)); it != effect_to_predicate.end())
-                effect_atoms.emplace(it->second,
-                                     group_effect_atoms(workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(it->second.get_index())], action.get_arity()));
+    // The atoms of the effect predicates are the relaxed reachable groundings of the conditional effects.
+    auto effect_atom_index = EffectAtomIndex(ground_program.get_predicate_to_action_mapping(),
+                                             ground_program.get_conditional_effect_to_predicate_mapping(),
+                                             workspace.facts.fact_sets.predicate,
+                                             workspace.workspace_repository);
 
     for_each_predicate_binding(
         [&](const auto binding)
@@ -630,14 +627,10 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                     action,
                     fluent_atoms_set,
                     derived_atoms_set,
-                    [&](auto effect, auto&& apply)
-                    {
-                        const auto predicate = effect_to_predicate.find(std::pair(action, effect));
-                        for_each_effect_binding(predicate == effect_to_predicate.end() ? nullptr : &effect_atoms.at(predicate->second), grounder_context.binding, apply);
-                    },
+                    [&](auto effect, auto&& apply) { effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding, apply); },
                     static_state,
-                                  grounder_context,
-                                  *fdr_context);
+                    grounder_context,
+                    *fdr_context);
 
                 if (!ground_action_or_nullopt.has_value())
                     return;

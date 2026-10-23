@@ -254,7 +254,8 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
     for (const auto cond_eff : action.get_effects())
     {
         auto effect_predicate = std::optional<formalism::datalog::PredicateView<formalism::FluentTag>> {};
-        if (has_effect_predicate(cond_eff))
+        // An effect without variables and condition fires with its action.
+        if (!cond_eff.get_variables().empty() || !cond_eff.get_condition().empty())
         {
             auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder);
             predicate->name = create_triggered_name(action, cond_eff);

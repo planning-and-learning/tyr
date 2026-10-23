@@ -60,6 +60,13 @@ public:
     {
         return this->get_data().variables.size();
     }
+    /// Whether the condition has no literals and no numeric constraints, i.e., holds in every state.
+    bool empty() const
+        requires std::same_as<T, ::tyr::LiftedTag>
+    {
+        return get_literals<::tyr::formalism::StaticTag>().empty() && get_literals<::tyr::formalism::FluentTag>().empty()
+               && get_literals<::tyr::formalism::DerivedTag>().empty() && get_numeric_constraints().empty();
+    }
 
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept

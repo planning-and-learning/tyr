@@ -22,7 +22,7 @@
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/static_extensions.hpp"
-#include "../programs/common.hpp"
+#include "effect_atom_index.hpp"
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/planning/action_executor.hpp"
@@ -110,6 +110,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
         datalog::ProgramWorkspace<LiftedTag> workspace;
         ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, SchemaEvaluator> schema_evaluators;
         datalog::StaticExtensionWorkspace static_extension_workspace;
+        /// The effect atoms of the facts, grouped by action binding.
+        EffectAtomIndex effect_atom_index;
         ActionExecutor executor;
         StateDelta successor_delta;
 
@@ -123,7 +125,6 @@ struct SuccessorGenerator<LiftedTag>::Impl
         } facts;
 
         /// The effect atoms of each action in the facts, grouped at the action's first successor.
-        ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, EffectAtomsByBinding> effect_atoms;
     };
 
 
@@ -131,11 +132,6 @@ struct SuccessorGenerator<LiftedTag>::Impl
     template<StateViewConcept<LiftedTag> S>
     void require_action_facts(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action);
 
-    /// Calls `apply` with each completed binding in `binding` of the action's effect that fires in the facts for the action binding in it.
-    void for_each_firing_binding(formalism::planning::ActionView<LiftedTag> action,
-                                 formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                 ygg::IndexList<formalism::Object>& binding,
-                                 boost::compat::function_ref<void()> apply);
 
     /// The repository and index of a registered state, or the address of a state builder.
     template<StateViewConcept<LiftedTag> S>
@@ -251,6 +247,10 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     action_binding_to_ground_action(),
     workspace(definition.action_program.get_datalog_program()),
     static_extension_workspace(),
+    effect_atom_index(definition.action_program.get_predicate_to_action_mapping(),
+                      definition.action_program.get_conditional_effect_to_predicate_mapping(),
+                      workspace.facts.fact_sets.predicate,
+                      workspace.workspace_repository),
     executor()
 {
     assert(execution_context);
@@ -273,7 +273,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
     evaluator.workspace.reset_evaluation();
     evaluator.facts.state = state_key(node);
     evaluator.facts.action = action ? std::optional(action->get_index()) : std::nullopt;
-    evaluator.effect_atoms.clear();
+    evaluator.effect_atom_index.clear();
 
     const auto state = node.get_state();
     insert_extended_state(state.get_state_builder(),
@@ -357,7 +357,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
                                                            state_context,
                                                            grounder_context,
                                                            *definition->task->get_fdr_context(),
-                                                           [&](auto effect, auto apply) { for_each_firing_binding(action, effect, grounder_context.binding, apply); }))
+                                                           [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding, apply); }))
                 continue;
             if (!callback(scratch_binding))
                 return false;
@@ -388,7 +388,7 @@ SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedT
         action,
         grounder_context,
         *definition->task->get_fdr_context(),
-        [&](auto effect, auto apply) { for_each_firing_binding(action, effect, grounder_context.binding, apply); },
+        [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding, apply); },
         out_state,
         out_delta);
     end_single_binding_work<S>();
@@ -404,23 +404,6 @@ void SuccessorGenerator<LiftedTag>::Impl::require_action_facts(const Node<Lifted
     if (evaluator.facts.enumerating)
         throw std::logic_error("SuccessorGenerator: the state differs from the one whose applicable action bindings are enumerated.");
     compute_action_facts(node, action);
-}
-
-void SuccessorGenerator<LiftedTag>::Impl::for_each_firing_binding(formalism::planning::ActionView<LiftedTag> action,
-                                                                  formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                                                  ygg::IndexList<formalism::Object>& binding,
-                                                                  boost::compat::function_ref<void()> apply)
-{
-    const auto& mapping = definition->action_program.get_conditional_effect_to_predicate_mapping();
-    const auto* atoms = static_cast<const EffectAtomsByBinding*>(nullptr);
-    if (const auto it = mapping.find(std::pair(action, effect)); it != mapping.end())
-    {
-        const auto [entry, inserted] = evaluator.effect_atoms.try_emplace(it->second);
-        if (inserted)
-            entry->second = group_effect_atoms(evaluator.workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(it->second.get_index())], binding.size());
-        atoms = &entry->second;
-    }
-    for_each_effect_binding(atoms, binding, apply);
 }
 
 SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
@@ -644,7 +627,7 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Node<LiftedTag, 
                                                                       state,
                                                                       grounder,
                                                                       *task->get_fdr_context(),
-                                                                      [&](auto effect, auto apply) { for_each_firing_binding(action, effect, grounder.binding, apply); });
+                                                                      [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder.binding, apply); });
     end_single_binding_work<S>();
     return applicable ? ActionBindingStatus::APPLICABLE : ActionBindingStatus::INAPPLICABLE;
 }

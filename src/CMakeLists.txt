@@ -128,6 +128,7 @@ add_library(
     planning/ground/successor_generator.cpp
     planning/lifted/axiom_evaluator.cpp
     planning/lifted/node.cpp
+    planning/lifted/effect_atom_index.cpp
     planning/lifted/successor_generator.cpp
     planning/lifted/task_grounder.cpp
 

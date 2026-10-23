@@ -17,7 +17,6 @@
 
 #include "common.hpp"
 
-#include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -35,28 +34,6 @@ namespace tyr::planning
 ::cista::offset::string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff)
 {
     return ::cista::offset::string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.get_index().get_value()) };
-}
-
-bool has_effect_predicate(formalism::planning::ConditionalEffectView<LiftedTag> effect)
-{
-    const auto condition = effect.get_condition();
-    return !effect.get_variables().empty() || !condition.get_literals<formalism::StaticTag>().empty()
-           || !condition.get_literals<formalism::FluentTag>().empty() || !condition.get_literals<formalism::DerivedTag>().empty()
-           || !condition.get_numeric_constraints().empty();
-}
-
-EffectAtomsByBinding group_effect_atoms(const datalog::PredicateFactSet<formalism::FluentTag>& atoms, size_t action_arity)
-{
-    auto result = EffectAtomsByBinding {};
-    for (const auto atom : atoms.get_bindings())
-    {
-        const auto objects = atom.get_objects();
-        auto binding = ygg::IndexList<formalism::Object> {};
-        for (size_t i = 0; i < action_arity; ++i)
-            binding.push_back(objects[i].get_index());
-        result[std::move(binding)].push_back(atom);
-    }
-    return result;
 }
 
 TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source, formalism::datalog::CopyContext& context)
