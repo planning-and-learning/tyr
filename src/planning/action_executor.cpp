@@ -221,29 +221,30 @@ template ygg::float_t ActionExecutor::apply_action_unregistered(const StateConte
 
 // Action binding API
 
-bool ActionExecutor::is_applicable_if_fires(std::span<const FiringEffect> firing_effects,
+bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
                                             const StateContext<LiftedTag>& state_context,
                                             formalism::planning::GrounderContext& grounder,
-                                            const formalism::planning::FDRContext& fdr)
+                                            const formalism::planning::FDRContext& fdr,
+                                            ForEachEffectBinding for_each_effect_binding)
 {
     auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
     m_effect_families.clear();
-    const auto binding_size = grounder.binding.size();
-    for (const auto& firing : firing_effects)
-    {
-        grounder.binding.insert(grounder.binding.end(), firing.extension.begin(), firing.extension.end());
-        const auto applicable = tyr::planning::is_applicable(firing.effect.get_effect(), applicability_context, m_effect_families);
-        grounder.binding.resize(binding_size);
-        if (!applicable)
-            return false;
-    }
-    return true;
+    auto applicable = true;
+    for (const auto cond_effect : action.get_effects())
+        for_each_effect_binding(cond_effect,
+                                [&]
+                                {
+                                    if (applicable && !tyr::planning::is_applicable(cond_effect.get_effect(), applicability_context, m_effect_families))
+                                        applicable = false;
+                                });
+    return applicable;
 }
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                                       std::span<const FiringEffect> firing_effects,
+                                                       formalism::planning::ActionView<LiftedTag> action,
                                                        formalism::planning::GrounderContext& grounder,
                                                        formalism::planning::FDRContext& fdr,
+                                                       ForEachEffectBinding for_each_effect_binding,
                                                        ygg::Builder<State<LiftedTag>>& successor_state_builder,
                                                        StateDelta& delta)
 {
@@ -256,21 +257,20 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                           [&](auto& out_state, auto& tmp_state_context, auto& del_effects, auto& add_effects, auto& numeric_writes)
                                           {
                                               auto applicability_context = ApplicabilityContext { tmp_state_context, grounder, fdr };
-                                              const auto binding_size = grounder.binding.size();
-                                              for (const auto& firing : firing_effects)
-                                              {
-                                                  grounder.binding.insert(grounder.binding.end(), firing.extension.begin(), firing.extension.end());
-                                                  apply_lifted_effect(firing.effect,
-                                                                      out_state,
-                                                                      tmp_state_context,
-                                                                      applicability_context,
-                                                                      grounder,
-                                                                      fdr,
-                                                                      del_effects,
-                                                                      add_effects,
-                                                                      numeric_writes);
-                                                  grounder.binding.resize(binding_size);
-                                              }
+                                              for (const auto cond_effect : action.get_effects())
+                                                  for_each_effect_binding(cond_effect,
+                                                                          [&]
+                                                                          {
+                                                                              apply_lifted_effect(cond_effect,
+                                                                                                  out_state,
+                                                                                                  tmp_state_context,
+                                                                                                  applicability_context,
+                                                                                                  grounder,
+                                                                                                  fdr,
+                                                                                                  del_effects,
+                                                                                                  add_effects,
+                                                                                                  numeric_writes);
+                                                                          });
                                           });
 }
 

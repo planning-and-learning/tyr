@@ -83,6 +83,12 @@ std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<L
 
 std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, GrounderContext& context);
 
+/// Grounds the action binding in the context with its effects grounded for each completed binding that
+/// `for_each_effect_binding(effect, callback)` puts into the context's binding before calling `callback`.
+template<typename ForEachEffectBinding>
+std::pair<ActionView<GroundTag>, bool>
+ground(ActionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr, ForEachEffectBinding&& for_each_effect_binding);
+
 std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context);
 
 std::pair<AxiomView<GroundTag>, bool>
@@ -371,6 +377,23 @@ inline std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, G
 
     // Canonicalize and Serialize
     return planning::insert(context.destination, *binding);
+}
+
+template<typename ForEachEffectBinding>
+std::pair<ActionView<GroundTag>, bool>
+ground(ActionView<LiftedTag> element, GrounderContext& context, FDRContext& fdr, ForEachEffectBinding&& for_each_effect_binding)
+{
+    const auto binding = ground(element, context).first.get_index();
+
+    auto action = planning::checkout<Action<GroundTag>>(context.builder);
+
+    action->binding = binding;
+    action->condition = ground(element.get_condition(), context, fdr).first.get_index();
+
+    for (const auto cond_effect : element.get_effects())
+        for_each_effect_binding(cond_effect, [&] { action->effects.push_back(ground(cond_effect, context, fdr).first.get_index()); });
+
+    return planning::insert(context.destination, *action);
 }
 
 inline std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, GrounderContext& context)

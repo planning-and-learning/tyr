@@ -24,6 +24,7 @@
 #include "tyr/planning/applicability_lifted_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <boost/compat/function_ref.hpp>
 #include <span>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
@@ -54,25 +55,25 @@ public:
 
     // Lifted action API
 
-    /// A conditional effect that fires, with the objects of its variables.
-    struct FiringEffect
-    {
-        formalism::planning::ConditionalEffectView<LiftedTag> effect;
-        std::span<const ygg::Index<formalism::Object>> extension;
-    };
+    /// Calls the callback once for each completed binding of a conditional effect in the grounder's binding, which holds the action
+    /// binding before and after: the action binding followed by objects of the effect's variables for which the effect fires.
+    using ForEachEffectBinding =
+        boost::compat::function_ref<void(formalism::planning::ConditionalEffectView<LiftedTag>, boost::compat::function_ref<void()>)>;
 
-    /// Whether the numeric effects of the firing effects of an action binding, which must be all that fire, are valid together.
-    bool is_applicable_if_fires(std::span<const FiringEffect> firing_effects,
+    /// Whether the numeric effects of the action binding in `grounder` are valid together for the effect bindings that fire.
+    bool is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
                                 const StateContext<LiftedTag>& state_context,
                                 formalism::planning::GrounderContext& grounder,
-                                const formalism::planning::FDRContext& fdr);
+                                const formalism::planning::FDRContext& fdr,
+                                ForEachEffectBinding for_each_effect_binding);
 
-    /// Applies the firing effects of an action binding, which must be all that fire, into caller-owned storage without interning
-    /// the successor and writes the exact changes relative to the parent into `delta`; returns the updated auxiliary metric value.
+    /// Applies the action binding in `grounder` for the effect bindings that fire into caller-owned storage without interning the
+    /// successor and writes the exact changes relative to the parent into `delta`; returns the updated auxiliary metric value.
     ygg::float_t apply_action_unregistered(const StateContext<LiftedTag>& state_context,
-                                           std::span<const FiringEffect> firing_effects,
+                                           formalism::planning::ActionView<LiftedTag> action,
                                            formalism::planning::GrounderContext& grounder,
                                            formalism::planning::FDRContext& fdr,
+                                           ForEachEffectBinding for_each_effect_binding,
                                            ygg::Builder<State<LiftedTag>>& successor_state_builder,
                                            StateDelta& delta);
 

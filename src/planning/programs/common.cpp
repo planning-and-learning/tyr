@@ -24,9 +24,6 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
-#include <cassert>
-#include <vector>
-
 namespace tyr::planning
 {
 
@@ -40,7 +37,7 @@ namespace tyr::planning
     return ::cista::offset::string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.get_index().get_value()) };
 }
 
-bool has_effect_rule(formalism::planning::ConditionalEffectView<LiftedTag> effect)
+bool has_effect_predicate(formalism::planning::ConditionalEffectView<LiftedTag> effect)
 {
     const auto condition = effect.get_condition();
     return !effect.get_variables().empty() || !condition.get_literals<formalism::StaticTag>().empty()
@@ -48,55 +45,18 @@ bool has_effect_rule(formalism::planning::ConditionalEffectView<LiftedTag> effec
            || !condition.get_numeric_constraints().empty();
 }
 
-EffectAtoms group_effect_atoms(formalism::planning::ActionView<LiftedTag> action,
-                               std::span<const ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>> effect_rules,
-                               const formalism::datalog::Repository& repository,
-                               const datalog::PredicateFactSets<formalism::FluentTag>& facts)
+EffectAtomsByBinding group_effect_atoms(const datalog::PredicateFactSet<formalism::FluentTag>& atoms, size_t action_arity)
 {
-    auto result = EffectAtoms {};
-#ifndef NDEBUG
-    // The k-th effect rule belongs to the k-th effect with one; its last head has the action's variables followed by the effect's.
-    auto effect_arities = std::vector<size_t> {};
-    for (const auto effect : action.get_effects())
-        if (has_effect_rule(effect))
-            effect_arities.push_back(effect.get_arity());
-    assert(effect_arities.size() == effect_rules.size());
-#endif
-    for (size_t k = 0; k < effect_rules.size(); ++k)
+    auto result = EffectAtomsByBinding {};
+    for (const auto atom : atoms.get_bindings())
     {
-        const auto predicate = ygg::make_view(effect_rules[k], repository).get_heads().back().get_predicate();
-        assert(predicate.get_arity() == action.get_arity() + effect_arities[k]);
-        for (const auto atom : facts.get_sets()[ygg::uint_t(predicate.get_index())].get_bindings())
-        {
-            const auto objects = atom.get_objects();
-            auto binding = ygg::IndexList<formalism::Object> {};
-            auto extension = ygg::IndexList<formalism::Object> {};
-            for (size_t i = 0; i < objects.size(); ++i)
-                (i < action.get_arity() ? binding : extension).push_back(objects[i].get_index());
-            result[std::move(binding)].emplace_back(k, std::move(extension));
-        }
+        const auto objects = atom.get_objects();
+        auto binding = ygg::IndexList<formalism::Object> {};
+        for (size_t i = 0; i < action_arity; ++i)
+            binding.push_back(objects[i].get_index());
+        result[std::move(binding)].push_back(atom);
     }
     return result;
-}
-
-void collect_firing_effects(formalism::planning::ActionView<LiftedTag> action,
-                            std::span<const std::pair<size_t, ygg::IndexList<formalism::Object>>> atoms,
-                            std::vector<ActionExecutor::FiringEffect>& out)
-{
-    out.clear();
-    auto k = size_t(0);
-    for (const auto effect : action.get_effects())
-    {
-        if (!has_effect_rule(effect))
-        {
-            out.push_back({ effect, {} });
-            continue;
-        }
-        for (const auto& [atom_k, extension] : atoms)
-            if (atom_k == k)
-                out.push_back({ effect, std::span<const ygg::Index<formalism::Object>>(extension.data(), extension.size()) });
-        ++k;
-    }
 }
 
 TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source, formalism::datalog::CopyContext& context)

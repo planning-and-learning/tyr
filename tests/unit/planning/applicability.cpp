@@ -152,19 +152,20 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
 
     // Each schema program has its action rule and the rules of its conditional effects.
     const auto& action_mapping = action_program.get_predicate_to_action_mapping();
-    const auto& effect_rules = action_program.get_action_to_effect_rules_mapping();
+    const auto& effect_mapping = action_program.get_conditional_effect_to_predicate_mapping();
+    const auto rule_of = [&](auto predicate)
+    { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_heads().front().get_predicate() == predicate; }); };
     auto expected_rules = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>> {};
-    for (const auto rule : global_rules)
+    auto num_rules = size_t(0);
+    for (const auto& [predicate, action] : action_mapping)
     {
-        if (const auto it = action_mapping.find(rule.get_heads().front().get_predicate()); it != action_mapping.end())
-        {
-            expected_rules[it->second].push_back(rule);
-            continue;
-        }
-        const auto owner = std::ranges::find_if(effect_rules, [&](const auto& entry) { return std::ranges::find(entry.second, rule.get_index()) != entry.second.end(); });
-        ASSERT_NE(owner, effect_rules.end());
-        expected_rules[owner->first].push_back(rule);
+        expected_rules[action].push_back(rule_of(predicate));
+        for (const auto effect : action.get_effects())
+            if (const auto it = effect_mapping.find(std::pair(action, effect)); it != effect_mapping.end())
+                expected_rules[action].push_back(rule_of(it->second));
+        num_rules += expected_rules[action].size();
     }
+    EXPECT_EQ(num_rules, global_rules.size());
     ASSERT_EQ(expected_rules.size(), schemas.size());
 
     for (const auto& [action, rules] : expected_rules)
