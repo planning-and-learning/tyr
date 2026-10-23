@@ -749,7 +749,22 @@ private:
             auto rctx = ctx.get_rule_execution_context(rule_index);
             auto& rule_out = rctx.out();
 
-            const auto total_time = ygg::StopwatchScope(rule_out.statistics().total_time);
+            // Three clock reads per execution: the start, the end of the initialization, and the end.
+            struct Timing
+            {
+                RuleStatistics& statistics;
+                std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+                std::optional<std::chrono::steady_clock::time_point> initialized;
+
+                ~Timing()
+                {
+                    const auto end = std::chrono::steady_clock::now();
+                    statistics.total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+                    if (initialized)
+                        statistics.process_generate_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end - *initialized);
+                }
+            };
+            auto timing = Timing { rule_out.statistics() };
             ++rule_out.statistics().num_executions;
 
             rctx.clear_iteration();  ///< Clear iteration before generate
@@ -757,8 +772,6 @@ private:
                 return;
 
             {
-                const auto initialize_time = ygg::StopwatchScope(rule_out.statistics().initialize_time);
-
                 const auto wrctx = rctx.get_rule_worker_execution_context();
                 const auto& fact_sets = wrctx.in().fact_sets();
                 const auto nullary_condition = rctx.in().cws_rule().get_nullary_condition();
@@ -769,6 +782,7 @@ private:
                     // No binding is applicable while the nullary condition fails. Its atoms are listened to, so the rule
                     // runs again once it holds, and the reset graph then enumerates all cliques.
                     rule_out.kckp().reset();
+                    rule_out.statistics().initialize_time += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - timing.start);
                     return;
                 }
 
@@ -777,12 +791,10 @@ private:
                 for (auto& worker : rule_out.workers())
                     worker.solve.applicability_cache.static_nullary = static_nullary;
             }
+            timing.initialized = std::chrono::steady_clock::now();
+            rule_out.statistics().initialize_time += std::chrono::duration_cast<std::chrono::nanoseconds>(*timing.initialized - timing.start);
 
-            {
-                const auto process_generate_time = ygg::StopwatchScope(rule_out.statistics().process_generate_time);
-
-                generate(rctx, enumerate_all);
-            }
+            generate(rctx, enumerate_all);
         };
 
         // With one requested Datalog thread, run sequentially to pin the execution order to the scheduler's
