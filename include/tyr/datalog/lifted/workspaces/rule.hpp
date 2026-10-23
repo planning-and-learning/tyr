@@ -159,11 +159,20 @@ template<formalism::RelationKind R>
 struct ConstRuleWorkspace<LiftedTag, R>
 {
 public:
+    /// A literal of the conflicting condition and the partitions of its variables, checkable once they are all bound.
+    struct ConflictingLiteralCheck
+    {
+        std::vector<ygg::uint_t> partitions;
+        std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag>> static_literal;
+        std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag>> fluent_literal;
+    };
+
     auto get_rule() const noexcept { return rule; }
     auto get_nullary_condition() const noexcept { return nullary_condition; }
     auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
     auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
+    const auto& get_conflicting_literal_checks() const noexcept { return conflicting_literal_checks; }
 
     ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
@@ -176,6 +185,8 @@ private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition;
 
     StaticConsistencyGraph static_consistency_graph;
+
+    std::vector<ConflictingLiteralCheck> conflicting_literal_checks;
 };
 
 /**

@@ -300,28 +300,9 @@ private:
     /// Partitions are the rule's parameters.
     auto make_literal_prune(formalism::PredicateTag, RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
     {
-        struct Check
-        {
-            std::vector<ygg::uint_t> partitions;
-            std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag>> static_literal;
-            std::optional<formalism::datalog::LiteralView<LiftedTag, formalism::FluentTag>> fluent_literal;
-        };
-        const auto condition = wrctx.in().cws_rule().get_conflicting_overapproximation_condition();
-        auto checks = std::vector<Check> {};
-        const auto add = [&](auto literal, auto&& check)
-        {
-            for (const auto parameter : formalism::datalog::collect_parameters(literal))
-                check.partitions.push_back(ygg::uint_t(parameter));
-            if (!check.partitions.empty())
-                checks.push_back(std::move(check));
-        };
-        for (const auto literal : condition.template get_literals<formalism::StaticTag>())
-            add(literal, Check { {}, literal, std::nullopt });
-        for (const auto literal : condition.template get_literals<formalism::FluentTag>())
-            add(literal, Check { {}, std::nullopt, literal });
-
+        const auto& checks = wrctx.in().cws_rule().get_conflicting_literal_checks();
         const auto& layout = wrctx.in().cws_rule().get_static_consistency_graph().get_graph_layout();
-        return [this, &wrctx, &layout, checks = std::move(checks)](ygg::uint_t partition, size_t, const kckp::Workspace& workspace)
+        return [this, &wrctx, &layout, &checks](ygg::uint_t partition, size_t, const kckp::Workspace& workspace)
         {
             if (goal_cutoff_stopped())
                 return true;
