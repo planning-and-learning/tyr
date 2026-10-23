@@ -48,7 +48,7 @@ extern ::cista::offset::string create_triggered_name(formalism::planning::Action
 extern ::cista::offset::string create_applicability_name(formalism::planning::AxiomView<LiftedTag> axiom);
 
 /// Whether the conditional effect has an effect rule, i.e., variables or a condition; the others fire with their action.
-bool has_effect_predicate(formalism::planning::ConditionalEffectView<LiftedTag> effect);
+bool has_effect_rule(formalism::planning::ConditionalEffectView<LiftedTag> effect);
 
 /// Per binding of an action, the k and extension of each atom of the predicate of its k-th effect rule (the rule's last head), whose
 /// objects are those of the binding followed by the extension.

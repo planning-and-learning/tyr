@@ -113,11 +113,14 @@ struct SuccessorGenerator<LiftedTag>::Impl
         ActionExecutor executor;
         StateDelta successor_delta;
 
-        /// The state whose facts the workspace holds and the actions whose effects they include: all, or the action of the
-        /// schema program that computed them. A state builder's contents can change, so its facts hold only while enumerating.
-        std::optional<StateKey> facts_state;
-        std::optional<ygg::Index<formalism::planning::Action<LiftedTag>>> facts_action;
-        bool enumerating = false;
+        /// The facts the workspace holds. A state builder's contents can change, so its facts hold only while enumerating.
+        struct Facts
+        {
+            std::optional<StateKey> state;
+            /// The action of the schema program that computed them, or none for the full program (all actions).
+            std::optional<ygg::Index<formalism::planning::Action<LiftedTag>>> action;
+            bool enumerating = false;
+        } facts;
 
         /// The effect atoms of each action in the facts, grouped at the action's first successor.
         ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, EffectAtoms> effect_atoms;
@@ -154,8 +157,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
     void end_single_binding_work()
     {
         if constexpr (!is_registered<S>)
-            if (!evaluator.enumerating)
-                evaluator.facts_state = std::nullopt;
+            if (!evaluator.facts.enumerating)
+                evaluator.facts.state = std::nullopt;
     }
 
     Impl(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
@@ -212,26 +215,19 @@ struct SuccessorGenerator<LiftedTag>::Impl
     template<StateViewConcept<LiftedTag> S, typename Objects>
     ActionBindingStatus check_action_binding(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action, Objects objects);
 
+    /// Computes the facts of the node's state with the action's schema program, or with the full program for all actions.
     template<StateViewConcept<LiftedTag> S>
-    void compute_action_facts(const Node<LiftedTag, S>& node,
-                              formalism::datalog::ProgramView<LiftedTag> program,
-                              const P2DTranslationContext<LiftedTag>& input_translation,
-                              std::vector<datalog::Scheduler<LiftedTag>>& schedulers);
+    void compute_action_facts(const Node<LiftedTag, S>& node, std::optional<formalism::planning::ActionView<LiftedTag>> action);
 
+    /// Calls `callback` with each applicable binding (in scratch_action_binding) of the action, or of all actions.
     template<StateViewConcept<LiftedTag> S, typename Callback>
     bool for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
-                                            ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& scratch_binding,
-                                            formalism::datalog::ProgramView<LiftedTag> program,
-                                            const P2DTranslationContext<LiftedTag>& input_translation,
-                                            std::vector<datalog::Scheduler<LiftedTag>>& schedulers,
+                                            std::optional<formalism::planning::ActionView<LiftedTag>> action,
                                             Callback&& callback);
 
     template<StateViewConcept<LiftedTag> S, typename Accept, typename Callback, typename Stop>
     bool for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
-                                            ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& scratch_binding,
-                                            formalism::datalog::ProgramView<LiftedTag> program,
-                                            const P2DTranslationContext<LiftedTag>& input_translation,
-                                            std::vector<datalog::Scheduler<LiftedTag>>& schedulers,
+                                            std::optional<formalism::planning::ActionView<LiftedTag>> action,
                                             Accept&& accept,
                                             Callback&& callback,
                                             Stop&& stop);
@@ -273,74 +269,64 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
 
 template<StateViewConcept<LiftedTag> S>
 void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<LiftedTag, S>& node,
-                                                               formalism::datalog::ProgramView<LiftedTag> program,
-                                                               const P2DTranslationContext<LiftedTag>& input_translation,
-                                                               std::vector<datalog::Scheduler<LiftedTag>>& schedulers)
+                                                               std::optional<formalism::planning::ActionView<LiftedTag>> action)
 {
+    auto* schema = action ? &get_schema_evaluator(*action) : nullptr;
     evaluator.workspace.reset_evaluation();
-    evaluator.facts_state = state_key(node);
-    evaluator.facts_action = std::nullopt;
-    if (&schedulers != &evaluator.workspace.schedulers)
-        for (const auto rule : program.get_rules<formalism::PredicateTag>())
-            if (const auto it = definition->action_program.get_predicate_to_action_mapping().find(rule.get_heads().front().get_predicate());
-                it != definition->action_program.get_predicate_to_action_mapping().end())
-                evaluator.facts_action = it->second.get_index();
+    evaluator.facts.state = state_key(node);
+    evaluator.facts.action = action ? std::optional(action->get_index()) : std::nullopt;
     evaluator.effect_atoms.clear();
 
     const auto state = node.get_state();
-    insert_extended_state(state.get_state_builder(), *definition->task->get_repository(), input_translation, evaluator.workspace);
+    insert_extended_state(state.get_state_builder(),
+                          *definition->task->get_repository(),
+                          schema ? schema->input_translation : definition->action_program.get_translation_context().p2d,
+                          evaluator.workspace);
 
-    auto ctx = datalog::ProgramExecutionContext<LiftedTag>::from_reset_workspace(evaluator.workspace, schedulers);
+    auto ctx = datalog::ProgramExecutionContext<LiftedTag>::from_reset_workspace(evaluator.workspace,
+                                                                                 schema ? schema->schedulers : evaluator.workspace.schedulers);
     datalog::execute_model(ctx, *evaluator.execution_context);
 }
 
 template<StateViewConcept<LiftedTag> S, typename Callback>
-bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(
-    const Node<LiftedTag, S>& node,
-    ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& scratch_binding,
-    formalism::datalog::ProgramView<LiftedTag> program,
-    const P2DTranslationContext<LiftedTag>& input_translation,
-    std::vector<datalog::Scheduler<LiftedTag>>& schedulers,
-    Callback&& callback)
+bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
+                                                                              std::optional<formalism::planning::ActionView<LiftedTag>> action,
+                                                                              Callback&& callback)
 {
-    return for_each_applicable_action_binding(node,
-                                              scratch_binding,
-                                              program,
-                                              input_translation,
-                                              schedulers,
-                                              [](const auto&) { return true; },
-                                              std::forward<Callback>(callback),
-                                              [] { return false; });
+    return for_each_applicable_action_binding(
+        node,
+        action,
+        [](const auto&) { return true; },
+        std::forward<Callback>(callback),
+        [] { return false; });
 }
 
 template<StateViewConcept<LiftedTag> S, typename Accept, typename Callback, typename Stop>
-bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(
-    const Node<LiftedTag, S>& node,
-    ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& scratch_binding,
-    formalism::datalog::ProgramView<LiftedTag> program,
-    const P2DTranslationContext<LiftedTag>& input_translation,
-    std::vector<datalog::Scheduler<LiftedTag>>& schedulers,
-    Accept&& accept,
-    Callback&& callback,
-    Stop&& stop)
+bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
+                                                                              std::optional<formalism::planning::ActionView<LiftedTag>> action,
+                                                                              Accept&& accept,
+                                                                              Callback&& callback,
+                                                                              Stop&& stop)
 {
+    const auto program = action ? get_schema_evaluator(*action).program : definition->action_program.get_datalog_program().get_program();
     if (stop())
         return false;
-    if (evaluator.enumerating)
+    if (evaluator.facts.enumerating)
         throw std::logic_error("SuccessorGenerator: applicable action bindings are enumerated already.");
-    compute_action_facts(node, program, input_translation, schedulers);
-    evaluator.enumerating = true;
+    compute_action_facts(node, action);
+    evaluator.facts.enumerating = true;
     struct EndEnumeration
     {
-        Evaluator& evaluator;
+        Evaluator::Facts& facts;
         bool registered;
         ~EndEnumeration()
         {
-            evaluator.enumerating = false;
+            facts.enumerating = false;
             if (!registered)
-                evaluator.facts_state = std::nullopt;
+                facts.state = std::nullopt;
         }
-    } end_enumeration { evaluator, is_registered<S> };
+    } end_enumeration { evaluator.facts, is_registered<S> };
+    auto& scratch_binding = *evaluator.scratch_action_binding;
 
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().get_state_builder(), node.get_metric());
     auto grounder_context =
@@ -412,12 +398,11 @@ template<StateViewConcept<LiftedTag> S>
 void SuccessorGenerator<LiftedTag>::Impl::require_action_facts(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action)
 {
     // The facts of another state, or without the action's effects, come from the action's schema program.
-    if (evaluator.facts_state == state_key(node) && (!evaluator.facts_action || *evaluator.facts_action == action.get_index()))
+    if (evaluator.facts.state == state_key(node) && (!evaluator.facts.action || *evaluator.facts.action == action.get_index()))
         return;
-    if (evaluator.enumerating)
+    if (evaluator.facts.enumerating)
         throw std::logic_error("SuccessorGenerator: the state differs from the one whose applicable action bindings are enumerated.");
-    auto& schema = get_schema_evaluator(action);
-    compute_action_facts(node, schema.program, schema.input_translation, schema.schedulers);
+    compute_action_facts(node, action);
 }
 
 std::span<const ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>>
@@ -504,10 +489,7 @@ void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag, S>
         validate_task(m_impl->definition->task, storage);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               m_impl->definition->action_program.get_datalog_program().get_program(),
-                                               m_impl->definition->action_program.get_translation_context().p2d,
-                                               m_impl->evaluator.workspace.schedulers,
+                                               std::nullopt,
                                                [&](auto& binding)
                                                {
                                                    auto& target = [&]() -> auto&
@@ -544,13 +526,9 @@ void SuccessorGenerator<LiftedTag>::get_successor_nodes(const Node<LiftedTag, S>
     validate_task(m_impl->definition->task, axiom_evaluator);
     if constexpr (std::same_as<S, StateView<LiftedTag>>)
         validate_task(m_impl->definition->task, storage);
-    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               schema.program,
-                                               schema.input_translation,
-                                               schema.schedulers,
+                                               action,
                                                [&](auto& binding)
                                                {
                                                    auto& target = [&]() -> auto&
@@ -587,10 +565,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
         validate_task(m_impl->definition->task, storage);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               m_impl->definition->action_program.get_datalog_program().get_program(),
-                                               m_impl->definition->action_program.get_translation_context().p2d,
-                                               m_impl->evaluator.workspace.schedulers,
+                                               std::nullopt,
                                                [&](auto& binding)
                                                {
                                                    const auto action_binding =
@@ -629,13 +604,9 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     validate_task(m_impl->definition->task, axiom_evaluator);
     if constexpr (std::same_as<S, StateView<LiftedTag>>)
         validate_task(m_impl->definition->task, storage);
-    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               schema.program,
-                                               schema.input_translation,
-                                               schema.schedulers,
+                                               action,
                                                [&](auto& binding)
                                                {
                                                    const auto action_binding =
@@ -963,10 +934,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_successor_node(const Node<LiftedTag
             throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
     return m_impl->for_each_applicable_action_binding(node,
-                                                      *m_impl->evaluator.scratch_action_binding,
-                                                      m_impl->definition->action_program.get_datalog_program().get_program(),
-                                                      m_impl->definition->action_program.get_translation_context().p2d,
-                                                      m_impl->evaluator.workspace.schedulers,
+                                                      std::nullopt,
                                                       [&](auto& binding) { return callback(get_successor_node(node, binding, storage, axiom_evaluator)); });
 }
 
@@ -991,10 +959,7 @@ void SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<Lifted
     validate_task(m_impl->definition->task, state_repository);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               m_impl->definition->action_program.get_datalog_program().get_program(),
-                                               m_impl->definition->action_program.get_translation_context().p2d,
-                                               m_impl->evaluator.workspace.schedulers,
+                                               std::nullopt,
                                                [&](auto& binding)
                                                {
                                                    out_nodes.push_back(get_packed_successor_node(node, binding, state_repository, axiom_evaluator));
@@ -1016,10 +981,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<L
             throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
     return m_impl->for_each_applicable_action_binding(node,
-                                                      *m_impl->evaluator.scratch_action_binding,
-                                                      m_impl->definition->action_program.get_datalog_program().get_program(),
-                                                      m_impl->definition->action_program.get_translation_context().p2d,
-                                                      m_impl->evaluator.workspace.schedulers,
+                                                      std::nullopt,
                                                       [&](auto& binding)
                                                       {
                                                           const auto action_binding =
@@ -1049,10 +1011,7 @@ void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Nod
     validate_task(m_impl->definition->task, state_repository);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               m_impl->definition->action_program.get_datalog_program().get_program(),
-                                               m_impl->definition->action_program.get_translation_context().p2d,
-                                               m_impl->evaluator.workspace.schedulers,
+                                               std::nullopt,
                                                [&](auto& binding)
                                                {
                                                    const auto action_binding =
@@ -1070,10 +1029,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Nod
     validate_task(m_impl->definition->task, node.get_state());
     return m_impl->for_each_applicable_action_binding(
         node,
-        *m_impl->evaluator.scratch_action_binding,
-        m_impl->definition->action_program.get_datalog_program().get_program(),
-        m_impl->definition->action_program.get_translation_context().p2d,
-        m_impl->evaluator.workspace.schedulers,
+        std::nullopt,
         [&](auto& binding) { return callback(formalism::planning::insert(*m_impl->definition->task->get_repository(), binding).first); });
 }
 
@@ -1083,10 +1039,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(
 {
     validate_task(m_impl->definition->task, node.get_state());
     return m_impl->for_each_applicable_action_binding(node,
-                                                      *m_impl->evaluator.scratch_action_binding,
-                                                      m_impl->definition->action_program.get_datalog_program().get_program(),
-                                                      m_impl->definition->action_program.get_translation_context().p2d,
-                                                      m_impl->evaluator.workspace.schedulers,
+                                                      std::nullopt,
                                                       [&](auto& binding)
                                                       { return callback(ygg::make_view(binding, *m_impl->definition->task->get_repository())); });
 }
@@ -1105,12 +1058,8 @@ bool SuccessorGenerator<LiftedTag>::for_each_successor_node(const Node<LiftedTag
         if (&node.get_state().get_state_builder() == &storage)
             throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
-    auto& schema = m_impl->get_schema_evaluator(action);
     return m_impl->for_each_applicable_action_binding(node,
-                                                      *m_impl->evaluator.scratch_action_binding,
-                                                      schema.program,
-                                                      schema.input_translation,
-                                                      schema.schedulers,
+                                                      action,
                                                       [&](auto& binding) { return callback(get_successor_node(node, binding, storage, axiom_evaluator)); });
 }
 
@@ -1135,13 +1084,9 @@ void SuccessorGenerator<LiftedTag>::get_packed_successor_nodes(const Node<Lifted
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, axiom_evaluator);
     validate_task(m_impl->definition->task, state_repository);
-    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               schema.program,
-                                               schema.input_translation,
-                                               schema.schedulers,
+                                               action,
                                                [&](auto& binding)
                                                {
                                                    out_nodes.push_back(get_packed_successor_node(node, binding, state_repository, axiom_evaluator));
@@ -1163,12 +1108,8 @@ bool SuccessorGenerator<LiftedTag>::for_each_labeled_successor_node(const Node<L
         if (&node.get_state().get_state_builder() == &storage)
             throw std::invalid_argument("SuccessorGenerator: source and output builder must not alias.");
     validate_task(m_impl->definition->task, axiom_evaluator);
-    auto& schema = m_impl->get_schema_evaluator(action);
     return m_impl->for_each_applicable_action_binding(node,
-                                                      *m_impl->evaluator.scratch_action_binding,
-                                                      schema.program,
-                                                      schema.input_translation,
-                                                      schema.schedulers,
+                                                      action,
                                                       [&](auto& binding)
                                                       {
                                                           const auto action_binding =
@@ -1198,13 +1139,9 @@ void SuccessorGenerator<LiftedTag>::get_packed_labeled_successor_nodes(const Nod
     validate_task(m_impl->definition->task, node.get_state());
     validate_task(m_impl->definition->task, axiom_evaluator);
     validate_task(m_impl->definition->task, state_repository);
-    auto& schema = m_impl->get_schema_evaluator(action);
     out_nodes.clear();
     m_impl->for_each_applicable_action_binding(node,
-                                               *m_impl->evaluator.scratch_action_binding,
-                                               schema.program,
-                                               schema.input_translation,
-                                               schema.schedulers,
+                                               action,
                                                [&](auto& binding)
                                                {
                                                    const auto action_binding =
@@ -1221,13 +1158,9 @@ bool SuccessorGenerator<LiftedTag>::for_each_applicable_action_binding(const Nod
                                                                        const std::function<bool(formalism::planning::ActionBindingView)>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    auto& schema = m_impl->get_schema_evaluator(action);
     return m_impl->for_each_applicable_action_binding(
         node,
-        *m_impl->evaluator.scratch_action_binding,
-        schema.program,
-        schema.input_translation,
-        schema.schedulers,
+        action,
         [&](auto& binding) { return callback(formalism::planning::insert(*m_impl->definition->task->get_repository(), binding).first); });
 }
 
@@ -1237,12 +1170,8 @@ bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(
                                                                                 const std::function<bool(BorrowedActionBindingView<LiftedTag>)>& callback)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    auto& schema = m_impl->get_schema_evaluator(action);
     return m_impl->for_each_applicable_action_binding(node,
-                                                      *m_impl->evaluator.scratch_action_binding,
-                                                      schema.program,
-                                                      schema.input_translation,
-                                                      schema.schedulers,
+                                                      action,
                                                       [&](auto& binding)
                                                       { return callback(ygg::make_view(binding, *m_impl->definition->task->get_repository())); });
 }
@@ -1255,13 +1184,9 @@ bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(
                                                                                 const std::function<bool()>& stop)
 {
     validate_task(m_impl->definition->task, node.get_state());
-    auto& schema = m_impl->get_schema_evaluator(action);
     const auto& repository = *m_impl->definition->task->get_repository();
     return m_impl->for_each_applicable_action_binding(node,
-                                                      *m_impl->evaluator.scratch_action_binding,
-                                                      schema.program,
-                                                      schema.input_translation,
-                                                      schema.schedulers,
+                                                      action,
                                                       [&](auto& binding) { return accept(ygg::make_view(binding, repository)); },
                                                       [&](auto& binding) { return callback(ygg::make_view(binding, repository)); },
                                                       stop);

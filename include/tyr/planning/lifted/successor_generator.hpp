@@ -59,7 +59,8 @@ public:
     Node<LiftedTag> get_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
     /// Checks full applicability without interning the offered binding. The borrowed object row must resolve to this task's canonical owners.
-    /// Foreign states, schemas or objects and wrong arity throw invalid_argument. May be called from a binding callback.
+    /// Foreign states, schemas or objects and wrong arity throw invalid_argument. May be called from a binding callback for the
+    /// callback's state; for another state it throws logic_error.
     /// Ground tuples absent from the compiled action set are INAPPLICABLE; lifted domain failures are OUTSIDE_PARAMETER_DOMAIN.
     template<StateViewConcept<LiftedTag> S>
     ActionBindingStatus
@@ -154,8 +155,9 @@ public:
                                         std::vector<formalism::planning::ActionBindingView>& out_bindings);
 
     /// Callbacks return true to continue, false to stop. The result is true iff enumeration was exhausted.
-    /// Enumeration must not reenter this generator's enumeration APIs: they share scratch storage.
-    /// Generating a single successor inside an action-binding callback is supported.
+    /// Enumeration must not reenter this generator's enumeration APIs: they share scratch storage, and reentering throws logic_error.
+    /// Generating a single successor of the callback's state inside an action-binding callback is supported; another state throws
+    /// logic_error.
     /// Builder successor callbacks reuse the supplied builder; copy results before the next callback.
     template<StateViewConcept<LiftedTag> S>
     bool for_each_applicable_action_binding(const Node<LiftedTag, S>& node, const std::function<bool(formalism::planning::ActionBindingView)>& callback);
