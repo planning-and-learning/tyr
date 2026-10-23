@@ -27,9 +27,6 @@
 #include "tyr/formalism/unification/term_operations.hpp"
 
 #include <algorithm>
-#include <cassert>
-#include <compare>
-#include <map>
 #include <optional>
 #include <string>
 #include <utility>
@@ -84,28 +81,28 @@ public:
         for (const auto head : heads)
             formalism::datalog::collect_parameters(head, head_parameters);
 
-        auto projections = std::vector<std::pair<RuleSplitting::Predicate, std::vector<ygg::uint_t>>> {};
-        m_used_projections.clear();
+        auto projections = std::vector<std::pair<Body, FluentLiteral>> {};
         while (auto projection = choose_projection(body, head_parameters, variables.size()))
         {
             restrict_kept_variables(projection->rest, projection->kept, projection->projected);
-            auto [atom, positions] = get_or_create_projection(variables, projection->projected, projection->kept);
+            const auto atom = create_projection_atom(projection->kept);
             projection->rest.fluent_literals.push_back(atom);
-            projections.emplace_back(atom.get_atom().get_predicate().get_index(), std::move(positions));
+            projections.emplace_back(std::move(projection->projected), atom);
             body = std::move(projection->rest);
         }
         if (projections.empty())
             return std::nullopt;
 
+        for (const auto& [projected, atom] : projections)
+        {
+            const auto [projection_rule, positions] =
+                emit_rule(variables, projected, { atom.get_atom() }, ygg::float_t(0));
+            m_program.predicate_rules.push_back(projection_rule);
+            m_splitting.origins.emplace(projection_rule, RuleSplitting::Origin { variables.size(), positions });
+            m_splitting.projection_rules.emplace(atom.get_atom().get_predicate().get_index(), projection_rule);
+        }
         const auto [main_rule, positions] = emit_rule(variables, body, heads, cost);
         m_splitting.origins.emplace(main_rule, RuleSplitting::Origin { variables.size(), positions });
-        for (auto& [predicate, projection_positions] : projections)
-        {
-            [[maybe_unused]] const auto inserted =
-                m_splitting.projection_origins.emplace(std::pair(main_rule, predicate), RuleSplitting::Origin { variables.size(), std::move(projection_positions) })
-                    .second;
-            assert(inserted && "A rule uses each projection predicate once.");
-        }
         return main_rule;
     }
 
@@ -117,15 +114,6 @@ private:
     {
         std::vector<StaticLiteral> static_literals;
         std::vector<FluentLiteral> fluent_literals;
-    };
-
-    struct ProjectionKey
-    {
-        std::vector<ygg::uint_t> static_literals;
-        std::vector<ygg::uint_t> fluent_literals;
-        std::vector<ygg::uint_t> kept;
-
-        auto operator<=>(const ProjectionKey&) const = default;
     };
 
     struct Projection
@@ -264,54 +252,6 @@ private:
         return result;
     }
 
-    /// The positions among the source rule's variables of the variables of a body, in order.
-    static std::vector<ygg::uint_t> positions_of(const Body& body)
-    {
-        auto positions = std::vector<ygg::uint_t> {};
-        for (const auto parameter : parameters_of(body))
-            positions.push_back(ygg::uint_t(parameter));
-        std::ranges::sort(positions);
-        return positions;
-    }
-
-    /// The projection atom over the kept variables for the projected body, and the positions of the projection rule's
-    /// variables among the source rule's variables. A projection with the same literals and kept variables (after
-    /// renumbering the variables by their order) reuses the earlier predicate and rule.
-    std::pair<FluentLiteral, std::vector<ygg::uint_t>> get_or_create_projection(const ygg::IndexList<formalism::Variable>& variables,
-                                                                               const Body& projected,
-                                                                               const std::vector<formalism::ParameterIndex>& kept)
-    {
-        auto positions = positions_of(projected);
-        auto local = ygg::UnorderedMap<formalism::ParameterIndex, formalism::ParameterIndex> {};
-        for (size_t i = 0; i < positions.size(); ++i)
-            local.emplace(formalism::ParameterIndex(positions[i]), formalism::ParameterIndex(ygg::uint_t(i)));
-
-        auto key = ProjectionKey {};
-        for (const auto literal : projected.static_literals)
-            key.static_literals.push_back(ygg::uint_t(renumber(literal, local)));
-        for (const auto literal : projected.fluent_literals)
-            key.fluent_literals.push_back(ygg::uint_t(renumber(literal, local)));
-        std::ranges::sort(key.static_literals);
-        std::ranges::sort(key.fluent_literals);
-        for (const auto variable : kept)
-            key.kept.push_back(ygg::uint_t(local.at(variable)));
-
-        if (const auto it = m_projections.find(key); it != m_projections.end() && !m_used_projections.contains(it->second))
-        {
-            m_used_projections.insert(it->second);
-            return { create_literal<formalism::FluentTag>(it->second, kept), std::move(positions) };
-        }
-
-        const auto atom = create_projection_atom(kept);
-        const auto [projection_rule, rule_positions] = emit_rule(variables, projected, { atom.get_atom() }, ygg::float_t(0));
-        assert(rule_positions == positions);
-        m_program.predicate_rules.push_back(projection_rule);
-        m_splitting.projection_rules.emplace(atom.get_atom().get_predicate().get_index(), projection_rule);
-        m_projections.emplace(std::move(key), atom.get_atom().get_predicate().get_index());
-        m_used_projections.insert(atom.get_atom().get_predicate().get_index());
-        return { atom, std::move(positions) };
-    }
-
     FluentLiteral create_projection_atom(const std::vector<formalism::ParameterIndex>& kept)
     {
         auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(m_context.builder);
@@ -369,7 +309,10 @@ private:
               const std::vector<FluentAtom>& heads,
               ygg::float_t cost)
     {
-        auto positions = positions_of(body);
+        auto positions = std::vector<ygg::uint_t> {};
+        for (const auto parameter : parameters_of(body))
+            positions.push_back(ygg::uint_t(parameter));
+        std::ranges::sort(positions);
         auto local = ygg::UnorderedMap<formalism::ParameterIndex, formalism::ParameterIndex> {};
         for (size_t i = 0; i < positions.size(); ++i)
             local.emplace(formalism::ParameterIndex(positions[i]), formalism::ParameterIndex(ygg::uint_t(i)));
@@ -397,10 +340,6 @@ private:
     formalism::datalog::CopyContext& m_context;
     const PredicateFactSets<formalism::StaticTag>& m_static_facts;
     size_t m_num_projections = 0;
-    std::map<ProjectionKey, RuleSplitting::Predicate> m_projections;
-    /// The projection predicates of the rule being split: a rule uses a shared projection at most once, since its origin is
-    /// kept per main rule and predicate.
-    ygg::UnorderedSet<RuleSplitting::Predicate> m_used_projections;
     ygg::UnorderedMap<std::pair<ygg::Index<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>
         m_domain_literals;
 };

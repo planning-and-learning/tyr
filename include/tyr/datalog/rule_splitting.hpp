@@ -40,17 +40,12 @@ struct RuleSplitting
         std::vector<ygg::uint_t> source_positions;
     };
 
-    using Predicate = ygg::Index<formalism::Predicate<formalism::FluentTag>>;
-
     /// The rule that replaces each source rule: the main rule of a split one, or its copy.
     RuleMapping rules;
-    /// The origin of every main rule of a split source rule.
+    /// The origin of every rule that splitting created, main rules and projection rules alike.
     ygg::UnorderedMap<Rule, Origin> origins;
-    /// The origin of the projection rule of each projection predicate within each split source rule that uses it, by the
-    /// source's main rule: projections with the same literals and kept variables share one predicate and rule.
-    ygg::UnorderedMap<std::pair<Rule, Predicate>, Origin> projection_origins;
     /// The projection rule that derives each projection predicate.
-    ygg::UnorderedMap<Predicate, Rule> projection_rules;
+    ygg::UnorderedMap<ygg::Index<formalism::Predicate<formalism::FluentTag>>, Rule> projection_rules;
 };
 
 /// Copies the program into the repository and projects the variables of its predicate rules that occur in no head and only
