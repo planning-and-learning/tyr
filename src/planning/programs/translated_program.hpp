@@ -21,7 +21,6 @@
 #include "common.hpp"
 #include "tyr/datalog/rule_mapping.hpp"
 #include "tyr/datalog/static_literal_decomposition.hpp"
-#include "tyr/datalog/static_variable_elimination.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -83,17 +82,6 @@ transform(const TranslatedProgram<Tables>& source, formalism::datalog::Repositor
     const auto program = std::forward<Pass>(pass)(source.program, *repository, rules);
     auto remapper = SymbolRemapper(*repository, rules);
     return { program, std::move(repository), source.tables.remap(remapper) };
-}
-
-/// The pass of eliminate_static_variables; its restore information goes to `result`, keyed by its output rules.
-inline auto eliminate_static_variables_pass(datalog::StaticVariableElimination& result)
-{
-    return [&result](formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& destination, datalog::RuleMapping& rules)
-    {
-        const auto output = datalog::eliminate_static_variables(program, destination, result);
-        rules = result.rules;
-        return output;
-    };
 }
 
 inline auto decompose_static_literals_pass()

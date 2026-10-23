@@ -247,9 +247,7 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
     const auto source_program = create_program(task, tables.translation_context, tables.predicate_to_actions, tables.effect_predicates, *source_repository);
     auto source = TranslatedProgram<ActionTables> { source_program, std::move(source_repository), std::move(tables) };
 
-    auto elimination = datalog::StaticVariableElimination {};
-    const auto eliminated = transform(source, *factory, num_objects, eliminate_static_variables_pass(elimination));
-    auto result = transform(eliminated, *factory, num_objects, decompose_static_literals_pass());
+    auto result = transform(source, *factory, num_objects, decompose_static_literals_pass());
     const auto program = result.program;
     auto repository = std::move(result.repository);
     translation_context = std::move(result.tables.translation_context);

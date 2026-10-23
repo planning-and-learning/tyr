@@ -168,9 +168,7 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task, Trans
     const auto program = create_program(task, tables.translation_context, *repository);
     auto source = TranslatedProgram<AxiomTables> { program, std::move(repository), std::move(tables) };
 
-    auto elimination = datalog::StaticVariableElimination {};
-    const auto eliminated = transform(source, *factory, num_objects, eliminate_static_variables_pass(elimination));
-    auto result = transform(eliminated, *factory, num_objects, decompose_static_literals_pass());
+    auto result = transform(source, *factory, num_objects, decompose_static_literals_pass());
     translation_context = std::move(result.tables.translation_context);
     return datalog::Program<LiftedTag>(result.program, std::move(result.repository), std::move(factory));
 }

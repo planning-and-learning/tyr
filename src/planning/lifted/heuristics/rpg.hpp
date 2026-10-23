@@ -98,14 +98,6 @@ struct RPGPolicy<LiftedTag>
             }
             else
                 ygg::extend(ygg::make_view(witness.get_rule_key(), workspace.workspace_repository).get_objects(), workspace.binding);
-
-            const auto& static_origins = definition.rpg_program.get_static_variable_origins();
-            if (const auto origin = static_origins.find(witness.get_rule_key().relation); origin != static_origins.end())
-            {
-                auto source_binding = ygg::IndexList<formalism::Object> {};
-                datalog::restore_eliminated_variables(origin->second, workspace.binding, source_binding);
-                workspace.binding = std::move(source_binding);
-            }
             return formalism::planning::ground(it->second, grounder_context).first;
         }
         const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
