@@ -332,32 +332,7 @@ TEST(TyrPlanningApplicabilityTest, PairwiseStaticCompatibilityRestrictsQuantifie
         tyr::formalism::planning::Parser(std::string(kPairwiseConditionalEffectDomain), "pairwise-conditional-effect-domain.pddl")
             .parse_task(std::string(kPairwiseConditionalEffectProblem), "pairwise-conditional-effect-problem.pddl"));
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<LiftedTag>().create(lifted_task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<LiftedTag>().create(lifted_task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(lifted_task, execution_context);
-    const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    const auto bindings = successor_generator->get_applicable_action_bindings(initial_node);
-
-    ASSERT_EQ(bindings.size(), 1);
-    ASSERT_EQ(bindings.front().get_objects().size(), 1);
-    const auto action = bindings.front().get_relation();
-    const auto effect = action.get_effects()[0];
-    const auto& effect_domain =
-        lifted_task->get_formalism_task().get_variable_domains().action_domains.at(action.get_index()).payload.effect_domains.at(effect.get_index()).payload;
-    const auto prefix = std::array { bindings.front().get_objects()[0].get_index() };
-    auto workspace = analysis::CompatibilityWorkspace {};
-    auto extensions = std::vector<ygg::Index<formalism::Object>> {};
-    analysis::for_each_compatible_extension(effect_domain,
-                                            prefix,
-                                            workspace,
-                                            [&](const auto extension)
-                                            {
-                                                ASSERT_EQ(extension.size(), 1);
-                                                extensions.push_back(extension[0]);
-                                            });
-
-    ASSERT_EQ(extensions.size(), 1);
-    EXPECT_EQ(ygg::make_view(extensions.front(), *lifted_task->get_repository()).get_name().str(), "b");
+    // The static facts allow only b for ?y in the ground action of apply(a), and only b is marked.
     expect_pairwise_conditional_effect_successor(lifted_task);
 
     const auto ground_result = lifted_task->instantiate_ground_task(*execution_context);

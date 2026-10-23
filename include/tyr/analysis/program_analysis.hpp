@@ -10,6 +10,7 @@
 #ifndef TYR_ANALYSIS_PROGRAM_ANALYSIS_HPP_
 #define TYR_ANALYSIS_PROGRAM_ANALYSIS_HPP_
 
+#include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/analysis/declarations.hpp"
 
 namespace tyr::analysis

@@ -25,9 +25,6 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
-#include <cassert>
-#include <ranges>
-#include <span>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/types.hpp>
@@ -45,44 +42,6 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
 ProgramVariableDomainsView compute_variable_domain_views(const ProgramVariableDomains& domains, const formalism::datalog::Repository& repository);
 
 TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::planning::Repository& repository);
-
-template<typename Callback>
-void for_each_compatible_extension(const ConditionalEffectDomainData& domains,
-                                   std::span<const ygg::Index<formalism::Object>> prefix,
-                                   CompatibilityWorkspace& workspace,
-                                   Callback&& callback)
-{
-    const auto& graph = domains.compatibility_graph;
-    const auto& layout = graph.get_layout();
-    assert(prefix.size() <= layout.num_partitions);
-
-    workspace.vertex_prefix.resize(prefix.size());
-    for (ygg::uint_t partition = 0; partition < prefix.size(); ++partition)
-    {
-        const auto object = ygg::uint_t(prefix[partition]);
-        if (partition >= domains.object_to_vertex.size() || object >= domains.object_to_vertex[partition].size())
-            return;
-
-        const auto vertex = domains.object_to_vertex[partition][object];
-        if (vertex.index >= layout.num_vertices)
-            return;
-        workspace.vertex_prefix[partition] = vertex;
-    }
-
-    kckp::KCKP(graph).for_each_compatible_extension(workspace.vertex_prefix,
-                                                    workspace.kckp,
-                                                    [&](std::span<const kckp::Vertex> extension)
-                                                    {
-                                                        callback(extension
-                                                                 | std::views::transform(
-                                                                     [&](kckp::Vertex vertex)
-                                                                     {
-                                                                         const auto partition = layout.vertex_to_partition[vertex.index];
-                                                                         const auto bit = layout.vertex_to_bit[vertex.index];
-                                                                         return domains.condition_domain.payload[partition].objects[bit];
-                                                                     }));
-                                                    });
-}
 }
 
 #endif

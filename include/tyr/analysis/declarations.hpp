@@ -18,7 +18,6 @@
 #ifndef TYR_ANALYSIS_DECLARATIONS_HPP_
 #define TYR_ANALYSIS_DECLARATIONS_HPP_
 
-#include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -77,19 +76,11 @@ struct ConditionalEffectDomainData
 {
     ConjunctiveConditionDomain condition_domain;
     ConjunctiveEffectDomain effect_domain;
-    kckp::Graph compatibility_graph;
-    std::vector<std::vector<kckp::Vertex>> object_to_vertex;
 };
 
 using ConditionalEffectDomain = Scoped<formalism::planning::ConditionalEffect<LiftedTag>, ConditionalEffectDomainData>;
 
 using ConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<formalism::planning::ConditionalEffect<LiftedTag>>, ConditionalEffectDomain>;
-
-struct CompatibilityWorkspace
-{
-    kckp::Workspace kckp;
-    std::vector<kckp::Vertex> vertex_prefix;
-};
 
 struct ActionDomainData
 {

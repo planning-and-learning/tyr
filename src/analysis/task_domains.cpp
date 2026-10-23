@@ -80,7 +80,6 @@ struct TmpConditionalEffectDomain
 {
     TmpConjunctiveConditionDomain condition_domain;
     TmpConjunctiveEffectDomain effect_domain;
-    kckp::Graph compatibility_graph;
 };
 
 using TmpConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<formalism::planning::ConditionalEffect<LiftedTag>>, TmpConditionalEffectDomain>;
@@ -164,7 +163,7 @@ AxiomDomainMap to_axiom_domain_map(const TmpAxiomDomainMap& domains)
     return result;
 }
 
-ActionDomainMap to_action_domain_map(TmpActionDomainMap& domains, size_t num_objects)
+ActionDomainMap to_action_domain_map(TmpActionDomainMap& domains)
 {
     auto result = ActionDomainMap {};
     result.reserve(domains.size());
@@ -177,20 +176,6 @@ ActionDomainMap to_action_domain_map(TmpActionDomainMap& domains, size_t num_obj
         for (auto& [c_effect, c_effect_domain] : action_domain.effect_domains)
         {
             auto condition_domains = to_variable_domain_list(c_effect_domain.condition_domain.payload);
-            const auto& layout = c_effect_domain.compatibility_graph.get_layout();
-            assert(layout.num_partitions == condition_domains.size());
-            auto object_to_vertex = std::vector<std::vector<kckp::Vertex>>(layout.num_partitions, std::vector<kckp::Vertex>(num_objects));
-            for (ygg::uint_t partition = 0; partition < layout.num_partitions; ++partition)
-            {
-                assert(layout.vertex_partitions[partition].size() == condition_domains[partition].objects.size());
-                for (size_t bit = 0; bit < condition_domains[partition].objects.size(); ++bit)
-                {
-                    const auto object = ygg::uint_t(condition_domains[partition].objects[bit]);
-                    assert(object < num_objects);
-                    object_to_vertex[partition][object] = kckp::Vertex(layout.vertex_partitions[partition][bit]);
-                }
-            }
-
             effect_domains.emplace(c_effect,
                                    ConditionalEffectDomain {
                                        c_effect,
@@ -203,8 +188,6 @@ ActionDomainMap to_action_domain_map(TmpActionDomainMap& domains, size_t num_obj
                                                c_effect_domain.effect_domain.element,
                                                to_variable_domain_list(c_effect_domain.effect_domain.payload),
                                            },
-                                           std::move(c_effect_domain.compatibility_graph),
-                                           std::move(object_to_vertex),
                                        },
                                    });
         }
@@ -680,7 +663,7 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
                                                                                         task.get_atoms<formalism::StaticTag>(),
                                                                                         effect_variable_domains,
                                                                                         task.get_context().template size<formalism::Object>());
-            auto compatibility = detail::create_pairwise_compatibility_graph(effect_variable_domains,
+            const auto compatibility = detail::create_pairwise_compatibility_graph(effect_variable_domains,
                                                                              task.get_context().template size<formalism::Object>(),
                                                                              { &action_static_compatibility, &effect_static_compatibility });
             c_parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
@@ -689,7 +672,6 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
                                    TmpConditionalEffectDomain {
                                        TmpConjunctiveConditionDomain { c_effect.get_condition().get_index(), c_parameter_domains },
                                        TmpConjunctiveEffectDomain { c_effect.get_effect().get_index(), c_parameter_domains },
-                                       std::move(compatibility.graph),
                                    });
         }
 
@@ -868,7 +850,7 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
     auto derived_predicate_domains = to_predicate_domain_map(derived_predicate_domain_sets);
     auto static_function_domains = to_function_domain_map(static_function_domain_sets);
     auto fluent_function_domains = to_function_domain_map(fluent_function_domain_sets);
-    auto action_domains = to_action_domain_map(action_domain_sets, task.get_context().template size<formalism::Object>());
+    auto action_domains = to_action_domain_map(action_domain_sets);
     auto axiom_domains = to_axiom_domain_map(axiom_domain_sets);
 
     return TaskVariableDomains {
