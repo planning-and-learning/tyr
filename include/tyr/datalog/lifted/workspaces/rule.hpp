@@ -31,6 +31,7 @@
 
 #include <cassert>
 #include <deque>
+#include <span>
 #include <functional>
 #include <optional>
 #include <type_traits>
@@ -189,7 +190,28 @@ public:
     {
         ygg::uint_t target;
         std::vector<ygg::uint_t> others;
+        /// With at most two other partitions, keyed by their vertices packed into one word; otherwise by the vertices.
+        ygg::UnorderedMap<uint64_t, std::vector<ygg::uint_t>> packed_targets;
         ygg::UnorderedMap<std::vector<ygg::uint_t>, std::vector<ygg::uint_t>, VertexKeyHash, std::equal_to<>> targets;
+
+        static uint64_t pack(std::span<const ygg::uint_t> vertices) noexcept
+        {
+            auto key = uint64_t(0);
+            for (const auto vertex : vertices)
+                key = (key << 32) | vertex;
+            return key;
+        }
+
+        const std::vector<ygg::uint_t>* find(const std::vector<ygg::uint_t>& key) const noexcept
+        {
+            if (others.size() <= 2)
+            {
+                const auto it = packed_targets.find(pack(key));
+                return it == packed_targets.end() ? nullptr : &it->second;
+            }
+            const auto it = targets.find(key);
+            return it == targets.end() ? nullptr : &it->second;
+        }
     };
 
     auto get_rule() const noexcept { return rule; }

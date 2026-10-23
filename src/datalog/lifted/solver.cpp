@@ -355,14 +355,14 @@ private:
                 key.clear();
                 for (const auto p : index.others)
                     key.push_back(workspace.partial_solution[p].index);
-                const auto it = index.targets.find(key);
-                if (it == index.targets.end())
+                const auto* targets = index.find(key);
+                if (!targets)
                     return false;
                 const auto& info = layout.info.infos[index.target];
                 auto row = ygg::BitsetSpan<uint64_t>(workspace.compatible_vertices(depth).data() + info.block_offset, info.num_bits);
                 auto& bits = wrctx.out().restrict_bits();
                 bits.clear();
-                for (const auto bit : it->second)
+                for (const auto bit : *targets)
                     if (row.test(bit))
                         bits.push_back(bit);
                 if (bits.empty())

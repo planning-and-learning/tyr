@@ -102,13 +102,22 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleVie
                 key.clear();
                 for (const auto partition : index.others)
                     key.push_back(*vertices[partition]);
-                index.targets[key].push_back(*vertices[target] - layout.info.infos[target].bit_offset);
+                const auto bit = *vertices[target] - layout.info.infos[target].bit_offset;
+                if (index.others.size() <= 2)
+                    index.packed_targets[StaticLiteralIndex::pack(key)].push_back(bit);
+                else
+                    index.targets[key].push_back(bit);
             }
-            for (auto& [_, bits] : index.targets)
+            const auto normalize = [](auto& map)
             {
-                std::ranges::sort(bits);
-                bits.erase(std::unique(bits.begin(), bits.end()), bits.end());
-            }
+                for (auto& [_, bits] : map)
+                {
+                    std::ranges::sort(bits);
+                    bits.erase(std::unique(bits.begin(), bits.end()), bits.end());
+                }
+            };
+            normalize(index.packed_targets);
+            normalize(index.targets);
             static_literal_indexes.push_back(std::move(index));
         }
     }
