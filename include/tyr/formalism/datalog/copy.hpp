@@ -105,7 +105,6 @@ std::pair<ConjunctiveConditionView<LiftedTag>, bool> copy(ConjunctiveConditionVi
 
 std::pair<ConjunctiveConditionView<GroundTag>, bool> copy(ConjunctiveConditionView<GroundTag> element, CopyContext& context);
 
-
 template<RelationKind R>
 std::pair<RuleView<LiftedTag, R>, bool> copy(RuleView<LiftedTag, R> element, CopyContext& context);
 
@@ -326,16 +325,14 @@ std::pair<MultiOperatorView<T>, bool> copy(MultiOperatorView<T> element, CopyCon
 template<TaskKind T>
 ArithmeticOperatorView<T> copy(ArithmeticOperatorView<T> element, CopyContext& context)
 {
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 template<TaskKind T>
 BooleanOperatorView<T> copy(BooleanOperatorView<T> element, CopyContext& context)
 {
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 

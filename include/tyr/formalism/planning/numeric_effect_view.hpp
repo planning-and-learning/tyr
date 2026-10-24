@@ -29,8 +29,7 @@ namespace ygg
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::NumericEffect<T, F>> C>
-class View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::planning::NumericEffect<T, F>, C>
+class View<ygg::Index<::tyr::formalism::planning::NumericEffect<T, F>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::NumericEffect<T, F>, C>
 {
     static_assert(std::same_as<F, ::tyr::formalism::FluentTag> || std::same_as<F, ::tyr::formalism::AuxiliaryTag>,
                   "Unsupported NumericEffect<F> specialization.");

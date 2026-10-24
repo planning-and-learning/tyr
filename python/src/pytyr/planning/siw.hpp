@@ -36,19 +36,13 @@ public:
     void on_start_subsearch(ygg::uint_t subsearch_index) override { NB_OVERRIDE_PURE(on_start_subsearch, subsearch_index); }
 
     void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics, const iw::Statistics<Kind>& solver_statistics) override
-    {
-        NB_OVERRIDE_PURE(add_subsearch_statistics, search_statistics, solver_statistics);
-    }
+    { NB_OVERRIDE_PURE(add_subsearch_statistics, search_statistics, solver_statistics); }
 
     void on_end_subsearch(ygg::uint_t subsearch_index, tyr::planning::SearchStatus status) override
-    {
-        NB_OVERRIDE_PURE(on_end_subsearch, subsearch_index, status);
-    }
+    { NB_OVERRIDE_PURE(on_end_subsearch, subsearch_index, status); }
 
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
-    {
-        NB_OVERRIDE_PURE(on_end_search, status, statistics);
-    }
+    { NB_OVERRIDE_PURE(on_end_search, status, statistics); }
 
     void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
 

@@ -47,11 +47,9 @@ using HashableTypeList = std::conditional_t<ygg::Hashable<T>, ygg::TypeList<T>, 
 
 using RegisteredTypes = ygg::ApplyTypeListT<ygg::ConcatTypeListsT, ygg::MapTypeListT<HashableTypeList, SerializedTypes>>;
 
-using ProjectionTypes = ygg::ConcatTypeListsT<SerializedTypes,
-                                             ygg::TypeList<formalism::BooleanOperatorKind,
-                                                           formalism::ArithmeticOperatorKind,
-                                                           formalism::NumericEffectOperatorKind,
-                                                           formalism::OptimizationDirection>>;
+using ProjectionTypes = ygg::ConcatTypeListsT<
+    SerializedTypes,
+    ygg::TypeList<formalism::BooleanOperatorKind, formalism::ArithmeticOperatorKind, formalism::NumericEffectOperatorKind, formalism::OptimizationDirection>>;
 
 }
 

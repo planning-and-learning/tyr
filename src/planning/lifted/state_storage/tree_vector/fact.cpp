@@ -29,8 +29,7 @@ FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::FactStorageBackend(Contex
 }
 
 template<bool ThreadSafe>
-typename FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::Packed
-FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
+typename FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::Packed FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_buffer.clear();
     const auto& bits = unpacked.indices;

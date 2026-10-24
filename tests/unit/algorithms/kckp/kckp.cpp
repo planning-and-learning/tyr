@@ -69,9 +69,7 @@ FakeTermView parameter(ygg::uint_t index) { return FakeTermView { index }; }
 FakeTermView constant(ygg::uint_t index) { return FakeTermView { FakeObjectView { Object(index) } }; }
 
 FakeLiteralView literal(bool polarity, ygg::uint_t predicate, std::initializer_list<FakeTermView> terms)
-{
-    return FakeLiteralView { polarity, FakeAtomView { FakePredicateView { predicate }, terms } };
-}
+{ return FakeLiteralView { polarity, FakeAtomView { FakePredicateView { predicate }, terms } }; }
 
 FakeGroundAtomView atom(ygg::uint_t predicate, std::initializer_list<ygg::uint_t> objects)
 {

@@ -31,9 +31,7 @@ namespace
 /// Ground derived atoms span all derived atoms of the task.
 template<bool ThreadSafe>
 void restore_unpacked_size(AtomUnpackedStorage<GroundTag>& unpacked, const StateStorageContext<GroundTag, TreeBitset, ThreadSafe>& context)
-{
-    unpacked.indices.resize(context.derived_num_bits);
-}
+{ unpacked.indices.resize(context.derived_num_bits); }
 
 /// Lifted derived atoms end at their last true atom, as read_bitset leaves them.
 template<bool ThreadSafe>
@@ -49,16 +47,12 @@ AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::AtomStorageBackend(Context& ct
 
 template<TaskKind Kind, bool ThreadSafe>
 typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
-{
-    return Packed { ygg::insert_bitset(m_context.bitsets, unpacked.indices, m_blocks) };
-}
+{ return Packed { ygg::insert_bitset(m_context.bitsets, unpacked.indices, m_blocks) }; }
 
 template<TaskKind Kind, bool ThreadSafe>
 typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed
 AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
-{
-    return Packed { ygg::insert_bitset(m_context.bitsets, parent.index, parent_unpacked.indices, unpacked.indices, m_blocks, m_flips) };
-}
+{ return Packed { ygg::insert_bitset(m_context.bitsets, parent.index, parent_unpacked.indices, unpacked.indices, m_blocks, m_flips) }; }
 
 template<TaskKind Kind, bool ThreadSafe>
 void AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)

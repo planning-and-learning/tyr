@@ -35,15 +35,11 @@ struct structure_traits<ygg::Data<Term>>
 {
     template<typename F>
     static bool zip_terms(const ygg::Data<Term>& lhs, const ygg::Data<Term>& rhs, F&& f)
-    {
-        return f(lhs, rhs);
-    }
+    { return f(lhs, rhs); }
 
     template<typename F>
     static ygg::Data<Term> transform_terms(const ygg::Data<Term>& value, F&& f)
-    {
-        return f(value);
-    }
+    { return f(value); }
 };
 
 /// @brief Free helper function to zip terms and template argument deduction.

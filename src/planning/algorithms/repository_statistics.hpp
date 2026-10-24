@@ -35,15 +35,13 @@ void snapshot_state_repository_statistics(const StateRepository<Kind>& repositor
 inline void snapshot_task_repository_statistics(const formalism::planning::Repository& repository, Statistics& statistics)
 {
     statistics.set_action_bindings_memory_usage(repository.memory_usage<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>());
-    statistics.set_predicate_bindings_memory_usage(
-        repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>()
-        + repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>()
-        + repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::DerivedTag>>>());
+    statistics.set_predicate_bindings_memory_usage(repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>()
+                                                   + repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>()
+                                                   + repository.memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::DerivedTag>>>());
     statistics.set_axiom_bindings_memory_usage(repository.memory_usage<formalism::RelationBinding<formalism::planning::Axiom<LiftedTag>>>());
-    statistics.set_function_bindings_memory_usage(
-        repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
-        + repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()
-        + repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>());
+    statistics.set_function_bindings_memory_usage(repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
+                                                  + repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()
+                                                  + repository.memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>());
 }
 
 }

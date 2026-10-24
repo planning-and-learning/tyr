@@ -76,9 +76,7 @@ struct AStarModePolicy<Kind, ParallelSearch>
     }
 
     static bool synchronize_priority_layers(const astar_eager::Options<Kind>& options) noexcept
-    {
-        return options.parallel_search_mode == astar_eager::ParallelSearchMode::SYNCHRONOUS;
-    }
+    { return options.parallel_search_mode == astar_eager::ParallelSearchMode::SYNCHRONOUS; }
 };
 
 template<TaskKind Kind, SearchKind Search>
@@ -147,16 +145,12 @@ public:
     ygg::float_t get_start_priority() const noexcept { return m_f_value; }
 
     void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node)
-    {
-        m_openlist.insert(QueueEntry { m_f_value, state, search_node.status, m_step++ });
-    }
+    { m_openlist.insert(QueueEntry { m_f_value, state, search_node.status, m_step++ }); }
 
     bool empty() const { return m_openlist.empty(); }
 
     ygg::float_t get_min_priority() const noexcept
-    {
-        return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : m_openlist.top_entry().f_value;
-    }
+    { return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : m_openlist.top_entry().f_value; }
 
     size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
 
@@ -168,9 +162,7 @@ public:
     }
 
     bool should_discard(const PoppedEntry& entry, ygg::float_t incumbent_cost) const noexcept
-    {
-        return ModePolicy::should_discard(entry.f_value, incumbent_cost);
-    }
+    { return ModePolicy::should_discard(entry.f_value, incumbent_cost); }
 
     SearchNode& get_search_node(ygg::Index<State<Kind>> state)
     {
@@ -202,9 +194,7 @@ public:
     }
 
     SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView) const
-    {
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() };
-    }
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() }; }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
@@ -305,21 +295,15 @@ public:
     static bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
 
     static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
-    {
-        return event_handler ? event_handler->make_worker(index) : nullptr;
-    }
+    { return event_handler ? event_handler->make_worker(index) : nullptr; }
 
     template<typename Handler>
     static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
-    {
-        handler.on_start_search(node, priority);
-    }
+    { handler.on_start_search(node, priority); }
 
     template<typename Handler>
     static void on_finish_priority_layer(Handler& handler, ygg::float_t priority, const Statistics& statistics)
-    {
-        handler.on_finish_f_layer(priority, statistics);
-    }
+    { handler.on_finish_f_layer(priority, statistics); }
 
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 

@@ -29,8 +29,7 @@ AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::AtomStorageBackend(Contex
 }
 
 template<bool ThreadSafe>
-typename AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::Packed
-AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
+typename AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::Packed AtomStorageBackend<LiftedTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_buffer.clear();
     const auto& bits = unpacked.indices;

@@ -89,9 +89,7 @@ inline void collect_fterms(FunctionExpressionView<T> element, ygg::UnorderedSet<
 
 template<TaskKind T, FactKind F>
 inline void collect_fterms(UnaryOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)
-{
-    collect_fterms(element.get_arg(), result);
-}
+{ collect_fterms(element.get_arg(), result); }
 
 template<TaskKind T, FactKind F, BinaryOperatorKind O>
 inline void collect_fterms(BinaryOperatorView<T, O> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)

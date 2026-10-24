@@ -20,12 +20,12 @@
 
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 
-#include <yggdrasil/containers/variant.hpp>
 #include <optional>
 #include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
+#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -50,10 +50,7 @@ struct Data<::tyr::planning::match_tree::Node<Tag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 }

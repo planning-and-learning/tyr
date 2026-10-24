@@ -58,9 +58,7 @@ public:
 
 template<TaskKind Kind>
 PruningStrategyPtr<Kind> PruningStrategy<Kind>::create()
-{
-    return std::make_shared<detail::NoPruningStrategy<Kind>>();
-}
+{ return std::make_shared<detail::NoPruningStrategy<Kind>>(); }
 
 }
 

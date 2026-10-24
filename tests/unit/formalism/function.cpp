@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -42,9 +42,7 @@ concept FunctionContract = std::constructible_from<ygg::Index<Entity>, ygg::uint
 
 template<typename Repository, typename... Entities>
 consteval bool function_contracts(ygg::TypeList<Entities...>)
-{
-    return (FunctionContract<Entities, Repository> && ...);
-}
+{ return (FunctionContract<Entities, Repository> && ...); }
 
 static_assert(function_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::FunctionTypes {}));
 static_assert(function_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::FunctionTypes {}));

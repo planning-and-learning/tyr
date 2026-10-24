@@ -53,9 +53,7 @@ void bind_insert(RepositoryBinding& repository)
 
 template<typename T>
 ygg::View<ygg::Data<T>, Repository> create_data(Repository& repository, const Data<T>& data)
-{
-    return make_view(data, repository);
-}
+{ return make_view(data, repository); }
 
 }  // namespace tyr::formalism::planning
 

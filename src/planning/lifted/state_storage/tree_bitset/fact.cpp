@@ -29,11 +29,8 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::FactStorageBackend(Contex
 }
 
 template<bool ThreadSafe>
-typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
-FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
-{
-    return Packed { ygg::insert_bitset(m_bitsets, unpacked.indices, m_blocks) };
-}
+typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
+{ return Packed { ygg::insert_bitset(m_bitsets, unpacked.indices, m_blocks) }; }
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
@@ -44,7 +41,8 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     for (const auto& change : changes)
     {
         const auto bit = ygg::uint_t(change.variable);
-        m_flips.push_back(tree_bitset::Flip { ygg::uint_t(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
+        m_flips.push_back(
+            tree_bitset::Flip { ygg::uint_t(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
     }
     ygg::normalize_flips(m_flips);
 

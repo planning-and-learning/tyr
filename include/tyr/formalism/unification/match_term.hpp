@@ -18,10 +18,11 @@
 #ifndef TYR_FORMALISM_UNIFICATION_MATCH_TERM_HPP_
 #define TYR_FORMALISM_UNIFICATION_MATCH_TERM_HPP_
 
-#include <yggdrasil/semantics/comparators.hpp>
 #include "tyr/formalism/term_data.hpp"
 #include "tyr/formalism/unification/match_policy.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
+
+#include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::formalism::unification
 {

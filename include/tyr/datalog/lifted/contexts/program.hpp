@@ -45,9 +45,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& facts() const noexcept { return m_cws.facts; }
         template<formalism::RelationKind R>
         const auto& get_rules() const noexcept
-        {
-            return m_cws.template get_rules<R>();
-        }
+        { return m_cws.template get_rules<R>(); }
 
     private:
         const ConstProgramWorkspace<LiftedTag>& m_cws;
@@ -72,9 +70,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         const auto& delta_numeric_annotations() const noexcept { return m_ws.delta_numeric_annotations; }
         const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
         void rebuild_numeric_support_selector(const TaggedFactSets<formalism::StaticTag>& static_fact_sets)
-        {
-            m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations, !AP::stores_annotations);
-        }
+        { m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations, !AP::stores_annotations); }
         void reset_numeric_support_selector() noexcept { m_ws.numeric_support_selector.reset(); }
         auto& tp() noexcept { return m_ws.tp; }
         const auto& tp() const noexcept { return m_ws.tp; }
@@ -84,14 +80,10 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
         template<formalism::RelationKind R>
         auto& get_rules() noexcept
-        {
-            return m_ws.template get_rules<R>();
-        }
+        { return m_ws.template get_rules<R>(); }
         template<formalism::RelationKind R>
         const auto& get_rules() const noexcept
-        {
-            return m_ws.template get_rules<R>();
-        }
+        { return m_ws.template get_rules<R>(); }
         auto& datalog_builder() noexcept { return m_ws.datalog_builder; }
         const auto& datalog_builder() const noexcept { return m_ws.datalog_builder; }
         auto& workspace_repository() noexcept { return m_ws.workspace_repository; }
@@ -114,19 +106,14 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     /// Schedulers must use the workspace's repository and a subset of its rules.
     ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1) :
         ProgramExecutionContext(In(ws.const_workspace), Out(ws, schedulers), num_threads)
-    {
-        clear();
-    }
+    { clear(); }
 
     /// The caller has reset the workspace and inserted this evaluation's input facts.
     static ProgramExecutionContext from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, size_t num_threads = 1)
-    {
-        return from_reset_workspace(ws, ws.schedulers, num_threads);
-    }
+    { return from_reset_workspace(ws, ws.schedulers, num_threads); }
 
-    static ProgramExecutionContext from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws,
-                                                        std::vector<Scheduler<LiftedTag>>& schedulers,
-                                                        size_t num_threads = 1)
+    static ProgramExecutionContext
+    from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1)
     {
         auto context = ProgramExecutionContext(In(ws.const_workspace), Out(ws, schedulers), num_threads);
         context.initialize();
@@ -170,10 +157,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     }
 
 private:
-    ProgramExecutionContext(In in, Out out, size_t num_threads) : m_in(in), m_out(out), m_num_threads(num_threads)
-    {
-        assert(num_threads > 0);
-    }
+    ProgramExecutionContext(In in, Out out, size_t num_threads) : m_in(in), m_out(out), m_num_threads(num_threads) { assert(num_threads > 0); }
 
     void initialize()
     {
@@ -215,9 +199,8 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, size_t) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&,
-                        std::vector<Scheduler<LiftedTag>>&,
-                        size_t = 1) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
+ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, std::vector<Scheduler<LiftedTag>>&, size_t = 1)
+    -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 }
 
 #endif

@@ -43,9 +43,7 @@ struct FactsWorkspace<GroundTag>
     bool insert(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> binding) { return fact_sets.predicate.insert(binding); }
 
     bool insert(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval)
-    {
-        return fact_sets.function.insert(binding, interval);
-    }
+    { return fact_sets.function.insert(binding, interval); }
 
     void reset();
 };

@@ -90,9 +90,7 @@ struct LMCutImplementation :
     using Precondition = std::variant<PredicateHead, NumericNode>;
     using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
 
-    LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition,
-                        ygg::ExecutionContextPtr execution_context,
-                        bool use_numeric_edge_cuts);
+    LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition, ygg::ExecutionContextPtr execution_context, bool use_numeric_edge_cuts);
     LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context);
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
 
@@ -110,8 +108,7 @@ private:
     datalog::Cost get_numeric_cost(NumericNode node) const noexcept;
     const datalog::WitnessAnnotation<formalism::FunctionTag>* get_numeric_witness(NumericNode node) const noexcept;
     template<formalism::RelationKind R>
-    const std::vector<Precondition>&
-    get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth);
+    const std::vector<Precondition>& get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth);
     void mark_goal_zone(PredicateHead head, size_t depth);
     void mark_goal_zone(NumericNode node, size_t depth);
     void mark_goal_zone(Precondition precondition, size_t depth);
@@ -161,9 +158,7 @@ template<TaskKind Kind>
 LMCutImplementation<Kind>::LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context) :
     Base(source, std::move(execution_context)),
     m_use_numeric_edge_cuts(source.m_use_numeric_edge_cuts)
-{
-    this->m_workspace.tp.set_early_termination(m_use_numeric_edge_cuts);
-}
+{ this->m_workspace.tp.set_early_termination(m_use_numeric_edge_cuts); }
 
 template<TaskKind Kind>
 ygg::float_t LMCutImplementation<Kind>::evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms)
@@ -223,9 +218,7 @@ ygg::float_t LMCutImplementation<Kind>::evaluate(const ygg::Builder<State<Kind>>
 
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::use_action_cost(ActionBinding action_binding, datalog::Cost cost)
-{
-    m_action_used_costs[action_binding] += cost;
-}
+{ m_action_used_costs[action_binding] += cost; }
 
 template<TaskKind Kind>
 template<formalism::RelationKind R>
@@ -250,9 +243,7 @@ datalog::Cost LMCutImplementation<Kind>::get_witness_edge_residual_cost(const da
 
 template<TaskKind Kind>
 datalog::Cost LMCutImplementation<Kind>::get_numeric_support_cost(const datalog::NumericSupport& support)
-{
-    return support.get_cost();
-}
+{ return support.get_cost(); }
 
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::append_numeric_support_preconditions(const datalog::NumericSupport& support,
@@ -307,9 +298,7 @@ const datalog::WitnessAnnotation<formalism::FunctionTag>* LMCutImplementation<Ki
 template<TaskKind Kind>
 template<formalism::RelationKind R>
 const std::vector<typename LMCutImplementation<Kind>::Precondition>&
-LMCutImplementation<Kind>::get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness,
-                                                         datalog::Cost edge_cost,
-                                                         size_t depth)
+LMCutImplementation<Kind>::get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth)
 {
     if (m_max_precondition_buffers.size() <= depth)
         m_max_precondition_buffers.emplace_back();
@@ -726,9 +715,7 @@ struct LMCutHeuristic<Kind>::Impl
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
-    {
-        return m_implementation.evaluate(state, cut_frontier_atoms);
-    }
+    { return m_implementation.evaluate(state, cut_frontier_atoms); }
 
     void print_summary(size_t verbosity) const { m_implementation.print_summary(verbosity); }
 
@@ -765,21 +752,15 @@ LMCutHeuristic<Kind>& LMCutHeuristic<Kind>::operator=(LMCutHeuristic&&) noexcept
 
 template<TaskKind Kind>
 LMCutHeuristicPtr<Kind> LMCutHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{
-    return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode);
-}
+{ return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
 void LMCutHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-{
-    m_impl->set_goal(goal);
-}
+{ m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
 ygg::float_t LMCutHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
-{
-    return m_impl->evaluate(state);
-}
+{ return m_impl->evaluate(state); }
 
 template<TaskKind Kind>
 formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state)
@@ -793,15 +774,11 @@ formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristi
 
 template<TaskKind Kind>
 HeuristicPtr<Kind> LMCutHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{
-    return HeuristicPtr<Kind>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
-}
+{ return HeuristicPtr<Kind>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
 template<TaskKind Kind>
 void LMCutHeuristic<Kind>::print_summary(size_t verbosity) const
-{
-    m_impl->print_summary(verbosity);
-}
+{ m_impl->print_summary(verbosity); }
 
 template class LMCutHeuristic<GroundTag>;
 template class LMCutHeuristic<LiftedTag>;

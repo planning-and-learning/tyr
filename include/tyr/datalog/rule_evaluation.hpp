@@ -19,7 +19,6 @@
 #define TYR_DATALOG_RULE_EVALUATION_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
-#include "tyr/formalism/numeric_expression_utils.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
@@ -27,6 +26,7 @@
 #include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/rule_instance.hpp"
+#include "tyr/formalism/numeric_expression_utils.hpp"
 
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>
@@ -57,7 +57,6 @@ inline ygg::ClosedInterval<ygg::float_t> widen_free_growth(ygg::ClosedInterval<y
     constexpr auto inf = std::numeric_limits<ygg::float_t>::infinity();
     return ygg::ClosedInterval<ygg::float_t>(lower(next) < lower(current) ? -inf : lower(next), upper(next) > upper(current) ? inf : upper(next));
 }
-
 
 struct RuleEvaluationInput
 {
@@ -136,9 +135,7 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
     ygg::ClosedInterval<ygg::float_t> interval;
     bool grows_fact;
 
-    FunctionHeadUpdate(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding,
-                       ygg::ClosedInterval<ygg::float_t> interval,
-                       bool grows_fact) :
+    FunctionHeadUpdate(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval, bool grows_fact) :
         binding(binding),
         interval(interval),
         grows_fact(grows_fact)
@@ -344,9 +341,7 @@ bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationW
         {
             const auto reported = input.selector.for_each_entry_support(entry,
                                                                         [&](const auto key, const auto interval, const auto& annotation)
-                                                                        {
-                                                                            workspace.exact_supports.emplace_back(key, interval, get_cost(annotation));
-                                                                        });
+                                                                        { workspace.exact_supports.emplace_back(key, interval, get_cost(annotation)); });
             if (!reported)
             {
                 assert(false && "annotated rule support has no exact backing certificate");

@@ -17,9 +17,9 @@
 
 #include "binding_utils.hpp"
 #include "bindings.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <tyr/formalism/planning/function_term_data.hpp>
-#include "tyr/formalism/planning/declarations.hpp"
 #include <tyr/formalism/planning/function_term_view.hpp>
 
 namespace tyr::formalism::planning

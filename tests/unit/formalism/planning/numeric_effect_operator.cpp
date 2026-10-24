@@ -1,6 +1,7 @@
 #include "tyr/formalism/planning/numeric_effect_operator_data.hpp"
 #include "tyr/formalism/planning/numeric_effect_operator_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+
 #include <concepts>
 
 namespace lifted_tests

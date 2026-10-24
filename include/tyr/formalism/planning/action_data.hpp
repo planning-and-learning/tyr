@@ -23,10 +23,10 @@
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -108,15 +108,11 @@ struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {}; }
+    static constexpr auto cista_members() noexcept
+    { return ygg::Members<&Data::index, &Data::name, &Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {}; }
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {};
-    }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    { return ygg::Members<&Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {}; }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Action<::tyr::LiftedTag>>);
@@ -161,10 +157,7 @@ struct Data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding, &Data::condition, &Data::effects> {}; }
     // Have to include effects because row only binds objects to non-effect quantified variables.
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding, &Data::condition, &Data::effects> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Action<::tyr::GroundTag>>);

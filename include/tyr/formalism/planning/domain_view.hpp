@@ -44,14 +44,10 @@ public:
     const auto& get_name() const noexcept { return this->get_data().name; }
     template<::tyr::formalism::FactKind T>
     auto get_predicates() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_predicates<T>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_predicates<T>(), this->get_context()); }
     template<::tyr::formalism::FactKind T>
     auto get_functions() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_functions<T>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_functions<T>(), this->get_context()); }
     auto get_auxiliary_function() const noexcept { return ygg::make_view(this->get_data().auxiliary_function, this->get_context()); }
     auto get_constants() const noexcept { return ygg::make_view(this->get_data().constants, this->get_context()); }
     auto get_actions() const noexcept { return ygg::make_view(this->get_data().actions, this->get_context()); }

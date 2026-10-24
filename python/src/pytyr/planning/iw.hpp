@@ -38,9 +38,7 @@ public:
     void on_end_arity(ygg::uint_t arity, tyr::planning::SearchStatus status) override { NB_OVERRIDE_PURE(on_end_arity, arity, status); }
 
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
-    {
-        NB_OVERRIDE_PURE(on_end_search, status, statistics);
-    }
+    { NB_OVERRIDE_PURE(on_end_search, status, statistics); }
 
     void on_solved(ygg::uint_t arity) override { NB_OVERRIDE_PURE(on_solved, arity); }
 

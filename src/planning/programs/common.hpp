@@ -33,7 +33,8 @@ namespace tyr::planning
 {
 extern ::cista::offset::string create_applicability_name(formalism::planning::ActionView<LiftedTag> action);
 
-extern ::cista::offset::string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff);
+extern ::cista::offset::string create_triggered_name(formalism::planning::ActionView<LiftedTag> action,
+                                                     formalism::planning::ConditionalEffectView<LiftedTag> cond_eff);
 
 extern ::cista::offset::string create_applicability_name(formalism::planning::AxiomView<LiftedTag> axiom);
 

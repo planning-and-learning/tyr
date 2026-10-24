@@ -515,24 +515,22 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_EQ(rejected, 0);
             if (inspected > 1)
             {
-                EXPECT_FALSE(generator->for_each_borrowed_applicable_action_binding(initial_node,
-                                                                                    action,
-                                                                                    reject,
-                                                                                    unexpected_callback,
-                                                                                    [&] { return rejected != 0; }));
+                EXPECT_FALSE(
+                    generator->for_each_borrowed_applicable_action_binding(initial_node, action, reject, unexpected_callback, [&] { return rejected != 0; }));
                 EXPECT_EQ(rejected, 1);
             }
             EXPECT_EQ(count_action_bindings(task), before_reject);
             auto borrowed_calls = size_t { 0 };
-            EXPECT_EQ(generator->for_each_borrowed_applicable_action_binding(initial_node,
-                                                                             action,
-                                                                             [](auto) { return true; },
-                                                                             [&](auto)
-                                                                             {
-                                                                                 ++borrowed_calls;
-                                                                                 return false;
-                                                                             },
-                                                                             [] { return false; }),
+            EXPECT_EQ(generator->for_each_borrowed_applicable_action_binding(
+                          initial_node,
+                          action,
+                          [](auto) { return true; },
+                          [&](auto)
+                          {
+                              ++borrowed_calls;
+                              return false;
+                          },
+                          [] { return false; }),
                       bindings.empty());
             EXPECT_EQ(borrowed_calls, bindings.empty() ? 0 : 1);
             callback_bindings.clear();

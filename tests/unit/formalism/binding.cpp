@@ -82,9 +82,7 @@ concept BindingContract =
 
 template<typename Repository, typename... Relations>
 consteval bool binding_contracts(ygg::TypeList<Relations...>)
-{
-    return (BindingContract<Relations, Repository> && ...);
-}
+{ return (BindingContract<Relations, Repository> && ...); }
 
 static_assert(binding_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::RelationRepositoryTypes {}));
 static_assert(binding_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::RelationRepositoryTypes {}));
@@ -170,14 +168,10 @@ void check_binding_copy()
 }
 
 TEST(TyrFormalismDatalogCopy, RemapsBindingRelationsAndObjects)
-{
-    check_binding_copy<tyr::formalism::datalog::RepositoryFactory, tyr::formalism::datalog::Builder, tyr::formalism::datalog::CopyContext>();
-}
+{ check_binding_copy<tyr::formalism::datalog::RepositoryFactory, tyr::formalism::datalog::Builder, tyr::formalism::datalog::CopyContext>(); }
 
 TEST(TyrFormalismPlanningCopy, RemapsBindingRelationsAndObjects)
-{
-    check_binding_copy<tyr::formalism::planning::RepositoryFactory, tyr::formalism::planning::Builder, tyr::formalism::planning::CopyContext>();
-}
+{ check_binding_copy<tyr::formalism::planning::RepositoryFactory, tyr::formalism::planning::Builder, tyr::formalism::planning::CopyContext>(); }
 
 TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
 {

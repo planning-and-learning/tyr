@@ -67,9 +67,7 @@ struct structure_traits<planning::MutableLiteral<T>>
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
-    {
-        return Type(unification::transform_terms(value.atom, f), value.polarity);
-    }
+    { return Type(unification::transform_terms(value.atom, f), value.polarity); }
 };
 }
 

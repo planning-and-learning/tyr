@@ -19,8 +19,8 @@
 #define TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
 #include <utility>
@@ -70,10 +70,7 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::body, &Data::head> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::body, &Data::head> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>);
@@ -117,10 +114,7 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding, &Data::body, &Data::head> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>);

@@ -28,8 +28,7 @@ namespace ygg
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Literal<T, F>> C>
-class View<ygg::Index<::tyr::formalism::datalog::Literal<T, F>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::datalog::Literal<T, F>, C>
+class View<ygg::Index<::tyr::formalism::datalog::Literal<T, F>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::Literal<T, F>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::datalog::Literal<T, F>> handle, const C& context) noexcept :

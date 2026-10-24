@@ -87,9 +87,7 @@ public:
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
     const Repository& get_canonical_context(ygg::Index<T>) const noexcept
-    {
-        return *this;
-    }
+    { return *this; }
 };
 
 static_assert(RepositoryConcept<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);
@@ -99,9 +97,7 @@ static_assert(Context<Repository<formalism::planning::Action<GroundTag>>, formal
 template<typename Tag, typename T>
     requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
 void prepare_for_insert(Repository<Tag>&, ygg::Data<T>& data)
-{
-    canonicalize(data);
-}
+{ canonicalize(data); }
 
 }
 

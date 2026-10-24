@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>

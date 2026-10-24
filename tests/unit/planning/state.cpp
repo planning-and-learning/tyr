@@ -70,15 +70,11 @@ struct StateFormattingView
 
     template<tyr::formalism::FactKind F>
     auto get_atoms_view() const
-    {
-        return state.template get_atoms_view<F>();
-    }
+    { return state.template get_atoms_view<F>(); }
     auto get_fluent_facts_view() const { return state.get_fluent_facts_view(); }
     template<tyr::formalism::FactKind F>
     auto get_fterm_values_view() const
-    {
-        return state.template get_fterm_values_view<F>();
-    }
+    { return state.template get_fterm_values_view<F>(); }
 };
 
 template<tyr::TaskKind Kind>
@@ -101,9 +97,7 @@ struct StateWithMutableAtoms : StateWithoutMetadata<tyr::planning::StateView<tyr
 {
     template<tyr::formalism::FactKind F>
     auto get_atoms()
-    {
-        return tyr::planning::StateView<tyr::GroundTag>::get_atoms<F>();
-    }
+    { return tyr::planning::StateView<tyr::GroundTag>::get_atoms<F>(); }
 };
 
 template<tyr::TaskKind Kind>
@@ -615,8 +609,8 @@ void expect_generated_successor_deltas(tyr::planning::SuccessorGenerator<Kind>& 
             auto expected = tyr::planning::StateDelta {};
             tyr::planning::compute_state_delta(parent.get_state().get_state_builder(), *builder, expected);
             EXPECT_EQ(delta, expected);
-            return with_parent ? repository.register_state(axioms, std::move(builder), parent.get_state(), delta)
-                               : repository.register_state(axioms, std::move(builder));
+            return with_parent ? repository.register_state(axioms, std::move(builder), parent.get_state(), delta) :
+                                 repository.register_state(axioms, std::move(builder));
         };
         const auto with_parent = register_generated(true);
         const auto without_parent = register_generated(false);
@@ -724,7 +718,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                 change(*builder);
                 auto delta = tyr::planning::StateDelta {};
                 tyr::planning::compute_state_delta(parent.get_state_builder(), *builder, delta);
-                return with_parent ? repository->register_state(*axioms, std::move(builder), parent, delta) : repository->register_state(*axioms, std::move(builder));
+                return with_parent ? repository->register_state(*axioms, std::move(builder), parent, delta) :
+                                     repository->register_state(*axioms, std::move(builder));
             };
             const auto with_parent = register_successor(true);
             const auto without_parent = register_successor(false);
@@ -806,7 +801,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         {
             EXPECT_EQ(actual.get_metric(), expected.get_metric());
             EXPECT_TRUE(std::ranges::equal(actual.get_state().get_fluent_facts(), expected.get_state().get_fluent_facts()));
-            EXPECT_TRUE(std::ranges::equal(actual.get_state().template get_atoms<::tyr::formalism::DerivedTag>(), expected.get_state().template get_atoms<::tyr::formalism::DerivedTag>()));
+            EXPECT_TRUE(std::ranges::equal(actual.get_state().template get_atoms<::tyr::formalism::DerivedTag>(),
+                                           expected.get_state().template get_atoms<::tyr::formalism::DerivedTag>()));
             EXPECT_TRUE(std::ranges::equal(actual.get_state().template get_fterm_values<::tyr::formalism::FluentTag>(),
                                            expected.get_state().template get_fterm_values<::tyr::formalism::FluentTag>()));
         };
@@ -906,7 +902,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         axioms->compute_extended_state(*generated);
         const auto generated_view = ygg::make_view(*generated, *task);
         EXPECT_TRUE(std::ranges::equal(generated_view.get_fluent_facts(), raised.get_state().get_fluent_facts()));
-        EXPECT_TRUE(std::ranges::equal(generated_view.template get_atoms<::tyr::formalism::DerivedTag>(), raised.get_state().template get_atoms<::tyr::formalism::DerivedTag>()));
+        EXPECT_TRUE(std::ranges::equal(generated_view.template get_atoms<::tyr::formalism::DerivedTag>(),
+                                       raised.get_state().template get_atoms<::tyr::formalism::DerivedTag>()));
         EXPECT_TRUE(std::ranges::equal(generated_view.template get_fterm_values<::tyr::formalism::FluentTag>(),
                                        raised.get_state().template get_fterm_values<::tyr::formalism::FluentTag>()));
         EXPECT_TRUE(owned->get_index().is_max());

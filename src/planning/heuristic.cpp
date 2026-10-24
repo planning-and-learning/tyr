@@ -25,9 +25,7 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 ygg::float_t Heuristic<Kind>::evaluate(const StateView<Kind>& state)
-{
-    return evaluate(state.get_state_builder());
-}
+{ return evaluate(state.get_state_builder()); }
 
 template class Heuristic<GroundTag>;
 template class Heuristic<LiftedTag>;

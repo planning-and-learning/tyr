@@ -1,10 +1,12 @@
 #include "planning_fixtures.hpp"
-
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
+#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/factory.hpp"
@@ -12,10 +14,6 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-
-#include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/parser.hpp"
 #include "tyr/serialization/serialization.hpp"
 
 #include <boost/json.hpp>
@@ -245,9 +243,7 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     auto binary_data = ygg::Data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
     canonicalize(binary_data);
     const auto binary = repository.insert(binary_data).first;
-    const auto expression =
-        ygg::make_view(Expression(Expression::Variant(Arithmetic(Arithmetic::Variant(binary.get_index())))),
-                       repository);
+    const auto expression = ygg::make_view(Expression(Expression::Variant(Arithmetic(Arithmetic::Variant(binary.get_index())))), repository);
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<tyr::formalism::planning::FunctionExpressionView<LiftedTag>>("expressions", "e");
     dictionaries.register_table<tyr::formalism::planning::ArithmeticOperatorView<LiftedTag>>("arithmetic", "a");
@@ -301,7 +297,6 @@ TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSeriali
     dictionaries.serialize(make_atom(repository, "truck").get_objects()[0]);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p"), std::logic_error);
 }
-
 
 }
 }

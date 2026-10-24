@@ -209,15 +209,14 @@ inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<Li
 
 inline BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(ground(arg, context).first.get_index()); },
-                            element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(ground(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 inline ArithmeticOperatorView<GroundTag> ground(ArithmeticOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(ground(arg, context).first.get_index()); },
-                            element.get_variant());
+    const auto data =
+        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(ground(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -336,9 +335,7 @@ std::pair<PredicateBindingView<F>, bool> ground_binding(AtomView<LiftedTag, F> e
 
 template<FactKind F>
 std::pair<FunctionBindingView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, GrounderContext& context)
-{
-    return ground(element.get_terms(), element.get_function(), context);
-}
+{ return ground(element.get_terms(), element.get_function(), context); }
 
 template<RelationKind R>
 std::pair<RuleBindingView<R>, bool> ground_binding(RuleView<LiftedTag, R> element, GrounderContext& context)

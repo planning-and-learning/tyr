@@ -56,10 +56,7 @@ struct Data<::tyr::formalism::planning::BinaryOperator<T, O>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::lhs, &Data::rhs> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::lhs, &Data::rhs> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::ArithmeticOperatorKind>>);

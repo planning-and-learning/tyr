@@ -32,10 +32,14 @@ template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
 inline constexpr bool stores_view_by_value_v<::tyr::formalism::datalog::NumericEffectOperator<T, F>> = true;
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ::tyr::formalism::datalog::Context C>
-class View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>>, C> : public ygg::DataViewBase<::tyr::formalism::datalog::NumericEffectOperator<T, F>, C>
+class View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>>, C> :
+    public ygg::DataViewBase<::tyr::formalism::datalog::NumericEffectOperator<T, F>, C>
 {
 public:
-    View(const ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>>& handle, const C& context) noexcept : ygg::DataViewBase<::tyr::formalism::datalog::NumericEffectOperator<T, F>, C>(handle, context) {}
+    View(const ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, F>>& handle, const C& context) noexcept :
+        ygg::DataViewBase<::tyr::formalism::datalog::NumericEffectOperator<T, F>, C>(handle, context)
+    {
+    }
 
     auto get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };

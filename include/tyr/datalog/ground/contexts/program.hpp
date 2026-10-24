@@ -52,9 +52,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         const auto& facts() const noexcept { return m_cws.facts; }
         template<formalism::RelationKind R>
         const auto& dependencies() const noexcept
-        {
-            return m_cws.template get_dependencies<R>();
-        }
+        { return m_cws.template get_dependencies<R>(); }
 
     private:
         const ConstProgramWorkspace<GroundTag>& m_cws;

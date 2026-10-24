@@ -1,8 +1,9 @@
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/numeric_effect_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+
 #include <concepts>
 #include <gtest/gtest.h>
 #include <stdexcept>

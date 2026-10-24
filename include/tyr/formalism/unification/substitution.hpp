@@ -42,9 +42,7 @@ public:
     SubstitutionFunction() = default;
 
     explicit SubstitutionFunction(std::vector<ParameterIndex> parameters) : m_parameters(std::move(parameters)), m_data(m_parameters.size())
-    {
-        rebuild_positions();
-    }
+    { rebuild_positions(); }
 
     static SubstitutionFunction from_range(ParameterIndex offset, size_t size)
     {

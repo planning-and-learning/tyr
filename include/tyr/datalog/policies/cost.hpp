@@ -27,10 +27,10 @@
 #include <tuple>
 #include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/formalism/binding_key.hpp>
 #include <yggdrasil/containers/unordered_set.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/binding_key.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
@@ -76,14 +76,10 @@ public:
 
     template<typename RuleKey>
     Cost get_cost(RuleKey) const noexcept
-    {
-        return Cost(0);
-    }
+    { return Cost(0); }
     template<typename RuleKey, typename NumericKey>
     Cost get_cost(RuleKey, NumericKey, ygg::ClosedInterval<ygg::float_t>) const noexcept
-    {
-        return Cost(0);
-    }
+    { return Cost(0); }
 
     void clear() noexcept {}
     template<typename RuleKey>
@@ -132,9 +128,7 @@ public:
     void set_cost(RuleKey rule_key, Cost cost) { m_costs.insert_or_assign(rule_key, cost); }
 
     void set_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
-    {
-        m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<R> { rule_key, numeric_key, interval }, cost);
-    }
+    { m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<R> { rule_key, numeric_key, interval }, cost); }
 
     const CostMap& get_costs() const noexcept { return m_costs; }
     CostMap& get_costs() noexcept { return m_costs; }
@@ -150,9 +144,7 @@ class RuleCostOverridePolicy : public RuleCostPolicy
 {
 public:
     template<formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>,
-                                    formalism::datalog::RuleBindingIndex<R>,
-                                    ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingIndex<R>, ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
 
 private:
@@ -182,9 +174,7 @@ public:
     Cost get_cost(formalism::datalog::RuleBindingIndex<R> rule_key,
                   formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
                   ygg::ClosedInterval<ygg::float_t> interval) const
-    {
-        return storage(R {}).get_cost(rule_key, numeric_key, interval);
-    }
+    { return storage(R {}).get_cost(rule_key, numeric_key, interval); }
 
     void clear() noexcept
     {
@@ -197,18 +187,14 @@ public:
 
     template<formalism::RelationKind R>
     void set_cost(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost)
-    {
-        storage(R {}).set_cost(rule_key, cost);
-    }
+    { storage(R {}).set_cost(rule_key, cost); }
 
     template<formalism::RelationKind R>
     void set_cost(formalism::datalog::RuleBindingIndex<R> rule_key,
                   formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
                   ygg::ClosedInterval<ygg::float_t> interval,
                   Cost cost)
-    {
-        storage(R {}).set_cost(rule_key, numeric_key, interval, cost);
-    }
+    { storage(R {}).set_cost(rule_key, numeric_key, interval, cost); }
 
 protected:
     auto& storage(formalism::PredicateTag) noexcept { return predicate_storage; }

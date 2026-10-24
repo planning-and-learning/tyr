@@ -44,9 +44,7 @@ struct Data<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>
         index(),
         fterm(),
         value(value_)
-    {
-        ygg::set(fterm_, fterm);
-    }
+    { ygg::set(fterm_, fterm); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -54,10 +52,7 @@ struct Data<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fterm, &Data::value> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fterm, &Data::value> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);

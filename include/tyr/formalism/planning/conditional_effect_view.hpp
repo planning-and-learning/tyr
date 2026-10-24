@@ -29,8 +29,7 @@ namespace ygg
 {
 
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::ConditionalEffect<T>> C>
-class View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::planning::ConditionalEffect<T>, C>
+class View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::ConditionalEffect<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>> handle, const C& context) noexcept :
@@ -40,14 +39,10 @@ public:
 
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return get_variables().size();
-    }
+    { return get_variables().size(); }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return ygg::make_view(this->get_data().variables, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().variables, this->get_context()); }
     auto get_condition() const noexcept { return ygg::make_view(this->get_data().condition, this->get_context()); }
     auto get_effect() const noexcept { return ygg::make_view(this->get_data().effect, this->get_context()); }
 };

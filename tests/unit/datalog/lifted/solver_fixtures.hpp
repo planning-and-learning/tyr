@@ -18,8 +18,6 @@
 #ifndef TYR_TESTS_UNIT_DATALOG_LIFTED_SOLVER_FIXTURES_HPP_
 #define TYR_TESTS_UNIT_DATALOG_LIFTED_SOLVER_FIXTURES_HPP_
 
-#include "tyr/datalog/solver.hpp"
-
 #include "planning/parser.hpp"
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/ground/program.hpp"
@@ -27,6 +25,7 @@
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
@@ -291,9 +290,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
         ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(source_term.get_index()),
         ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0))));
     const auto add_source_constraint = [&](ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>& condition)
-    {
-        condition.numeric_constraints.emplace_back(ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(source_comparison.get_index()));
-    };
+    { condition.numeric_constraints.emplace_back(ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(source_comparison.get_index())); };
     auto source_body_data = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
     add_source_constraint(source_body_data);
     const auto source_body = intern(std::move(source_body_data));
@@ -504,8 +501,10 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         };
         program_data.fluent_functions = { value_function.get_index() };
         program_data.fluent_fterm_values = {
-            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(first_object), ygg::float_t(5))).get_index(),
-            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(second_object), ygg::float_t(7))).get_index()
+            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(first_object), ygg::float_t(5)))
+                .get_index(),
+            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(second_object), ygg::float_t(7)))
+                .get_index()
         };
     }
     program_data.fluent_atoms = { ground_first_source.get_index(), ground_second_source.get_index() };

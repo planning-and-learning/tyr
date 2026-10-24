@@ -22,10 +22,8 @@
 namespace tyr::datalog
 {
 
-template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> element,
-                                                    const FactSets& fact_sets);
-template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> element,
-                                                    const FactSets& fact_sets);
+template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> element, const FactSets& fact_sets);
+template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> element, const FactSets& fact_sets);
 
 /**
  * is_applicable

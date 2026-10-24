@@ -1,6 +1,7 @@
 #include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"
 #include "tyr/formalism/datalog/numeric_effect_operator_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+
 #include <concepts>
 
 namespace lifted_tests

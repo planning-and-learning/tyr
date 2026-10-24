@@ -20,9 +20,9 @@
 
 #include "tyr/datalog/applicability_lifted_decl.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/numeric_expression_utils.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/numeric_expression_utils.hpp"
 
 #include <algorithm>
 #include <yggdrasil/core/closed_interval.hpp>
@@ -123,9 +123,7 @@ bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, T> elements, c
 }
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{
-    return evaluate(element, context);
-}
+{ return evaluate(element, context); }
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {
@@ -141,9 +139,7 @@ inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag
 
 template<formalism::RelationKind R>
 bool is_applicable(formalism::datalog::RuleView<LiftedTag, R> element, const ApplicabilityContext& context)
-{
-    return is_applicable(element.get_body(), context);
-}
+{ return is_applicable(element.get_body(), context); }
 
 }
 

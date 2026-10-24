@@ -21,10 +21,10 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 
 #include <stdexcept>
-#include <variant>
-#include <yggdrasil/containers/variant.hpp>
 #include <tuple>
 #include <utility>
+#include <variant>
+#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -58,10 +58,7 @@ struct Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);

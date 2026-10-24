@@ -18,8 +18,8 @@
 #ifndef TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_DATA_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
 #include <utility>
@@ -69,10 +69,7 @@ struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::condition, &Data::effect> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>);
@@ -110,10 +107,7 @@ struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::condition, &Data::effect> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>);

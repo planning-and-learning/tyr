@@ -27,8 +27,7 @@ namespace ygg
 {
 
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::ConjunctiveEffect<T>> C>
-class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::datalog::ConjunctiveEffect<T>, C>
+class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::ConjunctiveEffect<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> handle, const C& context) noexcept :

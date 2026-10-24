@@ -48,9 +48,7 @@ struct formatter<tyr::formalism::planning::PlanningDomain, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningDomain& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
 
 template<tyr::TaskKind T>
@@ -60,9 +58,7 @@ struct formatter<tyr::formalism::planning::PlanningTask<T>, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningTask<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
 
 }  // namespace fmt
@@ -233,9 +229,7 @@ struct formatter<ygg::View<ygg::Index<T>, tyr::formalism::planning::Repository>,
 
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
 
 template<typename T>
@@ -247,9 +241,7 @@ struct formatter<ygg::View<ygg::Data<T>, tyr::formalism::planning::Repository>, 
 
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
 
 template<>
@@ -259,9 +251,7 @@ struct formatter<tyr::formalism::planning::FDRValue, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::FDRValue& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", ygg::uint_t(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", ygg::uint_t(value)); }
 };
 
 template<>
@@ -271,9 +261,7 @@ struct formatter<tyr::formalism::OptimizationDirection, char>
 
     template<typename FormatContext>
     auto format(tyr::formalism::OptimizationDirection value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
 
 }  // namespace fmt
@@ -300,9 +288,7 @@ public:
 
     template<typename FormatContext>
     auto format(const Value& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
 
 }  // namespace fmt

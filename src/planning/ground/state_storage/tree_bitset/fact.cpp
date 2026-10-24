@@ -34,8 +34,7 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::FactStorageBackend(Contex
 }
 
 template<bool ThreadSafe>
-typename FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::Packed
-FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
+typename FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::Packed FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_blocks.assign(m_num_blocks, tree_bitset::Block { 0 });
     for (ygg::uint_t i = 0; i < m_infos.size(); ++i)

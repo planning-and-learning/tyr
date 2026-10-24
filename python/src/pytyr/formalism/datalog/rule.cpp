@@ -17,9 +17,9 @@
 
 #include "binding_utils.hpp"
 #include "bindings.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 
 #include <tyr/formalism/datalog/rule_data.hpp>
-#include "tyr/formalism/datalog/declarations.hpp"
 #include <tyr/formalism/datalog/rule_view.hpp>
 
 namespace tyr::formalism::datalog
@@ -39,18 +39,12 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<const VariableViewList&,
-                             ConjunctiveConditionView<T>,
-                             typename V::template HeadView<Repository>,
-                             ygg::float_t>(),
+            cls.def(nb::init<const VariableViewList&, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
                     "variables"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
                     "cost"_a = ygg::float_t(0));
-            cls.def(nb::init<ygg::IndexList<Variable>,
-                             ygg::Index<ConjunctiveCondition<LiftedTag>>,
-                             RuleHeadT<LiftedTag, R>,
-                             ygg::float_t>(),
+            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, RuleHeadT<LiftedTag, R>, ygg::float_t>(),
                     "variables"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
@@ -58,22 +52,17 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         }
         else
         {
-            cls.def(nb::init<RuleBindingView<R>,
-                             ConjunctiveConditionView<T>,
-                             typename V::template HeadView<Repository>,
-                             ygg::float_t>(),
+            cls.def(nb::init<RuleBindingView<R>, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
                     "binding"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
                     "cost"_a = ygg::float_t(0));
-            cls.def(nb::init<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>,
-                             ygg::Index<ConjunctiveCondition<GroundTag>>,
-                             RuleHeadT<GroundTag, R>,
-                             ygg::float_t>(),
-                    "binding"_a,
-                    "body"_a,
-                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
-                    "cost"_a = ygg::float_t(0));
+            cls.def(
+                nb::init<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::float_t>(),
+                "binding"_a,
+                "body"_a,
+                std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                "cost"_a = ygg::float_t(0));
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

@@ -60,9 +60,7 @@ struct StratumExecutionContext
 
     template<formalism::RelationKind R>
     auto get_rule_execution_context(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule)
-    {
-        return RuleExecutionContext<R, AP, TP, CP> { rule, *this };
-    }
+    { return RuleExecutionContext<R, AP, TP, CP> { rule, *this }; }
 
     const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }

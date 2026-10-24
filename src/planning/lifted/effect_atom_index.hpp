@@ -40,8 +40,7 @@ namespace tyr::planning
 class EffectAtomIndex
 {
 public:
-    using AppPredicateToActionMapping =
-        ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
+    using AppPredicateToActionMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
     using ConditionalEffectToPredicateMapping =
         ygg::UnorderedMap<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>,
                           formalism::datalog::PredicateView<formalism::FluentTag>>;

@@ -28,10 +28,7 @@ template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::f
 class View<ygg::Index<::tyr::formalism::Function<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::Function<T>, C>
 {
 public:
-    View(ygg::Index<::tyr::formalism::Function<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::Function<T>, C>(handle, context)
-    {
-    }
+    View(ygg::Index<::tyr::formalism::Function<T>> handle, const C& context) noexcept : ygg::IndexViewBase<::tyr::formalism::Function<T>, C>(handle, context) {}
 
     const auto& get_name() const noexcept { return this->get_data().name; }
     auto get_arity() const noexcept { return this->get_data().arity; }

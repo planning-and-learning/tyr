@@ -18,14 +18,15 @@
 #ifndef TYR_FORMALISM_TERM_DATA_HPP_
 #define TYR_FORMALISM_TERM_DATA_HPP_
 
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+
 #include <tuple>
 #include <utility>
 #include <variant>
+#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
-#include <yggdrasil/containers/variant.hpp>
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 
 namespace ygg
 {
@@ -61,10 +62,7 @@ struct Data<::tyr::formalism::Term>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Term>);

@@ -364,9 +364,7 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::brfs::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker> worker) override
-    {
-        return std::make_unique<GuardedBrFSWorkerEventHandler<Kind>>(worker, m_guard);
-    }
+    { return std::make_unique<GuardedBrFSWorkerEventHandler<Kind>>(worker, m_guard); }
 
 private:
     std::shared_ptr<OwnerAccessGuard<Kind>> m_guard;
@@ -385,9 +383,7 @@ public:
     }
 
     tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker> worker) const override
-    {
-        return std::make_shared<GuardedPruningStrategy>(worker, m_guard);
-    }
+    { return std::make_shared<GuardedPruningStrategy>(worker, m_guard); }
 
     bool should_prune_state(const tyr::planning::StateView<Kind>& state) override
     {
@@ -451,9 +447,7 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) override
-    {
-        return std::make_unique<GatedAStarWorkerEventHandler<Kind>>(gate);
-    }
+    { return std::make_unique<GatedAStarWorkerEventHandler<Kind>>(gate); }
 
     AStarGoalGate gate;
 };
@@ -501,9 +495,7 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) override
-    {
-        return std::make_unique<LayeredAStarWorkerEventHandler<Kind>>(gate);
-    }
+    { return std::make_unique<LayeredAStarWorkerEventHandler<Kind>>(gate); }
 
     AStarLayerGate gate;
     std::vector<ygg::float_t> finished_f_layers;
@@ -525,9 +517,7 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) override
-    {
-        return std::make_unique<ThrowingAStarWorkerEventHandler<Kind>>();
-    }
+    { return std::make_unique<ThrowingAStarWorkerEventHandler<Kind>>(); }
 };
 
 template<typename SearchNode>
@@ -554,7 +544,8 @@ auto find_successor(const tyr::planning::LabeledNodeList<Kind>& successors,
                     std::optional<ygg::Index<tyr::planning::State<Kind>>> excluded_state = std::nullopt)
 {
     return std::ranges::find_if(successors,
-                                [&](const auto& successor) {
+                                [&](const auto& successor)
+                                {
                                     return successor.label.get_relation().get_name().str() == action
                                            && (!excluded_state || successor.node.get_state().get_index() != *excluded_state);
                                 });

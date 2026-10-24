@@ -8,27 +8,16 @@ namespace ygg::serialization
 {
 
 inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::BooleanOperatorKind& value, Dictionaries*)
-{
-    result = std::string(::tyr::formalism::to_string(value));
-}
+{ result = std::string(::tyr::formalism::to_string(value)); }
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::ArithmeticOperatorKind& value, Dictionaries*)
-{
-    result = std::string(::tyr::formalism::to_string(value));
-}
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::ArithmeticOperatorKind& value, Dictionaries*)
+{ result = std::string(::tyr::formalism::to_string(value)); }
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::NumericEffectOperatorKind& value, Dictionaries*)
-{
-    result = std::string(::tyr::formalism::to_string(value));
-}
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::NumericEffectOperatorKind& value, Dictionaries*)
+{ result = std::string(::tyr::formalism::to_string(value)); }
 
-inline void
-tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::OptimizationDirection& value, Dictionaries*)
-{
-    result = std::string(::tyr::formalism::to_string(value));
-}
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::OptimizationDirection& value, Dictionaries*)
+{ result = std::string(::tyr::formalism::to_string(value)); }
 
 }
 

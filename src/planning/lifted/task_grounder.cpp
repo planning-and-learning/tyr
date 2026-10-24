@@ -15,18 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
 
+#include "effect_atom_index.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "effect_atom_index.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/copy.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
@@ -80,9 +80,7 @@ classify_literal(formalism::planning::AtomView<GroundTag, T> atom, bool polarity
 template<formalism::FactKind T>
 RemapStatus classify_literal(formalism::planning::LiteralView<GroundTag, T> literal,
                              const ygg::UnorderedSet<formalism::planning::AtomView<GroundTag, T>>& atoms)
-{
-    return classify_literal(literal.get_atom(), literal.get_polarity(), atoms);
-}
+{ return classify_literal(literal.get_atom(), literal.get_polarity(), atoms); }
 
 struct RemappedFDRFact
 {

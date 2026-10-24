@@ -153,7 +153,8 @@ void bind_state(nb::module_& m, const std::string& name)
                        nb::keep_alive<0, 1>())
                    .def(
                        "fluent_facts",
-                       [](const T& s) {
+                       [](const T& s)
+                       {
                            return make_owning_iterator<formalism::planning::FDRFactView<formalism::FluentTag>>(nb::type<T>(),
                                                                                                                "fluent facts iterator",
                                                                                                                s.get_fluent_facts_view());
@@ -593,9 +594,7 @@ public:
     bool is_static_goal_satisfied(const Task<Kind>& task) override { NB_OVERRIDE_PURE(is_static_goal_satisfied, task); }
 
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
-    {
-        NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state);
-    }
+    { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
 };
 
 template<TaskKind Kind>
@@ -648,9 +647,7 @@ public:
     bool should_prune_state(const StateView<Kind>& state) override { NB_OVERRIDE(should_prune_state, state); }
 
     bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ_state) override
-    {
-        NB_OVERRIDE(should_prune_successor_state, state, succ_state, is_new_succ_state);
-    }
+    { NB_OVERRIDE(should_prune_successor_state, state, succ_state, is_new_succ_state); }
 };
 
 template<TaskKind Kind>

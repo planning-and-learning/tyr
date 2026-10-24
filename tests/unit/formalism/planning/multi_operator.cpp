@@ -1,6 +1,6 @@
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/multi_operator_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/multi_operator_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 

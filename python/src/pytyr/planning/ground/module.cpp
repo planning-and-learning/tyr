@@ -45,10 +45,10 @@ void bind_ground_module_definitions(nb::module_& m)
     siw::bind_ground_module_definitions(siw_module);
 
     auto task = nb::class_<Task<GroundTag>>(m, "Task")  //
-        .def("get_formalism_task", &Task<GroundTag>::get_formalism_task, nb::rv_policy::reference_internal)
-        .def("get_repository", &Task<GroundTag>::get_repository)
-        .def("get_task", &Task<GroundTag>::get_task, nb::keep_alive<0, 1>())
-        .def("get_fdr_context", &Task<GroundTag>::get_fdr_context, nb::rv_policy::reference_internal);
+                    .def("get_formalism_task", &Task<GroundTag>::get_formalism_task, nb::rv_policy::reference_internal)
+                    .def("get_repository", &Task<GroundTag>::get_repository)
+                    .def("get_task", &Task<GroundTag>::get_task, nb::keep_alive<0, 1>())
+                    .def("get_fdr_context", &Task<GroundTag>::get_fdr_context, nb::rv_policy::reference_internal);
     ygg::add_print(task);
 
     bind_index<ygg::Index<State<GroundTag>>>(m, "StateIndex");

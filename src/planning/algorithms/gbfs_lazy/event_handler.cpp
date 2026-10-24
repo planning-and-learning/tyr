@@ -19,11 +19,11 @@
 
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
+#include "tyr/planning/state_view.hpp"
 
 #include <fmt/ostream.h>
 
@@ -110,9 +110,7 @@ WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(ygg::Index<Wo
 
 template<TaskKind Kind>
 DefaultEventHandlerPtr<Kind> DefaultEventHandler<Kind>::create(size_t verbosity)
-{
-    return std::make_shared<DefaultEventHandler<Kind>>(verbosity);
-}
+{ return std::make_shared<DefaultEventHandler<Kind>>(verbosity); }
 
 template class DefaultEventHandler<LiftedTag>;
 template class DefaultEventHandler<GroundTag>;

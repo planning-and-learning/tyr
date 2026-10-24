@@ -55,9 +55,7 @@ struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffec
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&MutableConjunctiveEffect::num_parent_variables, &MutableConjunctiveEffect::num_variables, &MutableConjunctiveEffect::literals> {};
-    }
+    { return ygg::Members<&MutableConjunctiveEffect::num_parent_variables, &MutableConjunctiveEffect::num_variables, &MutableConjunctiveEffect::literals> {}; }
 };
 
 using MutableConjunctiveEffectList = std::vector<MutableConjunctiveEffect>;
@@ -84,9 +82,7 @@ struct structure_traits<planning::MutableConjunctiveEffect>
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
-    {
-        return Type(value.num_parent_variables, value.num_variables, unification::transform_terms(value.literals, f));
-    }
+    { return Type(value.num_parent_variables, value.num_variables, unification::transform_terms(value.literals, f)); }
 };
 }
 

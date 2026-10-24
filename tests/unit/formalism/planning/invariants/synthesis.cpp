@@ -15,19 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
+
 #include "planning/parser.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariants/ordering.hpp"
-#include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/mutable/formatter.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include <yggdrasil/formatting/cista_formatters.hpp>
 
 #include <algorithm>
 #include <boost/json.hpp>
@@ -38,6 +38,7 @@
 #include <iterator>
 #include <set>
 #include <string>
+#include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 

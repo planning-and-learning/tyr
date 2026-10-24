@@ -91,15 +91,11 @@ void TypedRuleSchedulerStratum<R>::on_start_iteration() noexcept
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate)
-{
-    activate_relation(m_active_predicates, predicate);
-}
+{ activate_relation(m_active_predicates, predicate); }
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<formalism::Function<formalism::FluentTag>> function)
-{
-    activate_relation(m_active_functions, function);
-}
+{ activate_relation(m_active_functions, function); }
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_finish_iteration()

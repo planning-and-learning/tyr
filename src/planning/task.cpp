@@ -16,9 +16,9 @@
  */
 
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/task.hpp"
 
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
 
 #include <utility>
@@ -54,9 +54,7 @@ Task<LiftedTag>::Task(formalism::planning::PlanningTask<LiftedTag> task) : m_tas
 TaskPtr<LiftedTag> Task<LiftedTag>::create(formalism::planning::PlanningTask<LiftedTag> task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }
 
 GroundTaskInstantiationResult Task<LiftedTag>::instantiate_ground_task(ygg::ExecutionContext& execution_context, const GroundTaskInstantiationOptions& options)
-{
-    return tyr::planning::instantiate_ground_task(*this, execution_context, options);
-}
+{ return tyr::planning::instantiate_ground_task(*this, execution_context, options); }
 
 Task<GroundTag>::Task(formalism::planning::PlanningTask<GroundTag> task) : m_task(std::move(task)), m_static_state(m_task.get_task()) {}
 

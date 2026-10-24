@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -167,9 +167,7 @@ formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condi
 formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal,
                                                                                 TranslationContext<GroundTag>& translation_context,
                                                                                 GroundProgramBuildContext& context)
-{
-    return create_delete_free_condition(goal, translation_context, context);
-}
+{ return create_delete_free_condition(goal, translation_context, context); }
 
 formalism::datalog::ConjunctiveConditionView<GroundTag>
 create_delete_free_effect_condition(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> applicability_atom,
@@ -242,9 +240,7 @@ create_applicability_rule(formalism::planning::ActionView<GroundTag> action,
 }
 
 formalism::datalog::ProgramView<GroundTag> finish_program(GroundProgramBuildContext& context)
-{
-    return formalism::datalog::insert(context.merge_context.destination, *context.program).first;
-}
+{ return formalism::datalog::insert(context.merge_context.destination, *context.program).first; }
 
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<GroundTag> action,
                                            ygg::Data<formalism::datalog::Program<GroundTag>>& program,

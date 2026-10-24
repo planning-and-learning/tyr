@@ -68,10 +68,7 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::condition, &Data::effect> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>);
@@ -108,10 +105,7 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::condition, &Data::effect> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>);

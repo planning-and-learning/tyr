@@ -246,8 +246,9 @@ TEST(TyrDatalogLiftedAssignmentSets, TouchedBlocksAndPreparedRanksMatchScalarRan
     auto functions = tyr::datalog::FunctionAssignmentSet<tyr::formalism::FluentTag>(function, domains, fixture.objects.size());
     ASSERT_GT(predicates.get_set().blocks().size(), 1);
 
-    for (const auto objects : { std::initializer_list<ObjectIndex> { ObjectIndex(0), ObjectIndex(2), ObjectIndex(4), ObjectIndex(0), ObjectIndex(2), ObjectIndex(4) },
-                                std::initializer_list<ObjectIndex> { ObjectIndex(1), ObjectIndex(2), ObjectIndex(1), ObjectIndex(4), ObjectIndex(1), ObjectIndex(0) } })
+    for (const auto objects :
+         { std::initializer_list<ObjectIndex> { ObjectIndex(0), ObjectIndex(2), ObjectIndex(4), ObjectIndex(0), ObjectIndex(2), ObjectIndex(4) },
+           std::initializer_list<ObjectIndex> { ObjectIndex(1), ObjectIndex(2), ObjectIndex(1), ObjectIndex(4), ObjectIndex(1), ObjectIndex(0) } })
     {
         const auto predicate_binding = make_binding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(fixture.repository, predicate, objects);
         const auto function_binding = make_binding<tyr::formalism::Function<tyr::formalism::FluentTag>>(fixture.repository, function, objects);

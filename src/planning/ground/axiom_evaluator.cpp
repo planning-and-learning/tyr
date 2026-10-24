@@ -22,8 +22,8 @@
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/ground/axiom_stratification.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/state_builder.hpp"
 
 #include <atomic>
 #include <memory>

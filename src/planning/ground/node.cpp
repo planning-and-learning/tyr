@@ -20,8 +20,8 @@
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_view.hpp"
 //
-#include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/ground/task.hpp"
 
 #include <yggdrasil/core/config.hpp>
 

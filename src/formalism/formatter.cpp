@@ -32,21 +32,15 @@ namespace
 
 template<FactKind T>
 std::string to_string_impl(const ygg::Data<Predicate<T>>& value)
-{
-    return fmt::format("{}/{}", value.name, value.arity);
-}
+{ return fmt::format("{}/{}", value.name, value.arity); }
 
 template<FactKind T>
 std::string to_string_impl(const ygg::Data<Function<T>>& value)
-{
-    return fmt::format("{}/{}", value.name, value.arity);
-}
+{ return fmt::format("{}/{}", value.name, value.arity); }
 
 template<typename T>
 std::string to_string_impl(const ygg::Data<RelationBinding<T>>& value)
-{
-    return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " "));
-}
+{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
 
 }  // namespace
 

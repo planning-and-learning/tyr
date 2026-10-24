@@ -20,8 +20,8 @@
 
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/heuristic.hpp"
+#include "tyr/planning/state_view.hpp"
 
 #include <memory>
 

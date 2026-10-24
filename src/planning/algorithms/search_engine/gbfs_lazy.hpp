@@ -104,9 +104,7 @@ public:
     ygg::float_t get_start_priority() const noexcept { return m_start_h_value; }
 
     void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node)
-    {
-        m_standard_openlist.insert(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ });
-    }
+    { m_standard_openlist.insert(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ }); }
 
     bool empty() const { return m_openlist.empty(); }
 
@@ -236,15 +234,11 @@ public:
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 
     static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
-    {
-        return event_handler ? event_handler->make_worker(index) : nullptr;
-    }
+    { return event_handler ? event_handler->make_worker(index) : nullptr; }
 
     template<typename Handler>
     static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
-    {
-        handler.on_start_search(node, priority);
-    }
+    { handler.on_start_search(node, priority); }
 
     template<typename Handler>
     static constexpr void on_finish_priority_layer(Handler&, ygg::float_t, const Statistics&) noexcept

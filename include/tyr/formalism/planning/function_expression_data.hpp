@@ -18,13 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_FUNCTION_EXPRESSION_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_FUNCTION_EXPRESSION_DATA_HPP_
 
-#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/planning/arithmetic_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
 #include <utility>
 #include <variant>
+#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -56,9 +56,11 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
                     return Variant(arg);
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>>)
                     return Variant(arg.get_data());
-                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>)
+                else if constexpr (ygg::is_view_of_v<Alternative,
+                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>)
                     return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>)
+                else if constexpr (ygg::is_view_of_v<Alternative,
+                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -69,10 +71,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>);
@@ -103,11 +102,14 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
                     return Variant(arg);
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>>)
                     return Variant(arg.get_data());
-                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>)
+                else if constexpr (ygg::is_view_of_v<Alternative,
+                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>)
                     return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>)
+                else if constexpr (ygg::is_view_of_v<Alternative,
+                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>)
                     return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative, ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>)
+                else if constexpr (ygg::is_view_of_v<Alternative,
+                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -118,10 +120,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>);

@@ -53,9 +53,7 @@ struct MutableAction : ygg::comparison::Mixin<MutableAction>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&MutableAction::num_variables, &MutableAction::condition, &MutableAction::effects> {};
-    }
+    { return ygg::Members<&MutableAction::num_variables, &MutableAction::condition, &MutableAction::effects> {}; }
 };
 
 using MutableActionList = std::vector<MutableAction>;
@@ -79,9 +77,7 @@ struct structure_traits<planning::MutableAction>
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
-    {
-        return Type(value.num_variables, unification::transform_terms(value.condition, f), unification::transform_terms(value.effects, f));
-    }
+    { return Type(value.num_variables, unification::transform_terms(value.condition, f), unification::transform_terms(value.effects, f)); }
 };
 }
 

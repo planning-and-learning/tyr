@@ -75,10 +75,7 @@ struct Data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variable, &Data::domain_children, &Data::dontcare_child> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variable, &Data::domain_children, &Data::dontcare_child> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 }
 

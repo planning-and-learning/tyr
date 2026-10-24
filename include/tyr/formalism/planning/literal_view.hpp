@@ -27,8 +27,7 @@
 namespace ygg
 {
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Literal<T, F>> C>
-class View<ygg::Index<::tyr::formalism::planning::Literal<T, F>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::planning::Literal<T, F>, C>
+class View<ygg::Index<::tyr::formalism::planning::Literal<T, F>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Literal<T, F>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::Literal<T, F>> handle, const C& context) noexcept :

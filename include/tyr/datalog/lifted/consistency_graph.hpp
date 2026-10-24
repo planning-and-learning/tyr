@@ -220,8 +220,7 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
 
 /// The positive fluent literals of the conflicting condition: a new atom of one anchors the cliques it makes applicable.
 extern std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
-                                       formalism::datalog::Repository& context);
+create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition, formalism::datalog::Repository& context);
 
 }
 

@@ -141,13 +141,13 @@ ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& prog
     function_rules()
 {
     initialize_const_rule_workspaces<formalism::PredicateTag>(program,
-                                                                     *program.m_program_repository,
-                                                                     program.m_analysis.compatibility_graphs.predicate_rules,
-                                                                     predicate_rules);
+                                                              *program.m_program_repository,
+                                                              program.m_analysis.compatibility_graphs.predicate_rules,
+                                                              predicate_rules);
     initialize_const_rule_workspaces<formalism::FunctionTag>(program,
-                                                                    *program.m_program_repository,
-                                                                    program.m_analysis.compatibility_graphs.function_rules,
-                                                                    function_rules);
+                                                             *program.m_program_repository,
+                                                             program.m_analysis.compatibility_graphs.function_rules,
+                                                             function_rules);
 }
 
 }

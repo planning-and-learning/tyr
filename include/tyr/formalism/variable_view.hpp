@@ -28,10 +28,7 @@ template<ygg::formalism::SymbolContextFor<::tyr::formalism::Variable> C>
 class View<ygg::Index<::tyr::formalism::Variable>, C> : public ygg::IndexViewBase<::tyr::formalism::Variable, C>
 {
 public:
-    View(ygg::Index<::tyr::formalism::Variable> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::Variable, C>(handle, context)
-    {
-    }
+    View(ygg::Index<::tyr::formalism::Variable> handle, const C& context) noexcept : ygg::IndexViewBase<::tyr::formalism::Variable, C>(handle, context) {}
 
     const auto& get_name() const noexcept { return this->get_data().name; }
 };

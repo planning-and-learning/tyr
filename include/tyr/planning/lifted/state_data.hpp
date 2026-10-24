@@ -29,8 +29,8 @@
 #include "tyr/planning/lifted/state_storage/tree_vector/fact.hpp"
 #include "tyr/planning/state_storage/tree_vector/numeric.hpp"
 #elif defined(TYR_STATE_STORAGE_TREE_BITSET)
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
 #include "tyr/planning/lifted/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
 #include "tyr/planning/state_storage/tree_vector/numeric.hpp"
 #endif
 

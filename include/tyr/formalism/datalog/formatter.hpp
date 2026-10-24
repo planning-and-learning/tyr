@@ -41,9 +41,7 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::datalog::VariableDependencyGraph& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 
 }  // namespace fmt
@@ -183,9 +181,7 @@ struct formatter<ygg::View<ygg::Index<T>, tyr::formalism::datalog::Repository>, 
 
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 
 template<typename T>
@@ -197,9 +193,7 @@ struct formatter<ygg::View<ygg::Data<T>, tyr::formalism::datalog::Repository>, c
 
     template<typename FormatContext>
     auto format(const View& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 
 }  // namespace fmt

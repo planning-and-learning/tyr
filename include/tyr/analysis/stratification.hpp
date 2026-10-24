@@ -44,15 +44,11 @@ struct RuleStratum
 
     template<formalism::RelationKind R>
     auto& get() noexcept
-    {
-        return get(R {});
-    }
+    { return get(R {}); }
 
     template<formalism::RelationKind R>
     const auto& get() const noexcept
-    {
-        return get(R {});
-    }
+    { return get(R {}); }
 };
 
 struct RuleStrata

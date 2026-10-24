@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 
 #include "../../programs/common.hpp"
 #include "../../programs/translated_program.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
@@ -255,7 +255,8 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
     auto context = formalism::datalog::CopyContext { builder, *repository };
 
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
-    auto rule_of = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>> {};
+    auto rule_of =
+        ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>> {};
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
         rule_of.emplace(rule.get_heads().front().get_predicate(), rule.get_index());
     auto schema = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
@@ -320,24 +321,18 @@ ApplicableActionProgram<LiftedTag>::ApplicableActionProgram(formalism::planning:
 const TranslationContext<LiftedTag>& ApplicableActionProgram<LiftedTag>::get_translation_context() const noexcept { return m_translation_context; }
 
 const ApplicableActionProgram<LiftedTag>::AppPredicateToActionMapping& ApplicableActionProgram<LiftedTag>::get_predicate_to_action_mapping() const noexcept
-{
-    return m_predicate_to_actions;
-}
+{ return m_predicate_to_actions; }
 
 const ApplicableActionProgram<LiftedTag>::SchemaPrograms& ApplicableActionProgram<LiftedTag>::get_schema_programs() const noexcept { return m_schema_programs; }
 
 const ApplicableActionProgram<LiftedTag>::ConditionalEffectToPredicateMapping&
 ApplicableActionProgram<LiftedTag>::get_conditional_effect_to_predicate_mapping() const noexcept
-{
-    return m_conditional_effect_to_predicate;
-}
+{ return m_conditional_effect_to_predicate; }
 
 datalog::Program<LiftedTag>& ApplicableActionProgram<LiftedTag>::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& ApplicableActionProgram<LiftedTag>::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& ApplicableActionProgram<LiftedTag>::get_const_program_workspace() const noexcept
-{
-    return m_datalog_program.get_const_program_workspace();
-}
+{ return m_datalog_program.get_const_program_workspace(); }
 }

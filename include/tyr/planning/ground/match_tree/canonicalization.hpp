@@ -15,8 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_CANONICALIZATION_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_CANONICALIZATION_HPP_
 
@@ -35,39 +33,27 @@ namespace tyr::planning::match_tree
 
 template<typename Tag>
 bool is_canonical(const ygg::Data<AtomSelectorNode<Tag>>&)
-{
-    return true;
-};
+{ return true; };
 
 template<typename Tag>
 bool is_canonical(const ygg::Data<VariableSelectorNode<Tag>>&)
-{
-    return true;
-};
+{ return true; };
 
 template<typename Tag>
 bool is_canonical(const ygg::Data<NegativeFactSelectorNode<Tag>>&)
-{
-    return true;
-};
+{ return true; };
 
 template<typename Tag>
 bool is_canonical(const ygg::Data<NumericConstraintSelectorNode<Tag>>&)
-{
-    return true;
-};
+{ return true; };
 
 template<typename Tag>
 bool is_canonical(const ygg::Data<ElementGeneratorNode<Tag>>&)
-{
-    return true;
-};
+{ return true; };
 
 template<typename Tag>
 bool is_canonical(const ygg::Data<Node<Tag>>&)
-{
-    return true;
-};
+{ return true; };
 
 template<typename Tag>
 void canonicalize(ygg::Data<AtomSelectorNode<Tag>>&) {};

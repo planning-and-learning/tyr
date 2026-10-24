@@ -35,9 +35,7 @@ public:
     void on_finish_f_layer(ygg::float_t f_value, const tyr::planning::Statistics& statistics) override { NB_OVERRIDE(on_finish_f_layer, f_value, statistics); }
 
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
-    {
-        NB_OVERRIDE_PURE(on_end_search, status, statistics);
-    }
+    { NB_OVERRIDE_PURE(on_end_search, status, statistics); }
 
     void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
 };

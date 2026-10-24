@@ -42,8 +42,8 @@ void EffectAtomIndex::clear() noexcept
 }
 
 std::optional<std::span<const EffectAtomIndex::AtomIndex>> EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
-                                                                                       formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                                                                       std::span<const ygg::Index<formalism::Object>> binding)
+                                                                                      formalism::planning::ConditionalEffectView<LiftedTag> effect,
+                                                                                      std::span<const ygg::Index<formalism::Object>> binding)
 {
     const auto effect_predicate = m_effect_to_predicate.find(std::pair(action, effect));
     if (effect_predicate == m_effect_to_predicate.end())

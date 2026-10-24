@@ -18,9 +18,10 @@
 #ifndef TYR_FORMALISM_PARAMETER_INDEX_HPP_
 #define TYR_FORMALISM_PARAMETER_INDEX_HPP_
 
+#include "tyr/formalism/declarations.hpp"
+
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/ids/uint_mixins.hpp>
-#include "tyr/formalism/declarations.hpp"
 
 namespace tyr::formalism
 {

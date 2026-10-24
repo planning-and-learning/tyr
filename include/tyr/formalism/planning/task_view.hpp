@@ -55,14 +55,10 @@ public:
     size_t get_num_objects() const noexcept { return get_domain().get_constants().size() + get_objects().size(); }
     template<::tyr::formalism::FactKind T>
     auto get_atoms() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_atoms<T>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_atoms<T>(), this->get_context()); }
     template<::tyr::formalism::FactKind T>
     auto get_fterm_values() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_fterm_values<T>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_fterm_values<T>(), this->get_context()); }
     auto get_auxiliary_fterm_value() const noexcept { return ygg::make_view(this->get_data().auxiliary_fterm_value, this->get_context()); }
     auto get_goal() const noexcept { return ygg::make_view(this->get_data().goal, this->get_context()); }
     auto get_metric() const noexcept { return ygg::make_view(this->get_data().metric, this->get_context()); }
@@ -70,24 +66,16 @@ public:
 
     auto get_fluent_variables() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().fluent_variables, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().fluent_variables, this->get_context()); }
     auto get_fluent_facts() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().fluent_facts, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().fluent_facts, this->get_context()); }
     auto get_ground_actions() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().ground_actions, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().ground_actions, this->get_context()); }
     auto get_ground_axioms() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().ground_axioms, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().ground_axioms, this->get_context()); }
 };
 
 }

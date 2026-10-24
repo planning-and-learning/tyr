@@ -94,9 +94,7 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
 /// fact lookup, lazy grounding, and support selection share one deterministic traversal.
 template<typename Expression, typename ResolveTerm>
 auto evaluate_numeric_expression(Expression expression, ResolveTerm&& resolve_term)
-{
-    return numeric_evaluation_detail::evaluate(expression, resolve_term);
-}
+{ return numeric_evaluation_detail::evaluate(expression, resolve_term); }
 
 /// Evaluates the right-hand side before resolving the target. Assign never resolves its target.
 template<typename Effect, typename ResolveTerm>

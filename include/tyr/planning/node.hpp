@@ -21,9 +21,9 @@
 #include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
@@ -52,15 +52,11 @@ public:
         requires requires(const State& state) {
             { state.pack() } -> std::same_as<PackedStateView<Kind>>;
         }
-    {
-        return PackedNode<Kind>(m_state.pack(), m_metric);
-    }
+    { return PackedNode<Kind>(m_state.pack(), m_metric); }
 
     auto identifying_members() const noexcept
         requires ygg::Identifiable<State>
-    {
-        return std::tie(m_state, m_metric);
-    }
+    { return std::tie(m_state, m_metric); }
 
 private:
     State m_state;
@@ -97,9 +93,7 @@ struct LabeledNode
 
     auto pack() const noexcept(noexcept(node.pack()))
         requires std::same_as<Binding, formalism::planning::ActionBindingView> && requires(const Node<Kind, State>& value) { value.pack(); }
-    {
-        return PackedLabeledNode<Kind> { label, node.pack() };
-    }
+    { return PackedLabeledNode<Kind> { label, node.pack() }; }
 };
 
 template<TaskKind Kind>

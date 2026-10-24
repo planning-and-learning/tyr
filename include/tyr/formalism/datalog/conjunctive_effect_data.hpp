@@ -47,9 +47,7 @@ struct Data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::datalog::NumericEffectOperator<T, ::tyr::formalism::FluentTag>>, C>>& numeric_effects_) :
         index(),
         numeric_effects()
-    {
-        set(numeric_effects_, numeric_effects);
-    }
+    { set(numeric_effects_, numeric_effects); }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
@@ -57,10 +55,7 @@ struct Data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::numeric_effects> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::numeric_effects> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveEffect<::tyr::LiftedTag>>);

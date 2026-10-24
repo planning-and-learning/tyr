@@ -38,9 +38,9 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <yggdrasil/execution/onetbb.hpp>
 #include <string_view>
 #include <vector>
+#include <yggdrasil/execution/onetbb.hpp>
 
 namespace
 {

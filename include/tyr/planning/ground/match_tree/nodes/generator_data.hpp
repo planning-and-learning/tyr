@@ -43,9 +43,7 @@ struct Data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
     Data(ygg::IndexList<Tag> elements_) : index(), elements(std::move(elements_)) {}
     template<typename C>
     Data(const std::vector<::ygg::View<ygg::Index<Tag>, C>>& elements_) : index(), elements()
-    {
-        set(elements_, elements);
-    }
+    { set(elements_, elements); }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
@@ -53,10 +51,7 @@ struct Data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::elements> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::elements> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 }
 

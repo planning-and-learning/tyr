@@ -60,9 +60,7 @@ struct ActionAlignmentPolicy
 
     template<typename T>
     bool match_parameter_object(ParameterIndex lhs, const T&, unification::MatchState<T>&) const
-    {
-        return ygg::uint_t(lhs) >= num_rigid_variables;
-    }
+    { return ygg::uint_t(lhs) >= num_rigid_variables; }
 
     template<typename T>
     bool match_object_parameter(const T& lhs, ParameterIndex rhs, unification::MatchState<T>& state) const

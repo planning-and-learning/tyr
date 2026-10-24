@@ -16,12 +16,12 @@
  */
 
 #include "solver_fixtures.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 
 #include <algorithm>
+#include <gtest/gtest.h>
 #include <set>
 #include <string>
-#include <gtest/gtest.h>
-#include "tyr/formalism/datalog/interning.hpp"
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::tests

@@ -40,9 +40,7 @@ struct Data<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>>
     Data(ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>> fterm_, ygg::float_t value_) : index(), fterm(fterm_), value(value_) {}
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>>, C> fterm_, ygg::float_t value_) : index(), fterm(), value(value_)
-    {
-        set(fterm_, fterm);
-    }
+    { set(fterm_, fterm); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -50,10 +48,7 @@ struct Data<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fterm, &Data::value> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fterm, &Data::value> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);

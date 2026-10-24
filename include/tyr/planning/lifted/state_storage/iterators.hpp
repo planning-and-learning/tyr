@@ -58,7 +58,7 @@ public:
         assert(m_storage);
         assert(m_storage->indices.test(m_i));
         return ygg::Data<formalism::planning::FDRFact<Tag>> { ygg::Index<formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
-                                                                     formalism::planning::FDRValue { 1 } };
+                                                              formalism::planning::FDRValue { 1 } };
     }
 
     FDRFactIterator& operator++() noexcept

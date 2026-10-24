@@ -26,13 +26,13 @@
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <algorithm>
-#include <cstdint>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <cassert>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <tuple>
 #include <vector>
+#include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -93,9 +93,7 @@ private:
 
 public:
     PredicateAssignmentSets();
-    PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
-                            const analysis::PredicateDomainMap<T>& predicate_domains,
-                            size_t num_objects);
+    PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates, const analysis::PredicateDomainMap<T>& predicate_domains, size_t num_objects);
 
     void reset() noexcept;
 
@@ -151,9 +149,7 @@ private:
 
 public:
     FunctionAssignmentSets();
-    FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions,
-                           const analysis::FunctionDomainMap<T>& function_domains,
-                           size_t num_objects);
+    FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions, const analysis::FunctionDomainMap<T>& function_domains, size_t num_objects);
 
     void reset() noexcept;
 

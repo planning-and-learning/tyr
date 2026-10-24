@@ -27,8 +27,7 @@
 namespace ygg
 {
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::UnaryOperator<T>> C>
-class View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::datalog::UnaryOperator<T>, C>
+class View<ygg::Index<::tyr::formalism::datalog::UnaryOperator<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::UnaryOperator<T>, C>
 {
 public:
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;

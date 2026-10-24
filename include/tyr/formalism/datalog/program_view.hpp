@@ -40,31 +40,21 @@ public:
 
     template<::tyr::formalism::FactKind F>
     auto get_predicates() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_predicates<F>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_predicates<F>(), this->get_context()); }
     template<::tyr::formalism::FactKind F>
     auto get_functions() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_functions<F>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_functions<F>(), this->get_context()); }
     auto get_objects() const noexcept { return ygg::make_view(this->get_data().objects, this->get_context()); }
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_atoms<F>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_atoms<F>(), this->get_context()); }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_fterm_values<F>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_fterm_values<F>(), this->get_context()); }
     auto get_goal() const noexcept { return ygg::make_view(this->get_data().goal, this->get_context()); }
     template<::tyr::formalism::RelationKind R>
     auto get_rules() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_rules<R>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_rules<R>(), this->get_context()); }
 };
 
 }

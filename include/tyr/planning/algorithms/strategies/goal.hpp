@@ -43,9 +43,7 @@ public:
 
     virtual bool is_static_goal_satisfied(const Task<Kind>& task) = 0;
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state)
-    {
-        return is_dynamic_goal_satisfied(seed_state, state.get_state_builder());
-    }
+    { return is_dynamic_goal_satisfied(seed_state, state.get_state_builder()); }
     virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) = 0;
 };
 
@@ -62,9 +60,7 @@ public:
 
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(task); }
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-    {
-        return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal);
-    }
+    { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(m_goal); }
 
@@ -90,9 +86,7 @@ public:
 
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<SerializedGoalStrategy<Kind>>(task); }
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-    {
-        return std::make_shared<SerializedGoalStrategy<Kind>>(goal);
-    }
+    { return std::make_shared<SerializedGoalStrategy<Kind>>(goal); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return create(m_goal); }
 

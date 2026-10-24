@@ -127,9 +127,7 @@ public:
     explicit DefaultEventHandler(size_t verbosity = 0) : EventHandlerBase<DefaultEventHandler<Kind, Stats>, Kind, Stats>(verbosity) {}
 
     static std::shared_ptr<DefaultEventHandler<Kind, Stats>> create(size_t verbosity = 0)
-    {
-        return std::make_shared<DefaultEventHandler<Kind, Stats>>(verbosity);
-    }
+    { return std::make_shared<DefaultEventHandler<Kind, Stats>>(verbosity); }
 };
 
 template<TaskKind Kind, std::copy_constructible Stats = tyr::planning::Statistics>

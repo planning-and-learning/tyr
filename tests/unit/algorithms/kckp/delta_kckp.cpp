@@ -288,7 +288,8 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     const auto update = [&]
     {
         kckp.update(
-            [&](auto& delta_graph, auto& full_graph) {
+            [&](auto& delta_graph, auto& full_graph)
+            {
                 static_graph.initialize_dynamic_consistency_graphs(tyr::datalog::AssignmentSets(static_assignments, assignments),
                                                                    layout,
                                                                    delta_graph,

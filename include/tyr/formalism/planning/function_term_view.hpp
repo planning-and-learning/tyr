@@ -29,8 +29,7 @@
 namespace ygg
 {
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::FunctionTerm<T, F>> C>
-class View<ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::planning::FunctionTerm<T, F>, C>
+class View<ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::FunctionTerm<T, F>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::FunctionTerm<T, F>> handle, const C& context) noexcept :
@@ -51,25 +50,17 @@ public:
     }
     auto get_terms() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return ygg::make_view(this->get_data().terms, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().terms, this->get_context()); }
 
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().binding, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().binding, this->get_context()); }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_objects();
-    }
+    { return get_row().get_objects(); }
     auto get_key() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_key();
-    }
+    { return get_row().get_key(); }
 };
 
 }

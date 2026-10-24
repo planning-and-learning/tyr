@@ -290,9 +290,7 @@ struct InsertConstantPolicy
 
     template<typename Element>
     bool should_skip(Element) const
-    {
-        return false;
-    }
+    { return false; }
 
     bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
@@ -326,15 +324,11 @@ struct RestrictPolicy
 
     template<typename Element>
     bool should_skip(Element) const
-    {
-        return false;
-    }
+    { return false; }
 
     template<formalism::FactKind T>
     bool should_skip(formalism::planning::LiteralView<LiftedTag, T> literal) const
-    {
-        return !literal.get_polarity();
-    }
+    { return !literal.get_polarity(); }
 
     bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
@@ -369,9 +363,7 @@ struct LiftPolicy
 
     template<typename Element>
     bool should_skip(Element) const
-    {
-        return false;
-    }
+    { return false; }
 
     bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
 
@@ -410,9 +402,7 @@ void apply_policy(ygg::float_t, Policy&)
 
 template<typename Policy>
 void apply_policy(formalism::planning::UnaryOperatorView<LiftedTag> element, Policy& policy)
-{
-    apply_policy(element.get_arg(), policy);
-}
+{ apply_policy(element.get_arg(), policy); }
 
 template<formalism::BinaryOperatorKind O, typename Policy>
 void apply_policy(formalism::planning::BinaryOperatorView<LiftedTag, O> element, Policy& policy)
@@ -664,8 +654,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
                                                                                         effect_variable_domains,
                                                                                         task.get_context().template size<formalism::Object>());
             const auto compatibility = detail::create_pairwise_compatibility_graph(effect_variable_domains,
-                                                                             task.get_context().template size<formalism::Object>(),
-                                                                             { &action_static_compatibility, &effect_static_compatibility });
+                                                                                   task.get_context().template size<formalism::Object>(),
+                                                                                   { &action_static_compatibility, &effect_static_compatibility });
             c_parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
 
             effect_domains.emplace(c_effect.get_index(),

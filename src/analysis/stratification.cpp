@@ -37,9 +37,7 @@ struct RelationVertexMap
 
     ygg::uint_t get_vertex(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate) const { return ygg::uint_t(predicate); }
     ygg::uint_t get_vertex(ygg::Index<formalism::Function<formalism::FluentTag>> function) const
-    {
-        return static_cast<ygg::uint_t>(num_predicates + ygg::uint_t(function));
-    }
+    { return static_cast<ygg::uint_t>(num_predicates + ygg::uint_t(function)); }
     size_t size() const { return num_predicates + num_functions; }
 };
 
@@ -67,9 +65,7 @@ void add_body_dependencies(formalism::datalog::RuleView<LiftedTag, R> rule,
 }
 
 ygg::uint_t get_head_vertex(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
-{
-    return vertices.get_vertex(head.get_predicate().get_index());
-}
+{ return vertices.get_vertex(head.get_predicate().get_index()); }
 
 ygg::uint_t get_head_vertex(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
 {

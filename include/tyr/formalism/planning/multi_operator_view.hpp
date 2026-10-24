@@ -27,8 +27,7 @@
 namespace ygg
 {
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::MultiOperator<T>> C>
-class View<ygg::Index<::tyr::formalism::planning::MultiOperator<T>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::planning::MultiOperator<T>, C>
+class View<ygg::Index<::tyr::formalism::planning::MultiOperator<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::MultiOperator<T>, C>
 {
 public:
     using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;

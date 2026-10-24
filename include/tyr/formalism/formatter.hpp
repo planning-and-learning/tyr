@@ -65,9 +65,7 @@ struct formatter<tyr::formalism::ParameterIndex, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::ParameterIndex& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "V{}", ygg::uint_t(value));
-    }
+    { return fmt::format_to(ctx.out(), "V{}", ygg::uint_t(value)); }
 };
 
 template<>
@@ -76,9 +74,7 @@ struct formatter<tyr::formalism::BooleanOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::BooleanOperatorKind value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
 
 template<>
@@ -87,9 +83,7 @@ struct formatter<tyr::formalism::ArithmeticOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::ArithmeticOperatorKind value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
 
 template<>
@@ -98,9 +92,7 @@ struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::NumericEffectOperatorKind value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
 
 template<typename T>
@@ -110,9 +102,7 @@ struct formatter<ygg::Data<T>, char>
 
     template<typename FormatContext>
     auto format(const ygg::Data<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", to_string(value)); }
 };
 
 template<typename Tag>
@@ -122,9 +112,7 @@ struct formatter<ygg::Index<tyr::formalism::RelationBinding<Tag>>, char>
 
     template<typename FormatContext>
     auto format(const ygg::Index<tyr::formalism::RelationBinding<Tag>>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "<{},{}>", value.relation, value.row);
-    }
+    { return fmt::format_to(ctx.out(), "<{},{}>", value.relation, value.row); }
 };
 
 }  // namespace fmt

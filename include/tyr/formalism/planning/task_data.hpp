@@ -23,11 +23,11 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
+#include <optional>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <optional>
-#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -149,7 +149,22 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::domain, &Data::derived_predicates, &Data::objects, &Data::static_atoms, &Data::fluent_atoms, &Data::static_fterm_values, &Data::fluent_fterm_values, &Data::auxiliary_fterm_value, &Data::goal, &Data::metric, &Data::axioms> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return ygg::Members<&Data::index,
+                            &Data::name,
+                            &Data::domain,
+                            &Data::derived_predicates,
+                            &Data::objects,
+                            &Data::static_atoms,
+                            &Data::fluent_atoms,
+                            &Data::static_fterm_values,
+                            &Data::fluent_fterm_values,
+                            &Data::auxiliary_fterm_value,
+                            &Data::goal,
+                            &Data::metric,
+                            &Data::axioms> {};
+    }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::name,
@@ -165,10 +180,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
                             &Data::metric,
                             &Data::axioms> {};
     }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Task<::tyr::LiftedTag>>);
@@ -324,7 +336,27 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
 
     const auto& get_fluent_variables() const { return fluent_variables; }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::domain, &Data::derived_predicates, &Data::objects, &Data::static_atoms, &Data::fluent_atoms, &Data::derived_atoms, &Data::static_fterm_values, &Data::fluent_fterm_values, &Data::auxiliary_fterm_value, &Data::metric, &Data::axioms, &Data::fluent_variables, &Data::fluent_facts, &Data::goal, &Data::ground_actions, &Data::ground_axioms> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return ygg::Members<&Data::index,
+                            &Data::name,
+                            &Data::domain,
+                            &Data::derived_predicates,
+                            &Data::objects,
+                            &Data::static_atoms,
+                            &Data::fluent_atoms,
+                            &Data::derived_atoms,
+                            &Data::static_fterm_values,
+                            &Data::fluent_fterm_values,
+                            &Data::auxiliary_fterm_value,
+                            &Data::metric,
+                            &Data::axioms,
+                            &Data::fluent_variables,
+                            &Data::fluent_facts,
+                            &Data::goal,
+                            &Data::ground_actions,
+                            &Data::ground_axioms> {};
+    }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::name,
@@ -345,10 +377,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
                             &Data::ground_actions,
                             &Data::ground_axioms> {};
     }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Task<::tyr::GroundTag>>);

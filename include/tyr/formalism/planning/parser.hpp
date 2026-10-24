@@ -42,7 +42,8 @@ public:
            const loki::semantic::ParserOptions& options = loki::semantic::ParserOptions(),
            const loki::semantic::TranslatorOptions& translator_options = loki::semantic::TranslatorOptions());
 
-    PlanningTask<LiftedTag> parse_task(const std::filesystem::path& task_filepath, const loki::semantic::ParserOptions& options = loki::semantic::ParserOptions());
+    PlanningTask<LiftedTag> parse_task(const std::filesystem::path& task_filepath,
+                                       const loki::semantic::ParserOptions& options = loki::semantic::ParserOptions());
     PlanningTask<LiftedTag> parse_task(const std::string& task_description,
                                        std::optional<std::filesystem::path> task_filepath,
                                        const loki::semantic::ParserOptions& options = loki::semantic::ParserOptions());

@@ -156,9 +156,7 @@ public:
     }
 
     friend bool operator==(const FunctionTermValueIterator& lhs, const FunctionTermValueIterator& rhs) noexcept
-    {
-        return lhs.m_data == rhs.m_data && lhs.m_i == rhs.m_i;
-    }
+    { return lhs.m_data == rhs.m_data && lhs.m_i == rhs.m_i; }
     friend bool operator!=(const FunctionTermValueIterator& lhs, const FunctionTermValueIterator& rhs) noexcept { return !(lhs == rhs); }
 
 private:

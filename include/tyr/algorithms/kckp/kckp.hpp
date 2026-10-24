@@ -81,9 +81,7 @@ public:
     explicit VertexPartitions(const GraphLayout& layout) : m_layout(layout), m_data(layout.info.num_blocks, 0) {}
 
     friend bool operator==(const VertexPartitions& lhs, const VertexPartitions& rhs) noexcept
-    {
-        return lhs.m_layout.num_vertices == rhs.m_layout.num_vertices && lhs.m_layout.num_partitions == rhs.m_layout.num_partitions && lhs.m_data == rhs.m_data;
-    }
+    { return lhs.m_layout.num_vertices == rhs.m_layout.num_vertices && lhs.m_layout.num_partitions == rhs.m_layout.num_partitions && lhs.m_data == rhs.m_data; }
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), uint64_t { 0 }); }
 
@@ -295,14 +293,10 @@ private:
 };
 
 inline ygg::BitsetSpan<uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) noexcept
-{
-    return ygg::BitsetSpan<uint64_t>(m_data.data() + info.block_offset, info.num_bits);
-}
+{ return ygg::BitsetSpan<uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
 
 inline ygg::BitsetSpan<const uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) const noexcept
-{
-    return ygg::BitsetSpan<const uint64_t>(m_data.data() + info.block_offset, info.num_bits);
-}
+{ return ygg::BitsetSpan<const uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
 
 inline ygg::BitsetSpan<uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) noexcept { return get_bitset(m_layout.info.infos[partition]); }
 
@@ -338,14 +332,10 @@ inline ygg::BitsetSpan<const uint64_t> DeduplicatedAdjacencyMatrix::get_bitset(y
 }
 
 inline std::span<uint64_t> Workspace::compatible_vertices(size_t depth) noexcept
-{
-    return std::span<uint64_t>(compatible_vertices_data.data() + depth * compatible_row_blocks, compatible_row_blocks);
-}
+{ return std::span<uint64_t>(compatible_vertices_data.data() + depth * compatible_row_blocks, compatible_row_blocks); }
 
 inline std::span<const uint64_t> Workspace::compatible_vertices(size_t depth) const noexcept
-{
-    return std::span<const uint64_t>(compatible_vertices_data.data() + depth * compatible_row_blocks, compatible_row_blocks);
-}
+{ return std::span<const uint64_t>(compatible_vertices_data.data() + depth * compatible_row_blocks, compatible_row_blocks); }
 
 }
 

@@ -61,33 +61,23 @@ MaxRPGHeuristic<Kind>& MaxRPGHeuristic<Kind>::operator=(MaxRPGHeuristic&&) noexc
 
 template<TaskKind Kind>
 MaxRPGHeuristicPtr<Kind> MaxRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{
-    return std::make_shared<MaxRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode);
-}
+{ return std::make_shared<MaxRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
 void MaxRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-{
-    m_impl->set_goal(goal);
-}
+{ m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
 ygg::float_t MaxRPGHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
-{
-    return m_impl->evaluate(state);
-}
+{ return m_impl->evaluate(state); }
 
 template<TaskKind Kind>
 HeuristicPtr<Kind> MaxRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{
-    return HeuristicPtr<Kind>(new MaxRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
-}
+{ return HeuristicPtr<Kind>(new MaxRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
 template<TaskKind Kind>
 void MaxRPGHeuristic<Kind>::print_summary(size_t verbosity) const
-{
-    m_impl->print_summary(verbosity);
-}
+{ m_impl->print_summary(verbosity); }
 
 template class MaxRPGHeuristic<GroundTag>;
 template class MaxRPGHeuristic<LiftedTag>;

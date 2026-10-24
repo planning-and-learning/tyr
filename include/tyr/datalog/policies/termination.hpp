@@ -39,9 +39,7 @@ public:
     bool check(const FactSets&) const noexcept { return false; }
     bool should_terminate(const FactSets&) const noexcept { return false; }
     Cost get_total_cost(const FactSets&, const PredicateAnnotations<>&, const FunctionAnnotations<>&, const NumericSupportSelector&) const noexcept
-    {
-        return Cost(0);
-    }
+    { return Cost(0); }
     void reset() noexcept {}
     void clear() noexcept {}
 };

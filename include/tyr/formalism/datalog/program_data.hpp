@@ -22,9 +22,9 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <optional>
-#include <vector>
 #include <tuple>
 #include <utility>
+#include <vector>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -190,7 +190,22 @@ struct Data<::tyr::formalism::datalog::Program<T>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::static_predicates, &Data::fluent_predicates, &Data::static_functions, &Data::fluent_functions, &Data::objects, &Data::static_atoms, &Data::fluent_atoms, &Data::static_fterm_values, &Data::fluent_fterm_values, &Data::goal, &Data::predicate_rules, &Data::function_rules> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return ygg::Members<&Data::index,
+                            &Data::static_predicates,
+                            &Data::fluent_predicates,
+                            &Data::static_functions,
+                            &Data::fluent_functions,
+                            &Data::objects,
+                            &Data::static_atoms,
+                            &Data::fluent_atoms,
+                            &Data::static_fterm_values,
+                            &Data::fluent_fterm_values,
+                            &Data::goal,
+                            &Data::predicate_rules,
+                            &Data::function_rules> {};
+    }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::static_predicates,
@@ -206,10 +221,7 @@ struct Data<::tyr::formalism::datalog::Program<T>>
                             &Data::predicate_rules,
                             &Data::function_rules> {};
     }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Program<::tyr::LiftedTag>>);

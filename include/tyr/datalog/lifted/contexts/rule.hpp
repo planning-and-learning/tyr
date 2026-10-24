@@ -26,8 +26,8 @@
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/declarations.hpp"
-#include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
 
 #include <cstddef>
 
@@ -156,9 +156,7 @@ struct RuleExecutionContext
     }
 
     void initialize()
-    {
-        out().common().initialize_iteration(AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets });
-    }
+    { out().common().initialize_iteration(AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets }); }
 
     void clear_iteration() noexcept
     {
@@ -167,9 +165,7 @@ struct RuleExecutionContext
     }
 
     auto get_rule_worker_execution_context(std::size_t worker_index = 0)
-    {
-        return RuleWorkerExecutionContext<R, AP, TP, CP>(*this, out().workers()[worker_index]);
-    }
+    { return RuleWorkerExecutionContext<R, AP, TP, CP>(*this, out().workers()[worker_index]); }
 
     const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }

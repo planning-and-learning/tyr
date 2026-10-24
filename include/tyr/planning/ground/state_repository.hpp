@@ -19,7 +19,7 @@
 #define TYR_PLANNING_GROUND_STATE_REPOSITORY_HPP_
 
 #include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/state_view.hpp"
 
 #endif

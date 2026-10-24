@@ -69,17 +69,12 @@ struct Data<::tyr::planning::State<Kind>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fact_storage, &Data::atom_storage, &Data::numeric_storage> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fact_storage, &Data::numeric_storage> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 template<::tyr::TaskKind Kind>
 bool is_canonical(const ygg::Data<::tyr::planning::State<Kind>>&) noexcept
-{
-    return true;
-}
+{ return true; }
 
 template<::tyr::TaskKind Kind>
 void canonicalize(ygg::Data<::tyr::planning::State<Kind>>&) noexcept

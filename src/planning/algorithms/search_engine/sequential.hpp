@@ -24,8 +24,8 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/search_space/sequential.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
@@ -63,17 +63,13 @@ public:
 
     template<typename Options>
     static size_t num_workers(const Options&) noexcept
-    {
-        return 1;
-    }
+    { return 1; }
 
     static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker>, size_t) noexcept { return state; }
 
     template<typename Engine>
     static std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state(Engine&, const StateView<Kind>& start_state)
-    {
-        return { ygg::Index<Worker>(0), start_state };
-    }
+    { return { ygg::Index<Worker>(0), start_state }; }
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value = value; }
 
@@ -89,9 +85,7 @@ public:
 
     template<typename Engine>
     static void invoke(Engine& engine)
-    {
-        engine.worker_loop(engine.get_worker(ygg::Index<Worker>(0)));
-    }
+    { engine.worker_loop(engine.get_worker(ygg::Index<Worker>(0))); }
 
     template<typename Engine, typename WorkerData>
     bool begin_iteration(Engine&, WorkerData& worker)
@@ -139,9 +133,7 @@ public:
 
     template<typename Engine, typename Worker>
     static bool can_expand_locked(Engine&, const Worker& worker) noexcept
-    {
-        return !worker.search.empty();
-    }
+    { return !worker.search.empty(); }
 
     template<typename Worker, typename Callback>
     static decltype(auto) with_worker_lock(Worker&, Callback&& callback)
@@ -156,9 +148,7 @@ public:
 
     template<typename Engine, typename Worker>
     void wait_for_work(Engine&, Worker&)
-    {
-        set_terminal(SearchStatus::EXHAUSTED);
-    }
+    { set_terminal(SearchStatus::EXHAUSTED); }
 
     template<typename Engine, typename WorkerData>
     AcceptanceResult route(Engine& engine,
@@ -189,15 +179,11 @@ public:
                                                                  const StateView<Kind>&,
                                                                  ygg::float_t,
                                                                  EmitTransition&&)
-    {
-        return std::nullopt;
-    }
+    { return std::nullopt; }
 
     template<typename Engine, typename WorkerData>
     static bool is_generated_goal(Engine& engine, WorkerData& worker, const RoutedSuccessorT<Engine>&, const StateView<Kind>& state)
-    {
-        return worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), state);
-    }
+    { return worker.goal_strategy->is_dynamic_goal_satisfied(engine.m_start_node.get_state(), state); }
 
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
@@ -261,9 +247,7 @@ public:
 
     template<typename Callback>
     void for_each(Callback&& callback)
-    {
-        callback(m_worker);
-    }
+    { callback(m_worker); }
 
     std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {

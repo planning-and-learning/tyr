@@ -34,8 +34,7 @@ AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::AtomStorageBackend(Contex
 }
 
 template<bool ThreadSafe>
-typename AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed
-AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
+typename AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     std::fill(m_buffer.begin(), m_buffer.end(), ygg::uint_t(0));
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)

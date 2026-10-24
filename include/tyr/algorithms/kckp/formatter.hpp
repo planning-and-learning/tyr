@@ -29,9 +29,7 @@ struct formatter<tyr::kckp::Vertex, char>
 
     template<typename FormatContext>
     auto format(const tyr::kckp::Vertex& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.index);
-    }
+    { return fmt::format_to(ctx.out(), "{}", value.index); }
 };
 
 template<>
@@ -41,9 +39,7 @@ struct formatter<tyr::kckp::Edge, char>
 
     template<typename FormatContext>
     auto format(const tyr::kckp::Edge& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "<{} -- {}>", value.src, value.dst);
-    }
+    { return fmt::format_to(ctx.out(), "<{} -- {}>", value.src, value.dst); }
 };
 
 template<>

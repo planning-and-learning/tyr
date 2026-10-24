@@ -38,8 +38,7 @@ namespace tyr::planning
 class GroundTaskProgram
 {
 public:
-    using AppPredicateToActionMapping =
-        ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
+    using AppPredicateToActionMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
     using AppPredicateToAxiomMapping =
         ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, std::vector<formalism::planning::AxiomView<LiftedTag>>>;
     /// The predicate of each conditional effect with variables or a condition, whose atoms are the relaxed reachable bindings of its

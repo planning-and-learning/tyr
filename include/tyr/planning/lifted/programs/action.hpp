@@ -35,8 +35,7 @@ template<>
 class ApplicableActionProgram<LiftedTag>
 {
 public:
-    using AppPredicateToActionMapping =
-        ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
+    using AppPredicateToActionMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
 
     struct SchemaProgram
     {

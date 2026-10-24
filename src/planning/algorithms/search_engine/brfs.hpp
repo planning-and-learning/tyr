@@ -51,9 +51,7 @@ struct BreadthFirstModePolicy<SequentialSearch>
 
     template<TaskKind Kind>
     static constexpr bool synchronize_priority_layers(const brfs::Options<Kind>&) noexcept
-    {
-        return false;
-    }
+    { return false; }
 };
 
 template<>
@@ -68,9 +66,7 @@ struct BreadthFirstModePolicy<ParallelSearch>
 
     template<TaskKind Kind>
     static constexpr bool synchronize_priority_layers(const brfs::Options<Kind>&) noexcept
-    {
-        return true;
-    }
+    { return true; }
 };
 
 template<TaskKind Kind, SearchKind Search>
@@ -124,9 +120,7 @@ public:
     bool empty() const noexcept { return m_openlist.empty(); }
 
     ygg::float_t get_min_priority() const noexcept
-    {
-        return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : static_cast<ygg::float_t>(m_openlist.front().depth);
-    }
+    { return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : static_cast<ygg::float_t>(m_openlist.front().depth); }
 
     size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
 
@@ -163,16 +157,12 @@ public:
     }
 
     static SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView)
-    {
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() };
-    }
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() }; }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
     void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
-    {
-        m_openlist.push_back(PoppedEntry { static_cast<ygg::uint_t>(g_value), state });
-    }
+    { m_openlist.push_back(PoppedEntry { static_cast<ygg::uint_t>(g_value), state }); }
 
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
     AcceptanceResult accept_successor(Engine& engine,
@@ -224,21 +214,15 @@ public:
     static constexpr bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
 
     static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
-    {
-        return event_handler ? event_handler->make_worker(index) : nullptr;
-    }
+    { return event_handler ? event_handler->make_worker(index) : nullptr; }
 
     template<typename Handler>
     static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t)
-    {
-        handler.on_start_search(node);
-    }
+    { handler.on_start_search(node); }
 
     template<typename Handler>
     static void on_finish_priority_layer(Handler& handler, ygg::float_t priority, const Statistics& statistics)
-    {
-        handler.on_finish_layer(static_cast<ygg::uint_t>(priority), statistics);
-    }
+    { handler.on_finish_layer(static_cast<ygg::uint_t>(priority), statistics); }
 
     const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 

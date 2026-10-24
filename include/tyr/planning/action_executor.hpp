@@ -57,8 +57,7 @@ public:
 
     /// Calls the callback once for each completed binding of a conditional effect in the grounder's binding, which holds the action
     /// binding before and after: the action binding followed by objects of the effect's variables for which the effect fires.
-    using ForEachEffectBinding =
-        boost::compat::function_ref<void(formalism::planning::ConditionalEffectView<LiftedTag>, boost::compat::function_ref<void()>)>;
+    using ForEachEffectBinding = boost::compat::function_ref<void(formalism::planning::ConditionalEffectView<LiftedTag>, boost::compat::function_ref<void()>)>;
 
     /// Whether the numeric effects of the action binding in `grounder` are valid together for the effect bindings that fire.
     bool is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,

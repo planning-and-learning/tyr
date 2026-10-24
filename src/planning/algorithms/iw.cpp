@@ -46,9 +46,7 @@ public:
     bool should_prune_state(const StateView<Kind>& state) override { return m_lhs->should_prune_state(state) || m_rhs->should_prune_state(state); }
 
     bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ) override
-    {
-        return m_lhs->should_prune_successor_state(state, succ_state, is_new_succ) || m_rhs->should_prune_successor_state(state, succ_state, is_new_succ);
-    }
+    { return m_lhs->should_prune_successor_state(state, succ_state, is_new_succ) || m_rhs->should_prune_successor_state(state, succ_state, is_new_succ); }
 
     [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override
     {

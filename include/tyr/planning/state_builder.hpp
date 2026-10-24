@@ -20,9 +20,9 @@
 
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage/iterators.hpp"
 #include "tyr/planning/lifted/state_storage/iterators.hpp"
-#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder_concepts.hpp"
 
 #include <concepts>
@@ -111,98 +111,68 @@ static_assert(::tyr::planning::StateBuilderConcept<Builder<::tyr::planning::Stat
 
 template<::tyr::TaskKind Kind>
 ygg::Index<::tyr::planning::State<Kind>> Builder<::tyr::planning::State<Kind>>::get_index() const
-{
-    return m_index;
-}
+{ return m_index; }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(ygg::Index<::tyr::planning::State<Kind>> index)
-{
-    m_index = index;
-}
+{ m_index = index; }
 
 template<::tyr::TaskKind Kind>
 ::tyr::formalism::planning::FDRValue
 Builder<::tyr::planning::State<Kind>>::get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-{
-    return m_fact_storage.get(index);
-}
+{ return m_fact_storage.get(index); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
-{
-    m_fact_storage.set(fact);
-}
+{ m_fact_storage.set(fact); }
 
 template<::tyr::TaskKind Kind>
 ygg::float_t
 Builder<::tyr::planning::State<Kind>>::get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-{
-    return m_numeric_storage.get(index);
-}
+{ return m_numeric_storage.get(index); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index,
                                                 ygg::float_t value)
-{
-    m_numeric_storage.set(index, value);
-}
+{ m_numeric_storage.set(index, value); }
 
 template<::tyr::TaskKind Kind>
 bool Builder<::tyr::planning::State<Kind>>::test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-{
-    return m_atom_storage.test(index);
-}
+{ return m_atom_storage.test(index); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index)
-{
-    m_atom_storage.set(index);
-}
+{ m_atom_storage.set(index); }
 
 template<::tyr::TaskKind Kind>
 ::tyr::formalism::planning::FDRValue
 Builder<::tyr::planning::State<Kind>>::get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-{
-    return get(view.get_index());
-}
+{ return get(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag> view)
-{
-    set(view.get_data());
-}
+{ set(view.get_data()); }
 
 template<::tyr::TaskKind Kind>
 ygg::float_t Builder<::tyr::planning::State<Kind>>::get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-{
-    return get(view.get_index());
-}
+{ return get(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view,
                                                 ygg::float_t value)
-{
-    set(view.get_index(), value);
-}
+{ set(view.get_index(), value); }
 
 template<::tyr::TaskKind Kind>
 bool Builder<::tyr::planning::State<Kind>>::test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const
-{
-    return test(view.get_index());
-}
+{ return test(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view)
-{
-    set(view.get_index());
-}
+{ set(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> Builder<::tyr::planning::State<Kind>>::get_fluent_facts() const noexcept
-{
-    return ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag>(m_fact_storage);
-}
+{ return ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag>(m_fact_storage); }
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
@@ -265,9 +235,7 @@ void Builder<::tyr::planning::State<Kind>>::clear_unextended_part()
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::clear_extended_part()
-{
-    m_atom_storage.clear();
-}
+{ m_atom_storage.clear(); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::assign_unextended_part(const Builder& other)
@@ -289,16 +257,12 @@ void Builder<::tyr::planning::State<Kind>>::swap(Builder& other) noexcept
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::resize_fluent_facts(size_t size)
     requires std::same_as<Kind, ::tyr::GroundTag>
-{
-    m_fact_storage.resize(size);
-}
+{ m_fact_storage.resize(size); }
 
 template<::tyr::TaskKind Kind>
 void Builder<::tyr::planning::State<Kind>>::resize_derived_atoms(size_t size)
     requires std::same_as<Kind, ::tyr::GroundTag>
-{
-    m_atom_storage.resize(size);
-}
+{ m_atom_storage.resize(size); }
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
@@ -325,15 +289,11 @@ const auto& Builder<::tyr::planning::State<Kind>>::get_atom_storage() const noex
 }
 template<::tyr::TaskKind Kind>
 ::tyr::planning::NumericUnpackedStorage<Kind>& Builder<::tyr::planning::State<Kind>>::get_numeric_variables() noexcept
-{
-    return m_numeric_storage;
-}
+{ return m_numeric_storage; }
 
 template<::tyr::TaskKind Kind>
 const ::tyr::planning::NumericUnpackedStorage<Kind>& Builder<::tyr::planning::State<Kind>>::get_numeric_variables() const noexcept
-{
-    return m_numeric_storage;
-}
+{ return m_numeric_storage; }
 
 }
 

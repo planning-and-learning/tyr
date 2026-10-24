@@ -1,3 +1,5 @@
+#include "tyr/planning/applicability.hpp"
+
 #include "applicability_schema.hpp"
 #include "planning/parser.hpp"
 #include "tyr/analysis/declarations.hpp"
@@ -9,7 +11,6 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
@@ -155,7 +156,8 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto& effect_mapping = action_program.get_conditional_effect_to_predicate_mapping();
     const auto rule_of = [&](auto predicate)
     { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_heads().front().get_predicate() == predicate; }); };
-    auto expected_rules = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>> {};
+    auto expected_rules =
+        ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>> {};
     auto num_rules = size_t(0);
     for (const auto& [predicate, action] : action_mapping)
     {

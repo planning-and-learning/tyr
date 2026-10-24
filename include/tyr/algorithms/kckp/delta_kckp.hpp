@@ -73,19 +73,13 @@ public:
     ygg::uint_t get_offset(ygg::uint_t vertex, ygg::uint_t source_partition, ygg::uint_t target_partition) const noexcept;
 
     bool is_implicit(ygg::uint_t source_partition, ygg::uint_t target_partition) const noexcept
-    {
-        return get_pair_offset(source_partition, target_partition) == IMPLICIT;
-    }
+    { return get_pair_offset(source_partition, target_partition) == IMPLICIT; }
 
     bool is_static_only(ygg::uint_t source_partition, ygg::uint_t target_partition) const noexcept
-    {
-        return get_pair_offset(source_partition, target_partition) == STATIC_ONLY;
-    }
+    { return get_pair_offset(source_partition, target_partition) == STATIC_ONLY; }
 
     bool is_runtime(ygg::uint_t source_partition, ygg::uint_t target_partition) const noexcept
-    {
-        return get_pair_offset(source_partition, target_partition) < STATIC_ONLY;
-    }
+    { return get_pair_offset(source_partition, target_partition) < STATIC_ONLY; }
 
     size_t num_blocks() const noexcept { return m_num_blocks; }
 

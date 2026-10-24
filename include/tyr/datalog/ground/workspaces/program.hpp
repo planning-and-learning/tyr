@@ -109,22 +109,16 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     void clear_costs() { cost_policy.clear(); }
 
     auto get_numeric_support_selector() const noexcept
-    {
-        return NumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations, !AP::stores_annotations);
-    }
+    { return NumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations, !AP::stores_annotations); }
 };
 
 template<>
 inline const auto& ConstProgramWorkspace<GroundTag>::get_dependencies<formalism::PredicateTag>() const noexcept
-{
-    return predicate_rules;
-}
+{ return predicate_rules; }
 
 template<>
 inline const auto& ConstProgramWorkspace<GroundTag>::get_dependencies<formalism::FunctionTag>() const noexcept
-{
-    return function_rules;
-}
+{ return function_rules; }
 
 }
 

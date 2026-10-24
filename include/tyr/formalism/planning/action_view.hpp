@@ -44,52 +44,34 @@ public:
 
     const auto& get_name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return this->get_data().name;
-    }
+    { return this->get_data().name; }
     const auto& get_original_name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return this->get_data().original_name;
-    }
+    { return this->get_data().original_name; }
     auto get_original_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return this->get_data().original_arity;
-    }
+    { return this->get_data().original_arity; }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return get_variables().size();
-    }
+    { return get_variables().size(); }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return ygg::make_view(this->get_data().variables, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().variables, this->get_context()); }
     auto get_condition() const noexcept { return ygg::make_view(this->get_data().condition, this->get_context()); }
     auto get_effects() const noexcept { return ygg::make_view(this->get_data().effects, this->get_context()); }
 
     auto get_action() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_relation();
-    }
+    { return get_row().get_relation(); }
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().binding, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().binding, this->get_context()); }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_objects();
-    }
+    { return get_row().get_objects(); }
     auto get_key() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_key();
-    }
+    { return get_row().get_key(); }
 };
 
 }

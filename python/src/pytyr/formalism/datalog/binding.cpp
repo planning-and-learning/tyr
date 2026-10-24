@@ -47,7 +47,8 @@ void bind_binding_view(nb::module_& m, const char* name)
                    .def("get_index", &V::get_index)
                    .def("get_relation", &V::get_relation, nb::keep_alive<0, 1>())
                    .def("get_objects",
-                        [retain_owner](nb::typed<nb::handle, V> owner) -> nb::typed<nb::list, ObjectView> {
+                        [retain_owner](nb::typed<nb::handle, V> owner) -> nb::typed<nb::list, ObjectView>
+                        {
                             return nb::borrow<nb::typed<nb::list, ObjectView>>(
                                 ygg::python::cast_with_owner(nb::cast<const V&>(owner).get_objects(), owner, retain_owner));
                         });

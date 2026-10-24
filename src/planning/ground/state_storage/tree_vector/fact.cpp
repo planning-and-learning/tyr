@@ -34,8 +34,7 @@ FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::FactStorageBackend(Contex
 }
 
 template<bool ThreadSafe>
-typename FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed
-FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
+typename FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     const auto& values = unpacked.values;
 

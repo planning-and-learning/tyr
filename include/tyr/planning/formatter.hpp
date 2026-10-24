@@ -47,9 +47,7 @@ struct formatter<tyr::planning::Task<::tyr::LiftedTag>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const tyr::planning::Task<::tyr::LiftedTag>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_task());
-    }
+    { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
 };
 
 template<>
@@ -58,9 +56,7 @@ struct formatter<tyr::planning::Task<::tyr::GroundTag>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const tyr::planning::Task<::tyr::GroundTag>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_task());
-    }
+    { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
 };
 
 template<>
@@ -69,9 +65,7 @@ struct formatter<ygg::Data<tyr::planning::State<::tyr::LiftedTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const ygg::Data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -80,9 +74,7 @@ struct formatter<ygg::Builder<tyr::planning::State<::tyr::LiftedTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const ygg::Builder<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -91,9 +83,7 @@ struct formatter<ygg::Data<tyr::planning::State<::tyr::GroundTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const ygg::Data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -102,9 +92,7 @@ struct formatter<ygg::Builder<tyr::planning::State<::tyr::GroundTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const ygg::Builder<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -357,9 +345,7 @@ struct formatter<tyr::planning::PackedNode<Kind>, char> : formatter<tyr::plannin
 {
     template<typename FormatContext>
     auto format(const tyr::planning::PackedNode<Kind>& value, FormatContext& ctx) const
-    {
-        return formatter<tyr::planning::Node<Kind>, char>::format(value.unpack(), ctx);
-    }
+    { return formatter<tyr::planning::Node<Kind>, char>::format(value.unpack(), ctx); }
 };
 
 template<::tyr::TaskKind Kind>
@@ -367,9 +353,7 @@ struct formatter<tyr::planning::PackedLabeledNode<Kind>, char> : formatter<tyr::
 {
     template<typename FormatContext>
     auto format(const tyr::planning::PackedLabeledNode<Kind>& value, FormatContext& ctx) const
-    {
-        return formatter<tyr::planning::LabeledNode<Kind>, char>::format(value.unpack(), ctx);
-    }
+    { return formatter<tyr::planning::LabeledNode<Kind>, char>::format(value.unpack(), ctx); }
 };
 
 template<::tyr::TaskKind Kind>

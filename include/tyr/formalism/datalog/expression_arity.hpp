@@ -91,9 +91,7 @@ inline void collect_parameters(AtomView<LiftedTag, F> element, ygg::UnorderedSet
 
 template<FactKind F>
 inline void collect_parameters(LiteralView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
-{
-    collect_parameters(element.get_atom(), result);
-}
+{ collect_parameters(element.get_atom(), result); }
 
 template<FactKind F>
 inline void collect_parameters(FunctionTermView<LiftedTag, F> element, ygg::UnorderedSet<ParameterIndex>& result)
@@ -108,9 +106,7 @@ inline void collect_parameters(FunctionExpressionView<LiftedTag> element, ygg::U
 }
 
 inline void collect_parameters(UnaryOperatorView<LiftedTag> element, ygg::UnorderedSet<ParameterIndex>& result)
-{
-    collect_parameters(element.get_arg(), result);
-}
+{ collect_parameters(element.get_arg(), result); }
 
 template<BinaryOperatorKind O>
 inline void collect_parameters(BinaryOperatorView<LiftedTag, O> element, ygg::UnorderedSet<ParameterIndex>& result)
@@ -196,9 +192,7 @@ inline size_t max_fterm_arity(ygg::float_t) { return 0; }
 
 template<FactKind F>
 inline size_t max_fterm_arity(FunctionTermView<LiftedTag, F> element)
-{
-    return max_fterm_arity(element.get_function().get_arity());
-}
+{ return max_fterm_arity(element.get_function().get_arity()); }
 
 inline size_t max_fterm_arity(FunctionExpressionView<LiftedTag> element)
 {
@@ -209,9 +203,7 @@ inline size_t max_fterm_arity(UnaryOperatorView<LiftedTag> element) { return max
 
 template<BinaryOperatorKind O>
 inline size_t max_fterm_arity(BinaryOperatorView<LiftedTag, O> element)
-{
-    return std::max(max_fterm_arity(element.get_lhs()), max_fterm_arity(element.get_rhs()));
-}
+{ return std::max(max_fterm_arity(element.get_lhs()), max_fterm_arity(element.get_rhs())); }
 
 inline size_t max_fterm_arity(MultiOperatorView<LiftedTag> element)
 {
@@ -239,15 +231,11 @@ inline size_t max_fterm_arity(BooleanOperatorView<LiftedTag> element)
 
 template<FactKind F>
 inline size_t kckp_arity(LiteralView<LiftedTag, F> element)
-{
-    return element.get_atom().get_predicate().get_arity();
-}
+{ return element.get_atom().get_predicate().get_arity(); }
 
 template<FactKind F>
 inline size_t kckp_arity(FunctionTermView<LiftedTag, F> element)
-{
-    return element.get_function().get_arity();
-}
+{ return element.get_function().get_arity(); }
 
 inline size_t kckp_arity(BooleanOperatorView<LiftedTag> element) { return std::max(max_fterm_arity(element), collect_parameters(element).size()); }
 
@@ -257,15 +245,11 @@ inline size_t kckp_arity(BooleanOperatorView<LiftedTag> element) { return std::m
 
 template<FactKind F>
 inline size_t parameter_arity(LiteralView<LiftedTag, F> element)
-{
-    return collect_parameters(element).size();
-}
+{ return collect_parameters(element).size(); }
 
 template<FactKind F>
 inline size_t parameter_arity(FunctionTermView<LiftedTag, F> element)
-{
-    return collect_parameters(element).size();
-}
+{ return collect_parameters(element).size(); }
 
 inline size_t parameter_arity(BooleanOperatorView<LiftedTag> element) { return collect_parameters(element).size(); }
 

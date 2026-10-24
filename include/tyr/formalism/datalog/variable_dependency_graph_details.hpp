@@ -55,9 +55,7 @@ decltype(auto) select_literal_dependency(Dep&& dep) noexcept
 
 template<typename Dep>
 decltype(auto) select_numeric_dependency(Dep&& dep) noexcept
-{
-    return (std::forward<Dep>(dep).numeric_constraint);
-}
+{ return (std::forward<Dep>(dep).numeric_constraint); }
 
 struct UnaryDependencies
 {
@@ -77,9 +75,7 @@ struct UnaryDependencies
 
     template<FactKind F, PolarityKind P>
     const auto& get_literal_dependency() const noexcept
-    {
-        return details::select_literal_dependency<F, P>(*this);
-    }
+    { return details::select_literal_dependency<F, P>(*this); }
 
     const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
 
@@ -139,9 +135,7 @@ struct BinaryDependencies
 
     template<FactKind F, PolarityKind P>
     const auto& get_literal_dependency() const noexcept
-    {
-        return details::select_literal_dependency<F, P>(*this);
-    }
+    { return details::select_literal_dependency<F, P>(*this); }
 
     const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
 
@@ -151,9 +145,7 @@ struct BinaryDependencies
 
     template<FactKind F, PolarityKind P>
     bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
-    {
-        return get_literal_dependency<F, P>().test(get_index(pi, pj));
-    }
+    { return get_literal_dependency<F, P>().test(get_index(pi, pj)); }
 
     bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return numeric_constraint.test(get_index(pi, pj)); }
 

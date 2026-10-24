@@ -22,9 +22,9 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_storage/iterators.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
@@ -53,27 +53,20 @@ public:
     const auto& get_formalism_repository() const noexcept { return get_task().get_repository(); }
 
     bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-    {
-        return this->get_context().get_static_state().test(index);
-    }
+    { return this->get_context().get_static_state().test(index); }
     float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-    {
-        return this->get_context().get_static_state().get(index);
-    }
+    { return this->get_context().get_static_state().get(index); }
     ::tyr::formalism::planning::FDRValue get(Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-    {
-        return this->get_handle().get(index);
-    }
-    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const { return this->get_handle().get(index); }
+    { return this->get_handle().get(index); }
+    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
+    { return this->get_handle().get(index); }
     bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const { return this->get_handle().test(index); }
 
     bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
     bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
     float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return get(view.get_index()); }
     ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-    {
-        return get(view.get_index());
-    }
+    { return get(view.get_index()); }
     float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const { return get(view.get_index()); }
     bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
 
@@ -92,7 +85,6 @@ public:
     auto get_fluent_facts_view() const noexcept { return this->get_handle().get_fluent_facts_view(*get_formalism_repository()); }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values_view() const noexcept;
-
 };
 
 template<::tyr::TaskKind Kind, typename Context>
@@ -234,9 +226,7 @@ auto View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>>::g
 
 template<::tyr::TaskKind Kind>
 ::tyr::planning::StateView<Kind> View<Index<::tyr::planning::PackedState<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::unpack() const
-{
-    return this->get_context()->get_registered_state(this->get_handle());
-}
+{ return this->get_context()->get_registered_state(this->get_handle()); }
 
 template<::tyr::TaskKind Kind>
 View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::View(
@@ -282,57 +272,41 @@ View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::State
 
 template<::tyr::TaskKind Kind>
 ::tyr::planning::PackedStateView<Kind> View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::pack() const noexcept
-{
-    return ::tyr::planning::PackedStateView<Kind>(this->get_handle(), this->get_context());
-}
+{ return ::tyr::planning::PackedStateView<Kind>(this->get_handle(), this->get_context()); }
 
 template<::tyr::TaskKind Kind>
 ::tyr::formalism::planning::FDRValue View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
     Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-{
-    return m_state_builder->get(index);
-}
+{ return m_state_builder->get(index); }
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
     Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-{
-    return m_state_builder->get(index);
-}
+{ return m_state_builder->get(index); }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
     Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-{
-    return m_state_builder->test(index);
-}
+{ return m_state_builder->test(index); }
 
 template<::tyr::TaskKind Kind>
 const std::shared_ptr<::tyr::planning::StateRepository<Kind>>&
 View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_state_repository() const noexcept
-{
-    return this->get_context();
-}
+{ return this->get_context(); }
 
 template<::tyr::TaskKind Kind>
 const ::tyr::planning::Task<Kind>& View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_task() const noexcept
-{
-    return *get_state_repository()->get_task();
-}
+{ return *get_state_repository()->get_task(); }
 
 template<::tyr::TaskKind Kind>
 const Builder<::tyr::planning::State<Kind>>&
 View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_state_builder() const noexcept
-{
-    return *m_state_builder;
-}
+{ return *m_state_builder; }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
     ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
-{
-    return test(view.get_index());
-}
+{ return test(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
@@ -345,51 +319,37 @@ bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::
 template<::tyr::TaskKind Kind>
 float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
     ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
-{
-    return get(view.get_index());
-}
+{ return get(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 ::tyr::formalism::planning::FDRValue View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
     ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-{
-    return get(view.get_index());
-}
+{ return get(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
     ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-{
-    return get(view.get_index());
-}
+{ return get(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
     ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const
-{
-    return test(view.get_index());
-}
+{ return test(view.get_index()); }
 
 template<::tyr::TaskKind Kind>
 bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
     Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-{
-    return get_state_repository()->get_task()->get_static_state().test(index);
-}
+{ return get_state_repository()->get_task()->get_static_state().test(index); }
 
 template<::tyr::TaskKind Kind>
 float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
     Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-{
-    return get_state_repository()->get_task()->get_static_state().get(index);
-}
+{ return get_state_repository()->get_task()->get_static_state().get(index); }
 
 template<::tyr::TaskKind Kind>
 ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag>
 View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fluent_facts() const noexcept
-{
-    return m_state_builder->get_fluent_facts();
-}
+{ return m_state_builder->get_fluent_facts(); }
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
@@ -419,9 +379,7 @@ View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::State
 template<::tyr::TaskKind Kind>
 const std::shared_ptr<::tyr::formalism::planning::Repository>&
 View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_formalism_repository() const noexcept
-{
-    return get_state_repository()->get_task()->get_repository();
-}
+{ return get_state_repository()->get_task()->get_repository(); }
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>

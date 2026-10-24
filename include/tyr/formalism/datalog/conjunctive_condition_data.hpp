@@ -74,7 +74,6 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-
     template<::tyr::formalism::FactKind F>
     const auto& get_literals() const
     {
@@ -86,15 +85,11 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
+    static constexpr auto cista_members() noexcept
+    { return ygg::Members<&Data::index, &Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {};
-    }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    { return ygg::Members<&Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>);
@@ -135,7 +130,6 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-
     template<::tyr::formalism::FactKind F>
     const auto& get_literals() const
     {
@@ -147,12 +141,10 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
             static_assert(ygg::dependent_false<F>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
+    static constexpr auto cista_members() noexcept
+    { return ygg::Members<&Data::index, &Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::static_literals, &Data::fluent_literals, &Data::numeric_constraints> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>);

@@ -81,28 +81,20 @@ public:
 
     template<PredicateAnnotationStore Annotations>
     std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, Annotations& annotations) const
-    {
-        return annotations.insert_if_better(head, Annotation<>(std::move(witness)));
-    }
+    { return annotations.insert_if_better(head, Annotation<>(std::move(witness))); }
 
     template<PredicateAnnotationStore Annotations>
     bool try_update_candidate(PredicateHead head, PredicateWitness&& witness, Annotations& annotations) const
-    {
-        return publish_annotation(head, std::move(witness), annotations).has_value();
-    }
+    { return publish_annotation(head, std::move(witness), annotations).has_value(); }
 
     template<FunctionAnnotationStore Annotations>
     bool
     try_update_candidate(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionWitness&& witness, Annotations& numeric_annotations) const
-    {
-        return numeric_annotations.insert(head, interval, Annotation<formalism::FunctionTag>(std::move(witness)));
-    }
+    { return numeric_annotations.insert(head, interval, Annotation<formalism::FunctionTag>(std::move(witness))); }
 
     template<PredicateAnnotationStore DeltaAnnotations>
     bool can_update(PredicateHead head, Cost cost, const PredicateAnnotations<>& annotations, const DeltaAnnotations& delta_annotations) const noexcept
-    {
-        return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head));
-    }
+    { return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head)); }
 
     template<FunctionAnnotationStore DeltaAnnotations>
     bool can_update(FunctionBinding head,
@@ -110,9 +102,7 @@ public:
                     Cost cost,
                     const FunctionAnnotations<>& numeric_annotations,
                     const DeltaAnnotations& delta_numeric_annotations) const noexcept
-    {
-        return cost < std::min(numeric_annotations.fetch_cost(head, interval), delta_numeric_annotations.fetch_cost(head, interval));
-    }
+    { return cost < std::min(numeric_annotations.fetch_cost(head, interval), delta_numeric_annotations.fetch_cost(head, interval)); }
 
     template<PredicateAnnotationStore DeltaAnnotations>
     CostUpdate commit_annotation(PredicateHead head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<>& annotations) const

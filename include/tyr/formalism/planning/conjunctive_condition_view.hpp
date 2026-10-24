@@ -43,23 +43,15 @@ public:
 
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return ygg::make_view(this->get_data().variables, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().variables, this->get_context()); }
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    {
-        return ygg::make_view(this->get_data().template get_literals<F>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_literals<F>(), this->get_context()); }
     auto get_numeric_constraints() const noexcept(std::same_as<T, ::tyr::GroundTag>)
-    {
-        return ygg::make_view(this->get_data().numeric_constraints, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().numeric_constraints, this->get_context()); }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return this->get_data().variables.size();
-    }
+    { return this->get_data().variables.size(); }
     /// Whether the condition has no literals and no numeric constraints, i.e., holds in every state.
     bool empty() const
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -71,9 +63,7 @@ public:
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().template get_facts<F>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_facts<F>(), this->get_context()); }
 
     /// Projects represented atoms of the requested polarity, borrowing the repository.
     template<::tyr::formalism::FactKind F>

@@ -148,11 +148,11 @@ template<FactKind T_SRC, FactKind T_DST = T_SRC>
 std::pair<datalog::FunctionTermValueView<GroundTag, T_DST>, bool> merge_p2d(FunctionTermValueView<GroundTag, T_SRC> element, MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC, TaskKind Kind>
-    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+    requires(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
 std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffectView<Kind, T_SRC> element, MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC, TaskKind Kind>
-    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+    requires(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
 ygg::Data<datalog::NumericEffectOperator<Kind, T_DST>> merge_p2d(NumericEffectOperatorView<Kind, T_SRC> element, MergeDatalogContext& context);
 
 ygg::Data<datalog::FunctionExpression<LiftedTag>> merge_p2d(FunctionExpressionView<LiftedTag> element, MergeDatalogContext& context);
@@ -240,9 +240,7 @@ template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::PredicateBindingView<T_DST>, bool> merge_p2d(PredicateBindingView<T_SRC> element,  //
                                                                 const ygg::UnorderedMap<PredicateView<T_SRC>, datalog::PredicateView<T_DST>>& predicate_mapping,
                                                                 MergeDatalogContext& context)
-{
-    return merge_p2d(element, predicate_mapping.at(element.get_relation()), context);
-}
+{ return merge_p2d(element, predicate_mapping.at(element.get_relation()), context); }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::PredicateBindingView<T_DST>, bool>
@@ -460,9 +458,7 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::FunctionBindingView<T_DST>, bool> merge_p2d(FunctionBindingView<T_SRC> element, MergeDatalogContext& context)
-{
-    return merge_p2d(element, merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first, context);
-}
+{ return merge_p2d(element, merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first, context); }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::FunctionBindingView<T_DST>, bool>
@@ -499,7 +495,7 @@ std::pair<datalog::FunctionTermValueView<GroundTag, T_DST>, bool> merge_p2d(Func
 }
 
 template<FactKind T_SRC, FactKind T_DST, TaskKind Kind>
-    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+    requires(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
 std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffectView<Kind, T_SRC> element, MergeDatalogContext& context)
 {
     auto numeric_effect = datalog::checkout<datalog::NumericEffect<Kind, T_DST>>(context.builder);
@@ -512,7 +508,7 @@ std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffect
 }
 
 template<FactKind T_SRC, FactKind T_DST, TaskKind Kind>
-    requires (std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
+    requires(std::same_as<T_SRC, FluentTag> || std::same_as<T_SRC, AuxiliaryTag>) && std::same_as<T_DST, FluentTag>
 ygg::Data<datalog::NumericEffectOperator<Kind, T_DST>> merge_p2d(NumericEffectOperatorView<Kind, T_SRC> element, MergeDatalogContext& context)
 {
     using OperatorData = ygg::Data<datalog::NumericEffectOperator<Kind, T_DST>>;
@@ -594,15 +590,13 @@ std::pair<datalog::MultiOperatorView<T>, bool> merge_p2d(MultiOperatorView<T> el
 template<TaskKind T>
 ygg::Data<datalog::ArithmeticOperator<T>> merge_p2d(ArithmeticOperatorView<T> element, MergeDatalogContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<datalog::ArithmeticOperator<T>>(merge_p2d(arg, context).first.get_index()); },
-                 element.get_variant());
+    return visit([&](auto&& arg) { return ygg::Data<datalog::ArithmeticOperator<T>>(merge_p2d(arg, context).first.get_index()); }, element.get_variant());
 }
 
 template<TaskKind T>
 ygg::Data<datalog::BooleanOperator<T>> merge_p2d(BooleanOperatorView<T> element, MergeDatalogContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<datalog::BooleanOperator<T>>(merge_p2d(arg, context).first.get_index()); },
-                 element.get_variant());
+    return visit([&](auto&& arg) { return ygg::Data<datalog::BooleanOperator<T>>(merge_p2d(arg, context).first.get_index()); }, element.get_variant());
 }
 
 }

@@ -45,9 +45,7 @@ struct formatter<tyr::formalism::planning::MutableAtom<T>, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::MutableAtom<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "({} {})", value.predicate.get_name(), fmt::join(value.terms, " "));
-    }
+    { return fmt::format_to(ctx.out(), "({} {})", value.predicate.get_name(), fmt::join(value.terms, " ")); }
 };
 
 template<tyr::formalism::FactKind T>

@@ -34,9 +34,7 @@ namespace tyr::formalism::datalog
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<UnaryOperator<T>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T, BinaryOperatorKind O>
 bool is_canonical(const ygg::Data<BinaryOperator<T, O>>& data)
@@ -48,75 +46,51 @@ bool is_canonical(const ygg::Data<BinaryOperator<T, O>>& data)
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<MultiOperator<T>>& data)
-{
-    return std::is_sorted(data.args.begin(), data.args.end());
-}
+{ return std::is_sorted(data.args.begin(), data.args.end()); }
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<BooleanOperator<T>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<ArithmeticOperator<T>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T, FactKind F>
 bool is_canonical(const ygg::Data<Atom<T, F>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T, FactKind F>
 bool is_canonical(const ygg::Data<Literal<T, F>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T, FactKind F>
 bool is_canonical(const ygg::Data<FunctionTerm<T, F>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<FunctionExpression<T>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<FactKind F>
 bool is_canonical(const ygg::Data<FunctionTermValue<GroundTag, F>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T, FactKind F>
 bool is_canonical(const ygg::Data<NumericEffect<T, F>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<ConjunctiveCondition<T>>& data)
-{
-    return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.numeric_constraints);
-}
+{ return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.numeric_constraints); }
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<ConjunctiveEffect<T>>& data)
-{
-    return is_canonical(data.numeric_effects);
-}
+{ return is_canonical(data.numeric_effects); }
 
 template<TaskKind T>
 bool is_canonical(const ygg::Data<ConditionalEffect<T>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<TaskKind T, RelationKind R>
 bool is_canonical(const ygg::Data<Rule<T, R>>& data)
@@ -132,8 +106,8 @@ bool is_canonical(const ygg::Data<Program<T>>& data)
 {
     return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.static_functions)
            && is_canonical(data.fluent_functions) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
-           && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.goal)
-           && is_canonical(data.predicate_rules) && is_canonical(data.function_rules);
+           && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.goal) && is_canonical(data.predicate_rules)
+           && is_canonical(data.function_rules);
 }
 
 /**
@@ -221,9 +195,7 @@ void canonicalize(ygg::Data<ConjunctiveCondition<T>>& data)
 
 template<TaskKind T>
 void canonicalize(ygg::Data<ConjunctiveEffect<T>>& data)
-{
-    canonicalize(data.numeric_effects);
-}
+{ canonicalize(data.numeric_effects); }
 
 template<TaskKind T>
 void canonicalize(ygg::Data<ConditionalEffect<T>>&)

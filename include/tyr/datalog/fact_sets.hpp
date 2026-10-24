@@ -72,9 +72,7 @@ public:
     }
 
     friend bool operator==(const PredicateFactRowIterator& lhs, const PredicateFactRowIterator& rhs) noexcept
-    {
-        return lhs.m_data == rhs.m_data && lhs.m_position == rhs.m_position;
-    }
+    { return lhs.m_data == rhs.m_data && lhs.m_position == rhs.m_position; }
 
 private:
     const boost::dynamic_bitset<>* m_data = nullptr;
@@ -170,14 +168,11 @@ public:
     bool insert(const FunctionFactSet& other);
     bool insert(formalism::datalog::FunctionBindingIndex<T> binding, ygg::ClosedInterval<ygg::float_t> interval);
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
-    {
-        return insert(binding.get_index(), interval);
-    }
+    { return insert(binding.get_index(), interval); }
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
     bool insert(formalism::datalog::FunctionBindingRandomAccessRangeView<T> bindings, const std::vector<ygg::ClosedInterval<ygg::float_t>>& intervals);
     bool insert(formalism::datalog::FunctionBindingRandomAccessRangeView<T> bindings, const std::vector<ygg::float_t>& values);
-    bool insert(const std::vector<formalism::datalog::FunctionBindingView<T>>& bindings,
-                const std::vector<ygg::ClosedInterval<ygg::float_t>>& intervals);
+    bool insert(const std::vector<formalism::datalog::FunctionBindingView<T>>& bindings, const std::vector<ygg::ClosedInterval<ygg::float_t>>& intervals);
     bool insert(const std::vector<formalism::datalog::FunctionBindingView<T>>& bindings, const std::vector<ygg::float_t>& values);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, ygg::ClosedInterval<ygg::float_t> interval);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, ygg::float_t value);
@@ -206,9 +201,7 @@ public:
     bool insert(const FunctionFactSets& other);
     bool insert(formalism::datalog::FunctionBindingIndex<T> binding, ygg::ClosedInterval<ygg::float_t> interval);
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
-    {
-        return insert(binding.get_index(), interval);
-    }
+    { return insert(binding.get_index(), interval); }
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::ClosedInterval<ygg::float_t> interval);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);

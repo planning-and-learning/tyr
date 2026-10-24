@@ -47,19 +47,13 @@ void expect_invalid_argument_message(Callable&& callable, std::string_view expec
 }
 
 TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueUsesUnitActionCosts)
-{
-    EXPECT_EQ(tyr::planning::compute_successor_g_value(3.0, 9.0, CostMode::UNIT), 4.0);
-}
+{ EXPECT_EQ(tyr::planning::compute_successor_g_value(3.0, 9.0, CostMode::UNIT), 4.0); }
 
 TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueUsesGeneratedMetricWithGeneralActionCosts)
-{
-    EXPECT_EQ(tyr::planning::compute_successor_g_value(3.0, 9.0, CostMode::GENERAL), 9.0);
-}
+{ EXPECT_EQ(tyr::planning::compute_successor_g_value(3.0, 9.0, CostMode::GENERAL), 9.0); }
 
 TEST(PlanningAlgorithmUtilsTest, ComputeSuccessorGValueRejectsUnknownCostMode)
-{
-    EXPECT_THROW((void) tyr::planning::compute_successor_g_value(3.0, 9.0, static_cast<CostMode>(255)), std::runtime_error);
-}
+{ EXPECT_THROW((void) tyr::planning::compute_successor_g_value(3.0, 9.0, static_cast<CostMode>(255)), std::runtime_error); }
 
 TEST(PlanningAlgorithmUtilsTest, BlindHeuristicHasNoRelaxedPlan)
 {

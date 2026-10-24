@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 
 #include "../../programs/common.hpp"
@@ -23,6 +22,7 @@
 #include "tyr/datalog/rule_splitting.hpp"
 #include "tyr/datalog/static_literal_decomposition.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
@@ -274,8 +274,7 @@ RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task,
     m_translation_context(),
     m_rule_to_action(),
     m_rule_splitting(),
-    m_datalog_program(
-        create_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
+    m_datalog_program(create_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

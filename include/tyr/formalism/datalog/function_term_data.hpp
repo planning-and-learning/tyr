@@ -62,10 +62,7 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::function, &Data::terms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::function, &Data::terms> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
@@ -80,9 +77,7 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>>
     Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<F>>> binding_) : index(), binding(binding_) {}
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Function<F>>>, C> binding_) : index(), binding()
-    {
-        set(binding_, binding);
-    }
+    { set(binding_, binding); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -90,10 +85,7 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);

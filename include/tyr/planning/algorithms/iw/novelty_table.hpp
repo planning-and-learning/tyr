@@ -162,9 +162,7 @@ void for_each_tuple(const AtomIndexList& atoms, size_t max_arity, std::array<ygg
 template<size_t Arity, typename Callback>
 void for_each_tuple(const AtomIndexList& atoms, std::array<ygg::uint_t, Arity>& tuple, Callback&& callback)
     requires(Arity > 0)
-{
-    for_each_tuple<Arity>(atoms, Arity, tuple, callback);
-}
+{ for_each_tuple<Arity>(atoms, Arity, tuple, callback); }
 
 template<size_t Arity, typename Callback>
 void for_each_tuple_with_added_atoms(const AtomIndexList& added_atoms,
@@ -236,9 +234,7 @@ void for_each_tuple_with_added_atoms(const AtomIndexList& added_atoms,
                                      std::array<ygg::uint_t, Arity>& tuple,
                                      Callback&& callback)
     requires(Arity > 0)
-{
-    for_each_tuple_with_added_atoms<Arity>(added_atoms, kept_atoms, Arity, added_tuple, kept_tuple, tuple, callback);
-}
+{ for_each_tuple_with_added_atoms<Arity>(added_atoms, kept_atoms, Arity, added_tuple, kept_tuple, tuple, callback); }
 
 template<size_t Arity>
 class DynamicNoveltyTable
@@ -319,9 +315,7 @@ public:
 
     template<TaskKind Kind>
     bool insert(const StateView<Kind>& state)
-    {
-        return insert(state, Arity);
-    }
+    { return insert(state, Arity); }
 
     template<TaskKind Kind>
     bool insert(const StateView<Kind>& src, const StateView<Kind>& dst, ygg::uint_t max_arity)
@@ -370,9 +364,7 @@ public:
 
     template<TaskKind Kind>
     bool insert(const StateView<Kind>& src, const StateView<Kind>& dst)
-    {
-        return insert(src, dst, Arity);
-    }
+    { return insert(src, dst, Arity); }
 
 private:
     explicit DynamicNoveltyTable(std::shared_ptr<detail::NoveltyTableStorage<Arity>> storage, bool thread_safe) :

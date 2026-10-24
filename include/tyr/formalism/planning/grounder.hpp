@@ -206,15 +206,14 @@ inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<Li
 
 inline BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(ground(arg, context).first.get_index()); },
-                            element.get_variant());
+    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(ground(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
 inline ArithmeticOperatorView<GroundTag> ground(ArithmeticOperatorView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(ground(arg, context).first.get_index()); },
-                            element.get_variant());
+    const auto data =
+        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(ground(arg, context).first.get_index()); }, element.get_variant());
     return ygg::make_view(data, context.destination);
 }
 
@@ -257,9 +256,7 @@ std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, G
 }
 
 inline ygg::Data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, GrounderContext& context, FDRContext& fdr)
-{
-    return fdr.get_fact(ground(element, context).first).get_data();
-}
+{ return fdr.get_fact(ground(element, context).first).get_data(); }
 
 template<FactKind T>
 std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, GrounderContext& context)

@@ -35,8 +35,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <yggdrasil/execution/onetbb.hpp>
 #include <type_traits>
+#include <yggdrasil/execution/onetbb.hpp>
 
 #if defined(TYR_PROFILE_GROUND)
 using Kind = tyr::GroundTag;

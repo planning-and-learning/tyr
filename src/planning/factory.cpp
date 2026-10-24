@@ -31,15 +31,11 @@ namespace tyr::planning
 
 template<TaskKind Kind>
 StateRepositoryPtr<Kind> StateRepositoryFactory<Kind>::create(TaskPtr<Kind> task)
-{
-    return StateRepositoryPtr<Kind>(new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), false, m_next_index));
-}
+{ return StateRepositoryPtr<Kind>(new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), false, m_next_index)); }
 
 template<TaskKind Kind>
 StateRepositoryPtr<Kind> StateRepositoryFactory<Kind>::create_concurrent(TaskPtr<Kind> task)
-{
-    return StateRepositoryPtr<Kind>(new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), true, m_next_index));
-}
+{ return StateRepositoryPtr<Kind>(new StateRepository<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), true, m_next_index)); }
 
 template<TaskKind Kind>
 AxiomEvaluatorPtr<Kind> AxiomEvaluatorFactory<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)

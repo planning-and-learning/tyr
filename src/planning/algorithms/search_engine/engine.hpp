@@ -27,7 +27,6 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/ground/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristic.hpp"
@@ -38,6 +37,7 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <cassert>
@@ -117,9 +117,7 @@ public:
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
-        {
-            assert(num_state_owners > 0);
-        }
+        { assert(num_state_owners > 0); }
 
         WorkerData(ygg::Index<Worker> index_,
                    StateRepositoryPtr<Kind> state_repository_,
@@ -146,19 +144,13 @@ public:
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
-        {
-            assert(num_state_owners > 0);
-        }
+        { assert(num_state_owners > 0); }
 
         ygg::Index<State<Kind>> get_search_node_index(ygg::Index<State<Kind>> state) const noexcept
-        {
-            return ExecutionPolicy::search_node_index(state, index, num_state_owners);
-        }
+        { return ExecutionPolicy::search_node_index(state, index, num_state_owners); }
 
         SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
-        {
-            return search.initialize_start(get_search_node_index(state), g_value, h_value);
-        }
+        { return search.initialize_start(get_search_node_index(state), g_value, h_value); }
 
         SearchNode& get_search_node(ygg::Index<State<Kind>> state) { return search.get_search_node(get_search_node_index(state)); }
 
@@ -511,9 +503,7 @@ private:
     }
 
     ygg::float_t evaluate_successor_metric(const ygg::Builder<State<Kind>>& state, ygg::float_t auxiliary_value)
-    {
-        return planning::evaluate_successor_metric(m_task, state, auxiliary_value);
-    }
+    { return planning::evaluate_successor_metric(m_task, state, auxiliary_value); }
 
     void solve(WorkerData& worker, const Node<Kind>& node)
     {
@@ -563,9 +553,7 @@ private:
 
     template<typename Callback>
     void for_each_worker(Callback&& callback)
-    {
-        m_workers.for_each(std::forward<Callback>(callback));
-    }
+    { m_workers.for_each(std::forward<Callback>(callback)); }
 
     SearchResult<Kind> finish_search()
     {

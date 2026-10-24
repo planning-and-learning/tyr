@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/atom_data.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/atom_view.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 

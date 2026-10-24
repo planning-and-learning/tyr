@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <fmt/ranges.h>
 #include "planning/parser.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -25,12 +24,11 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/lifted/task_grounder_decl.hpp"
-#include <yggdrasil/execution/onetbb.hpp>
-#include <yggdrasil/formatting/cista_formatters.hpp>
 
 #include <algorithm>
 #include <filesystem>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <functional>
 #include <gtest/gtest.h>
 #include <memory>
@@ -39,6 +37,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::tests
 {

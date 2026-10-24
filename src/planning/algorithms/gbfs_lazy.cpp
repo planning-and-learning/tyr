@@ -39,22 +39,22 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
     {
         using Search = planning::detail::LazyGBFSPolicy<Kind, ParallelSearch>;
         return planning::detail::find_parallel_solution<Kind, Search>(task,
-                                                                             state_repository,
-                                                                             axiom_evaluator,
-                                                                             successor_generator,
-                                                                             heuristic,
-                                                                             options,
-                                                                             "gbfs_lazy::find_solution(...): unknown distribution hash mode.");
+                                                                      state_repository,
+                                                                      axiom_evaluator,
+                                                                      successor_generator,
+                                                                      heuristic,
+                                                                      options,
+                                                                      "gbfs_lazy::find_solution(...): unknown distribution hash mode.");
     }
 
     using Search = planning::detail::LazyGBFSPolicy<Kind, SequentialSearch>;
     using Execution = planning::detail::SequentialExecutionPolicy<Kind, Search>;
     return planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
-                                                                                         state_repository,
-                                                                                         axiom_evaluator,
-                                                                                         successor_generator,
-                                                                                         heuristic,
-                                                                                         options);
+                                                                                  state_repository,
+                                                                                  axiom_evaluator,
+                                                                                  successor_generator,
+                                                                                  heuristic,
+                                                                                  options);
 }
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,

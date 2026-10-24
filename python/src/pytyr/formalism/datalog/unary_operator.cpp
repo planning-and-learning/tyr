@@ -17,9 +17,9 @@
 
 #include "binding_utils.hpp"
 #include "bindings.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 
 #include <tyr/formalism/datalog/unary_operator_data.hpp>
-#include "tyr/formalism/datalog/declarations.hpp"
 #include <tyr/formalism/datalog/unary_operator_view.hpp>
 
 namespace tyr::formalism::datalog

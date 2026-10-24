@@ -18,7 +18,6 @@
 #ifndef TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 #define TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 
-#include <yggdrasil/semantics/comparison.hpp>
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
@@ -27,6 +26,7 @@
 #include <algorithm>
 #include <cassert>
 #include <vector>
+#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::unification
 {
@@ -52,15 +52,11 @@ template<TermUnifiableStructure T, TermSubstitution S>
 
 template<TermSubstitution S>
 [[nodiscard]] ygg::Data<Term> apply_substitution(const ygg::Data<Term>& term, const S& rho)
-{
-    return apply_substitution_once(term, rho);
-}
+{ return apply_substitution_once(term, rho); }
 
 template<TermUnifiableStructure T, TermSubstitution S>
 [[nodiscard]] T apply_substitution(const T& value, const S& rho)
-{
-    return apply_substitution_once(value, rho);
-}
+{ return apply_substitution_once(value, rho); }
 
 template<TermSubstitution S>
 [[nodiscard]] ygg::Data<Term> apply_substitution_fixpoint(const ygg::Data<Term>& term, const S& rho)

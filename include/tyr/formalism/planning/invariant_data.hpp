@@ -57,20 +57,16 @@ struct Data<::tyr::formalism::planning::Invariant>
         num_rigid_variables(num_rigid_variables_),
         num_counted_variables(num_counted_variables_),
         atoms()
-    {
-        set(atoms_, atoms);
-    }
+    { set(atoms_, atoms); }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
+    static constexpr auto cista_members() noexcept
+    { return ygg::Members<&Data::index, &Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Invariant>);

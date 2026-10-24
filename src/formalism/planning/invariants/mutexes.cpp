@@ -95,9 +95,7 @@ struct InstanceGroup : ygg::comparison::Mixin<InstanceGroup>
     InstanceGroup(size_t inv_index, std::vector<ygg::Index<Object>> rigid_values) : inv_index(inv_index), rigid_values(std::move(rigid_values)), atoms() {}
 
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {};
-    }
+    { return ygg::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {}; }
 };
 
 struct GroupKey : ygg::comparison::Mixin<GroupKey>

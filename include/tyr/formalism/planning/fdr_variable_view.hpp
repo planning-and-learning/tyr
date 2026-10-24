@@ -25,8 +25,7 @@
 namespace ygg
 {
 template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::FDRVariable<T>> C>
-class View<ygg::Index<::tyr::formalism::planning::FDRVariable<T>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::planning::FDRVariable<T>, C>
+class View<ygg::Index<::tyr::formalism::planning::FDRVariable<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::FDRVariable<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::FDRVariable<T>> handle, const C& context) noexcept :

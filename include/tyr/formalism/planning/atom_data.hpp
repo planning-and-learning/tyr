@@ -19,8 +19,8 @@
 #define TYR_FORMALISM_PLANNING_ATOM_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 #include <tuple>
@@ -63,10 +63,7 @@ struct Data<::tyr::formalism::planning::Atom<::tyr::LiftedTag, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::predicate, &Data::terms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::predicate, &Data::terms> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
@@ -82,9 +79,7 @@ struct Data<::tyr::formalism::planning::Atom<::tyr::GroundTag, F>>
     // Python constructor
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<F>>>, C> binding_) : index(), binding()
-    {
-        set(binding_, binding);
-    }
+    { set(binding_, binding); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -92,10 +87,7 @@ struct Data<::tyr::formalism::planning::Atom<::tyr::GroundTag, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);

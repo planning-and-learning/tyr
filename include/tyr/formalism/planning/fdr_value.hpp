@@ -18,9 +18,10 @@
 #ifndef TYR_FORMALISM_PLANNING_FDR_VALUE_HPP_
 #define TYR_FORMALISM_PLANNING_FDR_VALUE_HPP_
 
+#include "tyr/formalism/planning/declarations.hpp"
+
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/ids/uint_mixins.hpp>
-#include "tyr/formalism/planning/declarations.hpp"
 
 namespace tyr::formalism::planning
 {

@@ -17,9 +17,9 @@
 
 #include "binding_utils.hpp"
 #include "bindings.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 
 #include <tyr/formalism/datalog/numeric_effect_data.hpp>
-#include "tyr/formalism/datalog/declarations.hpp"
 #include <tyr/formalism/datalog/numeric_effect_view.hpp>
 
 namespace tyr::formalism::datalog

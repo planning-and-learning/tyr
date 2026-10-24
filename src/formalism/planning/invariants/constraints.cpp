@@ -325,9 +325,7 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
 }
 
 void ensure_cover(ConstraintSystem& system, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv)
-{
-    system.add_equality_conjunction(make_cover_equality_conjunction(pattern, atom, inv));
-}
+{ system.add_equality_conjunction(make_cover_equality_conjunction(pattern, atom, inv)); }
 
 void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& lhs, const MutableAtom<FluentTag>& rhs)
 {

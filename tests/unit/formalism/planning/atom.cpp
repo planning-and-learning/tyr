@@ -1,7 +1,7 @@
 #include "tyr/formalism/planning/atom_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 

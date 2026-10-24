@@ -61,33 +61,23 @@ AddRPGHeuristic<Kind>& AddRPGHeuristic<Kind>::operator=(AddRPGHeuristic&&) noexc
 
 template<TaskKind Kind>
 AddRPGHeuristicPtr<Kind> AddRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{
-    return std::make_shared<AddRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode);
-}
+{ return std::make_shared<AddRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
 void AddRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-{
-    m_impl->set_goal(goal);
-}
+{ m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
 ygg::float_t AddRPGHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
-{
-    return m_impl->evaluate(state);
-}
+{ return m_impl->evaluate(state); }
 
 template<TaskKind Kind>
 HeuristicPtr<Kind> AddRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{
-    return HeuristicPtr<Kind>(new AddRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
-}
+{ return HeuristicPtr<Kind>(new AddRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
 template<TaskKind Kind>
 void AddRPGHeuristic<Kind>::print_summary(size_t verbosity) const
-{
-    m_impl->print_summary(verbosity);
-}
+{ m_impl->print_summary(verbosity); }
 
 template class AddRPGHeuristic<GroundTag>;
 template class AddRPGHeuristic<LiftedTag>;

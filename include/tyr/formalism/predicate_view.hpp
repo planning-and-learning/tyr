@@ -28,8 +28,7 @@ template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::f
 class View<ygg::Index<::tyr::formalism::Predicate<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::Predicate<T>, C>
 {
 public:
-    View(ygg::Index<::tyr::formalism::Predicate<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::Predicate<T>, C>(handle, context)
+    View(ygg::Index<::tyr::formalism::Predicate<T>> handle, const C& context) noexcept : ygg::IndexViewBase<::tyr::formalism::Predicate<T>, C>(handle, context)
     {
     }
 

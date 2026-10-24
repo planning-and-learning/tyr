@@ -74,12 +74,10 @@ struct Data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atom, &Data::true_child, &Data::false_child, &Data::dontcare_child> {}; }
+    static constexpr auto cista_members() noexcept
+    { return ygg::Members<&Data::index, &Data::atom, &Data::true_child, &Data::false_child, &Data::dontcare_child> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::true_child, &Data::false_child, &Data::dontcare_child> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 }
 

@@ -80,9 +80,8 @@ struct EdgeAssignment
 
     inline bool is_valid() const noexcept
     {
-        return (first_index < second_index) && (first_index != formalism::ParameterIndex::max())
-               && (second_index != formalism::ParameterIndex::max()) && (first_object != ygg::Index<formalism::Object>::max())
-               && (second_object != ygg::Index<formalism::Object>::max());
+        return (first_index < second_index) && (first_index != formalism::ParameterIndex::max()) && (second_index != formalism::ParameterIndex::max())
+               && (first_object != ygg::Index<formalism::Object>::max()) && (second_object != ygg::Index<formalism::Object>::max());
     }
 };
 }

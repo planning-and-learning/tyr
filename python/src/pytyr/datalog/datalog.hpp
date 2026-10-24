@@ -142,15 +142,11 @@ inline void bind_fact_sets(nb::module_& m)
 /// Python accepts binding indices and views; the C++ stores take indices.
 template<typename T>
 ygg::Index<T> as_index(ygg::Index<T> index) noexcept
-{
-    return index;
-}
+{ return index; }
 
 template<typename T, typename C>
 ygg::Index<T> as_index(const ygg::View<ygg::Index<T>, C>& view) noexcept
-{
-    return view.get_index();
-}
+{ return view.get_index(); }
 
 inline void bind_numeric_support(nb::module_& m)
 {
@@ -158,17 +154,18 @@ inline void bind_numeric_support(nb::module_& m)
     using NumericKey = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using NumericKeyView = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
-    auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
-                   .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
-                   .def(
-                       "__init__",
-                       [](NumericSupport* self, NumericKeyView key, Interval interval, Cost cost) { new (self) NumericSupport(key.get_index(), interval, cost); },
-                       "key"_a,
-                       "interval"_a,
-                       "cost"_a)
-                   .def("get_key", &NumericSupport::get_key)
-                   .def("get_interval", &NumericSupport::get_interval)
-                   .def("get_cost", &NumericSupport::get_cost);
+    auto cls =
+        nb::class_<NumericSupport>(m, "NumericSupport")
+            .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
+            .def(
+                "__init__",
+                [](NumericSupport* self, NumericKeyView key, Interval interval, Cost cost) { new (self) NumericSupport(key.get_index(), interval, cost); },
+                "key"_a,
+                "interval"_a,
+                "cost"_a)
+            .def("get_key", &NumericSupport::get_key)
+            .def("get_interval", &NumericSupport::get_interval)
+            .def("get_cost", &NumericSupport::get_cost);
     ygg::add_comparison(cls);
 }
 
@@ -180,7 +177,8 @@ std::optional<Annotation<>> find_predicate_annotation(const PredicateAnnotations
 }
 
 template<typename Key, typename... Interval>
-std::optional<Annotation<formalism::FunctionTag>> find_function_annotation(const FunctionAnnotations<>& annotations, const Key& key, const Interval&... interval)
+std::optional<Annotation<formalism::FunctionTag>>
+find_function_annotation(const FunctionAnnotations<>& annotations, const Key& key, const Interval&... interval)
 {
     const auto* annotation = annotations.find(as_index(key), interval...);
     return annotation ? std::optional<Annotation<formalism::FunctionTag>>(*annotation) : std::nullopt;
@@ -202,17 +200,19 @@ inline void bind_annotations(nb::module_& m)
     using PredicateKey = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
     using PredicateKeyView = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
 
-    auto base_annotation_cls = nb::class_<BaseAnnotation>(m, "BaseAnnotation")
-                                   .def(nb::init<>())
-                                   .def(nb::init<Cost>(), "cost"_a)
-                                   .def("get_cost", &BaseAnnotation::get_cost);
+    auto base_annotation_cls =
+        nb::class_<BaseAnnotation>(m, "BaseAnnotation").def(nb::init<>()).def(nb::init<Cost>(), "cost"_a).def("get_cost", &BaseAnnotation::get_cost);
     ygg::add_comparison(base_annotation_cls);
 
     auto witness_annotation_cls =
         nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
             .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
             .def(nb::init<RuleKey, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
-            .def("__init__", [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost) { new (self) WitnessAnnotationT(rule_key.get_index(), cost); }, "rule_key"_a, "cost"_a)
+            .def(
+                "__init__",
+                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost) { new (self) WitnessAnnotationT(rule_key.get_index(), cost); },
+                "rule_key"_a,
+                "cost"_a)
             .def(
                 "__init__",
                 [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost, std::vector<NumericSupport> numeric_supports)
@@ -229,7 +229,12 @@ inline void bind_annotations(nb::module_& m)
         nb::class_<FunctionWitnessAnnotationT>(m, "FunctionWitnessAnnotation")
             .def(nb::init<FunctionRuleKey, Cost>(), "rule_key"_a, "cost"_a)
             .def(nb::init<FunctionRuleKey, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
-            .def("__init__", [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost) { new (self) FunctionWitnessAnnotationT(rule_key.get_index(), cost); }, "rule_key"_a, "cost"_a)
+            .def(
+                "__init__",
+                [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost)
+                { new (self) FunctionWitnessAnnotationT(rule_key.get_index(), cost); },
+                "rule_key"_a,
+                "cost"_a)
             .def(
                 "__init__",
                 [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost, std::vector<NumericSupport> numeric_supports)
@@ -245,15 +250,24 @@ inline void bind_annotations(nb::module_& m)
     nb::class_<PredicateAnnotationStore>(m, "PredicateAnnotations")
         .def(nb::init<>())
         .def("clear", &PredicateAnnotationStore::clear)
-        .def("find", [](const PredicateAnnotationStore& self, PredicateKey key) { return find_predicate_annotation(self, key); }, "binding"_a)
+        .def(
+            "find",
+            [](const PredicateAnnotationStore& self, PredicateKey key) { return find_predicate_annotation(self, key); },
+            "binding"_a)
         .def("find", [](const PredicateAnnotationStore& self, PredicateKeyView key) { return find_predicate_annotation(self, key); }, "binding"_a);
 
     nb::class_<FunctionAnnotationStore>(m, "FunctionAnnotations")
         .def(nb::init<>())
         .def("clear", &FunctionAnnotationStore::clear)
         .def("size", &FunctionAnnotationStore::size)
-        .def("find", [](const FunctionAnnotationStore& self, NumericKey key) { return find_function_annotation(self, key); }, "binding"_a)
-        .def("find", [](const FunctionAnnotationStore& self, NumericKeyView key) { return find_function_annotation(self, key); }, "binding"_a)
+        .def(
+            "find",
+            [](const FunctionAnnotationStore& self, NumericKey key) { return find_function_annotation(self, key); },
+            "binding"_a)
+        .def(
+            "find",
+            [](const FunctionAnnotationStore& self, NumericKeyView key) { return find_function_annotation(self, key); },
+            "binding"_a)
         .def(
             "find",
             [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) { return find_function_annotation(self, key, interval); },
@@ -275,14 +289,13 @@ void bind_cost_policy(nb::module_& m, const char* name)
 
     // get_cost(rule) takes only views: the lifted action cost reads the binding's objects.
     const auto bind_rule_view_cost = [&]<formalism::RelationKind R>()
-    {
-        cls.def("get_cost", [](const CostPolicy& self, formalism::datalog::RuleBindingView<R> rule) { return self.get_cost(rule); }, "rule"_a);
-    };
+    { cls.def("get_cost", [](const CostPolicy& self, formalism::datalog::RuleBindingView<R> rule) { return self.get_cost(rule); }, "rule"_a); };
     const auto bind_rule_costs = [&]<typename RuleKey, typename NumericKey>()
     {
         cls.def(
                "get_cost",
-               [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval) { return self.get_cost(as_index(rule), as_index(key), interval); },
+               [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval)
+               { return self.get_cost(as_index(rule), as_index(key), interval); },
                "rule"_a,
                "binding"_a,
                "interval"_a)
@@ -293,7 +306,8 @@ void bind_cost_policy(nb::module_& m, const char* name)
                 "cost"_a)
             .def(
                 "set_cost",
-                [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost) { self.set_cost(as_index(rule), as_index(key), interval, cost); },
+                [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost)
+                { self.set_cost(as_index(rule), as_index(key), interval, cost); },
                 "rule"_a,
                 "binding"_a,
                 "interval"_a,
@@ -368,9 +382,7 @@ inline void bind_policies(nb::module_& m)
 
 template<TaskKind Kind>
 void bind_task_policies(nb::module_& m)
-{
-    bind_cost_policy<RuleCostOverridePolicy<Kind>>(m, "RuleCostOverridePolicy");
-}
+{ bind_cost_policy<RuleCostOverridePolicy<Kind>>(m, "RuleCostOverridePolicy"); }
 
 template<TaskKind Kind, typename Workspace>
 void bind_workspace(nb::module_& m, const std::string& name)

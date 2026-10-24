@@ -197,12 +197,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     auto lifted_workspace = LiftedWorkspace(fixture.program);
     auto lifted_context = tyr::datalog::ProgramExecutionContext(lifted_workspace);
     lifted_workspace.numeric_annotations.clear();
-    lifted_workspace.numeric_annotations.insert(fixture.source.get_index(),
-                                                high_support_interval,
-                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
-    lifted_workspace.numeric_annotations.insert(fixture.source.get_index(),
-                                                interior_support_interval,
-                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(1)));
+    lifted_workspace.numeric_annotations.insert(fixture.source.get_index(), high_support_interval, tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
+    lifted_workspace.numeric_annotations.insert(fixture.source.get_index(), interior_support_interval, tyr::datalog::BaseAnnotation(tyr::datalog::Cost(1)));
     lifted_workspace.numeric_annotations.insert(fixture.source.get_index(), low_support_interval, tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
     expect_source_annotation_order(lifted_workspace.numeric_annotations.find_entries(fixture.source.get_index().relation, fixture.source.get_index().row));
 
@@ -246,9 +242,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     ground_workspace.numeric_annotations.insert(ground_source.get_row().get_index(),
                                                 interior_support_interval,
                                                 tyr::datalog::BaseAnnotation(tyr::datalog::Cost(1)));
-    ground_workspace.numeric_annotations.insert(ground_source.get_row().get_index(),
-                                                low_support_interval,
-                                                tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
+    ground_workspace.numeric_annotations.insert(ground_source.get_row().get_index(), low_support_interval, tyr::datalog::BaseAnnotation(tyr::datalog::Cost(2)));
     expect_source_annotation_order(ground_workspace.numeric_annotations.find_entries(ground_source.get_row().get_index()));
 
     tyr::datalog::compute_model(ground_context);
@@ -472,8 +466,9 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
     const auto seeded = std::vector { make_literal(make_atom(s, { p0 })).get_index(), make_literal(make_atom(m, { p1, p2 })).get_index() };
     const auto derive_t = make_predicate_rule(make_atom(t, { p0, p1, p2 }), seeded);
     const auto derive_u = make_predicate_rule(make_atom(u, { p0, p1, p2 }), seeded);
-    const auto derive_h = make_predicate_rule(make_atom(h, { p0, p1, p2 }),
-                                              { make_literal(make_atom(t, { p0, p1, p2 })).get_index(), make_literal(make_atom(u, { p0, p1, p2 })).get_index() });
+    const auto derive_h =
+        make_predicate_rule(make_atom(h, { p0, p1, p2 }),
+                            { make_literal(make_atom(t, { p0, p1, p2 })).get_index(), make_literal(make_atom(u, { p0, p1, p2 })).get_index() });
 
     auto program_data = ygg::Data<tyr::formalism::datalog::Program<LiftedTag>>();
     program_data.objects = { a.get_index(), b.get_index(), c.get_index(), d.get_index() };
@@ -753,20 +748,21 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     arena.execute(
         [&]
         {
-            oneapi::tbb::parallel_for(size_t(0),
-                                      size_t(8),
-                                      [&](size_t worker)
-                                      {
-                                          const auto predicate_cost = tyr::datalog::Cost(8 - worker);
-                                          const auto function_cost = tyr::datalog::Cost(worker < 4 ? 3 : 5);
-                                          retain_min(concurrent_map, first_bindings.front(), predicate_cost);
-                                          for (size_t i = first_bindings.size(); i-- > 0;)
-                                          {
-                                              delta_annotations.insert_if_better(first_bindings[i].get_index(), tyr::datalog::BaseAnnotation(predicate_cost));
-                                              delta_annotations.insert_if_better(second_bindings[i].get_index(), tyr::datalog::BaseAnnotation(predicate_cost));
-                                              delta_numeric_annotations.insert(function_bindings[i].get_index(), interval, tyr::datalog::BaseAnnotation(function_cost));
-                                          }
-                                      });
+            oneapi::tbb::parallel_for(
+                size_t(0),
+                size_t(8),
+                [&](size_t worker)
+                {
+                    const auto predicate_cost = tyr::datalog::Cost(8 - worker);
+                    const auto function_cost = tyr::datalog::Cost(worker < 4 ? 3 : 5);
+                    retain_min(concurrent_map, first_bindings.front(), predicate_cost);
+                    for (size_t i = first_bindings.size(); i-- > 0;)
+                    {
+                        delta_annotations.insert_if_better(first_bindings[i].get_index(), tyr::datalog::BaseAnnotation(predicate_cost));
+                        delta_annotations.insert_if_better(second_bindings[i].get_index(), tyr::datalog::BaseAnnotation(predicate_cost));
+                        delta_numeric_annotations.insert(function_bindings[i].get_index(), interval, tyr::datalog::BaseAnnotation(function_cost));
+                    }
+                });
         });
 
     ASSERT_NE(sequential_map.find(first_bindings.front().get_index()), nullptr);

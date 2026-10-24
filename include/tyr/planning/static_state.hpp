@@ -41,14 +41,9 @@ public:
     template<TaskKind Kind>
     explicit StaticState(formalism::planning::TaskView<Kind> task);
 
-    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
-    {
-        return ygg::test(ygg::uint_t(index), m_atoms);
-    }
+    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const { return ygg::test(ygg::uint_t(index), m_atoms); }
     ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
-    {
-        return ygg::get(ygg::uint_t(index), m_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN());
-    }
+    { return ygg::get(ygg::uint_t(index), m_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
     bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.get_index()); }
     ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept { return get(fterm.get_index()); }

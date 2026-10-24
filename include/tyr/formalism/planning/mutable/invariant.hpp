@@ -48,9 +48,7 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
         num_counted_variables(num_counted_variables_),
         atoms(std::move(atoms_)),
         predicates()
-    {
-        canonicalize();
-    }
+    { canonicalize(); }
     MutableInvariant(size_t num_rigid_variables_,
                      size_t num_counted_variables_,
                      MutableAtomList<FluentTag> atoms_,
@@ -73,9 +71,7 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&MutableInvariant::num_rigid_variables, &MutableInvariant::num_counted_variables, &MutableInvariant::atoms> {};
-    }
+    { return ygg::Members<&MutableInvariant::num_rigid_variables, &MutableInvariant::num_counted_variables, &MutableInvariant::atoms> {}; }
 };
 
 using MutableInvariantList = std::vector<MutableInvariant>;
@@ -103,9 +99,7 @@ struct structure_traits<planning::MutableInvariant>
 
     template<typename F>
     static Type transform_terms(const Type& value, F&& f)
-    {
-        return Type(value.num_rigid_variables, value.num_counted_variables, transform_terms(value.atoms, f), value.predicates);
-    }
+    { return Type(value.num_rigid_variables, value.num_counted_variables, transform_terms(value.atoms, f), value.predicates); }
 };
 
 }  // namespace tyr::formalism::unification

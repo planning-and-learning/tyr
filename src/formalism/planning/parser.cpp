@@ -57,9 +57,7 @@ Parser& Parser::operator=(Parser&&) noexcept = default;
 Parser::~Parser() = default;
 
 PlanningTask<LiftedTag> Parser::parse_task(const std::filesystem::path& task_filepath, const loki::ParserOptions& options)
-{
-    return parse_task(loki::semantic::read_file(task_filepath), task_filepath, options);
-}
+{ return parse_task(loki::semantic::read_file(task_filepath), task_filepath, options); }
 
 PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<std::filesystem::path> task_filepath, const loki::ParserOptions&)
 {

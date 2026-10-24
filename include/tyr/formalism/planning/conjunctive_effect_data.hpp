@@ -22,10 +22,10 @@
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/numeric_effect_operator_data.hpp"
 
+#include <optional>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <optional>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -73,12 +73,10 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
+    static constexpr auto cista_members() noexcept
+    { return ygg::Members<&Data::index, &Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>);
@@ -141,15 +139,11 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
+    static constexpr auto cista_members() noexcept
+    { return ygg::Members<&Data::index, &Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {};
-    }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    { return ygg::Members<&Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>);

@@ -18,13 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_ARITHMETIC_OPERATOR_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_ARITHMETIC_OPERATOR_DATA_HPP_
 
-#include <yggdrasil/containers/variant.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <stdexcept>
-#include <variant>
 #include <tuple>
 #include <utility>
+#include <variant>
+#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -49,17 +49,13 @@ struct Data<::tyr::formalism::planning::ArithmeticOperator<T>>
     }
     // Python constructor
     template<typename C>
-    Data(const ViewVariant<C>& variant_) :
-        variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
+    Data(const ViewVariant<C>& variant_) : variant(std::visit([](const auto& view) -> Variant { return Variant(view.get_index()); }, variant_))
     {
     }
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>);

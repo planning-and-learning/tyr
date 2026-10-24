@@ -40,9 +40,7 @@ struct Data<::tyr::formalism::planning::FDRVariable<T>>
     // Python constructor
     template<typename C>
     Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>>, C>>& atoms_) : index(), atoms()
-    {
-        set(atoms_, atoms);
-    }
+    { set(atoms_, atoms); }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
@@ -50,10 +48,7 @@ struct Data<::tyr::formalism::planning::FDRVariable<T>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atoms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atoms> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FDRVariable<::tyr::formalism::StaticTag>>);

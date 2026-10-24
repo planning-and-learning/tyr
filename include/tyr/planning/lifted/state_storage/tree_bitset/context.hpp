@@ -21,9 +21,9 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
-#include "tyr/planning/state_storage/tree_vector/arity.hpp"
 #include "tyr/planning/state_storage/tree_bitset/arity.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
+#include "tyr/planning/state_storage/tree_vector/arity.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <concepts>

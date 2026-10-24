@@ -39,9 +39,7 @@ struct Data<::tyr::formalism::datalog::Literal<T, F>>
     Data(ygg::Index<::tyr::formalism::datalog::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::Atom<T, F>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
-    {
-        set(atom_, atom);
-    }
+    { set(atom_, atom); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -49,10 +47,7 @@ struct Data<::tyr::formalism::datalog::Literal<T, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atom, &Data::polarity> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::polarity> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);

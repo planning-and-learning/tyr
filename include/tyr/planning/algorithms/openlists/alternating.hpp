@@ -30,7 +30,7 @@ namespace tyr::planning
 {
 
 template<IsOpenList First, IsOpenList... Rest>
-    requires (std::same_as<typename First::ItemType, typename Rest::ItemType> && ...) && std::move_constructible<typename First::ItemType>
+    requires(std::same_as<typename First::ItemType, typename Rest::ItemType> && ...) && std::move_constructible<typename First::ItemType>
 class AlternatingOpenList
 {
 public:

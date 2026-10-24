@@ -222,9 +222,7 @@ struct GroundQueueFixture
 
     tyr::formalism::datalog::RuleView<GroundTag, tyr::formalism::PredicateTag>
     rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body, tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> head)
-    {
-        return rule(body, head, fresh_rule_binding());
-    }
+    { return rule(body, head, fresh_rule_binding()); }
 
     tyr::formalism::datalog::RuleView<GroundTag, tyr::formalism::PredicateTag>
     rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body,
@@ -301,15 +299,11 @@ struct GroundQueueFixture
                 tyr::formalism::datalog::FunctionTermView<GroundTag, tyr::formalism::FluentTag> head,
                 ygg::float_t value,
                 ygg::float_t cost = 0)
-    {
-        return numeric_rule(body, head, tyr::formalism::NumericEffectOperatorKind::Assign, value, cost);
-    }
+    { return numeric_rule(body, head, tyr::formalism::NumericEffectOperatorKind::Assign, value, cost); }
 
     tyr::formalism::datalog::RuleView<GroundTag, tyr::formalism::FunctionTag>
     empty_body_assign_rule(tyr::formalism::datalog::FunctionTermView<GroundTag, tyr::formalism::FluentTag> head, ygg::float_t value)
-    {
-        return assign_rule(condition(), head, value);
-    }
+    { return assign_rule(condition(), head, value); }
 
     tyr::formalism::datalog::ProgramView<GroundTag> program()
     {

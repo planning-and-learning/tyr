@@ -49,9 +49,7 @@ InvariantMatchData::InvariantMatchData(InvariantView invariant, std::vector<unif
     m_inv(to_mutable(invariant)),
     m_rigid_variable_bindings(std::move(rigid_variable_bindings)),
     m_postings()
-{
-    build_postings();
-}
+{ build_postings(); }
 
 void InvariantMatchData::build_postings()
 {
@@ -166,9 +164,7 @@ void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, Que
 }
 
 void Matcher::query(AtomView<GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const
-{
-    query(MutableAtom<FluentTag>(atom), result, workspace);
-}
+{ query(MutableAtom<FluentTag>(atom), result, workspace); }
 
 QueryResult Matcher::query(const MutableAtom<FluentTag>& atom) const
 {

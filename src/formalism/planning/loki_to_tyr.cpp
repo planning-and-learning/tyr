@@ -74,8 +74,10 @@ void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::F
     prepare(function_expression.get_left());
     prepare(function_expression.get_right());
 }
-void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression) { this->prepare(function_expression.get_args()); }
-void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression) { this->prepare(function_expression.get_expression()); }
+void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression)
+{ this->prepare(function_expression.get_args()); }
+void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression)
+{ this->prepare(function_expression.get_expression()); }
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_expression)
 {
     m_fexpr_functions.insert(function_expression.get_function().get_name().str());
@@ -241,9 +243,7 @@ ygg::Index<Object> LokiToTyrTranslator::translate_common(loki::formalism::Object
 }
 
 ygg::Index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context)
-{
-    return translate_common(element.get_variable(), builder, context);
-}
+{ return translate_common(element.get_variable(), builder, context); }
 
 PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::PredicateView element, Builder& builder, Repository& context)
 {
@@ -361,13 +361,16 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
         atom_view_variant);
 }
 
-ygg::Data<FunctionExpression<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element, Builder&, Repository&)
-{
-    return ygg::Data<FunctionExpression<LiftedTag>>(ygg::float_t(element.get_value()));
-}
+ygg::Data<FunctionExpression<LiftedTag>>
+LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
+                                      Builder&,
+                                      Repository&)
+{ return ygg::Data<FunctionExpression<LiftedTag>>(ygg::float_t(element.get_value())); }
 
 ygg::Data<FunctionExpression<LiftedTag>>
-LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
+                                      Builder& builder,
+                                      Repository& context)
 {
     auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<LiftedTag>>
     {
@@ -375,8 +378,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
         binary->operator_kind = operator_kind;
         binary->lhs = translate_lifted(element.get_left(), builder, context);
         binary->rhs = translate_lifted(element.get_right(), builder, context);
-        return ygg::Data<FunctionExpression<LiftedTag>>(
-            ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *binary).first.get_index()));
+        return ygg::Data<FunctionExpression<LiftedTag>>(ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -395,15 +397,16 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
 }
 
 ygg::Data<FunctionExpression<LiftedTag>>
-LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
+                                      Builder& builder,
+                                      Repository& context)
 {
     auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<LiftedTag>>
     {
         auto multi = planning::checkout<MultiOperator<LiftedTag>>(builder);
         multi->operator_kind = operator_kind;
         translate_lifted(element.get_args(), builder, context, multi->args);
-        return ygg::Data<FunctionExpression<LiftedTag>>(
-            ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *multi).first.get_index()));
+        return ygg::Data<FunctionExpression<LiftedTag>>(ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -418,13 +421,14 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
 }
 
 ygg::Data<FunctionExpression<LiftedTag>>
-LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
+                                      Builder& builder,
+                                      Repository& context)
 {
     auto minus = planning::checkout<UnaryOperator<LiftedTag>>(builder);
     minus->operator_kind = ArithmeticOperatorKind::Sub;
     minus->arg = translate_lifted(element.get_expression(), builder, context);
-    return ygg::Data<FunctionExpression<LiftedTag>>(
-        ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *minus).first.get_index()));
+    return ygg::Data<FunctionExpression<LiftedTag>>(ygg::Data<ArithmeticOperator<LiftedTag>>(planning::insert(context, *minus).first.get_index()));
 }
 
 ygg::Data<FunctionExpression<LiftedTag>>
@@ -482,7 +486,9 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
 }
 
 ygg::Data<BooleanOperator<LiftedTag>>
-LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element,
+                                      Builder& builder,
+                                      Repository& context)
 {
     auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<LiftedTag>>
     {
@@ -558,7 +564,8 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
                                                     conj_condition->fluent_literals,
                                                     conj_condition->derived_literals);
                             }
-                            else if constexpr (std::is_same_v<SubConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
+                            else if constexpr (std::is_same_v<SubConditionT,
+                                                              loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
                             {
                                 const auto numeric_constraint = translate_lifted(subcondition, builder, context);
 
@@ -600,7 +607,9 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
         element.get_variant());
 }
 
-NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>> element, Builder& builder, Repository& context)
+NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>> element,
+                                                               Builder& builder,
+                                                               Repository& context)
 {
     auto fterm_view_variant = translate_lifted(element.get_function(), builder, context);
 
@@ -1004,13 +1013,16 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
         literal_view_variant);
 }
 
-ygg::Data<FunctionExpression<GroundTag>> LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element, Builder&, Repository&)
-{
-    return ygg::Data<FunctionExpression<GroundTag>>(ygg::float_t(element.get_value()));
-}
+ygg::Data<FunctionExpression<GroundTag>>
+LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
+                                        Builder&,
+                                        Repository&)
+{ return ygg::Data<FunctionExpression<GroundTag>>(ygg::float_t(element.get_value())); }
 
 ygg::Data<FunctionExpression<GroundTag>>
-LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
+                                        Builder& builder,
+                                        Repository& context)
 {
     auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<GroundTag>>
     {
@@ -1018,8 +1030,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
         binary->operator_kind = operator_kind;
         binary->lhs = translate_grounded(element.get_left(), builder, context);
         binary->rhs = translate_grounded(element.get_right(), builder, context);
-        return ygg::Data<FunctionExpression<GroundTag>>(
-            ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *binary).first.get_index()));
+        return ygg::Data<FunctionExpression<GroundTag>>(ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *binary).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1038,15 +1049,16 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 }
 
 ygg::Data<FunctionExpression<GroundTag>>
-LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
+                                        Builder& builder,
+                                        Repository& context)
 {
     auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> ygg::Data<FunctionExpression<GroundTag>>
     {
         auto multi = planning::checkout<MultiOperator<GroundTag>>(builder);
         multi->operator_kind = operator_kind;
         translate_grounded(element.get_args(), builder, context, multi->args);
-        return ygg::Data<FunctionExpression<GroundTag>>(
-            ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *multi).first.get_index()));
+        return ygg::Data<FunctionExpression<GroundTag>>(ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *multi).first.get_index()));
     };
 
     switch (element.get_operator())
@@ -1061,13 +1073,14 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
 }
 
 ygg::Data<FunctionExpression<GroundTag>>
-LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
+                                        Builder& builder,
+                                        Repository& context)
 {
     auto minus = planning::checkout<UnaryOperator<GroundTag>>(builder);
     minus->operator_kind = ArithmeticOperatorKind::Sub;
     minus->arg = translate_grounded(element.get_expression(), builder, context);
-    return ygg::Data<FunctionExpression<GroundTag>>(
-        ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *minus).first.get_index()));
+    return ygg::Data<FunctionExpression<GroundTag>>(ygg::Data<ArithmeticOperator<GroundTag>>(planning::insert(context, *minus).first.get_index()));
 }
 
 ygg::Data<FunctionExpression<GroundTag>>
@@ -1156,7 +1169,9 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
 }
 
 ygg::Data<BooleanOperator<GroundTag>>
-LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element, Builder& builder, Repository& context)
+LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element,
+                                        Builder& builder,
+                                        Repository& context)
 {
     auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> ygg::Data<BooleanOperator<GroundTag>>
     {
@@ -1237,7 +1252,8 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                                                     conj_condition->positive_facts,
                                                     conj_condition->negative_facts);
                             }
-                            else if constexpr (std::is_same_v<SubConditionT, loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
+                            else if constexpr (std::is_same_v<SubConditionT,
+                                                              loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
                             {
                                 const auto numeric_constraint = translate_grounded(subcondition, builder, context);
 

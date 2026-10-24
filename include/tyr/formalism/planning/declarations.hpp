@@ -442,9 +442,7 @@ using VariableViewList = std::vector<VariableView>;
 
 template<typename Repo, typename... Tags>
 constexpr bool repository_access_for_types(ygg::TypeList<Tags...>) noexcept
-{
-    return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...);
-}
+{ return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...); }
 
 template<typename T>
 concept RepositoryConcept = repository_access_for_types<T>(SymbolRepositoryTypes {}) && repository_access_for_types<T>(RelationRepositoryTypes {});

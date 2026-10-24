@@ -24,10 +24,10 @@
 #include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <yggdrasil/containers/vector.hpp>
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 

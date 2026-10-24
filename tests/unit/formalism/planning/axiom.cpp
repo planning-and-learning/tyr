@@ -1,7 +1,8 @@
 #include "tyr/formalism/planning/axiom_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+
 #include <concepts>
 
 namespace lifted_tests

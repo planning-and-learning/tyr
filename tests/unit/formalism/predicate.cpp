@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/predicate_data.hpp"
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <concepts>
@@ -42,9 +42,7 @@ concept PredicateContract = std::constructible_from<ygg::Index<Entity>, ygg::uin
 
 template<typename Repository, typename... Entities>
 consteval bool predicate_contracts(ygg::TypeList<Entities...>)
-{
-    return (PredicateContract<Entities, Repository> && ...);
-}
+{ return (PredicateContract<Entities, Repository> && ...); }
 
 static_assert(predicate_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::PredicateTypes {}));
 static_assert(predicate_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::PredicateTypes {}));

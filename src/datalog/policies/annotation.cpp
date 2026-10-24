@@ -26,23 +26,17 @@ namespace tyr::datalog
 
 template<typename AggregationFunction>
 void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(PredicateHead head, PredicateAnnotations<>& annotations) const
-{
-    annotations.insert_or_assign(head, BaseAnnotation(Cost(0)));
-}
+{ annotations.insert_or_assign(head, BaseAnnotation(Cost(0))); }
 
 template<typename AggregationFunction>
 void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(FunctionBinding head,
                                                                          ygg::ClosedInterval<ygg::float_t> interval,
                                                                          FunctionAnnotations<>& numeric_annotations) const
-{
-    numeric_annotations.insert(head, interval, BaseAnnotation(Cost(0)));
-}
+{ numeric_annotations.insert(head, interval, BaseAnnotation(Cost(0))); }
 
 template<typename AggregationFunction>
 void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::clear_achievers() noexcept
-{
-    m_achievers.clear();
-}
+{ m_achievers.clear(); }
 
 template<typename AggregationFunction>
 const typename MinCostAnnotationWithAchieversPolicy<AggregationFunction>::Achievers*

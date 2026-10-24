@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
 
 #include "../../programs/common.hpp"
@@ -23,6 +22,7 @@
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -188,7 +188,5 @@ datalog::Program<LiftedTag>& AxiomEvaluatorProgram<LiftedTag>::get_datalog_progr
 const datalog::Program<LiftedTag>& AxiomEvaluatorProgram<LiftedTag>::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& AxiomEvaluatorProgram<LiftedTag>::get_const_program_workspace() const noexcept
-{
-    return m_datalog_program.get_const_program_workspace();
-}
+{ return m_datalog_program.get_const_program_workspace(); }
 }

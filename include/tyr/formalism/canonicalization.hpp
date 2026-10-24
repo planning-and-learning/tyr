@@ -15,16 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef TYR_FORMALISM_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_CANONICALIZATION_HPP_
 
-#include <yggdrasil/semantics/canonicalization.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
 #include "tyr/formalism/datas.hpp"
 
 #include <algorithm>
+#include <yggdrasil/semantics/canonicalization.hpp>
+#include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::formalism
 {
@@ -39,23 +37,17 @@ inline bool is_canonical(const ygg::Data<Object>&) { return true; }
 
 template<typename Tag>
 bool is_canonical(const ygg::Data<RelationBinding<Tag>>&)
-{
-    return true;
-}
+{ return true; }
 
 inline bool is_canonical(const ygg::Data<Term>&) { return true; }
 
 template<FactKind T>
 bool is_canonical(const ygg::Data<Predicate<T>>&)
-{
-    return true;
-}
+{ return true; }
 
 template<FactKind T>
 bool is_canonical(const ygg::Data<Function<T>>&)
-{
-    return true;
-}
+{ return true; }
 
 inline void canonicalize(ygg::Data<Variable>&)
 {  // Trivially canonical

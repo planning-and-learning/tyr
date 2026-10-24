@@ -46,12 +46,12 @@ concept FactRangeConcept =
     std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ygg::Data<formalism::planning::FDRFact<Tag>>>;
 
 template<class R, class Tag>
-concept FunctionTermValueRangeConcept = std::ranges::input_range<R>
-                                        && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>,
-                                                        std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>>;
+concept FunctionTermValueRangeConcept =
+    std::ranges::input_range<R>
+    && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>>;
 
 template<typename T>
-concept IterableStateConcept = requires (const std::remove_reference_t<T>& cs) {
+concept IterableStateConcept = requires(const std::remove_reference_t<T>& cs) {
     { cs.template get_atoms<formalism::StaticTag>() } -> AtomRangeConcept<formalism::StaticTag>;
     { cs.get_fluent_facts() } -> FactRangeConcept<formalism::FluentTag>;
     { cs.template get_atoms<formalism::FluentTag>() } -> AtomRangeConcept<formalism::FluentTag>;
@@ -78,7 +78,7 @@ concept FunctionTermViewValueRangeConcept =
     && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, formalism::planning::FunctionTermViewValuePair<GroundTag, Tag>>;
 
 template<typename T>
-concept IterableViewStateConcept = requires (const std::remove_reference_t<T>& cs) {
+concept IterableViewStateConcept = requires(const std::remove_reference_t<T>& cs) {
     { cs.template get_atoms_view<formalism::StaticTag>() } -> AtomViewRangeConcept<formalism::StaticTag>;
     { cs.get_fluent_facts_view() } -> FactViewRangeConcept<formalism::FluentTag>;
     { cs.template get_atoms_view<formalism::FluentTag>() } -> AtomViewRangeConcept<formalism::FluentTag>;
@@ -90,7 +90,7 @@ concept IterableViewStateConcept = requires (const std::remove_reference_t<T>& c
 /// State contents and task context, accepting values and references without requiring repository identity.
 template<typename T, typename Kind>
 concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && IterableViewStateConcept<T>
-                           && requires (const std::remove_reference_t<T>& state,
+                           && requires(const std::remove_reference_t<T>& state,
                                        ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
                                        ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
                                        ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,

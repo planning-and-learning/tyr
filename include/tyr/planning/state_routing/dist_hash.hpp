@@ -19,10 +19,10 @@
 #define TYR_PLANNING_STATE_ROUTING_DIST_HASH_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/planning/state_builder.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_routing/dist_hash_concepts.hpp"
 
 #include <boost/hash2/xxhash.hpp>

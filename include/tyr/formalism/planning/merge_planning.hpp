@@ -370,15 +370,13 @@ std::pair<MultiOperatorView<T>, bool> merge_d2p(datalog::MultiOperatorView<T> el
 template<TaskKind T>
 ygg::Data<ArithmeticOperator<T>> merge_d2p(datalog::ArithmeticOperatorView<T> element, MergePlanningContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(merge_d2p(arg, context).first.get_index()); },
-                 element.get_variant());
+    return visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(merge_d2p(arg, context).first.get_index()); }, element.get_variant());
 }
 
 template<TaskKind T>
 ygg::Data<BooleanOperator<T>> merge_d2p(datalog::BooleanOperatorView<T> element, MergePlanningContext& context)
 {
-    return visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(merge_d2p(arg, context).first.get_index()); },
-                 element.get_variant());
+    return visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(merge_d2p(arg, context).first.get_index()); }, element.get_variant());
 }
 
 }

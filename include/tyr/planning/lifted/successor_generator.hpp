@@ -20,8 +20,8 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/programs/action.hpp"
+#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
 #include <atomic>
@@ -67,8 +67,7 @@ public:
     check_action_binding(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
 
     /// Accepts repository-backed and data-backed action bindings without publishing them.
-    template<StateViewConcept<LiftedTag> S,
-             ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+    template<StateViewConcept<LiftedTag> S, ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
     ActionBindingStatus check_action_binding(const Node<LiftedTag, S>& node, Binding binding);
 
     /// Retains a borrowed binding after validating schema, object ownership and arity, without checking applicability.

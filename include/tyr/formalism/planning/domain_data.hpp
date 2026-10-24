@@ -22,11 +22,11 @@
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
+#include <optional>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <optional>
-#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 
@@ -135,7 +135,20 @@ struct Data<::tyr::formalism::planning::Domain>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::static_predicates, &Data::fluent_predicates, &Data::derived_predicates, &Data::static_functions, &Data::fluent_functions, &Data::auxiliary_function, &Data::constants, &Data::actions, &Data::axioms> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return ygg::Members<&Data::index,
+                            &Data::name,
+                            &Data::static_predicates,
+                            &Data::fluent_predicates,
+                            &Data::derived_predicates,
+                            &Data::static_functions,
+                            &Data::fluent_functions,
+                            &Data::auxiliary_function,
+                            &Data::constants,
+                            &Data::actions,
+                            &Data::axioms> {};
+    }
     static constexpr auto identifying_members() noexcept
     {
         return ygg::Members<&Data::name,
@@ -149,10 +162,7 @@ struct Data<::tyr::formalism::planning::Domain>
                             &Data::actions,
                             &Data::axioms> {};
     }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Domain>);

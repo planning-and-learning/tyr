@@ -25,7 +25,6 @@
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 
 #include <optional>
-
 #include <yggdrasil/core/types.hpp>
 
 namespace ygg
@@ -37,15 +36,16 @@ class View<ygg::Data<::tyr::formalism::planning::FDRFact<T>>, C> : public ygg::D
     static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::FDRFact<T>>);
 
 public:
-    View(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& handle, const C& context) noexcept : ygg::DataViewBase<::tyr::formalism::planning::FDRFact<T>, C>(handle, context) {}
+    View(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& handle, const C& context) noexcept :
+        ygg::DataViewBase<::tyr::formalism::planning::FDRFact<T>, C>(handle, context)
+    {
+    }
 
     auto get_variable() const noexcept { return ygg::make_view(this->get_data().variable, this->get_context()); }
     auto get_value() const noexcept { return this->get_data().value; }
     auto has_value() const noexcept { return get_value() != ::tyr::formalism::planning::FDRValue::none(); }
     auto get_atom_index() const noexcept
-    {
-        return has_value() ? std::make_optional(this->get_repository()[this->get_data().variable].atoms[ygg::uint_t(get_value() - 1)]) : std::nullopt;
-    }
+    { return has_value() ? std::make_optional(this->get_repository()[this->get_data().variable].atoms[ygg::uint_t(get_value() - 1)]) : std::nullopt; }
     auto get_atom() const noexcept
     {
         const auto atom = get_atom_index();
@@ -56,9 +56,7 @@ public:
 /// Canonical context depends on variable.
 template<::tyr::formalism::FactKind T, typename C>
 const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& element, const C& context) noexcept
-{
-    return ygg::make_view(element.variable, context).get_context();
-}
+{ return ygg::make_view(element.variable, context).get_context(); }
 
 }
 

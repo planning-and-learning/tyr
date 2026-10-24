@@ -27,8 +27,7 @@
 namespace ygg
 {
 template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::BinaryOperator<T, O>> C>
-class View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, O>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::datalog::BinaryOperator<T, O>, C>
+class View<ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, O>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::BinaryOperator<T, O>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::datalog::BinaryOperator<T, O>> handle, const C& context) noexcept :

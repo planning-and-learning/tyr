@@ -34,7 +34,8 @@ class View<ygg::Data<::tyr::formalism::Term>, C> : public ygg::DataViewBase<::ty
 public:
     View(const ygg::Data<::tyr::formalism::Term>& handle, const C& context) noexcept : ygg::DataViewBase<::tyr::formalism::Term, C>(handle, context) {}
 
-    ygg::View<ygg::Data<::tyr::formalism::Term>::Variant, C> get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
+    ygg::View<ygg::Data<::tyr::formalism::Term>::Variant, C> get_variant() const noexcept
+    { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };
 
 template<typename C>

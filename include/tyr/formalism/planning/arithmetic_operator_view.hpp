@@ -34,7 +34,10 @@ template<::tyr::TaskKind T, ::tyr::formalism::planning::Context C>
 class View<ygg::Data<::tyr::formalism::planning::ArithmeticOperator<T>>, C> : public ygg::DataViewBase<::tyr::formalism::planning::ArithmeticOperator<T>, C>
 {
 public:
-    View(const ygg::Data<::tyr::formalism::planning::ArithmeticOperator<T>>& handle, const C& context) noexcept : ygg::DataViewBase<::tyr::formalism::planning::ArithmeticOperator<T>, C>(handle, context) {}
+    View(const ygg::Data<::tyr::formalism::planning::ArithmeticOperator<T>>& handle, const C& context) noexcept :
+        ygg::DataViewBase<::tyr::formalism::planning::ArithmeticOperator<T>, C>(handle, context)
+    {
+    }
 
     auto get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
 };

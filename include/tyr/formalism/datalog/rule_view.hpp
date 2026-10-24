@@ -43,14 +43,10 @@ public:
 
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return get_body().get_arity();
-    }
+    { return get_body().get_arity(); }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return ygg::make_view(this->get_data().variables, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().variables, this->get_context()); }
     auto get_body() const noexcept { return ygg::make_view(this->get_data().body, this->get_context()); }
     auto get_heads() const noexcept
         requires std::same_as<R, ::tyr::formalism::PredicateTag>
@@ -62,24 +58,16 @@ public:
 
     auto get_rule() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_relation();
-    }
+    { return get_row().get_relation(); }
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().binding, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().binding, this->get_context()); }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_objects();
-    }
+    { return get_row().get_objects(); }
     auto get_key() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_key();
-    }
+    { return get_row().get_key(); }
 };
 
 }

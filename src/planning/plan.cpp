@@ -17,10 +17,10 @@
 
 #include "tyr/planning/plan.hpp"
 
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/node.hpp"
+#include "tyr/planning/state_view.hpp"
 
 #include <yggdrasil/core/config.hpp>
 
@@ -41,33 +41,23 @@ Plan<Kind>::Plan(Node<Kind> start_node, LabeledNodeList<Kind> labeled_succ_nodes
 
 template<TaskKind Kind>
 const Node<Kind>& Plan<Kind>::get_start_node() const noexcept
-{
-    return m_start_node;
-}
+{ return m_start_node; }
 
 template<TaskKind Kind>
 const LabeledNodeList<Kind>& Plan<Kind>::get_labeled_succ_nodes() const noexcept
-{
-    return m_labeled_succ_nodes;
-}
+{ return m_labeled_succ_nodes; }
 
 template<TaskKind Kind>
 ygg::float_t Plan<Kind>::get_cost() const noexcept
-{
-    return !empty() ? m_labeled_succ_nodes.back().node.get_metric() : 0.;
-}
+{ return !empty() ? m_labeled_succ_nodes.back().node.get_metric() : 0.; }
 
 template<TaskKind Kind>
 size_t Plan<Kind>::get_length() const noexcept
-{
-    return m_labeled_succ_nodes.size();
-}
+{ return m_labeled_succ_nodes.size(); }
 
 template<TaskKind Kind>
 bool Plan<Kind>::empty() const noexcept
-{
-    return m_labeled_succ_nodes.empty();
-}
+{ return m_labeled_succ_nodes.empty(); }
 
 template<TaskKind Kind>
 PackedPlan<Kind> Plan<Kind>::pack() const
@@ -93,33 +83,23 @@ PackedPlan<Kind>::PackedPlan(PackedNode<Kind> start_node, PackedLabeledNodeList<
 
 template<TaskKind Kind>
 const PackedNode<Kind>& PackedPlan<Kind>::get_start_node() const noexcept
-{
-    return m_start_node;
-}
+{ return m_start_node; }
 
 template<TaskKind Kind>
 const PackedLabeledNodeList<Kind>& PackedPlan<Kind>::get_labeled_succ_nodes() const noexcept
-{
-    return m_labeled_succ_nodes;
-}
+{ return m_labeled_succ_nodes; }
 
 template<TaskKind Kind>
 ygg::float_t PackedPlan<Kind>::get_cost() const noexcept
-{
-    return !empty() ? m_labeled_succ_nodes.back().node.get_metric() : 0.;
-}
+{ return !empty() ? m_labeled_succ_nodes.back().node.get_metric() : 0.; }
 
 template<TaskKind Kind>
 size_t PackedPlan<Kind>::get_length() const noexcept
-{
-    return m_labeled_succ_nodes.size();
-}
+{ return m_labeled_succ_nodes.size(); }
 
 template<TaskKind Kind>
 bool PackedPlan<Kind>::empty() const noexcept
-{
-    return m_labeled_succ_nodes.empty();
-}
+{ return m_labeled_succ_nodes.empty(); }
 
 template<TaskKind Kind>
 Plan<Kind> PackedPlan<Kind>::unpack() const

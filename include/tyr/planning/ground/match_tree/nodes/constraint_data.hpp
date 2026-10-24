@@ -70,10 +70,7 @@ struct Data<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::constraint, &Data::true_child, &Data::dontcare_child> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::constraint, &Data::true_child, &Data::dontcare_child> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 }
 

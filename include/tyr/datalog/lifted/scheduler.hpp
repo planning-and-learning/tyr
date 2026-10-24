@@ -100,21 +100,15 @@ public:
 
     template<formalism::RelationKind R>
     auto& get() noexcept
-    {
-        return get(R {});
-    }
+    { return get(R {}); }
 
     template<formalism::RelationKind R>
     const auto& get() const noexcept
-    {
-        return get(R {});
-    }
+    { return get(R {}); }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum([[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
-    {
-        activate_all();
-    }
+    { activate_all(); }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_iteration(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
@@ -127,9 +121,7 @@ public:
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding,
                                 [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
-    {
-        activate(binding.relation);
-    }
+    { activate(binding.relation); }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)

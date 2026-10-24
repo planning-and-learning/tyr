@@ -31,8 +31,7 @@ namespace ygg
 {
 
 template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::ConjunctiveEffect<T>> C>
-class View<ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<T>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::planning::ConjunctiveEffect<T>, C>
+class View<ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::ConjunctiveEffect<T>, C>
 {
 public:
     View(ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<T>> handle, const C& context) noexcept :
@@ -42,18 +41,14 @@ public:
 
     auto get_literals() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return ygg::make_view(this->get_data().literals, this->get_context());
-    }
+    { return ygg::make_view(this->get_data().literals, this->get_context()); }
     auto get_numeric_effects() const noexcept { return ygg::make_view(this->get_data().numeric_effects, this->get_context()); }
     auto get_auxiliary_numeric_effect() const noexcept { return ygg::make_view(this->get_data().auxiliary_numeric_effect, this->get_context()); }
 
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return ygg::make_view(this->get_data().template get_facts<F>(), this->get_context());
-    }
+    { return ygg::make_view(this->get_data().template get_facts<F>(), this->get_context()); }
 };
 
 }

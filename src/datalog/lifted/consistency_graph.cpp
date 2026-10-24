@@ -409,9 +409,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets) noexcept
-{
-    return apply(element.get_operator(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets));
-}
+{ return apply(element.get_operator(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets)); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
@@ -861,9 +859,7 @@ static auto compute_indexed_constraints(formalism::datalog::ConjunctiveCondition
 }
 
 static auto compute_indexed_literals(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
-{
-    return compute_tagged_indexed_literals(element.get_literals<formalism::FluentTag>(), element.get_arity());
-}
+{ return compute_tagged_indexed_literals(element.get_literals<formalism::FluentTag>(), element.get_arity()); }
 
 static auto classify_adjacency(const kckp::GraphLayout& layout, const formalism::datalog::VariableDependencyGraph& dependency_graph)
 {
@@ -1096,9 +1092,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 }
 
 const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept
-{
-    return m_binary_overapproximation_vdg;
-}
+{ return m_binary_overapproximation_vdg; }
 
 const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m_compatibility_graph; }
 
@@ -1109,9 +1103,7 @@ const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_
 const kckp::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_compatibility_graph.get_adjacency_matrix(); }
 
 const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& StaticConsistencyGraph::get_hyperedge_indexed_literals() const noexcept
-{
-    return m_hyperedge_indexed_literals;
-}
+{ return m_hyperedge_indexed_literals; }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conjunctive_condition(size_t k,
@@ -1176,8 +1168,7 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
 }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
-create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition,
-                                       formalism::datalog::Repository& context)
+create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition, formalism::datalog::Repository& context)
 {
     auto builder = formalism::datalog::Builder {};
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);

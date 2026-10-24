@@ -17,8 +17,8 @@
 
 #include "tyr/planning/applicability_lifted.hpp"
 
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_builder.hpp"
 
 #ifndef TYR_HEADER_INSTANTIATION
 
@@ -33,8 +33,7 @@ template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag,
 // NumericEffectOperatorView
 
 template ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
-template ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element,
-                               const ApplicabilityContext& context);
+template ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
 /**
  * is_applicable

@@ -247,7 +247,8 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]() {
+        const auto statically_applicable = [&]()
+        {
             return applicability_cache.static_nullary
                    && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
         };
@@ -265,9 +266,7 @@ private:
 
     [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<formalism::Object>& binding,
                                                       ygg::UnorderedSet<ygg::IndexList<formalism::Object>>& set)
-    {
-        return set.insert(binding).second;
-    }
+    { return set.insert(binding).second; }
 
     template<typename Callback>
     void for_each_relevant_clique(formalism::PredicateTag,
@@ -288,9 +287,7 @@ private:
 
     template<typename Callback>
     void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
-    {
-        algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
-    }
+    { algorithm.for_each_clique(std::forward<Callback>(callback), workspace); }
 
     inline bool require_novel_binding(formalism::PredicateTag) noexcept
     {
@@ -458,7 +455,8 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]() {
+        const auto statically_applicable = [&]()
+        {
             return applicability_cache.static_nullary
                    && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
         };
@@ -593,7 +591,6 @@ private:
         else
             generate_general_case(rctx, enumerate_all);
     }
-
 
     template<formalism::RelationKind R>
     /// Parallel phase: generate new ground witnesses for all active rules.
@@ -738,21 +735,31 @@ template void compute_model(ProgramExecutionContext<LiftedTag,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx);
 
 template void execute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>& ctx, ygg::ExecutionContext& execution_context);
-template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy>& ctx, ygg::ExecutionContext& execution_context);
-template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>& ctx, ygg::ExecutionContext& execution_context);
-template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>& ctx, ygg::ExecutionContext& execution_context);
-template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx, ygg::ExecutionContext& execution_context);
-template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx, ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy>& ctx,
+                            ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>& ctx,
+                            ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>& ctx,
+                            ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
+                            ygg::ExecutionContext& execution_context);
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
+                            ygg::ExecutionContext& execution_context);
 template void
-execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx,
+              ygg::ExecutionContext& execution_context);
 template void execute_model(
-    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx,
+    ygg::ExecutionContext& execution_context);
 template void
-execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx,
+              ygg::ExecutionContext& execution_context);
 template void execute_model(
-    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+    ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx,
+    ygg::ExecutionContext& execution_context);
 template void execute_model(ProgramExecutionContext<LiftedTag,
                                                     MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
                                                     TerminationPolicy<MaxAggregation>,
-                                                    RuleCostOverridePolicy<LiftedTag>>& ctx, ygg::ExecutionContext& execution_context);
+                                                    RuleCostOverridePolicy<LiftedTag>>& ctx,
+                            ygg::ExecutionContext& execution_context);
 }

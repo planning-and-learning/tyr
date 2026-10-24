@@ -132,9 +132,7 @@ struct AtomStackEntry
         false_elements(false_elements),
         dontcare_elements(dontcare_elements),
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
-    {
-        result->atom = atom;
-    }
+    { result->atom = atom; }
 
     bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
@@ -193,9 +191,7 @@ struct NegativeFactStackEntry
         true_elements(true_elements),
         dontcare_elements(dontcare_elements),
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
-    {
-        result->fact = fact;
-    }
+    { result->fact = fact; }
 
     bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
@@ -220,9 +216,7 @@ struct ConstraintStackEntry
         true_elements(true_elements),
         dontcare_elements(dontcare_elements),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
-    {
-        result->constraint = constraint;
-    }
+    { result->constraint = constraint; }
 
     bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
@@ -255,9 +249,7 @@ auto store_result(Entry& entry, Repository<Tag>& repository)
 
 template<typename Tag>
 bool explored(const AtomStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>>
@@ -288,9 +280,7 @@ void push_result(AtomStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 
 template<typename Tag>
 bool explored(const VariableStackEntry<Tag>& el) noexcept
-{
-    return el.explored_children() && el.explored_dontcare_child();
-}
+{ return el.explored_children() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
@@ -325,9 +315,7 @@ void push_result(VariableStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 
 template<typename Tag>
 bool explored(const NegativeFactStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
@@ -356,9 +344,7 @@ void push_result(NegativeFactStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 
 template<typename Tag>
 bool explored(const ConstraintStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
@@ -387,21 +373,15 @@ void push_result(ConstraintStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
 
 template<typename Tag>
 bool explored(const GeneratorStackEntry<Tag>&) noexcept
-{
-    return true;
-}
+{ return true; }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>&, const SortedPreconditions<Tag>&, const PreconditionDetails<Tag>&, Builder<Tag>&)
-{
-    return std::nullopt;
-}
+{ return std::nullopt; }
 
 template<typename Tag>
 void push_result(GeneratorStackEntry<Tag>&, ygg::Data<Node<Tag>>)
-{
-    throw std::logic_error("Unexpected case.");
-}
+{ throw std::logic_error("Unexpected case."); }
 
 inline auto get_condition(formalism::planning::AxiomView<GroundTag> el) { return el.get_body(); }
 
@@ -759,15 +739,11 @@ MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_defi
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::create(std::vector<ygg::View<ygg::Index<Tag>, formalism::planning::Repository>> elements,
                                          const formalism::planning::Repository& context)
-{
-    return std::make_unique<MatchTree<Tag>>(std::move(elements), context);
-}
+{ return std::make_unique<MatchTree<Tag>>(std::move(elements), context); }
 
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
-{
-    return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition));
-}
+{ return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition)); }
 
 template<typename Tag>
 void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
@@ -856,7 +832,8 @@ template class MatchTree<formalism::planning::Axiom<GroundTag>>;
 
 // Tests intern match-tree nodes too; their insertion path needs basic_symbol_repository_impl.hpp.
 template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::AtomSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NumericConstraintSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
+template class ygg::formalism::BasicSymbolRepository<
+    tyr::planning::match_tree::NumericConstraintSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
 template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::VariableSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
 template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NegativeFactSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
 template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::ElementGeneratorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;

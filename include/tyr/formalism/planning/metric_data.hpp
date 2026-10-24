@@ -50,9 +50,7 @@ struct Data<::tyr::formalism::planning::Metric>
         index(),
         optimization_direction(optimization_direction_),
         fexpr()
-    {
-        ygg::set(fexpr_, fexpr);
-    }
+    { ygg::set(fexpr_, fexpr); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -60,10 +58,7 @@ struct Data<::tyr::formalism::planning::Metric>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::optimization_direction, &Data::fexpr> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::optimization_direction, &Data::fexpr> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Metric>);

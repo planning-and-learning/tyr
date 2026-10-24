@@ -36,9 +36,7 @@ public:
     void on_new_best_h_value(ygg::float_t h_value) override { NB_OVERRIDE_PURE(on_new_best_h_value, h_value); }
 
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
-    {
-        NB_OVERRIDE_PURE(on_end_search, status, statistics);
-    }
+    { NB_OVERRIDE_PURE(on_end_search, status, statistics); }
 
     void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
 };

@@ -315,9 +315,7 @@ public:
     }
 
     tyr::planning::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override
-    {
-        return std::make_shared<GatedLocationHeuristic>(m_task, m_gate, m_target_location, m_wait_location);
-    }
+    { return std::make_shared<GatedLocationHeuristic>(m_task, m_gate, m_target_location, m_wait_location); }
 
 private:
     tyr::planning::TaskPtr<Kind> m_task;
@@ -344,9 +342,7 @@ public:
     }
 
     tyr::planning::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override
-    {
-        return std::make_shared<LocationThrowingHeuristic>(m_task, m_location);
-    }
+    { return std::make_shared<LocationThrowingHeuristic>(m_task, m_location); }
 
 private:
     tyr::planning::TaskPtr<Kind> m_task;
@@ -389,9 +385,7 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) override
-    {
-        return std::make_unique<ReleasingAStarWorkerEventHandler<Kind>>(m_gate, m_expected);
-    }
+    { return std::make_unique<ReleasingAStarWorkerEventHandler<Kind>>(m_gate, m_expected); }
 
 private:
     std::shared_ptr<AStarHeuristicGate> m_gate;
@@ -467,9 +461,7 @@ class DuplicatePruningStrategy final : public tyr::planning::PruningStrategy<Kin
 {
 public:
     tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
-    {
-        return std::make_shared<DuplicatePruningStrategy>();
-    }
+    { return std::make_shared<DuplicatePruningStrategy>(); }
 
     bool should_prune_successor_state(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&, bool is_new) override { return !is_new; }
 };
@@ -487,9 +479,7 @@ class AlwaysSuccessorPruningStrategy final : public tyr::planning::PruningStrate
 {
 public:
     tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
-    {
-        return std::make_shared<AlwaysSuccessorPruningStrategy>();
-    }
+    { return std::make_shared<AlwaysSuccessorPruningStrategy>(); }
     bool should_prune_successor_state(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&, bool) override { return true; }
 };
 
@@ -507,9 +497,7 @@ class StaticallyUnsatisfiedGoalStrategy final : public tyr::planning::GoalStrate
 {
 public:
     tyr::planning::GoalStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
-    {
-        return std::make_shared<StaticallyUnsatisfiedGoalStrategy>();
-    }
+    { return std::make_shared<StaticallyUnsatisfiedGoalStrategy>(); }
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return false; }
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const ygg::Builder<tyr::planning::State<Kind>>&) override { return false; }
 };
@@ -521,9 +509,7 @@ public:
     tyr::planning::GoalStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override { return std::make_shared<NonRootGoalStrategy>(); }
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return true; }
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const ygg::Builder<tyr::planning::State<Kind>>& state) override
-    {
-        return &seed_state.get_state_builder() != &state;
-    }
+    { return &seed_state.get_state_builder() != &state; }
 };
 
 template<TaskKind Kind>
@@ -550,14 +536,10 @@ public:
     }
 
     tyr::planning::GoalStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
-    {
-        return tyr::planning::GoalStrategyPtr<Kind>(new SeedRecordingGoalStrategy(m_goal, m_observations));
-    }
+    { return tyr::planning::GoalStrategyPtr<Kind>(new SeedRecordingGoalStrategy(m_goal, m_observations)); }
 
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>& task) override
-    {
-        return tyr::planning::is_statically_applicable(m_goal, task.get_static_state());
-    }
+    { return tyr::planning::is_statically_applicable(m_goal, task.get_static_state()); }
 
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const ygg::Builder<tyr::planning::State<Kind>>& state) override
     {

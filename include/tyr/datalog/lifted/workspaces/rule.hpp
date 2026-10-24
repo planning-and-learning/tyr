@@ -186,9 +186,7 @@ RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static
 
 template<formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Common::clear() noexcept
-{
-    kckp.reset();
-}
+{ kckp.reset(); }
 
 template<formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
@@ -206,9 +204,7 @@ RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<Lifte
 
 template<formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Iteration::clear() noexcept
-{
-    head_updates.clear();
-}
+{ head_updates.clear(); }
 
 template<formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Solve::Solve() :

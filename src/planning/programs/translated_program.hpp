@@ -44,15 +44,11 @@ public:
 
     template<typename View>
     auto symbol(View view)
-    {
-        return formalism::datalog::copy(view, m_context).first;
-    }
+    { return formalism::datalog::copy(view, m_context).first; }
 
     template<formalism::RelationKind R>
     auto rule(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const
-    {
-        return m_rules.get<R>().at(rule);
-    }
+    { return m_rules.get<R>().at(rule); }
 
     TranslationContext<LiftedTag> translation_context(const TranslationContext<LiftedTag>& source) { return remap_translation_context(source, m_context); }
 
@@ -74,8 +70,7 @@ struct TranslatedProgram
 /// Applies a program transformation, `pass(program, destination, rules) -> program` that writes into a new repository of the
 /// factory and maps every source rule in `rules`, and remaps the tables to its output.
 template<typename Tables, typename Pass>
-TranslatedProgram<Tables>
-transform(const TranslatedProgram<Tables>& source, formalism::datalog::RepositoryFactory& factory, size_t num_objects, Pass&& pass)
+TranslatedProgram<Tables> transform(const TranslatedProgram<Tables>& source, formalism::datalog::RepositoryFactory& factory, size_t num_objects, Pass&& pass)
 {
     auto repository = factory.create_shared(num_objects);
     auto rules = datalog::RuleMapping {};

@@ -19,11 +19,11 @@
 #define TYR_DATALOG_POLICIES_NUMERIC_SUPPORT_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/numeric_expression_utils.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/numeric_expression_utils.hpp"
 
 #include <algorithm>
 #include <cassert>

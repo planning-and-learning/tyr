@@ -56,16 +56,16 @@ void for_each_static_extension(const ConstRuleWorkspace<LiftedTag, R>& rule,
         workspace.prefix.push_back(*vertex);
     }
 
-    kckp::KCKP(graph).for_each_compatible_extension(workspace.prefix,
-                                                    workspace.kckp,
-                                                    [&](std::span<const kckp::Vertex> extension)
-                                                    {
-                                                        workspace.extension.clear();
-                                                        for (const auto vertex : extension)
-                                                            workspace.extension.push_back(ygg::Index<formalism::Object>(layout.vertex_labels[vertex.index]));
-                                                        callback(std::span<const ygg::Index<formalism::Object>>(workspace.extension.data(),
-                                                                                                                 workspace.extension.size()));
-                                                    });
+    kckp::KCKP(graph).for_each_compatible_extension(
+        workspace.prefix,
+        workspace.kckp,
+        [&](std::span<const kckp::Vertex> extension)
+        {
+            workspace.extension.clear();
+            for (const auto vertex : extension)
+                workspace.extension.push_back(ygg::Index<formalism::Object>(layout.vertex_labels[vertex.index]));
+            callback(std::span<const ygg::Index<formalism::Object>>(workspace.extension.data(), workspace.extension.size()));
+        });
 }
 
 }

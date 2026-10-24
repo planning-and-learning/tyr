@@ -182,23 +182,18 @@ public:
     void finish_iteration(SchedulerIterationTrigger) noexcept {}
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term,
-                                ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R>
     auto& get_states() noexcept
-    {
-        return get_rules(R {}).states;
-    }
+    { return get_rules(R {}).states; }
 
     template<formalism::RelationKind R>
     const auto& get_states() const noexcept
-    {
-        return get_rules(R {}).states;
-    }
+    { return get_rules(R {}).states; }
 
     GroundQueueStatistics& statistics() noexcept { return m_statistics; }
     const GroundQueueStatistics& statistics() const noexcept { return m_statistics; }
@@ -210,8 +205,7 @@ private:
     void schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact,
-                                    ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R>
     void initialize_rule_states(const FactSets& fact_sets)
@@ -245,8 +239,7 @@ private:
                                         ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed_for(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term,
-                                    ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_numeric_changed_for(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     auto& get_queue(formalism::PredicateTag) noexcept { return m_predicate_queue; }
     auto& get_queue(formalism::FunctionTag) noexcept { return m_function_queue; }
@@ -255,15 +248,11 @@ private:
 
     template<formalism::RelationKind R>
     auto& get_queue() noexcept
-    {
-        return get_queue(R {});
-    }
+    { return get_queue(R {}); }
 
     template<formalism::RelationKind R>
     const auto& get_queue() const noexcept
-    {
-        return get_queue(R {});
-    }
+    { return get_queue(R {}); }
 
     auto& get_rules(formalism::PredicateTag) noexcept { return m_predicate_rules; }
     auto& get_rules(formalism::FunctionTag) noexcept { return m_function_rules; }

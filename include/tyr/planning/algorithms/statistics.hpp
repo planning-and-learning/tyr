@@ -126,9 +126,7 @@ public:
     uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
     /// HDA* communication overhead: the fraction of generated candidates transferred to another worker.
     double get_communication_overhead() const noexcept
-    {
-        return m_num_generated_candidates == 0 ? 0.0 : static_cast<double>(m_num_transferred_candidates) / static_cast<double>(m_num_generated_candidates);
-    }
+    { return m_num_generated_candidates == 0 ? 0.0 : static_cast<double>(m_num_transferred_candidates) / static_cast<double>(m_num_generated_candidates); }
     uint64_t get_num_registered_states() const noexcept { return m_num_registered_states; }
 
     size_t get_state_storage_memory_usage() const noexcept { return m_state_storage_memory_usage; }

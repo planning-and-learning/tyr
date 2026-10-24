@@ -60,9 +60,8 @@ public:
 
     /// The main rule of the rule with the given parts in the destination repository, or nullopt if nothing can be projected.
     /// The projection rules are added to the program.
-    std::optional<RuleSplitting::Rule> split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
-                                             const std::vector<FluentAtom>& heads,
-                                             ygg::float_t cost)
+    std::optional<RuleSplitting::Rule>
+    split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, const std::vector<FluentAtom>& heads, ygg::float_t cost)
     {
         if (!condition.get_numeric_constraints().empty())
             return std::nullopt;
@@ -306,10 +305,7 @@ private:
 
     /// The rule over the variables that its body uses, in action rule order, and the action rule position of each of them.
     std::pair<ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>, std::vector<ygg::uint_t>>
-    emit_rule(const ygg::IndexList<formalism::Variable>& variables,
-              const Body& body,
-              const std::vector<FluentAtom>& heads,
-              ygg::float_t cost)
+    emit_rule(const ygg::IndexList<formalism::Variable>& variables, const Body& body, const std::vector<FluentAtom>& heads, ygg::float_t cost)
     {
         auto positions = std::vector<ygg::uint_t> {};
         for (const auto parameter : parameters_of(body))

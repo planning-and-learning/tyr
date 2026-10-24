@@ -62,159 +62,107 @@ void field(std::ostream& os, std::string_view name, const T& value)
 
 template<TaskKind T>
 std::string unary_operator(const ygg::Data<UnaryOperator<T>>& value)
-{
-    return fmt::format("({} {})", value.operator_kind, value.arg);
-}
+{ return fmt::format("({} {})", value.operator_kind, value.arg); }
 
 template<TaskKind T>
 std::string unary_operator(UnaryOperatorView<T> value)
-{
-    return fmt::format("({} {})", value.get_operator(), value.get_arg());
-}
+{ return fmt::format("({} {})", value.get_operator(), value.get_arg()); }
 
 template<TaskKind T, BinaryOperatorKind O>
 std::string binary_operator(const ygg::Data<BinaryOperator<T, O>>& value)
-{
-    return fmt::format("({} {} {})", value.operator_kind, value.lhs, value.rhs);
-}
+{ return fmt::format("({} {} {})", value.operator_kind, value.lhs, value.rhs); }
 
 template<TaskKind T, BinaryOperatorKind O>
 std::string binary_operator(BinaryOperatorView<T, O> value)
-{
-    return fmt::format("({} {} {})", value.get_operator(), value.get_lhs(), value.get_rhs());
-}
+{ return fmt::format("({} {} {})", value.get_operator(), value.get_lhs(), value.get_rhs()); }
 
 template<TaskKind T>
 std::string multi_operator(const ygg::Data<MultiOperator<T>>& value)
-{
-    return fmt::format("({} {})", value.operator_kind, fmt::join(ygg::to_strings(value.args), " "));
-}
+{ return fmt::format("({} {})", value.operator_kind, fmt::join(ygg::to_strings(value.args), " ")); }
 
 template<TaskKind T>
 std::string multi_operator(MultiOperatorView<T> value)
-{
-    return fmt::format("({} {})", value.get_operator(), fmt::join(ygg::to_strings(value.get_args()), " "));
-}
+{ return fmt::format("({} {})", value.get_operator(), fmt::join(ygg::to_strings(value.get_args()), " ")); }
 
 template<TaskKind T>
 std::string arithmetic_operator(const ygg::Data<ArithmeticOperator<T>>& value)
-{
-    return fmt::format("{}", value.variant);
-}
+{ return fmt::format("{}", value.variant); }
 
 template<TaskKind T>
 std::string arithmetic_operator(ArithmeticOperatorView<T> value)
-{
-    return fmt::format("{}", value.get_variant());
-}
+{ return fmt::format("{}", value.get_variant()); }
 
 template<TaskKind T>
 std::string boolean_operator(const ygg::Data<BooleanOperator<T>>& value)
-{
-    return fmt::format("{}", value.variant);
-}
+{ return fmt::format("{}", value.variant); }
 
 template<TaskKind T>
 std::string boolean_operator(BooleanOperatorView<T> value)
-{
-    return fmt::format("{}", value.get_variant());
-}
+{ return fmt::format("{}", value.get_variant()); }
 
 template<FactKind T>
 std::string atom(const ygg::Data<Atom<LiftedTag, T>>& value)
-{
-    return fmt::format("({} {})", value.predicate, fmt::join(ygg::to_strings(value.terms), " "));
-}
+{ return fmt::format("({} {})", value.predicate, fmt::join(ygg::to_strings(value.terms), " ")); }
 
 template<FactKind T>
 std::string atom(AtomView<LiftedTag, T> value)
-{
-    return fmt::format("({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
-}
+{ return fmt::format("({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " ")); }
 
 template<TaskKind T, FactKind F>
 std::string literal(const ygg::Data<Literal<T, F>>& value)
-{
-    return value.polarity ? fmt::format("{}", value.atom) : fmt::format("(not {})", value.atom);
-}
+{ return value.polarity ? fmt::format("{}", value.atom) : fmt::format("(not {})", value.atom); }
 
 template<TaskKind T, FactKind F>
 std::string literal(LiteralView<T, F> value)
-{
-    return value.get_polarity() ? fmt::format("{}", value.get_atom()) : fmt::format("(not {})", value.get_atom());
-}
+{ return value.get_polarity() ? fmt::format("{}", value.get_atom()) : fmt::format("(not {})", value.get_atom()); }
 
 template<FactKind T>
 std::string ground_atom(const ygg::Data<Atom<GroundTag, T>>& value)
-{
-    return fmt::format("({})", value.binding);
-}
+{ return fmt::format("({})", value.binding); }
 
 template<FactKind T>
 std::string ground_atom(AtomView<GroundTag, T> value)
-{
-    return fmt::format("{}", value.get_row());
-}
+{ return fmt::format("{}", value.get_row()); }
 
 template<FactKind T>
 std::string function_term(const ygg::Data<FunctionTerm<LiftedTag, T>>& value)
-{
-    return fmt::format("({} {})", value.function, fmt::join(ygg::to_strings(value.terms), " "));
-}
+{ return fmt::format("({} {})", value.function, fmt::join(ygg::to_strings(value.terms), " ")); }
 
 template<FactKind T>
 std::string function_term(FunctionTermView<LiftedTag, T> value)
-{
-    return fmt::format("({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
-}
+{ return fmt::format("({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " ")); }
 
 template<FactKind T>
 std::string ground_function_term(const ygg::Data<FunctionTerm<GroundTag, T>>& value)
-{
-    return fmt::format("({})", value.binding);
-}
+{ return fmt::format("({})", value.binding); }
 
 template<FactKind T>
 std::string ground_function_term(FunctionTermView<GroundTag, T> value)
-{
-    return fmt::format("{}", value.get_row());
-}
+{ return fmt::format("{}", value.get_row()); }
 
 template<FactKind T>
 std::string ground_function_term_value(const ygg::Data<FunctionTermValue<GroundTag, T>>& value)
-{
-    return fmt::format("(= {} {})", value.fterm, value.value);
-}
+{ return fmt::format("(= {} {})", value.fterm, value.value); }
 
 template<FactKind T>
 std::string ground_function_term_value(FunctionTermValueView<GroundTag, T> value)
-{
-    return fmt::format("(= {} {})", value.get_fterm(), value.get_value());
-}
+{ return fmt::format("(= {} {})", value.get_fterm(), value.get_value()); }
 
 template<TaskKind T, FactKind F>
 std::string numeric_effect(const ygg::Data<NumericEffect<T, F>>& value)
-{
-    return fmt::format("({} {} {})", value.operator_kind, value.fterm, value.fexpr);
-}
+{ return fmt::format("({} {} {})", value.operator_kind, value.fterm, value.fexpr); }
 
 template<TaskKind T, FactKind F>
 std::string numeric_effect(NumericEffectView<T, F> value)
-{
-    return fmt::format("({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr());
-}
+{ return fmt::format("({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr()); }
 
 template<TaskKind T, FactKind F>
 std::string numeric_effect_operator(const ygg::Data<NumericEffectOperator<T, F>>& value)
-{
-    return fmt::format("{}", value.variant);
-}
+{ return fmt::format("{}", value.variant); }
 
 template<TaskKind T, FactKind F>
 std::string numeric_effect_operator(NumericEffectOperatorView<T, F> value)
-{
-    return fmt::format("{}", value.get_variant());
-}
+{ return fmt::format("{}", value.get_variant()); }
 
 template<FactKind T>
 std::string fdr_variable(const ygg::Data<FDRVariable<T>>& value)
@@ -264,9 +212,7 @@ std::string invariant(InvariantView value)
 
 template<FactKind T>
 std::string fdr_fact(const ygg::Data<FDRFact<T>>& value)
-{
-    return fmt::format("<{},{}>", value.variable, value.value);
-}
+{ return fmt::format("<{},{}>", value.variable, value.value); }
 
 template<FactKind T>
 std::string fdr_fact(FDRFactView<T> value)
@@ -284,15 +230,11 @@ std::string fdr_fact(FDRFactView<T> value)
 
 template<typename View>
 std::string named(View value)
-{
-    return fmt::format("{}", value.get_name());
-}
+{ return fmt::format("{}", value.get_name()); }
 
 template<typename View>
 std::string symbol(View value)
-{
-    return fmt::format("{}/{}", value.get_name(), value.get_arity());
-}
+{ return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
 
 template<typename View>
 std::string relation_binding(View value)
@@ -306,9 +248,7 @@ std::string relation_binding(View value)
 
 template<typename Tag>
 std::string relation_binding(const ygg::Data<RelationBinding<Tag>>& value)
-{
-    return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " "));
-}
+{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
 
 }  // namespace detail
 
@@ -837,8 +777,6 @@ std::string to_string(const std::pair<ActionBindingView, PlanFormatting>& value)
 }
 
 std::string to_string(const std::pair<ActionView<GroundTag>, PlanFormatting>& value)
-{
-    return fmt::format("{}", std::make_pair(value.first.get_row(), value.second));
-}
+{ return fmt::format("{}", std::make_pair(value.first.get_row(), value.second)); }
 
 }  // namespace tyr::formalism::planning

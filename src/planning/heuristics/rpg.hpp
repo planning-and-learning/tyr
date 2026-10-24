@@ -132,18 +132,14 @@ public:
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    {
-        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
-    }
+    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
 
     RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context) :
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    {
-        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
-    }
+    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
@@ -181,9 +177,7 @@ protected:
 
     void set_action_binding_cost(formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
-    {
-        m_workspace.cost_policy.set_action_cost(action_binding, cost);
-    }
+    { m_workspace.cost_policy.set_action_cost(action_binding, cost); }
 
     datalog::Cost get_predicate_cost(formalism::datalog::PredicateBindingView<formalism::FluentTag> head) const noexcept
     {
@@ -202,9 +196,7 @@ protected:
 
     template<formalism::RelationKind R>
     auto get_action(const datalog::WitnessAnnotation<R>& witness)
-    {
-        return Policy::get_action(*m_definition, m_workspace, witness);
-    }
+    { return Policy::get_action(*m_definition, m_workspace, witness); }
 
     template<formalism::RelationKind R>
     std::optional<formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)

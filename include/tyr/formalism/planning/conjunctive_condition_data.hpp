@@ -19,10 +19,10 @@
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/boolean_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
 #include <utility>
@@ -82,7 +82,6 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-
     template<::tyr::formalism::FactKind T>
     const auto& get_literals() const
     {
@@ -96,15 +95,14 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::derived_literals, &Data::numeric_constraints> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return ygg::
+            Members<&Data::index, &Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::derived_literals, &Data::numeric_constraints> {};
+    }
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::derived_literals, &Data::numeric_constraints> {};
-    }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    { return ygg::Members<&Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::derived_literals, &Data::numeric_constraints> {}; }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>);
@@ -158,7 +156,6 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-
     template<::tyr::formalism::FactKind T>
     const auto& get_literals() const
     {
@@ -181,15 +178,14 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::positive_facts, &Data::negative_facts, &Data::static_literals, &Data::derived_literals, &Data::numeric_constraints> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return ygg::
+            Members<&Data::index, &Data::positive_facts, &Data::negative_facts, &Data::static_literals, &Data::derived_literals, &Data::numeric_constraints> {};
+    }
     static constexpr auto identifying_members() noexcept
-    {
-        return ygg::Members<&Data::positive_facts, &Data::negative_facts, &Data::static_literals, &Data::derived_literals, &Data::numeric_constraints> {};
-    }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    { return ygg::Members<&Data::positive_facts, &Data::negative_facts, &Data::static_literals, &Data::derived_literals, &Data::numeric_constraints> {}; }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>);

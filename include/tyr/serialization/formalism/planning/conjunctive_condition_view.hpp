@@ -19,12 +19,14 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     {
         ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
     }
-    ar.field(std::same_as<T, ::tyr::GroundTag> ? "static_ground_literals" : "static_literals", [](const auto& value) -> decltype(auto) { return (value.template get_literals<::tyr::formalism::StaticTag>()); });
+    ar.field(std::same_as<T, ::tyr::GroundTag> ? "static_ground_literals" : "static_literals",
+             [](const auto& value) -> decltype(auto) { return (value.template get_literals<::tyr::formalism::StaticTag>()); });
     if constexpr (std::same_as<T, ::tyr::LiftedTag>)
     {
         ar.field("fluent_literals", [](const auto& value) -> decltype(auto) { return (value.template get_literals<::tyr::formalism::FluentTag>()); });
     }
-    ar.field(std::same_as<T, ::tyr::GroundTag> ? "derived_ground_literals" : "derived_literals", [](const auto& value) -> decltype(auto) { return (value.template get_literals<::tyr::formalism::DerivedTag>()); });
+    ar.field(std::same_as<T, ::tyr::GroundTag> ? "derived_ground_literals" : "derived_literals",
+             [](const auto& value) -> decltype(auto) { return (value.template get_literals<::tyr::formalism::DerivedTag>()); });
     if constexpr (std::same_as<T, ::tyr::GroundTag>)
     {
         ar.field("positive_fdr_facts", [](const auto& value) -> decltype(auto) { return (value.template get_facts<::tyr::formalism::PositiveTag>()); });

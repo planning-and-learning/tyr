@@ -21,10 +21,10 @@
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <stdexcept>
-#include <yggdrasil/containers/variant.hpp>
 #include <tuple>
 #include <utility>
 #include <variant>
+#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
@@ -62,10 +62,7 @@ struct Data<::tyr::formalism::planning::NumericEffectOperator<T, ::tyr::formalis
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 template<::tyr::TaskKind T>
@@ -96,10 +93,7 @@ struct Data<::tyr::formalism::planning::NumericEffectOperator<T, ::tyr::formalis
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::variant> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);

@@ -54,9 +54,7 @@ struct StateRepositoryPolicy<GroundTag>
 {
     template<bool ThreadSafe>
     static StateStorageContext<GroundTag, StateStoragePolicyTag, ThreadSafe> make_storage_context(const Task<GroundTag>& task)
-    {
-        return StateStorageContext<GroundTag, StateStoragePolicyTag, ThreadSafe>(task);
-    }
+    { return StateStorageContext<GroundTag, StateStoragePolicyTag, ThreadSafe>(task); }
 
     static void insert_initial_fluent_facts(const Task<GroundTag>& task, ygg::Builder<State<GroundTag>>& state)
     {
@@ -77,9 +75,7 @@ struct StateRepositoryPolicy<LiftedTag>
 {
     template<bool ThreadSafe>
     static StateStorageContext<LiftedTag, StateStoragePolicyTag, ThreadSafe> make_storage_context(const Task<LiftedTag>&)
-    {
-        return {};
-    }
+    { return {}; }
 
     static void insert_initial_fluent_facts(const Task<LiftedTag>& task, ygg::Builder<State<LiftedTag>>& state)
     {
@@ -233,7 +229,8 @@ struct StateRepository<Kind>::Impl
                 }
             }
 
-            derived_backend.unpack(packed_states[*state_index].template get_atom_storage<formalism::DerivedTag>(), state.template get_atom_storage<formalism::DerivedTag>());
+            derived_backend.unpack(packed_states[*state_index].template get_atom_storage<formalism::DerivedTag>(),
+                                   state.template get_atom_storage<formalism::DerivedTag>());
             state.set(*state_index);
         }
     };
@@ -342,7 +339,8 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(ygg::Index<State<Kin
         [&](auto& evaluator)
         {
             const auto& packed_state = evaluator.storage->packed_states[state_index];
-            evaluator.fluent_backend.unpack(packed_state.template get_atom_storage<formalism::FluentTag>(), state_builder->template get_atom_storage<formalism::FluentTag>());
+            evaluator.fluent_backend.unpack(packed_state.template get_atom_storage<formalism::FluentTag>(),
+                                            state_builder->template get_atom_storage<formalism::FluentTag>());
             evaluator.derived_backend.unpack(packed_state.template get_atom_storage<formalism::DerivedTag>(),
                                              state_builder->template get_atom_storage<formalism::DerivedTag>());
             evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
@@ -444,33 +442,23 @@ size_t StateRepository<Kind>::memory_usage() const noexcept
 
 template<TaskKind Kind>
 const TaskPtr<Kind>& StateRepository<Kind>::get_task() const noexcept
-{
-    return m_impl->definition->task;
-}
+{ return m_impl->definition->task; }
 
 template<TaskKind Kind>
 bool StateRepository<Kind>::shares_storage_with(const StateRepository& other) const noexcept
-{
-    return m_impl->storage_identity == other.m_impl->storage_identity;
-}
+{ return m_impl->storage_identity == other.m_impl->storage_identity; }
 
 template<TaskKind Kind>
 bool StateRepository<Kind>::is_concurrent() const noexcept
-{
-    return static_cast<bool>(m_impl->shared_evaluator);
-}
+{ return static_cast<bool>(m_impl->shared_evaluator); }
 
 template<TaskKind Kind>
 ygg::uint_t StateRepository<Kind>::get_worker_index() const noexcept
-{
-    return m_impl->index;
-}
+{ return m_impl->index; }
 
 template<TaskKind Kind>
 ygg::uint_t StateRepository<Kind>::get_index() const noexcept
-{
-    return m_impl->storage_identity;
-}
+{ return m_impl->storage_identity; }
 
 template<TaskKind Kind>
 size_t StateRepository<Kind>::num_states() const noexcept

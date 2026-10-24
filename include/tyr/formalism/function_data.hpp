@@ -18,16 +18,16 @@
 #ifndef TYR_FORMALISM_FUNCTION_DATA_HPP_
 #define TYR_FORMALISM_FUNCTION_DATA_HPP_
 
+#include "tyr/formalism/declarations.hpp"
+
+#include <string>
 #include <tuple>
 #include <utility>
-#include <string>
 #include <yggdrasil/core/types.hpp>
 #include <yggdrasil/core/types_utils.hpp>
-#include "tyr/formalism/declarations.hpp"
 
 namespace ygg
 {
-
 
 template<::tyr::formalism::FactKind T>
 struct Data<::tyr::formalism::Function<T>>
@@ -47,10 +47,7 @@ struct Data<::tyr::formalism::Function<T>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::arity> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name, &Data::arity> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Function<::tyr::formalism::StaticTag>>);

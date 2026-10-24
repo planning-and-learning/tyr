@@ -47,9 +47,7 @@ struct formatter<tyr::analysis::VariableDomain, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const tyr::analysis::VariableDomain& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.objects);
-    }
+    { return fmt::format_to(ctx.out(), "{}", value.objects); }
 };
 
 template<typename Element, typename Payload>
@@ -279,12 +277,15 @@ struct formatter<tyr::analysis::TaskVariableDomains, char>
 };
 
 template<typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::analysis::ConditionalEffectDomainViewData<C>, C>, char>
+struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::analysis::ConditionalEffectDomainViewData<C>, C>,
+                 char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::analysis::ConditionalEffectDomainViewData<C>, C>& value,
-                FormatContext& ctx) const
+    auto
+    format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::analysis::ConditionalEffectDomainViewData<C>, C>&
+               value,
+           FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "ConditionalEffectDomain(\n";
@@ -307,7 +308,8 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Action<::ty
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::analysis::ActionDomainViewData<C>, C>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::analysis::ActionDomainViewData<C>, C>& value,
+                FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "ActionDomain(\n";
@@ -440,9 +442,7 @@ struct formatter<tyr::analysis::VariableDomainView<C>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const tyr::analysis::VariableDomainView<C>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.objects);
-    }
+    { return fmt::format_to(ctx.out(), "{}", value.objects); }
 };
 
 template<>

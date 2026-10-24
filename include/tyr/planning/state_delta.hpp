@@ -49,9 +49,7 @@ struct StateDelta
         ygg::float_t to;
 
         friend bool operator==(const NumericChange& lhs, const NumericChange& rhs) noexcept
-        {
-            return lhs.fterm == rhs.fterm && ygg::EqualTo<ygg::float_t> {}(lhs.from, rhs.from) && ygg::EqualTo<ygg::float_t> {}(lhs.to, rhs.to);
-        }
+        { return lhs.fterm == rhs.fterm && ygg::EqualTo<ygg::float_t> {}(lhs.from, rhs.from) && ygg::EqualTo<ygg::float_t> {}(lhs.to, rhs.to); }
     };
 
     std::vector<FluentChange> fluents;    ///< Sorted by variable, unique.

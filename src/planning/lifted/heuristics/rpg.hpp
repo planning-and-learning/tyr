@@ -27,11 +27,11 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_view.hpp"
 
 #include <cassert>
 #include <fmt/ostream.h>
@@ -49,9 +49,7 @@ struct RPGPolicy<LiftedTag>
 
     template<typename Workspace>
     static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<LiftedTag>& definition,
-                       Workspace& workspace,
-                       formalism::datalog::PredicateBindingView<formalism::FluentTag> head)
+    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::datalog::PredicateBindingView<formalism::FluentTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_predicate;
         if (!mapping.contains(head.get_relation()))
@@ -85,8 +83,7 @@ struct RPGPolicy<LiftedTag>
         if (it == mapping.end())
             return std::nullopt;
 
-        auto grounder_context =
-            formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
+        auto grounder_context = formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
         if constexpr (std::same_as<R, formalism::PredicateTag>)
         {

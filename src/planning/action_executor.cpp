@@ -27,10 +27,10 @@
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_delta.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -131,15 +131,13 @@ void compute_touched_delta(const ygg::Builder<State<Kind>>& parent,
         for (const auto fact : *effects)
             delta.fluents.push_back(StateDelta::FluentChange { fact.variable, parent.get(fact.variable), successor.get(fact.variable) });
     std::ranges::sort(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable); });
-    delta.fluents.erase(std::ranges::unique(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable); }).begin(),
-                        delta.fluents.end());
+    delta.fluents.erase(std::ranges::unique(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable); }).begin(), delta.fluents.end());
     std::erase_if(delta.fluents, [](const auto& change) { return change.from == change.to; });
 
     for (const auto fterm : numeric_writes)
         delta.numerics.push_back(StateDelta::NumericChange { fterm, parent.get(fterm), successor.get(fterm) });
     std::ranges::sort(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm); });
-    delta.numerics.erase(std::ranges::unique(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm); }).begin(),
-                         delta.numerics.end());
+    delta.numerics.erase(std::ranges::unique(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm); }).begin(), delta.numerics.end());
     std::erase_if(delta.numerics, [](const auto& change) { return ygg::EqualTo<ygg::float_t> {}(change.from, change.to); });
 }
 
@@ -178,18 +176,14 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{
-    return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state);
-}
+{ return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state); }
 
 template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{
-    return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families);
-}
+{ return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families); }
 
 template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);

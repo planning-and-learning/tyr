@@ -80,9 +80,7 @@ inline CostMode parse_cost_mode(const std::string& key)
 }
 
 inline HeuristicExpectation parse_expectation(const std::string& key, const boost::json::object& object)
-{
-    return HeuristicExpectation { parse_cost_mode(key), parse_optional_float(object, "h") };
-}
+{ return HeuristicExpectation { parse_cost_mode(key), parse_optional_float(object, "h") }; }
 
 inline HeuristicCase parse_case(const boost::json::object& object)
 {
@@ -140,9 +138,7 @@ HeuristicContext<Kind> create_heuristic_context(tyr::planning::TaskPtr<LiftedTag
 
 template<TaskKind Kind>
 HeuristicContext<Kind> create_heuristic_context(const std::filesystem::path& domain_file, const std::filesystem::path& task_file)
-{
-    return create_heuristic_context<Kind>(tyr::planning::Task<LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file)));
-}
+{ return create_heuristic_context<Kind>(tyr::planning::Task<LiftedTag>::create(make_test_parser(domain_file).parse_task(task_file))); }
 
 inline bool should_check(const HeuristicExpectation& expectation) { return expectation.h.has_value(); }
 

@@ -43,9 +43,7 @@ public:
     auto get_head() const noexcept { return get_rule().get_head(); }
 
     auto resolve(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
-    {
-        return formalism::datalog::ground_binding(atom, m_grounder).first;
-    }
+    { return formalism::datalog::ground_binding(atom, m_grounder).first; }
 
     auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(constraint, m_grounder); }
 

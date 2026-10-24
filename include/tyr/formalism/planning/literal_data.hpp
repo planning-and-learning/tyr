@@ -40,9 +40,7 @@ struct Data<::tyr::formalism::planning::Literal<T, F>>
     // Python constructor
     template<typename C>
     Data(::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<T, F>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
-    {
-        set(atom_, atom);
-    }
+    { set(atom_, atom); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
@@ -50,10 +48,7 @@ struct Data<::tyr::formalism::planning::Literal<T, F>>
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atom, &Data::polarity> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::polarity> {}; }
-    void clear() noexcept
-    {
-        ygg::clear_members(*this);
-    }
+    void clear() noexcept { ygg::clear_members(*this); }
 };
 
 static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);

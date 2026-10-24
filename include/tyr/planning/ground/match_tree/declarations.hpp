@@ -89,9 +89,7 @@ using RepositoryPtr = std::unique_ptr<Repository<Tag>>;
 
 template<typename Repo, typename... Tags>
 constexpr bool match_tree_repository_access_for_types(ygg::TypeList<Tags...>) noexcept
-{
-    return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...);
-}
+{ return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...); }
 
 template<typename T>
 concept HasFormalismRepository = requires(const T& r) {
@@ -106,9 +104,7 @@ concept RepositoryConcept = HasFormalismRepository<T> && match_tree_repository_a
 /// @return
 template<typename Tag>
 inline const Repository<Tag>& get_repository(const Repository<Tag>& context) noexcept
-{
-    return context;
-}
+{ return context; }
 
 template<typename T, typename Tag>
 concept Context = requires(const T& a) {
