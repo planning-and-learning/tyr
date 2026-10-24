@@ -1,0 +1,7 @@
+# Tests: literal values are the test data. Tests read optionals with value(), whose
+# bad_optional_access fails the test: the check cannot see gtest's ASSERTs.
+InheritParentConfig: true
+Checks: >
+  -cppcoreguidelines-avoid-magic-numbers
+CheckOptions:
+  bugprone-unchecked-optional-access.IgnoreValueCalls: true
