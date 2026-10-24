@@ -36,7 +36,6 @@ FactStorageBackend<GroundTag, HashSet, ThreadSafe>::FactStorageBackend(Context& 
 template<bool ThreadSafe>
 typename FactStorageBackend<GroundTag, HashSet, ThreadSafe>::Packed FactStorageBackend<GroundTag, HashSet, ThreadSafe>::insert(const Unpacked& unpacked)
 {
-    auto data = m_buffer.data();
     const auto& values = unpacked.values;
 
     std::fill(m_buffer.begin(), m_buffer.end(), ygg::uint_t(0));
@@ -44,7 +43,7 @@ typename FactStorageBackend<GroundTag, HashSet, ThreadSafe>::Packed FactStorageB
     {
         const auto& info = m_infos[i];
 
-        ygg::bit::int_reference(data + info.begin, info.offset, info.length) = values[i];
+        ygg::bit::int_reference(std::span(m_buffer).subspan(info.begin), info.offset, info.length) = values[i];
     }
 
     return Packed { m_array_set.insert(m_buffer) };
@@ -63,7 +62,7 @@ void FactStorageBackend<GroundTag, HashSet, ThreadSafe>::unpack(const Packed& pa
     {
         const auto& info = m_infos[i];
 
-        values[i] = ygg::bit::read_int(data.data() + info.begin, info.offset, info.length);
+        values[i] = ygg::bit::read_int<ygg::uint_t>(std::span(data.data(), data.size()).subspan(info.begin), info.offset, info.length);
     }
 }
 

@@ -103,7 +103,7 @@ template<formalism::FactKind T>
 PredicateBindingViewRange<T> PredicateFactSet<T>::get_bindings() const noexcept
 {
     auto rows = detail::PredicateFactRowRange { detail::PredicateFactRowIterator { m_bitset, true }, detail::PredicateFactRowIterator { m_bitset, false } };
-    auto bindings = ygg::make_view(detail::PredicateBindingRange<T> { m_predicate_index, rows }, m_repository);
+    auto bindings = ygg::make_view(detail::PredicateBindingRange<T> { &m_predicate_index, &rows }, m_repository);
     return { bindings.begin(), bindings.end() };
 }
 
@@ -334,7 +334,7 @@ template<formalism::FactKind T>
 formalism::datalog::FunctionBindingRandomAccessRangeView<T> FunctionFactSet<T>::get_bindings() const noexcept
 {
     return ygg::make_view(
-        formalism::RelationBindingsRandomAccessRange<formalism::Function<T>, std::vector<ygg::Index<formalism::Row>>> { m_function_index, m_bindings },
+        formalism::RelationBindingsRandomAccessRange<formalism::Function<T>, std::vector<ygg::Index<formalism::Row>>> { &m_function_index, &m_bindings },
         m_repository);
 }
 

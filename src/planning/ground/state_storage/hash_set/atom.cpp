@@ -36,11 +36,9 @@ AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::AtomStorageBackend(Context& 
 template<bool ThreadSafe>
 typename AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::Packed AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::insert(const Unpacked& unpacked)
 {
-    auto data = m_buffer.data();
-
     std::fill(m_buffer.begin(), m_buffer.end(), ygg::uint_t(0));
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
-        ygg::bit::bit_reference(data, i) = unpacked.indices.test(i);
+        ygg::bit::bit_reference(std::span(m_buffer), i) = unpacked.indices.test(i);
     return Packed { m_array_set.insert(m_buffer) };
 }
 
@@ -54,7 +52,7 @@ void AtomStorageBackend<GroundTag, HashSet, ThreadSafe>::unpack(const Packed& pa
         indices.resize(m_num_bits);
 
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
-        indices[i] = bool(ygg::bit::bit_reference(data.data(), i));
+        indices[i] = bool(ygg::bit::bit_reference(std::span(data.data(), data.size()), i));
 }
 
 template class AtomStorageBackend<GroundTag, HashSet, false>;

@@ -19,6 +19,7 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/factory.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 
@@ -30,6 +31,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <yggdrasil/execution/onetbb.hpp>
 #if defined(__GLIBC__)
 #include <malloc.h>
 #endif

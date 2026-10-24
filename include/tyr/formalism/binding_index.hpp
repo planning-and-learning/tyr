@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_BINDING_INDEX_HPP_
 #define TYR_FORMALISM_BINDING_INDEX_HPP_
 
-#include <yggdrasil/formalism/binding_index.hpp>
+#include <yggdrasil/formalism/declarations.hpp>
 #include "tyr/formalism/declarations.hpp"
 
 namespace tyr::formalism

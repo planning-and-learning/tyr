@@ -37,7 +37,6 @@ template<bool ThreadSafe>
 typename FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed
 FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::insert(const Unpacked& unpacked)
 {
-    auto data = m_buffer.data();
     const auto& values = unpacked.values;
 
     std::fill(m_buffer.begin(), m_buffer.end(), ygg::uint_t(0));
@@ -45,7 +44,7 @@ FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::insert(const Unpacked& un
     {
         const auto& info = m_infos[i];
 
-        ygg::bit::int_reference(data + info.begin, info.offset, info.length) = values[i];
+        ygg::bit::int_reference(std::span(m_buffer).subspan(info.begin), info.offset, info.length) = values[i];
     }
 
     return Packed { m_array_set.insert(m_buffer) };
@@ -64,7 +63,7 @@ void FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::unpack(const Packed&
     {
         const auto& info = m_infos[i];
 
-        values[i] = ygg::bit::read_int(data.data() + info.begin, info.offset, info.length);
+        values[i] = ygg::bit::read_int<ygg::uint_t>(std::span(data.data(), data.size()).subspan(info.begin), info.offset, info.length);
     }
 }
 

@@ -22,6 +22,7 @@
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
@@ -34,6 +35,7 @@
 #include <string>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/execution/onetbb.hpp>
 
 using tyr::GroundTag;
 using tyr::LiftedTag;

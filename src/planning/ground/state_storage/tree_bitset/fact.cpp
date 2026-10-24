@@ -41,7 +41,7 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& un
     for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
     {
         const auto& info = m_infos[i];
-        ygg::bit::write_int(m_blocks.data() + info.begin, tree_bitset::Block(unpacked.values[i]), info.offset, info.length);
+        ygg::bit::write_int(std::span(m_blocks).subspan(info.begin), tree_bitset::Block(unpacked.values[i]), info.offset, info.length);
     }
 
     ygg::trim_trailing_zero_blocks(m_blocks);
@@ -75,7 +75,7 @@ void FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::unpack(const Packed&
     for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
     {
         const auto& info = m_infos[i];
-        values[i] = ygg::uint_t(ygg::bit::read_int(m_blocks.data() + info.begin, info.offset, info.length));
+        values[i] = ygg::uint_t(ygg::bit::read_int<tree_bitset::Block>(std::span(m_blocks).subspan(info.begin), info.offset, info.length));
     }
 }
 

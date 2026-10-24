@@ -44,11 +44,11 @@ TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
     const auto selected_fields = std::optional<std::vector<std::string>>(std::in_place);
     auto archive = ygg::serialization::Dictionaries::Archive(dictionaries, selected_fields);
     const auto dummy = 0;
-    auto writer = ygg::serialization::FieldWriter { archive, dummy };
+    auto writer = ygg::serialization::FieldWriter { &archive, &dummy };
     EXPECT_NO_THROW(writer.field("unused", [](int) -> int { throw std::runtime_error("excluded getter ran"); }));
     EXPECT_NO_THROW(writer.variant([](int) -> decltype(std::declval<tyr::formalism::planning::TermView>().get_variant())
                                    { throw std::runtime_error("excluded variant getter ran"); }));
-    EXPECT_TRUE(archive.fields.empty());
+    EXPECT_TRUE(std::move(archive).take_fields().empty());
 }
 
 TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
