@@ -1,7 +1,10 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Shared plumbing for the per-algorithm search-statistics fixture generators.
 
 Each ``generate_<algorithm>.py`` script defines its fixture path, configuration list, and
-a ``run_config`` callable producing the per-configuration JSON object, then delegates to
+a ``run_config`` callable producing the per-configuration JSON object for a :class:`ConfigRun`, then delegates to
 :func:`generate_main`. Every configuration runs in a worker subprocess with an external
 timeout; configurations that time out or fail are omitted from the fixture and skipped by
 the tests. The recorded statistics pin the exact search trajectory, so the fixtures are
@@ -11,8 +14,8 @@ Filtered runs (case names as CLI arguments) write ``<fixture>.generated`` next t
 fixture instead of replacing it.
 
 Typing note: the lifted and ground planning APIs are distinct nominal types, selected by a
-runtime ``kind``. The selected module is therefore treated as ``Any`` (the one hop no type
-checker can follow), while every object whose members we read back is ``cast`` to a small
+runtime ``kind``. The selected module is therefore typed as a plain ``ModuleType`` (the one hop no
+type checker can follow), while every object whose members we read back is ``cast`` to a small
 Protocol so attribute/method access stays statically checked.
 """
 
@@ -22,26 +25,34 @@ import json
 import math
 import subprocess
 import sys
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Callable, Literal, Mapping, Protocol, Sequence, TypeAlias, TypedDict, cast
+from types import ModuleType
+from typing import Any, Literal, Protocol, TypeAlias, TypedDict, cast
 
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
 from pytyr.formalism.planning import LiftedPlanningTask, Parser
-from pytyr.planning import CostMode, SearchBudget, SearchStatus, Statistics
-from pytyr.planning import ground as ground_planning
-from pytyr.planning import lifted as lifted_planning
+from pytyr.planning import (
+    CostMode,
+    SearchBudget,
+    SearchStatus,
+    Statistics,
+    ground as ground_planning,
+    lifted as lifted_planning,
+)
 
 
 class _ParserLike(Protocol):
     # Precise view of the one overload we use; pytyr's stub types the path as an
     # unparametrized PathLike, which reads as partially-unknown under strict mode.
     def parse_task(self, task_filepath: str, parser_options: ParserOptions) -> LiftedPlanningTask: ...
+
 
 ROOT = Path(__file__).resolve().parents[4]
 BENCHMARKS_ROOT = pypddl_datasets.data_root()
@@ -65,13 +76,16 @@ ConfigSpec: TypeAlias = tuple[HeuristicName | None, CostSuffix | None]
 JsonNumber: TypeAlias = int | float
 FixtureCase: TypeAlias = dict[str, object]
 ConfigResult: TypeAlias = dict[str, object]
-"""A run_config returns the per-configuration fixture object, or a skip reason string."""
-RunConfig: TypeAlias = Callable[["TaskKind", "HeuristicName | None", "CostSuffix | None", Path, Path, "FixtureCase", bool], "ConfigResult | str"]
 
 HEURISTICS: tuple[HeuristicName, ...] = ("blind", "hmax", "hadd", "hff", "hlmcut")
 COST_SUFFIXES: tuple[CostSuffix, ...] = ("unit", "general")
 # The RPG heuristics support unit cost only; blind search also runs with the general metric.
-SEARCH_CONFIGS: list[ConfigSpec] = [(heuristic, suffix) for heuristic in HEURISTICS for suffix in COST_SUFFIXES if heuristic == "blind" or suffix == "unit"]
+SEARCH_CONFIGS: list[ConfigSpec] = [
+    (heuristic, suffix)
+    for heuristic in HEURISTICS
+    for suffix in COST_SUFFIXES
+    if heuristic == "blind" or suffix == "unit"
+]
 RECORDED_STATUSES = (SearchStatus.SOLVED, SearchStatus.EXHAUSTED, SearchStatus.UNSOLVABLE)
 
 SEARCH_STATUS_NAMES = {
@@ -123,6 +137,24 @@ class SearchOptionsLike(Protocol):
 
 
 @dataclass(frozen=True)
+class ConfigRun:
+    """One configuration of one fixture case: the task, the search configuration, and the suite it belongs to."""
+
+    kind: TaskKind
+    heuristic_name: HeuristicName | None
+    cost_suffix: CostSuffix | None
+    domain_file: Path
+    task_file: Path
+    suite: FixtureCase
+    # Generation bounds every run by MAX_NUM_STATES and MAX_TIME; replaying a recorded fixture does not.
+    apply_limits: bool
+
+
+RunConfig: TypeAlias = Callable[[ConfigRun], "ConfigResult | str"]
+"""A run_config returns the per-configuration fixture object, or a skip reason string."""
+
+
+@dataclass(frozen=True)
 class Context:
     kind: TaskKind
     execution_context: ExecutionContext
@@ -143,11 +175,11 @@ def as_json_number(value: float) -> JsonNumber:
 def parse_task(domain_file: Path, task_file: Path) -> LiftedPlanningTask:
     parser_options = ParserOptions()
     parser_options.add_action_costs = True
-    parser = cast(_ParserLike, Parser(str(domain_file), parser_options))
+    parser = cast("_ParserLike", Parser(str(domain_file), parser_options))
     return parser.parse_task(str(task_file), parser_options)
 
 
-def planning_module(context: Context) -> Any:
+def planning_module(context: Context) -> ModuleType:
     """The runtime-selected planning module for this context's kind (see module docstring)."""
     return lifted_planning if context.kind == "lifted" else ground_planning
 
@@ -162,7 +194,9 @@ def make_context(kind: TaskKind, domain_file: Path, task_file: Path) -> Context:
         successor_generator = lifted_planning.SuccessorGeneratorFactory().create(lifted_task, execution_context)
         return Context(kind, execution_context, lifted_task, state_repository, axiom_evaluator, successor_generator)
 
-    instantiation = lifted_task.instantiate_ground_task(execution_context, lifted_planning.GroundTaskInstantiationOptions())
+    instantiation = lifted_task.instantiate_ground_task(
+        execution_context, lifted_planning.GroundTaskInstantiationOptions()
+    )
     task = instantiation.task
     axiom_evaluator = ground_planning.AxiomEvaluatorFactory().create(task, execution_context)
     state_repository = ground_planning.StateRepositoryFactory().create(task)
@@ -174,7 +208,7 @@ def cost_mode_of(suffix: CostSuffix | None) -> CostMode:
     return CostMode.UNIT if suffix == "unit" else CostMode.GENERAL
 
 
-def make_heuristic(context: Context, name: HeuristicName, cost_suffix: CostSuffix | None) -> Any:
+def make_heuristic(context: Context, name: HeuristicName, cost_suffix: CostSuffix | None) -> object:
     planning = planning_module(context)
     if name == "blind":
         return planning.BlindHeuristic()
@@ -210,26 +244,17 @@ def config_label(heuristic_name: HeuristicName | None, cost_suffix: CostSuffix |
     return f"{heuristic_name}_{cost_suffix}"
 
 
-def run_search_config(
-    algorithm: Algorithm,
-    kind: TaskKind,
-    heuristic_name: HeuristicName | None,
-    cost_suffix: CostSuffix | None,
-    domain_file: Path,
-    task_file: Path,
-    suite: FixtureCase,
-    apply_limits: bool,
-) -> ConfigResult | str:
+def run_search_config(algorithm: Algorithm, run: ConfigRun) -> ConfigResult | str:
     """Run one plain-search configuration and return its fixture object (counters + plan)."""
-    context = make_context(kind, domain_file, task_file)
+    context = make_context(run.kind, run.domain_file, run.task_file)
     module = getattr(planning_module(context), algorithm)  # runtime-selected submodule (see module docstring)
-    options = cast(SearchOptionsLike, module.Options())
-    if apply_limits:
+    options = cast("SearchOptionsLike", module.Options())
+    if run.apply_limits:
         options.search_budget = SearchBudget(MAX_NUM_STATES, timedelta(seconds=MAX_TIME))
 
-    if heuristic_name is None:
+    if run.heuristic_name is None:
         result = cast(
-            SearchResultLike,
+            "SearchResultLike",
             module.find_solution(
                 context.task,
                 context.state_repository,
@@ -239,13 +264,13 @@ def run_search_config(
             ),
         )
     else:
-        options.cost_mode = cost_mode_of(cost_suffix)
+        options.cost_mode = cost_mode_of(run.cost_suffix)
         try:
-            heuristic = make_heuristic(context, heuristic_name, cost_suffix)
+            heuristic = make_heuristic(context, run.heuristic_name, run.cost_suffix)
         except ValueError as error:
             return f"unsupported heuristic: {error}"
         result = cast(
-            SearchResultLike,
+            "SearchResultLike",
             module.find_solution(
                 context.task,
                 context.state_repository,
@@ -266,17 +291,10 @@ def run_search_config(
     return config
 
 
-def run_config_external(
-    module: str,
-    fixture: Path,
-    case_name: str,
-    kind: TaskKind,
-    heuristic_name: HeuristicName | None,
-    cost_suffix: CostSuffix | None,
-    domain_file: Path,
-    task_file: Path,
-) -> ConfigResult | str:
-    label = config_label(heuristic_name, cost_suffix)
+def run_config_external(module: str, fixture: Path, case_name: str, run: ConfigRun) -> ConfigResult | str:
+    """Run one configuration in a worker subprocess of the generator ``module``; a timeout is a skip reason."""
+    kind = run.kind
+    label = config_label(run.heuristic_name, run.cost_suffix)
     print(f"  running {kind}::{case_name} :: {label}", flush=True)
     command = [
         sys.executable,
@@ -285,10 +303,10 @@ def run_config_external(
         "--worker",
         str(fixture),
         kind,
-        heuristic_name or "-",
-        cost_suffix or "-",
-        str(domain_file),
-        str(task_file),
+        run.heuristic_name or "-",
+        run.cost_suffix or "-",
+        str(run.domain_file),
+        str(run.task_file),
     ]
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=WORKER_TIMEOUT_SECONDS, check=False)
@@ -297,30 +315,36 @@ def run_config_external(
 
     if result.returncode != 0:
         detail = f": {result.stderr.strip()}" if result.stderr else ""
-        raise RuntimeError(f"{kind}::{case_name} :: {label}: worker failed with code {result.returncode}{detail}")
+        msg = f"{kind}::{case_name} :: {label}: worker failed with code {result.returncode}{detail}"
+        raise RuntimeError(msg)
 
     try:
         payload = cast("dict[str, object]", json.loads(result.stdout.splitlines()[-1]))
     except (IndexError, json.JSONDecodeError) as error:
-        raise RuntimeError(f"{kind}::{case_name} :: {label}: invalid worker output: {error}") from error
+        msg = f"{kind}::{case_name} :: {label}: invalid worker output: {error}"
+        raise RuntimeError(msg) from error
     config = payload.get("config")
     if config is None:
         return str(payload.get("reason", "unknown"))
-    return cast(ConfigResult, config)
+    return cast("ConfigResult", config)
 
 
 def run_worker(run_config: RunConfig, argv: list[str]) -> None:
     _, fixture, kind, heuristic_name, cost_suffix, domain_file, task_file = argv
     if kind not in ("lifted", "ground"):
-        raise ValueError(f"unknown task kind: {kind}")
-    heuristic = None if heuristic_name == "-" else cast(HeuristicName, heuristic_name)
-    suffix = None if cost_suffix == "-" else cast(CostSuffix, cost_suffix)
-    suite = cast(FixtureCase, json.loads(Path(fixture).read_text()))
-    config = run_config(kind, heuristic, suffix, Path(domain_file), Path(task_file), suite, True)
+        msg = f"unknown task kind: {kind}"
+        raise ValueError(msg)
+    heuristic = None if heuristic_name == "-" else cast("HeuristicName", heuristic_name)
+    suffix = None if cost_suffix == "-" else cast("CostSuffix", cost_suffix)
+    suite = cast("FixtureCase", json.loads(Path(fixture).read_text()))
+    run = ConfigRun(kind, heuristic, suffix, Path(domain_file), Path(task_file), suite, apply_limits=True)
+    config = run_config(run)
     print(json.dumps({"config": None, "reason": config} if isinstance(config, str) else {"config": config}))
 
 
-def assemble_case(case: FixtureCase, configs: Sequence[ConfigSpec], results: dict[str, ConfigResult | str]) -> FixtureCase:
+def assemble_case(
+    case: FixtureCase, configs: Sequence[ConfigSpec], results: dict[str, ConfigResult | str]
+) -> FixtureCase:
     result: FixtureCase = {
         "name": case["name"],
         "domain_file": case["domain_file"],
@@ -342,32 +366,48 @@ def assemble_case(case: FixtureCase, configs: Sequence[ConfigSpec], results: dic
     return result
 
 
-def generate_main(script: Path, fixtures: Mapping[TaskKind, Path], configs: Sequence[ConfigSpec], run_config: RunConfig) -> None:
+def generate_main(
+    script: Path, fixtures: Mapping[TaskKind, Path], configs: Sequence[ConfigSpec], run_config: RunConfig
+) -> None:
     """Entry point for a generator script: handles --worker re-entry and case-name filters."""
     if len(sys.argv) > 1 and sys.argv[1] == "--worker":
         run_worker(run_config, sys.argv[1:])
         return
 
     filters = set(sys.argv[1:])
-    benchmark_suite = cast(FixtureCase, json.loads(BENCHMARKS_FIXTURE.read_text()))
+    benchmark_suite = cast("FixtureCase", json.loads(BENCHMARKS_FIXTURE.read_text()))
     cases_in = cast("list[FixtureCase]", benchmark_suite["cases"])
     module = ".".join(script.relative_to(ROOT).with_suffix("").parts)
     for kind, fixture in fixtures.items():
-        suite = cast(FixtureCase, json.loads(fixture.read_text()))
+        suite = cast("FixtureCase", json.loads(fixture.read_text()))
         selected = [case for case in cases_in if not filters or case["name"] in filters]
 
         with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as pool:
             futures = {
-                (str(case["name"]), config_label(heuristic_name, cost_suffix)):
-                    pool.submit(run_config_external, module, fixture, str(case["name"]), kind, heuristic_name, cost_suffix,
-                                BENCHMARKS_ROOT / str(case["domain_file"]), BENCHMARKS_ROOT / str(case["task_file"]))
+                (str(case["name"]), config_label(heuristic_name, cost_suffix)): pool.submit(
+                    run_config_external,
+                    module,
+                    fixture,
+                    str(case["name"]),
+                    ConfigRun(
+                        kind,
+                        heuristic_name,
+                        cost_suffix,
+                        BENCHMARKS_ROOT / str(case["domain_file"]),
+                        BENCHMARKS_ROOT / str(case["task_file"]),
+                        suite,
+                        apply_limits=True,
+                    ),
+                )
                 for case in selected
                 for heuristic_name, cost_suffix in configs
             }
             results = {key: future.result() for key, future in futures.items()}
 
         cases = [
-            assemble_case(case, configs, {label: result for (name, label), result in results.items() if name == case["name"]})
+            assemble_case(
+                case, configs, {label: result for (name, label), result in results.items() if name == case["name"]}
+            )
             for case in selected
         ]
 

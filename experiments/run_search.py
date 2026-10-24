@@ -1,121 +1,193 @@
 #!/usr/bin/env python
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""Run a Downward Lab search experiment described by a what and a how JSON file.
+
+See experiments/README.md for the configuration files and how to run them locally or on Arrhenius.
+"""
 
 import argparse
 import base64
 import json
 import os
 import sys
+from collections.abc import Collection
 from pathlib import Path
+from typing import Any, NamedTuple
 
-from lab.environments import LocalEnvironment, ArrheniusEnvironment
+import pypddl_datasets
+from lab.environments import ArrheniusEnvironment, LocalEnvironment
 from lab.experiment import ARGPARSER, Experiment
 
+# Run as a script, this directory is on sys.path; imported as `experiments.run_search`, the repository root is.
+if __package__:
+    from experiments.parser_datalog import DatalogParser
+    from experiments.parser_search import SearchParser
+    from experiments.report import BaseReport
+else:
+    from parser_datalog import DatalogParser
+    from parser_search import SearchParser
+    from report import BaseReport
 
 EXPERIMENTS_DIR = Path(__file__).resolve().parent
 REPO = EXPERIMENTS_DIR.parent
 STATE_ENV = "TYR_SEARCH_EXPERIMENT_STATE"
-sys.path.insert(0, str(REPO))
 
-from experiments.parser_datalog import DatalogParser
-from experiments.parser_search import SearchParser
-from experiments.report import BaseReport
+# A JSON object as parsed by `json`; validate_what and validate_how check its values.
+JsonObject = dict[str, Any]
 
 
 class ConfigError(ValueError):
-    pass
+    """A what/how configuration, a command-line override, or the encoded experiment state is invalid."""
 
 
-def load_json(path):
+class ExperimentState(NamedTuple):
+    """Everything a Lab step needs to rebuild the experiment."""
+
+    what: JsonObject
+    how: JsonObject
+    suites: list[str]
+    configurations: list[JsonObject]
+    output_dir: Path
+
+
+def load_json(path: Path) -> object:
+    """Read and parse the JSON file at `path`.
+
+    Raises:
+        ConfigError: If the file cannot be read or is not valid JSON.
+    """
     try:
         with path.open(encoding="utf-8") as stream:
             return json.load(stream)
     except OSError as error:
-        raise ConfigError(f"cannot read {path}: {error}") from error
+        msg = f"cannot read {path}: {error}"
+        raise ConfigError(msg) from error
     except json.JSONDecodeError as error:
-        raise ConfigError(f"invalid JSON in {path}: {error}") from error
+        msg = f"invalid JSON in {path}: {error}"
+        raise ConfigError(msg) from error
 
 
-def _object(value, name, required, optional=()):
+def _mapping(value: object, name: str) -> JsonObject:
     if not isinstance(value, dict):
-        raise ConfigError(f"{name} must be an object")
+        msg = f"{name} must be an object"
+        raise ConfigError(msg)
+    return value
 
+
+def _object(value: object, name: str, required: Collection[str], optional: Collection[str] = ()) -> JsonObject:
+    value = _mapping(value, name)
     keys = set(value)
     missing = set(required) - keys
     unknown = keys - set(required) - set(optional)
     if missing:
-        raise ConfigError(f"{name} is missing: {', '.join(sorted(missing))}")
+        msg = f"{name} is missing: {', '.join(sorted(missing))}"
+        raise ConfigError(msg)
     if unknown:
-        raise ConfigError(f"{name} has unknown keys: {', '.join(sorted(unknown))}")
+        msg = f"{name} has unknown keys: {', '.join(sorted(unknown))}"
+        raise ConfigError(msg)
+    return value
 
 
-def _string(value, name):
+def _string(value: object, name: str) -> None:
     if not isinstance(value, str) or not value:
-        raise ConfigError(f"{name} must be a non-empty string")
+        msg = f"{name} must be a non-empty string"
+        raise ConfigError(msg)
 
 
-def _positive_int(value, name):
+def _positive_int(value: object, name: str) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-        raise ConfigError(f"{name} must be a positive integer")
+        msg = f"{name} must be a positive integer"
+        raise ConfigError(msg)
 
 
-def _optional_positive_int(value, name):
+def _optional_positive_int(value: object, name: str) -> None:
     if value is not None:
         _positive_int(value, name)
 
 
-def _string_list(value, name, *, allow_empty=False):
+def _string_list(value: object, name: str, *, allow_empty: bool = False) -> None:
     if not isinstance(value, list) or (not allow_empty and not value):
         qualifier = "" if allow_empty else " non-empty"
-        raise ConfigError(f"{name} must be a{qualifier} list")
+        msg = f"{name} must be a{qualifier} list"
+        raise ConfigError(msg)
     for index, item in enumerate(value):
         _string(item, f"{name}[{index}]")
 
 
-def validate_what(config):
+def _validate_configurations(configurations: object) -> None:
+    if not isinstance(configurations, list) or not configurations:
+        msg = "what.configurations must be a non-empty list"
+        raise ConfigError(msg)
+
+    names: set[str] = set()
+    required_configuration = {"name", "task_kind", "heuristic", "seed", "args"}
+    for index, item in enumerate(configurations):
+        prefix = f"what.configurations[{index}]"
+        configuration = _object(item, prefix, required_configuration)
+        _string(configuration["name"], f"{prefix}.name")
+        _string(configuration["heuristic"], f"{prefix}.heuristic")
+        if isinstance(configuration["seed"], bool) or not isinstance(configuration["seed"], int):
+            msg = f"{prefix}.seed must be an integer"
+            raise ConfigError(msg)
+        _string_list(configuration["args"], f"{prefix}.args", allow_empty=True)
+        if {"-G", "--instantiate-ground-task"} & set(configuration["args"]):
+            msg = f"{prefix}.args must not contain ground-task flags"
+            raise ConfigError(msg)
+        if configuration["task_kind"] not in {"lifted", "ground"}:
+            msg = f"{prefix}.task_kind must be 'lifted' or 'ground'"
+            raise ConfigError(msg)
+        if configuration["name"] in names:
+            msg = f"duplicate configuration name: {configuration['name']}"
+            raise ConfigError(msg)
+        names.add(configuration["name"])
+
+
+def validate_what(config: object) -> JsonObject:
+    """Check the what config: the planner, its suites per environment, configurations, and parsers.
+
+    Returns:
+        The config itself, as a JSON object.
+
+    Raises:
+        ConfigError: If the config is invalid.
+    """
     required = {"name", "planner", "suite_sets", "configurations", "parsers"}
-    _object(config, "what config", required)
+    config = _object(config, "what config", required)
     _string(config["name"], "what.name")
 
     if config["planner"] not in {"astar_eager", "gbfs_lazy"}:
-        raise ConfigError("what.planner must be 'astar_eager' or 'gbfs_lazy'")
+        msg = "what.planner must be 'astar_eager' or 'gbfs_lazy'"
+        raise ConfigError(msg)
 
     _object(config["suite_sets"], "what.suite_sets", {"local", "arrhenius"})
     for environment, suites in config["suite_sets"].items():
         _string_list(suites, f"what.suite_sets.{environment}", allow_empty=True)
 
-    configurations = config["configurations"]
-    if not isinstance(configurations, list) or not configurations:
-        raise ConfigError("what.configurations must be a non-empty list")
-
-    names = set()
-    required_configuration = {"name", "task_kind", "heuristic", "seed", "args"}
-    for index, configuration in enumerate(configurations):
-        prefix = f"what.configurations[{index}]"
-        _object(configuration, prefix, required_configuration)
-        _string(configuration["name"], f"{prefix}.name")
-        _string(configuration["heuristic"], f"{prefix}.heuristic")
-        if isinstance(configuration["seed"], bool) or not isinstance(configuration["seed"], int):
-            raise ConfigError(f"{prefix}.seed must be an integer")
-        _string_list(configuration["args"], f"{prefix}.args", allow_empty=True)
-        if {"-G", "--instantiate-ground-task"} & set(configuration["args"]):
-            raise ConfigError(f"{prefix}.args must not contain ground-task flags")
-        if configuration["task_kind"] not in {"lifted", "ground"}:
-            raise ConfigError(f"{prefix}.task_kind must be 'lifted' or 'ground'")
-        if configuration["name"] in names:
-            raise ConfigError(f"duplicate configuration name: {configuration['name']}")
-        names.add(configuration["name"])
+    _validate_configurations(config["configurations"])
 
     _string_list(config["parsers"], "what.parsers")
     unknown_parsers = set(config["parsers"]) - {"search", "datalog"}
     if unknown_parsers:
-        raise ConfigError(f"unknown parsers: {', '.join(sorted(unknown_parsers))}")
+        msg = f"unknown parsers: {', '.join(sorted(unknown_parsers))}"
+        raise ConfigError(msg)
     if len(config["parsers"]) != len(set(config["parsers"])):
-        raise ConfigError("what.parsers contains duplicates")
+        msg = "what.parsers contains duplicates"
+        raise ConfigError(msg)
 
     return config
 
 
-def validate_how(config):
+def validate_how(config: object) -> JsonObject:
+    """Check the how config: the build, environment, resource limits, and environment-specific settings.
+
+    Returns:
+        The config itself, as a JSON object.
+
+    Raises:
+        ConfigError: If the config is invalid.
+    """
     common = {
         "name",
         "environment",
@@ -135,12 +207,13 @@ def validate_how(config):
         "scheduler_time_limit",
         "max_tasks",
     }
-    _object(config, "how config", common, local | arrhenius)
-    for key in {"name", "environment", "build_dir", "output_root"}:
+    config = _object(config, "how config", common, local | arrhenius)
+    for key in ("name", "environment", "build_dir", "output_root"):
         _string(config[key], f"how.{key}")
 
     if config["environment"] not in {"local", "arrhenius"}:
-        raise ConfigError("how.environment must be 'local' or 'arrhenius'")
+        msg = "how.environment must be 'local' or 'arrhenius'"
+        raise ConfigError(msg)
 
     _positive_int(config["memory_limit_mib"], "how.memory_limit_mib")
     _optional_positive_int(config["cpu_time_limit_s"], "how.cpu_time_limit_s")
@@ -150,18 +223,22 @@ def validate_how(config):
         missing = local - set(config)
         unexpected = arrhenius & set(config)
         if missing:
-            raise ConfigError(f"local how config is missing: {', '.join(sorted(missing))}")
+            msg = f"local how config is missing: {', '.join(sorted(missing))}"
+            raise ConfigError(msg)
         if unexpected:
-            raise ConfigError(f"local how config has Arrhenius keys: {', '.join(sorted(unexpected))}")
+            msg = f"local how config has Arrhenius keys: {', '.join(sorted(unexpected))}"
+            raise ConfigError(msg)
         _positive_int(config["local_processes"], "how.local_processes")
     else:
         missing = arrhenius - set(config)
         unexpected = local & set(config)
         if missing:
-            raise ConfigError(f"Arrhenius how config is missing: {', '.join(sorted(missing))}")
+            msg = f"Arrhenius how config is missing: {', '.join(sorted(missing))}"
+            raise ConfigError(msg)
         if unexpected:
-            raise ConfigError(f"Arrhenius how config has local keys: {', '.join(sorted(unexpected))}")
-        for key in {"account", "partition", "qos", "scheduler_time_limit"}:
+            msg = f"Arrhenius how config has local keys: {', '.join(sorted(unexpected))}"
+            raise ConfigError(msg)
+        for key in ("account", "partition", "qos", "scheduler_time_limit"):
             _string(config[key], f"how.{key}")
         _positive_int(config["cpus_per_task"], "how.cpus_per_task")
         _positive_int(config["memory_per_cpu_mib"], "how.memory_per_cpu_mib")
@@ -170,8 +247,12 @@ def validate_how(config):
     return config
 
 
-def apply_how_overrides(config, args):
-    config = config.copy()
+def apply_how_overrides(config: object, args: argparse.Namespace) -> JsonObject:
+    """Return a copy of the how config with the command-line overrides in `args` applied.
+
+    Switching the environment drops the settings of the previous environment.
+    """
+    config = _mapping(config, "how config").copy()
     environment = getattr(args, "environment", None)
     if environment and environment != config.get("environment"):
         environment_keys = {
@@ -216,23 +297,31 @@ def apply_how_overrides(config, args):
     return config
 
 
-def select_suites(what, how, requested):
+def select_suites(what: JsonObject, how: JsonObject, requested: list[str] | None) -> list[str]:
+    """Return the requested suites, or else the what config's suites for the how config's environment."""
     return requested or what["suite_sets"][how["environment"]]
 
 
-def select_configurations(what, requested):
+def select_configurations(what: JsonObject, requested: list[str] | None) -> list[JsonObject]:
+    """Return the configurations named in `requested`, in what-config order, or all if none are requested.
+
+    Raises:
+        ConfigError: If a requested configuration does not exist.
+    """
     if not requested:
         return what["configurations"]
 
-    requested = set(requested)
-    selected = [configuration for configuration in what["configurations"] if configuration["name"] in requested]
-    missing = requested - {configuration["name"] for configuration in selected}
+    requested_names = set(requested)
+    selected = [configuration for configuration in what["configurations"] if configuration["name"] in requested_names]
+    missing = requested_names - {configuration["name"] for configuration in selected}
     if missing:
-        raise ConfigError(f"unknown configurations: {', '.join(sorted(missing))}")
+        msg = f"unknown configurations: {', '.join(sorted(missing))}"
+        raise ConfigError(msg)
     return selected
 
 
-def planner_command(configuration):
+def planner_command(configuration: JsonObject) -> list[str]:
+    """Return the Lab command that runs the planner with the given configuration on a run's task."""
     task_kind_args = [] if configuration["task_kind"] == "lifted" else ["-G"]
     return [
         "{run_planner}",
@@ -249,16 +338,20 @@ def planner_command(configuration):
     ]
 
 
-def _repo_path(path):
+def _repo_path(path: str) -> Path:
     path = Path(path).expanduser()
     return path if path.is_absolute() else REPO / path
 
 
-def default_output_dir(what, how):
+def default_output_dir(what: JsonObject, how: JsonObject) -> Path:
+    """Return the experiment directory below the how config's output root, separated by planner."""
     return _repo_path(how["output_root"]) / what["planner"] / f"{what['name']}--{how['name']}"
 
 
-def encode_state(what, how, suites, configurations, output_dir):
+def encode_state(
+    what: JsonObject, how: JsonObject, suites: list[str], configurations: list[JsonObject], output_dir: Path
+) -> str:
+    """Encode the experiment as a string that the cluster jobs receive in the STATE_ENV environment variable."""
     state = {
         "what": what,
         "how": how,
@@ -270,23 +363,30 @@ def encode_state(what, how, suites, configurations, output_dir):
     return base64.urlsafe_b64encode(data).decode()
 
 
-def decode_state(encoded):
+def decode_state(encoded: str) -> ExperimentState:
+    """Decode and validate an experiment encoded by encode_state.
+
+    Raises:
+        ConfigError: If the encoded state is malformed or invalid.
+    """
     try:
         state = json.loads(base64.urlsafe_b64decode(encoded).decode())
     except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ConfigError(f"invalid {STATE_ENV}") from error
+        msg = f"invalid {STATE_ENV}"
+        raise ConfigError(msg) from error
 
-    _object(state, STATE_ENV, {"what", "how", "suites", "configurations", "output_dir"})
+    state = _object(state, STATE_ENV, {"what", "how", "suites", "configurations", "output_dir"})
     what = validate_what(state["what"])
     how = validate_how(state["how"])
     _string_list(state["suites"], f"{STATE_ENV}.suites", allow_empty=True)
     _string_list(state["configurations"], f"{STATE_ENV}.configurations")
     _string(state["output_dir"], f"{STATE_ENV}.output_dir")
     configurations = select_configurations(what, state["configurations"])
-    return what, how, state["suites"], configurations, Path(state["output_dir"])
+    return ExperimentState(what, how, state["suites"], configurations, Path(state["output_dir"]))
 
 
-def make_environment(how, encoded_state):
+def make_environment(how: JsonObject, encoded_state: str) -> LocalEnvironment | ArrheniusEnvironment:
+    """Return the Lab environment of the how config; Arrhenius jobs receive the encoded experiment state."""
     if how["environment"] == "local":
         return LocalEnvironment(processes=how["local_processes"])
 
@@ -305,9 +405,9 @@ def make_environment(how, encoded_state):
     return environment
 
 
-def make_experiment(what, how, suites, configurations, output_dir, encoded_state):
-    import pypddl_datasets
-
+def make_experiment(state: ExperimentState, encoded_state: str) -> Experiment:
+    """Build the Lab experiment: one run per suite task and configuration, plus the parse and report steps."""
+    what, how, suites, configurations, output_dir = state
     experiment = Experiment(path=output_dir, environment=make_environment(how, encoded_state))
     attributes = ["run_dir"]
     parser_types = {
@@ -361,7 +461,8 @@ def make_experiment(what, how, suites, configurations, output_dir, encoded_state
     return experiment
 
 
-def add_arguments(parser):
+def add_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add the experiment selection and how-config override options to `parser`."""
     parser.add_argument("--what", type=Path, help="JSON file describing what to run; required with --how.")
     parser.add_argument("--how", type=Path, help="JSON file describing how and where to run it; required with --what.")
     parser.add_argument("--suite", action="append", help="Replace the suite list selected by the environment.")
@@ -388,34 +489,47 @@ def add_arguments(parser):
     parser.add_argument("--wall-time-limit-s", type=int)
 
 
-def main():
+def load_experiment_state(args: argparse.Namespace, encoded_state: str | None) -> tuple[ExperimentState, str] | None:
+    """Return the experiment and its encoding, from the what/how files or else from the STATE_ENV variable.
+
+    Returns None after printing the help.
+
+    Raises:
+        ConfigError: If neither source is given or the configuration is invalid.
+    """
+    if args.what or args.how:
+        if not args.what or not args.how:
+            msg = "--what and --how must be provided together"
+            raise ConfigError(msg)
+        what = validate_what(load_json(args.what))
+        how = validate_how(apply_how_overrides(load_json(args.how), args))
+        suites = select_suites(what, how, args.suite)
+        configurations = select_configurations(what, args.configuration)
+        output_dir = args.output_dir or default_output_dir(what, how)
+        encoded_state = encode_state(what, how, suites, configurations, output_dir)
+        return ExperimentState(what, how, suites, configurations, Path(output_dir).resolve()), encoded_state
+    if encoded_state:
+        return decode_state(encoded_state), encoded_state
+    if "-h" in sys.argv or "--help" in sys.argv:
+        ARGPARSER.epilog = "Available steps: build, start, parse, fetch, report."
+        ARGPARSER.parse_args()
+        return None
+    msg = "--what and --how are required"
+    raise ConfigError(msg)
+
+
+def main() -> None:
+    """Parse the command line, build the experiment, and run the requested Lab steps."""
     pre_parser = argparse.ArgumentParser(add_help=False)
     add_arguments(pre_parser)
     args, _ = pre_parser.parse_known_args()
     add_arguments(ARGPARSER)
 
-    encoded_state = os.environ.get(STATE_ENV)
     try:
-        if args.what or args.how:
-            if not args.what or not args.how:
-                raise ConfigError("--what and --how must be provided together")
-            what = validate_what(load_json(args.what))
-            how = validate_how(apply_how_overrides(load_json(args.how), args))
-            suites = select_suites(what, how, args.suite)
-            configurations = select_configurations(what, args.configuration)
-            output_dir = args.output_dir or default_output_dir(what, how)
-            encoded_state = encode_state(what, how, suites, configurations, output_dir)
-            output_dir = Path(output_dir).resolve()
-        elif encoded_state:
-            what, how, suites, configurations, output_dir = decode_state(encoded_state)
-        elif "-h" in sys.argv or "--help" in sys.argv:
-            ARGPARSER.epilog = "Available steps: build, start, parse, fetch, report."
-            ARGPARSER.parse_args()
+        loaded = load_experiment_state(args, os.environ.get(STATE_ENV))
+        if loaded is None:
             return
-        else:
-            raise ConfigError("--what and --how are required")
-
-        experiment = make_experiment(what, how, suites, configurations, output_dir, encoded_state)
+        experiment = make_experiment(*loaded)
     except ConfigError as error:
         ARGPARSER.error(str(error))
 

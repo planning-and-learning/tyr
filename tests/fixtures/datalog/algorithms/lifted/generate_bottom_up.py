@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Regenerate lifted bottom-up binding fixtures for the initial state.
 
 Usage:
@@ -16,10 +18,11 @@ from typing import Literal, TypedDict, cast
 
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
+from pyyggdrasil.execution import ExecutionContext
+
 from pytyr import datalog
 from pytyr.formalism.planning import LiftedPlanningTask, Parser
 from pytyr.planning import lifted as planning
-from pyyggdrasil.execution import ExecutionContext
 
 ROOT = Path(__file__).resolve().parents[5]
 BENCHMARKS_ROOT = pypddl_datasets.data_root()
@@ -75,9 +78,7 @@ def make_context(domain_file: Path, task_file: Path) -> Context:
 def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
     result: list[PredicateAtoms] = []
     for fact_set in workspace.get_fluent_fact_sets().get_predicate_sets():
-        bindings: list[AtomBinding] = []
-        for binding in fact_set.get_bindings():
-            bindings.append({"objects": str(binding.get_objects())})
+        bindings: list[AtomBinding] = [{"objects": str(binding.get_objects())} for binding in fact_set.get_bindings()]
 
         predicate = fact_set.get_predicate()
         result.append(
@@ -119,7 +120,9 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
         if len(axiom_program.get_datalog_program().get_program().get_rules()) != 0:
             axiom_workspace = solve_program(context.execution_context, axiom_program.get_datalog_program())
         program = planning.ApplicableActionProgram(context.task.get_task())
-        return atoms_by_predicate(solve_program(context.execution_context, program.get_datalog_program(), axiom_workspace))
+        return atoms_by_predicate(
+            solve_program(context.execution_context, program.get_datalog_program(), axiom_workspace)
+        )
 
     if config == "ground_task":
         program = planning.GroundTaskProgram(context.task.get_task())
@@ -128,7 +131,8 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
         datalog.lifted.compute_model(execution, context.execution_context)
         return atoms_by_predicate(workspace)
 
-    raise RuntimeError(f"unknown bottom-up fixture configuration: {config}")
+    msg = f"unknown bottom-up fixture configuration: {config}"
+    raise RuntimeError(msg)
 
 
 def generate_case(case: FixtureCase) -> FixtureCase:
@@ -145,8 +149,8 @@ def generate_case(case: FixtureCase) -> FixtureCase:
 
 def main() -> None:
     filters = set(sys.argv[1:])
-    suite = cast(FixtureCase, json.loads(gzip.decompress(FIXTURE.read_bytes())))
-    benchmarks = cast(FixtureCase, json.loads(BENCHMARKS_FIXTURE.read_text()))
+    suite = cast("FixtureCase", json.loads(gzip.decompress(FIXTURE.read_bytes())))
+    benchmarks = cast("FixtureCase", json.loads(BENCHMARKS_FIXTURE.read_text()))
     cases_in = cast("list[FixtureCase]", benchmarks["cases"])
     cases: list[FixtureCase] = []
 
@@ -161,14 +165,14 @@ def main() -> None:
         expected_cases = [tuple(case[key] for key in keys) for case in cases_in]
         generated_cases = [tuple(case[key] for key in keys) for case in cases]
         if generated_cases != expected_cases:
-            raise RuntimeError("generated bottom-up cases do not match the benchmark manifest")
+            msg = "generated bottom-up cases do not match the benchmark manifest"
+            raise RuntimeError(msg)
 
     output = FIXTURE if not filters else FIXTURE.with_name(f"{FIXTURE.stem}.generated{FIXTURE.suffix}")
     header = {key: value for key, value in suite.items() if key != "cases"}
     payload = (json.dumps({**header, "cases": cases}, indent=4) + "\n").encode()
-    with output.open("wb") as file:
-        with gzip.GzipFile(filename="", mode="wb", fileobj=file, mtime=0) as compressed:
-            compressed.write(payload)
+    with output.open("wb") as file, gzip.GzipFile(filename="", mode="wb", fileobj=file, mtime=0) as compressed:
+        compressed.write(payload)
     print(f"Wrote {output}")
 
 

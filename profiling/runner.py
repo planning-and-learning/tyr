@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""Run each case of a profiling suite as its own Google Benchmark subprocess with a hard timeout."""
+
 import argparse
 import json
 import os
@@ -8,6 +13,7 @@ import re
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from typing import Any, TextIO, TypedDict, cast
 
 from report import build_summary, print_summary
@@ -15,6 +21,8 @@ from schema import require_mapping, validate_suite
 
 
 class CommandResult(TypedDict):
+    """Outcome of one benchmark subprocess; status is passed, failed or timed_out."""
+
     command: list[str]
     status: str
     exit_code: int | None
@@ -22,14 +30,28 @@ class CommandResult(TypedDict):
     stdout: str
 
 
+@dataclass(frozen=True)
+class BenchmarkOptions:
+    """How every case's Google Benchmark subprocess runs."""
+
+    suite_json: pathlib.Path
+    benchmark_args: list[str]
+    min_time: str
+    repetitions: int | None
+    report_aggregates_only: bool
+    timeout: float
+
+
 def run_text(command: list[str], cwd: pathlib.Path | None = None) -> str | None:
-    result = subprocess.run(command, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    """The command's stripped stdout, or None if it exits nonzero."""
+    result = subprocess.run(command, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     if result.returncode != 0:
         return None
     return result.stdout.strip()
 
 
 def find_cmake_cache(path: pathlib.Path) -> pathlib.Path | None:
+    """The CMakeCache.txt in ``path`` or its nearest ancestor that has one."""
     for candidate in [path, *path.parents]:
         cache = candidate / "CMakeCache.txt"
         if cache.exists():
@@ -38,6 +60,7 @@ def find_cmake_cache(path: pathlib.Path) -> pathlib.Path | None:
 
 
 def read_cmake_cache(cache_path: pathlib.Path | None) -> dict[str, str]:
+    """Build type, compiler and flags from the CMake cache, plus the cache's path; empty without a cache."""
     if cache_path is None:
         return {}
 
@@ -51,7 +74,7 @@ def read_cmake_cache(cache_path: pathlib.Path | None) -> dict[str, str]:
     }
 
     for line in cache_path.read_text(errors="replace").splitlines():
-        if line.startswith("//") or line.startswith("#") or "=" not in line:
+        if line.startswith(("//", "#")) or "=" not in line:
             continue
         key_with_type, value = line.split("=", 1)
         key = key_with_type.split(":", 1)[0]
@@ -63,6 +86,7 @@ def read_cmake_cache(cache_path: pathlib.Path | None) -> dict[str, str]:
 
 
 def read_cmake_compiler_metadata(cache_path: pathlib.Path | None) -> dict[str, str]:
+    """Compiler id and version from CMake's detected-compiler file next to the cache; empty if there is none."""
     if cache_path is None:
         return {}
 
@@ -86,7 +110,10 @@ def read_cmake_compiler_metadata(cache_path: pathlib.Path | None) -> dict[str, s
     return result
 
 
-def collect_metadata(args: argparse.Namespace, executable: pathlib.Path, test_dir: pathlib.Path, output_dir: pathlib.Path) -> dict[str, Any]:
+def collect_metadata(
+    args: argparse.Namespace, executable: pathlib.Path, test_dir: pathlib.Path, output_dir: pathlib.Path
+) -> dict[str, Any]:
+    """Git state, build configuration, host, and runner options recorded in the summary."""
     cache_path = find_cmake_cache(test_dir)
     return {
         "git": {
@@ -120,16 +147,19 @@ def collect_metadata(args: argparse.Namespace, executable: pathlib.Path, test_di
 
 
 def load_suite(suite_json: pathlib.Path) -> dict[str, Any]:
+    """Read and validate a profiling suite JSON file."""
     suite = json.loads(suite_json.read_text())
     validate_suite(suite)
     return suite
 
 
 def suite_prefix(suite: dict[str, Any]) -> str:
+    """The suite's path prefix variable, BENCHMARKS_DIR by default."""
     return suite.get("prefix", "BENCHMARKS_DIR")
 
 
 def normalize_stdout(stdout: str | bytes | None) -> str:
+    """Subprocess output as text; a timed-out process may leave bytes or nothing."""
     if stdout is None:
         return ""
     if isinstance(stdout, bytes):
@@ -138,6 +168,7 @@ def normalize_stdout(stdout: str | bytes | None) -> str:
 
 
 def load_cases(suite: dict[str, Any]) -> list[dict[str, Any]]:
+    """One case per domain task, named domain/task."""
     cases: list[dict[str, Any]] = []
 
     for domain_name, domain_config in suite["domains"].items():
@@ -156,24 +187,18 @@ def load_cases(suite: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def build_benchmark_command(
-    benchmark_executable: pathlib.Path,
-    run_name: str,
-    min_time: str,
-    result_file: pathlib.Path | None,
-    repetitions: int | None,
-    report_aggregates_only: bool,
-    suite_json: pathlib.Path,
-    benchmark_args: list[str],
+    benchmark_executable: pathlib.Path, run_name: str, result_file: pathlib.Path | None, options: BenchmarkOptions
 ) -> list[str]:
+    """The command running only ``run_name``'s benchmarks, writing JSON results to ``result_file`` if given."""
     # Google Benchmark uses POSIX regex on Unix; Python's re.escape also escapes
     # ordinary characters such as '-' that POSIX rejects outside character sets.
     escaped_name = "".join("\\" + char if char in r"\.^$|?*+()[]{}" else char for char in run_name)
     command = [
         str(benchmark_executable),
-        f"--suite-json={suite_json.resolve()}",
-        *benchmark_args,
+        f"--suite-json={options.suite_json.resolve()}",
+        *options.benchmark_args,
         f"--benchmark_filter=^{escaped_name}/.*",
-        f"--benchmark_min_time={min_time}",
+        f"--benchmark_min_time={options.min_time}",
         "--benchmark_format=json",
     ]
     if result_file is not None:
@@ -183,17 +208,20 @@ def build_benchmark_command(
                 "--benchmark_out_format=json",
             ]
         )
-    if repetitions is not None:
-        command.append(f"--benchmark_repetitions={repetitions}")
-    if report_aggregates_only:
+    if options.repetitions is not None:
+        command.append(f"--benchmark_repetitions={options.repetitions}")
+    if options.report_aggregates_only:
         command.append("--benchmark_report_aggregates_only=true")
     return command
 
 
 def run_command(command: list[str], timeout: float) -> CommandResult:
+    """Run the command with a wall-clock timeout, capturing stdout and stderr together."""
     started = time.monotonic()
     try:
-        result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout)
+        result = subprocess.run(
+            command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout, check=False
+        )
         duration = time.monotonic() - started
         stdout = normalize_stdout(result.stdout)
         exit_code = result.returncode
@@ -214,44 +242,58 @@ def run_command(command: list[str], timeout: float) -> CommandResult:
 
 
 def write_log_entry(log_file: TextIO, run_name: str, phase: str, result: CommandResult) -> None:
+    """Append the command's output to the log under a header naming the case, phase and status."""
     log_file.write(f"===== {run_name} ({phase}: {result['status']}) =====\n")
     log_file.write(result["stdout"])
     if result["stdout"] and not result["stdout"].endswith("\n"):
         log_file.write("\n")
 
 
+def load_benchmark_records(path: pathlib.Path) -> list[dict[str, Any]]:
+    """The benchmark records of a Google Benchmark JSON file; empty if its benchmarks are not a list.
+
+    Raises:
+        OSError: If the file cannot be read.
+        ValueError: If the file is not JSON.
+        KeyError: If the output has no benchmarks.
+        TypeError: If the output or a record is not a JSON object.
+    """
+    data = require_mapping(json.loads(path.read_text()), "benchmark output")
+    raw_benchmarks: object = data["benchmarks"]
+    if not isinstance(raw_benchmarks, list):
+        return []
+    return [require_mapping(item, "benchmark") for item in cast("list[object]", raw_benchmarks)]
+
+
+def benchmark_records_error(benchmarks: list[dict[str, Any]], run_name: str) -> str | None:
+    """Why the records are not a valid, error-free result of ``run_name``, or None if they are."""
+    if not benchmarks or not all(
+        isinstance(item.get("name"), str) and item["name"].startswith(f"{run_name}/") for item in benchmarks
+    ):
+        return "Missing or mismatched benchmark results."
+    errors = [item.get("error_message", "Benchmark error.") for item in benchmarks if item.get("error_occurred")]
+    if errors:
+        return "; ".join(errors)
+    if any(not isinstance(item.get(key), (int, float)) for item in benchmarks for key in ("real_time", "cpu_time")):
+        return "Missing or invalid benchmark timings."
+    if any(item.get("time_unit") not in {"ns", "us", "ms", "s"} for item in benchmarks):
+        return "Missing or invalid benchmark time unit."
+    return None
+
+
 def validate_benchmark_result(path: pathlib.Path, run_name: str) -> str | None:
+    """Why the benchmark JSON at ``path`` is not a valid, error-free result of ``run_name``, or None if it is."""
     try:
-        data = require_mapping(json.loads(path.read_text()), "benchmark output")
-        raw_benchmarks: object = data["benchmarks"]
-        if not isinstance(raw_benchmarks, list) or not raw_benchmarks:
-            return "Missing or mismatched benchmark results."
-        benchmarks = [require_mapping(item, "benchmark") for item in cast(list[object], raw_benchmarks)]
-        if not all(isinstance(item.get("name"), str) and item["name"].startswith(f"{run_name}/") for item in benchmarks):
-            return "Missing or mismatched benchmark results."
-        errors = [item.get("error_message", "Benchmark error.") for item in benchmarks if item.get("error_occurred")]
-        if errors:
-            return "; ".join(errors)
-        if any(not isinstance(item.get(key), (int, float)) for item in benchmarks for key in ("real_time", "cpu_time")):
-            return "Missing or invalid benchmark timings."
-        if any(item.get("time_unit") not in {"ns", "us", "ms", "s"} for item in benchmarks):
-            return "Missing or invalid benchmark time unit."
-        return None
+        return benchmark_records_error(load_benchmark_records(path), run_name)
     except (OSError, ValueError, KeyError, TypeError):
         return "Missing or invalid benchmark JSON."
 
 
 def run_benchmarks(
-    benchmark_executable: pathlib.Path,
-    output_dir: pathlib.Path,
-    cases: list[dict[str, Any]],
-    min_time: str,
-    repetitions: int | None,
-    report_aggregates_only: bool,
-    timeout: float,
-    suite_json: pathlib.Path,
-    benchmark_args: list[str],
+    benchmark_executable: pathlib.Path, output_dir: pathlib.Path, cases: list[dict[str, Any]], options: BenchmarkOptions
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Run every case, logging its output and recording its status in the case; return the results and failures."""
+    timeout = options.timeout
     results: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     benchmark_output_dir = output_dir / "benchmark-results"
@@ -266,16 +308,7 @@ def run_benchmarks(
             result_file.unlink(missing_ok=True)
             temp_result_file.unlink(missing_ok=True)
 
-            command = build_benchmark_command(
-                benchmark_executable,
-                run_name,
-                min_time,
-                temp_result_file,
-                repetitions,
-                report_aggregates_only,
-                suite_json,
-                benchmark_args,
-            )
+            command = build_benchmark_command(benchmark_executable, run_name, temp_result_file, options)
             result = run_command(command, timeout)
             if result["status"] == "passed":
                 error = validate_benchmark_result(temp_result_file, run_name)
@@ -324,6 +357,7 @@ def run_benchmarks(
 
 
 def main() -> int:
+    """Run the suite's selected cases, write summary.json, print the summary, and return its exit code."""
     parser = argparse.ArgumentParser(description="Run each profiling benchmark case with a hard wall-clock timeout.")
     parser.add_argument("--executable", type=pathlib.Path, required=True, help="Profiling benchmark executable to run.")
     parser.add_argument(
@@ -339,7 +373,12 @@ def main() -> int:
     )
     parser.add_argument("--benchmark-min-time", default="0.1s", help="Google Benchmark --benchmark_min_time value.")
     parser.add_argument("--benchmark-repetitions", type=int, help="Google Benchmark --benchmark_repetitions value.")
-    parser.add_argument("--benchmark-arg", action="append", default=[], help="Extra executable option; repeat as --benchmark-arg=--cores=1,16.")
+    parser.add_argument(
+        "--benchmark-arg",
+        action="append",
+        default=[],
+        help="Extra executable option; repeat as --benchmark-arg=--cores=1,16.",
+    )
     parser.add_argument("--case-filter", help="Regular expression selecting domain/task names from the suite.")
     parser.add_argument(
         "--benchmark-timeout",
@@ -372,17 +411,15 @@ def main() -> int:
     args.suite_prefix = suite_prefix(suite)
     metadata = collect_metadata(args, executable, test_dir, output_dir)
 
-    benchmark_results, benchmark_failures = run_benchmarks(
-        executable,
-        output_dir,
-        cases,
-        args.benchmark_min_time,
-        args.benchmark_repetitions,
-        args.benchmark_report_aggregates_only,
-        args.benchmark_timeout,
-        args.suite_json,
-        args.benchmark_arg,
+    options = BenchmarkOptions(
+        suite_json=args.suite_json,
+        benchmark_args=args.benchmark_arg,
+        min_time=args.benchmark_min_time,
+        repetitions=args.benchmark_repetitions,
+        report_aggregates_only=args.benchmark_report_aggregates_only,
+        timeout=args.benchmark_timeout,
     )
+    benchmark_results, benchmark_failures = run_benchmarks(executable, output_dir, cases, options)
     summary = build_summary(suite, cases, metadata, benchmark_results, benchmark_failures)
 
     rendered_summary = json.dumps(summary, indent=2)

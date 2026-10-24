@@ -1,9 +1,13 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Eager A* search on ground tasks."""
+
 # Import all classes for better IDE support
 
-from ...._pytyr.planning.ground.astar_eager import (
-    DefaultEventHandler,
-    EventHandler,
-    Options,
-    Solver,
-    find_solution,
+from pytyr._pytyr.planning.ground.astar_eager import (
+    DefaultEventHandler as DefaultEventHandler,
+    EventHandler as EventHandler,
+    Options as Options,
+    Solver as Solver,
+    find_solution as find_solution,
 )

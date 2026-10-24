@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import json
 import os
 import shutil
@@ -5,11 +8,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytyr
 import pypddl
-import pyyggdrasil
 import pytest
+import pyyggdrasil
 
+import pytyr
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 DOWNSTREAM_PACKAGE_DIR = Path(__file__).resolve().parent / "minimal_downstream_package"

@@ -1,8 +1,11 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Shared plumbing for heuristic fixture generators.
 
 Typing note: the lifted and ground planning APIs are distinct nominal types, selected by a
-runtime ``kind``. The selected module is therefore treated as ``Any`` (the one hop no type
-checker can follow), while objects whose members we read back are ``cast`` to a small
+runtime ``kind``. The selected module is therefore typed as a plain ``ModuleType`` (the one hop no
+type checker can follow), while objects whose members we read back are ``cast`` to a small
 Protocol so attribute/method access stays statically checked.
 """
 
@@ -13,15 +16,15 @@ import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Literal, Protocol, TypeAlias, cast
 
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
-from pytyr.formalism.planning import LiftedPlanningTask, Parser
-from pytyr.planning import CostMode
-from pytyr.planning import ground as ground_planning
-from pytyr.planning import lifted as lifted_planning
 from pyyggdrasil.execution import ExecutionContext
+
+from pytyr.formalism.planning import LiftedPlanningTask, Parser
+from pytyr.planning import CostMode, ground as ground_planning, lifted as lifted_planning
 
 ROOT = Path(__file__).resolve().parents[4]
 BENCHMARKS_ROOT = pypddl_datasets.data_root()
@@ -43,7 +46,7 @@ class _ParserLike(Protocol):
 
 
 class HeuristicLike(Protocol):
-    def evaluate(self, state: Any) -> float: ...
+    def evaluate(self, state: object) -> float: ...
 
 
 @dataclass(frozen=True)
@@ -67,7 +70,7 @@ def as_json_number(value: float) -> JsonNumber:
 def parse_task(domain_file: Path, task_file: Path) -> LiftedPlanningTask:
     parser_options = ParserOptions()
     parser_options.add_action_costs = True
-    parser = cast(_ParserLike, Parser(str(domain_file), parser_options))
+    parser = cast("_ParserLike", Parser(str(domain_file), parser_options))
     return parser.parse_task(str(task_file), parser_options)
 
 
@@ -81,7 +84,9 @@ def make_context(kind: TaskKind, domain_file: Path, task_file: Path) -> Context:
         successor_generator = lifted_planning.SuccessorGeneratorFactory().create(lifted_task, execution_context)
         return Context(kind, execution_context, lifted_task, state_repository, axiom_evaluator, successor_generator)
 
-    instantiation = lifted_task.instantiate_ground_task(execution_context, lifted_planning.GroundTaskInstantiationOptions())
+    instantiation = lifted_task.instantiate_ground_task(
+        execution_context, lifted_planning.GroundTaskInstantiationOptions()
+    )
     task = instantiation.task
     axiom_evaluator = ground_planning.AxiomEvaluatorFactory().create(task, execution_context)
     state_repository = ground_planning.StateRepositoryFactory().create(task)
@@ -89,7 +94,7 @@ def make_context(kind: TaskKind, domain_file: Path, task_file: Path) -> Context:
     return Context(kind, execution_context, task, state_repository, axiom_evaluator, successor_generator)
 
 
-def planning_module(context: Context) -> Any:
+def planning_module(context: Context) -> ModuleType:
     """The runtime-selected planning module for this context's kind (see module docstring)."""
     return lifted_planning if context.kind == "lifted" else ground_planning
 
@@ -97,12 +102,12 @@ def planning_module(context: Context) -> Any:
 def make_heuristic(context: Context, heuristic_name: HeuristicName, cost_mode: CostMode) -> HeuristicLike:
     planning = planning_module(context)
     if heuristic_name == "rpg_max":
-        return cast(HeuristicLike, planning.MaxRPGHeuristic(context.task, context.execution_context, cost_mode))
+        return cast("HeuristicLike", planning.MaxRPGHeuristic(context.task, context.execution_context, cost_mode))
     if heuristic_name == "rpg_add":
-        return cast(HeuristicLike, planning.AddRPGHeuristic(context.task, context.execution_context, cost_mode))
+        return cast("HeuristicLike", planning.AddRPGHeuristic(context.task, context.execution_context, cost_mode))
     if heuristic_name == "rpg_ff":
-        return cast(HeuristicLike, planning.FFRPGHeuristic(context.task, context.execution_context, cost_mode))
-    return cast(HeuristicLike, planning.LMCutHeuristic(context.task, context.execution_context, cost_mode))
+        return cast("HeuristicLike", planning.FFRPGHeuristic(context.task, context.execution_context, cost_mode))
+    return cast("HeuristicLike", planning.LMCutHeuristic(context.task, context.execution_context, cost_mode))
 
 
 def evaluate_initial(context: Context, heuristic_name: HeuristicName, cost_mode: CostMode) -> JsonNumber:
@@ -133,8 +138,8 @@ def generate_case(kind: TaskKind, heuristic_name: HeuristicName, case: FixtureCa
 
 
 def generate_fixture(kind: TaskKind, fixture: Path, heuristic_name: HeuristicName, filters: set[str]) -> None:
-    suite = cast(FixtureCase, json.loads(fixture.read_text()))
-    benchmark_suite = cast(FixtureCase, json.loads(BENCHMARKS_FIXTURE.read_text()))
+    suite = cast("FixtureCase", json.loads(fixture.read_text()))
+    benchmark_suite = cast("FixtureCase", json.loads(BENCHMARKS_FIXTURE.read_text()))
     cases_in = cast("list[FixtureCase]", benchmark_suite["cases"])
     cases: list[FixtureCase] = []
     for case in cases_in:

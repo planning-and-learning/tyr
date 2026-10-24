@@ -1,9 +1,14 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Print where the bundled native tyr library is, for build systems that link against it."""
+
 import argparse
 
 import pytyr
 
 
 def main() -> None:
+    """Print the path or version the command line asks for."""
     parser = argparse.ArgumentParser(
         prog="python -m pytyr",
         description="Print discovery paths for the bundled native tyr library.",

@@ -1,24 +1,36 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import gc
 from collections import Counter
 from datetime import timedelta
 from types import ModuleType
+from typing import Never, Self, override
 
 import pytest
-
-from pytyr import planning
 from pypddl.formalism import ParserOptions
-from pytyr.formalism import planning as formalism_planning
-from pytyr.formalism.planning import Parser
+from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
 
-from pypddl_datasets import fetch_task
+from pytyr import planning
+from pytyr.formalism import planning as formalism_planning
+from pytyr.formalism.planning import Parser
 
 Task = planning.lifted.Task | planning.ground.Task
+Node = planning.lifted.Node | planning.ground.Node
+LabeledNode = planning.lifted.LabeledNode | planning.ground.LabeledNode
+Plan = planning.lifted.Plan | planning.ground.Plan
+State = planning.lifted.State | planning.ground.State
+StateBuilder = planning.lifted.StateBuilder | planning.ground.StateBuilder
+StateRepository = planning.lifted.StateRepository | planning.ground.StateRepository
+AxiomEvaluator = planning.lifted.AxiomEvaluator | planning.ground.AxiomEvaluator
+SuccessorGenerator = planning.lifted.SuccessorGenerator | planning.ground.SuccessorGenerator
+SearchResult = planning.lifted.SearchResult | planning.ground.SearchResult
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
 
 
-def test_planning_modules_export_expected_algorithm_submodules():
+def test_planning_modules_export_expected_algorithm_submodules() -> None:
     assert hasattr(planning, "ground")
     assert hasattr(planning, "lifted")
 
@@ -44,7 +56,7 @@ def test_planning_modules_export_expected_algorithm_submodules():
                 solver.solve()
 
 
-def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
+def test_planning_statistics_bindings_expose_counters_and_progress_snapshots() -> None:
     statistics = planning.Statistics()
 
     assert statistics.get_num_generated_successors() == 0
@@ -71,8 +83,8 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     statistics.increment_num_expanded()
     statistics.increment_num_deadends()
     statistics.increment_num_pruned()
-    statistics.increment_num_generated_candidates(False)
-    statistics.increment_num_generated_candidates(True)
+    statistics.increment_num_generated_candidates(transferred=False)
+    statistics.increment_num_generated_candidates(transferred=True)
     assert statistics.get_num_generated_successors() == 1
     assert statistics.get_num_expanded() == 1
     assert statistics.get_num_deadends() == 1
@@ -128,10 +140,10 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
     assert progress_statistics.empty()
     assert progress_statistics.size() == 0
     assert not hasattr(progress_statistics, "add_snap_shot")
-    statistics.increment_num_generated_candidates(False)
-    statistics.increment_num_generated_candidates(True)
+    statistics.increment_num_generated_candidates(transferred=False)
+    statistics.increment_num_generated_candidates(transferred=True)
     progress_statistics.add_snapshot(statistics)
-    statistics.increment_num_generated_candidates(False)
+    statistics.increment_num_generated_candidates(transferred=False)
     progress_statistics.add_snapshot(statistics)
     statistics.clear()
     assert len(progress_statistics.get_snapshots()) == 2
@@ -176,7 +188,7 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots():
             assert isinstance(event_handler.get_statistics(), task_module.siw.Statistics)
 
 
-def test_default_event_handler_statistics_keep_handlers_alive():
+def test_default_event_handler_statistics_keep_handlers_alive() -> None:
     for task_module in (planning.ground, planning.lifted):
         event_handler = task_module.brfs.DefaultEventHandler()
         progress_statistics = event_handler.get_progress_statistics()
@@ -203,7 +215,7 @@ def test_default_event_handler_statistics_keep_handlers_alive():
         assert statistics.get_num_solved_subsearches() == 0
 
 
-def test_algorithm_statistics_are_constructible_and_mutable():
+def test_algorithm_statistics_are_constructible_and_mutable() -> None:
     for task_module in (planning.ground, planning.lifted):
         iw_statistics = task_module.iw.Statistics()
 
@@ -237,7 +249,7 @@ def test_algorithm_statistics_are_constructible_and_mutable():
         assert siw_statistics.get_num_solved_subsearches() == 0
 
 
-def test_nested_width_search_solvers_expose_expected_defaults():
+def test_nested_width_search_solvers_expose_expected_defaults() -> None:
     iw_max_arity = 5
 
     for task_module in (planning.ground, planning.lifted):
@@ -263,12 +275,12 @@ def test_nested_width_search_solvers_expose_expected_defaults():
         assert siw_solver.options is not None
 
 
-def test_heuristics_without_a_relaxed_plan_return_none():
+def test_heuristics_without_a_relaxed_plan_return_none() -> None:
     for task_module in (planning.ground, planning.lifted):
         assert task_module.BlindHeuristic().get_relaxed_plan() is None
 
 
-def test_search_result_exposes_all_result_fields():
+def test_search_result_exposes_all_result_fields() -> None:
     for task_module in (planning.ground, planning.lifted):
         result = task_module.SearchResult()
 
@@ -289,7 +301,7 @@ def test_search_result_exposes_all_result_fields():
         assert result.statistics.get_num_generated_successors() == 1
 
 
-def _assert_worker_statistics(result, num_workers: int):
+def _assert_worker_statistics(result: SearchResult, num_workers: int) -> None:
     assert len(result.worker_statistics) == num_workers
     for getter in (
         "get_num_generated_successors",
@@ -312,9 +324,7 @@ def _assert_worker_statistics(result, num_workers: int):
         (worker.get_idle_time() for worker in result.worker_statistics),
         start=timedelta(0),
     )
-    assert abs(worker_idle_time - result.statistics.get_idle_time()) <= timedelta(
-        microseconds=num_workers
-    )
+    assert abs(worker_idle_time - result.statistics.get_idle_time()) <= timedelta(microseconds=num_workers)
     assert sum(worker.get_num_destination_lock_acquisitions() for worker in result.worker_statistics) == (
         result.statistics.get_num_destination_lock_acquisitions()
     )
@@ -322,15 +332,19 @@ def _assert_worker_statistics(result, num_workers: int):
         (worker.get_destination_lock_wait_time() for worker in result.worker_statistics),
         start=timedelta(0),
     )
-    assert abs(worker_lock_wait_time - result.statistics.get_destination_lock_wait_time()) <= timedelta(microseconds=num_workers)
+    assert abs(worker_lock_wait_time - result.statistics.get_destination_lock_wait_time()) <= timedelta(
+        microseconds=num_workers
+    )
     worker_lock_hold_time = sum(
         (worker.get_destination_lock_hold_time() for worker in result.worker_statistics),
         start=timedelta(0),
     )
-    assert abs(worker_lock_hold_time - result.statistics.get_destination_lock_hold_time()) <= timedelta(microseconds=num_workers)
+    assert abs(worker_lock_hold_time - result.statistics.get_destination_lock_hold_time()) <= timedelta(
+        microseconds=num_workers
+    )
 
 
-def test_search_budget_defaults_arguments_and_mutable_fields():
+def test_search_budget_defaults_arguments_and_mutable_fields() -> None:
     unlimited = planning.SearchBudget()
     assert unlimited.max_num_states is None
     assert unlimited.max_time is None
@@ -355,7 +369,7 @@ def test_search_budget_defaults_arguments_and_mutable_fields():
     assert positional.max_time == timedelta(seconds=3)
 
 
-def test_algorithm_options_copy_budgets_and_keep_mutable_members_local():
+def test_algorithm_options_copy_budgets_and_keep_mutable_members_local() -> None:
     for task_module in (planning.ground, planning.lifted):
         for algorithm in (task_module.brfs, task_module.astar_eager, task_module.gbfs_lazy, task_module.iw):
             budget = planning.SearchBudget(50, timedelta(seconds=2))
@@ -376,7 +390,7 @@ def test_algorithm_options_copy_budgets_and_keep_mutable_members_local():
             assert second.search_budget.max_time == timedelta(seconds=2)
 
 
-def test_algorithm_options_are_default_constructible_with_expected_fields():
+def test_algorithm_options_are_default_constructible_with_expected_fields() -> None:
     ygg_uint_max = (1 << 32) - 1
     expected_defaults_by_algorithm = {
         "astar_eager": {
@@ -510,7 +524,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields():
                 assert not hasattr(options, "max_time")
 
 
-def _make_gripper_tasks():
+def _make_gripper_tasks() -> tuple[planning.ground.Task, planning.lifted.Task]:
     parser_options = ParserOptions()
     parser = Parser(str(GRIPPER.domain_path), parser_options)
     formalism_task = parser.parse_task(
@@ -527,46 +541,51 @@ def _make_gripper_tasks():
     return result.task, lifted_task
 
 
-def _make_components(task_module: ModuleType, task: Task, *, concurrent: bool = False):
+def _make_components(
+    task_module: ModuleType, task: Task, *, concurrent: bool = False
+) -> tuple[StateRepository, AxiomEvaluator, SuccessorGenerator]:
     execution_context = ExecutionContext(1)
     axiom_evaluator = task_module.AxiomEvaluatorFactory().create(task, execution_context)
     state_repository_factory = task_module.StateRepositoryFactory()
     state_repository = (
-        state_repository_factory.create_concurrent(task)
-        if concurrent
-        else state_repository_factory.create(task)
+        state_repository_factory.create_concurrent(task) if concurrent else state_repository_factory.create(task)
     )
     successor_generator = task_module.SuccessorGeneratorFactory().create(task, execution_context)
     return state_repository, axiom_evaluator, successor_generator
 
 
-def test_lazy_gbfs_reads_the_relaxed_plan_of_python_heuristics():
+def test_lazy_gbfs_reads_the_relaxed_plan_of_python_heuristics() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        for plan in (set(), None):
+        relaxed_plans: tuple[set[formalism_planning.ActionBinding] | None, ...] = (set(), None)
+        for plan in relaxed_plans:
+
             class RelaxedPlanHeuristic(task_module.Heuristic):
-                def __init__(self):
+                def __init__(self, plan: set[formalism_planning.ActionBinding] | None) -> None:
                     super().__init__()
+                    self.plan = plan
                     self.num_plan_requests = 0
 
-                def set_goal(self, goal):
+                @override
+                def set_goal(self, goal: formalism_planning.GroundConjunctiveCondition) -> None:
                     pass
 
-                def evaluate(self, state):
+                @override
+                def evaluate(self, state: StateBuilder) -> float:
                     return 0.0
 
-                def make_worker(self, execution_context):
+                def make_worker(self, _execution_context: ExecutionContext) -> Self:
                     return self
 
-                def get_relaxed_plan(self):
+                def get_relaxed_plan(self) -> set[formalism_planning.ActionBinding] | None:
                     self.num_plan_requests += 1
-                    return plan
+                    return self.plan
 
-            heuristic = RelaxedPlanHeuristic()
+            heuristic = RelaxedPlanHeuristic(plan)
             state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
             result = task_module.gbfs_lazy.find_solution(
                 task,
@@ -581,31 +600,36 @@ def test_lazy_gbfs_reads_the_relaxed_plan_of_python_heuristics():
             assert heuristic.num_plan_requests == result.statistics.get_num_expanded()
 
 
-def test_parallel_search_is_available_through_python_bindings():
+def test_parallel_search_is_available_through_python_bindings() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
+
         class EventHandler(task_module.gbfs_lazy.EventHandler):
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
                 self.end_status = None
                 self.num_expanded = None
                 self.solved = False
 
-            def on_start_search(self, node, h_value):
+            @override
+            def on_start_search(self, node: Node, h_value: float) -> None:
                 pass
 
-            def on_new_best_h_value(self, h_value):
+            @override
+            def on_new_best_h_value(self, h_value: float) -> None:
                 pass
 
-            def on_end_search(self, status, statistics):
+            @override
+            def on_end_search(self, status: planning.SearchStatus, statistics: planning.Statistics) -> None:
                 self.end_status = status
                 self.num_expanded = statistics.get_num_expanded()
 
-            def on_solved(self, plan):
+            @override
+            def on_solved(self, plan: Plan) -> None:
                 self.solved = True
 
         state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task, concurrent=True)
@@ -665,24 +689,27 @@ def test_parallel_search_is_available_through_python_bindings():
             _assert_worker_statistics(astar_result, 2)
 
 
-def test_parallel_search_rejects_null_python_heuristic_workers():
+def test_parallel_search_rejects_null_python_heuristic_workers() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
+
         class NullWorkerHeuristic(task_module.Heuristic):
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
 
-            def set_goal(self, goal):
+            @override
+            def set_goal(self, goal: formalism_planning.GroundConjunctiveCondition) -> None:
                 pass
 
-            def evaluate(self, state):
+            @override
+            def evaluate(self, state: StateBuilder) -> float:
                 return 0.0
 
-            def make_worker(self, execution_context):
+            def make_worker(self, _execution_context: ExecutionContext) -> None:
                 return None
 
         state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
@@ -700,111 +727,130 @@ def test_parallel_search_rejects_null_python_heuristic_workers():
             )
 
 
-def test_parallel_search_constructs_python_goal_and_pruning_workers():
+def _check_python_goal_and_pruning_workers(task_module: ModuleType, task: Task) -> None:
+    state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task, concurrent=True)
+    initial_state = state_repository.get_initial_state(axiom_evaluator)
+    fluent_variables = [fact.get_variable() for fact in initial_state.fluent_facts()]
+    factory_indices = {"goal": [], "pruning": []}
+    worker_ids = {"goal": set(), "pruning": set()}
+    callback_indices = {"goal": [], "pruning": []}
+    retained_snapshots = []
+
+    class PythonGoalStrategy(task_module.GoalStrategy):
+        def __init__(self, worker_index: int | None = None) -> None:
+            super().__init__()
+            self.worker_index = worker_index
+
+        @override
+        def make_worker(self, worker_index: planning.WorkerIndex) -> "PythonGoalStrategy":
+            factory_indices["goal"].append((isinstance(worker_index, planning.WorkerIndex), int(worker_index)))
+            worker = PythonGoalStrategy(int(worker_index))
+            worker_ids["goal"].add(id(worker))
+            return worker
+
+        @override
+        def is_static_goal_satisfied(self, task: Task) -> bool:
+            callback_indices["goal"].append(self.worker_index)
+            return True
+
+        @override
+        def is_dynamic_goal_satisfied(self, seed_state: State, state: StateBuilder) -> bool:
+            callback_indices["goal"].append(self.worker_index)
+            if len(callback_indices["goal"]) > 2 and not retained_snapshots:
+                retained_snapshots.append((state, tuple(state.get(variable) for variable in fluent_variables)))
+            return False
+
+    class PythonPruningStrategy(task_module.PruningStrategy):
+        def __init__(self, worker_index: int | None = None) -> None:
+            super().__init__()
+            self.worker_index = worker_index
+
+        @override
+        def make_worker(self, worker_index: planning.WorkerIndex) -> "PythonPruningStrategy":
+            factory_indices["pruning"].append((isinstance(worker_index, planning.WorkerIndex), int(worker_index)))
+            worker = PythonPruningStrategy(int(worker_index))
+            worker_ids["pruning"].add(id(worker))
+            return worker
+
+        @override
+        def should_prune_state(self, state: State) -> bool:
+            callback_indices["pruning"].append(self.worker_index)
+            return False
+
+        @override
+        def should_prune_successor_state(self, state: State, succ_state: State, is_new_succ_state: bool) -> bool:
+            callback_indices["pruning"].append(self.worker_index)
+            return False
+
+    options = task_module.brfs.Options()
+    options.num_search_workers = 2
+    options.goal_strategy = PythonGoalStrategy()
+    options.pruning_strategy = PythonPruningStrategy()
+
+    result = task_module.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
+
+    assert result.status == planning.SearchStatus.EXHAUSTED
+    for strategy in ("goal", "pruning"):
+        assert factory_indices[strategy] == [(True, 1)]
+        assert len(worker_ids[strategy]) == 1
+        assert set(callback_indices[strategy]) == {None, 1}
+
+    assert "Owning read-only state snapshot" in task_module.StateBuilder.__doc__
+    assert retained_snapshots
+    snapshot, values = retained_snapshots[0]
+    gc.collect()
+    assert tuple(snapshot.get(variable) for variable in fluent_variables) == values
+
+
+def test_parallel_search_constructs_python_goal_and_pruning_workers() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task, concurrent=True)
-        initial_state = state_repository.get_initial_state(axiom_evaluator)
-        fluent_variables = [fact.get_variable() for fact in initial_state.fluent_facts()]
-        factory_indices = {"goal": [], "pruning": []}
-        worker_ids = {"goal": set(), "pruning": set()}
-        callback_indices = {"goal": [], "pruning": []}
-        retained_snapshots = []
-
-        class PythonGoalStrategy(task_module.GoalStrategy):
-            def __init__(self, worker_index=None):
-                super().__init__()
-                self.worker_index = worker_index
-
-            def make_worker(self, worker_index):
-                factory_indices["goal"].append((isinstance(worker_index, planning.WorkerIndex), int(worker_index)))
-                worker = PythonGoalStrategy(int(worker_index))
-                worker_ids["goal"].add(id(worker))
-                return worker
-
-            def is_static_goal_satisfied(self, task):
-                callback_indices["goal"].append(self.worker_index)
-                return True
-
-            def is_dynamic_goal_satisfied(self, seed_state, state):
-                callback_indices["goal"].append(self.worker_index)
-                if len(callback_indices["goal"]) > 2 and not retained_snapshots:
-                    retained_snapshots.append((state, tuple(state.get(variable) for variable in fluent_variables)))
-                return False
-
-        class PythonPruningStrategy(task_module.PruningStrategy):
-            def __init__(self, worker_index=None):
-                super().__init__()
-                self.worker_index = worker_index
-
-            def make_worker(self, worker_index):
-                factory_indices["pruning"].append((isinstance(worker_index, planning.WorkerIndex), int(worker_index)))
-                worker = PythonPruningStrategy(int(worker_index))
-                worker_ids["pruning"].add(id(worker))
-                return worker
-
-            def should_prune_state(self, state):
-                callback_indices["pruning"].append(self.worker_index)
-                return False
-
-            def should_prune_successor_state(self, state, succ_state, is_new_succ_state):
-                callback_indices["pruning"].append(self.worker_index)
-                return False
-
-        options = task_module.brfs.Options()
-        options.num_search_workers = 2
-        options.goal_strategy = PythonGoalStrategy()
-        options.pruning_strategy = PythonPruningStrategy()
-
-        result = task_module.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
-
-        assert result.status == planning.SearchStatus.EXHAUSTED
-        for strategy in ("goal", "pruning"):
-            assert factory_indices[strategy] == [(True, 1)]
-            assert len(worker_ids[strategy]) == 1
-            assert set(callback_indices[strategy]) == {None, 1}
-
-        assert "Owning read-only state snapshot" in task_module.StateBuilder.__doc__
-        assert retained_snapshots
-        snapshot, values = retained_snapshots[0]
-        gc.collect()
-        assert tuple(snapshot.get(variable) for variable in fluent_variables) == values
+        _check_python_goal_and_pruning_workers(task_module, task)
 
 
-def test_parallel_search_rejects_missing_or_null_python_strategy_workers():
+def test_parallel_search_rejects_missing_or_null_python_strategy_workers() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
+
         class MissingWorkerGoalStrategy(task_module.GoalStrategy):
-            def is_static_goal_satisfied(self, task):
+            @override
+            def is_static_goal_satisfied(self, task: Task) -> bool:
                 return True
 
-            def is_dynamic_goal_satisfied(self, seed_state, state):
+            @override
+            def is_dynamic_goal_satisfied(self, seed_state: State, state: StateBuilder) -> bool:
                 return False
 
         class NullWorkerGoalStrategy(MissingWorkerGoalStrategy):
-            def make_worker(self, worker_index):
+            @override
+            def make_worker(self, worker_index: planning.WorkerIndex) -> None:
                 return None
 
         class MissingWorkerPruningStrategy(task_module.PruningStrategy):
             pass
 
         class NullWorkerPruningStrategy(MissingWorkerPruningStrategy):
-            def make_worker(self, worker_index):
+            @override
+            def make_worker(self, worker_index: planning.WorkerIndex) -> None:
                 return None
 
         state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
         cases = (
             ("goal_strategy", MissingWorkerGoalStrategy(), "goal strategy does not support worker construction"),
             ("goal_strategy", NullWorkerGoalStrategy(), "goal strategy does not support worker construction"),
-            ("pruning_strategy", MissingWorkerPruningStrategy(), "pruning strategy does not support worker construction"),
+            (
+                "pruning_strategy",
+                MissingWorkerPruningStrategy(),
+                "pruning strategy does not support worker construction",
+            ),
             ("pruning_strategy", NullWorkerPruningStrategy(), "pruning strategy does not support worker construction"),
         )
 
@@ -816,7 +862,7 @@ def test_parallel_search_rejects_missing_or_null_python_strategy_workers():
                 task_module.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
 
 
-def test_planning_task_view_accessors_keep_temporary_owners_alive():
+def test_planning_task_view_accessors_keep_temporary_owners_alive() -> None:
     parser_options = ParserOptions()
     parser = Parser(str(GRIPPER.domain_path), parser_options)
     formalism_task = parser.parse_task(
@@ -836,10 +882,14 @@ def test_planning_task_view_accessors_keep_temporary_owners_alive():
         str(GRIPPER.task_path),
         parser_options,
     )
-    ground_task_view = planning.lifted.Task(formalism_task).instantiate_ground_task(
-        ExecutionContext(1),
-        planning.lifted.GroundTaskInstantiationOptions(),
-    ).task.get_task()
+    ground_task_view = (
+        planning.lifted.Task(formalism_task)
+        .instantiate_ground_task(
+            ExecutionContext(1),
+            planning.lifted.GroundTaskInstantiationOptions(),
+        )
+        .task.get_task()
+    )
 
     gc.collect()
 
@@ -847,7 +897,7 @@ def test_planning_task_view_accessors_keep_temporary_owners_alive():
     assert [object_.get_name() for object_ in ground_task_view.get_objects()] == ["ball1", "ball2", "left", "right"]
 
 
-def test_cost_mode_is_bound_for_cost_sensitive_algorithms():
+def test_cost_mode_is_bound_for_cost_sensitive_algorithms() -> None:
     assert planning.CostMode.UNIT != planning.CostMode.GENERAL
 
     for task_module in (planning.ground, planning.lifted):
@@ -859,7 +909,7 @@ def test_cost_mode_is_bound_for_cost_sensitive_algorithms():
             assert options.cost_mode == planning.CostMode.UNIT
 
 
-def test_parallel_astar_search_mode_is_bound():
+def test_parallel_astar_search_mode_is_bound() -> None:
     assert planning.ParallelSearchMode.SYNCHRONOUS != planning.ParallelSearchMode.ASYNCHRONOUS
 
     for task_module in (planning.ground, planning.lifted):
@@ -869,7 +919,7 @@ def test_parallel_astar_search_mode_is_bound():
         assert options.parallel_search_mode == planning.ParallelSearchMode.ASYNCHRONOUS
 
 
-def test_state_repository_concurrency_is_bound():
+def test_state_repository_concurrency_is_bound() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -881,7 +931,7 @@ def test_state_repository_concurrency_is_bound():
         assert factory.create_concurrent(task).is_concurrent()
 
 
-def test_dist_hash_mode_is_bound():
+def test_dist_hash_mode_is_bound() -> None:
     assert planning.DistHashMode.RANDOM != planning.DistHashMode.LMCUT
 
     for task_module in (planning.ground, planning.lifted):
@@ -896,7 +946,7 @@ def test_dist_hash_mode_is_bound():
             assert options.dist_hash_mode == planning.DistHashMode.LMCUT
 
 
-def test_ground_task_instantiation_result_default_is_explicit_failure():
+def test_ground_task_instantiation_result_default_is_explicit_failure() -> None:
     result = planning.lifted.GroundTaskInstantiationResult()
 
     assert result.task is None
@@ -912,7 +962,9 @@ def test_ground_task_instantiation_result_default_is_explicit_failure():
     ],
     ids=["omitted", "default", "invariant_synthesis"],
 )
-def test_lifted_task_instantiates_ground_task_from_parsed_pddl(options):
+def test_lifted_task_instantiates_ground_task_from_parsed_pddl(
+    options: tuple[planning.lifted.GroundTaskInstantiationOptions, ...],
+) -> None:
     parser_options = ParserOptions()
     parser = Parser(str(GRIPPER.domain_path), parser_options)
     formalism_task = parser.parse_task(
@@ -928,21 +980,21 @@ def test_lifted_task_instantiates_ground_task_from_parsed_pddl(options):
     assert result.task.get_task().get_name() == "gripper-2"
 
 
-def test_state_repository_create_state_uses_plural_fluent_facts_argument():
+def test_state_repository_create_state_uses_plural_fluent_facts_argument() -> None:
     docstring = planning.ground.StateRepository.create_state.__doc__ or ""
 
     assert "fluent_facts" in docstring
     assert "fluent_fact:" not in docstring
 
 
-def test_state_get_uses_fluent_variable_argument_name():
+def test_state_get_uses_fluent_variable_argument_name() -> None:
     docstring = planning.ground.State.get.__doc__ or ""
 
     assert "fluent_variable" in docstring
     assert "fluent_fact:" not in docstring
 
 
-def test_state_iterable_methods_return_stable_iterators():
+def test_state_iterable_methods_return_stable_iterators() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -973,7 +1025,7 @@ def test_state_iterable_methods_return_stable_iterators():
         assert len(list(static_atoms)) == 12
 
 
-def test_packed_state_roundtrip_retains_repository():
+def test_packed_state_roundtrip_retains_repository() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1007,7 +1059,7 @@ def test_packed_state_roundtrip_retains_repository():
         assert str(unpacked) == state_text
 
 
-def test_packed_nodes_preserve_state_metric_and_label():
+def test_packed_nodes_preserve_state_metric_and_label() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1052,8 +1104,8 @@ def test_packed_nodes_preserve_state_metric_and_label():
 
 @pytest.mark.parametrize("family", ["ground", "lifted"])
 @pytest.mark.parametrize("packed", [False, True])
-def test_labeled_node_label_keeps_owning_node_alive(family, packed):
-    def make_label():
+def test_labeled_node_label_keeps_owning_node_alive(family: str, packed: bool) -> None:
+    def make_label() -> tuple[formalism_planning.ActionBinding, str]:
         task_module = getattr(planning, family)
         ground_task, lifted_task = _make_gripper_tasks()
         task = ground_task if family == "ground" else lifted_task
@@ -1069,7 +1121,7 @@ def test_labeled_node_label_keeps_owning_node_alive(family, packed):
     assert str(label) == expected
 
 
-def test_state_repository_create_state_accepts_state_iterables():
+def test_state_repository_create_state_accepts_state_iterables() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1107,7 +1159,7 @@ def test_state_repository_create_state_accepts_state_iterables():
         assert state_repository.num_states() == 1
 
 
-def test_planning_state_node_and_plan_repr_matches_str():
+def test_planning_state_node_and_plan_repr_matches_str() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1128,7 +1180,7 @@ def test_planning_state_node_and_plan_repr_matches_str():
         assert plan.empty()
 
 
-def test_node_python_equality_and_hash_follow_state_and_metric():
+def test_node_python_equality_and_hash_follow_state_and_metric() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1147,7 +1199,7 @@ def test_node_python_equality_and_hash_follow_state_and_metric():
         assert first_node != different_metric_node
 
 
-def test_successor_generator_accepts_explicit_repository_for_node_lookup():
+def test_successor_generator_accepts_explicit_repository_for_node_lookup() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1162,10 +1214,13 @@ def test_successor_generator_accepts_explicit_repository_for_node_lookup():
         assert not hasattr(successor_generator, "get_state_repository")
         assert looked_up_node == initial_node
         assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
-        assert successor_generator.get_packed_node(state_repository, initial_node.get_state().get_index()).unpack() == initial_node
+        assert (
+            successor_generator.get_packed_node(state_repository, initial_node.get_state().get_index()).unpack()
+            == initial_node
+        )
 
 
-def test_successor_generators_expose_uniform_action_binding_api():
+def test_successor_generators_expose_uniform_action_binding_api() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1176,22 +1231,32 @@ def test_successor_generators_expose_uniform_action_binding_api():
         start_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
 
         bindings = successor_generator.get_applicable_action_bindings(start_node)
-        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(start_node, state_repository, axiom_evaluator)
+        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(
+            start_node, state_repository, axiom_evaluator
+        )
 
         assert len(bindings) == len(labeled_successor_nodes)
         assert bindings
 
         binding = bindings[0]
         ground_action = successor_generator.ground_action(binding)
-        binding_successor = successor_generator.get_successor_node(start_node, binding, state_repository, axiom_evaluator)
-        ground_action_successor = successor_generator.get_successor_node(start_node, ground_action, state_repository, axiom_evaluator)
+        binding_successor = successor_generator.get_successor_node(
+            start_node, binding, state_repository, axiom_evaluator
+        )
+        ground_action_successor = successor_generator.get_successor_node(
+            start_node, ground_action, state_repository, axiom_evaluator
+        )
 
         assert isinstance(binding, formalism_planning.ActionBinding)
         assert successor_generator.ground_action(binding) == ground_action
         assert ground_action.get_action().get_arity() == len(list(ground_action.get_objects()))
         assert binding_successor == ground_action_successor
-        packed_binding_successor = successor_generator.get_packed_successor_node(start_node, binding, state_repository, axiom_evaluator)
-        packed_action_successor = successor_generator.get_packed_successor_node(start_node, ground_action, state_repository, axiom_evaluator)
+        packed_binding_successor = successor_generator.get_packed_successor_node(
+            start_node, binding, state_repository, axiom_evaluator
+        )
+        packed_action_successor = successor_generator.get_packed_successor_node(
+            start_node, ground_action, state_repository, axiom_evaluator
+        )
         assert packed_binding_successor.unpack() == binding_successor
         assert packed_action_successor.unpack() == binding_successor
         assert any(
@@ -1200,7 +1265,7 @@ def test_successor_generators_expose_uniform_action_binding_api():
         )
 
 
-def test_successor_generation_for_a_lifted_action_schema():
+def test_successor_generation_for_a_lifted_action_schema() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1210,8 +1275,14 @@ def test_successor_generation_for_a_lifted_action_schema():
         state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
         actions = list(task.get_task().get_domain().get_actions())
         initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
-        initial_successors = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator)
-        picked_node = next(successor.node for successor in initial_successors if successor.label.get_relation().get_original_name() == "pick")
+        initial_successors = successor_generator.get_labeled_successor_nodes(
+            initial_node, state_repository, axiom_evaluator
+        )
+        picked_node = next(
+            successor.node
+            for successor in initial_successors
+            if successor.label.get_relation().get_original_name() == "pick"
+        )
 
         for node in (initial_node, picked_node):
             all_successors = successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator)
@@ -1221,21 +1292,35 @@ def test_successor_generation_for_a_lifted_action_schema():
                 (successor.label, successor.node) for successor in all_successors
             ]
             packed_nodes = successor_generator.get_packed_successor_nodes(node, state_repository, axiom_evaluator)
-            assert [successor.unpack() for successor in packed_nodes] == [successor.node for successor in all_successors]
+            assert [successor.unpack() for successor in packed_nodes] == [
+                successor.node for successor in all_successors
+            ]
             assert Counter(successor_generator.get_successor_nodes(node, state_repository, axiom_evaluator)) == Counter(
                 successor.node for successor in all_successors
             )
             for action in actions:
-                expected = {successor.label: successor.node for successor in all_successors if successor.label.get_relation() == action}
-                selected = successor_generator.get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator)
+                expected = {
+                    successor.label: successor.node
+                    for successor in all_successors
+                    if successor.label.get_relation() == action
+                }
+                selected = successor_generator.get_labeled_successor_nodes(
+                    node, action, state_repository, axiom_evaluator
+                )
                 assert {successor.label: successor.node for successor in selected} == expected
                 assert set(successor_generator.get_applicable_action_bindings(node, action)) == {
                     binding for binding in all_bindings if binding.get_relation() == action
                 }
-                assert Counter(successor_generator.get_successor_nodes(node, action, state_repository, axiom_evaluator)) == Counter(expected.values())
-                packed = successor_generator.get_packed_labeled_successor_nodes(node, action, state_repository, axiom_evaluator)
+                assert Counter(
+                    successor_generator.get_successor_nodes(node, action, state_repository, axiom_evaluator)
+                ) == Counter(expected.values())
+                packed = successor_generator.get_packed_labeled_successor_nodes(
+                    node, action, state_repository, axiom_evaluator
+                )
                 assert {successor.label: successor.node.unpack() for successor in packed} == expected
-                packed_nodes = successor_generator.get_packed_successor_nodes(node, action, state_repository, axiom_evaluator)
+                packed_nodes = successor_generator.get_packed_successor_nodes(
+                    node, action, state_repository, axiom_evaluator
+                )
                 assert Counter(successor.unpack() for successor in packed_nodes) == Counter(expected.values())
                 if action.get_original_name() == "drop":
                     assert bool(expected) == (node == picked_node)
@@ -1243,7 +1328,7 @@ def test_successor_generation_for_a_lifted_action_schema():
 
 @pytest.mark.parametrize("family", ["ground", "lifted"])
 @pytest.mark.parametrize("labeled", [False, True])
-def test_successor_callbacks_match_lists_stop_and_propagate_exceptions(family, labeled):
+def test_successor_callbacks_match_lists_stop_and_propagate_exceptions(family: str, labeled: bool) -> None:
     task_module = getattr(planning, family)
     ground_task, lifted_task = _make_gripper_tasks()
     task = ground_task if family == "ground" else lifted_task
@@ -1252,31 +1337,34 @@ def test_successor_callbacks_match_lists_stop_and_propagate_exceptions(family, l
     getter = generator.get_labeled_successor_nodes if labeled else generator.get_successor_nodes
     visit = generator.for_each_labeled_successor_node if labeled else generator.for_each_successor_node
 
-    def values(nodes):
+    def values(
+        nodes: list[Node] | list[LabeledNode],
+    ) -> list[tuple[formalism_planning.ActionBinding, Node]] | list[Node] | list[LabeledNode]:
         return [(successor.label, successor.node) for successor in nodes] if labeled else nodes
 
     for schema in [(), *((action,) for action in task.get_task().get_domain().get_actions())]:
         args = (node, *schema, state_repository, axiom_evaluator)
         expected = getter(*args)
         seen = []
-        assert visit(*args, lambda successor: seen.append(successor) or True)
+        assert visit(*args, lambda successor, seen=seen: seen.append(successor) or True)
         assert values(seen) == values(expected)
         seen.clear()
-        assert visit(*args, lambda successor: seen.append(successor) or False) == (not expected)
+        assert visit(*args, lambda successor, seen=seen: seen.append(successor) or False) == (not expected)
         assert values(seen) == values(expected[:1])
 
-    def fail(successor):
-        raise RuntimeError("callback failure")
+    def fail(_successor: object) -> Never:
+        msg = "callback failure"
+        raise RuntimeError(msg)
 
     with pytest.raises(RuntimeError, match="callback failure"):
         visit(node, state_repository, axiom_evaluator, fail)
-    assert visit(node, state_repository, axiom_evaluator, lambda successor: True)
+    assert visit(node, state_repository, axiom_evaluator, lambda _successor: True)
 
 
 @pytest.mark.parametrize("family", ["ground", "lifted"])
 @pytest.mark.parametrize("labeled", [False, True])
-def test_successor_callback_values_retain_their_repository(family, labeled):
-    def collect():
+def test_successor_callback_values_retain_their_repository(family: str, labeled: bool) -> None:
+    def collect() -> tuple[list[Node] | list[LabeledNode], list[str]]:
         task_module = getattr(planning, family)
         ground_task, lifted_task = _make_gripper_tasks()
         task = ground_task if family == "ground" else lifted_task
@@ -1293,7 +1381,7 @@ def test_successor_callback_values_retain_their_repository(family, labeled):
     assert [str(successor) for successor in seen] == expected
 
 
-def test_packed_plans_preserve_empty_and_multistep_plans():
+def test_packed_plans_preserve_empty_and_multistep_plans() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in ((planning.ground, ground_task), (planning.lifted, lifted_task)):
@@ -1321,7 +1409,7 @@ def test_packed_plans_preserve_empty_and_multistep_plans():
         assert task_module.PackedPlan(node.pack()).empty()
 
 
-def test_labeled_node_is_constructible_for_plan_construction():
+def test_labeled_node_is_constructible_for_plan_construction() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (
@@ -1330,7 +1418,9 @@ def test_labeled_node_is_constructible_for_plan_construction():
     ):
         state_repository, axiom_evaluator, successor_generator = _make_components(task_module, task)
         start_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
-        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(start_node, state_repository, axiom_evaluator)
+        labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(
+            start_node, state_repository, axiom_evaluator
+        )
 
         assert labeled_successor_nodes
         first_labeled_successor = labeled_successor_nodes[0]
@@ -1368,7 +1458,7 @@ def test_labeled_node_is_constructible_for_plan_construction():
         assert plan.get_labeled_succ_nodes()[0].node == labeled_node.node
 
 
-def test_state_views_from_independent_repository_factories_use_distinct_storage_identity():
+def test_state_views_from_independent_repository_factories_use_distinct_storage_identity() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
 
     for task_module, task in (

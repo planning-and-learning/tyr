@@ -32,3 +32,14 @@ ban-relative-imports = "all"
 # document the behavior, pytest passes parametrized values by name, every assertion
 # counts as a branch, and the test folders are not packages.
 "{python/tests,tests}/**" = ["S101", "PLR2004", "D1", "FBT001", "C901", "PLR0912", "PLR0915", "INP001"]
+# Imports pypddl and pyyggdrasil before its own extension: the providers' native libraries must
+# be loaded first, so the subpackage imports follow those calls.
+"python/src/pytyr/__init__.py" = ["E402"]
+# Command-line entry points and scripts print their output.
+"{python/src/pytyr/__main__.py,profiling/**,experiments/**,python/examples/**,tests/fixtures/**}" = ["T201"]
+# Standalone scripts, run by path or by the build frontend, not packages.
+"{profiling/**,experiments/**,python/examples/**,python/pytyr_build_backend.py}" = ["INP001"]
+
+# Re-exports (`Name as Name`) of one module stay one import statement.
+[lint.isort]
+combine-as-imports = true

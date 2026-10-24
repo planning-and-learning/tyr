@@ -1,4 +1,8 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import gc
+from types import ModuleType
 
 import pytest
 
@@ -27,7 +31,7 @@ def test_ground_facts_expose_their_bindings() -> None:
 
 
 @pytest.mark.parametrize("module", [datalog, planning])
-def test_repository_factory_accepts_object_counts(module) -> None:
+def test_repository_factory_accepts_object_counts(module: ModuleType) -> None:
     factory = module.RepositoryFactory()
     assert factory.create_repository(num_objects=None) is not None
 
@@ -45,7 +49,7 @@ def test_repository_factory_accepts_object_counts(module) -> None:
 
 
 @pytest.mark.parametrize("module", [datalog, planning])
-def test_insert_reports_deduplication_and_retains_repository(module) -> None:
+def test_insert_reports_deduplication_and_retains_repository(module: ModuleType) -> None:
     factory = module.RepositoryFactory()
     repository = factory.create_repository()
     data = module.ObjectData("retained")
@@ -62,7 +66,7 @@ def test_insert_reports_deduplication_and_retains_repository(module) -> None:
 
 
 @pytest.mark.parametrize("module", [datalog, planning])
-def test_inserted_binding_children_retain_repository(module) -> None:
+def test_inserted_binding_children_retain_repository(module: ModuleType) -> None:
     repository = module.RepositoryFactory().create_repository()
     obj, _ = repository.insert(module.ObjectData("retained"))
     predicate, _ = repository.insert(module.StaticPredicateData("p", 1))

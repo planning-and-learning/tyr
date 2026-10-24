@@ -1,11 +1,17 @@
-#!/usr/bin/env python3
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Regenerate lmcut heuristic fixtures."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from .fixture_generation import ROOT, TaskKind, generate_main
+from tests.fixtures.planning.heuristics.fixture_generation import (
+    ROOT,
+    TaskKind,
+    generate_main,
+)
 
 FIXTURES: dict[TaskKind, Path] = {
     "ground": ROOT / "tests/fixtures/planning/heuristics/ground/lmcut.json",

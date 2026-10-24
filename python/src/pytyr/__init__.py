@@ -1,13 +1,17 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Python bindings of tyr, the planning and Datalog library, and the paths of its native build."""
+
+import tomllib as _tomllib
 from importlib import import_module as _import_module
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-import tomllib as _tomllib
 
 # Load native dependency packages before this package loads native extensions.
 _import_module("pypddl")
 _import_module("pyyggdrasil")
 
-from . import (
+from pytyr import (
     datalog as datalog,
     formalism as formalism,
     planning as planning,
@@ -15,7 +19,8 @@ from . import (
 )
 
 
-def _source_version() -> str:
+def source_version() -> str:
+    """Return the version in the nearest pyproject.toml, for source checkouts without installed metadata."""
     for parent in Path(__file__).resolve().parents:
         pyproject = parent / "pyproject.toml"
         if not pyproject.exists():
@@ -31,10 +36,11 @@ def _source_version() -> str:
 try:
     __version__ = version("pytyr")
 except PackageNotFoundError:
-    __version__ = _source_version()
+    __version__ = source_version()
 
 
 def native_prefix() -> Path:
+    """Return the prefix of tyr's bundled native build (headers, libraries, CMake files)."""
     package_dir = Path(__file__).resolve().parent
     native_dir = package_dir / "native"
     if (native_dir / "include" / "tyr").is_dir():
@@ -46,10 +52,12 @@ def native_prefix() -> Path:
 
 
 def native_include_dir() -> Path:
+    """Return the directory of tyr's C++ headers."""
     return native_prefix() / "include"
 
 
 def native_lib_dir() -> Path:
+    """Return the directory of tyr's native libraries."""
     native_dir = native_prefix()
     for lib_dir_name in ("lib", "lib64"):
         lib_dir = native_dir / lib_dir_name
@@ -71,7 +79,5 @@ def cmake_dir() -> Path:
         if (candidate / "tyrConfig.cmake").is_file():
             return candidate
 
-    raise FileNotFoundError(
-        f"tyrConfig.cmake not found under {prefix}; "
-        "the installed pytyr is too old or incomplete."
-    )
+    message = f"tyrConfig.cmake not found under {prefix}; the installed pytyr is too old or incomplete."
+    raise FileNotFoundError(message)

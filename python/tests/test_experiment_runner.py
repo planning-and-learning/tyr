@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import argparse
 from pathlib import Path
 
@@ -5,14 +8,13 @@ import pytest
 
 pytest.importorskip("lab")
 
-from lab import environments
-
 from experiments import run_search
 from experiments.parser_search import SearchParser
+from lab import environments
 
 
-def configuration(**overrides):
-    result = {
+def configuration(**overrides: object) -> dict[str, object]:
+    result: dict[str, object] = {
         "name": "lifted",
         "task_kind": "lifted",
         "heuristic": "rpg_ff",
@@ -23,8 +25,8 @@ def configuration(**overrides):
     return result
 
 
-def what(**overrides):
-    result = {
+def what(**overrides: object) -> dict[str, object]:
+    result: dict[str, object] = {
         "name": "search",
         "planner": "gbfs_lazy",
         "suite_sets": {"local": ["tiny"], "arrhenius": ["ipc"]},
@@ -35,8 +37,8 @@ def what(**overrides):
     return result
 
 
-def local_how(**overrides):
-    result = {
+def local_how(**overrides: object) -> dict[str, object]:
+    result: dict[str, object] = {
         "name": "local",
         "environment": "local",
         "build_dir": "build",
@@ -50,8 +52,8 @@ def local_how(**overrides):
     return result
 
 
-def arrhenius_how(**overrides):
-    result = {
+def arrhenius_how(**overrides: object) -> dict[str, object]:
+    result: dict[str, object] = {
         "name": "cluster",
         "environment": "arrhenius",
         "build_dir": "build",
@@ -71,7 +73,7 @@ def arrhenius_how(**overrides):
     return result
 
 
-def test_validate_what_accepts_valid_config():
+def test_validate_what_accepts_valid_config() -> None:
     config = what()
     assert run_search.validate_what(config) is config
 
@@ -84,12 +86,12 @@ def test_validate_what_accepts_valid_config():
         (what(parsers=["unknown"]), "unknown parsers"),
     ],
 )
-def test_validate_what_rejects_invalid_config(config, message):
+def test_validate_what_rejects_invalid_config(config: dict[str, object], message: str) -> None:
     with pytest.raises(run_search.ConfigError, match=message):
         run_search.validate_what(config)
 
 
-def test_checked_in_presets_are_valid():
+def test_checked_in_presets_are_valid() -> None:
     root = run_search.REPO / "experiments/configs"
     what_paths = sorted((root / "what").rglob("*.json"))
     how_paths = sorted((root / "how").glob("*.json"))
@@ -108,7 +110,7 @@ def test_checked_in_presets_are_valid():
 
 
 @pytest.mark.parametrize("config", [local_how(), arrhenius_how()])
-def test_validate_how_accepts_valid_config(config):
+def test_validate_how_accepts_valid_config(config: dict[str, object]) -> None:
     assert run_search.validate_how(config) is config
 
 
@@ -120,12 +122,12 @@ def test_validate_how_accepts_valid_config(config):
         (arrhenius_how(account=""), "how.account"),
     ],
 )
-def test_validate_how_rejects_invalid_config(config, message):
+def test_validate_how_rejects_invalid_config(config: dict[str, object], message: str) -> None:
     with pytest.raises(run_search.ConfigError, match=message):
         run_search.validate_how(config)
 
 
-def test_cli_how_overrides_take_precedence():
+def test_cli_how_overrides_take_precedence() -> None:
     config = arrhenius_how()
     args = argparse.Namespace(
         build_dir="build-cli",
@@ -145,7 +147,7 @@ def test_cli_how_overrides_take_precedence():
     assert config == arrhenius_how()
 
 
-def test_cli_can_switch_environment():
+def test_cli_can_switch_environment() -> None:
     args = argparse.Namespace(
         environment="local",
         local_processes=3,
@@ -161,7 +163,7 @@ def test_cli_can_switch_environment():
     assert "account" not in overridden
 
 
-def test_suite_and_configuration_selection():
+def test_suite_and_configuration_selection() -> None:
     config = what()
     assert run_search.select_suites(config, local_how(), None) == ["tiny"]
     assert run_search.select_suites(config, arrhenius_how(), None) == ["ipc"]
@@ -171,7 +173,7 @@ def test_suite_and_configuration_selection():
         run_search.select_configurations(config, ["missing"])
 
 
-def test_default_output_separates_planners():
+def test_default_output_separates_planners() -> None:
     how_config = local_how(output_root="experiments/data")
     astar = what(name="ipc", planner="astar_eager")
     gbfs = what(name="ipc", planner="gbfs_lazy")
@@ -179,7 +181,7 @@ def test_default_output_separates_planners():
     assert run_search.default_output_dir(astar, how_config) != run_search.default_output_dir(gbfs, how_config)
 
 
-def test_search_parser_reads_parallel_statistics(tmp_path):
+def test_search_parser_reads_parallel_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num Datalog threads: 1
 [INPUT] Num search workers: 2
@@ -205,8 +207,10 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
 [Search] Predicate bindings memory usage: 102 bytes
 [Search] Axiom bindings memory usage: 103 bytes
 [Search] Function bindings memory usage: 104 bytes
-[Search] Worker 0: idle=25000000 ns, expanded=25, generated=40, deadends=1, pruned=2, registered=35, state_storage=600 bytes
-[Search] Worker 1: idle=50000000 ns, expanded=15, generated=30, deadends=1, pruned=3, registered=30, state_storage=400 bytes
+[Search] Worker 0: idle=25000000 ns, expanded=25, generated=40, deadends=1, pruned=2, registered=35, \
+state_storage=600 bytes
+[Search] Worker 1: idle=50000000 ns, expanded=15, generated=30, deadends=1, pruned=3, registered=30, \
+state_storage=400 bytes
 [Search] Worker 0 communication: generated_candidates=60, transferred_candidates=10
 [Search] Worker 1 communication: generated_candidates=40, transferred_candidates=30
 [Search] Number of expanded states at last snapshot: 39
@@ -261,7 +265,7 @@ def test_search_parser_reads_parallel_statistics(tmp_path):
     assert props["retained_plan_states_memory_usage_bytes"] == 200
 
 
-def test_search_parser_rejects_incomplete_worker_statistics(tmp_path):
+def test_search_parser_rejects_incomplete_worker_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Worker 0: idle=0 ns, expanded=1, generated=2, deadends=0, pruned=0, registered=2, state_storage=100 bytes
@@ -275,7 +279,7 @@ def test_search_parser_rejects_incomplete_worker_statistics(tmp_path):
     assert props["unexplained_errors"] == ["Unexpected search worker indices: [0]"]
 
 
-def test_search_parser_rejects_missing_worker_statistics(tmp_path):
+def test_search_parser_rejects_missing_worker_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Number of expanded states: 1
@@ -289,7 +293,7 @@ def test_search_parser_rejects_missing_worker_statistics(tmp_path):
     assert props["unexplained_errors"] == ["Unexpected search worker indices: []"]
 
 
-def test_search_parser_rejects_mismatched_communication_statistics(tmp_path):
+def test_search_parser_rejects_mismatched_communication_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Number of generated candidates: 10
@@ -304,10 +308,12 @@ def test_search_parser_rejects_mismatched_communication_statistics(tmp_path):
 
     SearchParser().parse(tmp_path, props)
 
-    assert props["unexplained_errors"] == ["Communication aggregate does not match worker values: num_generated_candidates"]
+    assert props["unexplained_errors"] == [
+        "Communication aggregate does not match worker values: num_generated_candidates"
+    ]
 
 
-def test_search_parser_rejects_missing_communication_worker_statistics(tmp_path):
+def test_search_parser_rejects_missing_communication_worker_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Number of generated candidates: 10
@@ -324,7 +330,7 @@ def test_search_parser_rejects_missing_communication_worker_statistics(tmp_path)
     assert props["unexplained_errors"] == ["Missing communication worker statistics"]
 
 
-def test_search_parser_derives_zero_communication_overhead(tmp_path):
+def test_search_parser_derives_zero_communication_overhead(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Worker 0 communication: generated_candidates=0, transferred_candidates=0
@@ -342,7 +348,7 @@ def test_search_parser_derives_zero_communication_overhead(tmp_path):
     assert props["worker_communication_overheads"] == [0, 0]
 
 
-def test_search_parser_reads_destination_lock_statistics(tmp_path):
+def test_search_parser_reads_destination_lock_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [INPUT] Collect destination lock statistics: 1
@@ -375,7 +381,7 @@ def test_search_parser_reads_destination_lock_statistics(tmp_path):
     assert props["worker_destination_lock_hold_time_ns"] == [12_000_000, 18_000_000]
 
 
-def test_search_parser_ignores_disabled_destination_lock_statistics(tmp_path):
+def test_search_parser_ignores_disabled_destination_lock_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [INPUT] Collect destination lock statistics: 0
@@ -396,7 +402,7 @@ def test_search_parser_ignores_disabled_destination_lock_statistics(tmp_path):
     assert "communication_efficiency" not in props
 
 
-def test_search_parser_rejects_incomplete_destination_lock_statistics(tmp_path):
+def test_search_parser_rejects_incomplete_destination_lock_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Destination lock acquisitions: 3
@@ -413,7 +419,7 @@ def test_search_parser_rejects_incomplete_destination_lock_statistics(tmp_path):
     assert props["unexplained_errors"] == ["Unexpected destination-lock worker indices: [0]"]
 
 
-def test_search_parser_rejects_missing_destination_lock_worker_statistics(tmp_path):
+def test_search_parser_rejects_missing_destination_lock_worker_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Destination lock acquisitions: 0
@@ -429,7 +435,7 @@ def test_search_parser_rejects_missing_destination_lock_worker_statistics(tmp_pa
     assert props["unexplained_errors"] == ["Missing destination-lock worker statistics"]
 
 
-def test_search_parser_derives_destination_lock_aggregates_from_worker_rows(tmp_path):
+def test_search_parser_derives_destination_lock_aggregates_from_worker_rows(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [Search] Search time: 100 ms (100000000 ns)
@@ -450,7 +456,7 @@ def test_search_parser_derives_destination_lock_aggregates_from_worker_rows(tmp_
     assert "communication_efficiency" not in props
 
 
-def test_search_parser_rejects_missing_enabled_destination_lock_statistics(tmp_path):
+def test_search_parser_rejects_missing_enabled_destination_lock_statistics(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [INPUT] Collect destination lock statistics: 1
@@ -472,8 +478,8 @@ def test_search_parser_rejects_missing_enabled_destination_lock_statistics(tmp_p
     ],
 )
 def test_search_parser_ignores_missing_destination_lock_statistics_for_interrupted_runs(
-    tmp_path, filename, message, status
-):
+    tmp_path: Path, filename: str, message: str, status: str
+) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 2
 [INPUT] Collect destination lock statistics: 1
@@ -489,7 +495,7 @@ def test_search_parser_ignores_missing_destination_lock_statistics_for_interrupt
     assert "unexplained_errors" not in props
 
 
-def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path):
+def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path: Path) -> None:
     (tmp_path / "run.log").write_text(
         """[INPUT] Num search workers: 1
 [Search] Destination lock acquisitions: 3
@@ -504,7 +510,7 @@ def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path):
     assert props["unexplained_errors"] == ["Incomplete destination-lock aggregate statistics"]
 
 
-def test_arrhenius_state_round_trip(tmp_path):
+def test_arrhenius_state_round_trip(tmp_path: Path) -> None:
     what_config = what()
     how_config = arrhenius_how()
     configurations = [what_config["configurations"][0]]
@@ -522,7 +528,9 @@ def test_arrhenius_state_round_trip(tmp_path):
     ("cpus_per_task", "memory_per_cpu_mib"),
     [(1, 67584), (4, 16896), (8, 8448), (16, 4224)],
 )
-def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s, cpus_per_task, memory_per_cpu_mib):
+def test_arrhenius_slurm_submission(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, wall_time_limit_s: int, cpus_per_task: int, memory_per_cpu_mib: int
+) -> None:
     presets = run_search.REPO / "experiments/configs"
     what_config = run_search.load_json(
         presets / f"what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-{cpus_per_task}.json"
@@ -539,9 +547,9 @@ def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s, cp
     for _ in range(1001):
         experiment.add_run()
     experiment.add_step("start", experiment.start_runs)
-    submissions = []
+    submissions: list[list[str]] = []
 
-    def submit(command, **kwargs):
+    def submit(command: list[str], **_kwargs: object) -> bytes:
         submissions.append(command)
         return b"Submitted batch job 123\n"
 
@@ -615,7 +623,7 @@ def test_arrhenius_slurm_submission(tmp_path, monkeypatch, wall_time_limit_s, cp
         ),
     ],
 )
-def test_planner_command(config, expected):
+def test_planner_command(config: dict[str, object], expected: list[str]) -> None:
     assert run_search.planner_command(config) == [
         "{run_planner}",
         "{planner_exe}",

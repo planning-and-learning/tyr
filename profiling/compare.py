@@ -1,20 +1,34 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""Compare two profiling summaries: case statuses, benchmark timings, and declared attributes."""
+
 import argparse
 import json
 import operator
 import pathlib
 import sys
+from collections.abc import Callable
 from typing import Any
 
-from schema import AttributeCompare, AttributeValue, normalize_attribute_value, validate_attributes
 from report import representative_benchmarks
+from schema import AttributeCompare, AttributeValue, normalize_attribute_value, validate_attributes
+
+# For an ordered attribute's compare rule: whether the first value is better than the second.
+BETTER: dict[str | None, Callable[[AttributeValue, AttributeValue], bool]] = {
+    AttributeCompare.LOWER_IS_BETTER.value: operator.lt,
+    AttributeCompare.HIGHER_IS_BETTER.value: operator.gt,
+}
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
+    """Read a JSON object from ``path``."""
     return json.loads(path.read_text())
 
 
 def resolve_result_file(summary_path: pathlib.Path, result_file: str) -> pathlib.Path:
+    """Locate a summary's result file as given, else relative to the summary; return it as given if neither exists."""
     path = pathlib.Path(result_file)
     if path.exists():
         return path
@@ -27,6 +41,7 @@ def resolve_result_file(summary_path: pathlib.Path, result_file: str) -> pathlib
 
 
 def load_benchmarks(summary_path: pathlib.Path, summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Representative benchmark records by name, from the summary's successful and still existing result files."""
     benchmarks: dict[str, dict[str, Any]] = {}
 
     for result in summary.get("benchmark_results", []):
@@ -48,10 +63,12 @@ def load_benchmarks(summary_path: pathlib.Path, summary: dict[str, Any]) -> dict
 
 
 def index_cases(summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """The summary's cases by run name."""
     return {case["run_name"]: case for case in summary.get("cases", [])}
 
 
 def compare_cases(old_summary: dict[str, Any], new_summary: dict[str, Any]) -> list[dict[str, str | None]]:
+    """Cases whose run or benchmark status differs between the summaries; a case absent from one is "missing"."""
     old_cases = index_cases(old_summary)
     new_cases = index_cases(new_summary)
     run_names = sorted(set(old_cases) | set(new_cases))
@@ -83,6 +100,7 @@ def compare_cases(old_summary: dict[str, Any], new_summary: dict[str, Any]) -> l
 def compare_benchmarks(
     old_benchmarks: dict[str, dict[str, Any]], new_benchmarks: dict[str, dict[str, Any]]
 ) -> list[dict[str, str | float]]:
+    """Timings of benchmarks present in both runs, old ones converted to the new time unit, with ratios and deltas."""
     names = sorted(set(old_benchmarks) & set(new_benchmarks))
     comparisons: list[dict[str, str | float]] = []
     seconds_per_unit = {"ns": 1e-9, "us": 1e-6, "ms": 1e-3, "s": 1}
@@ -116,6 +134,7 @@ def compare_benchmarks(
 
 
 def compare_attribute_value(old_value: AttributeValue, new_value: AttributeValue, rule: str | None) -> str:
+    """Judge an attribute's change under its compare rule: missing, undefined, (un)changed, improved or regressed."""
     if old_value is None or new_value is None:
         return "missing"
 
@@ -125,21 +144,12 @@ def compare_attribute_value(old_value: AttributeValue, new_value: AttributeValue
     if rule == AttributeCompare.STRICT_EQUALITY.value:
         return "unchanged" if old_value == new_value else "changed"
 
-    if rule == AttributeCompare.LOWER_IS_BETTER.value:
-        if operator.lt(new_value, old_value):
-            return "improved"
-        if operator.gt(new_value, old_value):
-            return "regressed"
-        return "unchanged"
-
-    if rule == AttributeCompare.HIGHER_IS_BETTER.value:
-        if operator.gt(new_value, old_value):
-            return "improved"
-        if operator.lt(new_value, old_value):
-            return "regressed"
-        return "unchanged"
-
-    return "unknown_rule"
+    better = BETTER.get(rule)
+    if better is None:
+        return "unknown_rule"
+    if better(new_value, old_value):
+        return "improved"
+    return "regressed" if better(old_value, new_value) else "unchanged"
 
 
 def compare_attributes(
@@ -147,6 +157,7 @@ def compare_attributes(
     new_benchmarks: dict[str, dict[str, Any]],
     attributes: dict[str, dict[str, Any]],
 ) -> list[dict[str, AttributeValue]]:
+    """Each declared attribute of each benchmark present in both runs, judged by its compare rule."""
     names = sorted(set(old_benchmarks) & set(new_benchmarks))
     comparisons: list[dict[str, AttributeValue]] = []
 
@@ -182,6 +193,7 @@ def compare_attributes(
 
 
 def main() -> int:
+    """Print or write the comparison; return 1 on violations, status changes, or unmatched benchmarks."""
     parser = argparse.ArgumentParser(description="Compare two profiling summary JSON files.")
     parser.add_argument("old_summary", type=pathlib.Path)
     parser.add_argument("new_summary", type=pathlib.Path)

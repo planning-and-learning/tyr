@@ -1,5 +1,7 @@
-"""
-Custom lazy Greedy Best-First Search (GBFS) with customization points explained.
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""Custom lazy Greedy Best-First Search (GBFS) with customization points explained.
 
 Tyr also provides an off-the-shelf implementation, which is almost identical
 to the astar_eager.py example. Please familiarize yourself with astar_eager.py
@@ -14,39 +16,38 @@ Author: Dominik Drexler (dominik.drexler@liu.se)
 """
 
 import argparse
-
-from pathlib import Path
-from queue import PriorityQueue
 from dataclasses import dataclass
 from enum import Enum
-
-from pyyggdrasil.execution import ExecutionContext
+from pathlib import Path
+from queue import PriorityQueue
 
 from pypddl.formalism import ParserOptions
+from pyyggdrasil.execution import ExecutionContext
+
 from pytyr.formalism.planning import Parser
-
 from pytyr.planning import SearchStatus
-
 from pytyr.planning.lifted import (
-    StateIndex,
-    SearchResult,
     AxiomEvaluator,
     AxiomEvaluatorFactory,
+    ConjunctiveGoalStrategy,
+    FFRPGHeuristic,
+    Heuristic,
+    LabeledNode,
+    Node,
+    Plan,
+    SearchResult,
+    StateIndex,
     StateRepository,
     StateRepositoryFactory,
     SuccessorGenerator,
     SuccessorGeneratorFactory,
-    Heuristic,
-    FFRPGHeuristic,
-    ConjunctiveGoalStrategy,
-    Node,
-    LabeledNode,
-    Plan,
     Task,
 )
 
 
 class SearchNodeStatus(Enum):
+    """The lifecycle status of a search node."""
+
     NEW = 0
     OPEN = 1
     CLOSED = 2
@@ -56,6 +57,8 @@ class SearchNodeStatus(Enum):
 
 @dataclass
 class SearchNode:
+    """The search information of a state: its g-value, the parent state on the best known path, and its status."""
+
     g_value: float
     parent: StateIndex | None
     status: SearchNodeStatus
@@ -68,9 +71,7 @@ def backtrack_plan(
     axiom_evaluator: AxiomEvaluator,
     successor_generator: SuccessorGenerator,
 ) -> Plan:
-    """
-    Backtracks from the goal search node to compute the labeled state trajectory.
-    """
+    """Backtracks from the goal search node to compute the labeled state trajectory."""
     cur_state_index = goal_node.get_state().get_index()
     backward_state_trajectory: list[StateIndex] = []
 
@@ -79,16 +80,17 @@ def backtrack_plan(
         search_node = search_nodes[cur_state_index]
         cur_state_index = search_node.parent
 
+    # The trajectory contains at least the goal state.
     forward_state_trajectory = list(reversed(backward_state_trajectory))
-
-    assert forward_state_trajectory
 
     start_node = successor_generator.get_node(state_repository, forward_state_trajectory[0])
     node = start_node
     labeled_succ_nodes: list[LabeledNode] = []
 
     for i in range(len(forward_state_trajectory) - 1):
-        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator):
+        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(
+            node, state_repository, axiom_evaluator
+        ):
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
             succ_state_index = succ_state.get_index()
@@ -100,6 +102,15 @@ def backtrack_plan(
     return Plan(start_node, labeled_succ_nodes)
 
 
+def unsolved_result(status: SearchStatus) -> SearchResult:
+    """Return a search result without goal node and plan."""
+    search_result = SearchResult()
+    search_result.goal_node = None
+    search_result.plan = None
+    search_result.status = status
+    return search_result
+
+
 def find_solution(
     task: Task,
     state_repository: StateRepository,
@@ -107,16 +118,13 @@ def find_solution(
     successor_generator: SuccessorGenerator,
     heuristic: Heuristic,
 ) -> SearchResult:
-
+    """Run lazy GBFS from the initial state until a state satisfies the task's goal."""
     goal_strategy = ConjunctiveGoalStrategy(task)
 
-    search_result = SearchResult()
-
     if not goal_strategy.is_static_goal_satisfied(task):
-        search_result.goal_node = None
-        search_result.plan = None
-        search_result.status = SearchStatus.UNSOLVABLE
-        return search_result
+        return unsolved_result(SearchStatus.UNSOLVABLE)
+
+    search_result = SearchResult()
 
     initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
     initial_state = initial_node.get_state()
@@ -131,10 +139,8 @@ def find_solution(
     initial_g_value = initial_node.get_metric()
     initial_state_index = initial_state.get_index()
 
-    search_nodes: dict[StateIndex, SearchNode] = dict()
-    search_nodes[initial_state_index] = SearchNode(
-        initial_g_value, None, SearchNodeStatus.NEW
-    )
+    search_nodes: dict[StateIndex, SearchNode] = {}
+    search_nodes[initial_state_index] = SearchNode(initial_g_value, None, SearchNodeStatus.NEW)
 
     queue: PriorityQueue[tuple[float, float, StateIndex]] = PriorityQueue()
     # Note: we insert cheap state indices to allow memory to be returned to the pool.
@@ -156,20 +162,20 @@ def find_solution(
             search_node.status = SearchNodeStatus.DEADEND
             continue
 
-        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(node, state_repository, axiom_evaluator):
+        for labeled_succ_node in successor_generator.get_labeled_successor_nodes(
+            node, state_repository, axiom_evaluator
+        ):
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
             succ_g_value = succ_node.get_metric()
             succ_state_index = succ_state.get_index()
 
             if succ_state_index not in search_nodes:
-                search_nodes[succ_state_index] = SearchNode(
-                    succ_g_value, state_index, SearchNodeStatus.NEW
-                )
+                search_nodes[succ_state_index] = SearchNode(succ_g_value, state_index, SearchNodeStatus.NEW)
 
             succ_search_node = search_nodes[succ_state_index]
 
-            if not succ_search_node.status == SearchNodeStatus.NEW:
+            if succ_search_node.status != SearchNodeStatus.NEW:
                 continue
 
             succ_search_node.parent = state_index
@@ -193,13 +199,11 @@ def find_solution(
             succ_search_node.status = SearchNodeStatus.OPEN
             queue.put((state_h_value, succ_g_value, succ_state_index))
 
-    search_result.goal_node = None
-    search_result.plan = None
-    search_result.status = SearchStatus.EXHAUSTED
-    return search_result
+    return unsolved_result(SearchStatus.EXHAUSTED)
 
 
 def main() -> None:
+    """Run the custom lazy GBFS with the FF heuristic on the given task and print the plan."""
     arg_parser = argparse.ArgumentParser(description="GBFS Lazy Search.")
     arg_parser.add_argument(
         "-d",

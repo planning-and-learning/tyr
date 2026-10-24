@@ -1,5 +1,7 @@
-"""
-Synthesize and inspect invariants from a planning domain.
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""Synthesize and inspect invariants from a planning domain.
 
 Example usage (benchmark files are provided by the pypddl-datasets package):
 
@@ -14,18 +16,19 @@ from itertools import product
 from pathlib import Path
 
 from pypddl.formalism import ParserOptions
+
 from pytyr.formalism.planning import (
-    Parser,
-    ParameterIndex,
-    ObjectIndex,
     Invariant,
-    synthesize_invariants,
     InvariantMatchData,
     InvariantMatcher,
     InvariantQueryResult,
     InvariantQueryWorkspace,
+    ObjectIndex,
     ObjectSubstitution,
+    ParameterIndex,
+    Parser,
     TaskVariableDomains,
+    synthesize_invariants,
 )
 
 
@@ -34,6 +37,10 @@ def rigid_parameter_domains_from_task_variable_domains(
     task_variable_domains: TaskVariableDomains,
     all_object_indices: set[ObjectIndex],
 ) -> list[list[ObjectIndex]]:
+    """Return the candidate objects of each rigid variable, sorted, or an empty list if some variable has none.
+
+    A rigid variable's candidates are the objects allowed at every fluent predicate position where it occurs.
+    """
     domains = [set(all_object_indices) for _ in range(inv.get_num_rigid_variables())]
 
     fluent_predicate_domains = task_variable_domains.fluent_predicate_domains
@@ -51,9 +58,7 @@ def rigid_parameter_domains_from_task_variable_domains(
             if parameter >= inv.get_num_rigid_variables():
                 continue
 
-            allowed_objects = {
-                obj.get_index() for obj in predicate_domains[position].objects
-            }
+            allowed_objects = {obj.get_index() for obj in predicate_domains[position].objects}
 
             domains[parameter] &= allowed_objects
 
@@ -71,9 +76,7 @@ def enumerate_rigid_bindings(
     task_variable_domains: TaskVariableDomains,
     all_object_indices: set[ObjectIndex],
 ) -> list[ObjectSubstitution]:
-    """
-    Enumerate all rigid substitutions consistent with the task variable domains.
-    """
+    """Enumerate all rigid substitutions consistent with the task variable domains."""
     rigid_domains = rigid_parameter_domains_from_task_variable_domains(
         inv,
         task_variable_domains,
@@ -108,9 +111,7 @@ def build_invariant_match_data(
     task_variable_domains: TaskVariableDomains,
     all_object_indices: set[ObjectIndex],
 ) -> list[InvariantMatchData]:
-    """
-    Build one InvariantMatchData object per invariant.
-    """
+    """Build one InvariantMatchData object per invariant."""
     result: list[InvariantMatchData] = []
 
     for inv in invariants:
@@ -127,9 +128,8 @@ def build_invariant_match_data(
 
 
 def main() -> None:
-    arg_parser = argparse.ArgumentParser(
-        description="Parse and traverse planning formalism structures."
-    )
+    """Synthesize the domain's invariants and match the first one against the initial fluent atoms."""
+    arg_parser = argparse.ArgumentParser(description="Parse and traverse planning formalism structures.")
     arg_parser.add_argument(
         "-d",
         "--domain-filepath",
@@ -181,10 +181,7 @@ def main() -> None:
 
     print("\nBuilt invariant match data:")
     for i, data in enumerate(invariant_match_data):
-        print(
-            f"[{i}] invariant={data.invariant}, "
-            f"rigid variable substitutions={data.rigid_variable_bindings}"
-        )
+        print(f"[{i}] invariant={data.invariant}, rigid variable substitutions={data.rigid_variable_bindings}")
 
     # 4. Create an InvariantMatcher.
     matcher = InvariantMatcher(invariant_match_data)
@@ -209,11 +206,7 @@ def main() -> None:
         for match in query_result.matches:
             data = invariant_match_data[match.invariant_index]
             binding = data.rigid_variable_bindings[match.binding_index]
-            print(
-                f"  invariant_index={match.invariant_index}, "
-                f"binding_index={match.binding_index}, "
-                f"binding={binding}"
-            )
+            print(f"  invariant_index={match.invariant_index}, binding_index={match.binding_index}, binding={binding}")
 
 
 if __name__ == "__main__":
