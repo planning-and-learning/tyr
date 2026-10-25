@@ -21,13 +21,14 @@ jobs:
           PYTHON: ${{ steps.python.outputs.python-path }}
         with:
           # clang-tidy needs compile_commands.json, pyright the package in
-          # .venv (its stubs are generated at install). The native
+          # .venv (its stubs are generated at install) and lab, which the
+          # experiments import. The native
           # dependencies come with the pyyggdrasil and pypddl wheels.
           prepare: |
             "$PYTHON" -m venv .venv
             .venv/bin/python -m pip install 'scikit-build-core>=1.0.3,<2' 'cmake>=3.21' 'ninja>=1.5' \
               'nanobind-backend>=1.0' 'pyyggdrasil>=0.6.0,<0.7' 'pypddl>=1.7.0,<1.8' \
-              'pypddl-datasets>=0.0.17,<0.1'
+              'pypddl-datasets>=0.0.17,<0.1' 'lab>=8.10,<9'
             PREFIX="$(.venv/bin/python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')"
             cmake -S . -B build/peachycheck -G Ninja -DCMAKE_MAKE_PROGRAM="$PWD/.venv/bin/ninja" \
                   -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
