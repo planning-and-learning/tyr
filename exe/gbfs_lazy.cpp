@@ -244,8 +244,8 @@ int run(int argc, char** argv)
                 options.event_handler = tyr::planning::gbfs_lazy::DefaultEventHandler<tyr::GroundTag>::create(verbosity);
                 options.cost_mode = search_cost_mode;
                 options.random_seed = random_seed;
-            if (max_time)
-                options.search_budget.max_time = std::chrono::seconds(*max_time);
+                if (max_time)
+                    options.search_budget.max_time = std::chrono::seconds(*max_time);
                 options.num_search_workers = num_search_workers;
                 options.dist_hash_mode = dist_hash_mode;
                 options.collect_destination_lock_statistics = collect_destination_lock_statistics;
