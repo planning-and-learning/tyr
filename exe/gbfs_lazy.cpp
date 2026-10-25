@@ -65,6 +65,7 @@ int main(int argc, char** argv)
         .default_value(false)
         .implicit_value(true)
         .help("Collect destination worker lock wait and hold times.");
+    program.add_argument("--max-time").scan<'u', uint64_t>().help("The search time limit in seconds; the search then stops with OUT_OF_TIME.");
     program.add_argument("-R", "--random-seed").default_value(uint64_t(0)).scan<'u', uint64_t>().help("The random seed.");
     program.add_argument("-S", "--shuffle-labeled-succ-nodes").default_value(false).implicit_value(true).help("Toggle shuffling the labeled successor nodes.");
     program.add_argument("--disable-preferred-actions").default_value(false).implicit_value(true).help("Disable preferred action queues.");
@@ -109,6 +110,7 @@ int main(int argc, char** argv)
         auto dist_hash_mode = dist_hash_mode_name == "random" ? tyr::planning::DistHashMode::RANDOM : tyr::planning::DistHashMode::LMCUT;
         auto collect_destination_lock_statistics = program.get<bool>("--collect-destination-lock-statistics");
         auto random_seed = program.get<uint64_t>("--random-seed");
+        auto max_time = program.present<uint64_t>("--max-time");
         auto shuffle_labeled_succ_nodes = program.get<bool>("--shuffle-labeled-succ-nodes");
         auto disable_preferred_actions = program.get<bool>("--disable-preferred-actions");
         auto instantiate_ground_task = program.get<bool>("--instantiate-ground-task");
@@ -161,6 +163,8 @@ int main(int argc, char** argv)
             options.event_handler = tyr::planning::gbfs_lazy::DefaultEventHandler<tyr::LiftedTag>::create(verbosity);
             options.cost_mode = search_cost_mode;
             options.random_seed = random_seed;
+            if (max_time)
+                options.search_budget.max_time = std::chrono::seconds(*max_time);
             options.num_search_workers = num_search_workers;
             options.dist_hash_mode = dist_hash_mode;
             options.collect_destination_lock_statistics = collect_destination_lock_statistics;
@@ -235,6 +239,8 @@ int main(int argc, char** argv)
                 options.event_handler = tyr::planning::gbfs_lazy::DefaultEventHandler<tyr::GroundTag>::create(verbosity);
                 options.cost_mode = search_cost_mode;
                 options.random_seed = random_seed;
+            if (max_time)
+                options.search_budget.max_time = std::chrono::seconds(*max_time);
                 options.num_search_workers = num_search_workers;
                 options.dist_hash_mode = dist_hash_mode;
                 options.collect_destination_lock_statistics = collect_destination_lock_statistics;

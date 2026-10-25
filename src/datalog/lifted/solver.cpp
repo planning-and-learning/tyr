@@ -261,6 +261,8 @@ private:
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
         if (statically_applicable() && dynamically_applicable())
             insert_nullary_update(R {}, input, wrctx);
+        else
+            ++out.statistics().num_rejected_rules;
     }
 
     [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<formalism::Object>& binding,
@@ -425,7 +427,10 @@ private:
         [[maybe_unused]] const auto& in = wrctx.in();
         auto& out = wrctx.out();
         if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
+        {
+            ++out.statistics().num_rejected_rules;
             return;
+        }
 
         assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
         insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
@@ -464,7 +469,10 @@ private:
         };
 
         if (!statically_applicable())
+        {
+            ++out.statistics().num_rejected_rules;
             return;
+        }
 
 #ifndef NDEBUG
         // Only applicable bindings count: a rejected binding is generated again once it becomes applicable.
