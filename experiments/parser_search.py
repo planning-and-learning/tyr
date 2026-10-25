@@ -5,6 +5,7 @@
 
 import math
 import re
+from collections.abc import MutableMapping
 from typing import Any
 
 from lab import tools
@@ -27,7 +28,8 @@ WORKER_COMMUNICATION_STATISTICS = re.compile(
 )
 
 # Lab run properties: a mapping from attribute names to the untyped values Lab stores.
-Props = dict[str, Any]
+# Lab run properties: values of whatever type each pattern or function stored.
+Props = MutableMapping[str, Any]
 WorkerRows = list[tuple[int, ...]]
 
 

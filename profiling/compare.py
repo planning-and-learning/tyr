@@ -6,7 +6,6 @@
 
 import argparse
 import json
-import operator
 import pathlib
 import sys
 from collections.abc import Callable
@@ -15,10 +14,23 @@ from typing import Any
 from report import representative_benchmarks
 from schema import AttributeCompare, AttributeValue, normalize_attribute_value, validate_attributes
 
+OrderedValue = bool | int | float | str
+
+
+def less(first: OrderedValue, second: OrderedValue) -> bool:
+    """Order two values of one kind: numbers by value, strings lexicographically."""
+    if isinstance(first, str) and isinstance(second, str):
+        return first < second
+    if isinstance(first, str) or isinstance(second, str):
+        msg = f"cannot order {first!r} and {second!r}"
+        raise TypeError(msg)
+    return first < second
+
+
 # For an ordered attribute's compare rule: whether the first value is better than the second.
-BETTER: dict[str | None, Callable[[AttributeValue, AttributeValue], bool]] = {
-    AttributeCompare.LOWER_IS_BETTER.value: operator.lt,
-    AttributeCompare.HIGHER_IS_BETTER.value: operator.gt,
+BETTER: dict[str | None, Callable[[OrderedValue, OrderedValue], bool]] = {
+    AttributeCompare.LOWER_IS_BETTER.value: less,
+    AttributeCompare.HIGHER_IS_BETTER.value: lambda first, second: less(second, first),
 }
 
 

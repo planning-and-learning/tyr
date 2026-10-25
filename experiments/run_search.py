@@ -14,7 +14,7 @@ import os
 import sys
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, TypeGuard, cast
 
 import pypddl_datasets
 from lab.environments import ArrheniusEnvironment, LocalEnvironment
@@ -69,8 +69,19 @@ def load_json(path: Path) -> object:
         raise ConfigError(msg) from error
 
 
-def _mapping(value: object, name: str) -> JsonObject:
+def _is_json_object(value: object) -> TypeGuard[JsonObject]:
     if not isinstance(value, dict):
+        return False
+    entries = cast("dict[object, object]", value)  # every dict is one; json.load leaves the types open
+    return all(isinstance(key, str) for key in entries)
+
+
+def _is_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _mapping(value: object, name: str) -> JsonObject:
+    if not _is_json_object(value):
         msg = f"{name} must be an object"
         raise ConfigError(msg)
     return value
@@ -108,7 +119,7 @@ def _optional_positive_int(value: object, name: str) -> None:
 
 
 def _string_list(value: object, name: str, *, allow_empty: bool = False) -> None:
-    if not isinstance(value, list) or (not allow_empty and not value):
+    if not _is_list(value) or (not allow_empty and not value):
         qualifier = "" if allow_empty else " non-empty"
         msg = f"{name} must be a{qualifier} list"
         raise ConfigError(msg)
@@ -117,7 +128,7 @@ def _string_list(value: object, name: str, *, allow_empty: bool = False) -> None
 
 
 def _validate_configurations(configurations: object) -> None:
-    if not isinstance(configurations, list) or not configurations:
+    if not _is_list(configurations) or not configurations:
         msg = "what.configurations must be a non-empty list"
         raise ConfigError(msg)
 
@@ -339,8 +350,8 @@ def planner_command(configuration: JsonObject) -> list[str]:
 
 
 def _repo_path(path: str) -> Path:
-    path = Path(path).expanduser()
-    return path if path.is_absolute() else REPO / path
+    resolved = Path(path).expanduser()
+    return resolved if resolved.is_absolute() else REPO / resolved
 
 
 def default_output_dir(what: JsonObject, how: JsonObject) -> Path:

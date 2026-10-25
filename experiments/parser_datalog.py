@@ -4,7 +4,7 @@
 """Lab parser for the Datalog program statistics that the planner prints."""
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, MutableMapping
 from typing import Any
 
 from lab.parser import Parser
@@ -84,7 +84,7 @@ def parse_statistic(line: str) -> tuple[str, int | float] | None:
     return None
 
 
-def parse_datalog_summaries(content: str, props: dict[str, Any]) -> None:
+def parse_datalog_summaries(content: str, props: MutableMapping[str, Any]) -> None:
     """Store the statistics of each known summary section in `props`, prefixed by the section's name."""
     section = None
 
