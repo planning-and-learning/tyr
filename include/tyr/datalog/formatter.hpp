@@ -28,6 +28,7 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
+#include <limits>
 #include <ostream>
 #include <ranges>
 #include <sstream>
@@ -292,12 +293,13 @@ struct formatter<tyr::datalog::RuleWorkerStatistics, char>
     {
         const auto rej = static_cast<ygg::float_t>(value.num_rejected_rules);
         const auto gen = static_cast<ygg::float_t>(value.num_generated_rules);
-        auto overapproximation_ratio = (gen > 0) ? (rej + gen) / gen : ygg::float_t { 1.0 };
+        // Generated bindings per accepted one (rejected bindings are generated ones); 1 is optimal.
+        auto overapproximation_ratio = (gen > rej) ? gen / (gen - rej) : (gen > 0) ? std::numeric_limits<ygg::float_t>::infinity() : ygg::float_t { 1.0 };
         return fmt::format_to(ctx.out(),
                               "[RuleWorkerStatistics] N_exec = {:>10} | executions\n"
                               "[RuleWorkerStatistics] N_gen  = {:>10} | generated rules\n"
                               "[RuleWorkerStatistics] N_rej  = {:>10} | rejected rules\n"
-                              "[RuleWorkerStatistics] OA     = {:>10.2f} | overapproximation ratio (1 + N_rej / N_gen)",
+                              "[RuleWorkerStatistics] OA     = {:>10.2f} | overapproximation ratio (N_gen / (N_gen - N_rej))",
                               value.num_executions,
                               value.num_generated_rules,
                               value.num_rejected_rules,
@@ -314,12 +316,13 @@ struct formatter<tyr::datalog::AggregatedRuleWorkerStatistics, char>
     {
         const auto rej = static_cast<ygg::float_t>(value.num_rejected_rules);
         const auto gen = static_cast<ygg::float_t>(value.num_generated_rules);
-        auto overapproximation_ratio = (gen > 0) ? (rej + gen) / gen : ygg::float_t { 1.0 };
+        // Generated bindings per accepted one (rejected bindings are generated ones); 1 is optimal.
+        auto overapproximation_ratio = (gen > rej) ? gen / (gen - rej) : (gen > 0) ? std::numeric_limits<ygg::float_t>::infinity() : ygg::float_t { 1.0 };
         return fmt::format_to(ctx.out(),
                               "[AggregatedRuleWorkerStatistics] N_exec =  {:>10} | executions\n"
                               "[AggregatedRuleWorkerStatistics] N_gen  =  {:>10} | generated rules\n"
                               "[AggregatedRuleWorkerStatistics] N_rej  =  {:>10} | rejected rules\n"
-                              "[AggregatedRuleWorkerStatistics] OA     =  {:>10.2f} | overapproximation ratio (1 + N_rej / N_gen)",
+                              "[AggregatedRuleWorkerStatistics] OA     =  {:>10.2f} | overapproximation ratio (N_gen / (N_gen - N_rej))",
                               value.num_executions,
                               value.num_generated_rules,
                               value.num_rejected_rules,

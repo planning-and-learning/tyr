@@ -137,7 +137,7 @@ class DatalogParser(Parser):
         [AggregatedRuleWorkerStatistics] N_exec =          40 | executions
         [AggregatedRuleWorkerStatistics] N_gen  =        7488 | generated rules
         [AggregatedRuleWorkerStatistics] N_rej  =        2493 | rejected rules
-        [AggregatedRuleWorkerStatistics] OA     =        1.33 | overapproximation ratio (1 + N_rej / N_gen)
+        [AggregatedRuleWorkerStatistics] OA     =        1.50 | overapproximation ratio (N_gen / (N_gen - N_rej))
         [Axiom evaluator] Summary
         [ProgramStatistics] N_exec =       4996    | executions
         [ProgramStatistics] T_seq  =         20 ms | sequential time
@@ -163,7 +163,7 @@ class DatalogParser(Parser):
         [AggregatedRuleWorkerStatistics] N_exec =           0 | executions
         [AggregatedRuleWorkerStatistics] N_gen  =           0 | generated rules
         [AggregatedRuleWorkerStatistics] N_rej  =           0 | rejected rules
-        [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (1 + N_rej / N_gen)
+        [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (N_gen / (N_gen - N_rej))
         [FFRPGHeuristic] Summary
         [ProgramStatistics] N_exec =          7    | executions
         [ProgramStatistics] T_seq  =       1478 ms | sequential time
@@ -189,7 +189,7 @@ class DatalogParser(Parser):
         [AggregatedRuleWorkerStatistics] N_exec =         207 | executions
         [AggregatedRuleWorkerStatistics] N_gen  =     7013498 | generated rules
         [AggregatedRuleWorkerStatistics] N_rej  =        1496 | rejected rules
-        [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (1 + N_rej / N_gen)
+        [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (N_gen / (N_gen - N_rej))
     """
 
     def __init__(self) -> None:
