@@ -1,11 +1,10 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from typing import override
-
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
+from typing_extensions import override
 
 from pytyr import planning
 from pytyr.formalism import planning as formalism_planning
@@ -197,7 +196,7 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: State, state: planning.ground.StateBuilder) -> bool:
+        def is_dynamic_goal_satisfied(self, seed_state: State, state: State) -> bool:
             self.saw_builder = isinstance(state, planning.ground.StateBuilder)
             return False
 
@@ -227,7 +226,7 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
             self.goal = goal
 
         @override
-        def evaluate(self, state: planning.ground.StateBuilder) -> float:
+        def evaluate(self, state: State) -> float:
             self.saw_builder = isinstance(state, planning.ground.StateBuilder)
             return 7.0
 

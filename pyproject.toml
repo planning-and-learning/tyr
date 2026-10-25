@@ -31,6 +31,8 @@ Homepage = "https://github.com/planning-and-learning/tyr"
 test = [
     "pytest",
     "pypddl-datasets>=0.0.17,<0.1",
+    # override and TypeIs for Python 3.11, in the tests, examples and fixture generators.
+    "typing-extensions>=4.10",
 ]
 
 [tool.pytest.ini_options]

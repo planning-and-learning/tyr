@@ -398,7 +398,7 @@ class SearchParser(Parser):
         """Register the search patterns and the functions deriving further properties."""
         super().__init__()
         for name, regex, value_type in SEARCH_PATTERNS:
-            self.add_pattern(name, regex, type=value_type)
+            self.add_pattern(name, regex, "run.log", value_type)
 
         self.add_function(process_invalid)
         self.add_function(process_unsolvable)

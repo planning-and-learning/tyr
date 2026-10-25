@@ -9,6 +9,7 @@ from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
 
 from pytyr.formalism.planning import (
+    FluentFDRFact,
     FluentFDRVariable,
     FluentGroundAtom,
     GreedyCriterion,
@@ -112,6 +113,15 @@ def test_options_stay_backward_compatible() -> None:
     assert lifted.GroundTaskInstantiationOptions(disable_invariant_synthesis=True).disable_invariant_synthesis is True
 
 
+def _fact_atoms(facts: list[FluentFDRFact]) -> list[FluentGroundAtom]:
+    atoms: list[FluentGroundAtom] = []
+    for fact in facts:
+        atom = fact.get_atom()
+        assert atom is not None
+        atoms.append(atom)
+    return atoms
+
+
 def _atom_text(atom: FluentGroundAtom) -> str:
     return f"{atom.get_predicate().get_name()}({','.join(str(o.get_name()) for o in atom.get_objects())})"
 
@@ -123,7 +133,7 @@ def test_all_mutex_groups_are_the_proven_instances(ferry: Ferry) -> None:
     )
     ground = result.task.get_task()
     all_atoms = list(ground.get_fluent_atoms())
-    initial_atoms = [fact.get_atom() for fact in ground.get_fluent_facts()]
+    initial_atoms = _fact_atoms(ground.get_fluent_facts())
 
     groups = compute_all_mutex_groups(initial_atoms, all_atoms, invariants)
 
@@ -138,6 +148,7 @@ def test_all_mutex_groups_are_the_proven_instances(ferry: Ferry) -> None:
         (sorted(_predicate_names(invariant)), invariant.get_num_rigid_variables()) for invariant in invariants
     ) == [(["at", "on"], 1), (["at-ferry"], 0), (["empty-ferry", "on"], 0)]
     for group in groups:
+        assert group.invariant is not None
         assert group.invariant in invariants
         assert len(group.objects) == group.invariant.get_num_rigid_variables()
         assert all(set(group.objects) <= set(atom.get_objects()) for atom in group.atoms)
@@ -150,7 +161,7 @@ def test_variables_trace_back_to_their_invariant(ferry: Ferry) -> None:
     result = _ground(formalism_task, order)
     ground = result.task.get_task()
     all_atoms = list(ground.get_fluent_atoms())
-    initial_atoms = [fact.get_atom() for fact in ground.get_fluent_facts()]
+    initial_atoms = _fact_atoms(ground.get_fluent_facts())
 
     groups = compute_mutex_groups_in_order(initial_atoms, all_atoms, order)
 
@@ -158,7 +169,12 @@ def test_variables_trace_back_to_their_invariant(ferry: Ferry) -> None:
     assert _variable_predicates(result.task.get_fdr_context().get_variables()) == sorted(
         sorted(str(atom.get_predicate().get_name()) for atom in group.atoms) for group in groups
     )
-    contents = [group for group in groups if _predicate_names(group.invariant) == {"empty-ferry", "on"}]
+    assert all(group.invariant is not None for group in groups)
+    contents = [
+        group
+        for group in groups
+        if group.invariant is not None and _predicate_names(group.invariant) == {"empty-ferry", "on"}
+    ]
     assert len(contents) == 1
     assert contents[0].objects == []
 

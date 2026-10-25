@@ -164,11 +164,12 @@ def test_cli_can_switch_environment() -> None:
 
 
 def test_suite_and_configuration_selection() -> None:
-    config = what()
+    ground = configuration(name="ground", task_kind="ground")
+    config = what(configurations=[configuration(), ground])
     assert run_search.select_suites(config, local_how(), None) == ["tiny"]
     assert run_search.select_suites(config, arrhenius_how(), None) == ["ipc"]
     assert run_search.select_suites(config, local_how(), ["custom"]) == ["custom"]
-    assert run_search.select_configurations(config, ["ground"]) == [config["configurations"][1]]
+    assert run_search.select_configurations(config, ["ground"]) == [ground]
     with pytest.raises(run_search.ConfigError, match="unknown configurations: missing"):
         run_search.select_configurations(config, ["missing"])
 
@@ -225,7 +226,7 @@ state_storage=400 bytes
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -272,7 +273,7 @@ def test_search_parser_rejects_incomplete_worker_statistics(tmp_path: Path) -> N
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -286,7 +287,7 @@ def test_search_parser_rejects_missing_worker_statistics(tmp_path: Path) -> None
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -304,7 +305,7 @@ def test_search_parser_rejects_mismatched_communication_statistics(tmp_path: Pat
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -323,7 +324,7 @@ def test_search_parser_rejects_missing_communication_worker_statistics(tmp_path:
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -338,7 +339,7 @@ def test_search_parser_derives_zero_communication_overhead(tmp_path: Path) -> No
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -362,7 +363,7 @@ def test_search_parser_reads_destination_lock_statistics(tmp_path: Path) -> None
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -394,7 +395,7 @@ def test_search_parser_ignores_disabled_destination_lock_statistics(tmp_path: Pa
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -412,7 +413,7 @@ def test_search_parser_rejects_incomplete_destination_lock_statistics(tmp_path: 
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -428,7 +429,7 @@ def test_search_parser_rejects_missing_destination_lock_worker_statistics(tmp_pa
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -445,7 +446,7 @@ def test_search_parser_derives_destination_lock_aggregates_from_worker_rows(tmp_
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -463,7 +464,7 @@ def test_search_parser_rejects_missing_enabled_destination_lock_statistics(tmp_p
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -487,7 +488,7 @@ def test_search_parser_ignores_missing_destination_lock_statistics_for_interrupt
         encoding="utf-8",
     )
     (tmp_path / filename).write_text(message, encoding="utf-8")
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -503,7 +504,7 @@ def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path: 
 """,
         encoding="utf-8",
     )
-    props = {}
+    props: dict[str, object] = {}
 
     SearchParser().parse(tmp_path, props)
 
@@ -511,16 +512,19 @@ def test_search_parser_rejects_incomplete_destination_lock_aggregates(tmp_path: 
 
 
 def test_arrhenius_state_round_trip(tmp_path: Path) -> None:
-    what_config = what()
+    lifted = configuration()
+    what_config = what(configurations=[lifted, configuration(name="ground", task_kind="ground")])
     how_config = arrhenius_how()
-    configurations = [what_config["configurations"][0]]
+    configurations = [lifted]
     encoded = run_search.encode_state(what_config, how_config, ["ipc"], configurations, tmp_path / "experiment")
 
     restored = run_search.decode_state(encoded)
 
     assert restored[:4] == (what_config, how_config, ["ipc"], configurations)
     assert restored[4] == (tmp_path / "experiment").resolve()
-    assert f"{run_search.STATE_ENV}={encoded}" in run_search.make_environment(how_config, encoded).export
+    environment = run_search.make_environment(how_config, encoded)
+    assert isinstance(environment, environments.ArrheniusEnvironment)
+    assert f"{run_search.STATE_ENV}={encoded}" in environment.export
 
 
 @pytest.mark.parametrize("wall_time_limit_s", [300, 600])
@@ -532,8 +536,8 @@ def test_arrhenius_slurm_submission(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, wall_time_limit_s: int, cpus_per_task: int, memory_per_cpu_mib: int
 ) -> None:
     presets = run_search.REPO / "experiments/configs"
-    what_config = run_search.load_json(
-        presets / f"what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-{cpus_per_task}.json"
+    what_config = run_search.validate_what(
+        run_search.load_json(presets / f"what/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-{cpus_per_task}.json")
     )
     how_config = run_search.apply_how_overrides(
         run_search.load_json(presets / f"how/arrhenius-build-65536m-{wall_time_limit_s}s-{cpus_per_task}cpu.json"),

@@ -35,9 +35,9 @@ CRITERIA = {"max_group_size": GreedyCriterion.MaxGroupSize, "max_coverage": Gree
 
 
 def as_fixture(invariant: Invariant) -> dict[str, Any]:
-    atoms = []
+    atoms: list[dict[str, str | list[int]]] = []
     for atom in invariant.get_atoms():
-        parameters = []
+        parameters: list[int] = []
         for term in atom.get_terms():
             match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(term.get_variant()))
             if match is None:
@@ -53,7 +53,7 @@ def as_fixture(invariant: Invariant) -> dict[str, Any]:
 
 
 def main() -> None:
-    cases = []
+    cases: list[dict[str, object]] = []
     for source in SOURCES:
         for case in json.loads(source.read_text())["cases"]:
             parser = Parser(str(pypddl_datasets.data_root() / case["domain_file"]), ParserOptions())

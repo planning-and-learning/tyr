@@ -2,15 +2,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import gc
+from collections.abc import Iterator
 from pathlib import Path
-from typing import override
 
+import pytest
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
+from typing_extensions import TypeIs, override
 
 from pytyr import datalog, planning
-from pytyr.formalism import planning as formalism_planning
+from pytyr.formalism import datalog as formalism_datalog, planning as formalism_planning
 from pytyr.formalism.planning import Parser
 
 Node = planning.lifted.Node
@@ -20,6 +22,11 @@ IwStatistics = planning.lifted.iw.Statistics
 SearchStatus = planning.SearchStatus
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
+
+
+def _is_iterator(value: object) -> TypeIs[Iterator[object]]:
+    # The binding-value iterator is untyped in the stubs; the test checks its shape.
+    return isinstance(value, Iterator)
 
 
 def _lifted_task() -> planning.lifted.Task:
@@ -60,11 +67,15 @@ def test_function_fact_value_iterator_preserves_pairing() -> None:
     (fact_set,) = workspace.get_fluent_fact_sets().get_function_sets()
 
     values = fact_set.get_binding_values()
+    assert _is_iterator(values)
     assert iter(values) is values
     entries = list(values)
     assert len(entries) == fact_set.count() == 1
-    assert entries[0][1] == 0.0
-    binding = entries[0][0]
+    match entries[0]:
+        case (formalism_datalog.FluentFunctionBinding() as binding, float() as value):
+            assert value == 0.0
+        case entry:
+            pytest.fail(f"expected a (binding, value) pair, got {entry!r}")
     function_name = binding.get_relation().get_name()
 
     del values, entries, fact_set, workspace, program, task
@@ -237,7 +248,7 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: State, state: planning.lifted.StateBuilder) -> bool:
+        def is_dynamic_goal_satisfied(self, seed_state: State, state: State) -> bool:
             self.saw_builder = isinstance(state, planning.lifted.StateBuilder)
             return False
 
@@ -267,7 +278,7 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
             self.goal = goal
 
         @override
-        def evaluate(self, state: planning.lifted.StateBuilder) -> float:
+        def evaluate(self, state: State) -> float:
             self.saw_builder = isinstance(state, planning.lifted.StateBuilder)
             return 7.0
 

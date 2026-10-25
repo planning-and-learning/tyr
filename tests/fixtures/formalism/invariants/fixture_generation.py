@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import functools
 import itertools
 import json
 import os
@@ -47,7 +48,7 @@ Parts = list[dict[str, Any]]
 def canonical(parts: Parts) -> str:
     """Text with rigid variables renamed to give the smallest sorted part texts: equal for invariants up to renaming."""
     rigid = sorted({arg for part in parts for arg in part["args"] if isinstance(arg, int) and arg >= 0})
-    best = None
+    best: list[str] | None = None
     for renaming in itertools.permutations(range(len(rigid))):
         names = dict(zip(rigid, renaming, strict=True))
         texts = sorted(
@@ -55,6 +56,8 @@ def canonical(parts: Parts) -> str:
             for part in parts
         )
         best = texts if best is None or texts < best else best
+    # permutations() yields at least the empty renaming, so best is set.
+    assert best is not None
     return "{" + ", ".join(best) + "}"
 
 
@@ -80,9 +83,9 @@ FD_VERIFY = HERE / "fd_verify.py"
 
 def tyr_worker(domain: str) -> list[Parts]:
     parser = Parser(domain, ParserOptions())
-    result = []
+    result: list[Parts] = []
     for invariant in synthesize_invariants(parser.get_domain()):
-        parts = []
+        parts: Parts = []
         for atom in invariant.get_atoms():
             args: list[Any] = []
             for term in atom.get_terms():
@@ -136,8 +139,8 @@ def check_case(translator: Path, root: Path, case: dict[str, Any]) -> dict[str, 
     }
 
 
-def ipc_cases(root: Path) -> list[dict[str, Any]]:
-    cases = []
+def ipc_cases(root: Path) -> list[dict[str, str]]:
+    cases: list[dict[str, str]] = []
     for name in sorted(pypddl_datasets.list_domains()):
         if not name.startswith(SUITE_PREFIX):
             continue
@@ -173,10 +176,12 @@ def main() -> None:
     synthesis_path = HERE / "synthesis.json"
     synthesis = json.loads(synthesis_path.read_text())
     classical = [case for case in synthesis["cases"] if case["domain_file"].startswith("classical/")]
-    jobs = [{key: case[key] for key in ("name", "domain_file", "task_file")} for case in classical] + ipc_cases(root)
+    jobs: list[dict[str, str]] = [
+        {key: case[key] for key in ("name", "domain_file", "task_file")} for case in classical
+    ] + ipc_cases(root)
 
     with concurrent.futures.ThreadPoolExecutor(args.workers) as pool:
-        results = list(pool.map(lambda case: check_case(args.translator.resolve(), root, case), jobs))
+        results = list(pool.map(functools.partial(check_case, args.translator.resolve(), root), jobs))
 
     unproven = [result for result in results if result.get("_unproven")]
     for result in unproven:

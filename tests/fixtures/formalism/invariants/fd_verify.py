@@ -11,15 +11,83 @@ Usage:
 """
 
 import contextlib
+import importlib
 import io
 import json
 import sys
-from typing import Any
+from collections.abc import Callable
+from typing import Protocol, TypedDict, TypeVar, runtime_checkable
 
-from fast_downward.translate import invariant_finder, invariants, normalize, options, pddl, pddl_parser
+
+class Part(TypedDict):
+    """A candidate invariant part: predicate name and arguments (rigid parameter indices, -1 for the counted one)."""
+
+    predicate: str
+    args: list[int]
 
 
-def fd_task(domain: str, problem: str) -> pddl.Task:
+# The translator is imported at runtime (it is on PYTHONPATH only in this subprocess); these protocols type the
+# few parts of it this script uses.
+class _Task(Protocol): ...
+
+
+class _BalanceChecker(Protocol): ...
+
+
+class _InvariantPart(Protocol): ...
+
+
+class _Invariant(Protocol):
+    def check_balance(
+        self, balance_checker: _BalanceChecker, enqueue_func: Callable[["_Invariant"], None], /
+    ) -> bool: ...
+
+
+@runtime_checkable
+class _Options(Protocol):
+    def set_options(self, args: list[str], /) -> None: ...
+
+
+@runtime_checkable
+class _PddlParser(Protocol):
+    def open(self, domain_filename: str, task_filename: str, /) -> _Task: ...
+
+
+@runtime_checkable
+class _Normalize(Protocol):
+    def normalize(self, task: _Task, /) -> None: ...
+
+
+@runtime_checkable
+class _InvariantFinder(Protocol):
+    BalanceChecker: Callable[[_Task, None], _BalanceChecker]
+
+
+@runtime_checkable
+class _Invariants(Protocol):
+    InvariantPart: Callable[[str, tuple[int, ...], int | None], _InvariantPart]
+    Invariant: Callable[[list[_InvariantPart]], _Invariant]
+
+
+ModuleInterface = TypeVar("ModuleInterface")
+
+
+def _translator_module(name: str, interface: type[ModuleInterface]) -> ModuleInterface:
+    module = importlib.import_module(f"fast_downward.translate.{name}")
+    if not isinstance(module, interface):
+        msg = f"Fast Downward's translator module {name} lacks the functions this script uses"
+        raise TypeError(msg)
+    return module
+
+
+options = _translator_module("options", _Options)
+pddl_parser = _translator_module("pddl_parser", _PddlParser)
+normalize = _translator_module("normalize", _Normalize)
+invariant_finder = _translator_module("invariant_finder", _InvariantFinder)
+invariants = _translator_module("invariants", _Invariants)
+
+
+def fd_task(domain: str, problem: str) -> _Task:
     """Parse and normalize the task with Fast Downward's translator, silencing its progress output."""
     options.set_options([domain, problem])
     with contextlib.redirect_stdout(io.StringIO()):
@@ -28,7 +96,7 @@ def fd_task(domain: str, problem: str) -> pddl.Task:
     return task
 
 
-def verify(domain: str, problem: str, candidates: list[list[dict[str, Any]]]) -> list[bool]:
+def verify(domain: str, problem: str, candidates: list[list[Part]]) -> list[bool]:
     """Whether Fast Downward's balance check proves each candidate, given as parts {"predicate", "args"}."""
     task = fd_task(domain, problem)
     checker = invariant_finder.BalanceChecker(task, None)

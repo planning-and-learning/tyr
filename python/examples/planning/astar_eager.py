@@ -13,10 +13,10 @@ Author: Dominik Drexler (dominik.drexler@liu.se)
 
 import argparse
 from pathlib import Path
-from typing import override
 
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
+from typing_extensions import override
 
 from pytyr.formalism.planning import GroundConjunctiveCondition, Parser
 from pytyr.planning import SearchStatus, Statistics
@@ -34,7 +34,6 @@ from pytyr.planning.lifted import (
     Plan,
     PruningStrategy,
     State,
-    StateBuilder,
     StateRepositoryFactory,
     SuccessorGeneratorFactory,
     Task,
@@ -60,7 +59,7 @@ class CustomHeuristic(Heuristic):
         pass
 
     @override
-    def evaluate(self, state: StateBuilder) -> float:
+    def evaluate(self, state: State) -> float:
         raise NotImplementedError
 
 
@@ -95,7 +94,7 @@ class CustomGoalStrategy(GoalStrategy):
         raise NotImplementedError
 
     @override
-    def is_dynamic_goal_satisfied(self, seed_state: State, state: StateBuilder) -> bool:
+    def is_dynamic_goal_satisfied(self, seed_state: State, state: State) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 
