@@ -124,7 +124,7 @@ struct NonDefaultItem
 {
     int value;
 
-    explicit NonDefaultItem(int value) : value(value) {}
+    explicit NonDefaultItem(int value_) : value(value_) {}
     NonDefaultItem(const NonDefaultItem&) = default;
     NonDefaultItem(NonDefaultItem&&) = default;
     NonDefaultItem& operator=(const NonDefaultItem&) = delete;

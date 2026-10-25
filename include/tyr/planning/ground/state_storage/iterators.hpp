@@ -46,7 +46,7 @@ public:
     using iterator_concept = std::input_iterator_tag;
     using pointer = void;
 
-    FDRFactIterator() noexcept {}
+    FDRFactIterator() noexcept = default;
     FDRFactIterator(const FactUnpackedStorage<GroundTag>& storage, bool begin) noexcept : m_storage(&storage), m_i(begin ? 0 : m_storage->values.size())
     {
         if (begin)

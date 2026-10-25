@@ -204,9 +204,9 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
     rule->binding = create_rule_binding<formalism::PredicateTag>(context,
                                                                  [](auto atom)
                                                                  {
-                                                                     auto heads = ygg::IndexList<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>> {};
-                                                                     heads.push_back(atom.get_index());
-                                                                     return heads;
+                                                                     auto atoms = ygg::IndexList<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>> {};
+                                                                     atoms.push_back(atom.get_index());
+                                                                     return atoms;
                                                                  })
                         .get_index();
     rule->body = body.get_index();

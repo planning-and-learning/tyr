@@ -27,6 +27,8 @@ convention = "google"
 ban-relative-imports = "all"
 
 [lint.flake8-tidy-imports.banned-api]
+"typing.TYPE_CHECKING".msg = "Import at module level instead; modules here have no import cycles to break."
+
 [lint.per-file-ignores]
 # Tests: pytest asserts with `assert`, literal values are the test data, test names
 # document the behavior, pytest passes parametrized values by name, every assertion

@@ -28,7 +28,7 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
 {
     using namespace nb::literals;
     using Tag = ConjunctiveCondition<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

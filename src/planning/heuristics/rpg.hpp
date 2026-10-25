@@ -55,8 +55,8 @@ struct RPGDefinition
     TaskPtr<Kind> task;
     RPGProgram<Kind> rpg_program;
 
-    RPGDefinition(TaskPtr<Kind> task, CostMode cost_mode, bool split_rules = false) :
-        task(std::move(task)),
+    RPGDefinition(TaskPtr<Kind> task_, CostMode cost_mode, bool split_rules = false) :
+        task(std::move(task_)),
         rpg_program(this->task->get_task(), cost_mode, split_rules)
     {
     }

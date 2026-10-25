@@ -32,7 +32,7 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
 {
     using namespace nb::literals;
     using Tag = Rule<T, R>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

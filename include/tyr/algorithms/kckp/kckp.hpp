@@ -38,7 +38,7 @@ struct Vertex
     ygg::uint_t index;
 
     constexpr Vertex() noexcept : index(std::numeric_limits<ygg::uint_t>::max()) {}
-    constexpr explicit Vertex(ygg::uint_t index) noexcept : index(index) {}
+    constexpr explicit Vertex(ygg::uint_t index_) noexcept : index(index_) {}
 
     friend constexpr bool operator==(Vertex, Vertex) noexcept = default;
 };

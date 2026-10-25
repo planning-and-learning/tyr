@@ -294,11 +294,11 @@ struct InsertConstantPolicy
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
-    auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return *static_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return *fluent_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) { return *derived_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) { return *static_function_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) { return *fluent_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)
@@ -367,11 +367,11 @@ struct LiftPolicy
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
 
-    auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return *static_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return *fluent_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) { return *derived_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) { return *static_function_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) { return *fluent_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)

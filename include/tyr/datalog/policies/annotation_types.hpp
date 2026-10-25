@@ -53,10 +53,10 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
     Cost cost;
 
     NumericSupport() = delete;
-    NumericSupport(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
-        key(key),
-        interval(std::move(interval)),
-        cost(cost)
+    NumericSupport(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key_, ygg::ClosedInterval<ygg::float_t> interval_, Cost cost_) :
+        key(key_),
+        interval(std::move(interval_)),
+        cost(cost_)
     {
     }
 
@@ -105,7 +105,9 @@ struct PredicateAchieverKey : ygg::comparison::Mixin<PredicateAchieverKey>
     formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
 
     PredicateAchieverKey() = default;
-    PredicateAchieverKey(PredicateRuleBinding rule_key, formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head) : rule_key(rule_key), head(head)
+    PredicateAchieverKey(PredicateRuleBinding rule_key_, formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head_) :
+        rule_key(rule_key_),
+        head(head_)
     {
     }
 
@@ -220,10 +222,10 @@ struct CostUpdate
     Cost new_cost;
 
     CostUpdate() noexcept : old_cost(std::nullopt), new_cost(static_cast<Cost>(0)) { assert(is_monotone()); }
-    CostUpdate(std::optional<Cost> old_cost, Cost new_cost) noexcept : old_cost(old_cost), new_cost(new_cost) { assert(is_monotone()); }
-    CostUpdate(Cost old_cost, Cost new_cost) noexcept :
-        old_cost(old_cost == std::numeric_limits<Cost>::max() ? std::nullopt : std::optional<Cost>(old_cost)),
-        new_cost(new_cost)
+    CostUpdate(std::optional<Cost> old_cost_, Cost new_cost_) noexcept : old_cost(old_cost_), new_cost(new_cost_) { assert(is_monotone()); }
+    CostUpdate(Cost old_cost_, Cost new_cost_) noexcept :
+        old_cost(old_cost_ == std::numeric_limits<Cost>::max() ? std::nullopt : std::optional<Cost>(old_cost_)),
+        new_cost(new_cost_)
     { assert(is_monotone()); }
 
     [[nodiscard]] bool is_monotone() const noexcept { return !old_cost || new_cost <= *old_cost; }
@@ -439,9 +441,9 @@ struct NumericIntervalAnnotation
     Annotation<formalism::FunctionTag> annotation;
 
     NumericIntervalAnnotation() = default;
-    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation) :
-        interval(std::move(interval)),
-        annotation(std::move(annotation))
+    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval_, Annotation<formalism::FunctionTag> annotation_) :
+        interval(std::move(interval_)),
+        annotation(std::move(annotation_))
     {
     }
 };

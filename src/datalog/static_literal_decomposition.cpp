@@ -98,7 +98,7 @@ private:
         {
             element.clear();
             for (const auto object : binding.get_objects())
-                element.push_back(ygg::Data<formalism::Term>(object.get_index()));
+                element.emplace_back(object.get_index());
             if (const auto sigma = formalism::unification::match(pattern, element, Substitution(parameters)))
             {
                 auto tuple = Tuple {};

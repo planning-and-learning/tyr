@@ -40,10 +40,10 @@ struct MutableAction : ygg::comparison::Mixin<MutableAction>
     MutableConditionalEffectList effects;
 
     MutableAction() = default;
-    MutableAction(size_t num_variables, MutableConjunctiveCondition condition, MutableConditionalEffectList effects) :
-        num_variables(num_variables),
-        condition(std::move(condition)),
-        effects(std::move(effects))
+    MutableAction(size_t num_variables_, MutableConjunctiveCondition condition_, MutableConditionalEffectList effects_) :
+        num_variables(num_variables_),
+        condition(std::move(condition_)),
+        effects(std::move(effects_))
     {
     }
     MutableAction(ActionView<LiftedTag> element) : num_variables(element.get_arity()), condition(num_variables, element.get_condition()), effects()

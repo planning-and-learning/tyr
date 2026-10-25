@@ -63,7 +63,7 @@ auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate
 
     auto terms = std::vector<ygg::Data<tyr::formalism::Term>> {};
     for (const auto i : parameters)
-        terms.push_back(ygg::Data<tyr::formalism::Term>(tyr::formalism::ParameterIndex(i)));
+        terms.emplace_back(tyr::formalism::ParameterIndex(i));
 
     return tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>(predicate, terms);
 }

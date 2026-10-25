@@ -13,11 +13,16 @@ from lab.parser import Parser
 from lab.reports import Attribute, arithmetic_mean, geometric_mean
 
 FLOAT = r"([-+]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?|inf))"
-WORKER_STATISTICS = re.compile(
-    r"^\[Search\] Worker (\d+): idle=(\d+) ns, expanded=(\d+), generated=(\d+), "
-    r"deadends=(\d+), pruned=(\d+), registered=(\d+), state_storage=(\d+) bytes$",
-    re.MULTILINE,
+WORKER_FIELDS = (
+    r"idle=(\d+) ns",
+    r"expanded=(\d+)",
+    r"generated=(\d+)",
+    r"deadends=(\d+)",
+    r"pruned=(\d+)",
+    r"registered=(\d+)",
+    r"state_storage=(\d+) bytes",
 )
+WORKER_STATISTICS = re.compile(rf"^\[Search\] Worker (\d+): {', '.join(WORKER_FIELDS)}$", re.MULTILINE)
 WORKER_DESTINATION_LOCK_STATISTICS = re.compile(
     r"^\[Search\] Worker (\d+) destination lock: acquisitions=(\d+), wait=(\d+) ns, hold=(\d+) ns$",
     re.MULTILINE,

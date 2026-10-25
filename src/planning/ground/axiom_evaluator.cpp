@@ -122,7 +122,7 @@ void AxiomEvaluator<GroundTag>::compute_extended_state(ygg::Builder<State<Ground
     {
         while (true)
         {
-            auto discovered_new_atom = bool { false };
+            auto discovered_new_atom = false;
 
             m_impl->evaluator.applicable_axioms.clear();
             match_tree->generate(state_context, m_impl->evaluator.applicable_axioms);

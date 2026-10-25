@@ -711,11 +711,11 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
 
                     if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::WhenTag>>>)
                     {
-                        auto conjunctive_condition = translate_lifted(subeffect.get_condition(), all_parameters, builder, context);
+                        auto when_condition = translate_lifted(subeffect.get_condition(), all_parameters, builder, context);
 
                         tmp_effect = subeffect.get_effect();
 
-                        return conjunctive_condition;
+                        return when_condition;
                     }
                     else
                     {

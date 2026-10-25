@@ -211,7 +211,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
 INSTANTIATE_TEST_SUITE_P(TyrDatalogLiftedBottomUpFixture,
                          BottomUpFixtureTest,
                          ::testing::ValuesIn(load_cases()),
-                         [](const testing::TestParamInfo<BottomUpCase>& info) { return info.param.name; });
+                         [](const testing::TestParamInfo<BottomUpCase>& param_info) { return param_info.param.name; });
 
 }
 }

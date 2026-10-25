@@ -41,18 +41,18 @@ struct MutableConditionalEffect : ygg::comparison::Mixin<MutableConditionalEffec
     MutableConjunctiveEffect effect;
 
     MutableConditionalEffect() = default;
-    MutableConditionalEffect(size_t num_parent_variables, size_t num_variables, MutableConjunctiveCondition condition, MutableConjunctiveEffect effect) :
-        num_parent_variables(num_parent_variables),
-        num_variables(num_variables),
-        condition(std::move(condition)),
-        effect(std::move(effect))
+    MutableConditionalEffect(size_t num_parent_variables_, size_t num_variables_, MutableConjunctiveCondition condition_, MutableConjunctiveEffect effect_) :
+        num_parent_variables(num_parent_variables_),
+        num_variables(num_variables_),
+        condition(std::move(condition_)),
+        effect(std::move(effect_))
     {
     }
-    MutableConditionalEffect(size_t num_parent_variables, ConditionalEffectView<LiftedTag> element) :
-        num_parent_variables(num_parent_variables),
+    MutableConditionalEffect(size_t num_parent_variables_, ConditionalEffectView<LiftedTag> element) :
+        num_parent_variables(num_parent_variables_),
         num_variables(element.get_arity()),
-        condition(num_parent_variables, element.get_condition()),
-        effect(num_parent_variables, num_variables, element.get_effect())
+        condition(num_parent_variables_, element.get_condition()),
+        effect(num_parent_variables_, num_variables, element.get_effect())
     {
     }
 

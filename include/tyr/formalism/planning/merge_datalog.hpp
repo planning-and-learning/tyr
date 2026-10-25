@@ -687,39 +687,6 @@ merge_p2d(LiteralView<GroundTag, DerivedTag> element,
           const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
           MergeDatalogContext& context);
 
-std::optional<datalog::LiteralView<GroundTag, FluentTag>>
-merge_p2d(FDRFactView<FluentTag> element,
-          bool polarity,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-
-std::optional<datalog::LiteralView<GroundTag, FluentTag>>
-merge_p2d(FDRFactView<FluentTag> element,
-          bool polarity,
-          ygg::UnorderedMap<AtomView<GroundTag, FluentTag>, datalog::AtomView<GroundTag, FluentTag>>& atom_mapping,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& predicate_mapping,
-          MergeDatalogContext& context);
-
-std::pair<datalog::ConjunctiveConditionView<GroundTag>, bool>
-merge_p2d(ConjunctiveConditionView<GroundTag> element,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& fluent_predicate_mapping,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& derived_predicate_mapping,
-          MergeDatalogContext& context);
-
-std::pair<datalog::ConjunctiveConditionView<GroundTag>, bool>
-merge_p2d(ConjunctiveConditionView<GroundTag> element,
-          ygg::UnorderedMap<AtomView<GroundTag, FluentTag>, datalog::AtomView<GroundTag, FluentTag>>& fluent_atom_mapping,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& fluent_predicate_mapping,
-          ygg::UnorderedMap<AtomView<GroundTag, DerivedTag>, datalog::AtomView<GroundTag, FluentTag>>& derived_atom_mapping,
-          const ygg::UnorderedMap<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>& derived_predicate_mapping,
-          MergeDatalogContext& context);
-
-std::pair<datalog::ConjunctiveConditionView<GroundTag>, bool>
-merge_p2d(ConjunctiveConditionView<GroundTag> element,
-          ygg::UnorderedMap<AtomView<GroundTag, FluentTag>, datalog::AtomView<GroundTag, FluentTag>>& fluent_atom_mapping,
-          const ygg::UnorderedMap<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>& fluent_predicate_mapping,
-          MergeDatalogContext& context);
-
 // Numeric
 
 extern template std::pair<datalog::FunctionView<StaticTag>, bool> merge_p2d(FunctionView<StaticTag> element, MergeDatalogContext& context);

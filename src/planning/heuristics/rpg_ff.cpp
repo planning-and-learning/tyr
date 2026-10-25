@@ -52,7 +52,7 @@ struct FFRPGHeuristic<Kind>::Impl :
         FunctionHead head;
         ygg::ClosedInterval<ygg::float_t> interval;
 
-        NumericCertificate(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval) : head(head), interval(std::move(interval)) {}
+        NumericCertificate(FunctionHead head_, ygg::ClosedInterval<ygg::float_t> interval_) : head(head_), interval(std::move(interval_)) {}
 
         static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericCertificate::head, &NumericCertificate::interval> {}; }
     };

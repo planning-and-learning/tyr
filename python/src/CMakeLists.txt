@@ -17,6 +17,7 @@ file(
 
 nanobind_add_module(
     _pytyr
+    NB_SUPPRESS_WARNINGS
     module.cpp
     pytyr/module.cpp
     pytyr/serialization/module.cpp

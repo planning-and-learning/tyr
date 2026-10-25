@@ -32,7 +32,7 @@ void bind_numeric_effect_kind(nb::module_& m, RepositoryBinding& repository, con
 {
     using namespace nb::literals;
     using Tag = NumericEffect<T, F>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

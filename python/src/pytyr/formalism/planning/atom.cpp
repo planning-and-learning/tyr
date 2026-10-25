@@ -32,7 +32,7 @@ void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::st
 {
     using namespace nb::literals;
     using Tag = Atom<T, F>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

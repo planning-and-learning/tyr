@@ -33,6 +33,6 @@ TEST_P(AstarStatisticsTest, StatisticsMatchFixture) { check_astar_case<GroundTag
 INSTANTIATE_TEST_SUITE_P(TyrPlanningAstarStatistics,
                          AstarStatisticsTest,
                          ::testing::ValuesIn(load_search_cases("tests/fixtures/planning/algorithms/ground/astar.json")),
-                         [](const testing::TestParamInfo<SearchCase>& info) { return info.param.name; });
+                         [](const testing::TestParamInfo<SearchCase>& param_info) { return param_info.param.name; });
 }
 }

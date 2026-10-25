@@ -29,10 +29,10 @@ namespace tyr::datalog
  */
 
 template<formalism::RelationKind R>
-ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule,
+ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule_,
                                                      formalism::datalog::Repository& repository,
                                                      kckp::Graph compatibility_graph) :
-    rule(rule),
+    rule(rule_),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
     unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first),
     binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first),

@@ -48,7 +48,7 @@ struct VertexAssignment
 
     VertexAssignment() : index(), object() {}
 
-    VertexAssignment(formalism::ParameterIndex index, ygg::Index<formalism::Object> object) : index(index), object(object) {}
+    VertexAssignment(formalism::ParameterIndex index_, ygg::Index<formalism::Object> object_) : index(index_), object(object_) {}
 
     [[nodiscard]] inline bool is_valid() const noexcept { return index != formalism::ParameterIndex::max() && object != ygg::Index<formalism::Object>::max(); }
 };
@@ -67,14 +67,14 @@ struct EdgeAssignment
 
     EdgeAssignment() : first_index(), first_object(), second_index(), second_object() {}
 
-    EdgeAssignment(formalism::ParameterIndex first_index,
-                   ygg::Index<formalism::Object> first_object,
-                   formalism::ParameterIndex second_index,
-                   ygg::Index<formalism::Object> second_object) :
-        first_index(first_index),
-        first_object(first_object),
-        second_index(second_index),
-        second_object(second_object)
+    EdgeAssignment(formalism::ParameterIndex first_index_,
+                   ygg::Index<formalism::Object> first_object_,
+                   formalism::ParameterIndex second_index_,
+                   ygg::Index<formalism::Object> second_object_) :
+        first_index(first_index_),
+        first_object(first_object_),
+        second_index(second_index_),
+        second_object(second_object_)
     {
     }
 

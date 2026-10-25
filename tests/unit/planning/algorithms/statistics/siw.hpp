@@ -47,9 +47,9 @@ struct SiwCase
     std::vector<std::pair<std::string, SiwExpectation>> configs;
 };
 
-void PrintTo(const SiwCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
+inline void PrintTo(const SiwCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
 
-SiwExpectation parse_expectation(const boost::json::object& object)
+inline SiwExpectation parse_expectation(const boost::json::object& object)
 {
     auto result = SiwExpectation {};
     if (const auto value = ygg::common::find_string(object, "status", "case"))
@@ -60,7 +60,7 @@ SiwExpectation parse_expectation(const boost::json::object& object)
     return result;
 }
 
-SiwCase parse_case(const boost::json::object& suite, const boost::json::object& object)
+inline SiwCase parse_case(const boost::json::object& suite, const boost::json::object& object)
 {
     auto result = SiwCase { ygg::common::as_string(object, "name", "case"),
                             ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "domain_file", "case")),
@@ -73,7 +73,7 @@ SiwCase parse_case(const boost::json::object& suite, const boost::json::object& 
     return result;
 }
 
-std::vector<SiwCase> load_cases(const std::filesystem::path& fixture)
+inline std::vector<SiwCase> load_cases(const std::filesystem::path& fixture)
 {
     const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");

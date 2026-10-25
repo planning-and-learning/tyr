@@ -118,9 +118,9 @@ try
 
     for (const auto& benchmark_case : tyr::profiling::load_suite(suite_path))
     {
-        benchmark::RegisterBenchmark((benchmark_case.name + "/labeled_successors").c_str(),
+        benchmark::RegisterBenchmark(benchmark_case.name + "/labeled_successors",
                                      [benchmark_case](benchmark::State& state) { benchmark_initial_successors(state, benchmark_case); });
-        benchmark::RegisterBenchmark((benchmark_case.name + "/interned_bindings").c_str(),
+        benchmark::RegisterBenchmark(benchmark_case.name + "/interned_bindings",
                                      [benchmark_case](benchmark::State& state) { benchmark_interned_action_bindings(state, benchmark_case); });
     }
 

@@ -260,9 +260,9 @@ catch (const std::exception& error)
 template<Operation operation>
 void register_pair(const BenchmarkCase& benchmark_case, const std::string& name)
 {
-    benchmark::RegisterBenchmark((benchmark_case.paths.name + "/" + name + "/global").c_str(),
+    benchmark::RegisterBenchmark(benchmark_case.paths.name + "/" + name + "/global",
                                  [benchmark_case](benchmark::State& state) { run<operation, false>(state, benchmark_case); });
-    benchmark::RegisterBenchmark((benchmark_case.paths.name + "/" + name + "/per_schema").c_str(),
+    benchmark::RegisterBenchmark(benchmark_case.paths.name + "/" + name + "/per_schema",
                                  [benchmark_case](benchmark::State& state) { run<operation, true>(state, benchmark_case); });
 }
 }

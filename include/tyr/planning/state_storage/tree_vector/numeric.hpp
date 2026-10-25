@@ -38,7 +38,7 @@ struct NumericPackedStorage<Kind, Tag> : ygg::comparison::Mixin<NumericPackedSto
     ygg::TreeVectorIndex<ygg::float_t> index;
 
     NumericPackedStorage() = default;
-    explicit NumericPackedStorage(ygg::TreeVectorIndex<ygg::float_t> index) : index(index) {}
+    explicit NumericPackedStorage(ygg::TreeVectorIndex<ygg::float_t> index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericPackedStorage::index> {}; }
 };

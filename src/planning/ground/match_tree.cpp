@@ -82,7 +82,7 @@ struct BaseEntry
     size_t depth;
     ElementSpan<Tag> elements;
 
-    BaseEntry(size_t depth, ElementSpan<Tag> elements) : depth(depth), elements(elements) {}
+    BaseEntry(size_t depth_, ElementSpan<Tag> elements_) : depth(depth_), elements(elements_) {}
 };
 
 template<typename Tag>
@@ -121,15 +121,15 @@ struct AtomStackEntry
     ygg::UniqueObjectPoolPtr<ygg::Data<AtomSelectorNode<Tag>>> result;
 
     AtomStackEntry(Builder<Tag>& builder,
-                   BaseEntry<Tag> base,
+                   BaseEntry<Tag> base_,
                    ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom,
-                   ElementSpan<Tag> true_elements,
-                   ElementSpan<Tag> false_elements,
-                   ElementSpan<Tag> dontcare_elements) :
-        base(base),
-        true_elements(true_elements),
-        false_elements(false_elements),
-        dontcare_elements(dontcare_elements),
+                   ElementSpan<Tag> true_elements_,
+                   ElementSpan<Tag> false_elements_,
+                   ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
+        true_elements(true_elements_),
+        false_elements(false_elements_),
+        dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
     { result->atom = atom; }
 
@@ -151,15 +151,15 @@ struct VariableStackEntry
     ygg::UniqueObjectPoolPtr<ygg::Data<VariableSelectorNode<Tag>>> result;
 
     VariableStackEntry(Builder<Tag>& builder,
-                       BaseEntry<Tag> base,
+                       BaseEntry<Tag> base_,
                        formalism::planning::FDRVariableView<formalism::FluentTag> variable,
                        std::vector<ElementSpan<Tag>> domain_elements_,
                        std::vector<ygg::uint_t> forward_,
-                       ElementSpan<Tag> dontcare_elements) :
-        base(base),
+                       ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
         domain_elements(std::move(domain_elements_)),
         forward(std::move(forward_)),
-        dontcare_elements(dontcare_elements),
+        dontcare_elements(dontcare_elements_),
 
         result(planning::match_tree::checkout<VariableSelectorNode<Tag>>(builder))
     {
@@ -182,13 +182,13 @@ struct NegativeFactStackEntry
     ygg::UniqueObjectPoolPtr<ygg::Data<NegativeFactSelectorNode<Tag>>> result;
 
     NegativeFactStackEntry(Builder<Tag>& builder,
-                           BaseEntry<Tag> base,
+                           BaseEntry<Tag> base_,
                            ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
-                           ElementSpan<Tag> true_elements,
-                           ElementSpan<Tag> dontcare_elements) :
-        base(base),
-        true_elements(true_elements),
-        dontcare_elements(dontcare_elements),
+                           ElementSpan<Tag> true_elements_,
+                           ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
+        true_elements(true_elements_),
+        dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
     { result->fact = fact; }
 
@@ -207,13 +207,13 @@ struct ConstraintStackEntry
     ygg::UniqueObjectPoolPtr<ygg::Data<NumericConstraintSelectorNode<Tag>>> result;
 
     ConstraintStackEntry(Builder<Tag>& builder,
-                         BaseEntry<Tag> base,
+                         BaseEntry<Tag> base_,
                          ygg::Data<formalism::planning::BooleanOperator<GroundTag>> constraint,
-                         ElementSpan<Tag> true_elements,
-                         ElementSpan<Tag> dontcare_elements) :
-        base(base),
-        true_elements(true_elements),
-        dontcare_elements(dontcare_elements),
+                         ElementSpan<Tag> true_elements_,
+                         ElementSpan<Tag> dontcare_elements_) :
+        base(base_),
+        true_elements(true_elements_),
+        dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
     { result->constraint = std::move(constraint); }
 
@@ -228,11 +228,11 @@ struct GeneratorStackEntry
 
     ygg::UniqueObjectPoolPtr<ygg::Data<planning::match_tree::ElementGeneratorNode<Tag>>> result;
 
-    GeneratorStackEntry(Builder<Tag>& builder, BaseEntry<Tag> base) :
-        base(base),
+    GeneratorStackEntry(Builder<Tag>& builder, BaseEntry<Tag> base_) :
+        base(base_),
         result(planning::match_tree::checkout<planning::match_tree::ElementGeneratorNode<Tag>>(builder))
     {
-        for (const auto element : base.elements)
+        for (const auto element : base_.elements)
             result->elements.push_back(element.get_index());
 
         // std::cout << "Num elements in generator node: " << result->elements.size() << std::endl;

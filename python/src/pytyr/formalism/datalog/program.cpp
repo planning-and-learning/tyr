@@ -28,7 +28,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
 {
     using namespace nb::literals;
     using Tag = Program<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

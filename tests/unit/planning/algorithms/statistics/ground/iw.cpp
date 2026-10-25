@@ -33,6 +33,6 @@ TEST_P(IwStatisticsTest, MatchesExpectedOutcome) { check_iw_case<GroundTag>(GetP
 INSTANTIATE_TEST_SUITE_P(TyrPlanningIwStatistics,
                          IwStatisticsTest,
                          ::testing::ValuesIn(load_cases("tests/fixtures/planning/algorithms/ground/iw.json")),
-                         [](const testing::TestParamInfo<IwCase>& info) { return info.param.name; });
+                         [](const testing::TestParamInfo<IwCase>& param_info) { return param_info.param.name; });
 }
 }

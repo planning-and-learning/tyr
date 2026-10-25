@@ -93,7 +93,7 @@ struct InstanceGroup : ygg::comparison::Mixin<InstanceGroup>
     AtomViewList<GroundTag, FluentTag> atoms;
     size_t num_initial_atoms = 0;
 
-    InstanceGroup(size_t inv_index, std::vector<ygg::Index<Object>> rigid_values) : inv_index(inv_index), rigid_values(std::move(rigid_values)), atoms() {}
+    InstanceGroup(size_t inv_index_, std::vector<ygg::Index<Object>> rigid_values_) : inv_index(inv_index_), rigid_values(std::move(rigid_values_)), atoms() {}
 
     static constexpr auto identifying_members() noexcept
     { return ygg::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {}; }
@@ -104,7 +104,9 @@ struct GroupKey : ygg::comparison::Mixin<GroupKey>
     size_t invariant_index;
     std::vector<ygg::Index<Object>> rigid_values;
 
-    GroupKey(size_t invariant_index, std::vector<ygg::Index<Object>> rigid_values) : invariant_index(invariant_index), rigid_values(std::move(rigid_values)) {}
+    GroupKey(size_t invariant_index_, std::vector<ygg::Index<Object>> rigid_values_) : invariant_index(invariant_index_), rigid_values(std::move(rigid_values_))
+    {
+    }
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&GroupKey::invariant_index, &GroupKey::rigid_values> {}; }
 };

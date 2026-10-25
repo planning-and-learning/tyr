@@ -48,9 +48,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake
 
+      # Every compiler warning fails the build here, so none goes unnoticed.
       - name: Configure and Build Tyr
         run: |
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
                 -DTYR_BUILD_TESTS=ON \
                 -DTYR_BUILD_EXECUTABLES=ON \
                 -DTYR_RELATION_STORAGE_POLICY=${{ matrix.relation_storage_policy }} \

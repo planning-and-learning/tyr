@@ -150,10 +150,10 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
     ygg::ClosedInterval<ygg::float_t> interval;
     bool grows_fact;
 
-    FunctionHeadUpdate(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval, bool grows_fact) :
-        binding(binding),
-        interval(std::move(interval)),
-        grows_fact(grows_fact)
+    FunctionHeadUpdate(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding_, ygg::ClosedInterval<ygg::float_t> interval_, bool grows_fact_) :
+        binding(binding_),
+        interval(std::move(interval_)),
+        grows_fact(grows_fact_)
     {
     }
 
@@ -385,7 +385,7 @@ Cost get_transition_credit(const CP& policy,
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return static_cast<Cost>(0);
     else
-        return policy.get_cost(instance.witness_key().get_index(), head, std::move(interval));
+        return policy.get_cost(instance.witness_key().get_index(), head, interval);
 }
 
 template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>

@@ -457,9 +457,9 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto throwing_move = StateWithThrowingMove<Kind>(state);
     EXPECT_THROW((tyr::planning::Node<Kind, StateWithThrowingMove<Kind>>(throwing_move, 0)), std::runtime_error);
     const auto throwing_node = tyr::planning::Node<Kind, StateWithThrowingPack<Kind>>(StateWithThrowingPack<Kind>(registered), 0);
-    EXPECT_THROW(throwing_node.pack(), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(throwing_node.pack()), std::runtime_error);
     const auto throwing_labeled = tyr::planning::LabeledNode<Kind, StateWithThrowingPack<Kind>> { label, throwing_node };
-    EXPECT_THROW(throwing_labeled.pack(), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(throwing_labeled.pack()), std::runtime_error);
     EXPECT_EQ(fmt::format("{}", borrowed_labeled), fmt::format("{}", labeled));
     EXPECT_EQ(fmt::format("{}", borrowed_indexed_labeled), fmt::format("{}", indexed_labeled));
 
@@ -686,12 +686,12 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
 
     const auto expect_duplicate = [&](const auto& state)
     {
-        const auto packed = state.pack();
-        const auto unpacked = packed.unpack();
-        EXPECT_EQ(packed.get_index(), state.get_index());
-        EXPECT_EQ(packed.get_state_repository(), repository);
+        const auto packed_state = state.pack();
+        const auto unpacked = packed_state.unpack();
+        EXPECT_EQ(packed_state.get_index(), state.get_index());
+        EXPECT_EQ(packed_state.get_state_repository(), repository);
         EXPECT_EQ(unpacked, state);
-        EXPECT_EQ(unpacked.pack(), packed);
+        EXPECT_EQ(unpacked.pack(), packed_state);
         EXPECT_TRUE(std::ranges::equal(unpacked.get_fluent_facts(), state.get_fluent_facts()));
         EXPECT_EQ(derived_names(unpacked), derived_names(state));
         EXPECT_TRUE(std::ranges::equal(unpacked.template get_fterm_values<::tyr::formalism::FluentTag>(),

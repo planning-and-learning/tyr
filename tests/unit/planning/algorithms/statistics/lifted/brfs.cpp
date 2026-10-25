@@ -33,6 +33,6 @@ TEST_P(BrfsStatisticsTest, StatisticsMatchFixture) { check_brfs_case<LiftedTag>(
 INSTANTIATE_TEST_SUITE_P(TyrPlanningBrfsStatistics,
                          BrfsStatisticsTest,
                          ::testing::ValuesIn(load_search_cases("tests/fixtures/planning/algorithms/lifted/brfs.json")),
-                         [](const testing::TestParamInfo<SearchCase>& info) { return info.param.name; });
+                         [](const testing::TestParamInfo<SearchCase>& param_info) { return param_info.param.name; });
 }
 }

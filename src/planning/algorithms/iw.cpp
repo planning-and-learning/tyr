@@ -102,7 +102,7 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
     const auto deadline = max_time ? std::make_optional(search_start + *max_time) : std::optional<std::chrono::steady_clock::time_point> {};
     statistics.set_search_start_time_point(search_start);
 
-    const auto finalize = [&](SearchResult<Kind> result)
+    const auto finalize = [&](SearchResult<Kind> search_result)
     {
         const auto search_end = std::chrono::steady_clock::now();
         statistics.set_search_end_time_point(search_end);
@@ -111,10 +111,10 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
             worker.set_search_start_time_point(search_start);
             worker.set_search_end_time_point(search_end);
         }
-        result.statistics = statistics;
-        result.worker_statistics = worker_statistics;
-        event_handler->on_end_search(result.status, result.statistics);
-        return result;
+        search_result.statistics = statistics;
+        search_result.worker_statistics = worker_statistics;
+        event_handler->on_end_search(search_result.status, search_result.statistics);
+        return search_result;
     };
 
     event_handler->on_start_search(max_arity);

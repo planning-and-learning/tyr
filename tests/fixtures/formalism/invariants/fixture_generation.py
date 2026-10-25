@@ -216,8 +216,8 @@ def main() -> None:
         + "\n"
     )
     print(
-        f"synthesis.json: {len(by_name)} classical cases; ipc.json: {sum('skipped' not in r for r in ipc)} cases, "
-        f"{sum('skipped' in r for r in ipc)} skipped"
+        f"synthesis.json: {len(by_name)} classical cases; ipc.json: {sum('skipped' not in r for r in ipc)} cases,",
+        f"{sum('skipped' in r for r in ipc)} skipped",
     )
 
 

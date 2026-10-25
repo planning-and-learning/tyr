@@ -49,7 +49,7 @@ struct formatter<tyr::formalism::unification::SubstitutionFunction<T>, char>
 
             os << ygg::print_indent << "bindings = [\n";
             {
-                ygg::IndentScope scope(os);
+                ygg::IndentScope bindings_scope(os);
                 for (const auto& parameter : value.parameters())
                 {
                     os << ygg::print_indent;

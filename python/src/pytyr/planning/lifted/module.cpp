@@ -69,7 +69,7 @@ void bind_lifted_module_definitions(nb::module_& m)
 
     auto task =
         nb::class_<Task<LiftedTag>>(m, "Task")  //
-            .def(nb::new_([](formalism::planning::PlanningTask<LiftedTag>&& task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }),
+            .def(nb::new_([](formalism::planning::PlanningTask<LiftedTag>&& source_task) { return std::make_shared<Task<LiftedTag>>(std::move(source_task)); }),
                  "formalism_task"_a,
                  R"doc(
 Create a planning task from a formalism task.
@@ -87,7 +87,7 @@ should not be used further.
         )doc")
             .def_static(
                 "create",
-                [](formalism::planning::PlanningTask<LiftedTag>&& task) { return Task<LiftedTag>::create(std::move(task)); },
+                [](formalism::planning::PlanningTask<LiftedTag>&& source_task) { return Task<LiftedTag>::create(std::move(source_task)); },
                 "formalism_task"_a)
             .def("get_formalism_task", &Task<LiftedTag>::get_formalism_task, nb::rv_policy::reference_internal)
             .def("get_repository", &Task<LiftedTag>::get_repository)

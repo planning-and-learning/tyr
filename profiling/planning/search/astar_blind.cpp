@@ -250,7 +250,7 @@ int main(int argc, char** argv)
         {
             const auto prepared = std::make_shared<PreparedCase>();
             for (const auto cores : options.cores)
-                benchmark::RegisterBenchmark((benchmark_case.name + "/astar_blind/" + mode + "/workers:" + std::to_string(cores)).c_str(),
+                benchmark::RegisterBenchmark(benchmark_case.name + "/astar_blind/" + mode + "/workers:" + std::to_string(cores),
                                              [benchmark_case, prepared, cores, options](benchmark::State& state)
                                              { run(state, benchmark_case, *prepared, cores, options); })
                     ->Iterations(1)

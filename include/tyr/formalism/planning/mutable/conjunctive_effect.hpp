@@ -39,15 +39,15 @@ struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffec
     MutableLiteralList<FluentTag> literals;
 
     MutableConjunctiveEffect() = default;
-    MutableConjunctiveEffect(size_t num_parent_variables, size_t num_variables, MutableLiteralList<FluentTag> literals) :
-        num_parent_variables(num_parent_variables),
-        num_variables(num_variables),
-        literals(std::move(literals))
+    MutableConjunctiveEffect(size_t num_parent_variables_, size_t num_variables_, MutableLiteralList<FluentTag> literals_) :
+        num_parent_variables(num_parent_variables_),
+        num_variables(num_variables_),
+        literals(std::move(literals_))
     {
     }
-    MutableConjunctiveEffect(size_t num_parent_variables, size_t num_variables, ConjunctiveEffectView<LiftedTag> element) :
-        num_parent_variables(num_parent_variables),
-        num_variables(num_variables),
+    MutableConjunctiveEffect(size_t num_parent_variables_, size_t num_variables_, ConjunctiveEffectView<LiftedTag> element) :
+        num_parent_variables(num_parent_variables_),
+        num_variables(num_variables_),
         literals()
     {
         for (const auto& literal : element.get_literals())

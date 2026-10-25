@@ -152,7 +152,7 @@ try
             if (evaluation_threads != 1 && !std::is_same_v<Heuristic, tyr::planning::FFRPGHeuristic<Kind>>)
                 continue;
             const auto name = benchmark_case.name + "/gbfs_lazy/evaluation_threads:" + std::to_string(evaluation_threads);
-            benchmark::RegisterBenchmark(name.c_str(),
+            benchmark::RegisterBenchmark(name,
                                          [benchmark_case, evaluation_threads](benchmark::State& state)
                                          { benchmark_gbfs_lazy(state, benchmark_case, evaluation_threads); })
                 ->UseRealTime();

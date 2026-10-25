@@ -83,9 +83,9 @@ public:
 
     friend void swap(Builder& lhs, Builder& rhs) noexcept { lhs.swap(rhs); }
 
-    void resize_fluent_facts(size_t num_fluent_facts)
+    void resize_fluent_facts(size_t size)
         requires std::same_as<Kind, ::tyr::GroundTag>;
-    void resize_derived_atoms(size_t num_derived_atoms)
+    void resize_derived_atoms(size_t size)
         requires std::same_as<Kind, ::tyr::GroundTag>;
 
     template<::tyr::formalism::FactKind T>

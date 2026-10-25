@@ -373,8 +373,8 @@ void expect_schema_queries_match_filtered_successors()
     const auto same_successor = [&](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && same_node(lhs.node, rhs.node); };
     ASSERT_EQ(all_successors.size(), 4);
     auto schemas = tyr::formalism::planning::ActionViewList<LiftedTag> {};
-    for (const auto actions : { task->get_domain().get_domain().get_actions(), task->get_task().get_domain().get_actions() })
-        schemas.insert(schemas.end(), actions.begin(), actions.end());
+    for (const auto action_list : { task->get_domain().get_domain().get_actions(), task->get_task().get_domain().get_actions() })
+        schemas.insert(schemas.end(), action_list.begin(), action_list.end());
 
     for (auto* generator : { source.get(), worker.get() })
     {
@@ -411,7 +411,7 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_TRUE(std::ranges::is_permutation(nodes, expected_nodes, same_node));
             EXPECT_TRUE(std::ranges::is_permutation(bindings, expected_bindings));
 
-            size_t streamed = 0;
+            size_t schema_streamed = 0;
             EXPECT_TRUE(generator->for_each_labeled_successor_node(
                 initial_node,
                 action,
@@ -420,22 +420,22 @@ void expect_schema_queries_match_filtered_successors()
                 [&](const auto& successor)
                 {
                     static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::LabeledNode<Kind, S>>);
-                    EXPECT_TRUE(same_successor(successor, successors.at(streamed++)));
+                    EXPECT_TRUE(same_successor(successor, successors.at(schema_streamed++)));
                     return true;
                 }));
-            EXPECT_EQ(streamed, successors.size());
-            streamed = 0;
+            EXPECT_EQ(schema_streamed, successors.size());
+            schema_streamed = 0;
             EXPECT_EQ(generator->for_each_successor_node(initial_node,
                                                          action,
                                                          callback_storage,
                                                          *axiom_evaluator,
                                                          [&](const auto& successor)
                                                          {
-                                                             EXPECT_TRUE(same_node(successor, nodes.at(streamed++)));
+                                                             EXPECT_TRUE(same_node(successor, nodes.at(schema_streamed++)));
                                                              return false;
                                                          }),
                       nodes.empty());
-            EXPECT_EQ(streamed, nodes.empty() ? 0 : 1);
+            EXPECT_EQ(schema_streamed, nodes.empty() ? 0 : 1);
 
             auto callback_bindings = std::vector<tyr::formalism::planning::ActionBindingView> {};
             auto callback_successors = tyr::planning::LabeledNodeList<Kind, S> {};
@@ -640,9 +640,9 @@ void expect_schema_queries_match_filtered_successors()
             auto fresh_repository = tyr::planning::StateRepositoryFactory<Kind>().create(fresh_task);
             auto fresh_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(fresh_task, execution_context);
             const auto node = fresh_generator->get_initial_node(*fresh_repository, *fresh_axioms);
-            const auto actions = fresh_task->get_domain().get_domain().get_actions();
-            const auto alias = std::ranges::find_if(actions, [](auto action) { return action.get_name().str() == "alias"; });
-            ASSERT_NE(alias, actions.end());
+            const auto fresh_actions = fresh_task->get_domain().get_domain().get_actions();
+            const auto alias = std::ranges::find_if(fresh_actions, [](auto action) { return action.get_name().str() == "alias"; });
+            ASSERT_NE(alias, fresh_actions.end());
             ASSERT_EQ(count_action_bindings(fresh_task), 0);
             auto calls = size_t { 0 };
             const auto stop = [&](auto)

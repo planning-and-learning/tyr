@@ -193,8 +193,7 @@ catch (const std::exception& error)
 template<Operation operation>
 void register_case(const BenchmarkCase& benchmark_case, const std::string& name)
 {
-    benchmark::RegisterBenchmark((benchmark_case.paths.name + "/" + name).c_str(),
-                                 [benchmark_case](benchmark::State& state) { run<operation>(state, benchmark_case); });
+    benchmark::RegisterBenchmark(benchmark_case.paths.name + "/" + name, [benchmark_case](benchmark::State& state) { run<operation>(state, benchmark_case); });
 }
 }
 

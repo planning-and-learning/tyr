@@ -91,18 +91,18 @@ struct SuccessorGenerator<GroundTag>::Impl
         ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>> checked_binding;
     };
 
-    Impl(ygg::uint_t index, TaskPtr<GroundTag> task, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-        index(index),
-        next_index(std::move(next_index)),
+    Impl(ygg::uint_t index_, TaskPtr<GroundTag> task, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+        index(index_),
+        next_index(std::move(next_index_)),
         definition(std::make_shared<Definition>(std::move(task))),
         evaluator(*definition)
     {
     }
 
-    Impl(ygg::uint_t index, std::shared_ptr<const Definition> definition, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-        index(index),
-        next_index(std::move(next_index)),
-        definition(std::move(definition)),
+    Impl(ygg::uint_t index_, std::shared_ptr<const Definition> definition_, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+        index(index_),
+        next_index(std::move(next_index_)),
+        definition(std::move(definition_)),
         evaluator(*this->definition)
     {
     }
@@ -420,15 +420,15 @@ ActionBindingResult SuccessorGenerator<GroundTag>::Impl::try_get_applicable_acti
 
     const auto& constants = task->get_task().get_domain().get_data().constants;
     const auto& task_objects = task->get_task().get_data().objects;
-    for (const auto index : indices)
-        if (!std::binary_search(constants.begin(), constants.end(), index) && !std::binary_search(task_objects.begin(), task_objects.end(), index))
+    for (const auto object : indices)
+        if (!std::binary_search(constants.begin(), constants.end(), object) && !std::binary_search(task_objects.begin(), task_objects.end(), object))
             return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
 
     auto& scratch = evaluator.checked_binding;
     scratch.relation = action.get_index();
     scratch.objects.clear();
-    for (const auto index : indices)
-        scratch.objects.push_back(index);
+    for (const auto object : indices)
+        scratch.objects.push_back(object);
     const auto binding = task->get_repository()->find(scratch);
     if (!binding)
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
@@ -616,7 +616,7 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Nod
 {
     validate_task(m_impl->definition->task, node.get_state());
     auto& tree = m_impl->get_schema_match_tree(action);
-    return m_impl->for_each_applicable_action(node, tree, [&](const auto action) { return callback(action.get_row()); });
+    return m_impl->for_each_applicable_action(node, tree, [&](const auto ground_action) { return callback(ground_action.get_row()); });
 }
 
 template<StateViewConcept<GroundTag> S>

@@ -79,7 +79,7 @@ inline MutableAtom<FluentTag> make_initial_atom(PredicateView<FluentTag> predica
     if (counted_position == arity)
     {
         for (size_t i = 0; i < arity; ++i)
-            terms.emplace_back(ygg::Data<Term>(ParameterIndex(i)));
+            terms.emplace_back(ParameterIndex(i));
     }
     else
     {
@@ -89,12 +89,12 @@ inline MutableAtom<FluentTag> make_initial_atom(PredicateView<FluentTag> predica
         {
             if (i == counted_position)
             {
-                terms.emplace_back(ygg::Data<Term>(counted_index));
+                terms.emplace_back(counted_index);
             }
             else
             {
                 const auto rigid_index = (i < counted_position) ? ParameterIndex(i) : ParameterIndex(i - 1);
-                terms.emplace_back(ygg::Data<Term>(rigid_index));
+                terms.emplace_back(rigid_index);
             }
         }
     }

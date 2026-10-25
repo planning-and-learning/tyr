@@ -101,30 +101,30 @@ private:
             this->prepare(element.value());
         }
     }
-    void prepare(loki::formalism::FunctionSkeletonView element);
-    void prepare(loki::formalism::ObjectView element);
-    void prepare(loki::formalism::ParameterView element);
-    void prepare(loki::formalism::PredicateView element);
+    void prepare(loki::formalism::FunctionSkeletonView function_skeleton);
+    void prepare(loki::formalism::ObjectView object);
+    void prepare(loki::formalism::ParameterView parameter);
+    void prepare(loki::formalism::PredicateView predicate);
     void prepare(loki::formalism::RequirementView element);
-    void prepare(loki::formalism::TypeView element);
+    void prepare(loki::formalism::TypeView type);
     void prepare(loki::formalism::VariableView element);
-    void prepare(loki::formalism::TermView element);
-    void prepare(loki::formalism::AtomView element);
-    void prepare(loki::formalism::LiteralView element);
+    void prepare(loki::formalism::TermView term);
+    void prepare(loki::formalism::AtomView atom);
+    void prepare(loki::formalism::LiteralView literal);
     void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element);
-    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element);
-    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element);
-    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element);
-    void prepare(loki::formalism::FunctionTermView element);
-    void prepare(loki::formalism::FunctionExpressionView element);
-    void prepare(loki::formalism::ConditionView element);
-    void prepare(loki::formalism::EffectView element);
-    void prepare(loki::formalism::ActionView element);
-    void prepare(loki::formalism::AxiomView element);
-    void prepare(loki::formalism::DomainView element);
-    void prepare(loki::formalism::InitialFunctionValueView element);
-    void prepare(loki::formalism::MetricView element);
-    void prepare(loki::formalism::TaskView element);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> function_expression);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression);
+    void prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression);
+    void prepare(loki::formalism::FunctionTermView function_expression);
+    void prepare(loki::formalism::FunctionExpressionView function_expression);
+    void prepare(loki::formalism::ConditionView condition);
+    void prepare(loki::formalism::EffectView effect);
+    void prepare(loki::formalism::ActionView action);
+    void prepare(loki::formalism::AxiomView axiom);
+    void prepare(loki::formalism::DomainView domain);
+    void prepare(loki::formalism::InitialFunctionValueView function_value);
+    void prepare(loki::formalism::MetricView metric);
+    void prepare(loki::formalism::TaskView problem);
 
     /**
      * Common translations.
@@ -290,10 +290,10 @@ private:
 public:
     LokiToTyrTranslator() = default;
 
-    PlanningDomain translate(const loki::formalism::DomainView& domain, std::optional<std::filesystem::path> path = std::nullopt);
+    PlanningDomain translate(const loki::formalism::DomainView& element, std::optional<std::filesystem::path> path = std::nullopt);
 
     PlanningTask<LiftedTag>
-    translate(const loki::formalism::TaskView& problem, PlanningDomain domain, std::optional<std::filesystem::path> path = std::nullopt);
+    translate(const loki::formalism::TaskView& element, PlanningDomain domain, std::optional<std::filesystem::path> path = std::nullopt);
 };
 
 }

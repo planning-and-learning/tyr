@@ -46,7 +46,7 @@ public:
     using iterator_concept = std::input_iterator_tag;
     using pointer = void;
 
-    FDRFactIterator() noexcept {}
+    FDRFactIterator() noexcept = default;
     FDRFactIterator(const FactUnpackedStorage<LiftedTag>& storage, bool begin) noexcept :
         m_storage(&storage),
         m_i(begin ? m_storage->indices.find_first() : boost::dynamic_bitset<>::npos)

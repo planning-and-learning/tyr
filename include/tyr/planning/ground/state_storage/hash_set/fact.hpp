@@ -38,7 +38,7 @@ struct FactPackedStorage<GroundTag, HashSet> : ygg::comparison::Mixin<FactPacked
     ygg::uint_t index = 0;
 
     FactPackedStorage() = default;
-    explicit FactPackedStorage(ygg::uint_t index) : index(index) {}
+    explicit FactPackedStorage(ygg::uint_t index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&FactPackedStorage::index> {}; }
 };

@@ -48,7 +48,7 @@ struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
     formalism::datalog::RuleView<GroundTag, R> rule;
 
     GroundQueueEntry() = delete;
-    GroundQueueEntry(Cost cost, formalism::datalog::RuleView<GroundTag, R> rule) : cost(cost), rule(rule) {}
+    GroundQueueEntry(Cost cost_, formalism::datalog::RuleView<GroundTag, R> rule_) : cost(cost_), rule(rule_) {}
 
     [[nodiscard]] auto identifying_members() const noexcept { return std::make_tuple(cost, rule); }
 };

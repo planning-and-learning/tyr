@@ -156,21 +156,21 @@ struct SuccessorGenerator<LiftedTag>::Impl
                 evaluator.facts.state = std::nullopt;
     }
 
-    Impl(ygg::uint_t index, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-        index(index),
-        next_index(std::move(next_index)),
+    Impl(ygg::uint_t index_, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+        index(index_),
+        next_index(std::move(next_index_)),
         definition(std::make_shared<Definition>(std::move(task))),
         evaluator(*definition, std::move(execution_context))
     {
     }
 
-    Impl(ygg::uint_t index,
-         std::shared_ptr<const Definition> definition,
+    Impl(ygg::uint_t index_,
+         std::shared_ptr<const Definition> definition_,
          ygg::ExecutionContextPtr execution_context,
-         std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-        index(index),
-        next_index(std::move(next_index)),
-        definition(std::move(definition)),
+         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+        index(index_),
+        next_index(std::move(next_index_)),
+        definition(std::move(definition_)),
         evaluator(*this->definition, std::move(execution_context))
     {
     }
@@ -337,28 +337,28 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         const auto it = mapping.find(predicate);
         if (it == mapping.end())
             continue;  // A conditional effect's rule.
-        const auto action = it->second;
+        const auto schema = it->second;
         const auto& set = evaluator.workspace.facts.fact_sets.predicate.get_sets()[static_cast<ygg::uint_t>(predicate.get_index())];
         for (const auto& binding : set.get_bindings())
         {
             if (stop())
                 return false;
-            scratch_binding.relation = action.get_index();
+            scratch_binding.relation = schema.get_index();
             scratch_binding.objects.clear();
             ygg::extend(binding.get_objects(), scratch_binding.objects);
             if (!accept(scratch_binding))
                 continue;
 
-            assert(is_applicable(action.get_condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
+            assert(is_applicable(schema.get_condition(), ApplicabilityContext { state_context, grounder_context, *definition->task->get_fdr_context() })
                    && "ApplicableActionProgram emitted an action binding whose condition is not satisfied.");
 
             // Datalog certifies the action condition, not whether its grounded numeric effects are valid and mutually compatible.
             if (!evaluator.executor.is_applicable_if_fires(
-                    action,
+                    schema,
                     state_context,
                     grounder_context,
                     *definition->task->get_fdr_context(),
-                    [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding(), apply); }))
+                    [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(schema, effect, grounder_context.binding(), apply); }))
                 continue;
             if (!callback(scratch_binding))
                 return false;
@@ -617,8 +617,8 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Node<LiftedTag, 
     auto& binding = evaluator.checked_binding;
     binding.relation = action.get_index();
     binding.objects.clear();
-    for (const auto index : indices)
-        binding.objects.push_back(index);
+    for (const auto object : indices)
+        binding.objects.push_back(object);
     auto grounder = formalism::planning::GrounderContext { workspace.planning_builder, *task->get_repository(), binding.objects };
     const auto state = StateContext<LiftedTag>(*task, node.get_state().get_state_builder(), node.get_metric());
     if (!is_applicable(action.get_condition(), ApplicabilityContext { state, grounder, *task->get_fdr_context() }))

@@ -41,20 +41,20 @@ struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCo
     MutableLiteralList<DerivedTag> derived_literals;
 
     MutableConjunctiveCondition() = default;
-    MutableConjunctiveCondition(size_t num_parent_variables,
-                                size_t num_variables,
-                                MutableLiteralList<StaticTag> static_literals,
-                                MutableLiteralList<FluentTag> fluent_literals,
-                                MutableLiteralList<DerivedTag> derived_literals = {}) :
-        num_parent_variables(num_parent_variables),
-        num_variables(num_variables),
-        static_literals(std::move(static_literals)),
-        fluent_literals(std::move(fluent_literals)),
-        derived_literals(std::move(derived_literals))
+    MutableConjunctiveCondition(size_t num_parent_variables_,
+                                size_t num_variables_,
+                                MutableLiteralList<StaticTag> static_literals_,
+                                MutableLiteralList<FluentTag> fluent_literals_,
+                                MutableLiteralList<DerivedTag> derived_literals_ = {}) :
+        num_parent_variables(num_parent_variables_),
+        num_variables(num_variables_),
+        static_literals(std::move(static_literals_)),
+        fluent_literals(std::move(fluent_literals_)),
+        derived_literals(std::move(derived_literals_))
     {
     }
-    MutableConjunctiveCondition(size_t num_parent_variables, ConjunctiveConditionView<LiftedTag> element) :
-        num_parent_variables(num_parent_variables),
+    MutableConjunctiveCondition(size_t num_parent_variables_, ConjunctiveConditionView<LiftedTag> element) :
+        num_parent_variables(num_parent_variables_),
         num_variables(element.get_arity()),
         static_literals(),
         fluent_literals(),

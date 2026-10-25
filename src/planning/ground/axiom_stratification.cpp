@@ -79,7 +79,7 @@ GroundAxiomStrata compute_ground_axiom_stratification(formalism::planning::TaskV
     auto out = GroundAxiomStrata {};
     out.data.reserve(buckets.size());
     for (auto& b : buckets)
-        out.data.emplace_back(GroundAxiomStratum(std::move(b)));
+        out.data.emplace_back(std::move(b));
 
     return out;
 }

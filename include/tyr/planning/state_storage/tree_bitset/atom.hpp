@@ -38,7 +38,7 @@ struct AtomPackedStorage<Kind, TreeBitset> : ygg::comparison::Mixin<AtomPackedSt
     Index index;
 
     AtomPackedStorage() = default;
-    explicit AtomPackedStorage(Index index) : index(index) {}
+    explicit AtomPackedStorage(Index index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomPackedStorage::index> {}; }
 };

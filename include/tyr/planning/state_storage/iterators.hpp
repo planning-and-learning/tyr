@@ -49,7 +49,7 @@ public:
     using iterator_concept = std::input_iterator_tag;
     using pointer = void;
 
-    AtomIterator() noexcept {}
+    AtomIterator() noexcept = default;
     AtomIterator(const boost::dynamic_bitset<>& data, bool begin) noexcept : m_data(&data), m_i(begin ? m_data->find_first() : boost::dynamic_bitset<>::npos) {}
 
     value_type operator*() const noexcept
@@ -129,7 +129,7 @@ public:
             ++m_i;
     }
 
-    FunctionTermValueIterator() noexcept {}
+    FunctionTermValueIterator() noexcept = default;
     FunctionTermValueIterator(const std::vector<ygg::float_t>& data, bool begin) noexcept : m_data(&data), m_i(begin ? 0 : m_data->size())
     {
         if (begin)

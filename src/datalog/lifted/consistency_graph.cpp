@@ -221,12 +221,12 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex,
                         std::swap(first_obj, second_obj);
                     }
 
-                    auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                    assert(assignment.is_valid());
+                    auto edge_assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                    assert(edge_assignment.is_valid());
 
-                    // std::cout << assignment << std::endl;
+                    // std::cout << edge_assignment << std::endl;
 
-                    bounds = intersect(bounds, func_set.at(assignment));
+                    bounds = intersect(bounds, func_set.at(edge_assignment));
                     if (empty(bounds))
                         return bounds;  // early exit
                 }

@@ -87,7 +87,7 @@ void instantiate_factored_mapping_rec(const std::vector<std::pair<std::vector<si
     for (auto more = true; more; more = std::next_permutation(perm.begin(), perm.end(), optional_parameter_less))
     {
         for (size_t i = 0; i < positions.size(); ++i)
-            current.push_back({ positions[i], perm[i] });
+            current.emplace_back(positions[i], perm[i]);
 
         instantiate_factored_mapping_rec(groups, group_index + 1, current, out);
 
@@ -137,15 +137,15 @@ std::vector<PositionMapping> possible_mappings(const MutableAtom<FluentTag>& par
         images.reserve(inv_params.size() + (len_diff != 0 ? 1 : 0));
 
         for (const auto& p : inv_params)
-            images.push_back(p);
+            images.emplace_back(p);
 
         if (len_diff != 0)
         {
-            images.push_back(std::nullopt);
+            images.emplace_back(std::nullopt);
             allowed_omissions = 0;
         }
 
-        factored_mapping.push_back({ other_positions, std::move(images) });
+        factored_mapping.emplace_back(other_positions, std::move(images));
     }
 
     return instantiate_factored_mapping(factored_mapping);
@@ -165,7 +165,7 @@ MutableAtomList<FluentTag> possible_matches(const MutableAtom<FluentTag>& part,
         for (const auto& [other_pos, inv_var] : mapping)
             args[other_pos] = ygg::Data<Term>(inv_var.value_or(ParameterIndex(num_rigid_variables)));
 
-        result.push_back(MutableAtom<FluentTag>(other_literal.predicate, std::move(args)));
+        result.emplace_back(other_literal.predicate, std::move(args));
     }
 
     return result;

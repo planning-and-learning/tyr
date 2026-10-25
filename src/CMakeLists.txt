@@ -166,9 +166,8 @@ target_compile_features(core PUBLIC cxx_std_20)
 target_compile_definitions(
     core
     PUBLIC
+        # Boost.MPL's configuration comes from loki::parsers, so every translation unit agrees on it.
         FMT_HEADER_ONLY
-        BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-        BOOST_MPL_LIMIT_LIST_SIZE=50
 )
 
 if(TYR_ENABLE_INNER_PARALLELISM)

@@ -225,18 +225,18 @@ struct StateRepository<Kind>::Impl
             {
                 std::forward<ExtendState>(extend_state)();
                 const auto derived = insert_derived(state, parent, parent_state);
-                const auto [index, inserted] = packed_states.complete_miss_with_hash(hash,
-                                                                                     key,
-                                                                                     [&](ygg::Index<State<Kind>> index)
-                                                                                     {
-                                                                                         auto data = ygg::Data<State<Kind>>(fluent, derived, numeric);
-                                                                                         data.index = index;
-                                                                                         return data;
-                                                                                     });
-                state_index = index;
+                const auto [inserted_index, inserted] = packed_states.complete_miss_with_hash(hash,
+                                                                                              key,
+                                                                                              [&](ygg::Index<State<Kind>> new_index)
+                                                                                              {
+                                                                                                  auto data = ygg::Data<State<Kind>>(fluent, derived, numeric);
+                                                                                                  data.index = new_index;
+                                                                                                  return data;
+                                                                                              });
+                state_index = inserted_index;
                 if (inserted)
                 {
-                    state.set(index);
+                    state.set(inserted_index);
                     return;
                 }
             }

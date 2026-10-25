@@ -34,7 +34,7 @@ struct NumericPackedStorage<Kind, HashSet> : ygg::comparison::Mixin<NumericPacke
     ygg::uint_t index = 0;
 
     NumericPackedStorage() = default;
-    explicit NumericPackedStorage(ygg::uint_t index) : index(index) {}
+    explicit NumericPackedStorage(ygg::uint_t index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericPackedStorage::index> {}; }
 };

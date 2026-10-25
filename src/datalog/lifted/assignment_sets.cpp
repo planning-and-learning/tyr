@@ -272,9 +272,7 @@ template class PredicateAssignmentSet<formalism::FluentTag>;
  */
 
 template<formalism::FactKind T>
-PredicateAssignmentSets<T>::PredicateAssignmentSets()
-{
-}
+PredicateAssignmentSets<T>::PredicateAssignmentSets() = default;
 
 template<formalism::FactKind T>
 PredicateAssignmentSets<T>::PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
@@ -476,9 +474,7 @@ template class FunctionAssignmentSet<formalism::FluentTag>;
  */
 
 template<formalism::FactKind T>
-FunctionAssignmentSets<T>::FunctionAssignmentSets()
-{
-}
+FunctionAssignmentSets<T>::FunctionAssignmentSets() = default;
 
 template<formalism::FactKind T>
 FunctionAssignmentSets<T>::FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions,
@@ -565,9 +561,7 @@ template class FunctionAssignmentSets<formalism::FluentTag>;
  */
 
 template<formalism::FactKind T>
-TaggedAssignmentSets<T>::TaggedAssignmentSets()
-{
-}
+TaggedAssignmentSets<T>::TaggedAssignmentSets() = default;
 
 template<formalism::FactKind T>
 TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,

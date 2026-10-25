@@ -147,10 +147,10 @@ ConstraintSystem make_param_system(const MutableAction& op, const MutableConditi
     params.reserve(op.num_variables + add_effect.num_variables);
 
     for (size_t i = 0; i < op.num_variables; ++i)
-        params.push_back(ParameterIndex(i));
+        params.emplace_back(i);
 
     for (size_t i = 0; i < add_effect.num_variables; ++i)
-        params.push_back(ParameterIndex(add_effect.num_parent_variables + i));
+        params.emplace_back(add_effect.num_parent_variables + i);
 
     for (const auto param : params)
     {

@@ -229,11 +229,11 @@ struct InsertConstantPolicy
 
     [[nodiscard]] bool should_skip(formalism::datalog::FunctionView<formalism::FluentTag>) const { return true; }
 
-    auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) { return *static_predicate_domain_sets; }
-    auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
 
-    auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) { return *static_function_domain_sets; }
-    auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) { return *fluent_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t pos, formalism::datalog::ObjectView object, Symbol symbol)
@@ -300,13 +300,13 @@ struct LiftPolicy
 
     [[nodiscard]] bool should_skip(formalism::datalog::FunctionView<formalism::StaticTag>) const { return true; }
 
-    auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) { return *static_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
 
-    auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
 
-    auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) { return *static_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
 
-    auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) { return *fluent_function_domain_sets; }
+    [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t pos, formalism::datalog::ObjectView object, Symbol symbol)

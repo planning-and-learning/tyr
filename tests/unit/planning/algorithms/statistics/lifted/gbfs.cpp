@@ -33,6 +33,6 @@ TEST_P(GbfsStatisticsTest, StatisticsMatchFixture) { check_gbfs_case<LiftedTag>(
 INSTANTIATE_TEST_SUITE_P(TyrPlanningGbfsStatistics,
                          GbfsStatisticsTest,
                          ::testing::ValuesIn(load_search_cases("tests/fixtures/planning/algorithms/lifted/gbfs.json")),
-                         [](const testing::TestParamInfo<SearchCase>& info) { return info.param.name; });
+                         [](const testing::TestParamInfo<SearchCase>& param_info) { return param_info.param.name; });
 }
 }

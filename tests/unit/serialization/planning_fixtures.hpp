@@ -149,11 +149,11 @@ void check_runtime_serialization()
 
     const auto check_rejected_owner = [](const auto& owner)
     {
-        auto dictionaries = ygg::serialization::Dictionaries {};
-        dictionaries.template register_table<tyr::formalism::planning::TaskView<Kind>>("tasks", "t", std::vector<std::string> { "name" });
-        dictionaries.template register_table<tyr::formalism::planning::DomainView>("domains", "d", std::vector<std::string> {});
-        EXPECT_THROW(dictionaries.serialize(owner), std::invalid_argument);
-        EXPECT_THROW(dictionaries.tables(), std::logic_error);
+        auto owner_dictionaries = ygg::serialization::Dictionaries {};
+        owner_dictionaries.template register_table<tyr::formalism::planning::TaskView<Kind>>("tasks", "t", std::vector<std::string> { "name" });
+        owner_dictionaries.template register_table<tyr::formalism::planning::DomainView>("domains", "d", std::vector<std::string> {});
+        EXPECT_THROW(owner_dictionaries.serialize(owner), std::invalid_argument);
+        EXPECT_THROW(owner_dictionaries.tables(), std::logic_error);
     };
     check_rejected_owner(formalism_task.get_domain());
     check_rejected_owner(formalism_task);

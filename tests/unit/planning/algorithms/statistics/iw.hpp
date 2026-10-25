@@ -45,9 +45,9 @@ struct IwCase
     std::vector<std::pair<std::string, IwExpectation>> configs;
 };
 
-void PrintTo(const IwCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
+inline void PrintTo(const IwCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
 
-IwExpectation parse_expectation(const boost::json::object& object)
+inline IwExpectation parse_expectation(const boost::json::object& object)
 {
     auto result = IwExpectation {};
     if (const auto value = ygg::common::find_string(object, "status", "case"))
@@ -58,7 +58,7 @@ IwExpectation parse_expectation(const boost::json::object& object)
     return result;
 }
 
-IwCase parse_case(const boost::json::object& suite, const boost::json::object& object)
+inline IwCase parse_case(const boost::json::object& suite, const boost::json::object& object)
 {
     auto result = IwCase { ygg::common::as_string(object, "name", "case"),
                            ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(object, "domain_file", "case")),
@@ -71,7 +71,7 @@ IwCase parse_case(const boost::json::object& suite, const boost::json::object& o
     return result;
 }
 
-std::vector<IwCase> load_cases(const std::filesystem::path& fixture)
+inline std::vector<IwCase> load_cases(const std::filesystem::path& fixture)
 {
     const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");

@@ -49,7 +49,7 @@ void initialize_const_rule_workspaces(Program<LiftedTag>& program,
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy, TP tp, CP cost_policy) :
+ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy_, TP tp_, CP cost_policy_) :
     const_workspace(&program.get_const_program_workspace()),
     program_repository(&program.get_program_repository()),
     workspace_repository(program.get_repository_factory().create_shared(program.get_program().get_objects().size(), program_repository)),
@@ -61,14 +61,14 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
           program.get_program().get_atoms<formalism::FluentTag>(),
           program.get_program().get_fterm_values<formalism::FluentTag>(),
           *workspace_repository),
-    annotation_policy(std::move(annotation_policy)),
+    annotation_policy(std::move(annotation_policy_)),
     annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
     numeric_annotations(program.get_program().get_functions<formalism::FluentTag>().size()),
     delta_annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
     delta_numeric_annotations(program.get_program().get_functions<formalism::FluentTag>().size()),
     numeric_support_selector(),
-    tp(std::move(tp)),
-    cost_policy(std::move(cost_policy)),
+    tp(std::move(tp_)),
+    cost_policy(std::move(cost_policy_)),
     predicate_rules(),
     function_rules(),
     planning_builder(),

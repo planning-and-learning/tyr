@@ -231,7 +231,7 @@ private:
         {
             auto element = std::vector<ygg::Data<formalism::Term>> {};
             for (const auto object : binding.get_objects())
-                element.push_back(ygg::Data<formalism::Term>(object.get_index()));
+                element.emplace_back(object.get_index());
             if (const auto match = formalism::unification::match(pattern, element, sigma))
             {
                 const auto& value = (*match)[variable];

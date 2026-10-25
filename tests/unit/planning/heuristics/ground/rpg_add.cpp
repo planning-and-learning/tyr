@@ -43,6 +43,6 @@ TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture) { check_heuristic_case<
 INSTANTIATE_TEST_SUITE_P(TyrPlanningHeuristicFixture,
                          HeuristicFixtureTest,
                          ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/ground/rpg_add.json")),
-                         [](const testing::TestParamInfo<HeuristicCase>& info) { return info.param.name; });
+                         [](const testing::TestParamInfo<HeuristicCase>& param_info) { return param_info.param.name; });
 }
 }

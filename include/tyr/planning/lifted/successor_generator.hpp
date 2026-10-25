@@ -217,7 +217,7 @@ public:
                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator);
     template<StateViewConcept<LiftedTag> S>
     PackedNode<LiftedTag> get_packed_successor_node(const Node<LiftedTag, S>& node,
-                                                    formalism::planning::ActionView<GroundTag> action,
+                                                    formalism::planning::ActionView<GroundTag> binding,
                                                     StateRepository<LiftedTag>& state_repository,
                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator);
     template<StateViewConcept<LiftedTag> S>

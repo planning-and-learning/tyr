@@ -42,7 +42,7 @@ struct FactPackedStorage<LiftedTag, TreeBitset> : ygg::comparison::Mixin<FactPac
     Index index;
 
     FactPackedStorage() = default;
-    explicit FactPackedStorage(Index index) : index(index) {}
+    explicit FactPackedStorage(Index index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&FactPackedStorage::index> {}; }
 };

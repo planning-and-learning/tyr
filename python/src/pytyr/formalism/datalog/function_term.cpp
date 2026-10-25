@@ -32,7 +32,7 @@ void bind_function_term_kind(nb::module_& m, RepositoryBinding& repository, cons
 {
     using namespace nb::literals;
     using Tag = FunctionTerm<T, F>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

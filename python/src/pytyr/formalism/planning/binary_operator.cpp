@@ -32,7 +32,7 @@ void bind_binary_operator_kind(nb::module_& m, RepositoryBinding& repository, co
 {
     using namespace nb::literals;
     using Tag = BinaryOperator<T, O>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

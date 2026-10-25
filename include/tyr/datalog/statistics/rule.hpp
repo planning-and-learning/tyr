@@ -80,7 +80,7 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
             continue;
 
         samples.push_back(rs.total_time);
-        avg_samples.push_back(rs.total_time / rs.num_executions);
+        avg_samples.emplace_back(rs.total_time / rs.num_executions);
         result.num_executions += rs.num_executions;
         result.total_time += rs.total_time;
         result.initialize_time += rs.initialize_time;

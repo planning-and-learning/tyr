@@ -64,7 +64,7 @@ template<TaskKind Kind>
 class PackedState;
 
 template<TaskKind Kind>
-struct StateContext;
+class StateContext;
 
 struct StateDelta;
 

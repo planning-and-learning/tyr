@@ -28,7 +28,7 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
 {
     using namespace nb::literals;
     using Tag = Axiom<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, (name + "Index").c_str());
+    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
 
     {
         using V = ygg::Data<Tag>;

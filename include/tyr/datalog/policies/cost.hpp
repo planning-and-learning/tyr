@@ -57,12 +57,12 @@ struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKe
     ygg::ClosedInterval<ygg::float_t> interval;
 
     NumericTransitionCostKey() = default;
-    NumericTransitionCostKey(formalism::datalog::RuleBindingIndex<R> rule_key,
-                             formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
-                             ygg::ClosedInterval<ygg::float_t> interval) :
-        rule_key(rule_key),
-        numeric_key(numeric_key),
-        interval(std::move(interval))
+    NumericTransitionCostKey(formalism::datalog::RuleBindingIndex<R> rule_key_,
+                             formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key_,
+                             ygg::ClosedInterval<ygg::float_t> interval_) :
+        rule_key(rule_key_),
+        numeric_key(numeric_key_),
+        interval(std::move(interval_))
     {
     }
 

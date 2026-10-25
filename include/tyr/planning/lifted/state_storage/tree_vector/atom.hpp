@@ -37,7 +37,7 @@ struct AtomPackedStorage<LiftedTag, TreeVector> : ygg::comparison::Mixin<AtomPac
     ygg::TreeVectorIndex<ygg::uint_t> index;
 
     AtomPackedStorage() = default;
-    explicit AtomPackedStorage(ygg::TreeVectorIndex<ygg::uint_t> index) : index(index) {}
+    explicit AtomPackedStorage(ygg::TreeVectorIndex<ygg::uint_t> index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomPackedStorage::index> {}; }
 };

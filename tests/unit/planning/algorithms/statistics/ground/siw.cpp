@@ -33,6 +33,6 @@ TEST_P(SiwStatisticsTest, MatchesExpectedOutcome) { check_siw_case<GroundTag>(Ge
 INSTANTIATE_TEST_SUITE_P(TyrPlanningSiwStatistics,
                          SiwStatisticsTest,
                          ::testing::ValuesIn(load_cases("tests/fixtures/planning/algorithms/ground/siw.json")),
-                         [](const testing::TestParamInfo<SiwCase>& info) { return info.param.name; });
+                         [](const testing::TestParamInfo<SiwCase>& param_info) { return param_info.param.name; });
 }
 }

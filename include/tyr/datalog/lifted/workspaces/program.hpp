@@ -101,7 +101,7 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 
     ProgramStatistics statistics;
 
-    explicit ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy = AP(), TP tp = TP(), CP cost_policy = CP());
+    explicit ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP());
     ProgramWorkspace(Program<LiftedTag>&&, AP = AP(), TP = TP(), CP = CP()) = delete;
 
     /// Discards all evaluation-local views before clearing their repository. Call only while no

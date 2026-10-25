@@ -58,7 +58,7 @@ struct RuleWorkspace<LiftedTag, R>
 {
     struct Common
     {
-        explicit Common(const StaticConsistencyGraph& static_consistency_graph);
+        explicit Common(const StaticConsistencyGraph& static_consistency_graph_);
 
         void initialize_iteration(const AssignmentSets& assignment_sets);
 
@@ -153,7 +153,7 @@ public:
     [[nodiscard]] auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     [[nodiscard]] const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
-    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
+    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule_, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
 private:
     formalism::datalog::RuleView<LiftedTag, R> rule;
@@ -178,9 +178,9 @@ inline bool supports_inner_parallelism(formalism::PredicateTag) noexcept { retur
 inline bool supports_inner_parallelism(formalism::FunctionTag) noexcept { return false; }
 
 template<formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) :
-    static_consistency_graph(&static_consistency_graph),
-    kckp(static_consistency_graph.get_graph(), static_consistency_graph.get_partitioned_adjacency_layout()),
+RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph_) :
+    static_consistency_graph(&static_consistency_graph_),
+    kckp(static_consistency_graph_.get_graph(), static_consistency_graph_.get_partitioned_adjacency_layout()),
     statistics()
 {
 }

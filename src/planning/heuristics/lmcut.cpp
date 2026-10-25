@@ -51,9 +51,9 @@ struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode>
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LMCutNumericNode() = delete;
-    LMCutNumericNode(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval) :
-        key(key),
-        interval(std::move(interval))
+    LMCutNumericNode(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key_, ygg::ClosedInterval<ygg::float_t> interval_) :
+        key(key_),
+        interval(std::move(interval_))
     {
     }
 
