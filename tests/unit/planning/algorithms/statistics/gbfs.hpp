@@ -15,6 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_GBFS_HPP_
+#define TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_GBFS_HPP_
+
 #include "heuristics.hpp"
 #include "statistics.hpp"
 
@@ -25,13 +28,14 @@ namespace tyr::tests
 {
 namespace
 {
+template<TaskKind Kind>
 void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, CostMode cost_mode)
 {
-    auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
+    auto context = create_search_context<Kind>(test_case.domain_file, test_case.task_file);
     const auto num_ground_actions_before = context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>();
-    auto heuristic = create_search_heuristic<StatisticsTaskKind>(heuristic_name, context, cost_mode);
+    auto heuristic = create_search_heuristic<Kind>(heuristic_name, context, cost_mode);
 
-    auto options = tyr::planning::gbfs_lazy::Options<StatisticsTaskKind>();
+    auto options = tyr::planning::gbfs_lazy::Options<Kind>();
     options.cost_mode = cost_mode;
     const auto result = tyr::planning::gbfs_lazy::find_solution(*context.task,
                                                                 *context.state_repository,
@@ -42,32 +46,25 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
 
     expect_statistics(expected, result.statistics, result);
     expect_repository_statistics(context, result.statistics);
-    if constexpr (std::is_same_v<StatisticsTaskKind, LiftedTag>)
+    if constexpr (std::is_same_v<Kind, LiftedTag>)
     {
         EXPECT_EQ(context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>(), num_ground_actions_before);
     }
 }
 }
 
-class GbfsStatisticsTest : public ::testing::TestWithParam<SearchCase>
+/// Checks every configuration of one fixture case.
+template<TaskKind Kind>
+void check_gbfs_case(const SearchCase& test_case)
 {
-};
-
-TEST_P(GbfsStatisticsTest, StatisticsMatchFixture)
-{
-    const auto& test_case = GetParam();
-
     for (const auto& [key, expected] : test_case.configs)
     {
         SCOPED_TRACE(key);
         const auto [heuristic_name, cost_mode] = parse_costed_heuristic_key(key);
-        check_statistics(expected, test_case, heuristic_name, cost_mode);
+        check_statistics<Kind>(expected, test_case, heuristic_name, cost_mode);
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(TyrPlanningGbfsStatistics,
-                         GbfsStatisticsTest,
-                         ::testing::ValuesIn(load_search_cases(kStatisticsFixture)),
-                         [](const testing::TestParamInfo<SearchCase>& info) { return info.param.name; });
-
 }
+
+#endif

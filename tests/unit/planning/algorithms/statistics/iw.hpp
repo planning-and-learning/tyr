@@ -15,6 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_IW_HPP_
+#define TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_IW_HPP_
+
 #include "statistics.hpp"
 
 #include <filesystem>
@@ -69,9 +72,9 @@ IwCase parse_case(const boost::json::object& suite, const boost::json::object& o
     return result;
 }
 
-std::vector<IwCase> load_cases()
+std::vector<IwCase> load_cases(const std::filesystem::path& fixture)
 {
-    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / kStatisticsFixture);
+    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");
     auto result = std::vector<IwCase> {};
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
@@ -79,18 +82,19 @@ std::vector<IwCase> load_cases()
     return result;
 }
 
+template<TaskKind Kind>
 void check_expectation(const IwExpectation& expectation, const IwCase& test_case)
 {
-    auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
-    auto brfs_solver = tyr::planning::brfs::Solver<StatisticsTaskKind> { context.task,
-                                                                         context.state_repository,
-                                                                         context.axiom_evaluator,
-                                                                         context.successor_generator,
-                                                                         tyr::planning::brfs::Options<StatisticsTaskKind> {} };
-    brfs_solver.options.event_handler = tyr::planning::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto context = create_search_context<Kind>(test_case.domain_file, test_case.task_file);
+    auto brfs_solver = tyr::planning::brfs::Solver<Kind> { context.task,
+                                                           context.state_repository,
+                                                           context.axiom_evaluator,
+                                                           context.successor_generator,
+                                                           tyr::planning::brfs::Options<Kind> {} };
+    brfs_solver.options.event_handler = tyr::planning::brfs::DefaultEventHandler<Kind>::create();
 
-    auto options = tyr::planning::iw::Options<StatisticsTaskKind> {};
-    const auto event_handler = tyr::planning::iw::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto options = tyr::planning::iw::Options<Kind> {};
+    const auto event_handler = tyr::planning::iw::DefaultEventHandler<Kind>::create();
     options.event_handler = event_handler;
 
     const auto result = tyr::planning::iw::find_solution(brfs_solver, test_case.max_arity, options);
@@ -131,24 +135,17 @@ void check_expectation(const IwExpectation& expectation, const IwCase& test_case
     expect_repository_statistics(context, result.statistics);
 }
 
-class IwStatisticsTest : public ::testing::TestWithParam<IwCase>
+/// Checks every configuration of one fixture case.
+template<TaskKind Kind>
+void check_iw_case(const IwCase& test_case)
 {
-};
-
-TEST_P(IwStatisticsTest, MatchesExpectedOutcome)
-{
-    const auto& test_case = GetParam();
-
     for (const auto& [key, expectation] : test_case.configs)
     {
         SCOPED_TRACE(key);
-        check_expectation(expectation, test_case);
+        check_expectation<Kind>(expectation, test_case);
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(TyrPlanningIwStatistics,
-                         IwStatisticsTest,
-                         ::testing::ValuesIn(load_cases()),
-                         [](const testing::TestParamInfo<IwCase>& info) { return info.param.name; });
-
 }
+
+#endif

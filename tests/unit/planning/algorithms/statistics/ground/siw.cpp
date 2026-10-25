@@ -15,12 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/declarations.hpp"
+#include "../siw.hpp"
+
+#include <gtest/gtest.h>
+#include <tyr/planning/declarations.hpp>
 
 namespace tyr::tests
 {
-using StatisticsTaskKind = GroundTag;
-inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/ground/siw.json";
-}
+namespace
+{
+class SiwStatisticsTest : public ::testing::TestWithParam<SiwCase>
+{
+};
 
-#include "../siw.hpp"
+TEST_P(SiwStatisticsTest, MatchesExpectedOutcome) { check_siw_case<GroundTag>(GetParam()); }
+
+INSTANTIATE_TEST_SUITE_P(TyrPlanningSiwStatistics,
+                         SiwStatisticsTest,
+                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/algorithms/ground/siw.json")),
+                         [](const testing::TestParamInfo<SiwCase>& info) { return info.param.name; });
+}
+}

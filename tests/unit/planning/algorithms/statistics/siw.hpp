@@ -15,6 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_SIW_HPP_
+#define TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_SIW_HPP_
+
 #include "statistics.hpp"
 
 #include <filesystem>
@@ -71,9 +74,9 @@ SiwCase parse_case(const boost::json::object& suite, const boost::json::object& 
     return result;
 }
 
-std::vector<SiwCase> load_cases()
+std::vector<SiwCase> load_cases(const std::filesystem::path& fixture)
 {
-    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / kStatisticsFixture);
+    const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");
     auto result = std::vector<SiwCase> {};
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
@@ -81,21 +84,21 @@ std::vector<SiwCase> load_cases()
     return result;
 }
 
+template<TaskKind Kind>
 void check_expectation(const SiwExpectation& expectation, const SiwCase& test_case)
 {
-    auto context = create_search_context<StatisticsTaskKind>(test_case.domain_file, test_case.task_file);
-    auto brfs_solver = tyr::planning::brfs::Solver<StatisticsTaskKind> { context.task,
-                                                                         context.state_repository,
-                                                                         context.axiom_evaluator,
-                                                                         context.successor_generator,
-                                                                         tyr::planning::brfs::Options<StatisticsTaskKind> {} };
-    brfs_solver.options.event_handler = tyr::planning::brfs::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto context = create_search_context<Kind>(test_case.domain_file, test_case.task_file);
+    auto brfs_solver = tyr::planning::brfs::Solver<Kind> { context.task,
+                                                           context.state_repository,
+                                                           context.axiom_evaluator,
+                                                           context.successor_generator,
+                                                           tyr::planning::brfs::Options<Kind> {} };
+    brfs_solver.options.event_handler = tyr::planning::brfs::DefaultEventHandler<Kind>::create();
 
-    auto iw_solver =
-        tyr::planning::iw::Solver<StatisticsTaskKind> { std::move(brfs_solver), test_case.max_arity, tyr::planning::iw::Options<StatisticsTaskKind> {} };
-    const auto event_handler = tyr::planning::siw::DefaultEventHandler<StatisticsTaskKind>::create();
+    auto iw_solver = tyr::planning::iw::Solver<Kind> { std::move(brfs_solver), test_case.max_arity, tyr::planning::iw::Options<Kind> {} };
+    const auto event_handler = tyr::planning::siw::DefaultEventHandler<Kind>::create();
 
-    auto options = tyr::planning::siw::Options<StatisticsTaskKind> {};
+    auto options = tyr::planning::siw::Options<Kind> {};
     options.event_handler = event_handler;
 
     const auto result = tyr::planning::siw::find_solution(iw_solver, options);
@@ -137,24 +140,17 @@ void check_expectation(const SiwExpectation& expectation, const SiwCase& test_ca
     expect_repository_statistics(context, result.statistics);
 }
 
-class SiwStatisticsTest : public ::testing::TestWithParam<SiwCase>
+/// Checks every configuration of one fixture case.
+template<TaskKind Kind>
+void check_siw_case(const SiwCase& test_case)
 {
-};
-
-TEST_P(SiwStatisticsTest, MatchesExpectedOutcome)
-{
-    const auto& test_case = GetParam();
-
     for (const auto& [key, expectation] : test_case.configs)
     {
         SCOPED_TRACE(key);
-        check_expectation(expectation, test_case);
+        check_expectation<Kind>(expectation, test_case);
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(TyrPlanningSiwStatistics,
-                         SiwStatisticsTest,
-                         ::testing::ValuesIn(load_cases()),
-                         [](const testing::TestParamInfo<SiwCase>& info) { return info.param.name; });
-
 }
+
+#endif

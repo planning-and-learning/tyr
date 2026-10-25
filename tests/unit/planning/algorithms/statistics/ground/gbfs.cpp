@@ -15,12 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/declarations.hpp"
+#include "../gbfs.hpp"
+
+#include <gtest/gtest.h>
+#include <tyr/planning/declarations.hpp>
 
 namespace tyr::tests
 {
-using StatisticsTaskKind = GroundTag;
-inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/ground/gbfs.json";
-}
+namespace
+{
+class GbfsStatisticsTest : public ::testing::TestWithParam<SearchCase>
+{
+};
 
-#include "../gbfs.hpp"
+TEST_P(GbfsStatisticsTest, StatisticsMatchFixture) { check_gbfs_case<GroundTag>(GetParam()); }
+
+INSTANTIATE_TEST_SUITE_P(TyrPlanningGbfsStatistics,
+                         GbfsStatisticsTest,
+                         ::testing::ValuesIn(load_search_cases("tests/fixtures/planning/algorithms/ground/gbfs.json")),
+                         [](const testing::TestParamInfo<SearchCase>& info) { return info.param.name; });
+}
+}

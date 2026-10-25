@@ -17,14 +17,6 @@
 
 #include "tyr/planning/heuristics/rpg_ff.hpp"
 
-namespace tyr::tests
-{
-using HeuristicTaskKind = GroundTag;
-template<TaskKind Kind>
-using TestedHeuristic = planning::FFRPGHeuristic<Kind>;
-inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuristics/ground/rpg_ff.json";
-}
-
 #include "../heuristic.hpp"
 
 namespace tyr::tests
@@ -32,4 +24,26 @@ namespace tyr::tests
 TEST(TyrPlanningGroundFFRPGHeuristicTest, RelaxedPlanDescribesLatestEvaluation) { expect_relaxed_plan_reset_after_dead_end<GroundTag>(); }
 TEST(TyrPlanningGroundFFRPGHeuristicTest, WorkerRelaxedPlanIsIndependent) { expect_worker_has_independent_relaxed_plan<GroundTag>(); }
 TEST(TyrPlanningGroundFFRPGHeuristicTest, TraversesExactNumericHeadSupports) { expect_ff_traverses_exact_numeric_head_supports<GroundTag>(); }
+}
+
+namespace tyr::tests
+{
+namespace
+{
+class HeuristicFixtureTest : public ::testing::TestWithParam<HeuristicCase>
+{
+};
+
+TEST(TyrPlanningHeuristicWorkerTest, SnapshotsConfiguredGoal) { expect_worker_snapshots_configured_goal<GroundTag, tyr::planning::FFRPGHeuristic>(); }
+
+TEST(TyrPlanningHeuristicEvaluationTest, AlternatingStatesReplacePreviousModel)
+{ expect_alternating_states_replace_previous_model<GroundTag, tyr::planning::FFRPGHeuristic>(); }
+
+TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture) { check_heuristic_case<GroundTag, tyr::planning::FFRPGHeuristic>(GetParam()); }
+
+INSTANTIATE_TEST_SUITE_P(TyrPlanningHeuristicFixture,
+                         HeuristicFixtureTest,
+                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/ground/rpg_ff.json")),
+                         [](const testing::TestParamInfo<HeuristicCase>& info) { return info.param.name; });
+}
 }

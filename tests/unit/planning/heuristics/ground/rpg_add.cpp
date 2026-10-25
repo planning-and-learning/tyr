@@ -17,18 +17,32 @@
 
 #include "tyr/planning/heuristics/rpg_add.hpp"
 
-namespace tyr::tests
-{
-using HeuristicTaskKind = GroundTag;
-template<TaskKind Kind>
-using TestedHeuristic = planning::AddRPGHeuristic<Kind>;
-inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuristics/ground/rpg_add.json";
-}
-
 #include "../heuristic.hpp"
 
 namespace tyr::tests
 {
 TEST(TyrPlanningGroundAddRPGHeuristicTest, SetGoalReconfiguresEvaluator) { expect_builtin_set_goal_reconfigures_evaluator<GroundTag>(); }
-TEST(TyrPlanningGroundAddRPGHeuristicTest, GeneralCostModeThrows) { expect_general_cost_mode_throws<GroundTag>(); }
+TEST(TyrPlanningGroundAddRPGHeuristicTest, GeneralCostModeThrows) { expect_general_cost_mode_throws<GroundTag, tyr::planning::AddRPGHeuristic>(); }
+}
+
+namespace tyr::tests
+{
+namespace
+{
+class HeuristicFixtureTest : public ::testing::TestWithParam<HeuristicCase>
+{
+};
+
+TEST(TyrPlanningHeuristicWorkerTest, SnapshotsConfiguredGoal) { expect_worker_snapshots_configured_goal<GroundTag, tyr::planning::AddRPGHeuristic>(); }
+
+TEST(TyrPlanningHeuristicEvaluationTest, AlternatingStatesReplacePreviousModel)
+{ expect_alternating_states_replace_previous_model<GroundTag, tyr::planning::AddRPGHeuristic>(); }
+
+TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture) { check_heuristic_case<GroundTag, tyr::planning::AddRPGHeuristic>(GetParam()); }
+
+INSTANTIATE_TEST_SUITE_P(TyrPlanningHeuristicFixture,
+                         HeuristicFixtureTest,
+                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/ground/rpg_add.json")),
+                         [](const testing::TestParamInfo<HeuristicCase>& info) { return info.param.name; });
+}
 }

@@ -15,12 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/declarations.hpp"
+#include "../astar.hpp"
+
+#include <gtest/gtest.h>
+#include <tyr/planning/declarations.hpp>
 
 namespace tyr::tests
 {
-using StatisticsTaskKind = GroundTag;
-inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/ground/astar.json";
-}
+namespace
+{
+class AstarStatisticsTest : public ::testing::TestWithParam<SearchCase>
+{
+};
 
-#include "../astar.hpp"
+TEST_P(AstarStatisticsTest, StatisticsMatchFixture) { check_astar_case<GroundTag>(GetParam()); }
+
+INSTANTIATE_TEST_SUITE_P(TyrPlanningAstarStatistics,
+                         AstarStatisticsTest,
+                         ::testing::ValuesIn(load_search_cases("tests/fixtures/planning/algorithms/ground/astar.json")),
+                         [](const testing::TestParamInfo<SearchCase>& info) { return info.param.name; });
+}
+}

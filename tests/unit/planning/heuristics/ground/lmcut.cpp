@@ -17,19 +17,11 @@
 
 #include "tyr/planning/heuristics/lmcut.hpp"
 
+#include "../heuristic.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 
-namespace tyr::tests
-{
-using HeuristicTaskKind = GroundTag;
-template<TaskKind Kind>
-using TestedHeuristic = planning::LMCutHeuristic<Kind>;
-inline constexpr const char* kHeuristicFixture = "tests/fixtures/planning/heuristics/ground/lmcut.json";
-}
-
-#include "../heuristic.hpp"
-
-TEST(TyrPlanningGroundLMCutHeuristicTest, GeneralCostModeThrows) { tyr::tests::expect_general_cost_mode_throws<tyr::GroundTag>(); }
+TEST(TyrPlanningGroundLMCutHeuristicTest, GeneralCostModeThrows)
+{ tyr::tests::expect_general_cost_mode_throws<tyr::GroundTag, tyr::planning::LMCutHeuristic>(); }
 
 TEST(TyrPlanningGroundLMCutHeuristicTest, WeightedAlternativeCountsOneUnitAction)
 {
@@ -39,4 +31,26 @@ TEST(TyrPlanningGroundLMCutHeuristicTest, WeightedAlternativeCountsOneUnitAction
     auto unit = tyr::planning::LMCutHeuristic<tyr::GroundTag>::create(context.task, context.execution_context, tyr::CostMode::UNIT);
 
     EXPECT_EQ(unit->evaluate(state), 1);
+}
+
+namespace tyr::tests
+{
+namespace
+{
+class HeuristicFixtureTest : public ::testing::TestWithParam<HeuristicCase>
+{
+};
+
+TEST(TyrPlanningHeuristicWorkerTest, SnapshotsConfiguredGoal) { expect_worker_snapshots_configured_goal<GroundTag, tyr::planning::LMCutHeuristic>(); }
+
+TEST(TyrPlanningHeuristicEvaluationTest, AlternatingStatesReplacePreviousModel)
+{ expect_alternating_states_replace_previous_model<GroundTag, tyr::planning::LMCutHeuristic>(); }
+
+TEST_P(HeuristicFixtureTest, InitialStateMatchesFixture) { check_heuristic_case<GroundTag, tyr::planning::LMCutHeuristic>(GetParam()); }
+
+INSTANTIATE_TEST_SUITE_P(TyrPlanningHeuristicFixture,
+                         HeuristicFixtureTest,
+                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/ground/lmcut.json")),
+                         [](const testing::TestParamInfo<HeuristicCase>& info) { return info.param.name; });
+}
 }

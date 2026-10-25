@@ -15,12 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/declarations.hpp"
+#include "../brfs.hpp"
+
+#include <gtest/gtest.h>
+#include <tyr/planning/declarations.hpp>
 
 namespace tyr::tests
 {
-using StatisticsTaskKind = LiftedTag;
-inline constexpr const char* kStatisticsFixture = "tests/fixtures/planning/algorithms/lifted/brfs.json";
-}
+namespace
+{
+class BrfsStatisticsTest : public ::testing::TestWithParam<SearchCase>
+{
+};
 
-#include "../brfs.hpp"
+TEST_P(BrfsStatisticsTest, StatisticsMatchFixture) { check_brfs_case<LiftedTag>(GetParam()); }
+
+INSTANTIATE_TEST_SUITE_P(TyrPlanningBrfsStatistics,
+                         BrfsStatisticsTest,
+                         ::testing::ValuesIn(load_search_cases("tests/fixtures/planning/algorithms/lifted/brfs.json")),
+                         [](const testing::TestParamInfo<SearchCase>& info) { return info.param.name; });
+}
+}
