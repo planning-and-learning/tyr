@@ -65,9 +65,9 @@ public:
 
     ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
     template<::tyr::formalism::FactKind F>
-    auto get_atoms(const ::tyr::formalism::planning::Repository& repository) const noexcept;
+    [[nodiscard]] auto get_atoms(const ::tyr::formalism::planning::Repository& repository) const noexcept;
     template<::tyr::formalism::FactKind F>
-    ::tyr::planning::FunctionTermValueRange<F> get_fterm_values() const noexcept;
+    [[nodiscard]] ::tyr::planning::FunctionTermValueRange<F> get_fterm_values() const noexcept;
 
     auto get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
     template<::tyr::formalism::FactKind F>

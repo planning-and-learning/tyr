@@ -510,7 +510,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
         EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(other.get_index()));
 
     // The h rule rejected (a,b,c) before t(a,b,c) existed, so the new atom, not a delta edge, generated it.
-    const auto& h_rule = workspace.predicate_rules[ygg::uint_t(derive_h.get_index())];
+    const auto& h_rule = workspace.predicate_rules[static_cast<ygg::uint_t>(derive_h.get_index())];
     ASSERT_NE(h_rule, nullptr);
     EXPECT_GT(h_rule->worker.front().solve.statistics.num_rejected_rules, 0);
 }

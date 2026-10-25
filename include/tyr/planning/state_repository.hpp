@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/containers/shared_object_pool.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -94,8 +95,7 @@ public:
     [[nodiscard]] size_t num_states() const noexcept;
 
     /// A repository owns the states it registers.
-    friend const StateRepository& get_repository(const StateRepository& repository) noexcept { return repository; }
-    friend const StateRepository& get_repository(const StateRepository&& repository) = delete;
+    friend const StateRepository& get_repository(const StateRepository& repository YGG_LIFETIMEBOUND) noexcept { return repository; }
 
 private:
     std::unique_ptr<Impl> m_impl;

@@ -65,7 +65,7 @@ ygg::uint_t parse_count(std::string_view value)
 {
     auto result = ygg::uint_t {};
     const auto* const last = std::to_address(value.end());
-    const auto [end, error] = std::from_chars(value.data(), last, result);
+    const auto [end, error] = std::from_chars(std::to_address(value.begin()), last, result);
     if (error != std::errc {} || end != last)
         throw std::invalid_argument("Expected a nonnegative integer: " + std::string(value));
     return result;

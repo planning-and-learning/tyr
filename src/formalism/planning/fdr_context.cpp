@@ -149,7 +149,7 @@ std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(AtomView<GroundTag, F
 std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(AtomView<GroundTag, FluentTag> atom) const
 {
     assert(&m_context->get_canonical_context(atom.get_index()) == &atom.get_context());
-    const auto index = ygg::uint_t(atom.get_index());
+    const auto index = static_cast<ygg::uint_t>(atom.get_index());
     if (index >= m_facts.size())
         return std::nullopt;
 
@@ -162,7 +162,7 @@ std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(AtomView<GroundTag, 
 
 void FDRContext::ensure_fact_slot(AtomView<GroundTag, FluentTag> atom)
 {
-    const auto index = ygg::uint_t(atom.get_index());
+    const auto index = static_cast<ygg::uint_t>(atom.get_index());
     while (m_facts.size() <= index)
         m_facts.emplace_back();
 }
@@ -170,7 +170,7 @@ void FDRContext::ensure_fact_slot(AtomView<GroundTag, FluentTag> atom)
 bool FDRContext::publish_fact(AtomView<GroundTag, FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact)
 {
     ensure_fact_slot(atom);
-    const auto index = ygg::uint_t(atom.get_index());
+    const auto index = static_cast<ygg::uint_t>(atom.get_index());
     auto& slot = m_facts[index];
     if (slot.ready.load(std::memory_order_relaxed))
         return false;

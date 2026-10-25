@@ -74,12 +74,12 @@ public:
 
     ygg::ClosedInterval<ygg::float_t> evaluate_effect_expression(formalism::datalog::FunctionExpressionView<GroundTag> expression, Selection& selection) const
     {
-        return formalism::evaluate_numeric_expression(std::move(expression), [&](const auto term) { return evaluate_term(term, selection); });
+        return formalism::evaluate_numeric_expression(expression, [&](const auto term) { return evaluate_term(term, selection); });
     }
 
     bool is_supported(formalism::datalog::BooleanOperatorView<GroundTag> constraint, Selection& selection) const
     {
-        return formalism::evaluate_numeric_expression(std::move(constraint), [&](const auto term) { return evaluate_term(term, selection); });
+        return formalism::evaluate_numeric_expression(constraint, [&](const auto term) { return evaluate_term(term, selection); });
     }
 
     ygg::ClosedInterval<ygg::float_t> select_fluent_interval(Key key, Selection& selection) const

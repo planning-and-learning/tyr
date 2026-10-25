@@ -73,7 +73,7 @@ public:
 
     void initialize_annotation(PredicateHead head, PredicateAnnotations<>& annotations) const;
 
-    void initialize_annotation(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionAnnotations<>& numeric_annotations) const;
+    void initialize_annotation(FunctionBinding head, const ygg::ClosedInterval<ygg::float_t>& interval, FunctionAnnotations<>& numeric_annotations) const;
 
     void clear_achievers() noexcept {}
 
@@ -88,9 +88,11 @@ public:
     { return publish_annotation(head, std::move(witness), annotations).has_value(); }
 
     template<FunctionAnnotationStore Annotations>
-    bool
-    try_update_candidate(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionWitness&& witness, Annotations& numeric_annotations) const
-    { return numeric_annotations.insert(head, std::move(interval), Annotation<formalism::FunctionTag>(std::move(witness))); }
+    bool try_update_candidate(FunctionBinding head,
+                              const ygg::ClosedInterval<ygg::float_t>& interval,
+                              FunctionWitness&& witness,
+                              Annotations& numeric_annotations) const
+    { return numeric_annotations.insert(head, interval, Annotation<formalism::FunctionTag>(std::move(witness))); }
 
     template<PredicateAnnotationStore DeltaAnnotations>
     [[nodiscard]] bool

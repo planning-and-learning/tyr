@@ -86,9 +86,14 @@ struct NumericUnpackedStorage
     std::vector<ygg::float_t> values;
 
     [[nodiscard]] ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
-    { return ygg::get(ygg::uint_t(index), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    { return ygg::get(static_cast<ygg::uint_t>(index), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
     void set(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
-    { ygg::set(ygg::uint_t(index), ygg::FloatTolerance<ygg::float_t>::canonicalize(value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    {
+        ygg::set(static_cast<ygg::uint_t>(index),
+                 ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
+                 values,
+                 std::numeric_limits<ygg::float_t>::quiet_NaN());
+    }
     void clear() { values.clear(); }
     void swap(NumericUnpackedStorage& other) noexcept { values.swap(other.values); }
 

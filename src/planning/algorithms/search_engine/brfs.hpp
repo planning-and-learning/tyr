@@ -117,12 +117,12 @@ public:
 
     void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node) { m_openlist.push_back(PoppedEntry { search_node.g_value, state }); }
 
-    bool empty() const noexcept { return m_openlist.empty(); }
+    [[nodiscard]] bool empty() const noexcept { return m_openlist.empty(); }
 
-    ygg::float_t get_min_priority() const noexcept
+    [[nodiscard]] ygg::float_t get_min_priority() const noexcept
     { return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : static_cast<ygg::float_t>(m_openlist.front().depth); }
 
-    size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
+    [[nodiscard]] size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
 
     PoppedEntry pop()
     {
@@ -224,7 +224,7 @@ public:
     static void on_finish_priority_layer(Handler& handler, ygg::float_t priority, const Statistics& statistics)
     { handler.on_finish_layer(static_cast<ygg::uint_t>(priority), statistics); }
 
-    const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
+    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 
 private:
     ygg::uint_t m_current_layer { 0 };

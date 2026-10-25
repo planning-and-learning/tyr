@@ -41,13 +41,13 @@ struct AtomUnpackedStorage<GroundTag>
 
     [[nodiscard]] bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index) const
     {
-        assert(ygg::uint_t(index) < indices.size());
-        return indices.test(ygg::uint_t(index));
+        assert(static_cast<ygg::uint_t>(index) < indices.size());
+        return indices.test(static_cast<ygg::uint_t>(index));
     }
     void set(ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index)
     {
-        assert(ygg::uint_t(index) < indices.size());
-        indices.set(ygg::uint_t(index));
+        assert(static_cast<ygg::uint_t>(index) < indices.size());
+        indices.set(static_cast<ygg::uint_t>(index));
     }
     void resize(size_t size) { indices.resize(size, false); }
     void clear() { indices.clear(); }
@@ -63,13 +63,13 @@ struct FactUnpackedStorage<GroundTag>
 
     [[nodiscard]] formalism::planning::FDRValue get(ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
     {
-        assert(ygg::uint_t(index) < values.size());
-        return formalism::planning::FDRValue(values[ygg::uint_t(index)]);
+        assert(static_cast<ygg::uint_t>(index) < values.size());
+        return formalism::planning::FDRValue(values[static_cast<ygg::uint_t>(index)]);
     }
     void set(ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact)
     {
-        assert(ygg::uint_t(fact.variable) < values.size());
-        values[ygg::uint_t(fact.variable)] = ygg::uint_t(fact.value);
+        assert(static_cast<ygg::uint_t>(fact.variable) < values.size());
+        values[static_cast<ygg::uint_t>(fact.variable)] = static_cast<ygg::uint_t>(fact.value);
     }
     void resize(size_t size) { values.resize(size, 0); }
     void clear() { values.clear(); }

@@ -133,7 +133,7 @@ AtomViewList<GroundTag, FluentTag> uncovered_atoms(const InstanceGroup& group, c
 
     for (const auto atom : group.atoms)
     {
-        const auto atom_index = ygg::uint_t(atom.get_index());
+        const auto atom_index = static_cast<ygg::uint_t>(atom.get_index());
         if (uncovered[atom_index])
             result.push_back(atom);
     }
@@ -171,7 +171,7 @@ std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, Flue
     auto is_initial = std::vector<bool>(all_atoms.size(), false);
     for (const auto atom : initial_atoms)
     {
-        const auto i = ygg::uint_t(atom.get_index());
+        const auto i = static_cast<ygg::uint_t>(atom.get_index());
         if (i >= all_atoms.size())
             throw std::invalid_argument("initial_atoms must be among all_atoms");
         is_initial[i] = true;
@@ -211,7 +211,7 @@ std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, Flue
                     continue;  // matched another part of the same instance
 
                 group.atoms.push_back(atom);
-                if (is_initial[ygg::uint_t(atom.get_index())])
+                if (is_initial[static_cast<ygg::uint_t>(atom.get_index())])
                     ++group.num_initial_atoms;
             }
         }
@@ -228,7 +228,7 @@ size_t compute_uncovered_coverage(const InstanceGroup& group, const std::vector<
     size_t coverage = 0;
     for (const auto atom : group.atoms)
     {
-        const auto i = ygg::uint_t(atom.get_index());
+        const auto i = static_cast<ygg::uint_t>(atom.get_index());
         if (uncovered[i])
             ++coverage;
     }
@@ -258,7 +258,7 @@ void mark_group_covered(const AtomViewList<GroundTag, FluentTag>& group, std::ve
 {
     for (const auto atom : group)
     {
-        const auto i = ygg::uint_t(atom.get_index());
+        const auto i = static_cast<ygg::uint_t>(atom.get_index());
         if (uncovered[i])
         {
             uncovered[i] = false;
@@ -320,7 +320,7 @@ choose_groups_greedily(const InvariantViewList& invariants, const std::vector<In
 void check_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     for (ygg::uint_t i = 0; i < all_atoms.size(); ++i)
-        if (ygg::uint_t(all_atoms[i].get_index()) != i)
+        if (static_cast<ygg::uint_t>(all_atoms[i].get_index()) != i)
             throw std::invalid_argument("all_atoms must be the fluent atoms ordered by index, without gaps");
 }
 

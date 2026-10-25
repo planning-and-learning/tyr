@@ -50,7 +50,7 @@ void for_each_static_extension(const ConstRuleWorkspace<LiftedTag, R>& rule,
     workspace.prefix.clear();
     for (ygg::uint_t partition = 0; partition < prefix.size(); ++partition)
     {
-        const auto vertex = layout.find_vertex(partition, ygg::uint_t(prefix[partition]));
+        const auto vertex = layout.find_vertex(partition, static_cast<ygg::uint_t>(prefix[partition]));
         if (!vertex)
             return;
         workspace.prefix.push_back(*vertex);

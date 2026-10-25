@@ -101,7 +101,7 @@ struct ConstraintSystem
     void add_not_constant(ConstraintTerm term);
     void extend(const ConstraintSystem& other);
 
-    bool is_solvable() const;
+    [[nodiscard]] bool is_solvable() const;
 
 private:
     static EqualityConjunction combine_equality_conjunctions(const std::vector<EqualityConjunction>& conjunctions);

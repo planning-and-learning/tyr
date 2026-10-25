@@ -8,7 +8,7 @@ namespace ygg::serialization
 {
 
 inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::ParameterIndex& value, Dictionaries*)
-{ result = ygg::uint_t(value); }
+{ result = static_cast<ygg::uint_t>(value); }
 
 }
 

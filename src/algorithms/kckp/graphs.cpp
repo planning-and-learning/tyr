@@ -131,8 +131,8 @@ DeduplicatedAdjacencyMatrix::DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& 
 
 Graph::Graph() : m_layout(create_graph_layout(std::span<const size_t> {})), m_adjacency(m_layout) {}
 
-Graph Graph::create(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs)
-{ return Graph(satisfiable, std::move(adjacency), std::move(universal_partition_pairs)); }
+Graph Graph::create(bool satisfiable, AdjacencyMatrix adjacency, const boost::dynamic_bitset<>& universal_partition_pairs)
+{ return Graph(satisfiable, std::move(adjacency), universal_partition_pairs); }
 
 Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, const boost::dynamic_bitset<>& universal_partition_pairs)
 {

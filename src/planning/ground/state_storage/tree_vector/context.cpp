@@ -68,7 +68,7 @@ StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(cons
 }
 
 template<bool ThreadSafe>
-StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(LayoutData&& layout_data) :
+StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(LayoutData layout_data) :
     fluent_array_set(layout_data.fluent_array_size),
     derived_array_set(layout_data.derived_array_size),
     fluent_infos(std::move(layout_data.fluent_infos)),

@@ -1514,7 +1514,7 @@ TEST(TyrPlanningSearchEngineTest, ParallelAStarSnapshotExcludesTimedOutWaitersBu
         size_t num_callbacks { 0 };
 
         [[nodiscard]] size_t num_workers() const { return workers.size(); }
-        Worker& get_worker(ygg::Index<tyr::planning::Worker> index) { return workers[ygg::uint_t(index)]; }
+        Worker& get_worker(ygg::Index<tyr::planning::Worker> index) { return workers[static_cast<ygg::uint_t>(index)]; }
 
         std::optional<tyr::planning::Statistics> collect_priority_layer_statistics()
         {
@@ -1577,7 +1577,7 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
     } worker;
     struct Handler
     {
-        std::mutex* worker_mutex;
+        std::mutex* worker_mutex = nullptr;
         bool called { false };
 
         void on_new_best_h_value(ygg::float_t h_value)

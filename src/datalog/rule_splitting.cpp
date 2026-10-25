@@ -227,7 +227,7 @@ private:
         const auto sigma = Substitution(std::vector<formalism::ParameterIndex>(atom_parameters.begin(), atom_parameters.end()));
 
         auto objects = ygg::UnorderedSet<ygg::Index<formalism::Object>> {};
-        for (const auto binding : m_static_facts->get_sets()[ygg::uint_t(atom.get_predicate().get_index())].get_bindings())
+        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(atom.get_predicate().get_index())].get_bindings())
         {
             auto element = std::vector<ygg::Data<formalism::Term>> {};
             for (const auto object : binding.get_objects())
@@ -312,7 +312,7 @@ private:
     {
         auto positions = std::vector<ygg::uint_t> {};
         for (const auto parameter : parameters_of(body))
-            positions.push_back(ygg::uint_t(parameter));
+            positions.push_back(static_cast<ygg::uint_t>(parameter));
         std::ranges::sort(positions);
         auto local = ygg::UnorderedMap<formalism::ParameterIndex, formalism::ParameterIndex> {};
         for (size_t i = 0; i < positions.size(); ++i)

@@ -139,7 +139,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
                           node.get_state().get_index();
                           node.get_state().get_state_repository();
                       })
-            return { static_cast<const void*>(node.get_state().get_state_repository().get()), ygg::uint_t(node.get_state().get_index()) };
+            return { static_cast<const void*>(node.get_state().get_state_repository().get()), static_cast<ygg::uint_t>(node.get_state().get_index()) };
         else
             return { static_cast<const void*>(&node.get_state().get_state_builder()), std::numeric_limits<ygg::uint_t>::max() };
     }
@@ -338,7 +338,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         if (it == mapping.end())
             continue;  // A conditional effect's rule.
         const auto action = it->second;
-        const auto& set = evaluator.workspace.facts.fact_sets.predicate.get_sets()[ygg::uint_t(predicate.get_index())];
+        const auto& set = evaluator.workspace.facts.fact_sets.predicate.get_sets()[static_cast<ygg::uint_t>(predicate.get_index())];
         for (const auto& binding : set.get_bindings())
         {
             if (stop())
@@ -731,7 +731,7 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
                 }
                 const auto rule =
                     *std::ranges::find_if(schema_rules, [&](auto schema_rule) { return schema_rule.get_heads().front().get_predicate() == it->second; });
-                datalog::for_each_static_extension(*rules[ygg::uint_t(rule.get_index())],
+                datalog::for_each_static_extension(*rules[static_cast<ygg::uint_t>(rule.get_index())],
                                                    std::span<const ygg::Index<formalism::Object>>(objects.data(), objects.size()),
                                                    m_impl->evaluator.static_extension_workspace,
                                                    [&](auto extension)

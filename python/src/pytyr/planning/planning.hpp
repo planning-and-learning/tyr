@@ -44,13 +44,7 @@ class OwningIterator
 public:
     explicit OwningIterator(Range range) : m_range(std::move(range)), m_it(std::ranges::begin(m_range)), m_end(std::ranges::end(m_range)) {}
 
-    OwningIterator(OwningIterator&& other) noexcept :
-        m_range(std::move(other.m_range)),
-        m_it(std::ranges::begin(m_range)),
-        m_end(std::ranges::end(m_range)),
-        m_exhausted(false)
-    {
-    }
+    OwningIterator(OwningIterator&& other) noexcept : m_range(std::move(other.m_range)), m_it(std::ranges::begin(m_range)), m_end(std::ranges::end(m_range)) {}
 
     OwningIterator(const OwningIterator&) = delete;
     OwningIterator& operator=(const OwningIterator&) = delete;

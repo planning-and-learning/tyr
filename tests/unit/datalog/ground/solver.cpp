@@ -775,7 +775,7 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictly
     const auto head = fixture.fluent_atom("head").get_row();
     const auto rule = fixture.fresh_rule_binding();
     auto policy = datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>();
-    policy.initialize(ygg::uint_t(head.get_index().relation) + 1);
+    policy.initialize(static_cast<ygg::uint_t>(head.get_index().relation) + 1);
 
     policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), static_cast<datalog::Cost>(2)));
     policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), static_cast<datalog::Cost>(2)));
@@ -783,13 +783,13 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictly
     const auto* achievers = policy.find_achievers(head.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ(achievers->front().get_cost(), datalog::Cost(2));
+    EXPECT_EQ(achievers->front().get_cost(), static_cast<datalog::Cost>(2));
 
     policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), static_cast<datalog::Cost>(1)));
     achievers = policy.find_achievers(head.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ(achievers->front().get_cost(), datalog::Cost(1));
+    EXPECT_EQ(achievers->front().get_cost(), static_cast<datalog::Cost>(1));
 }
 
 TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupport)
@@ -810,7 +810,7 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    EXPECT_EQ(ctx.out().scheduler().get_states<tyr::formalism::PredicateTag>()[ygg::uint_t(derive_head.get_index())].unsatisfied_count, 1);
+    EXPECT_EQ(ctx.out().scheduler().get_states<tyr::formalism::PredicateTag>()[static_cast<ygg::uint_t>(derive_head.get_index())].unsatisfied_count, 1);
 
     tyr::datalog::compute_model(ctx);
 

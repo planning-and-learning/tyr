@@ -45,10 +45,10 @@ AxiomEvaluatorPtr<Kind> AxiomEvaluatorFactory<Kind>::create(TaskPtr<Kind> task, 
 }
 
 template<TaskKind Kind>
-SuccessorGeneratorPtr<Kind> SuccessorGeneratorFactory<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
+SuccessorGeneratorPtr<Kind> SuccessorGeneratorFactory<Kind>::create(TaskPtr<Kind> task, const ygg::ExecutionContextPtr& execution_context)
 {
     return SuccessorGeneratorPtr<Kind>(
-        new SuccessorGenerator<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), std::move(execution_context), m_next_index));
+        new SuccessorGenerator<Kind>(m_next_index->fetch_add(1, std::memory_order_relaxed), std::move(task), execution_context, m_next_index));
 }
 
 template class StateRepositoryFactory<GroundTag>;

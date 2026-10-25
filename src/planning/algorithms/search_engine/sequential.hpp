@@ -105,8 +105,8 @@ public:
         m_status = SearchStatus::IN_PROGRESS;
     }
 
-    bool running() const noexcept { return m_status == SearchStatus::IN_PROGRESS; }
-    bool timed_out() const { return m_deadline && std::chrono::steady_clock::now() >= *m_deadline; }
+    [[nodiscard]] bool running() const noexcept { return m_status == SearchStatus::IN_PROGRESS; }
+    [[nodiscard]] bool timed_out() const { return m_deadline && std::chrono::steady_clock::now() >= *m_deadline; }
 
     void set_terminal(SearchStatus status)
     {
@@ -125,11 +125,11 @@ public:
         return true;
     }
 
-    ygg::float_t incumbent_cost() const noexcept { return m_incumbent_cost; }
+    [[nodiscard]] ygg::float_t incumbent_cost() const noexcept { return m_incumbent_cost; }
 
-    SearchStatus status() const noexcept { return m_status; }
+    [[nodiscard]] SearchStatus status() const noexcept { return m_status; }
     std::optional<WorkerStateIndex<Kind>> goal() const noexcept { return m_goal; }
-    std::exception_ptr exception() const noexcept { return nullptr; }
+    [[nodiscard]] std::exception_ptr exception() const noexcept { return nullptr; }
 
     template<typename Engine, typename Worker>
     static bool can_expand_locked(Engine&, const Worker& worker) noexcept
@@ -237,7 +237,7 @@ public:
     {
     }
 
-    size_t size() const noexcept { return 1; }
+    [[nodiscard]] size_t size() const noexcept { return 1; }
 
     WorkerData& get([[maybe_unused]] ygg::Index<Worker> index) noexcept
     {

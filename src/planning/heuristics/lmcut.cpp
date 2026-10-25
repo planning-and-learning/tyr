@@ -325,7 +325,7 @@ LMCutImplementation<Kind>::get_witness_max_preconditions(const datalog::WitnessA
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::mark_goal_zone(Precondition precondition, size_t depth)
 {
-    std::visit([&](auto node) { mark_goal_zone(std::move(node), depth); }, precondition);
+    std::visit([&](const auto& node) { mark_goal_zone(std::move(node), depth); }, precondition);
 }
 
 template<TaskKind Kind>

@@ -89,7 +89,7 @@ public:
                                   size_t num_workers)
     {
         const auto owner = m_dist_hash.owner(*target, num_workers);
-        const auto owner_index = static_cast<size_t>(ygg::uint_t(owner));
+        const auto owner_index = static_cast<size_t>(static_cast<ygg::uint_t>(owner));
         assert(owner_index < sender.registration_repositories.size());
         auto& repository = *sender.registration_repositories[owner_index];
         if (owner != sender.index)
@@ -149,7 +149,7 @@ public:
     static ygg::Index<Worker> owner(ygg::Index<State<Kind>> state, size_t num_workers) noexcept
     {
         assert(num_workers > 0);
-        return ygg::Index<Worker>(static_cast<ygg::uint_t>(ygg::uint_t(state) % num_workers));
+        return ygg::Index<Worker>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state) % num_workers));
     }
 
     template<typename Engine, typename WorkerData>
@@ -170,13 +170,13 @@ public:
     static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, [[maybe_unused]] ygg::Index<Worker> worker, size_t num_workers) noexcept
     {
         assert(owner(state, num_workers) == worker);
-        return ygg::Index<State<Kind>>(static_cast<ygg::uint_t>(ygg::uint_t(state) / num_workers));
+        return ygg::Index<State<Kind>>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state) / num_workers));
     }
 
     static uint64_t owned_state_count(uint64_t num_states, ygg::Index<Worker> worker, size_t num_workers) noexcept
     {
-        const auto worker_index = uint64_t(ygg::uint_t(worker));
-        const auto worker_count = uint64_t(num_workers);
+        const auto worker_index = static_cast<uint64_t>(static_cast<ygg::uint_t>(worker));
+        const auto worker_count = static_cast<uint64_t>(num_workers);
         return num_states <= worker_index ? uint64_t { 0 } : 1 + (num_states - 1 - worker_index) / worker_count;
     }
 
@@ -257,7 +257,7 @@ private:
         auto layer_statistics = std::optional<Statistics> {};
         auto next_active_priority = std::optional<ygg::float_t> {};
         auto release_workers = false;
-        const auto worker_index = static_cast<size_t>(ygg::uint_t(worker.index));
+        const auto worker_index = static_cast<size_t>(static_cast<ygg::uint_t>(worker.index));
         {
             auto lock = std::unique_lock(m_layer_mutex);
             if (!execution.running())
@@ -819,11 +819,11 @@ public:
         }
     }
 
-    size_t size() const noexcept { return m_workers.size(); }
+    [[nodiscard]] size_t size() const noexcept { return m_workers.size(); }
 
     WorkerData& get(ygg::Index<Worker> index) noexcept
     {
-        const auto value = static_cast<size_t>(ygg::uint_t(index));
+        const auto value = static_cast<size_t>(static_cast<ygg::uint_t>(index));
         assert(value < m_workers.size());
         return *m_workers[value];
     }

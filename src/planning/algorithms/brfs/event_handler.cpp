@@ -42,8 +42,8 @@ public:
     void on_expand_node(const Node<Kind>& node) override
     {
         fmt::print("[BRFS][Worker {}] ----------------------------------------\n[BRFS][Worker {}] Expanding node: {}\n\n",
-                   ygg::uint_t(m_index),
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    node);
     }
 
@@ -53,9 +53,9 @@ public:
             return;
 
         fmt::print("[BRFS][Worker {}] Action: {}\n[BRFS][Worker {}] Successor node: {}\n\n",
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    labeled_succ_node.label,
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    labeled_succ_node.node);
     }
 

@@ -31,10 +31,10 @@ StaticState::StaticState(formalism::planning::AtomListView<GroundTag, formalism:
                          formalism::planning::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values)
 {
     for (const auto atom : atoms)
-        ygg::set(ygg::uint_t(atom.get_index()), true, m_atoms);
+        ygg::set(static_cast<ygg::uint_t>(atom.get_index()), true, m_atoms);
 
     for (const auto fterm_value : fterm_values)
-        ygg::set(ygg::uint_t(fterm_value.get_fterm().get_index()),
+        ygg::set(static_cast<ygg::uint_t>(fterm_value.get_fterm().get_index()),
                  fterm_value.get_value(),
                  m_numeric_variables,
                  std::numeric_limits<ygg::float_t>::quiet_NaN());

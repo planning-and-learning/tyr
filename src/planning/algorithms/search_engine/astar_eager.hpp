@@ -118,8 +118,8 @@ public:
         SearchNodeStatus status;
         ygg::uint_t step;
 
-        KeyType get_key() const { return std::make_tuple(f_value, status, step); }
-        ItemType get_item() const { return std::make_tuple(f_value, state); }
+        [[nodiscard]] KeyType get_key() const { return std::make_tuple(f_value, status, step); }
+        [[nodiscard]] ItemType get_item() const { return std::make_tuple(f_value, state); }
     };
 
     struct PoppedEntry
@@ -142,17 +142,17 @@ public:
         return search_node;
     }
 
-    ygg::float_t get_start_priority() const noexcept { return m_f_value; }
+    [[nodiscard]] ygg::float_t get_start_priority() const noexcept { return m_f_value; }
 
     void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node)
     { m_openlist.insert(QueueEntry { m_f_value, state, search_node.status, m_step++ }); }
 
-    bool empty() const { return m_openlist.empty(); }
+    [[nodiscard]] bool empty() const { return m_openlist.empty(); }
 
-    ygg::float_t get_min_priority() const noexcept
+    [[nodiscard]] ygg::float_t get_min_priority() const noexcept
     { return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : m_openlist.top_entry().f_value; }
 
-    size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
+    [[nodiscard]] size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
 
     PoppedEntry pop()
     {
@@ -161,7 +161,7 @@ public:
         return PoppedEntry { entry.f_value, entry.state };
     }
 
-    bool should_discard(const PoppedEntry& entry, ygg::float_t incumbent_cost) const noexcept
+    [[nodiscard]] bool should_discard(const PoppedEntry& entry, ygg::float_t incumbent_cost) const noexcept
     { return ModePolicy::should_discard(entry.f_value, incumbent_cost); }
 
     SearchNode& get_search_node(ygg::Index<State<Kind>> state)
@@ -193,7 +193,7 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView) const
+    [[nodiscard]] SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView) const
     { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() }; }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
@@ -305,7 +305,7 @@ public:
     static void on_finish_priority_layer(Handler& handler, ygg::float_t priority, const Statistics& statistics)
     { handler.on_finish_f_layer(priority, statistics); }
 
-    const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
+    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 
 private:
     static constexpr ParentState no_parent() noexcept { return ParentPolicy::no_parent(); }

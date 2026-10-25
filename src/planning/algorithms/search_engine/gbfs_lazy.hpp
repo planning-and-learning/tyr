@@ -76,8 +76,8 @@ public:
         ygg::Index<State<Kind>> state;
         ygg::uint_t step;
 
-        KeyType get_key() const { return std::make_tuple(h_value, g_value, step); }
-        ItemType get_item() const { return state; }
+        [[nodiscard]] KeyType get_key() const { return std::make_tuple(h_value, g_value, step); }
+        [[nodiscard]] ItemType get_item() const { return state; }
     };
 
     struct PoppedEntry
@@ -101,12 +101,12 @@ public:
         return search_node;
     }
 
-    ygg::float_t get_start_priority() const noexcept { return m_start_h_value; }
+    [[nodiscard]] ygg::float_t get_start_priority() const noexcept { return m_start_h_value; }
 
     void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node)
     { m_standard_openlist.insert(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ }); }
 
-    bool empty() const { return m_openlist.empty(); }
+    [[nodiscard]] bool empty() const { return m_openlist.empty(); }
 
     PoppedEntry pop()
     {
@@ -121,7 +121,7 @@ public:
     // Best-h progress is detected while another worker may own this queue, so defer the local weight update without nesting worker locks.
     void queue_preferred_boost(size_t boost) noexcept { m_pending_preferred_boost.fetch_add(boost, std::memory_order_relaxed); }
 
-    bool should_discard(const PoppedEntry&, ygg::float_t) const noexcept { return false; }
+    [[nodiscard]] bool should_discard(const PoppedEntry&, ygg::float_t) const noexcept { return false; }
 
     SearchNode& get_search_node(ygg::Index<State<Kind>> state)
     {
@@ -164,7 +164,8 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView action) const
+    [[nodiscard]] SuccessorMetadata
+    make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView action) const
     {
         // Successors are applicable in the evaluated state, so the preferred ones are its relaxed plan's applicable actions.
         const auto preferred = m_relaxed_plan && m_relaxed_plan->contains(action);
@@ -231,7 +232,7 @@ public:
         return AcceptanceResult::QUEUED;
     }
 
-    const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
+    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
 
     static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
     { return event_handler ? event_handler->make_worker(index) : nullptr; }

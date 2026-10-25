@@ -551,7 +551,7 @@ public:
         return entries ? find_numeric_interval_annotation(*entries, std::move(interval)) : nullptr;
     }
 
-    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
+    bool insert(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval, Annotation<formalism::FunctionTag> annotation)
     { return insert(binding.relation, binding.row, std::move(interval), std::move(annotation)); }
 
     bool insert(Relation relation, Key key, const ygg::ClosedInterval<ygg::float_t>& interval, Annotation<formalism::FunctionTag> annotation)
@@ -656,9 +656,9 @@ public:
 
     void clear() noexcept { m_entry.reset(); }
 
-    [[nodiscard]] Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    [[nodiscard]] Cost fetch_cost(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval) const noexcept
     {
-        const auto* annotation = find(binding, std::move(interval));
+        const auto* annotation = find(binding, interval);
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 

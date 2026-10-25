@@ -55,11 +55,11 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     m_flips.clear();
     for (const auto& change : changes)
     {
-        const auto& info = (*m_infos)[ygg::uint_t(change.variable)];
+        const auto& info = (*m_infos)[static_cast<ygg::uint_t>(change.variable)];
         ygg::append_int_flips(info.begin,
                               info.offset,
                               info.length,
-                              static_cast<tree_bitset::Block>(ygg::uint_t(change.from) ^ ygg::uint_t(change.to)),
+                              static_cast<tree_bitset::Block>(static_cast<ygg::uint_t>(change.from) ^ static_cast<ygg::uint_t>(change.to)),
                               m_flips);
     }
     ygg::normalize_flips(m_flips);

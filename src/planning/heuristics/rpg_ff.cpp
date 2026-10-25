@@ -100,7 +100,7 @@ struct FFRPGHeuristic<Kind>::Impl :
                 extract_numeric_constraint_support(constraint);
         }
 
-        return ygg::float_t(m_relaxed_plan.size());
+        return static_cast<ygg::float_t>(m_relaxed_plan.size());
     }
 
     const auto& get_relaxed_plan() const noexcept { return m_relaxed_plan; }
@@ -157,8 +157,8 @@ private:
     template<typename Relation, typename Row>
     static bool mark(std::vector<boost::dynamic_bitset<>>& markings, Relation relation, Row row)
     {
-        const auto relation_index = ygg::uint_t(relation);
-        const auto row_index = ygg::uint_t(row);
+        const auto relation_index = static_cast<ygg::uint_t>(relation);
+        const auto row_index = static_cast<ygg::uint_t>(row);
         assert(relation_index < markings.size());
         if (ygg::test(row_index, markings[relation_index]))
             return true;

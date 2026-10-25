@@ -50,7 +50,7 @@ public:
         parameters.reserve(size);
 
         for (size_t i = 0; i < size; ++i)
-            parameters.push_back(ParameterIndex(ygg::uint_t(offset) + i));
+            parameters.push_back(ParameterIndex(static_cast<ygg::uint_t>(offset) + i));
 
         return SubstitutionFunction(std::move(parameters));
     }

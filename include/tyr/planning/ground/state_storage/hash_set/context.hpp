@@ -76,7 +76,7 @@ struct StateStorageContext<GroundTag, HashSet, ThreadSafe>
     }
 
 private:
-    explicit StateStorageContext(LayoutData&& layout_data);
+    explicit StateStorageContext(LayoutData layout_data);
 };
 
 }

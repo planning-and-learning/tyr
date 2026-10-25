@@ -23,6 +23,7 @@
 #include <concepts>
 #include <variant>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/type_list.hpp>
 
 namespace tyr::planning::match_tree
@@ -103,11 +104,8 @@ concept RepositoryConcept = HasFormalismRepository<T> && match_tree_repository_a
 /// @param context
 /// @return
 template<typename Tag>
-inline const Repository<Tag>& get_repository(const Repository<Tag>& context) noexcept
+inline const Repository<Tag>& get_repository(const Repository<Tag>& context YGG_LIFETIMEBOUND) noexcept
 { return context; }
-
-template<typename Tag>
-const Repository<Tag>& get_repository(const Repository<Tag>&& context) = delete;
 
 template<typename T, typename Tag>
 concept Context = requires(const T& a) {

@@ -35,9 +35,9 @@ struct RelationVertexMap
     size_t num_predicates;
     size_t num_functions;
 
-    [[nodiscard]] ygg::uint_t get_vertex(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate) const { return ygg::uint_t(predicate); }
+    [[nodiscard]] ygg::uint_t get_vertex(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate) const { return static_cast<ygg::uint_t>(predicate); }
     [[nodiscard]] ygg::uint_t get_vertex(ygg::Index<formalism::Function<formalism::FluentTag>> function) const
-    { return static_cast<ygg::uint_t>(num_predicates + ygg::uint_t(function)); }
+    { return static_cast<ygg::uint_t>(num_predicates + static_cast<ygg::uint_t>(function)); }
     [[nodiscard]] size_t size() const { return num_predicates + num_functions; }
 };
 

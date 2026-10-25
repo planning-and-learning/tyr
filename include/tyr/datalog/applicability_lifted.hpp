@@ -83,12 +83,12 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return formalism::evaluate_numeric_expression(std::move(element), [&](const auto term) { return evaluate(term, context); });
+    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
 }
 
 inline bool evaluate(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return formalism::evaluate_numeric_expression(std::move(element), [&](const auto term) { return evaluate(term, context); });
+    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
 }
 
 template<formalism::FactKind T>

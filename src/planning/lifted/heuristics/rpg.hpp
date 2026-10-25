@@ -108,7 +108,7 @@ struct RPGPolicy<LiftedTag>
     {
         const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().relation);
         const auto rule_binding = ygg::make_view(witness.get_rule_key(), *workspace.workspace_repository);
-        auto position = size_t(0);
+        auto position = static_cast<size_t>(0);
         for (const auto object : rule_binding.get_objects())
             workspace.binding[origin.source_positions[position++]] = object.get_index();
 
@@ -135,7 +135,7 @@ struct RPGPolicy<LiftedTag>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         const auto rule_binding = ygg::make_view(witness.get_rule_key(), *workspace.workspace_repository);
-        const auto& const_rule_workspace = *workspace.const_workspace->template get_rules<R>()[ygg::uint_t(witness.get_rule_key().relation)];
+        const auto& const_rule_workspace = *workspace.const_workspace->template get_rules<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation)];
         auto binding = ygg::IndexList<formalism::Object> {};
         ygg::extend(rule_binding.get_objects(), binding);
         auto grounder_context = formalism::datalog::GrounderContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
@@ -149,7 +149,7 @@ struct RPGPolicy<LiftedTag>
         if (verbosity < 1)
             return;
 
-        std::cout << "[RPGHeuristic] Summary" << std::endl;
+        std::cout << "[RPGHeuristic] Summary" << '\n';
         fmt::print(std::cout, "{}\n", workspace.statistics);
         auto rule_statistics = std::vector<datalog::RuleStatistics> {};
         const auto collect_rule_statistics = [&]<formalism::RelationKind R>()

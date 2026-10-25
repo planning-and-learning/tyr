@@ -74,7 +74,7 @@ GroundAxiomStrata compute_ground_axiom_stratification(formalism::planning::TaskV
 
     auto buckets = std::vector<GroundAxiomStratum>(max_s + 1);
     for (const auto axiom : task.get_ground_axioms())
-        buckets[atom_stratum[ygg::uint_t(axiom.get_head().get_index())]].push_back(axiom);
+        buckets[atom_stratum[static_cast<ygg::uint_t>(axiom.get_head().get_index())]].push_back(axiom);
 
     auto out = GroundAxiomStrata {};
     out.data.reserve(buckets.size());

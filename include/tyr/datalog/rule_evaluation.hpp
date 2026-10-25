@@ -72,8 +72,8 @@ public:
     [[nodiscard]] const PredicateAnnotations<>& predicate_annotations() const noexcept { return *m_predicate_annotations; }
 
 private:
-    const NumericSupportSelector* m_selector;
-    const PredicateAnnotations<>* m_predicate_annotations;
+    const NumericSupportSelector* m_selector = nullptr;
+    const PredicateAnnotations<>* m_predicate_annotations = nullptr;
 };
 
 struct RuleEvaluationWorkspace
@@ -123,15 +123,15 @@ public:
     void clear() noexcept
     {
         for (const auto binding : m_bindings)
-            m_seen_rows[ygg::uint_t(binding.relation)].reset(ygg::uint_t(binding.row));
+            m_seen_rows[static_cast<ygg::uint_t>(binding.relation)].reset(static_cast<ygg::uint_t>(binding.row));
         m_bindings.clear();
         m_achievers.clear();
     }
 
     void insert(Binding binding)
     {
-        const auto relation = static_cast<size_t>(ygg::uint_t(binding.relation));
-        const auto row = static_cast<size_t>(ygg::uint_t(binding.row));
+        const auto relation = static_cast<size_t>(static_cast<ygg::uint_t>(binding.relation));
+        const auto row = static_cast<size_t>(static_cast<ygg::uint_t>(binding.row));
         if (relation >= m_seen_rows.size())
             m_seen_rows.resize(relation + 1);
         auto& seen = m_seen_rows[relation];
@@ -279,10 +279,10 @@ struct RuleUpdateInput
 {
     RuleInstance<Kind, R> rule_instance;
     RuleEvaluationInput evaluation;
-    RuleEvaluationWorkspace* workspace;
-    const FunctionAnnotations<>* numeric_annotations;
-    AP* annotation_policy;
-    const CP* cost_policy;
+    RuleEvaluationWorkspace* workspace = nullptr;
+    const FunctionAnnotations<>* numeric_annotations = nullptr;
+    AP* annotation_policy = nullptr;
+    const CP* cost_policy = nullptr;
 };
 
 template<TaskKind Kind, formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
@@ -398,7 +398,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
-    auto state = EvaluationState { Aggregation::identity(), Cost(instance.get_rule().get_cost()), std::nullopt, {}, {} };
+    auto state = EvaluationState { Aggregation::identity(), static_cast<Cost>(instance.get_rule().get_cost()), std::nullopt, {}, {} };
 
     workspace.exact_supports.clear();
 

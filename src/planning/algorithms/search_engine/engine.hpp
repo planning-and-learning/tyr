@@ -67,10 +67,10 @@ enum class ExpansionResult : uint8_t
 template<TaskKind Kind, typename SearchNode>
 SearchNode& get_or_create_search_node(ygg::Index<State<Kind>> state_index, ygg::SegmentedVector<SearchNode>& search_nodes, const SearchNode& default_node)
 {
-    while (ygg::uint_t(state_index) >= search_nodes.size())
+    while (static_cast<ygg::uint_t>(state_index) >= search_nodes.size())
         search_nodes.push_back(default_node);
 
-    return search_nodes[ygg::uint_t(state_index)];
+    return search_nodes[static_cast<ygg::uint_t>(state_index)];
 }
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, ExecutionPolicyConcept<Kind, SearchPolicy> ExecutionPolicy>
@@ -112,7 +112,7 @@ public:
             successor_generator(&successor_generator_),
             heuristic(&heuristic_),
             search(heuristic_, options),
-            rng(options.random_seed + ygg::uint_t(index)),
+            rng(options.random_seed + static_cast<ygg::uint_t>(index)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
@@ -139,7 +139,7 @@ public:
             successor_generator(owned_successor_generator.get()),
             heuristic(owned_heuristic.get()),
             search(*heuristic, options),
-            rng(options.random_seed + ygg::uint_t(index)),
+            rng(options.random_seed + static_cast<ygg::uint_t>(index)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
@@ -199,7 +199,7 @@ public:
         return SearchEngine(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, search_start).run();
     }
 
-    size_t num_workers() const noexcept { return m_workers.size(); }
+    [[nodiscard]] size_t num_workers() const noexcept { return m_workers.size(); }
 
     WorkerData& get_worker(ygg::Index<Worker> index) noexcept { return m_workers.get(index); }
 

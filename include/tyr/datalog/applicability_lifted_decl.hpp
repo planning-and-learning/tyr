@@ -20,6 +20,7 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/grounder_decl.hpp"
 
 namespace tyr::datalog
 {

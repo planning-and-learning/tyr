@@ -251,7 +251,7 @@ struct formatter<tyr::formalism::planning::FDRValue, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::FDRValue& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", ygg::uint_t(value)); }
+    { return fmt::format_to(ctx.out(), "{}", static_cast<ygg::uint_t>(value)); }
 };
 
 template<>

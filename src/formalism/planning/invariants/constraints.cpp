@@ -160,7 +160,7 @@ void ConstraintSystem::add_equality_DNF(std::vector<EqualityConjunction> dnf) { 
 
 void ConstraintSystem::add_inequality_disjunction(const InequalityDisjunction& disj) { inequality_disjunctions.push_back(disj); }
 
-void ConstraintSystem::add_not_constant(ConstraintTerm term) { not_constant.push_back(std::move(term)); }
+void ConstraintSystem::add_not_constant(ConstraintTerm term) { not_constant.push_back(term); }
 
 void ConstraintSystem::extend(const ConstraintSystem& other)
 {

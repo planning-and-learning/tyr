@@ -65,7 +65,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
                               formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
                               size_t action_arity)
 {
-    const auto atoms = m_facts->get_sets()[ygg::uint_t(effect_predicate.get_index())].get_bindings();
+    const auto atoms = m_facts->get_sets()[static_cast<ygg::uint_t>(effect_predicate.get_index())].get_bindings();
 
     // The applicability row of each atom's action binding, which holds since the effect rule's body contains the precondition.
     groups.atom_rows.clear();
@@ -110,7 +110,7 @@ std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::datalog::Predica
     const auto atom = m_repository->find(m_lookup);
     if (!atom)
         return std::nullopt;
-    return ygg::uint_t(atom->get_index().row);
+    return static_cast<ygg::uint_t>(atom->get_index().row);
 }
 
 }

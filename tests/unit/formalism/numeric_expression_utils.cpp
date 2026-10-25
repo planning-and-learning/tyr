@@ -36,7 +36,7 @@ struct NumericLeaf
 template<typename Operator>
 struct BinaryExpression
 {
-    Operator op;
+    Operator op {};
     NumericLeaf lhs;
     NumericLeaf rhs;
 
@@ -48,7 +48,7 @@ struct BinaryExpression
 /// Returns its operator by reference.
 struct ReferenceBooleanExpression
 {
-    formalism::BooleanOperatorKind op;
+    formalism::BooleanOperatorKind op {};
     NumericLeaf lhs;
     NumericLeaf rhs;
 
@@ -59,7 +59,7 @@ struct ReferenceBooleanExpression
 
 struct MultiExpression
 {
-    formalism::ArithmeticOperatorKind op;
+    formalism::ArithmeticOperatorKind op {};
     std::vector<NumericLeaf> args;
 
     [[nodiscard]] auto get_operator() const noexcept { return op; }
@@ -68,7 +68,7 @@ struct MultiExpression
 
 struct NumericEffect
 {
-    formalism::NumericEffectOperatorKind op;
+    formalism::NumericEffectOperatorKind op {};
     NumericLeaf target;
     NumericLeaf rhs;
 

@@ -77,7 +77,7 @@ struct StateStorageContext<GroundTag, TreeVector, ThreadSafe>
     }
 
 private:
-    explicit StateStorageContext(LayoutData&& layout_data);
+    explicit StateStorageContext(LayoutData layout_data);
 };
 
 }

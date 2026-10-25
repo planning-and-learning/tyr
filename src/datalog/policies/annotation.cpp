@@ -31,9 +31,9 @@ void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(Predica
 
 template<typename AggregationFunction>
 void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(FunctionBinding head,
-                                                                         ygg::ClosedInterval<ygg::float_t> interval,
+                                                                         const ygg::ClosedInterval<ygg::float_t>& interval,
                                                                          FunctionAnnotations<>& numeric_annotations) const
-{ numeric_annotations.insert(head, std::move(interval), BaseAnnotation(static_cast<Cost>(0))); }
+{ numeric_annotations.insert(head, interval, BaseAnnotation(static_cast<Cost>(0))); }
 
 template<typename AggregationFunction>
 void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::clear_achievers() noexcept

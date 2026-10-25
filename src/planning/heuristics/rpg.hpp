@@ -179,13 +179,13 @@ protected:
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
     { m_workspace.cost_policy.set_action_cost(action_binding, cost); }
 
-    datalog::Cost get_predicate_cost(formalism::datalog::PredicateBindingView<formalism::FluentTag> head) const noexcept
+    [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateBindingView<formalism::FluentTag> head) const noexcept
     {
         const auto* annotation = m_workspace.annotations.find(head.get_index());
-        return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
+        return annotation ? datalog::get_cost(*annotation) : static_cast<datalog::Cost>(0);
     }
 
-    datalog::Cost get_goal_cost() const
+    [[nodiscard]] datalog::Cost get_goal_cost() const
     {
         const auto& numeric_support_selector = m_workspace.get_numeric_support_selector();
         return m_workspace.tp.get_total_cost(datalog::FactSets { m_workspace.const_workspace->facts.fact_sets, m_workspace.facts.fact_sets },

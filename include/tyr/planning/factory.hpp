@@ -65,7 +65,7 @@ class SuccessorGeneratorFactory
 public:
     SuccessorGeneratorFactory() : m_next_index(std::make_shared<std::atomic<ygg::uint_t>>(0)) {}
 
-    SuccessorGeneratorPtr<Kind> create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context);
+    SuccessorGeneratorPtr<Kind> create(TaskPtr<Kind> task, const ygg::ExecutionContextPtr& execution_context);
 
 private:
     std::shared_ptr<std::atomic<ygg::uint_t>> m_next_index;

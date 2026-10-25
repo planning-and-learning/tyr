@@ -94,7 +94,7 @@ private:
             pattern.push_back(term.get_data());
         auto relation = ygg::UnorderedSet<Tuple> {};
         auto element = std::vector<ygg::Data<formalism::Term>> {};
-        for (const auto binding : m_static_facts->get_sets()[ygg::uint_t(literal.get_atom().get_predicate().get_index())].get_bindings())
+        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(literal.get_atom().get_predicate().get_index())].get_bindings())
         {
             element.clear();
             for (const auto object : binding.get_objects())
@@ -106,7 +106,7 @@ private:
                 {
                     const auto& value = (*sigma)[p];
                     YGG_ASSUME(value.has_value());  ///< A match binds every parameter of the pattern.
-                    tuple.push_back(ygg::uint_t(formalism::unification::get_object(*value)));
+                    tuple.push_back(static_cast<ygg::uint_t>(formalism::unification::get_object(*value)));
                 }
                 relation.insert(std::move(tuple));
             }

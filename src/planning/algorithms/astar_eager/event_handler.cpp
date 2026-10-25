@@ -41,8 +41,8 @@ public:
     void on_expand_node(const Node<Kind>& node) override
     {
         fmt::print("[ASTAR][Worker {}] ----------------------------------------\n[ASTAR][Worker {}] Expanding node: {}\n\n",
-                   ygg::uint_t(m_index),
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    node);
     }
 
@@ -52,9 +52,9 @@ public:
             && outcome != TransitionOutcome::GOAL)
             return;
         fmt::print("[ASTAR][Worker {}] Action: {}\n[ASTAR][Worker {}] Successor node: {}\n\n",
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    labeled_succ_node.label,
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    labeled_succ_node.node);
     }
 

@@ -66,7 +66,7 @@ NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const P
     m_writes.clear();
     for (const auto& change : changes)
     {
-        const auto position = ygg::uint_t(change.fterm);
+        const auto position = static_cast<ygg::uint_t>(change.fterm);
         m_writes.push_back(ygg::TreeVectorWrite<ygg::float_t> { position, values[position] });
     }
 

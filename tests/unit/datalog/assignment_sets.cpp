@@ -79,9 +79,11 @@ struct Fixture
 
     [[nodiscard]] tyr::analysis::VariableDomainList domains() const
     {
-        return { domain({ ygg::uint_t(objects[0].get_index()), ygg::uint_t(objects[2].get_index()) }),
-                 domain({ ygg::uint_t(objects[1].get_index()) }),
-                 domain({ ygg::uint_t(objects[0].get_index()), ygg::uint_t(objects[3].get_index()), ygg::uint_t(objects[4].get_index()) }) };
+        return { domain({ static_cast<ygg::uint_t>(objects[0].get_index()), static_cast<ygg::uint_t>(objects[2].get_index()) }),
+                 domain({ static_cast<ygg::uint_t>(objects[1].get_index()) }),
+                 domain({ static_cast<ygg::uint_t>(objects[0].get_index()),
+                          static_cast<ygg::uint_t>(objects[3].get_index()),
+                          static_cast<ygg::uint_t>(objects[4].get_index()) }) };
     }
 };
 }
@@ -232,7 +234,7 @@ TEST(TyrDatalogLiftedAssignmentSets, FunctionInsertionTracksHullsAndEmptyAssignm
     auto nullary_set = tyr::datalog::FunctionAssignmentSet<tyr::formalism::FluentTag>(nullary, {}, fixture.objects.size());
     EXPECT_EQ(nullary_set.size(), 1);
     EXPECT_TRUE(empty(nullary_set[nullary_binding]));
-    EXPECT_TRUE(nullary_set.insert(nullary_binding, ygg::float_t(7)));
+    EXPECT_TRUE(nullary_set.insert(nullary_binding, static_cast<ygg::float_t>(7)));
     EXPECT_EQ(nullary_set[nullary_binding], ygg::ClosedInterval<ygg::float_t>(7, 7));
 }
 TEST(TyrDatalogLiftedAssignmentSets, TouchedBlocksAndPreparedRanksMatchScalarRanks)

@@ -162,7 +162,7 @@ public:
     tyr::planning::gbfs_lazy::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker> index) override
     {
         ++num_workers_created;
-        return std::make_unique<CountingGBFSWorkerEventHandler<Kind>>(worker_statistics.at(ygg::uint_t(index)));
+        return std::make_unique<CountingGBFSWorkerEventHandler<Kind>>(worker_statistics.at(static_cast<ygg::uint_t>(index)));
     }
 
     [[nodiscard]] tyr::planning::Statistics totals() const
@@ -221,7 +221,7 @@ public:
     tyr::planning::brfs::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker> index) override
     {
         ++num_workers_created;
-        return std::make_unique<CountingBrFSWorkerEventHandler<Kind>>(worker_statistics.at(ygg::uint_t(index)));
+        return std::make_unique<CountingBrFSWorkerEventHandler<Kind>>(worker_statistics.at(static_cast<ygg::uint_t>(index)));
     }
 
     std::array<tyr::planning::Statistics, 2> worker_statistics;
@@ -244,7 +244,7 @@ public:
 
     void access(ygg::Index<tyr::planning::Worker> worker, const tyr::planning::StateView<Kind>& state)
     {
-        auto& lane = m_lanes.at(ygg::uint_t(worker));
+        auto& lane = m_lanes.at(static_cast<ygg::uint_t>(worker));
         if (lane.active.test_and_set(std::memory_order_acquire))
             lane.reentered.store(true, std::memory_order_relaxed);
 
@@ -259,7 +259,7 @@ public:
     void access_transition(ygg::Index<tyr::planning::Worker> worker, const tyr::planning::StateView<Kind>& source, const tyr::planning::StateView<Kind>& target)
     {
         const auto source_owner = owner(source);
-        observe_repository(m_lanes.at(ygg::uint_t(source_owner)), source);
+        observe_repository(m_lanes.at(static_cast<ygg::uint_t>(source_owner)), source);
         if (source_owner != worker)
         {
             m_num_remote_transitions.fetch_add(1, std::memory_order_relaxed);
@@ -301,7 +301,7 @@ private:
     [[nodiscard]] ygg::Index<tyr::planning::Worker> owner(const tyr::planning::StateView<Kind>& state) const
     {
         if (m_mode == RepositoryMode::SHARED)
-            return ygg::Index<tyr::planning::Worker>(static_cast<ygg::uint_t>(ygg::uint_t(state.get_index()) % num_workers));
+            return ygg::Index<tyr::planning::Worker>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state.get_index()) % num_workers));
         return m_hash.owner(state.get_state_builder(), num_workers);
     }
 
@@ -619,9 +619,9 @@ void expect_sequential_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
     const auto final_node = tyr::planning::Node<Kind>(selected->node.get_state(), g_value);
     const auto default_node = SequentialSearchNode<Kind> { std::numeric_limits<ygg::float_t>::infinity(), ygg::Index<tyr::planning::State<Kind>>::max() };
     auto search_nodes = ygg::SegmentedVector<SequentialSearchNode<Kind>> {};
-    get_or_create_search_node(ygg::uint_t(start.get_state().get_index()), search_nodes, default_node) =
+    get_or_create_search_node(static_cast<ygg::uint_t>(start.get_state().get_index()), search_nodes, default_node) =
         SequentialSearchNode<Kind> { start.get_metric(), ygg::Index<tyr::planning::State<Kind>>::max() };
-    auto& final_search_node = get_or_create_search_node(ygg::uint_t(final_node.get_state().get_index()), search_nodes, default_node);
+    auto& final_search_node = get_or_create_search_node(static_cast<ygg::uint_t>(final_node.get_state().get_index()), search_nodes, default_node);
     final_search_node = SequentialSearchNode<Kind> { g_value, start.get_state().get_index() };
 
     const auto num_states = repository->num_states();
@@ -686,9 +686,12 @@ void expect_parallel_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
         const auto default_node = ParallelSearchNode<Kind> { std::numeric_limits<ygg::float_t>::infinity(), no_parent };
         auto first_search_nodes = ygg::SegmentedVector<ParallelSearchNode<Kind>> {};
         auto second_search_nodes = ygg::SegmentedVector<ParallelSearchNode<Kind>> {};
-        get_or_create_search_node(ygg::uint_t(root.state), first_search_nodes, default_node) = ParallelSearchNode<Kind> { start.get_metric(), no_parent };
-        get_or_create_search_node(ygg::uint_t(final.state), first_search_nodes, default_node) = ParallelSearchNode<Kind> { final_g_value, middle_index };
-        get_or_create_search_node(ygg::uint_t(middle_index.state), second_search_nodes, default_node) = ParallelSearchNode<Kind> { middle_g_value, root };
+        get_or_create_search_node(static_cast<ygg::uint_t>(root.state), first_search_nodes, default_node) =
+            ParallelSearchNode<Kind> { start.get_metric(), no_parent };
+        get_or_create_search_node(static_cast<ygg::uint_t>(final.state), first_search_nodes, default_node) =
+            ParallelSearchNode<Kind> { final_g_value, middle_index };
+        get_or_create_search_node(static_cast<ygg::uint_t>(middle_index.state), second_search_nodes, default_node) =
+            ParallelSearchNode<Kind> { middle_g_value, root };
 
         const auto workers = std::vector<tyr::planning::WorkerSearchSpaceView<Kind, ParallelSearchNode<Kind>>> {
             { *first_repository_owner, *first_axiom_evaluator, *first_generator, first_search_nodes },

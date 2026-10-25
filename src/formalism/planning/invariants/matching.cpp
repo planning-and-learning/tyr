@@ -47,8 +47,8 @@ struct ActionAlignmentPolicy
     template<typename T>
     bool match_parameter_parameter(ParameterIndex lhs, ParameterIndex rhs, unification::MatchState<T>& state) const
     {
-        const bool lhs_is_counted = ygg::uint_t(lhs) >= num_rigid_variables;
-        const bool rhs_is_action_parameter = ygg::uint_t(rhs) < num_action_variables;
+        const bool lhs_is_counted = static_cast<ygg::uint_t>(lhs) >= num_rigid_variables;
+        const bool rhs_is_action_parameter = static_cast<ygg::uint_t>(rhs) < num_action_variables;
 
         if (lhs_is_counted)
             return true;
@@ -61,12 +61,12 @@ struct ActionAlignmentPolicy
 
     template<typename T>
     bool match_parameter_object(ParameterIndex lhs, const T&, unification::MatchState<T>&) const
-    { return ygg::uint_t(lhs) >= num_rigid_variables; }
+    { return static_cast<ygg::uint_t>(lhs) >= num_rigid_variables; }
 
     template<typename T>
     bool match_object_parameter(const T& lhs, ParameterIndex rhs, unification::MatchState<T>& state) const
     {
-        if (ygg::uint_t(rhs) < num_action_variables)
+        if (static_cast<ygg::uint_t>(rhs) < num_action_variables)
             return state.sigma.assign_or_check(rhs, lhs);
 
         return false;
@@ -81,8 +81,8 @@ struct EffectCoverPolicy
     template<typename T>
     bool match_parameter_parameter(ParameterIndex lhs, ParameterIndex rhs, unification::MatchState<T>& state) const
     {
-        const bool lhs_is_counted = ygg::uint_t(lhs) >= num_rigid_variables;
-        const bool rhs_is_effect_local = ygg::uint_t(rhs) >= num_action_variables;
+        const bool lhs_is_counted = static_cast<ygg::uint_t>(lhs) >= num_rigid_variables;
+        const bool rhs_is_effect_local = static_cast<ygg::uint_t>(rhs) >= num_action_variables;
 
         if (!lhs_is_counted)
         {
@@ -115,7 +115,7 @@ struct EffectCoverPolicy
     template<typename T>
     bool match_parameter_object(ParameterIndex lhs, const T& rhs, unification::MatchState<T>& state) const
     {
-        if (ygg::uint_t(lhs) < num_rigid_variables)
+        if (static_cast<ygg::uint_t>(lhs) < num_rigid_variables)
             return false;
 
         if (state.counted.is_unbound(lhs))
@@ -129,7 +129,7 @@ struct EffectCoverPolicy
     template<typename T>
     bool match_object_parameter(const T& lhs, ParameterIndex rhs, unification::MatchState<T>& state) const
     {
-        if (ygg::uint_t(rhs) >= num_action_variables)
+        if (static_cast<ygg::uint_t>(rhs) >= num_action_variables)
             return state.sigma.assign_or_check(rhs, lhs);
 
         return false;

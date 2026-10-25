@@ -312,9 +312,9 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_TRUE(source->for_each_successor_node(initial_node,
                                                 callback_storage,
                                                 *axiom_evaluator,
-                                                [&](auto successor)
+                                                [&](const auto& successor)
                                                 {
-                                                    static_assert(std::same_as<decltype(successor), tyr::planning::Node<Kind, S>>);
+                                                    static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::Node<Kind, S>>);
                                                     if (successor_builder)
                                                     {
                                                         EXPECT_EQ(&successor.get_state().get_state_builder(), successor_builder);
@@ -412,23 +412,24 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_TRUE(std::ranges::is_permutation(bindings, expected_bindings));
 
             size_t streamed = 0;
-            EXPECT_TRUE(generator->for_each_labeled_successor_node(initial_node,
-                                                                   action,
-                                                                   callback_storage,
-                                                                   *axiom_evaluator,
-                                                                   [&](auto successor)
-                                                                   {
-                                                                       static_assert(std::same_as<decltype(successor), tyr::planning::LabeledNode<Kind, S>>);
-                                                                       EXPECT_TRUE(same_successor(successor, successors.at(streamed++)));
-                                                                       return true;
-                                                                   }));
+            EXPECT_TRUE(generator->for_each_labeled_successor_node(
+                initial_node,
+                action,
+                callback_storage,
+                *axiom_evaluator,
+                [&](const auto& successor)
+                {
+                    static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::LabeledNode<Kind, S>>);
+                    EXPECT_TRUE(same_successor(successor, successors.at(streamed++)));
+                    return true;
+                }));
             EXPECT_EQ(streamed, successors.size());
             streamed = 0;
             EXPECT_EQ(generator->for_each_successor_node(initial_node,
                                                          action,
                                                          callback_storage,
                                                          *axiom_evaluator,
-                                                         [&](auto successor)
+                                                         [&](const auto& successor)
                                                          {
                                                              EXPECT_TRUE(same_node(successor, nodes.at(streamed++)));
                                                              return false;

@@ -149,7 +149,7 @@ public:
     Graph();
 
     /// Constrained adjacency and universal-pair flags must both be symmetric.
-    static Graph create(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs);
+    static Graph create(bool satisfiable, AdjacencyMatrix adjacency, const boost::dynamic_bitset<>& universal_partition_pairs);
 
     [[nodiscard]] bool is_satisfiable() const noexcept { return m_satisfiable; }
     [[nodiscard]] const GraphLayout& get_layout() const noexcept { return m_layout; }

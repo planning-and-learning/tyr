@@ -61,7 +61,7 @@ inline bool consistent_literals(const Vertex& vertex,
 
     // std::cout << "Vertex: " << *this << std::endl;
 
-    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos[ygg::uint_t(parameter_index)])
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos[static_cast<ygg::uint_t>(parameter_index)])
     {
         const auto& info = indexed_literals.infos[lit_id];
         const auto predicate = info.predicate;
@@ -71,7 +71,7 @@ inline bool consistent_literals(const Vertex& vertex,
 
         const auto& pred_set = predicate_assignment_sets.get_set(predicate);
 
-        for (const auto position : info.position_mappings.parameter_to_positions[ygg::uint_t(parameter_index)])
+        for (const auto position : info.position_mappings.parameter_to_positions[static_cast<ygg::uint_t>(parameter_index)])
         {
             {
                 auto assignment = VertexAssignment(formalism::ParameterIndex(position), object_index);
@@ -193,7 +193,7 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex,
 
     if (info.num_parameters >= 1)
     {
-        for (const auto position : info.position_mappings.parameter_to_positions[ygg::uint_t(parameter_index)])
+        for (const auto position : info.position_mappings.parameter_to_positions[static_cast<ygg::uint_t>(parameter_index)])
         {
             auto assignment = VertexAssignment(formalism::ParameterIndex(position), object_index);
             assert(assignment.is_valid());
@@ -256,8 +256,8 @@ template<formalism::FactKind T>
 inline ygg::ClosedInterval<ygg::float_t>
 consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
 {
-    auto p = ygg::uint_t(edge.vi().get_parameter_index());
-    auto q = ygg::uint_t(edge.vj().get_parameter_index());
+    auto p = static_cast<ygg::uint_t>(edge.vi().get_parameter_index());
+    auto q = static_cast<ygg::uint_t>(edge.vj().get_parameter_index());
     auto obj_p = edge.vi().get_object_index();
     auto obj_q = edge.vj().get_object_index();
 
@@ -516,8 +516,8 @@ template<formalism::FactKind T>
 inline bool
 consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
 {
-    auto p = ygg::uint_t(edge.vi().get_parameter_index());
-    auto q = ygg::uint_t(edge.vj().get_parameter_index());
+    auto p = static_cast<ygg::uint_t>(edge.vi().get_parameter_index());
+    auto q = static_cast<ygg::uint_t>(edge.vj().get_parameter_index());
     auto obj_p = edge.vi().get_object_index();
     auto obj_q = edge.vj().get_object_index();
 
@@ -701,7 +701,7 @@ static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<
                 {
                     if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                     {
-                        info.position_mappings.parameter_to_positions[ygg::uint_t(arg)].push_back(position);
+                        info.position_mappings.parameter_to_positions[static_cast<ygg::uint_t>(arg)].push_back(position);
                         ++info.num_parameters;
                     }
                     else if constexpr (std::is_same_v<Alternative, formalism::datalog::ObjectView>)
@@ -720,14 +720,14 @@ static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<
 
         for (const auto param1 : parameters)
         {
-            result.info_mappings.parameter_to_infos[ygg::uint_t(param1)].push_back(index);
+            result.info_mappings.parameter_to_infos[static_cast<ygg::uint_t>(param1)].push_back(index);
 
             for (const auto param2 : parameters)
             {
                 if (param1 >= param2)
                     continue;
 
-                result.info_mappings.parameter_pairs_to_infos[ygg::uint_t(param1)][ygg::uint_t(param2)].push_back(index);
+                result.info_mappings.parameter_pairs_to_infos[static_cast<ygg::uint_t>(param1)][static_cast<ygg::uint_t>(param2)].push_back(index);
             }
         }
 
@@ -785,7 +785,7 @@ static auto compute_tagged_indexed_fterms(const std::vector<formalism::datalog::
                 {
                     if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                     {
-                        info.position_mappings.parameter_to_positions[ygg::uint_t(arg)].push_back(position);
+                        info.position_mappings.parameter_to_positions[static_cast<ygg::uint_t>(arg)].push_back(position);
                         ++info.num_parameters;
                     }
                     else if constexpr (std::is_same_v<Alternative, formalism::datalog::ObjectView>)
@@ -800,18 +800,18 @@ static auto compute_tagged_indexed_fterms(const std::vector<formalism::datalog::
         }
 
         auto parameters = formalism::datalog::collect_parameters(fterm);
-        const auto index = ygg::uint_t(fterm.get_index());
+        const auto index = static_cast<ygg::uint_t>(fterm.get_index());
 
         for (const auto param1 : parameters)
         {
-            result.info_mappings.parameter_to_infos[ygg::uint_t(param1)].push_back(index);
+            result.info_mappings.parameter_to_infos[static_cast<ygg::uint_t>(param1)].push_back(index);
 
             for (const auto param2 : parameters)
             {
                 if (param1 >= param2)
                     continue;
 
-                result.info_mappings.parameter_pairs_to_infos[ygg::uint_t(param1)][ygg::uint_t(param2)].push_back(index);
+                result.info_mappings.parameter_pairs_to_infos[static_cast<ygg::uint_t>(param1)][static_cast<ygg::uint_t>(param2)].push_back(index);
             }
         }
 

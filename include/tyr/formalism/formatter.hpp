@@ -65,7 +65,7 @@ struct formatter<tyr::formalism::ParameterIndex, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::ParameterIndex& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "V{}", ygg::uint_t(value)); }
+    { return fmt::format_to(ctx.out(), "V{}", static_cast<ygg::uint_t>(value)); }
 };
 
 template<>

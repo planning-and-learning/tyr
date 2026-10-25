@@ -41,8 +41,8 @@ public:
     void on_expand_node(const Node<Kind>& node) override
     {
         fmt::print("[GBFS][Worker {}] ----------------------------------------\n[GBFS][Worker {}] Expanding node: {}\n\n",
-                   ygg::uint_t(m_index),
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    node);
     }
 
@@ -51,9 +51,9 @@ public:
         if (outcome != TransitionOutcome::OPENED && outcome != TransitionOutcome::GOAL)
             return;
         fmt::print("[GBFS][Worker {}] Action: {}\n[GBFS][Worker {}] Successor node: {}\n\n",
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    labeled_succ_node.label,
-                   ygg::uint_t(m_index),
+                   static_cast<ygg::uint_t>(m_index),
                    labeled_succ_node.node);
     }
 

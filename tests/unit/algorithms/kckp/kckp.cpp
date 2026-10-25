@@ -140,7 +140,7 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
     {
         partition_sizes.push_back(variable_domain.objects.size());
         for (const auto object : variable_domain.objects)
-            vertex_labels.push_back(ygg::uint_t(object));
+            vertex_labels.push_back(static_cast<ygg::uint_t>(object));
     }
 
     const auto layout = tyr::kckp::create_graph_layout(partition_sizes, vertex_labels);
@@ -178,7 +178,7 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
             }
         }
 
-    return LabeledGraph(tyr::kckp::Graph::create(satisfiable, std::move(adjacency), std::move(universal_partition_pairs)));
+    return LabeledGraph(tyr::kckp::Graph::create(satisfiable, std::move(adjacency), universal_partition_pairs));
 }
 
 Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_t> prefix_values, tyr::kckp::Workspace& workspace)
@@ -196,7 +196,7 @@ Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_
                                        {
                                            auto values = Extension {};
                                            for (const auto vertex : extension)
-                                               values.push_back(ygg::uint_t(graph.get_object(vertex)));
+                                               values.push_back(static_cast<ygg::uint_t>(graph.get_object(vertex)));
                                            result.push_back(std::move(values));
                                        });
     return result;
@@ -211,7 +211,7 @@ Extensions enumerate_cliques(const LabeledGraph& graph, tyr::kckp::Workspace& wo
             {
                 auto values = Extension {};
                 for (const auto vertex : clique)
-                    values.push_back(ygg::uint_t(graph.get_object(vertex)));
+                    values.push_back(static_cast<ygg::uint_t>(graph.get_object(vertex)));
                 result.push_back(std::move(values));
             },
             workspace);
@@ -333,9 +333,10 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
 
 TEST(TyrKCKP, PlainCliqueEnumerationReturnsFullAssignments)
 {
-    const auto graph = make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
-                                  true,
-                                  [](auto, Object first, auto, Object second) { return ygg::uint_t(second) == ygg::uint_t(first) + 2; });
+    const auto graph =
+        make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
+                   true,
+                   [](auto, Object first, auto, Object second) { return static_cast<ygg::uint_t>(second) == static_cast<ygg::uint_t>(first) + 2; });
 
     auto workspace = tyr::kckp::Workspace {};
     EXPECT_EQ(enumerate_cliques(graph, workspace), (Extensions { { 0, 2 }, { 1, 3 } }));
@@ -343,9 +344,10 @@ TEST(TyrKCKP, PlainCliqueEnumerationReturnsFullAssignments)
 
 TEST(TyrKCKP, ValidatesVertexPrefixes)
 {
-    const auto graph = make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
-                                  true,
-                                  [](auto, Object first, auto, Object second) { return ygg::uint_t(second) == ygg::uint_t(first) + 2; });
+    const auto graph =
+        make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
+                   true,
+                   [](auto, Object first, auto, Object second) { return static_cast<ygg::uint_t>(second) == static_cast<ygg::uint_t>(first) + 2; });
     const auto& raw_graph = graph.get_graph();
     auto workspace = tyr::kckp::Workspace {};
     const auto count_extensions = [&](std::initializer_list<tyr::kckp::Vertex> prefix)
@@ -369,8 +371,8 @@ TEST(TyrKCKPGraph, ArcConsistencyAndSeededEnumerationCoverDegenerateCases)
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
-                                      const auto lhs = ygg::uint_t(first);
-                                      const auto rhs = ygg::uint_t(second);
+                                      const auto lhs = static_cast<ygg::uint_t>(first);
+                                      const auto rhs = static_cast<ygg::uint_t>(second);
                                       if (first_partition == 0 && second_partition == 1)
                                           return (lhs == 0 && (rhs == 3 || rhs == 4)) || (lhs == 1 && rhs == 4) || (lhs == 2 && rhs == 5);
                                       if (first_partition == 1 && second_partition == 2)
@@ -412,8 +414,8 @@ TEST(TyrKCKPGraph, IncrementalSupportsPropagateAsymmetricCascadeAndPreserveCompa
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
-                                      const auto lhs = ygg::uint_t(first);
-                                      const auto rhs = ygg::uint_t(second);
+                                      const auto lhs = static_cast<ygg::uint_t>(first);
+                                      const auto rhs = static_cast<ygg::uint_t>(second);
                                       if (first_partition == 0 && second_partition == 1)
                                           return (rhs == 10 && (lhs == 1 || lhs == 0)) || (rhs == 11 && (lhs == 3 || lhs == 2));
                                       if (first_partition == 1 && second_partition == 2)
@@ -452,8 +454,8 @@ TEST(TyrKCKPGraph, ArcConsistencyDoesNotImplyClique)
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
-                                      const auto lhs = ygg::uint_t(first);
-                                      const auto rhs = ygg::uint_t(second);
+                                      const auto lhs = static_cast<ygg::uint_t>(first);
+                                      const auto rhs = static_cast<ygg::uint_t>(second);
                                       if (first_partition == 0 && second_partition == 1)
                                           return (lhs == 0 && rhs == 2) || (lhs == 1 && rhs == 3);
                                       if (first_partition == 1 && second_partition == 2)
@@ -479,7 +481,7 @@ TEST(TyrKCKPGraph, SupportAcrossBitsetBlockBoundaryIsPreserved)
     auto domains = tyr::analysis::VariableDomainList {};
     domains.push_back(domain({ 0 }));
     domains.push_back(std::move(target_domain));
-    const auto graph = make_graph(std::move(domains), true, [](auto, auto, auto, Object target) { return ygg::uint_t(target) == 65; });
+    const auto graph = make_graph(std::move(domains), true, [](auto, auto, auto, Object target) { return static_cast<ygg::uint_t>(target) == 65; });
 
     ASSERT_TRUE(graph.is_satisfiable());
     EXPECT_EQ(graph.get_domains()[0].objects, (std::vector<Object> { Object(0) }));

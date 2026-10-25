@@ -269,8 +269,8 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         const auto retained_predicate_rule = predicate_rule(applicable, retained_atom);
         const auto removed_function_rule = function_rule(inapplicable, removed_term);
         const auto retained_function_rule = function_rule(applicable, retained_term);
-        retained_predicate_source_index = ygg::uint_t(retained_predicate_rule.get_index());
-        retained_function_source_index = ygg::uint_t(retained_function_rule.get_index());
+        retained_predicate_source_index = static_cast<ygg::uint_t>(retained_predicate_rule.get_index());
+        retained_function_source_index = static_cast<ygg::uint_t>(retained_function_rule.get_index());
         const auto goal = condition({}, { fluent_literal(retained_atom, true) });
         const auto static_value =
             intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>> { static_term.get_index(), 2.0 });
@@ -298,16 +298,16 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     EXPECT_GT(retained_function_source_index, 0);
     EXPECT_EQ(&filtered->get_context(), &destination);
     ASSERT_EQ(filtered->get_rules<tyr::formalism::PredicateTag>().size(), 1);
-    EXPECT_EQ(ygg::uint_t(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_index()), 0);
+    EXPECT_EQ(static_cast<ygg::uint_t>(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_index()), 0);
     EXPECT_EQ(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_heads().front().get_predicate().get_name().str(), "retained-predicate");
-    EXPECT_EQ(ygg::uint_t(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_rule().get_index()), 0);
+    EXPECT_EQ(static_cast<ygg::uint_t>(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_rule().get_index()), 0);
     EXPECT_EQ(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_rule().get_heads().front().get_predicate().get_name().str(),
               "retained-predicate");
     ASSERT_EQ(filtered->get_rules<tyr::formalism::FunctionTag>().size(), 1);
-    EXPECT_EQ(ygg::uint_t(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_index()), 0);
+    EXPECT_EQ(static_cast<ygg::uint_t>(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_index()), 0);
     ygg::visit([&](const auto function_head) { EXPECT_EQ(function_head.get_fterm().get_function().get_name().str(), "retained-function"); },
                filtered->get_rules<tyr::formalism::FunctionTag>().front().get_head().get_variant());
-    EXPECT_EQ(ygg::uint_t(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().get_index()), 0);
+    EXPECT_EQ(static_cast<ygg::uint_t>(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().get_index()), 0);
     ygg::visit([&](const auto function_head) { EXPECT_EQ(function_head.get_fterm().get_function().get_name().str(), "retained-function"); },
                filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().get_head().get_variant());
     ASSERT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().size(), 1);

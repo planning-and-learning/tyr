@@ -280,7 +280,7 @@ struct RestrictPolicy
     template<typename Symbol>
     void on_parameter(size_t pos, formalism::ParameterIndex param, Symbol symbol)
     {
-        auto& parameter_domain = (*parameter_domains)[ygg::uint_t(param)];
+        auto& parameter_domain = (*parameter_domains)[static_cast<ygg::uint_t>(param)];
         const auto& symbol_domain = get_domains(symbol).at(symbol.get_index())[pos];
         ygg::intersect_inplace(parameter_domain.objects, symbol_domain.objects);
     }
@@ -319,7 +319,7 @@ struct LiftPolicy
     void on_parameter(size_t pos, formalism::ParameterIndex param, Symbol symbol)
     {
         auto& domain = get_domains(symbol).at(symbol.get_index())[pos];
-        ygg::union_inplace(domain.objects, (*parameter_domains)[ygg::uint_t(param)].objects);
+        ygg::union_inplace(domain.objects, (*parameter_domains)[static_cast<ygg::uint_t>(param)].objects);
     }
 };
 
