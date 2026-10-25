@@ -53,7 +53,7 @@ struct FactsWorkspace<LiftedTag>
         return true;
     }
 
-    bool insert(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval)
+    bool insert(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
     {
         if (!fact_sets.function.insert(binding, interval))
             return false;

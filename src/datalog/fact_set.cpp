@@ -22,6 +22,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 
 namespace tyr::datalog
@@ -193,7 +194,7 @@ bool FunctionFactSet<T>::insert(const FunctionFactSet& other)
 { return insert(other.get_bindings(), other.get_values()); }
 
 template<formalism::FactKind T>
-bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingIndex<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
+bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingIndex<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
     const auto i = ygg::uint_t(binding.row);
 
@@ -223,7 +224,7 @@ bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingView<T> bindi
 
 template<formalism::FactKind T>
 bool FunctionFactSet<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, ygg::ClosedInterval<ygg::float_t> interval)
-{ return insert(fterm.get_row(), interval); }
+{ return insert(fterm.get_row(), std::move(interval)); }
 
 template<formalism::FactKind T>
 bool FunctionFactSet<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, ygg::float_t value)
@@ -356,11 +357,11 @@ bool FunctionFactSets<T>::insert(const FunctionFactSets& other)
 
 template<formalism::FactKind T>
 bool FunctionFactSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::ClosedInterval<ygg::float_t> interval)
-{ return m_sets[ygg::uint_t(function_term.get_function().get_index())].insert(function_term, interval); }
+{ return m_sets[ygg::uint_t(function_term.get_function().get_index())].insert(function_term, std::move(interval)); }
 
 template<formalism::FactKind T>
 bool FunctionFactSets<T>::insert(formalism::datalog::FunctionBindingIndex<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
-{ return m_sets[ygg::uint_t(binding.relation)].insert(binding, interval); }
+{ return m_sets[ygg::uint_t(binding.relation)].insert(binding, std::move(interval)); }
 
 template<formalism::FactKind T>
 bool FunctionFactSets<T>::insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value)

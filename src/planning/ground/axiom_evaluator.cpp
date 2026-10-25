@@ -116,7 +116,7 @@ AxiomEvaluatorPtr<GroundTag> AxiomEvaluator<GroundTag>::make_worker(ygg::Executi
 
 void AxiomEvaluator<GroundTag>::compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder)
 {
-    auto state_context = StateContext<GroundTag> { *m_impl->definition->task, state_builder, ygg::float_t(0) };
+    auto state_context = StateContext<GroundTag> { *m_impl->definition->task, state_builder, static_cast<ygg::float_t>(0) };
 
     for (const auto& match_tree : m_impl->evaluator.match_tree_workers)
     {

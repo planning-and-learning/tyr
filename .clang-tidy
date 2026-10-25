@@ -45,6 +45,9 @@ Checks: >
 HeaderFilterRegex: '.*/(include/tyr|tests|profiling|python/src|exe)/.*'
 ExcludeHeaderFilterRegex: '.*/(dependencies-install|dependencies-build|build|site-packages|_deps)/.*'
 CheckOptions:
+  # Views are handles (an index or data handle plus a context pointer), passed by value like
+  # std::string_view; only cista's variant inside some of them makes their copy non-trivial.
+  performance-unnecessary-value-param.AllowedTypes: '^::ygg::View<;^ygg::View<'
   # Member initializers are written `= value`, as elsewhere in the code.
   cppcoreguidelines-use-default-member-init.UseAssignment: true
   # YGG_ASSUME (yggdrasil/core/config.hpp) must expand at its call site, like assert: the

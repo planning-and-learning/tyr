@@ -33,12 +33,12 @@ namespace tyr::tests
 {
 
 inline tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag> make_atom(tyr::formalism::planning::Repository& repository,
-                                                                                          std::string object_name)
+                                                                                          const std::string& object_name)
 {
     auto predicate_data = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 1);
     canonicalize(predicate_data);
     const auto predicate = repository.insert(predicate_data).first;
-    auto object_data = ygg::Data<tyr::formalism::Object>(std::move(object_name));
+    auto object_data = ygg::Data<tyr::formalism::Object>(object_name);
     canonicalize(object_data);
     const auto object = repository.insert(object_data).first;
     auto binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};

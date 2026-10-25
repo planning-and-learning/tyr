@@ -49,7 +49,7 @@ namespace tyr::datalog
 
 /// Conservative closure acceleration for detected label-preserving zero-edge bound growth.
 /// This does not imply exact numeric closure or global termination.
-inline ygg::ClosedInterval<ygg::float_t> widen_free_growth(ygg::ClosedInterval<ygg::float_t> next, ygg::ClosedInterval<ygg::float_t> current)
+inline ygg::ClosedInterval<ygg::float_t> widen_free_growth(ygg::ClosedInterval<ygg::float_t> next, const ygg::ClosedInterval<ygg::float_t>& current)
 {
     if (empty(current))
         return next;
@@ -115,8 +115,8 @@ public:
 
     void insert(Binding binding)
     {
-        const auto relation = size_t(ygg::uint_t(binding.relation));
-        const auto row = size_t(ygg::uint_t(binding.row));
+        const auto relation = static_cast<size_t>(ygg::uint_t(binding.relation));
+        const auto row = static_cast<size_t>(ygg::uint_t(binding.row));
         if (relation >= m_seen_rows.size())
             m_seen_rows.resize(relation + 1);
         auto& seen = m_seen_rows[relation];
@@ -137,7 +137,7 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
 
     FunctionHeadUpdate(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval, bool grows_fact) :
         binding(binding),
-        interval(interval),
+        interval(std::move(interval)),
         grows_fact(grows_fact)
     {
     }
@@ -193,7 +193,7 @@ void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
         }
         else if (!facts.contains(head))
         {
-            cost_buckets.insert(Cost(0), head);
+            cost_buckets.insert(static_cast<Cost>(0), head);
         }
     }
 }
@@ -230,7 +230,7 @@ bool reduce_function_head_update(const FunctionHeadUpdate& update,
     else
     {
         if (update.grows_fact)
-            cost_buckets.insert(Cost(0), update.binding, update.interval);
+            cost_buckets.insert(static_cast<Cost>(0), update.binding, update.interval);
         return false;
     }
 }
@@ -300,7 +300,7 @@ struct RuleUpdateResult
     RuleUpdateStatus status;
     std::optional<Cost> queue_label;
 
-    bool is_handled() const noexcept { return status == RuleUpdateStatus::Pruned || status == RuleUpdateStatus::Completed; }
+    [[nodiscard]] bool is_handled() const noexcept { return status == RuleUpdateStatus::Pruned || status == RuleUpdateStatus::Completed; }
 };
 
 namespace rule_evaluation_detail
@@ -340,7 +340,7 @@ bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationW
         for (const auto& entry : workspace.selector.selection)
         {
             const auto reported = input.selector.for_each_entry_support(entry,
-                                                                        [&](const auto key, const auto interval, const auto& annotation)
+                                                                        [&](const auto key, const auto& interval, const auto& annotation)
                                                                         { workspace.exact_supports.emplace_back(key, interval, get_cost(annotation)); });
             if (!reported)
             {
@@ -356,7 +356,7 @@ template<TaskKind Kind, formalism::RelationKind R, typename CP>
 Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
-        return Cost(0);
+        return static_cast<Cost>(0);
     else
         return policy.get_cost(instance.witness_key());
 }
@@ -365,12 +365,12 @@ template<TaskKind Kind, formalism::RelationKind R, typename CP>
 Cost get_transition_credit(const CP& policy,
                            RuleInstance<Kind, R>& instance,
                            formalism::datalog::FunctionBindingIndex<formalism::FluentTag> head,
-                           ygg::ClosedInterval<ygg::float_t> interval)
+                           const ygg::ClosedInterval<ygg::float_t>& interval)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
-        return Cost(0);
+        return static_cast<Cost>(0);
     else
-        return policy.get_cost(instance.witness_key().get_index(), head, interval);
+        return policy.get_cost(instance.witness_key().get_index(), head, std::move(interval));
 }
 
 template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
@@ -479,10 +479,10 @@ std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind
 
     const auto current = input.selector.current_interval(effect.head);
     auto interval = raw_interval;
-    if (!empty(current) && policy.is_widening_label_preserving(Cost(0), Cost(0)))
+    if (!empty(current) && policy.is_widening_label_preserving(static_cast<Cost>(0), static_cast<Cost>(0)))
         interval = widen_free_growth(raw_interval, current);
 
-    return FunctionCandidate { effect.head, interval, Cost(0), Cost(0), empty(current) || !subset(interval, current), std::nullopt };
+    return FunctionCandidate { effect.head, interval, static_cast<Cost>(0), static_cast<Cost>(0), empty(current) || !subset(interval, current), std::nullopt };
 }
 
 }
@@ -497,7 +497,7 @@ std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
     if constexpr (!AP::stores_annotations)
     {
         if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return Cost(0);
+            return static_cast<Cost>(0);
         else
         {
             const auto candidate = rule_evaluation_detail::evaluate_unannotated_function(instance, annotation_policy, input, workspace);
@@ -536,7 +536,7 @@ std::optional<PredicateCandidate> evaluate_predicate_candidate(RuleInstance<Kind
 {
     if constexpr (!AP::stores_annotations)
     {
-        return PredicateCandidate { Cost(0), Cost(0), std::nullopt };
+        return PredicateCandidate { static_cast<Cost>(0), static_cast<Cost>(0), std::nullopt };
     }
     else
     {
@@ -589,7 +589,7 @@ auto evaluate_propositional_candidate(std::span<const formalism::datalog::Predic
                                       RuleEvaluationWorkspace& workspace,
                                       const DeltaAnnotations& delta_annotations)
 {
-    auto best_cost = Cost(0);
+    auto best_cost = static_cast<Cost>(0);
     for (const auto head : heads)
         best_cost = std::max(best_cost, std::min(input.predicate_annotations.fetch_cost(head), delta_annotations.fetch_cost(head)));
     return evaluate_propositional_candidate(rule_instance, annotation_policy, cost_policy, input, workspace, best_cost);
@@ -621,7 +621,7 @@ std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, 
         auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
         const auto pre_transition_label = state->support_cost + edge;
         auto interval = state->raw_interval;
-        if (!empty(state->current_interval) && edge == Cost(0))
+        if (!empty(state->current_interval) && edge == static_cast<Cost>(0))
         {
             const auto current_label = input.selector.get_current_interval_cost(effect.head, state->current_interval);
             if (annotation_policy.is_widening_label_preserving(pre_transition_label, current_label))

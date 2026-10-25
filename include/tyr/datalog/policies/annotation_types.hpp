@@ -55,14 +55,14 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
     NumericSupport() = delete;
     NumericSupport(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost) :
         key(key),
-        interval(interval),
+        interval(std::move(interval)),
         cost(cost)
     {
     }
 
-    auto get_key() const noexcept { return key; }
-    auto get_interval() const noexcept { return interval; }
-    auto get_cost() const noexcept { return cost; }
+    [[nodiscard]] auto get_key() const noexcept { return key; }
+    [[nodiscard]] auto get_interval() const noexcept { return interval; }
+    [[nodiscard]] auto get_cost() const noexcept { return cost; }
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericSupport::key, &NumericSupport::interval, &NumericSupport::cost> {}; }
 };
@@ -78,9 +78,9 @@ public:
     WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost, NumericSupports numeric_supports);
     WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost, std::span<const NumericSupport> numeric_supports);
 
-    auto get_rule_key() const noexcept { return rule_key; }
-    auto get_cost() const noexcept { return cost; }
-    const auto& get_numeric_supports() const noexcept { return numeric_supports; }
+    [[nodiscard]] auto get_rule_key() const noexcept { return rule_key; }
+    [[nodiscard]] auto get_cost() const noexcept { return cost; }
+    [[nodiscard]] const auto& get_numeric_supports() const noexcept { return numeric_supports; }
 
     static constexpr auto identifying_members() noexcept
     { return ygg::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost, &WitnessAnnotation::numeric_supports> {}; }
@@ -189,10 +189,10 @@ void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredic
 struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation>
 {
 public:
-    BaseAnnotation() : m_cost(Cost(0)) {}
+    BaseAnnotation() : m_cost(static_cast<Cost>(0)) {}
     explicit BaseAnnotation(Cost cost) : m_cost(cost) {}
 
-    auto get_cost() const noexcept { return m_cost; }
+    [[nodiscard]] auto get_cost() const noexcept { return m_cost; }
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&BaseAnnotation::m_cost> {}; }
 
@@ -214,15 +214,15 @@ struct CostUpdate
     std::optional<Cost> old_cost;
     Cost new_cost;
 
-    CostUpdate() noexcept : old_cost(std::nullopt), new_cost(Cost(0)) { assert(is_monotone()); }
+    CostUpdate() noexcept : old_cost(std::nullopt), new_cost(static_cast<Cost>(0)) { assert(is_monotone()); }
     CostUpdate(std::optional<Cost> old_cost, Cost new_cost) noexcept : old_cost(old_cost), new_cost(new_cost) { assert(is_monotone()); }
     CostUpdate(Cost old_cost, Cost new_cost) noexcept :
         old_cost(old_cost == std::numeric_limits<Cost>::max() ? std::nullopt : std::optional<Cost>(old_cost)),
         new_cost(new_cost)
     { assert(is_monotone()); }
 
-    bool is_monotone() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
-    bool is_strict_improvement() const noexcept { return new_cost < old_cost.value_or(std::numeric_limits<Cost>::max()); }
+    [[nodiscard]] bool is_monotone() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
+    [[nodiscard]] bool is_strict_improvement() const noexcept { return new_cost < old_cost.value_or(std::numeric_limits<Cost>::max()); }
 };
 
 /// ThreadSafe permits concurrent read(), update(), and row growth after relation lanes
@@ -286,13 +286,13 @@ public:
                               });
     }
 
-    const Value* find(Key key) const noexcept { return find(key.relation, key.row); }
+    [[nodiscard]] const Value* find(Key key) const noexcept { return find(key.relation, key.row); }
 
     Value* find(Key key) noexcept
         requires(!ThreadSafe)
     { return const_cast<Value*>(std::as_const(*this).find(key)); }
 
-    const Value* find(Relation relation, Row row) const noexcept
+    [[nodiscard]] const Value* find(Relation relation, Row row) const noexcept
     {
         const auto* slot = find_slot(relation, row);
         return slot && slot->generation == m_generation ? &slot->value : nullptr;
@@ -352,7 +352,7 @@ private:
         return lane[row_index];
     }
 
-    const Slot* find_slot(Relation relation, Row row) const noexcept
+    [[nodiscard]] const Slot* find_slot(Relation relation, Row row) const noexcept
     {
         const auto relation_index = ygg::uint_t(relation);
         const auto row_index = ygg::uint_t(row);
@@ -392,7 +392,7 @@ public:
         m_annotations.update(key, [&](auto& incumbent, bool) { incumbent = std::move(annotation); });
     }
 
-    Cost fetch_cost(Key key) const noexcept
+    [[nodiscard]] Cost fetch_cost(Key key) const noexcept
     {
         return m_annotations.read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
     }
@@ -412,7 +412,7 @@ public:
                                     });
     }
 
-    const Annotation<>* find(Key key) const noexcept { return m_annotations.find(key); }
+    [[nodiscard]] const Annotation<>* find(Key key) const noexcept { return m_annotations.find(key); }
 
     Annotation<>* find(Key key) noexcept
         requires(!ThreadSafe)
@@ -432,7 +432,7 @@ struct NumericIntervalAnnotation
 
     NumericIntervalAnnotation() = default;
     NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation) :
-        interval(interval),
+        interval(std::move(interval)),
         annotation(std::move(annotation))
     {
     }
@@ -504,11 +504,11 @@ public:
         m_size = 0;
     }
 
-    size_t size() const noexcept
+    [[nodiscard]] size_t size() const noexcept
         requires(!ThreadSafe)
     { return m_size; }
 
-    Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    [[nodiscard]] Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
     {
         return m_slots.read(
             binding,
@@ -520,11 +520,11 @@ public:
             std::numeric_limits<Cost>::max());
     }
 
-    const Entries* find_entries(Binding binding) const noexcept { return m_slots.find(binding); }
+    [[nodiscard]] const Entries* find_entries(Binding binding) const noexcept { return m_slots.find(binding); }
 
-    const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
+    [[nodiscard]] const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
 
-    const Annotation<formalism::FunctionTag>* find(Binding binding) const noexcept
+    [[nodiscard]] const Annotation<formalism::FunctionTag>* find(Binding binding) const noexcept
     {
         const auto* entries = find_entries(binding);
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
@@ -537,16 +537,16 @@ public:
         return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
     }
 
-    const Annotation<formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    [[nodiscard]] const Annotation<formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
     {
         const auto* entries = find_entries(binding);
-        return entries ? find_numeric_interval_annotation(*entries, interval) : nullptr;
+        return entries ? find_numeric_interval_annotation(*entries, std::move(interval)) : nullptr;
     }
 
     bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
-    { return insert(binding.relation, binding.row, interval, std::move(annotation)); }
+    { return insert(binding.relation, binding.row, std::move(interval), std::move(annotation)); }
 
-    bool insert(Relation relation, Key key, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
+    bool insert(Relation relation, Key key, const ygg::ClosedInterval<ygg::float_t>& interval, Annotation<formalism::FunctionTag> annotation)
     {
         if (empty(interval))
             return false;
@@ -606,13 +606,13 @@ public:
 
     void clear() noexcept { m_entries.clear(); }
 
-    Cost fetch_cost(Key key) const noexcept
+    [[nodiscard]] Cost fetch_cost(Key key) const noexcept
     {
         const auto* annotation = find(key);
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
-    const Annotation<>* find(Key key) const noexcept
+    [[nodiscard]] const Annotation<>* find(Key key) const noexcept
     {
         const auto it = std::find_if(m_entries.begin(), m_entries.end(), [&](const auto& entry) { return entry.first == key; });
         return it != m_entries.end() ? &it->second : nullptr;
@@ -648,17 +648,17 @@ public:
 
     void clear() noexcept { m_entry.reset(); }
 
-    Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    [[nodiscard]] Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
     {
-        const auto* annotation = find(binding, interval);
+        const auto* annotation = find(binding, std::move(interval));
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
-    const Annotation<formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
+    [[nodiscard]] const Annotation<formalism::FunctionTag>* find(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval) const noexcept
     { return m_entry && m_entry->binding == binding && m_entry->interval == interval ? &m_entry->annotation : nullptr; }
 
     /// Same replacement rule as NumericIntervalAnnotations: an equal interval is replaced only by a strictly cheaper annotation.
-    bool insert(Binding binding, ygg::ClosedInterval<ygg::float_t> interval, Annotation<formalism::FunctionTag> annotation)
+    bool insert(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval, Annotation<formalism::FunctionTag> annotation)
     {
         assert((!m_entry || (m_entry->binding == binding && m_entry->interval == interval)) && "A ground rule firing stages a single head interval.");
         if (m_entry && get_cost(m_entry->annotation) <= get_cost(annotation))

@@ -52,7 +52,7 @@ public:
     auto get_domain() const noexcept { return ygg::make_view(this->get_data().domain, this->get_context()); }
     auto get_derived_predicates() const noexcept { return ygg::make_view(this->get_data().derived_predicates, this->get_context()); }
     auto get_objects() const noexcept { return ygg::make_view(this->get_data().objects, this->get_context()); }
-    size_t get_num_objects() const noexcept { return get_domain().get_constants().size() + get_objects().size(); }
+    [[nodiscard]] size_t get_num_objects() const noexcept { return get_domain().get_constants().size() + get_objects().size(); }
     template<::tyr::formalism::FactKind T>
     auto get_atoms() const noexcept
     { return ygg::make_view(this->get_data().template get_atoms<T>(), this->get_context()); }

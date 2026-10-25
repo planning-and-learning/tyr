@@ -44,7 +44,7 @@ struct WorkerSearchSpaceView
     const ygg::SegmentedVector<SearchNode>& search_nodes;
     size_t state_index_divisor = 1;
 
-    const SearchNode& get_search_node(ygg::Index<State<Kind>> state) const
+    [[nodiscard]] const SearchNode& get_search_node(ygg::Index<State<Kind>> state) const
     {
         assert(state_index_divisor > 0);
         const auto index = static_cast<size_t>(ygg::uint_t(state)) / state_index_divisor;

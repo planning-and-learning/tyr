@@ -27,18 +27,18 @@ using Cost = ygg::float_t;
 
 struct SumAggregation
 {
-    static constexpr Cost identity() noexcept { return Cost(0); }
+    static constexpr Cost identity() noexcept { return static_cast<Cost>(0); }
     constexpr Cost operator()(Cost acc, Cost x) const noexcept { return acc + x; }
 };
 
 struct MaxAggregation
 {
-    static constexpr Cost identity() noexcept { return Cost(0); }
+    static constexpr Cost identity() noexcept { return static_cast<Cost>(0); }
     constexpr Cost operator()(Cost acc, Cost x) const noexcept { return std::max(acc, x); }
 };
 
 /// The part of `total` not yet covered by `used` (saturating at zero).
-inline Cost reduce_cost(Cost total, Cost used) noexcept { return used >= total ? Cost(0) : total - used; }
+inline Cost reduce_cost(Cost total, Cost used) noexcept { return used >= total ? static_cast<Cost>(0) : total - used; }
 
 }
 

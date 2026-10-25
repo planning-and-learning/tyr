@@ -239,7 +239,7 @@ TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepCons
     using Binary = tyr::formalism::planning::BinaryOperator<LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
     using BinaryView = ygg::View<ygg::Index<Binary>, tyr::formalism::planning::Repository>;
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
-    const auto constant = Expression(Expression::Variant(ygg::float_t(3)));
+    const auto constant = Expression(Expression::Variant(static_cast<ygg::float_t>(3)));
     auto binary_data = ygg::Data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
     canonicalize(binary_data);
     const auto binary = repository.insert(binary_data).first;

@@ -47,9 +47,9 @@ public:
     void compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder);
     [[nodiscard]] AxiomEvaluatorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
-    const TaskPtr<LiftedTag>& get_task() const noexcept;
-    const ygg::ExecutionContextPtr& get_execution_context() const noexcept;
-    ygg::uint_t get_index() const noexcept;
+    [[nodiscard]] const TaskPtr<LiftedTag>& get_task() const noexcept;
+    [[nodiscard]] const ygg::ExecutionContextPtr& get_execution_context() const noexcept;
+    [[nodiscard]] ygg::uint_t get_index() const noexcept;
 
     void print_summary(size_t verbosity) const;
 

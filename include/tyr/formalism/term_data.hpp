@@ -42,7 +42,7 @@ struct Data<::tyr::formalism::Term>
     using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
-    Data(Variant variant) : variant(variant) {}
+    Data(Variant variant) : variant(std::move(variant)) {}
     // Python constructor
     template<typename C>
     Data(const ViewVariant<C>& variant_) :

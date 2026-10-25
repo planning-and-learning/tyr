@@ -50,8 +50,8 @@ int main(int argc, char** argv)
     program.add_argument("-D", "--domain-filepath").required().help("The path to the PDDL domain file.");
     program.add_argument("-P", "--problem-filepath").required().help("The path to the PDDL problem file.");
     program.add_argument("-O", "--plan-filepath").default_value(std::string("plan.out")).help("The path to the output plan file.");
-    program.add_argument("-N", "--num-datalog-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of Datalog threads.");
-    program.add_argument("-M", "--num-search-workers").default_value(size_t(1)).scan<'u', size_t>().help("The number of search workers.");
+    program.add_argument("-N", "--num-datalog-threads").default_value(static_cast<size_t>(1)).scan<'u', size_t>().help("The number of Datalog threads.");
+    program.add_argument("-M", "--num-search-workers").default_value(static_cast<size_t>(1)).scan<'u', size_t>().help("The number of search workers.");
     program.add_argument("--state-repository-mode")
         .default_value(std::string("hash-distributed"))
         .choices("hash-distributed", "shared")
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
         .default_value(false)
         .implicit_value(true)
         .help("Collect destination worker lock wait and hold times.");
-    program.add_argument("-R", "--random-seed").default_value(uint64_t(0)).scan<'u', uint64_t>().help("The random seed.");
+    program.add_argument("-R", "--random-seed").default_value(static_cast<uint64_t>(0)).scan<'u', uint64_t>().help("The random seed.");
     program.add_argument("-S", "--shuffle-labeled-succ-nodes").default_value(false).implicit_value(true).help("Enable shuffling the labeled successor nodes.");
     program.add_argument("-G", "--instantiate-ground-task")
         .default_value(false)
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     program.add_argument("--heuristic-cost-type").default_value("unit").choices("unit", "general");
     program.add_argument("--search-cost-type").default_value("general").choices("unit", "general");
     program.add_argument("-V", "--verbosity")
-        .default_value(size_t(1))
+        .default_value(static_cast<size_t>(1))
         .scan<'u', size_t>()
         .help("The verbosity level. Defaults to minimal amount of debug output.");
 
@@ -124,18 +124,18 @@ int main(int argc, char** argv)
 
         if (num_search_workers == 0)
         {
-            std::cerr << "--num-search-workers must be greater than zero." << std::endl;
+            std::cerr << "--num-search-workers must be greater than zero." << '\n';
             return 1;
         }
 
-        std::cout << "[INPUT] Num Datalog threads: " << num_datalog_threads << std::endl;
-        std::cout << "[INPUT] Num search workers: " << num_search_workers << std::endl;
-        std::cout << "[INPUT] State repository mode: " << state_repository_mode_name << std::endl;
-        std::cout << "[INPUT] Distribution hash mode: " << dist_hash_mode_name << std::endl;
-        std::cout << "[INPUT] Parallel search mode: " << parallel_search_mode_name << std::endl;
-        std::cout << "[INPUT] Collect destination lock statistics: " << collect_destination_lock_statistics << std::endl;
-        std::cout << "[INPUT] Random seed: " << random_seed << std::endl;
-        std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << std::endl;
+        std::cout << "[INPUT] Num Datalog threads: " << num_datalog_threads << '\n';
+        std::cout << "[INPUT] Num search workers: " << num_search_workers << '\n';
+        std::cout << "[INPUT] State repository mode: " << state_repository_mode_name << '\n';
+        std::cout << "[INPUT] Distribution hash mode: " << dist_hash_mode_name << '\n';
+        std::cout << "[INPUT] Parallel search mode: " << parallel_search_mode_name << '\n';
+        std::cout << "[INPUT] Collect destination lock statistics: " << collect_destination_lock_statistics << '\n';
+        std::cout << "[INPUT] Random seed: " << random_seed << '\n';
+        std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << '\n';
 
         auto parser_options = loki::semantic::ParserOptions();
         // parser_options.strict = true;
@@ -197,7 +197,7 @@ int main(int argc, char** argv)
                 plan_file.open(plan_filepath);
                 if (!plan_file.is_open())
                 {
-                    std::cerr << "Error opening file!" << std::endl;
+                    std::cerr << "Error opening file!" << '\n';
                     return 1;
                 }
                 fmt::print(plan_file, "{}", result.plan.value());
@@ -206,7 +206,7 @@ int main(int argc, char** argv)
 
             tyr::cli::print_summary(*lifted_task->get_repository());
             std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
-                      << state_repository->memory_usage() << " bytes" << std::endl;
+                      << state_repository->memory_usage() << " bytes" << '\n';
         }
         else
         {
@@ -216,7 +216,7 @@ int main(int argc, char** argv)
 
             if (ground_task_instantiation_result.status == tyr::planning::GroundTaskInstantiationStatus::PROVEN_UNSOLVABLE)
             {
-                std::cout << "[TaskGrounder] Task is unsolvable!" << std::endl;
+                std::cout << "[TaskGrounder] Task is unsolvable!" << '\n';
             }
             else if (ground_task_instantiation_result.status == tyr::planning::GroundTaskInstantiationStatus::SUCCESS)
             {
@@ -265,7 +265,7 @@ int main(int argc, char** argv)
                     plan_file.open(plan_filepath);
                     if (!plan_file.is_open())
                     {
-                        std::cerr << "Error opening file!" << std::endl;
+                        std::cerr << "Error opening file!" << '\n';
                         return 1;
                     }
                     fmt::print(plan_file, "{}", result.plan.value());
@@ -274,13 +274,13 @@ int main(int argc, char** argv)
 
                 tyr::cli::print_summary(*ground_task->get_repository());
                 std::cout << (num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")
-                          << state_repository->memory_usage() << " bytes" << std::endl;
+                          << state_repository->memory_usage() << " bytes" << '\n';
             }
         }
     }
 
-    std::cout << "[Total] Peak memory usage: " << ygg::get_peak_memory_usage_in_bytes() << " bytes" << std::endl;
-    std::cout << "[Total] Total time: " << ygg::to_ms(total_time) << " ms (" << ygg::to_ns(total_time) << " ns)" << std::endl;
+    std::cout << "[Total] Peak memory usage: " << ygg::get_peak_memory_usage_in_bytes() << " bytes" << '\n';
+    std::cout << "[Total] Total time: " << ygg::to_ms(total_time) << " ms (" << ygg::to_ns(total_time) << " ns)" << '\n';
 
     return 0;
 }

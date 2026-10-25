@@ -365,7 +365,7 @@ ygg::Data<FunctionExpression<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                       Builder&,
                                       Repository&)
-{ return ygg::Data<FunctionExpression<LiftedTag>>(ygg::float_t(element.get_value())); }
+{ return ygg::Data<FunctionExpression<LiftedTag>>(static_cast<ygg::float_t>(element.get_value())); }
 
 ygg::Data<FunctionExpression<LiftedTag>>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
@@ -1017,7 +1017,7 @@ ygg::Data<FunctionExpression<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                         Builder&,
                                         Repository&)
-{ return ygg::Data<FunctionExpression<GroundTag>>(ygg::float_t(element.get_value())); }
+{ return ygg::Data<FunctionExpression<GroundTag>>(static_cast<ygg::float_t>(element.get_value())); }
 
 ygg::Data<FunctionExpression<GroundTag>>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,

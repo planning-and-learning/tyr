@@ -59,15 +59,16 @@ public:
 
     void on_finish_iteration();
 
-    const formalism::datalog::Repository& get_context() const noexcept { return m_context; }
-    const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_rules() const noexcept { return m_rules; }
+    [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return m_context; }
+    [[nodiscard]] const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_rules() const noexcept { return m_rules; }
 
     /// Active rules in sorted index order: hash-set iteration order is platform-unspecified, but the
     /// rule processing order assigns program-repository rows (first-derivation order) that delta
     /// bitsets are indexed by, so it must be identical on every platform.
-    const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
+    [[nodiscard]] const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
-    bool requires_full_enumeration(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept { return m_full_enumeration_rules.contains(rule); }
+    [[nodiscard]] bool requires_full_enumeration(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept
+    { return m_full_enumeration_rules.contains(rule); }
 
 private:
     void rebuild_sorted_active_rules();
@@ -95,15 +96,15 @@ public:
 
     auto& get(formalism::PredicateTag) noexcept { return predicate_rules; }
     auto& get(formalism::FunctionTag) noexcept { return function_rules; }
-    const auto& get(formalism::PredicateTag) const noexcept { return predicate_rules; }
-    const auto& get(formalism::FunctionTag) const noexcept { return function_rules; }
+    [[nodiscard]] const auto& get(formalism::PredicateTag) const noexcept { return predicate_rules; }
+    [[nodiscard]] const auto& get(formalism::FunctionTag) const noexcept { return function_rules; }
 
     template<formalism::RelationKind R>
     auto& get() noexcept
     { return get(R {}); }
 
     template<formalism::RelationKind R>
-    const auto& get() const noexcept
+    [[nodiscard]] const auto& get() const noexcept
     { return get(R {}); }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>

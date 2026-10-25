@@ -118,29 +118,29 @@ public:
      * Getters
      */
 
-    uint64_t get_num_generated_candidates() const noexcept { return m_num_generated_candidates; }
-    uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
-    uint64_t get_num_expanded() const { return m_num_expanded; }
-    uint64_t get_num_deadends() const { return m_num_deadends; }
-    uint64_t get_num_pruned() const { return m_num_pruned; }
-    uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
+    [[nodiscard]] uint64_t get_num_generated_candidates() const noexcept { return m_num_generated_candidates; }
+    [[nodiscard]] uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
+    [[nodiscard]] uint64_t get_num_expanded() const { return m_num_expanded; }
+    [[nodiscard]] uint64_t get_num_deadends() const { return m_num_deadends; }
+    [[nodiscard]] uint64_t get_num_pruned() const { return m_num_pruned; }
+    [[nodiscard]] uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
     /// HDA* communication overhead: the fraction of generated candidates transferred to another worker.
-    double get_communication_overhead() const noexcept
+    [[nodiscard]] double get_communication_overhead() const noexcept
     { return m_num_generated_candidates == 0 ? 0.0 : static_cast<double>(m_num_transferred_candidates) / static_cast<double>(m_num_generated_candidates); }
-    uint64_t get_num_registered_states() const noexcept { return m_num_registered_states; }
+    [[nodiscard]] uint64_t get_num_registered_states() const noexcept { return m_num_registered_states; }
 
-    size_t get_state_storage_memory_usage() const noexcept { return m_state_storage_memory_usage; }
-    size_t get_action_bindings_memory_usage() const noexcept { return m_action_bindings_memory_usage; }
-    size_t get_predicate_bindings_memory_usage() const noexcept { return m_predicate_bindings_memory_usage; }
-    size_t get_axiom_bindings_memory_usage() const noexcept { return m_axiom_bindings_memory_usage; }
-    size_t get_function_bindings_memory_usage() const noexcept { return m_function_bindings_memory_usage; }
+    [[nodiscard]] size_t get_state_storage_memory_usage() const noexcept { return m_state_storage_memory_usage; }
+    [[nodiscard]] size_t get_action_bindings_memory_usage() const noexcept { return m_action_bindings_memory_usage; }
+    [[nodiscard]] size_t get_predicate_bindings_memory_usage() const noexcept { return m_predicate_bindings_memory_usage; }
+    [[nodiscard]] size_t get_axiom_bindings_memory_usage() const noexcept { return m_axiom_bindings_memory_usage; }
+    [[nodiscard]] size_t get_function_bindings_memory_usage() const noexcept { return m_function_bindings_memory_usage; }
 
-    auto get_search_time() const { return m_search_end_time_point - m_search_start_time_point; }
-    auto get_current_search_time() const { return std::chrono::steady_clock::now() - m_search_start_time_point; }
-    auto get_idle_time() const noexcept { return m_idle_time; }
-    uint64_t get_num_destination_lock_acquisitions() const noexcept { return m_num_destination_lock_acquisitions; }
-    auto get_destination_lock_wait_time() const noexcept { return m_destination_lock_wait_time; }
-    auto get_destination_lock_hold_time() const noexcept { return m_destination_lock_hold_time; }
+    [[nodiscard]] auto get_search_time() const { return m_search_end_time_point - m_search_start_time_point; }
+    [[nodiscard]] auto get_current_search_time() const { return std::chrono::steady_clock::now() - m_search_start_time_point; }
+    [[nodiscard]] auto get_idle_time() const noexcept { return m_idle_time; }
+    [[nodiscard]] uint64_t get_num_destination_lock_acquisitions() const noexcept { return m_num_destination_lock_acquisitions; }
+    [[nodiscard]] auto get_destination_lock_wait_time() const noexcept { return m_destination_lock_wait_time; }
+    [[nodiscard]] auto get_destination_lock_hold_time() const noexcept { return m_destination_lock_hold_time; }
 };
 
 class ProgressStatistics
@@ -172,12 +172,12 @@ public:
         {
         }
 
-        uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
-        uint64_t get_num_expanded() const { return m_num_expanded; }
-        uint64_t get_num_deadends() const { return m_num_deadends; }
-        uint64_t get_num_pruned() const { return m_num_pruned; }
-        uint64_t get_num_generated_candidates() const noexcept { return m_num_generated_candidates; }
-        uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
+        [[nodiscard]] uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
+        [[nodiscard]] uint64_t get_num_expanded() const { return m_num_expanded; }
+        [[nodiscard]] uint64_t get_num_deadends() const { return m_num_deadends; }
+        [[nodiscard]] uint64_t get_num_pruned() const { return m_num_pruned; }
+        [[nodiscard]] uint64_t get_num_generated_candidates() const noexcept { return m_num_generated_candidates; }
+        [[nodiscard]] uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
     };
 
     void add_snapshot(const Statistics& statistics)
@@ -191,10 +191,10 @@ public:
     }
 
     void clear() noexcept { m_snapshots.clear(); }
-    bool empty() const noexcept { return m_snapshots.empty(); }
-    size_t size() const noexcept { return m_snapshots.size(); }
+    [[nodiscard]] bool empty() const noexcept { return m_snapshots.empty(); }
+    [[nodiscard]] size_t size() const noexcept { return m_snapshots.size(); }
 
-    const auto& get_snapshots() const { return m_snapshots; }
+    [[nodiscard]] const auto& get_snapshots() const { return m_snapshots; }
 
 private:
     std::vector<Snapshot> m_snapshots;

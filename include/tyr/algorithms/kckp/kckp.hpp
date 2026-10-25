@@ -72,7 +72,7 @@ struct GraphLayout
 
     /// The vertex with label in partition, if any. Requires the partition's labels to be sorted, as for rule
     /// consistency graphs, whose labels are objects of sorted parameter domains.
-    std::optional<Vertex> find_vertex(ygg::uint_t partition, ygg::uint_t label) const noexcept;
+    [[nodiscard]] std::optional<Vertex> find_vertex(ygg::uint_t partition, ygg::uint_t label) const noexcept;
 };
 
 class VertexPartitions
@@ -86,13 +86,13 @@ public:
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), uint64_t { 0 }); }
 
     ygg::BitsetSpan<uint64_t> get_bitset(const GraphLayout::BitsetInfo& info) noexcept;
-    ygg::BitsetSpan<const uint64_t> get_bitset(const GraphLayout::BitsetInfo& info) const noexcept;
+    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_bitset(const GraphLayout::BitsetInfo& info) const noexcept;
     ygg::BitsetSpan<uint64_t> get_bitset(ygg::uint_t partition) noexcept;
-    ygg::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t partition) const noexcept;
+    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t partition) const noexcept;
 
     auto& data() noexcept { return m_data; }
-    const auto& data() const noexcept { return m_data; }
-    const auto& layout() const noexcept { return m_layout; }
+    [[nodiscard]] const auto& data() const noexcept { return m_data; }
+    [[nodiscard]] const auto& layout() const noexcept { return m_layout; }
 
 private:
     const GraphLayout& m_layout;
@@ -104,11 +104,11 @@ class AdjacencyMatrix
 public:
     explicit AdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_bitset_data(layout.num_vertices * layout.info.num_blocks) {}
 
-    std::span<const uint64_t> get_row(ygg::uint_t vertex) const noexcept;
+    [[nodiscard]] std::span<const uint64_t> get_row(ygg::uint_t vertex) const noexcept;
     ygg::BitsetSpan<uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept;
-    ygg::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
+    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
 
-    const auto& layout() const noexcept { return m_layout; }
+    [[nodiscard]] const auto& layout() const noexcept { return m_layout; }
 
 private:
     GraphLayout m_layout;
@@ -122,12 +122,12 @@ public:
     explicit DeduplicatedAdjacencyMatrix(const GraphLayout& layout) : m_layout(layout) {}
     explicit DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& matrix);
 
-    ygg::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
+    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
 
-    const auto& layout() const noexcept { return m_layout; }
-    const auto& row_offset() const noexcept { return m_row_offset; }
-    const auto& row_data() const noexcept { return m_row_data; }
-    const auto& bitset_data() const noexcept { return m_bitset_data; }
+    [[nodiscard]] const auto& layout() const noexcept { return m_layout; }
+    [[nodiscard]] const auto& row_offset() const noexcept { return m_row_offset; }
+    [[nodiscard]] const auto& row_data() const noexcept { return m_row_data; }
+    [[nodiscard]] const auto& bitset_data() const noexcept { return m_bitset_data; }
 
 private:
     GraphLayout m_layout;
@@ -148,12 +148,12 @@ public:
     /// Constrained adjacency and universal-pair flags must both be symmetric.
     static Graph create(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs);
 
-    bool is_satisfiable() const noexcept { return m_satisfiable; }
-    const GraphLayout& get_layout() const noexcept { return m_layout; }
-    const DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept { return m_adjacency; }
+    [[nodiscard]] bool is_satisfiable() const noexcept { return m_satisfiable; }
+    [[nodiscard]] const GraphLayout& get_layout() const noexcept { return m_layout; }
+    [[nodiscard]] const DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept { return m_adjacency; }
 
 private:
-    Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs);
+    Graph(bool satisfiable, AdjacencyMatrix adjacency, const boost::dynamic_bitset<>& universal_partition_pairs);
 
     bool m_satisfiable { true };
     GraphLayout m_layout;
@@ -188,7 +188,7 @@ struct Workspace
     }
 
     std::span<uint64_t> compatible_vertices(size_t depth) noexcept;
-    std::span<const uint64_t> compatible_vertices(size_t depth) const noexcept;
+    [[nodiscard]] std::span<const uint64_t> compatible_vertices(size_t depth) const noexcept;
 };
 
 namespace detail
@@ -271,12 +271,12 @@ public:
         complete_from_prefix(first_partition, workspace, emit);
     }
 
-    const Graph& get_graph() const noexcept { return m_graph; }
+    [[nodiscard]] const Graph& get_graph() const noexcept { return m_graph; }
 
 private:
     bool seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace) const;
 
-    ygg::uint_t choose_next_partition(ygg::uint_t first_partition, const Workspace& workspace) const noexcept;
+    [[nodiscard]] ygg::uint_t choose_next_partition(ygg::uint_t first_partition, const Workspace& workspace) const noexcept;
 
     bool update_candidates(ygg::uint_t first_partition, Vertex source, size_t depth, Workspace& workspace) const;
 

@@ -81,7 +81,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
     }
 
     // Counting sort by row: offsets[r + 1] counts the atoms of row r, then holds where they end.
-    const auto num_rows = groups.atom_rows.empty() ? ygg::uint_t(0) : *std::ranges::max_element(groups.atom_rows) + 1;
+    const auto num_rows = groups.atom_rows.empty() ? static_cast<ygg::uint_t>(0) : *std::ranges::max_element(groups.atom_rows) + 1;
     groups.offsets.assign(num_rows + 1, 0);
     for (const auto row : groups.atom_rows)
         ++groups.offsets[row + 1];
@@ -89,7 +89,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
         groups.offsets[row + 1] += groups.offsets[row];
 
     groups.atoms.resize(groups.atom_rows.size());
-    auto i = size_t(0);
+    auto i = static_cast<size_t>(0);
     for (const auto atom : atoms)
         groups.atoms[groups.offsets[groups.atom_rows[i++]]++] = atom.get_index();
     // Filling advanced each start to the next row's start; shift them back.

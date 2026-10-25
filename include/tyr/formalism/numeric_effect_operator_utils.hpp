@@ -29,7 +29,7 @@ namespace tyr::formalism
  */
 
 template<typename T>
-inline T apply(NumericEffectOperatorKind op, T lhs, T rhs)
+inline T apply(NumericEffectOperatorKind op, const T& lhs, T rhs)
 {
     switch (op)
     {

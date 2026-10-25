@@ -99,7 +99,7 @@ public:
     }
 
 private:
-    ygg::uint_t count_satisfied_goals(const Task<Kind>& task, const ygg::Builder<State<Kind>>& state) const
+    [[nodiscard]] ygg::uint_t count_satisfied_goals(const Task<Kind>& task, const ygg::Builder<State<Kind>>& state) const
     {
         const auto state_context = StateContext { task, state, ygg::float_t { 0 } };
         auto result = ygg::uint_t { 0 };

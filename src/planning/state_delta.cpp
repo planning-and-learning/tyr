@@ -51,7 +51,7 @@ void compute_state_delta(const ygg::Builder<State<Kind>>& parent, const ygg::Bui
     const auto num_variables = std::max(num_fluent_variables(parent), num_fluent_variables(successor));
     for (size_t i = 0; i < num_variables; ++i)
     {
-        const auto variable = ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>>(ygg::uint_t(i));
+        const auto variable = ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
         const auto from = parent.get(variable);
         const auto to = successor.get(variable);
         if (from != to)
@@ -61,7 +61,7 @@ void compute_state_delta(const ygg::Builder<State<Kind>>& parent, const ygg::Bui
     const auto num_fterms = std::max(parent.get_numeric_variables().values.size(), successor.get_numeric_variables().values.size());
     for (size_t i = 0; i < num_fterms; ++i)
     {
-        const auto fterm = ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>(ygg::uint_t(i));
+        const auto fterm = ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
         const auto from = parent.get(fterm);
         const auto to = successor.get(fterm);
         if (!ygg::EqualTo<ygg::float_t> {}(from, to))

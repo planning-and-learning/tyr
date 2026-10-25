@@ -31,25 +31,24 @@ namespace tyr::cli
 
 inline void print_summary(const formalism::planning::Repository& repository)
 {
-    std::cout << "[Total] Number of objects: " << repository.template size<formalism::Object>() << std::endl;
-    std::cout << "[Total] Number of fluent atoms: " << repository.template size<formalism::planning::Atom<GroundTag, formalism::FluentTag>>() << std::endl;
-    std::cout << "[Total] Number of derived atoms: " << repository.template size<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>() << std::endl;
-    std::cout << "[Total] Number of fluent fterms: " << repository.template size<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>()
-              << std::endl;
+    std::cout << "[Total] Number of objects: " << repository.template size<formalism::Object>() << '\n';
+    std::cout << "[Total] Number of fluent atoms: " << repository.template size<formalism::planning::Atom<GroundTag, formalism::FluentTag>>() << '\n';
+    std::cout << "[Total] Number of derived atoms: " << repository.template size<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>() << '\n';
+    std::cout << "[Total] Number of fluent fterms: " << repository.template size<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>() << '\n';
     std::cout << "[Total] Action bindings memory usage: "
-              << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>() << " bytes" << std::endl;
+              << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>() << " bytes" << '\n';
     std::cout << "[Total] Predicate bindings memory usage: "
               << repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>()
                      + repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>()
                      + repository.template memory_usage<formalism::RelationBinding<formalism::Predicate<formalism::DerivedTag>>>()
-              << " bytes" << std::endl;
+              << " bytes" << '\n';
     std::cout << "[Total] Axiom bindings memory usage: "
-              << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Axiom<LiftedTag>>>() << " bytes" << std::endl;
+              << repository.template memory_usage<formalism::RelationBinding<formalism::planning::Axiom<LiftedTag>>>() << " bytes" << '\n';
     std::cout << "[Total] Function bindings memory usage: "
               << repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::StaticTag>>>()
                      + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::FluentTag>>>()
                      + repository.template memory_usage<formalism::RelationBinding<formalism::Function<formalism::AuxiliaryTag>>>()
-              << " bytes" << std::endl;
+              << " bytes" << '\n';
 }
 
 template<TaskKind Kind>

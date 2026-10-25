@@ -123,7 +123,7 @@ private:
                 if (m_goal_positions.emplace(literal.get_atom().get_row().get_index(), m_goal_atoms.size()).second)
                     m_goal_atoms.push_back(literal.get_atom().get_row().get_index());
             m_goal_final.assign(m_goal_atoms.size(), false);
-            m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? Cost(0) : min_edge_cost;
+            m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? static_cast<Cost>(0) : min_edge_cost;
             m_goal_cutoff_enabled = !m_goal_atoms.empty();
         }
     }
@@ -137,7 +137,7 @@ private:
             for (const auto atom : set.get_bindings())
                 if (const auto* annotation = program_out.annotations().find(atom.get_index()))
                     return get_cost(*annotation);
-        return Cost(0);
+        return static_cast<Cost>(0);
     }
 
     /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
@@ -164,7 +164,7 @@ private:
         for (size_t i = 0; i < m_goal_atoms.size(); ++i)
         {
             if (facts.contains(m_goal_atoms[i]))
-                observe_goal_atom(i, Cost(0));
+                observe_goal_atom(i, static_cast<Cost>(0));
             else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
                 observe_goal_atom(i, get_cost(*annotation));
         }
@@ -181,7 +181,7 @@ private:
                     observe_goal_atom(it->second, get_cost(*annotation));
     }
 
-    bool goal_cutoff_stopped() const noexcept { return m_goal_cutoff_stopped; }
+    [[nodiscard]] bool goal_cutoff_stopped() const noexcept { return m_goal_cutoff_stopped; }
 
     static void create_nullary_binding(ygg::IndexList<formalism::Object>& binding) { binding.clear(); }
 
@@ -707,8 +707,8 @@ private:
     size_t m_next_stratum = 0;
     bool m_goal_cutoff_enabled = false;
     bool m_goal_cutoff_stopped = false;
-    Cost m_min_edge_cost = Cost(0);
-    Cost m_goal_cutoff_bound = Cost(0);
+    Cost m_min_edge_cost = static_cast<Cost>(0);
+    Cost m_goal_cutoff_bound = static_cast<Cost>(0);
     std::vector<GoalAtom> m_goal_atoms;
     ygg::UnorderedMap<GoalAtom, size_t> m_goal_positions;
     std::vector<bool> m_goal_final;

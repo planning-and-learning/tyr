@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <utility>
 
 namespace tyr::planning
 {
@@ -128,7 +129,7 @@ auto create_cond_numeric_effect_rule(formalism::planning::ActionView<LiftedTag> 
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
-    rule->head = merge_p2d(effect, context);
+    rule->head = merge_p2d(std::move(effect), context);
     rule->cost = 1;
 
     return formalism::datalog::insert(context.destination, *rule);

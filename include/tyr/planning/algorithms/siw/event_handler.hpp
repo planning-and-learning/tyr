@@ -33,7 +33,7 @@ template<TaskKind Kind>
 class EventHandler : public serialized::EventHandler<Kind, iw::Statistics<Kind>>
 {
 public:
-    virtual const Statistics<Kind>& get_statistics() const = 0;
+    [[nodiscard]] virtual const Statistics<Kind>& get_statistics() const = 0;
 };
 
 template<TaskKind Kind>
@@ -50,10 +50,10 @@ private:
     EventHandlerBase() = default;
     friend Derived;
 
-    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
+    [[nodiscard]] constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
     constexpr auto& self() { return static_cast<Derived&>(*this); }
 
-    bool verbosity(size_t level) const { return m_verbosity >= level; }
+    [[nodiscard]] bool verbosity(size_t level) const { return m_verbosity >= level; }
 
 public:
     explicit EventHandlerBase(size_t verbosity = 0) : m_statistics(), m_verbosity(verbosity) {}
@@ -97,7 +97,7 @@ public:
             self().on_solved_impl(plan);
     }
 
-    const Statistics<Kind>& get_statistics() const override { return m_statistics; }
+    [[nodiscard]] const Statistics<Kind>& get_statistics() const override { return m_statistics; }
 };
 
 template<TaskKind Kind>

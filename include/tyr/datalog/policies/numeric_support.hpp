@@ -29,6 +29,7 @@
 #include <cassert>
 #include <concepts>
 #include <limits>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -65,20 +66,20 @@ class NumericSupportSelector
 public:
     NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<>& annotations, bool initial_intervals_cost_zero = false);
 
-    Key fluent_key(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> term) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> lookup_static(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> term) const;
-    ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
-    const NumericIntervalAnnotations<>::Entries* find_entries(Key key) const;
-    Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? Cost(0) : std::numeric_limits<Cost>::max(); }
+    [[nodiscard]] Key fluent_key(formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag> term) const noexcept;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> lookup_static(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> term) const;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> current_interval(Key key) const;
+    [[nodiscard]] const NumericIntervalAnnotations<>::Entries* find_entries(Key key) const;
+    [[nodiscard]] Cost missing_entries_cost() const noexcept { return m_initial_intervals_cost_zero ? static_cast<Cost>(0) : std::numeric_limits<Cost>::max(); }
 
     ygg::ClosedInterval<ygg::float_t> evaluate_effect_expression(formalism::datalog::FunctionExpressionView<GroundTag> expression, Selection& selection) const
     {
-        return formalism::evaluate_numeric_expression(expression, [&](const auto term) { return evaluate_term(term, selection); });
+        return formalism::evaluate_numeric_expression(std::move(expression), [&](const auto term) { return evaluate_term(term, selection); });
     }
 
     bool is_supported(formalism::datalog::BooleanOperatorView<GroundTag> constraint, Selection& selection) const
     {
-        return formalism::evaluate_numeric_expression(constraint, [&](const auto term) { return evaluate_term(term, selection); });
+        return formalism::evaluate_numeric_expression(std::move(constraint), [&](const auto term) { return evaluate_term(term, selection); });
     }
 
     ygg::ClosedInterval<ygg::float_t> select_fluent_interval(Key key, Selection& selection) const
@@ -108,7 +109,7 @@ public:
     /// an exact certificate for the selected interval, or the two certificates attaining its bounds.
     /// Returns whether a complete proof was reported.
     template<typename Callback>
-    bool for_each_entry_support(const SelectionEntry& entry, Callback callback) const
+    [[nodiscard]] bool for_each_entry_support(const SelectionEntry& entry, Callback callback) const
     {
         const auto key = entry.key;
 
@@ -163,7 +164,7 @@ public:
                                      AggregationFunction agg,
                                      Callback callback) const
     {
-        const auto cost = get_constraint_cost(constraint, selection, agg);
+        const auto cost = get_constraint_cost(std::move(constraint), selection, agg);
         if (cost == std::numeric_limits<Cost>::max())
             return cost;
 
@@ -178,7 +179,7 @@ public:
     }
 
     /// The cheapest annotation cost at which the achieved interval hull covers `current`.
-    Cost get_current_interval_cost(Key key, ygg::ClosedInterval<ygg::float_t> current) const
+    [[nodiscard]] Cost get_current_interval_cost(Key key, const ygg::ClosedInterval<ygg::float_t>& current) const
     {
         const auto* entries = find_entries(key);
         if (!entries)
@@ -211,7 +212,7 @@ public:
         return best_cost;
     }
 
-    bool is_available(Key key, ygg::ClosedInterval<ygg::float_t> interval) const
+    [[nodiscard]] bool is_available(Key key, const ygg::ClosedInterval<ygg::float_t>& interval) const
     {
         const auto current = current_interval(key);
         return !empty(current) && subset(interval, current);
@@ -229,7 +230,7 @@ private:
             return {};
     }
 
-    const SelectionEntry* find_selection_entry(Key key, const Selection& selection) const
+    [[nodiscard]] const SelectionEntry* find_selection_entry(Key key, const Selection& selection) const
     {
         for (const auto& entry : selection)
             if (entry.key == key)

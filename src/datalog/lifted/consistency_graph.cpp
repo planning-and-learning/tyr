@@ -682,8 +682,8 @@ static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<
         info.predicate = literal.get_atom().get_predicate().get_index();
         info.polarity = literal.get_polarity();
         info.kckp_arity = kckp_arity(literal);
-        info.num_parameters = ygg::uint_t(0);
-        info.num_constants = ygg::uint_t(0);
+        info.num_parameters = static_cast<ygg::uint_t>(0);
+        info.num_constants = static_cast<ygg::uint_t>(0);
         info.position_mappings.constant_positions = std::vector<std::pair<ygg::uint_t, ygg::Index<formalism::Object>>> {};
         info.position_mappings.parameter_to_positions = std::vector<std::vector<ygg::uint_t>>(arity);
 
@@ -766,8 +766,8 @@ static auto compute_tagged_indexed_fterms(const std::vector<formalism::datalog::
         auto info = details::RuleToFunctionTermInfo<T> {};
         info.function = fterm.get_function().get_index();
         info.kckp_arity = kckp_arity(fterm);
-        info.num_parameters = ygg::uint_t(0);
-        info.num_constants = ygg::uint_t(0);
+        info.num_parameters = static_cast<ygg::uint_t>(0);
+        info.num_constants = static_cast<ygg::uint_t>(0);
         info.position_mappings.constant_positions = std::vector<std::pair<ygg::uint_t, ygg::Index<formalism::Object>>> {};
         info.position_mappings.parameter_to_positions = std::vector<std::vector<ygg::uint_t>>(arity);
 
@@ -1118,7 +1118,7 @@ create_overapproximation_conjunctive_condition(size_t k,
 
     const auto literal_belongs_to_k_overapproximation = [k](const auto literal)
     { return literal.get_polarity() ? kckp_arity(literal) >= k : kckp_arity(literal) == k; };
-    const auto numeric_constraint_belongs_to_k_overapproximation = [k](const auto numeric_constraint) { return kckp_arity(numeric_constraint) >= k; };
+    const auto numeric_constraint_belongs_to_k_overapproximation = [k](const auto& numeric_constraint) { return kckp_arity(numeric_constraint) >= k; };
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (literal_belongs_to_k_overapproximation(literal))
@@ -1149,7 +1149,7 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k,
     // Binary KCKP edges join distinct rule parameters, so a one-parameter literal such as p(x,x) still needs an exact check.
     const auto requires_exact_literal_check = [k](const auto literal)
     { return kckp_arity(literal) > k || (k == 2 && kckp_arity(literal) == 2 && parameter_arity(literal) == 1); };
-    const auto requires_exact_numeric_check = [k](const auto numeric_constraint)
+    const auto requires_exact_numeric_check = [k](const auto& numeric_constraint)
     { return kckp_arity(numeric_constraint) > k || (k == 2 && kckp_arity(numeric_constraint) == 2); };
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
@@ -1192,7 +1192,7 @@ create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveCondi
     auto binding_empty = ygg::IndexList<formalism::Object> {};
     auto grounder_context = formalism::datalog::GrounderContext { builder, context, binding_empty };
 
-    const auto is_nullary = [](const auto element) { return parameter_arity(element) == 0; };
+    const auto is_nullary = [](const auto& element) { return parameter_arity(element) == 0; };
 
     for (const auto literal : condition.get_literals<formalism::StaticTag>())
         if (is_nullary(literal))

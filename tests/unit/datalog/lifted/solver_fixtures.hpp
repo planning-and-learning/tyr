@@ -279,7 +279,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     const auto source_assign_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
         tyr::formalism::NumericEffectOperatorKind::Assign,
         source_term.get_index(),
-        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(3))));
+        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(static_cast<ygg::float_t>(3))));
     const auto target_assign_effect = intern(ygg::Data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
         tyr::formalism::NumericEffectOperatorKind::Assign,
         target_term.get_index(),
@@ -288,7 +288,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     const auto source_comparison = intern(ygg::Data<tyr::formalism::datalog::BinaryOperator<LiftedTag, tyr::formalism::BooleanOperatorKind>>(
         tyr::formalism::BooleanOperatorKind::Ge,
         ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(source_term.get_index()),
-        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0))));
+        ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(static_cast<ygg::float_t>(0))));
     const auto add_source_constraint = [&](ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>& condition)
     { condition.numeric_constraints.emplace_back(ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(source_comparison.get_index())); };
     auto source_body_data = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
@@ -446,7 +446,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         const auto comparison = intern(ygg::Data<tyr::formalism::datalog::BinaryOperator<LiftedTag, tyr::formalism::BooleanOperatorKind>>(
             tyr::formalism::BooleanOperatorKind::Ge,
             ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(value_term.get_index()),
-            ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0))));
+            ygg::Data<tyr::formalism::datalog::FunctionExpression<LiftedTag>>(static_cast<ygg::float_t>(0))));
         body_data.numeric_constraints.emplace_back(ygg::Data<tyr::formalism::datalog::BooleanOperator<LiftedTag>>::Variant(comparison.get_index()));
     }
     const auto body = intern(std::move(body_data));
@@ -501,9 +501,11 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         };
         program_data.fluent_functions = { value_function.get_index() };
         program_data.fluent_fterm_values = {
-            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(first_object), ygg::float_t(5)))
+            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(first_object),
+                                                                                                               static_cast<ygg::float_t>(5)))
                 .get_index(),
-            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(second_object), ygg::float_t(7)))
+            intern(ygg::Data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(second_object),
+                                                                                                               static_cast<ygg::float_t>(7)))
                 .get_index()
         };
     }

@@ -34,14 +34,14 @@ class VariableDependencyGraph
 public:
     explicit VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition);
 
-    const auto& unary() const noexcept { return m_unary_dependencies; }
-    const auto& binary() const noexcept { return m_binary_dependencies; }
+    [[nodiscard]] const auto& unary() const noexcept { return m_unary_dependencies; }
+    [[nodiscard]] const auto& binary() const noexcept { return m_binary_dependencies; }
 
     /**
      * Getters
      */
 
-    auto k() const noexcept { return m_k; }
+    [[nodiscard]] auto k() const noexcept { return m_k; }
 
 private:
     ygg::uint_t m_k;

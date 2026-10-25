@@ -35,13 +35,13 @@ class Task<GroundTag>
 public:
     explicit Task(formalism::planning::PlanningTask<GroundTag> task);
 
-    const auto& get_formalism_task() const noexcept { return m_task; }
-    const auto& get_domain() const noexcept { return m_task.get_domain(); }
-    auto get_task() const noexcept { return m_task.get_task(); }
-    const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
-    const auto& get_repository() const noexcept { return m_task.get_repository(); }
-    const StaticState& get_static_state() const noexcept { return m_static_state; }
-    bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
+    [[nodiscard]] const auto& get_formalism_task() const noexcept { return m_task; }
+    [[nodiscard]] const auto& get_domain() const noexcept { return m_task.get_domain(); }
+    [[nodiscard]] auto get_task() const noexcept { return m_task.get_task(); }
+    [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
+    [[nodiscard]] const auto& get_repository() const noexcept { return m_task.get_repository(); }
+    [[nodiscard]] const StaticState& get_static_state() const noexcept { return m_static_state; }
+    [[nodiscard]] bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
 private:
     formalism::planning::PlanningTask<GroundTag> m_task;

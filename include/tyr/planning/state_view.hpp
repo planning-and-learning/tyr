@@ -48,29 +48,32 @@ public:
     {
     }
 
-    const auto& get_state_builder() const noexcept { return this->get_handle(); }
-    const auto& get_task() const noexcept { return this->get_context(); }
-    const auto& get_formalism_repository() const noexcept { return get_task().get_repository(); }
+    [[nodiscard]] const auto& get_state_builder() const noexcept { return this->get_handle(); }
+    [[nodiscard]] const auto& get_task() const noexcept { return this->get_context(); }
+    [[nodiscard]] const auto& get_formalism_repository() const noexcept { return get_task().get_repository(); }
 
-    bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
+    [[nodiscard]] bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
     { return this->get_context().get_static_state().test(index); }
-    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
+    [[nodiscard]] float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
     { return this->get_context().get_static_state().get(index); }
-    ::tyr::formalism::planning::FDRValue get(Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
     { return this->get_handle().get(index); }
-    float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
+    [[nodiscard]] float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
     { return this->get_handle().get(index); }
-    bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const { return this->get_handle().test(index); }
+    [[nodiscard]] bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
+    { return this->get_handle().test(index); }
 
-    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
-    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
-    float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return get(view.get_index()); }
-    ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
+    [[nodiscard]] float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
     { return get(view.get_index()); }
-    float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const { return get(view.get_index()); }
-    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
+    { return get(view.get_index()); }
+    [[nodiscard]] float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
+    { return get(view.get_index()); }
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
 
-    auto get_fluent_facts() const noexcept { return this->get_handle().get_fluent_facts(); }
+    [[nodiscard]] auto get_fluent_facts() const noexcept { return this->get_handle().get_fluent_facts(); }
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept;
     template<::tyr::formalism::FactKind F>
@@ -82,7 +85,7 @@ public:
     template<::tyr::formalism::FactKind F, typename C>
     auto get_atoms_view(ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const;
 
-    auto get_fluent_facts_view() const noexcept { return this->get_handle().get_fluent_facts_view(*get_formalism_repository()); }
+    [[nodiscard]] auto get_fluent_facts_view() const noexcept { return this->get_handle().get_fluent_facts_view(*get_formalism_repository()); }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values_view() const noexcept;
 };
@@ -101,9 +104,9 @@ struct View<ygg::Index<::tyr::planning::PackedState<Kind>>, std::shared_ptr<::ty
 public:
     using IndexViewBase<::tyr::planning::State<Kind>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::IndexViewBase;
 
-    const std::shared_ptr<::tyr::planning::StateRepository<Kind>>& get_state_repository() const noexcept { return this->get_context(); }
+    [[nodiscard]] const std::shared_ptr<::tyr::planning::StateRepository<Kind>>& get_state_repository() const noexcept { return this->get_context(); }
 
-    ::tyr::planning::StateView<Kind> unpack() const;
+    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const;
 };
 
 template<::tyr::TaskKind Kind, typename Context>
@@ -125,22 +128,22 @@ public:
     View& operator=(View&&) noexcept;
     ~View();
 
-    ::tyr::planning::PackedStateView<Kind> pack() const noexcept;
+    [[nodiscard]] ::tyr::planning::PackedStateView<Kind> pack() const noexcept;
 
-    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
-    ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const;
-    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const;
+    [[nodiscard]] bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
+    [[nodiscard]] ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
+    [[nodiscard]] ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const;
+    [[nodiscard]] bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const;
 
-    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
-    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
-    ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
-    ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
-    ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
-    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const;
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
+    [[nodiscard]] ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
+    [[nodiscard]] ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const;
 
-    ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
+    [[nodiscard]] ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept;
     template<::tyr::formalism::FactKind F>
@@ -151,14 +154,14 @@ public:
     template<::tyr::formalism::FactKind F, typename C>
     auto get_atoms_view(ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const;
 
-    auto get_fluent_facts_view() const noexcept;
+    [[nodiscard]] auto get_fluent_facts_view() const noexcept;
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values_view() const noexcept;
 
-    const std::shared_ptr<::tyr::formalism::planning::Repository>& get_formalism_repository() const noexcept;
-    const ::tyr::planning::Task<Kind>& get_task() const noexcept;
-    const std::shared_ptr<::tyr::planning::StateRepository<Kind>>& get_state_repository() const noexcept;
-    const Builder<::tyr::planning::State<Kind>>& get_state_builder() const noexcept;
+    [[nodiscard]] const std::shared_ptr<::tyr::formalism::planning::Repository>& get_formalism_repository() const noexcept;
+    [[nodiscard]] const ::tyr::planning::Task<Kind>& get_task() const noexcept;
+    [[nodiscard]] const std::shared_ptr<::tyr::planning::StateRepository<Kind>>& get_state_repository() const noexcept;
+    [[nodiscard]] const Builder<::tyr::planning::State<Kind>>& get_state_builder() const noexcept;
 
 private:
     using Base = IndexViewBase<::tyr::planning::State<Kind>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>;
@@ -353,7 +356,7 @@ View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::State
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
-auto View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms() const noexcept
+[[nodiscard]] auto View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms() const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
         return get_task().get_static_state().get_atoms();
@@ -365,7 +368,7 @@ auto View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
-::tyr::planning::FunctionTermValueRange<F>
+[[nodiscard]] ::tyr::planning::FunctionTermValueRange<F>
 View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fterm_values() const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
@@ -383,14 +386,14 @@ View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::State
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
-auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms_view() const noexcept
+[[nodiscard]] auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms_view() const noexcept
 {
     return get_atoms<F>() | std::views::transform([context = this->get_formalism_repository()](auto id) { return ygg::make_view(id, *context); });
 }
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F, typename C>
-auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms_view(
+[[nodiscard]] auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms_view(
     ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const
 {
     return get_atoms_view<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
@@ -404,7 +407,8 @@ auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::plann
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
-auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fterm_values_view() const noexcept
+[[nodiscard]] auto
+View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fterm_values_view() const noexcept
 {
     return get_fterm_values<F>()
            | std::views::transform([context = this->get_formalism_repository()](auto&& pair)

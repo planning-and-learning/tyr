@@ -53,14 +53,14 @@ public:
         {
         }
 
-        const auto& cws_rule() const noexcept { return m_cws_rule; }
+        [[nodiscard]] const auto& cws_rule() const noexcept { return m_cws_rule; }
 
         auto& annotation_policy() noexcept { return m_rctx.stratum_out().program().annotation_policy(); }
-        const auto& annotations() const noexcept { return m_rctx.stratum_out().program().annotations(); }
-        const auto& numeric_annotations() const noexcept { return m_rctx.stratum_out().program().numeric_annotations(); }
-        const auto& numeric_support_selector() const noexcept { return m_rctx.stratum_out().program().numeric_support_selector(); }
-        const auto& cost_policy() const noexcept { return m_rctx.stratum_out().program().cost_policy(); }
-        const auto& fact_sets() const noexcept { return m_fact_sets; }
+        [[nodiscard]] const auto& annotations() const noexcept { return m_rctx.stratum_out().program().annotations(); }
+        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_rctx.stratum_out().program().numeric_annotations(); }
+        [[nodiscard]] const auto& numeric_support_selector() const noexcept { return m_rctx.stratum_out().program().numeric_support_selector(); }
+        [[nodiscard]] const auto& cost_policy() const noexcept { return m_rctx.stratum_out().program().cost_policy(); }
+        [[nodiscard]] const auto& fact_sets() const noexcept { return m_fact_sets; }
 
     private:
         RuleExecutionContext<R, AP, TP, CP>& m_rctx;
@@ -106,10 +106,10 @@ public:
     RuleWorkerExecutionContext(RuleExecutionContext<R, AP, TP, CP>& rctx, LiftedRuleWorkerT<R>& ws_worker) : m_in(rctx), m_out(rctx, ws_worker) {}
 
     auto& in() noexcept { return m_in; }
-    const auto& in() const noexcept { return m_in; }
+    [[nodiscard]] const auto& in() const noexcept { return m_in; }
 
     auto& out() noexcept { return m_out; }
-    const auto& out() const noexcept { return m_out; }
+    [[nodiscard]] const auto& out() const noexcept { return m_out; }
 
 private:
     In m_in;
@@ -124,7 +124,7 @@ struct RuleExecutionContext
     public:
         explicit In(const ConstRuleWorkspace<LiftedTag, R>& cws_rule) : m_cws_rule(cws_rule) {}
 
-        const auto& cws_rule() const noexcept { return m_cws_rule; }
+        [[nodiscard]] const auto& cws_rule() const noexcept { return m_cws_rule; }
 
     private:
         const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
@@ -136,13 +136,13 @@ struct RuleExecutionContext
         explicit Out(RuleWorkspace<LiftedTag, R>& ws_rule) : m_ws_rule(ws_rule) {}
 
         auto& common() noexcept { return m_ws_rule.common; }
-        const auto& common() const noexcept { return m_ws_rule.common; }
+        [[nodiscard]] const auto& common() const noexcept { return m_ws_rule.common; }
         auto& kckp() noexcept { return m_ws_rule.common.kckp; }
-        const auto& kckp() const noexcept { return m_ws_rule.common.kckp; }
+        [[nodiscard]] const auto& kckp() const noexcept { return m_ws_rule.common.kckp; }
         auto& statistics() noexcept { return m_ws_rule.common.statistics; }
-        const auto& statistics() const noexcept { return m_ws_rule.common.statistics; }
+        [[nodiscard]] const auto& statistics() const noexcept { return m_ws_rule.common.statistics; }
         auto& workers() noexcept { return m_ws_rule.worker; }
-        const auto& workers() const noexcept { return m_ws_rule.worker; }
+        [[nodiscard]] const auto& workers() const noexcept { return m_ws_rule.worker; }
 
     private:
         RuleWorkspace<LiftedTag, R>& m_ws_rule;
@@ -167,13 +167,13 @@ struct RuleExecutionContext
     auto get_rule_worker_execution_context(std::size_t worker_index = 0)
     { return RuleWorkerExecutionContext<R, AP, TP, CP>(*this, out().workers()[worker_index]); }
 
-    const auto& in() const noexcept { return m_in; }
+    [[nodiscard]] const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }
-    const auto& out() const noexcept { return m_out; }
+    [[nodiscard]] const auto& out() const noexcept { return m_out; }
 
-    const auto& stratum_in() const noexcept { return m_ctx.in(); }
+    [[nodiscard]] const auto& stratum_in() const noexcept { return m_ctx.in(); }
     auto& stratum_out() noexcept { return m_ctx.out(); }
-    const auto& stratum_out() const noexcept { return m_ctx.out(); }
+    [[nodiscard]] const auto& stratum_out() const noexcept { return m_ctx.out(); }
 
 private:
     StratumExecutionContext<AP, TP, CP>& m_ctx;

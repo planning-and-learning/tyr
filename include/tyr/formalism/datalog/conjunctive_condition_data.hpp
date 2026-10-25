@@ -75,7 +75,7 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::FactKind F>
-    const auto& get_literals() const
+    [[nodiscard]] const auto& get_literals() const
     {
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return static_literals;
@@ -131,7 +131,7 @@ struct Data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::FactKind F>
-    const auto& get_literals() const
+    [[nodiscard]] const auto& get_literals() const
     {
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return static_literals;

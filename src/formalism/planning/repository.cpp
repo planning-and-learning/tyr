@@ -19,13 +19,10 @@
 
 #include <yggdrasil/formalism/detail/basic_symbol_repository_impl.hpp>
 
-namespace tyr::formalism
-{
-namespace planning
+namespace tyr::formalism::planning
 {
 static_assert(RepositoryConcept<Repository>);
 static_assert(Context<Repository>);
-}
 }
 
 template class ygg::formalism::BasicSymbolRepository<tyr::formalism::Variable, true>;

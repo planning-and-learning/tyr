@@ -289,10 +289,10 @@ struct InsertConstantPolicy
     TmpFunctionDomainMap<formalism::FluentTag>& fluent_function_domain_sets;
 
     template<typename Element>
-    bool should_skip(Element) const
+    [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
-    bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
     auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return static_predicate_domain_sets; }
     auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return fluent_predicate_domain_sets; }
@@ -323,20 +323,20 @@ struct RestrictPolicy
     TmpVariableDomainList& parameter_domains;
 
     template<typename Element>
-    bool should_skip(Element) const
+    [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
     template<formalism::FactKind T>
-    bool should_skip(formalism::planning::LiteralView<LiftedTag, T> literal) const
+    [[nodiscard]] bool should_skip(formalism::planning::LiteralView<LiftedTag, T> literal) const
     { return !literal.get_polarity(); }
 
-    bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
-    const auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return static_predicate_domain_sets; }
-    const auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return fluent_predicate_domain_sets; }
-    const auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return derived_predicate_domain_sets; }
-    const auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return static_function_domain_sets; }
-    const auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return fluent_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return static_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return fluent_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return derived_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return static_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t, formalism::planning::ObjectView, Symbol)
@@ -362,10 +362,10 @@ struct LiftPolicy
     const TmpVariableDomainList& parameter_domains;
 
     template<typename Element>
-    bool should_skip(Element) const
+    [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
-    bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
 
     auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return static_predicate_domain_sets; }
     auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return fluent_predicate_domain_sets; }

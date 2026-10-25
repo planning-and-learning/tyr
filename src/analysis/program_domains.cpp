@@ -224,10 +224,10 @@ struct InsertConstantPolicy
     TmpFunctionDomainMap<formalism::FluentTag>& fluent_function_domain_sets;
 
     template<typename Element>
-    bool should_skip(Element) const
+    [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
-    bool should_skip(formalism::datalog::FunctionView<formalism::FluentTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::datalog::FunctionView<formalism::FluentTag>) const { return true; }
 
     auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) { return static_predicate_domain_sets; }
     auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) { return fluent_predicate_domain_sets; }
@@ -257,20 +257,20 @@ struct RestrictPolicy
     TmpVariableDomainList& parameter_domains;
 
     template<typename Element>
-    bool should_skip(Element) const
+    [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
     template<formalism::FactKind T>
-    bool should_skip(formalism::datalog::LiteralView<LiftedTag, T> literal) const
+    [[nodiscard]] bool should_skip(formalism::datalog::LiteralView<LiftedTag, T> literal) const
     { return !literal.get_polarity(); }
 
-    bool should_skip(formalism::datalog::FunctionView<formalism::FluentTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::datalog::FunctionView<formalism::FluentTag>) const { return true; }
 
-    const auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return static_predicate_domain_sets; }
-    const auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return fluent_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return static_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return fluent_predicate_domain_sets; }
 
-    const auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return static_function_domain_sets; }
-    const auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) const { return fluent_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return static_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) const { return fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t, formalism::datalog::ObjectView, Symbol)
@@ -295,10 +295,10 @@ struct LiftPolicy
     const TmpVariableDomainList& parameter_domains;
 
     template<typename Element>
-    bool should_skip(Element) const
+    [[nodiscard]] bool should_skip(Element) const
     { return false; }
 
-    bool should_skip(formalism::datalog::FunctionView<formalism::StaticTag>) const { return true; }
+    [[nodiscard]] bool should_skip(formalism::datalog::FunctionView<formalism::StaticTag>) const { return true; }
 
     auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) { return static_predicate_domain_sets; }
 
@@ -489,7 +489,7 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
                 for (const auto op : rule.get_body().get_numeric_constraints())
                     apply_policy(op, insert_policy);
 
-                formalism::datalog::for_each_head(rule, [&](auto head) { apply_policy(head, insert_policy); });
+                formalism::datalog::for_each_head(rule, [&](const auto& head) { apply_policy(head, insert_policy); });
             }
         };
 
@@ -564,7 +564,7 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
             for (const auto op : rule.get_body().get_numeric_constraints())
                 apply_policy(op, lift_policy);
 
-            formalism::datalog::for_each_head(rule, [&](auto head) { apply_policy(head, lift_policy); });
+            formalism::datalog::for_each_head(rule, [&](const auto& head) { apply_policy(head, lift_policy); });
         }
     };
 

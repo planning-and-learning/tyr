@@ -69,11 +69,11 @@ struct StateFormattingView
     const State& state;
 
     template<tyr::formalism::FactKind F>
-    auto get_atoms_view() const
+    [[nodiscard]] auto get_atoms_view() const
     { return state.template get_atoms_view<F>(); }
-    auto get_fluent_facts_view() const { return state.get_fluent_facts_view(); }
+    [[nodiscard]] auto get_fluent_facts_view() const { return state.get_fluent_facts_view(); }
     template<tyr::formalism::FactKind F>
-    auto get_fterm_values_view() const
+    [[nodiscard]] auto get_fterm_values_view() const
     { return state.template get_fterm_values_view<F>(); }
 };
 
@@ -85,12 +85,12 @@ class BuilderWithoutTaskType : public ygg::Builder<tyr::planning::State<Kind>>
 
 struct StateWithMutableTask : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
 {
-    tyr::planning::Task<tyr::GroundTag>& get_task() const;
+    [[nodiscard]] tyr::planning::Task<tyr::GroundTag>& get_task() const;
 };
 
 struct StateWithTaskValue : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
 {
-    tyr::planning::Task<tyr::GroundTag> get_task() const;
+    [[nodiscard]] tyr::planning::Task<tyr::GroundTag> get_task() const;
 };
 
 struct StateWithMutableAtoms : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
@@ -112,7 +112,7 @@ template<tyr::TaskKind Kind>
 struct StateWithThrowingPack : tyr::planning::StateView<Kind>
 {
     explicit StateWithThrowingPack(tyr::planning::StateView<Kind> state) : tyr::planning::StateView<Kind>(std::move(state)) {}
-    tyr::planning::PackedStateView<Kind> pack() const { throw std::runtime_error("state pack"); }
+    [[nodiscard]] tyr::planning::PackedStateView<Kind> pack() const { throw std::runtime_error("state pack"); }
 };
 
 using StateKinds = ygg::TypeList<tyr::GroundTag, tyr::LiftedTag>;
@@ -177,8 +177,8 @@ static_assert(
 template<tyr::TaskKind Kind>
 struct NodeWithoutMetadata
 {
-    StateWithoutMetadata<tyr::planning::StateView<Kind>> get_state() const;
-    ygg::float_t get_metric() const;
+    [[nodiscard]] StateWithoutMetadata<tyr::planning::StateView<Kind>> get_state() const;
+    [[nodiscard]] ygg::float_t get_metric() const;
 };
 
 struct NodeWithMutableState : NodeWithoutMetadata<tyr::GroundTag>
@@ -573,7 +573,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     if constexpr (std::same_as<Kind, GroundTag>)
     {
         auto& values = moved->template get_atom_storage<formalism::FluentTag>().values;
-        std::ranges::fill(values, ygg::uint_t(0));
+        std::ranges::fill(values, static_cast<ygg::uint_t>(0));
     }
     else
         moved->template get_atom_storage<formalism::FluentTag>().indices.clear();

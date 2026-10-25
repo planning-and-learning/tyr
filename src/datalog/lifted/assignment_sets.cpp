@@ -31,6 +31,7 @@
 #include <limits>
 #include <numeric>
 #include <tuple>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -68,7 +69,7 @@ void for_each_assignment_rank(const PerfectAssignmentHash& hash, const Objects& 
 }
 
 template<typename T>
-bool update_interval(ygg::ClosedInterval<T>& target, ygg::ClosedInterval<T> source)
+bool update_interval(ygg::ClosedInterval<T>& target, const ygg::ClosedInterval<T>& source)
 {
     const auto old = target;
     target = hull(target, source);
@@ -81,7 +82,7 @@ bool update_interval(ygg::ClosedInterval<T>& target, ygg::ClosedInterval<T> sour
  */
 
 PerfectAssignmentHash::PerfectAssignmentHash(const analysis::VariableDomainList& parameter_domains, size_t num_objects) :
-    m_num_assignments(1),
+
     m_num_objects(num_objects),
     m_remapping(parameter_domains.size() * m_num_objects, 0),
     m_vertex_offsets(parameter_domains.size() + 1, 0),
@@ -352,7 +353,7 @@ void FunctionAssignmentSet<T>::reset() noexcept
 { std::fill(m_set.begin(), m_set.end(), ygg::ClosedInterval<ygg::float_t>()); }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
+bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
     assert(binding.get_index().relation == m_function_index);
     auto changed = update_interval(m_set[EmptyAssignment::rank], interval);
@@ -504,7 +505,7 @@ void FunctionAssignmentSets<T>::reset() noexcept
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval)
-{ return m_sets[binding.get_relation().get_index().get_value()].insert(binding, interval); }
+{ return m_sets[binding.get_relation().get_index().get_value()].insert(binding, std::move(interval)); }
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value)
@@ -512,7 +513,7 @@ bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<Grou
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::ClosedInterval<ygg::float_t> interval)
-{ return m_sets[function_term.get_function().get_index().get_value()].insert(function_term.get_row(), interval); }
+{ return m_sets[function_term.get_function().get_index().get_value()].insert(function_term.get_row(), std::move(interval)); }
 
 template<formalism::FactKind T>
 void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const std::vector<ygg::float_t>& values)

@@ -38,7 +38,7 @@ typename FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed FactStora
 {
     const auto& values = unpacked.values;
 
-    std::fill(m_buffer.begin(), m_buffer.end(), ygg::uint_t(0));
+    std::fill(m_buffer.begin(), m_buffer.end(), static_cast<ygg::uint_t>(0));
     for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
     {
         const auto& info = m_infos[i];

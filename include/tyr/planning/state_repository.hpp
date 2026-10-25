@@ -77,16 +77,16 @@ public:
     [[nodiscard]] StateRepositoryPtr<Kind> make_worker() const;
 
     /// All repositories sharing this storage must be quiescent while inspecting memory usage.
-    size_t memory_usage() const noexcept;
+    [[nodiscard]] size_t memory_usage() const noexcept;
 
     const TaskPtr<Kind>& get_task() const noexcept;
     bool shares_storage_with(const StateRepository& other) const noexcept;
-    bool is_concurrent() const noexcept;
+    [[nodiscard]] bool is_concurrent() const noexcept;
     /// The index of this worker among the repositories sharing its storage.
-    ygg::uint_t get_worker_index() const noexcept;
+    [[nodiscard]] ygg::uint_t get_worker_index() const noexcept;
     /// The identity of the storage that owns the states; shared by all workers of a cohort.
-    ygg::uint_t get_index() const noexcept;
-    size_t num_states() const noexcept;
+    [[nodiscard]] ygg::uint_t get_index() const noexcept;
+    [[nodiscard]] size_t num_states() const noexcept;
 
     /// A repository owns the states it registers.
     friend const StateRepository& get_repository(const StateRepository& repository) noexcept { return repository; }

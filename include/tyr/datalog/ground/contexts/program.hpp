@@ -48,10 +48,10 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     public:
         explicit In(const ConstProgramWorkspace<GroundTag>& cws) : m_cws(cws) {}
 
-        auto program() const noexcept { return m_cws.program; }
-        const auto& facts() const noexcept { return m_cws.facts; }
+        [[nodiscard]] auto program() const noexcept { return m_cws.program; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_cws.facts; }
         template<formalism::RelationKind R>
-        const auto& dependencies() const noexcept
+        [[nodiscard]] const auto& dependencies() const noexcept
         { return m_cws.template get_dependencies<R>(); }
 
     private:
@@ -64,22 +64,22 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         explicit Out(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_ws(ws) {}
 
         auto& facts() noexcept { return m_ws.facts; }
-        const auto& facts() const noexcept { return m_ws.facts; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_ws.facts; }
         auto& annotation_policy() noexcept { return m_ws.annotation_policy; }
-        const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
+        [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
         auto& annotations() noexcept { return m_ws.annotations; }
-        const auto& annotations() const noexcept { return m_ws.annotations; }
+        [[nodiscard]] const auto& annotations() const noexcept { return m_ws.annotations; }
         auto& numeric_annotations() noexcept { return m_ws.numeric_annotations; }
-        const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
-        auto numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
+        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
+        [[nodiscard]] auto numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
         auto& tp() noexcept { return m_ws.tp; }
-        const auto& tp() const noexcept { return m_ws.tp; }
+        [[nodiscard]] const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
-        const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
+        [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
         auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
         auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
         auto& scheduler() noexcept { return m_ws.scheduler; }
-        const auto& scheduler() const noexcept { return m_ws.scheduler; }
+        [[nodiscard]] const auto& scheduler() const noexcept { return m_ws.scheduler; }
 
     private:
         ProgramWorkspace<GroundTag, AP, TP, CP>& m_ws;
@@ -101,9 +101,9 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         initialize();
     }
 
-    const auto& in() const noexcept { return m_in; }
+    [[nodiscard]] const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }
-    const auto& out() const noexcept { return m_out; }
+    [[nodiscard]] const auto& out() const noexcept { return m_out; }
 
 private:
     void initialize_annotations()

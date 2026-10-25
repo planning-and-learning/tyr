@@ -59,13 +59,13 @@ public:
 
     explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 
-    const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
-    const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
-    const SchemaPrograms& get_schema_programs() const noexcept;
-    const ConditionalEffectToPredicateMapping& get_conditional_effect_to_predicate_mapping() const noexcept;
+    [[nodiscard]] const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
+    [[nodiscard]] const AppPredicateToActionMapping& get_predicate_to_action_mapping() const noexcept;
+    [[nodiscard]] const SchemaPrograms& get_schema_programs() const noexcept;
+    [[nodiscard]] const ConditionalEffectToPredicateMapping& get_conditional_effect_to_predicate_mapping() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
-    const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
-    const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
+    [[nodiscard]] const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
+    [[nodiscard]] const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
 
 private:
     TranslationContext<LiftedTag> m_translation_context;

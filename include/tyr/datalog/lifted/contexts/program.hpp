@@ -42,9 +42,9 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     public:
         explicit In(const ConstProgramWorkspace<LiftedTag>& cws) : m_cws(cws) {}
 
-        const auto& facts() const noexcept { return m_cws.facts; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_cws.facts; }
         template<formalism::RelationKind R>
-        const auto& get_rules() const noexcept
+        [[nodiscard]] const auto& get_rules() const noexcept
         { return m_cws.template get_rules<R>(); }
 
     private:
@@ -57,41 +57,41 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers) : m_ws(ws), m_schedulers(schedulers) {}
 
         auto& facts() noexcept { return m_ws.facts; }
-        const auto& facts() const noexcept { return m_ws.facts; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_ws.facts; }
         auto& annotation_policy() noexcept { return m_ws.annotation_policy; }
-        const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
+        [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
         auto& annotations() noexcept { return m_ws.annotations; }
-        const auto& annotations() const noexcept { return m_ws.annotations; }
+        [[nodiscard]] const auto& annotations() const noexcept { return m_ws.annotations; }
         auto& numeric_annotations() noexcept { return m_ws.numeric_annotations; }
-        const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
+        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
         auto& delta_annotations() noexcept { return m_ws.delta_annotations; }
-        const auto& delta_annotations() const noexcept { return m_ws.delta_annotations; }
+        [[nodiscard]] const auto& delta_annotations() const noexcept { return m_ws.delta_annotations; }
         auto& delta_numeric_annotations() noexcept { return m_ws.delta_numeric_annotations; }
-        const auto& delta_numeric_annotations() const noexcept { return m_ws.delta_numeric_annotations; }
-        const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
+        [[nodiscard]] const auto& delta_numeric_annotations() const noexcept { return m_ws.delta_numeric_annotations; }
+        [[nodiscard]] const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
         void rebuild_numeric_support_selector(const TaggedFactSets<formalism::StaticTag>& static_fact_sets)
         { m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations, !AP::stores_annotations); }
         void reset_numeric_support_selector() noexcept { m_ws.numeric_support_selector.reset(); }
         auto& tp() noexcept { return m_ws.tp; }
-        const auto& tp() const noexcept { return m_ws.tp; }
+        [[nodiscard]] const auto& tp() const noexcept { return m_ws.tp; }
         auto& cost_policy() noexcept { return m_ws.cost_policy; }
-        const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
+        [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
         auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
         auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
         template<formalism::RelationKind R>
         auto& get_rules() noexcept
         { return m_ws.template get_rules<R>(); }
         template<formalism::RelationKind R>
-        const auto& get_rules() const noexcept
+        [[nodiscard]] const auto& get_rules() const noexcept
         { return m_ws.template get_rules<R>(); }
         auto& datalog_builder() noexcept { return m_ws.datalog_builder; }
-        const auto& datalog_builder() const noexcept { return m_ws.datalog_builder; }
+        [[nodiscard]] const auto& datalog_builder() const noexcept { return m_ws.datalog_builder; }
         auto& workspace_repository() noexcept { return m_ws.workspace_repository; }
-        const auto& workspace_repository() const noexcept { return m_ws.workspace_repository; }
+        [[nodiscard]] const auto& workspace_repository() const noexcept { return m_ws.workspace_repository; }
         auto& schedulers() noexcept { return m_schedulers; }
-        const auto& schedulers() const noexcept { return m_schedulers; }
+        [[nodiscard]] const auto& schedulers() const noexcept { return m_schedulers; }
         auto& statistics() noexcept { return m_ws.statistics; }
-        const auto& statistics() const noexcept { return m_ws.statistics; }
+        [[nodiscard]] const auto& statistics() const noexcept { return m_ws.statistics; }
 
     private:
         ProgramWorkspace<LiftedTag, AP, TP, CP>& m_ws;
@@ -146,10 +146,10 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         initialize();
     }
 
-    const auto& in() const noexcept { return m_in; }
+    [[nodiscard]] const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }
-    const auto& out() const noexcept { return m_out; }
-    bool is_single_threaded() const noexcept { return m_num_threads == 1; }
+    [[nodiscard]] const auto& out() const noexcept { return m_out; }
+    [[nodiscard]] bool is_single_threaded() const noexcept { return m_num_threads == 1; }
     void set_num_threads(size_t num_threads) noexcept
     {
         assert(num_threads > 0);

@@ -32,10 +32,10 @@ class AxiomEvaluatorProgram<LiftedTag>
 public:
     explicit AxiomEvaluatorProgram(formalism::planning::TaskView<LiftedTag> task);
 
-    const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
+    [[nodiscard]] const TranslationContext<LiftedTag>& get_translation_context() const noexcept;
     datalog::Program<LiftedTag>& get_datalog_program() noexcept;
-    const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
-    const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
+    [[nodiscard]] const datalog::Program<LiftedTag>& get_datalog_program() const noexcept;
+    [[nodiscard]] const datalog::ConstProgramWorkspace<LiftedTag>& get_const_program_workspace() const noexcept;
 
 private:
     TranslationContext<LiftedTag> m_translation_context;

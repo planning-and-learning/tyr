@@ -29,6 +29,7 @@
 
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/containers/unique_object_pool.hpp>
 
@@ -71,7 +72,7 @@ ygg::Data<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::Fluent
     auto effect = formalism::datalog::checkout<formalism::datalog::NumericEffect<LiftedTag, formalism::FluentTag>>(context.builder);
     effect->operator_kind = formalism::NumericEffectOperatorKind::Assign;
     effect->fterm = term_view.get_index();
-    effect->fexpr = ygg::Data<formalism::datalog::FunctionExpression<LiftedTag>>(ygg::float_t(0));
+    effect->fexpr = ygg::Data<formalism::datalog::FunctionExpression<LiftedTag>>(static_cast<ygg::float_t>(0));
     return ygg::Data<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::FluentTag>>(
         formalism::NumericEffectOperatorKind::Assign,
         formalism::datalog::insert(context.merge_context.destination, *effect).first.get_index());
@@ -219,7 +220,7 @@ create_ground_numeric_effect_rule(formalism::datalog::ConjunctiveConditionView<G
                                   formalism::planning::NumericEffectOperatorView<GroundTag, formalism::FluentTag> head,
                                   GroundProgramBuildContext& context)
 {
-    const auto datalog_head = formalism::planning::merge_p2d(head, context.merge_context);
+    const auto datalog_head = formalism::planning::merge_p2d(std::move(head), context.merge_context);
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag, formalism::FunctionTag>>(context.builder);
     rule->binding = create_rule_binding<formalism::FunctionTag>(context, [&](auto) { return create_rule_binding_numeric_head(context); }).get_index();
     rule->body = body.get_index();

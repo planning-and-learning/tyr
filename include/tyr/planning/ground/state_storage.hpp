@@ -39,7 +39,7 @@ struct AtomUnpackedStorage<GroundTag>
 {
     boost::dynamic_bitset<> indices;
 
-    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index) const
+    [[nodiscard]] bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index) const
     {
         assert(ygg::uint_t(index) < indices.size());
         return indices.test(ygg::uint_t(index));
@@ -61,7 +61,7 @@ struct FactUnpackedStorage<GroundTag>
 {
     std::vector<ygg::uint_t> values;
 
-    formalism::planning::FDRValue get(ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
+    [[nodiscard]] formalism::planning::FDRValue get(ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
     {
         assert(ygg::uint_t(index) < values.size());
         return formalism::planning::FDRValue(values[ygg::uint_t(index)]);

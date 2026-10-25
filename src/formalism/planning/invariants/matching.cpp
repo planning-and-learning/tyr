@@ -142,7 +142,7 @@ std::optional<InvariantSubstitution>
 match_cover_against_atom(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& element)
 {
     auto state = TermMatchState {
-        .sigma = InvariantSubstitution::from_range(ParameterIndex { ygg::uint_t(inv.num_rigid_variables) }, inv.num_counted_variables),
+        .sigma = InvariantSubstitution::from_range(ParameterIndex { static_cast<ygg::uint_t>(inv.num_rigid_variables) }, inv.num_counted_variables),
         .counted = InvariantSubstitution {},
     };
 
@@ -184,7 +184,7 @@ std::optional<EffectSubstitution> match_effect_cover_against_atom(const MutableI
 
     auto state = TermMatchState {
         .sigma = EffectSubstitution(std::move(effect_parameters)),
-        .counted = EffectSubstitution::from_range(ParameterIndex { ygg::uint_t(inv.num_rigid_variables) }, inv.num_counted_variables),
+        .counted = EffectSubstitution::from_range(ParameterIndex { static_cast<ygg::uint_t>(inv.num_rigid_variables) }, inv.num_counted_variables),
     };
 
     const auto policy = EffectCoverPolicy {

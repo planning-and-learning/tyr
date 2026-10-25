@@ -142,7 +142,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
 
 TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
 {
-    const auto annotation = tyr::datalog::Annotation<>(tyr::datalog::BaseAnnotation(tyr::datalog::Cost(7.5)));
+    const auto annotation = tyr::datalog::Annotation<>(tyr::datalog::BaseAnnotation(static_cast<tyr::datalog::Cost>(7.5)));
 
     EXPECT_DOUBLE_EQ(tyr::datalog::get_cost(annotation), 7.5);
 }

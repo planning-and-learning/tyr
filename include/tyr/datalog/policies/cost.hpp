@@ -42,7 +42,7 @@ struct ActionCostLookup
     formalism::planning::ActionView<LiftedTag> action;
     formalism::datalog::RuleBindingView<R> rule_binding;
 
-    auto get_key() const noexcept
+    [[nodiscard]] auto get_key() const noexcept
     {
         assert(rule_binding.get_data().size() >= action.get_arity());
         return std::make_pair(action.get_index(), std::views::take(rule_binding.get_data(), action.get_arity()));
@@ -62,11 +62,11 @@ struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKe
                              ygg::ClosedInterval<ygg::float_t> interval) :
         rule_key(rule_key),
         numeric_key(numeric_key),
-        interval(interval)
+        interval(std::move(interval))
     {
     }
 
-    auto identifying_members() const noexcept { return std::make_tuple(rule_key, numeric_key, lower(interval), upper(interval)); }
+    [[nodiscard]] auto identifying_members() const noexcept { return std::make_tuple(rule_key, numeric_key, lower(interval), upper(interval)); }
 };
 
 class RuleCostPolicy
@@ -75,11 +75,11 @@ public:
     RuleCostPolicy() = default;
 
     template<typename RuleKey>
-    Cost get_cost(RuleKey) const noexcept
-    { return Cost(0); }
+    [[nodiscard]] Cost get_cost(RuleKey) const noexcept
+    { return static_cast<Cost>(0); }
     template<typename RuleKey, typename NumericKey>
-    Cost get_cost(RuleKey, NumericKey, ygg::ClosedInterval<ygg::float_t>) const noexcept
-    { return Cost(0); }
+    [[nodiscard]] Cost get_cost(RuleKey, NumericKey, const ygg::ClosedInterval<ygg::float_t>&) const noexcept
+    { return static_cast<Cost>(0); }
 
     void clear() noexcept {}
     template<typename RuleKey>
@@ -87,7 +87,7 @@ public:
     {
     }
     template<typename RuleKey, typename NumericKey>
-    void set_cost(RuleKey, NumericKey, ygg::ClosedInterval<ygg::float_t>, Cost) noexcept
+    void set_cost(RuleKey, NumericKey, const ygg::ClosedInterval<ygg::float_t>&, Cost) noexcept
     {
     }
 };
@@ -104,19 +104,19 @@ public:
     RuleCostOverrideStorage() = default;
     explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)), m_numeric_transition_costs() {}
 
-    Cost get_cost(RuleKey rule_key) const
+    [[nodiscard]] Cost get_cost(RuleKey rule_key) const
     {
         if (const auto it = m_costs.find(rule_key); it != m_costs.end())
             return it->second;
-        return Cost(0);
+        return static_cast<Cost>(0);
     }
 
-    Cost get_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
+    [[nodiscard]] Cost get_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
     {
-        if (const auto it = m_numeric_transition_costs.find(NumericTransitionCostKey<R> { rule_key, numeric_key, interval });
+        if (const auto it = m_numeric_transition_costs.find(NumericTransitionCostKey<R> { rule_key, numeric_key, std::move(interval) });
             it != m_numeric_transition_costs.end())
             return it->second;
-        return Cost(0);
+        return static_cast<Cost>(0);
     }
 
     void clear() noexcept
@@ -128,11 +128,11 @@ public:
     void set_cost(RuleKey rule_key, Cost cost) { m_costs.insert_or_assign(rule_key, cost); }
 
     void set_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
-    { m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<R> { rule_key, numeric_key, interval }, cost); }
+    { m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<R> { rule_key, numeric_key, std::move(interval) }, cost); }
 
-    const CostMap& get_costs() const noexcept { return m_costs; }
+    [[nodiscard]] const CostMap& get_costs() const noexcept { return m_costs; }
     CostMap& get_costs() noexcept { return m_costs; }
-    const NumericTransitionCostMap& get_numeric_transition_costs() const noexcept { return m_numeric_transition_costs; }
+    [[nodiscard]] const NumericTransitionCostMap& get_numeric_transition_costs() const noexcept { return m_numeric_transition_costs; }
 
 protected:
     CostMap m_costs;
@@ -162,7 +162,7 @@ public:
 
     /// Takes the rule binding as a view: the lifted action cost reads the binding's objects.
     template<formalism::RelationKind R>
-    Cost get_cost(formalism::datalog::RuleBindingView<R> rule_key) const
+    [[nodiscard]] Cost get_cost(formalism::datalog::RuleBindingView<R> rule_key) const
     {
         const auto& costs = storage(R {}).get_costs();
         if (const auto it = costs.find(rule_key.get_index()); it != costs.end())
@@ -171,10 +171,10 @@ public:
     }
 
     template<formalism::RelationKind R>
-    Cost get_cost(formalism::datalog::RuleBindingIndex<R> rule_key,
-                  formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
-                  ygg::ClosedInterval<ygg::float_t> interval) const
-    { return storage(R {}).get_cost(rule_key, numeric_key, interval); }
+    [[nodiscard]] Cost get_cost(formalism::datalog::RuleBindingIndex<R> rule_key,
+                                formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
+                                ygg::ClosedInterval<ygg::float_t> interval) const
+    { return storage(R {}).get_cost(rule_key, numeric_key, std::move(interval)); }
 
     void clear() noexcept
     {
@@ -194,45 +194,45 @@ public:
                   formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
                   ygg::ClosedInterval<ygg::float_t> interval,
                   Cost cost)
-    { storage(R {}).set_cost(rule_key, numeric_key, interval, cost); }
+    { storage(R {}).set_cost(rule_key, numeric_key, std::move(interval), cost); }
 
 protected:
     auto& storage(formalism::PredicateTag) noexcept { return predicate_storage; }
     auto& storage(formalism::FunctionTag) noexcept { return function_storage; }
-    const auto& storage(formalism::PredicateTag) const noexcept { return predicate_storage; }
-    const auto& storage(formalism::FunctionTag) const noexcept { return function_storage; }
+    [[nodiscard]] const auto& storage(formalism::PredicateTag) const noexcept { return predicate_storage; }
+    [[nodiscard]] const auto& storage(formalism::FunctionTag) const noexcept { return function_storage; }
 
-    const auto* mapping(formalism::PredicateTag) const noexcept { return m_predicate_rule_to_action; }
-    const auto* mapping(formalism::FunctionTag) const noexcept { return m_function_rule_to_action; }
+    [[nodiscard]] const auto* mapping(formalism::PredicateTag) const noexcept { return m_predicate_rule_to_action; }
+    [[nodiscard]] const auto* mapping(formalism::FunctionTag) const noexcept { return m_function_rule_to_action; }
 
     template<formalism::RelationKind R>
-    Cost get_action_cost(formalism::datalog::RuleBindingView<R> rule_binding) const
+    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleBindingView<R> rule_binding) const
         requires std::same_as<Kind, GroundTag>
     {
         const auto* rule_to_action = mapping(R {});
         if (!rule_to_action)
-            return Cost(0);
+            return static_cast<Cost>(0);
 
         const auto action = rule_to_action->find(rule_binding.get_index());
         if (action == rule_to_action->end())
-            return Cost(0);
+            return static_cast<Cost>(0);
         const auto cost = m_action_costs.find(action->second.get_row());
-        return cost == m_action_costs.end() ? Cost(0) : cost->second;
+        return cost == m_action_costs.end() ? static_cast<Cost>(0) : cost->second;
     }
 
     template<formalism::RelationKind R>
-    Cost get_action_cost(formalism::datalog::RuleBindingView<R> rule_binding) const
+    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleBindingView<R> rule_binding) const
         requires std::same_as<Kind, LiftedTag>
     {
         const auto* rule_to_action = mapping(R {});
         if (!rule_to_action)
-            return Cost(0);
+            return static_cast<Cost>(0);
 
         const auto action = rule_to_action->find(rule_binding.get_index().relation);
         if (action == rule_to_action->end() || rule_binding.get_data().size() < action->second.get_arity())
-            return Cost(0);
+            return static_cast<Cost>(0);
         const auto cost = m_action_costs.find(ActionCostLookup<R> { action->second, rule_binding });
-        return cost == m_action_costs.end() ? Cost(0) : cost->second;
+        return cost == m_action_costs.end() ? static_cast<Cost>(0) : cost->second;
     }
 
     RuleCostOverrideStorage<formalism::PredicateTag> predicate_storage;

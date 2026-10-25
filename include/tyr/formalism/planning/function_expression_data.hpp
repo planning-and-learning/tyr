@@ -45,7 +45,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
     using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
-    Data(Variant variant_) : variant(variant_) {}
+    Data(Variant variant_) : variant(std::move(variant_)) {}
     // Python constructor
     template<typename C>
     Data(const ViewVariant<C>& variant_) :
@@ -91,7 +91,7 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
     using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
-    Data(Variant variant_) : variant(variant_) {}
+    Data(Variant variant_) : variant(std::move(variant_)) {}
     // Python constructor
     template<typename C>
     Data(const ViewVariant<C>& variant_) :

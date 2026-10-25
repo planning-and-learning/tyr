@@ -26,6 +26,7 @@
 #include <fmt/ranges.h>
 #include <iterator>
 #include <sstream>
+#include <utility>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
@@ -280,10 +281,10 @@ std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> valu
 std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return format_view(value); }
 std::string to_string(MultiOperatorView<LiftedTag> value) { return format_view(value); }
 std::string to_string(MultiOperatorView<GroundTag> value) { return format_view(value); }
-std::string to_string(ArithmeticOperatorView<LiftedTag> value) { return format_view(value); }
-std::string to_string(ArithmeticOperatorView<GroundTag> value) { return format_view(value); }
-std::string to_string(BooleanOperatorView<LiftedTag> value) { return format_view(value); }
-std::string to_string(BooleanOperatorView<GroundTag> value) { return format_view(value); }
+std::string to_string(ArithmeticOperatorView<LiftedTag> value) { return format_view(std::move(value)); }
+std::string to_string(ArithmeticOperatorView<GroundTag> value) { return format_view(std::move(value)); }
+std::string to_string(BooleanOperatorView<LiftedTag> value) { return format_view(std::move(value)); }
+std::string to_string(BooleanOperatorView<GroundTag> value) { return format_view(std::move(value)); }
 
 std::string to_string(const ygg::Data<Atom<LiftedTag, StaticTag>>& value) { return format_data(value); }
 std::string to_string(const ygg::Data<Atom<LiftedTag, FluentTag>>& value) { return format_data(value); }
@@ -325,9 +326,9 @@ std::string to_string(FunctionTermValueView<GroundTag, StaticTag> value) { retur
 std::string to_string(FunctionTermValueView<GroundTag, FluentTag> value) { return format_view(value); }
 std::string to_string(FunctionTermValueView<GroundTag, AuxiliaryTag> value) { return format_view(value); }
 std::string to_string(NumericEffectView<LiftedTag, FluentTag> value) { return format_view(value); }
-std::string to_string(NumericEffectOperatorView<LiftedTag, FluentTag> value) { return format_view(value); }
+std::string to_string(NumericEffectOperatorView<LiftedTag, FluentTag> value) { return format_view(std::move(value)); }
 std::string to_string(NumericEffectView<GroundTag, FluentTag> value) { return format_view(value); }
-std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value) { return format_view(value); }
+std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value) { return format_view(std::move(value)); }
 
 std::string to_string(VariableView value) { return fmt::format("{}", value.get_name()); }
 std::string to_string(ObjectView value) { return fmt::format("{}", value.get_name()); }

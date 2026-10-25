@@ -46,7 +46,7 @@ public:
 
     void on_solved(const Plan<Kind>& plan) override { NB_OVERRIDE_PURE(on_solved, plan); }
 
-    const Statistics<Kind>& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
+    [[nodiscard]] const Statistics<Kind>& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
 };
 
 template<TaskKind Kind>

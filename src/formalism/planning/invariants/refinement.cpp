@@ -197,13 +197,14 @@ MutableInvariantList refine_candidate(const MutableInvariant& inv, const Threat&
             if (inv.predicates.contains(del_atom.predicate))
                 continue;
 
-            for (auto phi_prime : possible_matches(*part, add_atom, del_atom, inv.num_rigid_variables))
+            for (const auto& phi_prime : possible_matches(*part, add_atom, del_atom, inv.num_rigid_variables))
             {
                 if (covers(inv, phi_prime))
                     continue;
 
                 const size_t new_num_counted_variables =
-                    std::max(inv.num_counted_variables, atom_uses_counted(phi_prime, inv.num_rigid_variables) ? size_t(1) : size_t(0));
+                    std::max(inv.num_counted_variables,
+                             atom_uses_counted(phi_prime, inv.num_rigid_variables) ? static_cast<size_t>(1) : static_cast<size_t>(0));
 
                 auto atoms = inv.atoms;
                 atoms.push_back(phi_prime);

@@ -274,7 +274,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
     evaluator.facts.action = action ? std::optional(action->get_index()) : std::nullopt;
     evaluator.effect_atom_index.clear();
 
-    const auto state = node.get_state();
+    const auto& state = node.get_state();
     insert_extended_state(state.get_state_builder(),
                           *definition->task->get_repository(),
                           schema ? schema->input_translation : definition->action_program.get_translation_context().p2d,
@@ -1238,7 +1238,7 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
     if (verbosity < 1)
         return;
 
-    std::cout << "[Successor generator] Summary" << std::endl;
+    std::cout << "[Successor generator] Summary" << '\n';
     fmt::print(std::cout, "{}\n", m_impl->evaluator.workspace.statistics);
     auto successor_generator_rule_statistics = std::vector<datalog::RuleStatistics> {};
     for (const auto& ws_rule : m_impl->evaluator.workspace.template get_rules<formalism::PredicateTag>())

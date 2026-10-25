@@ -30,7 +30,7 @@ struct FDRValue : ygg::FixedUintMixin<FDRValue>
     using Base = ygg::FixedUintMixin<FDRValue>;
     using Base::Base;
 
-    bool is_none() const noexcept { return *this == none(); }
+    [[nodiscard]] bool is_none() const noexcept { return *this == none(); }
 
     static constexpr FDRValue none() noexcept { return FDRValue { 0 }; }
 };

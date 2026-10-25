@@ -526,10 +526,10 @@ std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> valu
 std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return detail::binary_operator(value); }
 std::string to_string(MultiOperatorView<LiftedTag> value) { return detail::multi_operator(value); }
 std::string to_string(MultiOperatorView<GroundTag> value) { return detail::multi_operator(value); }
-std::string to_string(ArithmeticOperatorView<LiftedTag> value) { return detail::arithmetic_operator(value); }
-std::string to_string(ArithmeticOperatorView<GroundTag> value) { return detail::arithmetic_operator(value); }
-std::string to_string(BooleanOperatorView<LiftedTag> value) { return detail::boolean_operator(value); }
-std::string to_string(BooleanOperatorView<GroundTag> value) { return detail::boolean_operator(value); }
+std::string to_string(ArithmeticOperatorView<LiftedTag> value) { return detail::arithmetic_operator(std::move(value)); }
+std::string to_string(ArithmeticOperatorView<GroundTag> value) { return detail::arithmetic_operator(std::move(value)); }
+std::string to_string(BooleanOperatorView<LiftedTag> value) { return detail::boolean_operator(std::move(value)); }
+std::string to_string(BooleanOperatorView<GroundTag> value) { return detail::boolean_operator(std::move(value)); }
 
 std::string to_string(AtomView<LiftedTag, StaticTag> value) { return detail::atom(value); }
 std::string to_string(AtomView<LiftedTag, FluentTag> value) { return detail::atom(value); }
@@ -556,10 +556,10 @@ std::string to_string(NumericEffectView<LiftedTag, FluentTag> value) { return de
 std::string to_string(NumericEffectView<LiftedTag, AuxiliaryTag> value) { return detail::numeric_effect(value); }
 std::string to_string(NumericEffectView<GroundTag, FluentTag> value) { return detail::numeric_effect(value); }
 std::string to_string(NumericEffectView<GroundTag, AuxiliaryTag> value) { return detail::numeric_effect(value); }
-std::string to_string(NumericEffectOperatorView<LiftedTag, FluentTag> value) { return detail::numeric_effect_operator(value); }
-std::string to_string(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> value) { return detail::numeric_effect_operator(value); }
-std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value) { return detail::numeric_effect_operator(value); }
-std::string to_string(NumericEffectOperatorView<GroundTag, AuxiliaryTag> value) { return detail::numeric_effect_operator(value); }
+std::string to_string(NumericEffectOperatorView<LiftedTag, FluentTag> value) { return detail::numeric_effect_operator(std::move(value)); }
+std::string to_string(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> value) { return detail::numeric_effect_operator(std::move(value)); }
+std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value) { return detail::numeric_effect_operator(std::move(value)); }
+std::string to_string(NumericEffectOperatorView<GroundTag, AuxiliaryTag> value) { return detail::numeric_effect_operator(std::move(value)); }
 std::string to_string(FDRVariableView<FluentTag> value) { return detail::fdr_variable(value); }
 
 std::string to_string(InvariantView value) { return detail::invariant(value); }

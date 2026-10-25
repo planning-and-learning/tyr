@@ -49,18 +49,18 @@ public:
     ygg::Index<::tyr::planning::State<Kind>> get_index() const;
     void set(ygg::Index<::tyr::planning::State<Kind>> index);
 
-    ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
     void set(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact);
-    ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const;
+    [[nodiscard]] ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const;
     void set(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index, ygg::float_t value);
-    bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const;
+    [[nodiscard]] bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const;
     void set(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index);
 
-    ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
     void set(::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag> view);
-    ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
+    [[nodiscard]] ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
     void set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value);
-    bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const;
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const;
     void set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view);
 
     ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
@@ -176,7 +176,7 @@ template<::tyr::TaskKind Kind>
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
-auto Builder<::tyr::planning::State<Kind>>::get_atoms(const ::tyr::formalism::planning::Repository& repository_) const noexcept
+[[nodiscard]] auto Builder<::tyr::planning::State<Kind>>::get_atoms(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
         return get_fluent_facts()
@@ -189,7 +189,7 @@ auto Builder<::tyr::planning::State<Kind>>::get_atoms(const ::tyr::formalism::pl
 
 template<::tyr::TaskKind Kind>
 template<::tyr::formalism::FactKind F>
-::tyr::planning::FunctionTermValueRange<F> Builder<::tyr::planning::State<Kind>>::get_fterm_values() const noexcept
+[[nodiscard]] ::tyr::planning::FunctionTermValueRange<F> Builder<::tyr::planning::State<Kind>>::get_fterm_values() const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
         return ::tyr::planning::FunctionTermValueRange<F>(m_numeric_storage);

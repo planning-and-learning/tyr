@@ -48,13 +48,13 @@ public:
 
     void insert(E entry) { m_priority_queue.push(std::move(entry)); }
 
-    decltype(auto) top() const
+    [[nodiscard]] decltype(auto) top() const
     {
         assert(!empty());
         return m_priority_queue.top().get_item();
     }
 
-    const auto& top_entry() const
+    [[nodiscard]] const auto& top_entry() const
     {
         assert(!empty());
         return m_priority_queue.top();
@@ -72,9 +72,9 @@ public:
         std::swap(m_priority_queue, tmp);
     }
 
-    bool empty() const { return m_priority_queue.empty(); }
+    [[nodiscard]] bool empty() const { return m_priority_queue.empty(); }
 
-    std::size_t size() const { return m_priority_queue.size(); }
+    [[nodiscard]] std::size_t size() const { return m_priority_queue.size(); }
 
 private:
     std::priority_queue<E, std::vector<E>, EntryComparator> m_priority_queue;

@@ -572,7 +572,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateEdgeCost)
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(derive_a.get_row().get_index(), datalog::Cost(7));
+    cost_policy.set_cost(derive_a.get_row().get_index(), static_cast<datalog::Cost>(7));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy,
@@ -672,7 +672,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(expensive_source.get_row().get_index(), datalog::BaseAnnotation(datalog::Cost(2)));
+    ctx.out().annotations().insert_or_assign(expensive_source.get_row().get_index(), datalog::BaseAnnotation(static_cast<datalog::Cost>(2)));
     tyr::datalog::compute_model(ctx);
 
     EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(goal_atom.get_row()));
@@ -694,7 +694,7 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     auto termination_policy = datalog::TerminationPolicy<datalog::MaxAggregation>();
     termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(cheap.get_row().get_index(), datalog::Cost(1));
+    cost_policy.set_cost(cheap.get_row().get_index(), static_cast<datalog::Cost>(1));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
                                                 datalog::TerminationPolicy<datalog::MaxAggregation>,
@@ -777,15 +777,15 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictly
     auto policy = datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>();
     policy.initialize(ygg::uint_t(head.get_index().relation) + 1);
 
-    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), datalog::Cost(2)));
-    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), datalog::Cost(2)));
+    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), static_cast<datalog::Cost>(2)));
+    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), static_cast<datalog::Cost>(2)));
 
     const auto* achievers = policy.find_achievers(head.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ(achievers->front().get_cost(), datalog::Cost(2));
 
-    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), datalog::Cost(1)));
+    policy.record_achiever(head.get_index(), datalog::WitnessAnnotation<tyr::formalism::PredicateTag>(rule.get_index(), static_cast<datalog::Cost>(1)));
     achievers = policy.find_achievers(head.get_index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
@@ -869,7 +869,7 @@ TEST(TyrDatalogGroundQueueTest, RevalidatesQueuedRuleAfterContainedNumericCertif
 
     const auto interval = ygg::ClosedInterval<ygg::float_t>(1, 1);
     ctx.out().numeric_annotations().clear();
-    ctx.out().numeric_annotations().insert(term.get_row().get_index(), interval, datalog::BaseAnnotation(datalog::Cost(5)));
+    ctx.out().numeric_annotations().insert(term.get_row().get_index(), interval, datalog::BaseAnnotation(static_cast<datalog::Cost>(5)));
 
     tyr::datalog::compute_model(ctx);
 
@@ -927,7 +927,9 @@ TEST(TyrDatalogGroundQueueTest, ReevaluatesPendingPredicateWhenNumericSupportBec
 
     ctx.initialize(fixture.initial_fluent_atoms);
     ctx.out().numeric_annotations().clear();
-    ctx.out().numeric_annotations().insert(term.get_row().get_index(), ygg::ClosedInterval<ygg::float_t>(5, 5), datalog::BaseAnnotation(datalog::Cost(10)));
+    ctx.out().numeric_annotations().insert(term.get_row().get_index(),
+                                           ygg::ClosedInterval<ygg::float_t>(5, 5),
+                                           datalog::BaseAnnotation(static_cast<datalog::Cost>(10)));
     tyr::datalog::compute_model(ctx);
 
     const auto* annotation = ctx.out().annotations().find(goal.get_row().get_index());
@@ -946,7 +948,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule.get_row().get_index(), term.get_row().get_index(), interval, datalog::Cost(3));
+    cost_policy.set_cost(rule.get_row().get_index(), term.get_row().get_index(), interval, static_cast<datalog::Cost>(3));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy,
@@ -954,7 +956,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
     auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>(), datalog::NoTerminationPolicy(), cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
     ctx.initialize(fixture.initial_fluent_atoms);
-    ctx.out().annotations().insert_or_assign(prerequisite.get_row().get_index(), datalog::BaseAnnotation(datalog::Cost(5)));
+    ctx.out().annotations().insert_or_assign(prerequisite.get_row().get_index(), datalog::BaseAnnotation(static_cast<datalog::Cost>(5)));
 
     tyr::datalog::compute_model(ctx);
 
@@ -975,7 +977,7 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(rule.get_row().get_index(), term.get_row().get_index(), raw_interval, datalog::Cost(1));
+    cost_policy.set_cost(rule.get_row().get_index(), term.get_row().get_index(), raw_interval, static_cast<datalog::Cost>(1));
     auto termination_policy = datalog::TerminationPolicy<datalog::SumAggregation>();
     termination_policy.set_goals(goal);
     using Workspace = datalog::ProgramWorkspace<GroundTag,

@@ -35,10 +35,10 @@ struct RelationVertexMap
     size_t num_predicates;
     size_t num_functions;
 
-    ygg::uint_t get_vertex(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate) const { return ygg::uint_t(predicate); }
-    ygg::uint_t get_vertex(ygg::Index<formalism::Function<formalism::FluentTag>> function) const
+    [[nodiscard]] ygg::uint_t get_vertex(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate) const { return ygg::uint_t(predicate); }
+    [[nodiscard]] ygg::uint_t get_vertex(ygg::Index<formalism::Function<formalism::FluentTag>> function) const
     { return static_cast<ygg::uint_t>(num_predicates + ygg::uint_t(function)); }
-    size_t size() const { return num_predicates + num_functions; }
+    [[nodiscard]] size_t size() const { return num_predicates + num_functions; }
 };
 
 template<formalism::RelationKind R>
@@ -76,7 +76,7 @@ template<formalism::RelationKind R>
 void add_rule_dependencies(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
     for (const auto rule : program.get_rules<R>())
-        formalism::datalog::for_each_head(rule, [&](auto head) { add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph); });
+        formalism::datalog::for_each_head(rule, [&](const auto& head) { add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph); });
 }
 
 template<formalism::RelationKind R>
@@ -89,7 +89,7 @@ void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
     {
         auto stratum = std::optional<ygg::uint_t> {};
         formalism::datalog::for_each_head(rule,
-                                          [&](auto head)
+                                          [&](const auto& head)
                                           {
                                               const auto head_stratum = relation_stratum[get_head_vertex(head, vertices)];
                                               if (stratum && *stratum != head_stratum)
@@ -139,7 +139,7 @@ RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag
         relation_stratum[i] = comp_stratum[comp[i]];
 
     // 6) Bucket rules by head stratum.
-    auto max_s = ygg::uint_t(0);
+    auto max_s = static_cast<ygg::uint_t>(0);
     for (auto s : comp_stratum)
         max_s = std::max(max_s, s);
 

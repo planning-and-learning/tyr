@@ -46,7 +46,7 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>
     using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
-    Data(Variant variant_) : variant(variant_) {}
+    Data(Variant variant_) : variant(std::move(variant_)) {}
     template<typename C>
     Data(const ViewVariant<C>& variant_) :
         variant(std::visit(
@@ -95,7 +95,7 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>
     using ViewVariant = ::ygg::ViewVariant<Variant, C>;
 
     Data() = default;
-    Data(Variant variant_) : variant(variant_) {}
+    Data(Variant variant_) : variant(std::move(variant_)) {}
     template<typename C>
     Data(const ViewVariant<C>& variant_) :
         variant(std::visit(

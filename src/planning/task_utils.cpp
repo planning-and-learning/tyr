@@ -30,9 +30,7 @@
 
 #include <yggdrasil/core/config.hpp>
 
-namespace tyr::planning
-{
-namespace detail
+namespace tyr::planning::detail
 {
 
 void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
@@ -105,6 +103,5 @@ void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
     auto merge_context = formalism::planning::MergePlanningContext { planning_builder, repository };
     for (const auto binding : derived_bindings)
         state.set(formalism::planning::merge_atom_d2p<formalism::FluentTag, formalism::DerivedTag>(binding, fluent_to_derived_predicate, merge_context).first);
-}
 }
 }

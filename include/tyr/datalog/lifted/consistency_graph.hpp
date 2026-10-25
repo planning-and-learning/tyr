@@ -143,8 +143,8 @@ public:
     {
     }
 
-    auto get_parameter_index() const noexcept { return m_parameter_index; }
-    auto get_object_index() const noexcept { return m_object_index; }
+    [[nodiscard]] auto get_parameter_index() const noexcept { return m_parameter_index; }
+    [[nodiscard]] auto get_object_index() const noexcept { return m_object_index; }
 };
 
 /**
@@ -158,10 +158,10 @@ private:
     Vertex m_vj;
 
 public:
-    Edge(Vertex vi, Vertex vj) noexcept : m_vi(std::move(vi)), m_vj(std::move(vj)) {}
+    Edge(Vertex vi, Vertex vj) noexcept : m_vi(vi), m_vj(vj) {}
 
-    const auto& vi() const noexcept { return m_vi; }
-    const auto& vj() const noexcept { return m_vj; }
+    [[nodiscard]] const auto& vi() const noexcept { return m_vi; }
+    [[nodiscard]] const auto& vj() const noexcept { return m_vj; }
 };
 
 }
@@ -179,13 +179,13 @@ public:
                                                kckp::DeltaGraph& delta_graph,
                                                kckp::FullGraph& full_graph) const;
 
-    const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
-    const kckp::Graph& get_graph() const noexcept;
-    const kckp::GraphLayout& get_graph_layout() const noexcept;
-    const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
-    const kckp::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
+    [[nodiscard]] const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
+    [[nodiscard]] const kckp::Graph& get_graph() const noexcept;
+    [[nodiscard]] const kckp::GraphLayout& get_graph_layout() const noexcept;
+    [[nodiscard]] const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
+    [[nodiscard]] const kckp::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
     /// Term positions of the hyperedge condition's literals, in its literal order.
-    const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& get_hyperedge_indexed_literals() const noexcept;
+    [[nodiscard]] const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& get_hyperedge_indexed_literals() const noexcept;
 
 private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> m_unary_overapproximation_condition;

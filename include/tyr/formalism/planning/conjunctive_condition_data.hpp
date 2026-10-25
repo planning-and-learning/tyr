@@ -83,7 +83,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_literals() const
+    [[nodiscard]] const auto& get_literals() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_literals;
@@ -157,7 +157,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_literals() const
+    [[nodiscard]] const auto& get_literals() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_literals;
@@ -168,7 +168,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
     }
 
     template<::tyr::formalism::PolarityKind T>
-    const auto& get_facts() const
+    [[nodiscard]] const auto& get_facts() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::PositiveTag>)
             return positive_facts;

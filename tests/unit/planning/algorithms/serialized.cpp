@@ -294,7 +294,7 @@ public:
     }
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override { ++num_search_ends; }
     void on_solved(ygg::uint_t arity) override { m_statistics.set_solution_arity(arity); }
-    const tyr::planning::iw::Statistics<GroundTag>& get_statistics() const override { return m_statistics; }
+    [[nodiscard]] const tyr::planning::iw::Statistics<GroundTag>& get_statistics() const override { return m_statistics; }
 
 private:
     tyr::planning::iw::Statistics<GroundTag> m_statistics;
@@ -850,7 +850,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
                      labeled_succ_nodes.end(),
                      [&](const auto& labeled_succ_node) { return labeled_succ_node.node.get_state().get_index() != start_node.get_state().get_index(); });
     ASSERT_NE(first_labeled_succ_node_it, labeled_succ_nodes.end());
-    const auto first_labeled_succ_node = *first_labeled_succ_node_it;
+    const auto& first_labeled_succ_node = *first_labeled_succ_node_it;
     const auto first_goal_node = first_labeled_succ_node.node;
     const auto second_start_node = tyr::planning::Node<GroundTag>(first_goal_node.get_state(), 0);
     const auto repeated_start_node = tyr::planning::Node<GroundTag>(start_node.get_state(), 1);

@@ -38,7 +38,7 @@ struct RuleMapping
     ygg::UnorderedMap<Rule<formalism::FunctionTag>, Rule<formalism::FunctionTag>> function;
 
     template<formalism::RelationKind R>
-    const auto& get() const noexcept
+    [[nodiscard]] const auto& get() const noexcept
     {
         if constexpr (std::same_as<R, formalism::PredicateTag>)
             return predicate;

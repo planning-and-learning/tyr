@@ -77,7 +77,7 @@ struct Fixture
             objects.push_back(intern(repository, ygg::Data<tyr::formalism::Object>("o" + std::to_string(i))));
     }
 
-    tyr::analysis::VariableDomainList domains() const
+    [[nodiscard]] tyr::analysis::VariableDomainList domains() const
     {
         return { domain({ ygg::uint_t(objects[0].get_index()), ygg::uint_t(objects[2].get_index()) }),
                  domain({ ygg::uint_t(objects[1].get_index()) }),

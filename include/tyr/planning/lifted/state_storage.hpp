@@ -40,7 +40,8 @@ struct AtomUnpackedStorage<LiftedTag>
 {
     boost::dynamic_bitset<> indices;
 
-    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index) const { return ygg::test(ygg::uint_t(index), indices); }
+    [[nodiscard]] bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index) const
+    { return ygg::test(ygg::uint_t(index), indices); }
     void set(ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index) { ygg::set(ygg::uint_t(index), true, indices); }
     void clear() { indices.clear(); }
     void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
@@ -53,7 +54,7 @@ struct FactUnpackedStorage<LiftedTag>
 {
     boost::dynamic_bitset<> indices;
 
-    formalism::planning::FDRValue get(ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
+    [[nodiscard]] formalism::planning::FDRValue get(ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
     { return formalism::planning::FDRValue(ygg::test(ygg::uint_t(index), indices)); }
     void set(ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact)
     {

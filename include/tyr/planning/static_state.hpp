@@ -41,15 +41,17 @@ public:
     template<TaskKind Kind>
     explicit StaticState(formalism::planning::TaskView<Kind> task);
 
-    bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const { return ygg::test(ygg::uint_t(index), m_atoms); }
-    ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
+    [[nodiscard]] bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
+    { return ygg::test(ygg::uint_t(index), m_atoms); }
+    [[nodiscard]] ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
     { return ygg::get(ygg::uint_t(index), m_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
-    bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.get_index()); }
-    ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept { return get(fterm.get_index()); }
+    [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.get_index()); }
+    [[nodiscard]] ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept
+    { return get(fterm.get_index()); }
 
-    auto get_atoms() const noexcept { return AtomRange<formalism::StaticTag>(m_atoms); }
-    auto get_fterm_values() const noexcept { return FunctionTermValueRange<formalism::StaticTag>(m_numeric_variables); }
+    [[nodiscard]] auto get_atoms() const noexcept { return AtomRange<formalism::StaticTag>(m_atoms); }
+    [[nodiscard]] auto get_fterm_values() const noexcept { return FunctionTermValueRange<formalism::StaticTag>(m_numeric_variables); }
 
 private:
     boost::dynamic_bitset<> m_atoms;

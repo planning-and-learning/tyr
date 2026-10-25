@@ -40,7 +40,7 @@ struct Data<::tyr::formalism::planning::Metric>
     Data(::tyr::formalism::OptimizationDirection optimization_direction_, ygg::Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>> fexpr_) :
         index(),
         optimization_direction(optimization_direction_),
-        fexpr(fexpr_)
+        fexpr(std::move(fexpr_))
     {
     }
     // Python constructor
@@ -50,7 +50,7 @@ struct Data<::tyr::formalism::planning::Metric>
         index(),
         optimization_direction(optimization_direction_),
         fexpr()
-    { ygg::set(fexpr_, fexpr); }
+    { ygg::set(std::move(fexpr_), fexpr); }
     Data(const Data& other) = default;
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;

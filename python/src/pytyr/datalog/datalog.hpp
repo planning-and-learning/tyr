@@ -34,6 +34,7 @@
 #include <tyr/datalog/policies/cost.hpp>
 #include <tyr/datalog/policies/termination.hpp>
 #include <tyr/formalism/datalog/copy.hpp>
+#include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <yggdrasil/python/owner.hpp>
@@ -65,7 +66,7 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
         .def("count",
              [](const Set& self)
              {
-                 auto result = size_t(0);
+                 auto result = static_cast<size_t>(0);
                  for ([[maybe_unused]] const auto binding : self.get_bindings())
                      ++result;
                  return result;
@@ -154,18 +155,18 @@ inline void bind_numeric_support(nb::module_& m)
     using NumericKey = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using NumericKeyView = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
 
-    auto cls =
-        nb::class_<NumericSupport>(m, "NumericSupport")
-            .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
-            .def(
-                "__init__",
-                [](NumericSupport* self, NumericKeyView key, Interval interval, Cost cost) { new (self) NumericSupport(key.get_index(), interval, cost); },
-                "key"_a,
-                "interval"_a,
-                "cost"_a)
-            .def("get_key", &NumericSupport::get_key)
-            .def("get_interval", &NumericSupport::get_interval)
-            .def("get_cost", &NumericSupport::get_cost);
+    auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
+                   .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
+                   .def(
+                       "__init__",
+                       [](NumericSupport* self, NumericKeyView key, Interval interval, Cost cost)
+                       { new (self) NumericSupport(key.get_index(), std::move(std::move(std::move(interval))), cost); },
+                       "key"_a,
+                       "interval"_a,
+                       "cost"_a)
+                   .def("get_key", &NumericSupport::get_key)
+                   .def("get_interval", &NumericSupport::get_interval)
+                   .def("get_cost", &NumericSupport::get_cost);
     ygg::add_comparison(cls);
 }
 

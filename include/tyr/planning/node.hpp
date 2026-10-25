@@ -45,16 +45,16 @@ public:
 
     Node(State state, ygg::float_t metric) noexcept(std::is_nothrow_move_constructible_v<State>) : m_state(std::move(state)), m_metric(metric) {}
 
-    const State& get_state() const noexcept { return m_state; }
-    ygg::float_t get_metric() const noexcept { return m_metric; }
+    [[nodiscard]] const State& get_state() const noexcept { return m_state; }
+    [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
 
-    auto pack() const noexcept(noexcept(m_state.pack()))
+    [[nodiscard]] auto pack() const noexcept(noexcept(m_state.pack()))
         requires requires(const State& state) {
             { state.pack() } -> std::same_as<PackedStateView<Kind>>;
         }
     { return PackedNode<Kind>(m_state.pack(), m_metric); }
 
-    auto identifying_members() const noexcept
+    [[nodiscard]] auto identifying_members() const noexcept
         requires ygg::Identifiable<State>
     { return std::tie(m_state, m_metric); }
 
@@ -69,10 +69,10 @@ class PackedNode : public ygg::comparison::Mixin<PackedNode<Kind>>
 public:
     PackedNode(PackedStateView<Kind> state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
-    const PackedStateView<Kind>& get_state() const noexcept { return m_state; }
-    ygg::float_t get_metric() const noexcept { return m_metric; }
+    [[nodiscard]] const PackedStateView<Kind>& get_state() const noexcept { return m_state; }
+    [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
 
-    Node<Kind> unpack() const { return Node<Kind>(m_state.unpack(), m_metric); }
+    [[nodiscard]] Node<Kind> unpack() const { return Node<Kind>(m_state.unpack(), m_metric); }
 
     static constexpr auto identifying_members() noexcept { return ygg::Members<&PackedNode::m_state, &PackedNode::m_metric> {}; }
 
@@ -91,7 +91,7 @@ struct LabeledNode
     Binding label;
     Node<Kind, State> node;
 
-    auto pack() const noexcept(noexcept(node.pack()))
+    [[nodiscard]] auto pack() const noexcept(noexcept(node.pack()))
         requires std::same_as<Binding, formalism::planning::ActionBindingView> && requires(const Node<Kind, State>& value) { value.pack(); }
     { return PackedLabeledNode<Kind> { label, node.pack() }; }
 };
@@ -102,7 +102,7 @@ struct PackedLabeledNode
     formalism::planning::ActionBindingView label;
     PackedNode<Kind> node;
 
-    LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
+    [[nodiscard]] LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
 };
 }
 

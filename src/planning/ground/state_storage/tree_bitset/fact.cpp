@@ -40,7 +40,7 @@ typename FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::Packed FactStora
     for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
     {
         const auto& info = m_infos[i];
-        ygg::bit::write_int(std::span(m_blocks).subspan(info.begin), tree_bitset::Block(unpacked.values[i]), info.offset, info.length);
+        ygg::bit::write_int(std::span(m_blocks).subspan(info.begin), static_cast<tree_bitset::Block>(unpacked.values[i]), info.offset, info.length);
     }
 
     ygg::trim_trailing_zero_blocks(m_blocks);
@@ -56,7 +56,11 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     for (const auto& change : changes)
     {
         const auto& info = m_infos[ygg::uint_t(change.variable)];
-        ygg::append_int_flips(info.begin, info.offset, info.length, tree_bitset::Block(ygg::uint_t(change.from) ^ ygg::uint_t(change.to)), m_flips);
+        ygg::append_int_flips(info.begin,
+                              info.offset,
+                              info.length,
+                              static_cast<tree_bitset::Block>(ygg::uint_t(change.from) ^ ygg::uint_t(change.to)),
+                              m_flips);
     }
     ygg::normalize_flips(m_flips);
 

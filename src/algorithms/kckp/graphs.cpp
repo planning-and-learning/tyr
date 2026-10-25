@@ -39,7 +39,7 @@ namespace
     return true;
 }
 
-size_t pair_rank(size_t num_partitions, ygg::uint_t first, ygg::uint_t second) noexcept { return size_t(first) * num_partitions + second; }
+size_t pair_rank(size_t num_partitions, ygg::uint_t first, ygg::uint_t second) noexcept { return static_cast<size_t>(first) * num_partitions + second; }
 }
 
 GraphLayout create_graph_layout(std::span<const size_t> partition_sizes, std::span<const ygg::uint_t> vertex_labels)
@@ -129,12 +129,12 @@ DeduplicatedAdjacencyMatrix::DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& 
     }
 }
 
-Graph::Graph() : m_satisfiable(true), m_layout(create_graph_layout(std::span<const size_t> {})), m_adjacency(m_layout) {}
+Graph::Graph() : m_layout(create_graph_layout(std::span<const size_t> {})), m_adjacency(m_layout) {}
 
 Graph Graph::create(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs)
 { return Graph(satisfiable, std::move(adjacency), std::move(universal_partition_pairs)); }
 
-Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<> universal_partition_pairs)
+Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, const boost::dynamic_bitset<>& universal_partition_pairs)
 {
     const auto old_layout = adjacency.layout();
     assert(universal_partition_pairs.size() == old_layout.num_partitions * old_layout.num_partitions);
@@ -182,7 +182,7 @@ Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<
                     || universal_partition_pairs.test(pair_rank(old_layout.num_partitions, source_partition, target_partition)))
                     continue;
 
-                auto& count = support_counts[size_t(source) * old_layout.num_partitions + target_partition];
+                auto& count = support_counts[static_cast<size_t>(source) * old_layout.num_partitions + target_partition];
                 count = static_cast<ygg::uint_t>(adjacency.get_bitset(source, target_partition).count());
                 if (count == 0)
                 {
@@ -214,7 +214,7 @@ Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, boost::dynamic_bitset<
                     continue;
 
                 const auto source = source_info.bit_offset + source_bit;
-                auto& count = support_counts[size_t(source) * old_layout.num_partitions + target_partition];
+                auto& count = support_counts[static_cast<size_t>(source) * old_layout.num_partitions + target_partition];
                 assert(count != 0);
                 if (--count == 0)
                     remove_vertex(source);

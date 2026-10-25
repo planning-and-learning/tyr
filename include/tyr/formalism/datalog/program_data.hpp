@@ -71,7 +71,7 @@ struct Data<::tyr::formalism::datalog::Program<T>>
         fluent_atoms(std::move(fluent_atoms_)),
         static_fterm_values(std::move(static_fterm_values_)),
         fluent_fterm_values(std::move(fluent_fterm_values_)),
-        goal(goal_),
+        goal(std::move(goal_)),
         predicate_rules(std::move(predicate_rules_)),
         function_rules(std::move(function_rules_))
     {

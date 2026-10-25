@@ -59,7 +59,7 @@ private:
         return result;
     }
 
-    size_t cur_weight() const
+    [[nodiscard]] size_t cur_weight() const
     {
         assert(m_pos < N);
 
@@ -80,13 +80,7 @@ private:
     }
 
 public:
-    AlternatingOpenList(First& first, Rest&... rest, std::array<size_t, N> weights) :
-        m_queues(std::ref(first), std::ref(rest)...),
-        m_weights(weights),
-        m_pos(0),
-        m_count(0)
-    {
-    }
+    AlternatingOpenList(First& first, Rest&... rest, std::array<size_t, N> weights) : m_queues(std::ref(first), std::ref(rest)...), m_weights(weights) {}
 
     ItemType top()
     {
@@ -116,26 +110,26 @@ public:
         std::apply([](auto&&... queues) { (queues.get().clear(), ...); }, m_queues);
     }
 
-    bool empty() const
+    [[nodiscard]] bool empty() const
     {
         return std::apply([](auto&&... queues) { return (queues.get().empty() && ...); }, m_queues);
     }
 
-    std::size_t size() const
+    [[nodiscard]] std::size_t size() const
     {
         return std::apply([](auto&&... queues) { return (queues.get().size() + ...); }, m_queues);
     }
 
     auto& get_weights() noexcept { return m_weights; }
-    const auto& get_weights() const noexcept { return m_weights; }
+    [[nodiscard]] const auto& get_weights() const noexcept { return m_weights; }
 
 private:
     std::tuple<std::reference_wrapper<First>, std::reference_wrapper<Rest>...> m_queues;
 
     std::array<size_t, N> m_weights;
 
-    size_t m_pos;
-    size_t m_count;
+    size_t m_pos = 0;
+    size_t m_count = 0;
 };
 
 }

@@ -154,7 +154,7 @@ void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
         return;
 
     const auto& workspace = *m_impl->evaluator.workspace;
-    std::cout << "[Axiom evaluator] Summary" << std::endl;
+    std::cout << "[Axiom evaluator] Summary" << '\n';
     fmt::print(std::cout, "{}\n", workspace.statistics);
     auto axiom_evaluator_rule_statistics = std::vector<datalog::RuleStatistics> {};
     for (const auto& ws_rule : workspace.template get_rules<formalism::PredicateTag>())

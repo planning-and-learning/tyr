@@ -82,11 +82,11 @@ try
 {
     auto execution_context = ygg::ExecutionContext::create(evaluation_threads);
     auto task = create_task(benchmark_case, *execution_context);
-    auto initial_h_value = ygg::float_t(0);
-    auto cost = ygg::float_t(0);
-    auto length = std::size_t(0);
-    auto num_expanded = uint64_t(0);
-    auto num_generated_successors = uint64_t(0);
+    auto initial_h_value = static_cast<ygg::float_t>(0);
+    auto cost = static_cast<ygg::float_t>(0);
+    auto length = static_cast<std::size_t>(0);
+    auto num_expanded = static_cast<uint64_t>(0);
+    auto num_generated_successors = static_cast<uint64_t>(0);
     auto solved = false;
 
     for (auto _ : state)
@@ -108,8 +108,8 @@ try
         num_expanded = result.statistics.get_num_expanded();
         num_generated_successors = result.statistics.get_num_generated_successors();
         solved = result.status == tyr::planning::SearchStatus::SOLVED;
-        cost = result.plan ? result.plan->get_cost() : ygg::float_t(0);
-        length = result.plan ? result.plan->get_length() : std::size_t(0);
+        cost = result.plan ? result.plan->get_cost() : static_cast<ygg::float_t>(0);
+        length = result.plan ? result.plan->get_length() : static_cast<std::size_t>(0);
 
         benchmark::DoNotOptimize(static_cast<int>(result.status));
         benchmark::DoNotOptimize(initial_h_value);
@@ -145,7 +145,7 @@ try
 
     for (const auto& benchmark_case : tyr::profiling::load_suite(suite_path))
     {
-        for (const auto evaluation_threads : { std::size_t(1), std::size_t(8) })
+        for (const auto evaluation_threads : { static_cast<std::size_t>(1), static_cast<std::size_t>(8) })
         {
             if (evaluation_threads != 1 && !std::is_same_v<Heuristic, tyr::planning::FFRPGHeuristic<Kind>>)
                 continue;

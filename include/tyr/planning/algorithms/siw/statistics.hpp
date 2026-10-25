@@ -50,14 +50,14 @@ public:
         ++m_num_solved_subsearches;
     }
 
-    std::optional<ygg::uint_t> get_maximum_effective_width() const { return m_maximum_effective_width; }
-    std::optional<double> get_average_effective_width() const
+    [[nodiscard]] std::optional<ygg::uint_t> get_maximum_effective_width() const { return m_maximum_effective_width; }
+    [[nodiscard]] std::optional<double> get_average_effective_width() const
     {
         if (m_num_solved_subsearches == 0)
             return std::nullopt;
         return m_total_effective_width / static_cast<double>(m_num_solved_subsearches);
     }
-    ygg::uint_t get_num_solved_subsearches() const { return m_num_solved_subsearches; }
+    [[nodiscard]] ygg::uint_t get_num_solved_subsearches() const { return m_num_solved_subsearches; }
 };
 
 }  // namespace tyr::planning::siw

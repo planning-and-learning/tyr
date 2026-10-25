@@ -35,8 +35,8 @@ struct StratumExecutionContext
     public:
         explicit In(const ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx) {}
 
-        const auto& program() const noexcept { return m_ctx.in(); }
-        bool is_single_threaded() const noexcept { return m_ctx.is_single_threaded(); }
+        [[nodiscard]] const auto& program() const noexcept { return m_ctx.in(); }
+        [[nodiscard]] bool is_single_threaded() const noexcept { return m_ctx.is_single_threaded(); }
 
     private:
         const ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;
@@ -62,7 +62,7 @@ struct StratumExecutionContext
     auto get_rule_execution_context(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule)
     { return RuleExecutionContext<R, AP, TP, CP> { rule, *this }; }
 
-    const auto& in() const noexcept { return m_in; }
+    [[nodiscard]] const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }
 
 private:

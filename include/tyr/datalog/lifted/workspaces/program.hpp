@@ -141,7 +141,7 @@ struct ConstProgramWorkspace<LiftedTag>
     }
 
     template<formalism::RelationKind R>
-    const auto& get_rules() const noexcept
+    [[nodiscard]] const auto& get_rules() const noexcept
     {
         if constexpr (std::same_as<R, formalism::PredicateTag>)
             return predicate_rules;

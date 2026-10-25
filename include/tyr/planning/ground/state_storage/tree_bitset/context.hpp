@@ -61,7 +61,7 @@ struct StateStorageContext<GroundTag, TreeBitset, ThreadSafe>
     FloatVectorSet float_vectors;
     BitsetSet bitsets;
 
-    size_t memory_usage() const noexcept
+    [[nodiscard]] size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
         bytes += float_vectors.memory_usage();

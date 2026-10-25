@@ -42,13 +42,13 @@ public:
                  PlanningDomain domain,
                  std::optional<std::filesystem::path> path = std::nullopt);
 
-    const auto& get_repository() const noexcept { return m_repository; }
-    auto get_task() const noexcept { return m_task; }
-    const auto& get_fdr_context() const noexcept { return m_fdr_context; }
-    const auto& get_domain() const noexcept { return m_domain; }
-    const auto& get_path() const noexcept { return m_path; }
-    const auto& get_variable_domains() const noexcept { return m_variable_domains; }
-    const auto& get_variable_domains_view() const noexcept { return m_variable_domains_view; }
+    [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
+    [[nodiscard]] auto get_task() const noexcept { return m_task; }
+    [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_fdr_context; }
+    [[nodiscard]] const auto& get_domain() const noexcept { return m_domain; }
+    [[nodiscard]] const auto& get_path() const noexcept { return m_path; }
+    [[nodiscard]] const auto& get_variable_domains() const noexcept { return m_variable_domains; }
+    [[nodiscard]] const auto& get_variable_domains_view() const noexcept { return m_variable_domains_view; }
 
 private:
     std::shared_ptr<Repository> m_repository;
@@ -79,11 +79,11 @@ public:
             throw std::invalid_argument("Task context does not match the given Repository.");
     }
 
-    const auto& get_repository() const noexcept { return m_repository; }
-    auto get_task() const noexcept { return m_task; }
-    const auto& get_fdr_context() const noexcept { return m_fdr_context; }
-    const auto& get_domain() const noexcept { return m_domain; }
-    const auto& get_path() const noexcept { return m_path; }
+    [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
+    [[nodiscard]] auto get_task() const noexcept { return m_task; }
+    [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_fdr_context; }
+    [[nodiscard]] const auto& get_domain() const noexcept { return m_domain; }
+    [[nodiscard]] const auto& get_path() const noexcept { return m_path; }
 
 private:
     std::shared_ptr<Repository> m_repository;

@@ -50,7 +50,7 @@ struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
     GroundQueueEntry() = delete;
     GroundQueueEntry(Cost cost, formalism::datalog::RuleView<GroundTag, R> rule) : cost(cost), rule(rule) {}
 
-    auto identifying_members() const noexcept { return std::make_tuple(cost, rule); }
+    [[nodiscard]] auto identifying_members() const noexcept { return std::make_tuple(cost, rule); }
 };
 
 struct GroundQueueStatistics
@@ -163,13 +163,13 @@ public:
     }
 
     template<formalism::RelationKind R>
-    Cost next_cost() const noexcept
+    [[nodiscard]] Cost next_cost() const noexcept
     {
         const auto& queue = get_queue<R>();
         return queue.empty() ? std::numeric_limits<Cost>::max() : queue.front().cost;
     }
 
-    Cost next_cost() const noexcept { return std::min(next_cost<formalism::PredicateTag>(), next_cost<formalism::FunctionTag>()); }
+    [[nodiscard]] Cost next_cost() const noexcept { return std::min(next_cost<formalism::PredicateTag>(), next_cost<formalism::FunctionTag>()); }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
@@ -192,13 +192,13 @@ public:
     { return get_rules(R {}).states; }
 
     template<formalism::RelationKind R>
-    const auto& get_states() const noexcept
+    [[nodiscard]] const auto& get_states() const noexcept
     { return get_rules(R {}).states; }
 
     GroundQueueStatistics& statistics() noexcept { return m_statistics; }
-    const GroundQueueStatistics& statistics() const noexcept { return m_statistics; }
+    [[nodiscard]] const GroundQueueStatistics& statistics() const noexcept { return m_statistics; }
     GroundSchedulerScratch& scratch() noexcept { return m_scratch; }
-    const GroundSchedulerScratch& scratch() const noexcept { return m_scratch; }
+    [[nodiscard]] const GroundSchedulerScratch& scratch() const noexcept { return m_scratch; }
 
 private:
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -218,7 +218,7 @@ private:
             const auto rule = rules[rule_index];
             auto& state = states[rule_index];
 
-            auto unsatisfied_count = ygg::uint_t(0);
+            auto unsatisfied_count = static_cast<ygg::uint_t>(0);
             for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
                 if (!is_applicable(literal, fact_sets))
                     ++unsatisfied_count;
@@ -243,21 +243,21 @@ private:
 
     auto& get_queue(formalism::PredicateTag) noexcept { return m_predicate_queue; }
     auto& get_queue(formalism::FunctionTag) noexcept { return m_function_queue; }
-    const auto& get_queue(formalism::PredicateTag) const noexcept { return m_predicate_queue; }
-    const auto& get_queue(formalism::FunctionTag) const noexcept { return m_function_queue; }
+    [[nodiscard]] const auto& get_queue(formalism::PredicateTag) const noexcept { return m_predicate_queue; }
+    [[nodiscard]] const auto& get_queue(formalism::FunctionTag) const noexcept { return m_function_queue; }
 
     template<formalism::RelationKind R>
     auto& get_queue() noexcept
     { return get_queue(R {}); }
 
     template<formalism::RelationKind R>
-    const auto& get_queue() const noexcept
+    [[nodiscard]] const auto& get_queue() const noexcept
     { return get_queue(R {}); }
 
     auto& get_rules(formalism::PredicateTag) noexcept { return m_predicate_rules; }
     auto& get_rules(formalism::FunctionTag) noexcept { return m_function_rules; }
-    const auto& get_rules(formalism::PredicateTag) const noexcept { return m_predicate_rules; }
-    const auto& get_rules(formalism::FunctionTag) const noexcept { return m_function_rules; }
+    [[nodiscard]] const auto& get_rules(formalism::PredicateTag) const noexcept { return m_predicate_rules; }
+    [[nodiscard]] const auto& get_rules(formalism::FunctionTag) const noexcept { return m_function_rules; }
 
     formalism::datalog::ProgramView<GroundTag> m_program;
     RuleWorkspace<GroundTag, formalism::PredicateTag> m_predicate_rules;

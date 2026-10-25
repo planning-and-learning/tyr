@@ -40,10 +40,10 @@ public:
     static constexpr bool stores_annotations = false;
     static constexpr bool records_propositional_achievers = false;
 
-    bool is_widening_label_preserving(Cost, Cost) const noexcept { return true; }
+    [[nodiscard]] bool is_widening_label_preserving(Cost, Cost) const noexcept { return true; }
 
     void initialize_annotation(PredicateHead, PredicateAnnotations<>&) const noexcept {}
-    void initialize_annotation(FunctionBinding, ygg::ClosedInterval<ygg::float_t>, FunctionAnnotations<>&) const noexcept {}
+    void initialize_annotation(FunctionBinding, const ygg::ClosedInterval<ygg::float_t>&, FunctionAnnotations<>&) const noexcept {}
 
     void clear_achievers() noexcept {}
 };
@@ -64,7 +64,7 @@ public:
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
 
-    bool is_widening_label_preserving(Cost candidate_label, Cost current_target_label) const noexcept
+    [[nodiscard]] bool is_widening_label_preserving(Cost candidate_label, Cost current_target_label) const noexcept
     {
         if constexpr (std::same_as<AggregationFunction, MaxAggregation>)
             return true;
@@ -77,7 +77,7 @@ public:
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, PredicateWitness) const noexcept {}
+    void record_achiever(PredicateHead, const PredicateWitness&) const noexcept {}
 
     template<PredicateAnnotationStore Annotations>
     std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, Annotations& annotations) const
@@ -90,18 +90,19 @@ public:
     template<FunctionAnnotationStore Annotations>
     bool
     try_update_candidate(FunctionBinding head, ygg::ClosedInterval<ygg::float_t> interval, FunctionWitness&& witness, Annotations& numeric_annotations) const
-    { return numeric_annotations.insert(head, interval, Annotation<formalism::FunctionTag>(std::move(witness))); }
+    { return numeric_annotations.insert(head, std::move(interval), Annotation<formalism::FunctionTag>(std::move(witness))); }
 
     template<PredicateAnnotationStore DeltaAnnotations>
-    bool can_update(PredicateHead head, Cost cost, const PredicateAnnotations<>& annotations, const DeltaAnnotations& delta_annotations) const noexcept
+    [[nodiscard]] bool
+    can_update(PredicateHead head, Cost cost, const PredicateAnnotations<>& annotations, const DeltaAnnotations& delta_annotations) const noexcept
     { return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head)); }
 
     template<FunctionAnnotationStore DeltaAnnotations>
-    bool can_update(FunctionBinding head,
-                    ygg::ClosedInterval<ygg::float_t> interval,
-                    Cost cost,
-                    const FunctionAnnotations<>& numeric_annotations,
-                    const DeltaAnnotations& delta_numeric_annotations) const noexcept
+    [[nodiscard]] bool can_update(FunctionBinding head,
+                                  const ygg::ClosedInterval<ygg::float_t>& interval,
+                                  Cost cost,
+                                  const FunctionAnnotations<>& numeric_annotations,
+                                  const DeltaAnnotations& delta_numeric_annotations) const noexcept
     { return cost < std::min(numeric_annotations.fetch_cost(head, interval), delta_numeric_annotations.fetch_cost(head, interval)); }
 
     template<PredicateAnnotationStore DeltaAnnotations>
@@ -116,7 +117,7 @@ public:
 
     template<FunctionAnnotationStore DeltaAnnotations>
     CostUpdate commit_annotation(FunctionBinding head,
-                                 ygg::ClosedInterval<ygg::float_t> interval,
+                                 const ygg::ClosedInterval<ygg::float_t>& interval,
                                  const DeltaAnnotations& delta_numeric_annotations,
                                  FunctionAnnotations<>& numeric_annotations) const
     {
@@ -143,7 +144,7 @@ public:
 
     void clear_achievers() noexcept;
 
-    const Achievers* find_achievers(PredicateHead head) const noexcept;
+    [[nodiscard]] const Achievers* find_achievers(PredicateHead head) const noexcept;
 
     void record_achiever(PredicateHead head, PredicateWitness witness);
 

@@ -23,6 +23,7 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 
 #include <optional>
+#include <utility>
 #include <yggdrasil/containers/variant.hpp>
 
 namespace tyr::datalog
@@ -45,7 +46,7 @@ public:
     auto resolve(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
     { return formalism::datalog::ground_binding(atom, m_grounder).first; }
 
-    auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(constraint, m_grounder); }
+    auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(std::move(constraint), m_grounder); }
 
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> effect) const
     {

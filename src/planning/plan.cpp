@@ -22,13 +22,14 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_view.hpp"
 
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-Plan<Kind>::Plan(Node<Kind> start_node) : Plan(start_node, LabeledNodeList<Kind> {})
+Plan<Kind>::Plan(Node<Kind> start_node) : Plan(std::move(start_node), LabeledNodeList<Kind> {})
 {
 }
 

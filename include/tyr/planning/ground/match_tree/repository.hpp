@@ -71,9 +71,9 @@ public:
     Repository(Repository&& other) = delete;
     Repository& operator=(Repository&& other) = delete;
 
-    const auto& get_index() const noexcept { return m_index; }
+    [[nodiscard]] const auto& get_index() const noexcept { return m_index; }
 
-    const formalism::planning::Repository& get_formalism_repository() const noexcept { return m_formalism_repository; }
+    [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return m_formalism_repository; }
 
     /// @brief Access the element with the given index.
     template<typename T>
@@ -86,7 +86,7 @@ public:
 
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
-    const Repository& get_canonical_context(ygg::Index<T>) const noexcept
+    [[nodiscard]] const Repository& get_canonical_context(ygg::Index<T>) const noexcept
     { return *this; }
 };
 

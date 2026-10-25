@@ -34,10 +34,10 @@ struct InvariantMatchData
 public:
     InvariantMatchData(InvariantView invariant, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings);
 
-    auto invariant() const noexcept { return m_invariant; }
-    const auto& mutable_invariant() const noexcept { return m_inv; }
-    const auto& rigid_variable_bindings() const noexcept { return m_rigid_variable_bindings; }
-    const auto& postings() const noexcept { return m_postings; }
+    [[nodiscard]] auto invariant() const noexcept { return m_invariant; }
+    [[nodiscard]] const auto& mutable_invariant() const noexcept { return m_inv; }
+    [[nodiscard]] const auto& rigid_variable_bindings() const noexcept { return m_rigid_variable_bindings; }
+    [[nodiscard]] const auto& postings() const noexcept { return m_postings; }
 
 private:
     void build_postings();
@@ -79,8 +79,8 @@ public:
 
     void query(AtomView<GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const;
 
-    QueryResult query(const MutableAtom<FluentTag>& atom) const;
-    QueryResult query(AtomView<GroundTag, FluentTag> atom) const;
+    [[nodiscard]] QueryResult query(const MutableAtom<FluentTag>& atom) const;
+    [[nodiscard]] QueryResult query(AtomView<GroundTag, FluentTag> atom) const;
 
 private:
     InvariantMatchDataList m_invariant_match_data;

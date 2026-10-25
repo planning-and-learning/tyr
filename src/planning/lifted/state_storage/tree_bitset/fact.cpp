@@ -42,7 +42,7 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     {
         const auto bit = ygg::uint_t(change.variable);
         m_flips.push_back(
-            tree_bitset::Flip { ygg::uint_t(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
+            tree_bitset::Flip { static_cast<ygg::uint_t>(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
     }
     ygg::normalize_flips(m_flips);
 

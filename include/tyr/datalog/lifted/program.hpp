@@ -36,14 +36,14 @@ public:
             formalism::datalog::RepositoryPtr program_repository,
             formalism::datalog::RepositoryFactoryPtr repository_factory);
 
-    auto get_program() const noexcept { return m_program; }
-    const auto& get_program_repository() const noexcept { return *m_program_repository; }
+    [[nodiscard]] auto get_program() const noexcept { return m_program; }
+    [[nodiscard]] const auto& get_program_repository() const noexcept { return *m_program_repository; }
     auto& get_repository_factory() noexcept { return *m_repository_factory; }
-    auto& get_repository_factory() const noexcept { return *m_repository_factory; }
-    const auto& get_domains() const noexcept { return m_analysis.domains; }
-    const auto& get_strata() const noexcept { return m_strata; }
-    const auto& get_listeners() const noexcept { return m_listeners; }
-    const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
+    [[nodiscard]] auto& get_repository_factory() const noexcept { return *m_repository_factory; }
+    [[nodiscard]] const auto& get_domains() const noexcept { return m_analysis.domains; }
+    [[nodiscard]] const auto& get_strata() const noexcept { return m_strata; }
+    [[nodiscard]] const auto& get_listeners() const noexcept { return m_listeners; }
+    [[nodiscard]] const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:
     friend struct ConstProgramWorkspace<LiftedTag>;

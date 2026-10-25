@@ -48,7 +48,7 @@ public:
 
     void initialize(const StateView<Kind>&) const noexcept {}
 
-    ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept
+    [[nodiscard]] ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept
     {
         auto result = static_cast<ygg::hash_t>(m_seed);
         ygg::hash_combine(result, state.template get_atom_storage<formalism::FluentTag>());
@@ -57,7 +57,7 @@ public:
         return boost::hash2::xxhash_64(result).result();
     }
 
-    ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept
+    [[nodiscard]] ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept
     {
         assert(num_workers > 0);
         // The ordinary single-worker search path pays no state-hashing cost.
@@ -77,9 +77,9 @@ public:
     /// Select the initial state's unit-cost LM-cut frontier and positive task goals once before routing.
     void initialize(const StateView<Kind>& start_state);
 
-    ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept;
+    [[nodiscard]] ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept;
 
-    ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept
+    [[nodiscard]] ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept
     {
         assert(num_workers > 0);
         return ygg::Index<Worker>(static_cast<ygg::uint_t>(num_workers == 1 ? 0 : hash(state) % num_workers));

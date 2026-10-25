@@ -47,7 +47,7 @@ struct RuleHeadMember<T, PredicateTag>
     ygg::IndexList<Atom<T, FluentTag>> heads;
 
     auto& head_member() noexcept { return heads; }
-    const auto& head_member() const noexcept { return heads; }
+    [[nodiscard]] const auto& head_member() const noexcept { return heads; }
 };
 
 template<TaskKind T>
@@ -59,7 +59,7 @@ struct RuleHeadMember<T, FunctionTag>
     ygg::Data<NumericEffectOperator<T, FluentTag>> head;
 
     auto& head_member() noexcept { return head; }
-    const auto& head_member() const noexcept { return head; }
+    [[nodiscard]] const auto& head_member() const noexcept { return head; }
 };
 
 }

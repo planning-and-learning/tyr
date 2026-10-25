@@ -44,7 +44,7 @@ struct StateStorageContext<LiftedTag, TreeVector, ThreadSafe>
     UintVectorSet uint_vectors;
     FloatVectorSet float_vectors;
 
-    size_t memory_usage() const noexcept
+    [[nodiscard]] size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
         bytes += uint_vectors.memory_usage();

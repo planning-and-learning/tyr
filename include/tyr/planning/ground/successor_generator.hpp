@@ -42,7 +42,7 @@ private:
 
     SuccessorGenerator(ygg::uint_t index,
                        TaskPtr<GroundTag> task,
-                       ygg::ExecutionContextPtr execution_context,
+                       const ygg::ExecutionContextPtr& execution_context,
                        std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
 
     explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
@@ -134,7 +134,7 @@ public:
                                           formalism::planning::ActionView<GroundTag> action,
                                           SuccessorStorage<GroundTag, S>& storage,
                                           AxiomEvaluator<GroundTag>& axiom_evaluator);
-    formalism::planning::ActionView<GroundTag> ground_action(formalism::planning::ActionBindingView binding) const;
+    [[nodiscard]] formalism::planning::ActionView<GroundTag> ground_action(formalism::planning::ActionBindingView binding) const;
 
     template<StateViewConcept<GroundTag> S>
     std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<GroundTag, S>& node);
@@ -276,10 +276,10 @@ public:
                                              const StateDelta& delta);
 
     Node<GroundTag> get_node(StateRepository<GroundTag>& state_repository, ygg::Index<State<GroundTag>> state_index);
-    [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
+    [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(const ygg::ExecutionContextPtr& execution_context) const;
 
-    const TaskPtr<GroundTag>& get_task() const noexcept;
-    ygg::uint_t get_index() const noexcept;
+    [[nodiscard]] const TaskPtr<GroundTag>& get_task() const noexcept;
+    [[nodiscard]] ygg::uint_t get_index() const noexcept;
 
 private:
     std::unique_ptr<Impl> m_impl;

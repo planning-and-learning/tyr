@@ -44,10 +44,10 @@ public:
             throw std::invalid_argument("Domain context does not match the given Repository.");
     }
 
-    auto get_domain() const noexcept { return m_domain; }
-    const auto& get_repository() const noexcept { return m_repository; }
-    const auto& get_repository_factory() const noexcept { return m_repository_factory; }
-    const auto& get_path() const noexcept { return m_path; }
+    [[nodiscard]] auto get_domain() const noexcept { return m_domain; }
+    [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
+    [[nodiscard]] const auto& get_repository_factory() const noexcept { return m_repository_factory; }
+    [[nodiscard]] const auto& get_path() const noexcept { return m_path; }
 
 private:
     RepositoryPtr m_repository;

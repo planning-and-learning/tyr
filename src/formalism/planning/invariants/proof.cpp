@@ -42,13 +42,13 @@ namespace
 {
 unification::SubstitutionFunction<ygg::Data<Term>> make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
 {
-    auto sigma =
-        unification::SubstitutionFunction<ygg::Data<Term>>::from_range(ParameterIndex { ygg::uint_t(effect.num_parent_variables) }, effect.num_variables);
+    auto sigma = unification::SubstitutionFunction<ygg::Data<Term>>::from_range(ParameterIndex { static_cast<ygg::uint_t>(effect.num_parent_variables) },
+                                                                                effect.num_variables);
 
     for (size_t i = 0; i < effect.num_variables; ++i)
     {
-        [[maybe_unused]] const auto inserted =
-            sigma.assign(ParameterIndex { ygg::uint_t(effect.num_parent_variables + i) }, ygg::Data<Term>(ParameterIndex { ygg::uint_t(fresh_base + i) }));
+        [[maybe_unused]] const auto inserted = sigma.assign(ParameterIndex { static_cast<ygg::uint_t>(effect.num_parent_variables + i) },
+                                                            ygg::Data<Term>(ParameterIndex { static_cast<ygg::uint_t>(fresh_base + i) }));
         assert(inserted);
     }
 

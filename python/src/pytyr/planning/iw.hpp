@@ -42,7 +42,7 @@ public:
 
     void on_solved(ygg::uint_t arity) override { NB_OVERRIDE_PURE(on_solved, arity); }
 
-    const Statistics<Kind>& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
+    [[nodiscard]] const Statistics<Kind>& get_statistics() const override { NB_OVERRIDE_PURE(get_statistics); }
 };
 
 template<TaskKind Kind>

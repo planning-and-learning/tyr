@@ -73,9 +73,9 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
         fluent_atoms(std::move(fluent_atoms_)),
         static_fterm_values(std::move(static_fterm_values_)),
         fluent_fterm_values(std::move(fluent_fterm_values_)),
-        auxiliary_fterm_value(auxiliary_fterm_value_),
+        auxiliary_fterm_value(std::move(auxiliary_fterm_value_)),
         goal(goal_),
-        metric(metric_),
+        metric(std::move(metric_)),
         axioms(std::move(axioms_))
     {
     }
@@ -128,7 +128,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_atoms() const
+    [[nodiscard]] const auto& get_atoms() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_atoms;
@@ -139,7 +139,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     }
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_fterm_values() const
+    [[nodiscard]] const auto& get_fterm_values() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_fterm_values;
@@ -237,8 +237,8 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
         derived_atoms(std::move(derived_atoms_)),
         static_fterm_values(std::move(static_fterm_values_)),
         fluent_fterm_values(std::move(fluent_fterm_values_)),
-        auxiliary_fterm_value(auxiliary_fterm_value_),
-        metric(metric_),
+        auxiliary_fterm_value(std::move(auxiliary_fterm_value_)),
+        metric(std::move(metric_)),
         axioms(std::move(axioms_)),
         fluent_variables(std::move(fluent_variables_)),
         fluent_facts(std::move(fluent_facts_)),
@@ -311,7 +311,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_atoms() const
+    [[nodiscard]] const auto& get_atoms() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_atoms;
@@ -324,7 +324,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     }
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_fterm_values() const
+    [[nodiscard]] const auto& get_fterm_values() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_fterm_values;
@@ -334,7 +334,7 @@ struct Data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
             static_assert(ygg::dependent_false<T>::value, "Missing case");
     }
 
-    const auto& get_fluent_variables() const { return fluent_variables; }
+    [[nodiscard]] const auto& get_fluent_variables() const { return fluent_variables; }
 
     static constexpr auto cista_members() noexcept
     {

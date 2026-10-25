@@ -68,7 +68,7 @@ GroundAxiomStrata compute_ground_axiom_stratification(formalism::planning::TaskV
         atom_stratum[i] = comp_stratum[comp[i]];
 
     // 6) Bucket axioms by head stratum
-    auto max_s = ygg::uint_t(0);
+    auto max_s = static_cast<ygg::uint_t>(0);
     for (auto s : comp_stratum)
         max_s = std::max(max_s, s);
 

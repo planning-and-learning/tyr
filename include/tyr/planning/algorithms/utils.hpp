@@ -77,7 +77,7 @@ struct SearchResult
     std::vector<Statistics> worker_statistics;
 
     /// Fraction of aggregate search-worker capacity not spent waiting for work.
-    ygg::float_t get_worker_utilization() const noexcept
+    [[nodiscard]] ygg::float_t get_worker_utilization() const noexcept
     {
         const auto search_time = std::chrono::duration<long double>(statistics.get_search_time()).count();
         const auto capacity = search_time * worker_statistics.size();

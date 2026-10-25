@@ -57,7 +57,8 @@ std::vector<int> parse_parameters(const boost::json::object& atom_object)
 
 auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate_name, const std::vector<int>& parameters)
 {
-    auto predicate_builder = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>> { std::string(predicate_name), ygg::uint_t(parameters.size()) };
+    auto predicate_builder =
+        ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>> { std::string(predicate_name), static_cast<ygg::uint_t>(parameters.size()) };
     const auto predicate = repo.insert(predicate_builder).first;
 
     auto terms = std::vector<ygg::Data<tyr::formalism::Term>> {};

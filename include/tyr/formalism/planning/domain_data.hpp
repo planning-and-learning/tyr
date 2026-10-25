@@ -66,7 +66,7 @@ struct Data<::tyr::formalism::planning::Domain>
         derived_predicates(std::move(derived_predicates_)),
         static_functions(std::move(static_functions_)),
         fluent_functions(std::move(fluent_functions_)),
-        auxiliary_function(auxiliary_function_),
+        auxiliary_function(std::move(auxiliary_function_)),
         constants(std::move(constants_)),
         actions(std::move(actions_)),
         axioms(std::move(axioms_))
@@ -112,7 +112,7 @@ struct Data<::tyr::formalism::planning::Domain>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_predicates() const
+    [[nodiscard]] const auto& get_predicates() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_predicates;
@@ -125,7 +125,7 @@ struct Data<::tyr::formalism::planning::Domain>
     }
 
     template<::tyr::formalism::FactKind T>
-    const auto& get_functions() const
+    [[nodiscard]] const auto& get_functions() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
             return static_functions;

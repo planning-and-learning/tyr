@@ -74,29 +74,29 @@ struct UnaryDependencies
      */
 
     template<FactKind F, PolarityKind P>
-    const auto& get_literal_dependency() const noexcept
+    [[nodiscard]] const auto& get_literal_dependency() const noexcept
     { return details::select_literal_dependency<F, P>(*this); }
 
-    const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
+    [[nodiscard]] const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
 
     /**
      * has_
      */
 
     template<FactKind F, PolarityKind P>
-    bool has_literal_dependency(ygg::uint_t p) const noexcept
+    [[nodiscard]] bool has_literal_dependency(ygg::uint_t p) const noexcept
     {
         assert(p < k);
         return get_literal_dependency<F, P>().test(p);
     }
 
-    bool has_numeric_dependency(ygg::uint_t p) const noexcept
+    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t p) const noexcept
     {
         assert(p < k);
         return numeric_constraint.test(p);
     }
 
-    bool has_dependency(ygg::uint_t p) const noexcept
+    [[nodiscard]] bool has_dependency(ygg::uint_t p) const noexcept
     {
         return has_literal_dependency<StaticTag, PositiveTag>(p) || has_literal_dependency<StaticTag, NegativeTag>(p)
                || has_literal_dependency<FluentTag, PositiveTag>(p) || has_literal_dependency<FluentTag, NegativeTag>(p) || has_numeric_dependency(p);
@@ -123,7 +123,7 @@ struct BinaryDependencies
     {
     }
 
-    ygg::uint_t get_index(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    [[nodiscard]] ygg::uint_t get_index(ygg::uint_t pi, ygg::uint_t pj) const noexcept
     {
         assert(pi < k && pj < k);
         return pi * k + pj;
@@ -134,22 +134,22 @@ struct BinaryDependencies
      */
 
     template<FactKind F, PolarityKind P>
-    const auto& get_literal_dependency() const noexcept
+    [[nodiscard]] const auto& get_literal_dependency() const noexcept
     { return details::select_literal_dependency<F, P>(*this); }
 
-    const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
+    [[nodiscard]] const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
 
     /**
      * has_
      */
 
     template<FactKind F, PolarityKind P>
-    bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    [[nodiscard]] bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
     { return get_literal_dependency<F, P>().test(get_index(pi, pj)); }
 
-    bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return numeric_constraint.test(get_index(pi, pj)); }
+    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return numeric_constraint.test(get_index(pi, pj)); }
 
-    bool has_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    [[nodiscard]] bool has_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
     {
         return has_literal_dependency<StaticTag, PositiveTag>(pi, pj) || has_literal_dependency<StaticTag, NegativeTag>(pi, pj)
                || has_literal_dependency<FluentTag, PositiveTag>(pi, pj) || has_literal_dependency<FluentTag, NegativeTag>(pi, pj)

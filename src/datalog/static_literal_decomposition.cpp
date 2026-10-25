@@ -67,7 +67,7 @@ private:
     /// A join check visiting more assignments gives up and keeps the literal.
     static constexpr size_t max_join_steps = 10'000'000;
 
-    static std::uint64_t pair_key(ygg::uint_t first, ygg::uint_t second) noexcept { return (std::uint64_t(first) << 32) | second; }
+    static std::uint64_t pair_key(ygg::uint_t first, ygg::uint_t second) noexcept { return (static_cast<std::uint64_t>(first) << 32) | second; }
 
     std::optional<std::vector<StaticLiteralIndex>> compute(StaticLiteral literal)
     {
@@ -122,8 +122,8 @@ private:
 
         // The join of the projections contains the relation; it is exact iff it has no more tuples.
         auto assignment = Tuple(arity);
-        auto count = size_t(0);
-        auto steps = size_t(0);
+        auto count = static_cast<size_t>(0);
+        auto steps = static_cast<size_t>(0);
         const auto exceeded = [&] { return count > relation.size() || steps > max_join_steps; };
         const auto extend = [&](const auto& self, size_t k) -> void
         {
@@ -211,8 +211,8 @@ private:
         {
             auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>(m_context.builder);
             binding->relation = new_predicate;
-            binding->objects.push_back(ygg::Index<formalism::Object>(ygg::uint_t(key >> 32)));
-            binding->objects.push_back(ygg::Index<formalism::Object>(ygg::uint_t(key & 0xffffffffu)));
+            binding->objects.push_back(ygg::Index<formalism::Object>(static_cast<ygg::uint_t>(key >> 32)));
+            binding->objects.push_back(ygg::Index<formalism::Object>(static_cast<ygg::uint_t>(key & 0xffffffffu)));
             auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::StaticTag>>(m_context.builder);
             atom->binding = formalism::datalog::insert(m_context.destination, *binding).first.get_index();
             m_program.static_atoms.push_back(formalism::datalog::insert(m_context.destination, *atom).first.get_index());

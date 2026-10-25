@@ -129,7 +129,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
     Data& operator=(Data&& other) = default;
 
     template<::tyr::formalism::PolarityKind T>
-    const auto& get_facts() const
+    [[nodiscard]] const auto& get_facts() const
     {
         if constexpr (std::same_as<T, ::tyr::formalism::PositiveTag>)
             return add_facts;

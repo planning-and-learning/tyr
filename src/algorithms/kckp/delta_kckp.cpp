@@ -25,8 +25,8 @@ namespace tyr::kckp
 PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const GraphLayout& layout, std::span<const AdjacencyKind> adjacency_kinds) :
     m_num_partitions(layout.num_partitions),
     m_row_offsets(layout.num_vertices),
-    m_pair_offsets(),
-    m_num_blocks(0)
+    m_pair_offsets()
+
 {
     if (m_num_partitions != 0 && m_num_partitions > m_pair_offsets.max_size() / m_num_partitions)
         throw std::overflow_error("PartitionedAdjacencyLayout: partition-pair table size overflow");

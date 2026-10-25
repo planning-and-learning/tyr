@@ -49,7 +49,7 @@ public:
     using iterator_concept = std::input_iterator_tag;
     using pointer = void;
 
-    AtomIterator() noexcept : m_data(nullptr), m_i(0) {}
+    AtomIterator() noexcept {}
     AtomIterator(const boost::dynamic_bitset<>& data, bool begin) noexcept : m_data(&data), m_i(begin ? m_data->find_first() : boost::dynamic_bitset<>::npos) {}
 
     value_type operator*() const noexcept
@@ -90,8 +90,8 @@ public:
     {
     }
 
-    auto begin() const { return AtomIterator<Tag>(*m_data, true); }
-    auto end() const { return AtomIterator<Tag>(*m_data, false); }
+    [[nodiscard]] auto begin() const { return AtomIterator<Tag>(*m_data, true); }
+    [[nodiscard]] auto end() const { return AtomIterator<Tag>(*m_data, false); }
 
 private:
     const boost::dynamic_bitset<>* m_data { nullptr };
@@ -129,7 +129,7 @@ public:
             ++m_i;
     }
 
-    FunctionTermValueIterator() noexcept : m_data(nullptr), m_i(0) {}
+    FunctionTermValueIterator() noexcept {}
     FunctionTermValueIterator(const std::vector<ygg::float_t>& data, bool begin) noexcept : m_data(&data), m_i(begin ? 0 : m_data->size())
     {
         if (begin)
@@ -175,8 +175,8 @@ public:
     {
     }
 
-    auto begin() const { return FunctionTermValueIterator<Tag>(*m_data, true); }
-    auto end() const { return FunctionTermValueIterator<Tag>(*m_data, false); }
+    [[nodiscard]] auto begin() const { return FunctionTermValueIterator<Tag>(*m_data, true); }
+    [[nodiscard]] auto end() const { return FunctionTermValueIterator<Tag>(*m_data, false); }
 
 private:
     const std::vector<ygg::float_t>* m_data { nullptr };

@@ -95,7 +95,7 @@ public:
         for (const auto& [projected, atom] : projections)
         {
             const auto [projection_rule, positions] =
-                emit_rule(variables, projected, { ygg::make_view(atom, m_context.destination).get_atom().get_index() }, ygg::float_t(0));
+                emit_rule(variables, projected, { ygg::make_view(atom, m_context.destination).get_atom().get_index() }, static_cast<ygg::float_t>(0));
             m_program.predicate_rules.push_back(projection_rule);
             m_splitting.origins.emplace(projection_rule, RuleSplitting::Origin { variables.size(), positions });
             m_splitting.projection_rules.emplace(ygg::make_view(atom, m_context.destination).get_atom().get_predicate().get_index(), projection_rule);
@@ -126,10 +126,10 @@ private:
     static constexpr size_t max_kept_variables = 2;
 
     template<formalism::FactKind F>
-    Parameters parameters_of(ygg::Index<formalism::datalog::Literal<LiftedTag, F>> literal) const
+    [[nodiscard]] Parameters parameters_of(ygg::Index<formalism::datalog::Literal<LiftedTag, F>> literal) const
     { return formalism::datalog::collect_parameters(ygg::make_view(literal, m_context.destination)); }
 
-    Parameters parameters_of(const Body& body) const
+    [[nodiscard]] Parameters parameters_of(const Body& body) const
     {
         auto result = Parameters {};
         for (const auto literal : body.static_literals)
@@ -142,7 +142,7 @@ private:
     /// The projection of a single variable, with the static literals whose variables it covers, that keeps the fewest variables.
     /// A projection must leave a precondition with a variable outside it, which it then joins with: otherwise the projection
     /// rule enumerates the same bindings as the rule did.
-    std::optional<Projection> choose_projection(const Body& body, const Parameters& head_parameters, size_t num_variables) const
+    [[nodiscard]] std::optional<Projection> choose_projection(const Body& body, const Parameters& head_parameters, size_t num_variables) const
     {
         auto best = std::optional<Projection> {};
         for (ygg::uint_t position = 0; position < num_variables; ++position)
@@ -285,7 +285,7 @@ private:
         data->predicate = atom.get_predicate().get_index();
         for (const auto term : atom.get_terms())
         {
-            const auto value = term.get_data();
+            const auto& value = term.get_data();
             data->terms.push_back(
                 formalism::unification::is_parameter(value) ? ygg::Data<formalism::Term>(local.at(formalism::unification::get_parameter(value))) : value);
         }
@@ -313,7 +313,7 @@ private:
         std::ranges::sort(positions);
         auto local = ygg::UnorderedMap<formalism::ParameterIndex, formalism::ParameterIndex> {};
         for (size_t i = 0; i < positions.size(); ++i)
-            local.emplace(formalism::ParameterIndex(positions[i]), formalism::ParameterIndex(ygg::uint_t(i)));
+            local.emplace(formalism::ParameterIndex(positions[i]), formalism::ParameterIndex(static_cast<ygg::uint_t>(i)));
 
         auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(m_context.builder);
         for (const auto position : positions)

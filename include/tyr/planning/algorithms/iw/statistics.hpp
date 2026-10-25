@@ -35,7 +35,7 @@ private:
 public:
     void clear() noexcept { m_solution_arity = std::nullopt; }
     void set_solution_arity(ygg::uint_t arity) { m_solution_arity = arity; }
-    std::optional<ygg::uint_t> get_solution_arity() const { return m_solution_arity; }
+    [[nodiscard]] std::optional<ygg::uint_t> get_solution_arity() const { return m_solution_arity; }
 };
 
 }

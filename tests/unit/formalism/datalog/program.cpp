@@ -147,8 +147,8 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     auto destination = factory.create();
 
     auto filtered = std::optional<tyr::formalism::datalog::ProgramView<::tyr::GroundTag>> {};
-    auto retained_predicate_source_index = ygg::uint_t(0);
-    auto retained_function_source_index = ygg::uint_t(0);
+    auto retained_predicate_source_index = static_cast<ygg::uint_t>(0);
+    auto retained_function_source_index = static_cast<ygg::uint_t>(0);
     {
         auto source = factory.create();
         const auto intern = [&](auto data)

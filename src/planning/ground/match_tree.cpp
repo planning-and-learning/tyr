@@ -134,9 +134,9 @@ struct AtomStackEntry
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
     { result->atom = atom; }
 
-    bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
-    bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+    [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+    [[nodiscard]] bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -147,7 +147,7 @@ struct VariableStackEntry
     std::vector<ElementSpan<Tag>> domain_elements;
     std::vector<ygg::uint_t> forward;
     ElementSpan<Tag> dontcare_elements;
-    size_t forward_pos;
+    size_t forward_pos = 0;
 
     ygg::UniqueObjectPoolPtr<ygg::Data<VariableSelectorNode<Tag>>> result;
 
@@ -161,15 +161,15 @@ struct VariableStackEntry
         domain_elements(std::move(domain_elements_)),
         forward(std::move(forward_)),
         dontcare_elements(dontcare_elements),
-        forward_pos(0),
+
         result(planning::match_tree::checkout<VariableSelectorNode<Tag>>(builder))
     {
         result->variable = variable.get_index();
         result->domain_children.resize(domain_elements.size());
     }
 
-    bool explored_children() const noexcept { return forward_pos == forward.size(); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+    [[nodiscard]] bool explored_children() const noexcept { return forward_pos == forward.size(); }
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -193,8 +193,8 @@ struct NegativeFactStackEntry
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
     { result->fact = fact; }
 
-    bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+    [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -216,10 +216,10 @@ struct ConstraintStackEntry
         true_elements(true_elements),
         dontcare_elements(dontcare_elements),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
-    { result->constraint = constraint; }
+    { result->constraint = std::move(constraint); }
 
-    bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
-    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
+    [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+    [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
 template<typename Tag>
@@ -266,7 +266,7 @@ next_entry(const AtomStackEntry<Tag>& el, const SortedPreconditions<Tag>& sorted
 }
 
 template<typename Tag>
-void push_result(AtomStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
+void push_result(AtomStackEntry<Tag>& el, const ygg::Data<Node<Tag>>& node)
 {
     if (!el.explored_true_child())
         el.result->true_child = node;
@@ -300,7 +300,7 @@ std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
 }
 
 template<typename Tag>
-void push_result(VariableStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
+void push_result(VariableStackEntry<Tag>& el, const ygg::Data<Node<Tag>>& node)
 {
     if (!el.explored_children())
     {
@@ -332,7 +332,7 @@ std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
 }
 
 template<typename Tag>
-void push_result(NegativeFactStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
+void push_result(NegativeFactStackEntry<Tag>& el, const ygg::Data<Node<Tag>>& node)
 {
     if (!el.explored_true_child())
         el.result->true_child = node;
@@ -361,7 +361,7 @@ std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
 }
 
 template<typename Tag>
-void push_result(ConstraintStackEntry<Tag>& el, ygg::Data<Node<Tag>> node)
+void push_result(ConstraintStackEntry<Tag>& el, const ygg::Data<Node<Tag>>& node)
 {
     if (!el.result->true_child && !el.true_elements.empty())
         el.result->true_child = node;
@@ -380,7 +380,7 @@ std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>&, const
 { return std::nullopt; }
 
 template<typename Tag>
-void push_result(GeneratorStackEntry<Tag>&, ygg::Data<Node<Tag>>)
+void push_result(GeneratorStackEntry<Tag>&, const ygg::Data<Node<Tag>>&)
 { throw std::logic_error("Unexpected case."); }
 
 inline auto get_condition(formalism::planning::AxiomView<GroundTag> el) { return el.get_body(); }
@@ -642,7 +642,7 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, formalism::plan
 
         for (const auto constraint : condition.get_numeric_constraints())
         {
-            const auto key = constraint.get_data();
+            const auto& key = constraint.get_data();
             occurrences[key].push_back(element);
             details[element][key] = std::monostate {};
         }
@@ -673,7 +673,7 @@ MatchTree<Tag>::MatchTree(std::vector<ygg::View<ygg::Index<Tag>, formalism::plan
 
     auto builder = Builder<Tag> {};
     auto stack = std::deque<StackEntry<Tag>> {};
-    auto initial_entry = try_create_stack_entry(BaseEntry<Tag>(size_t(0), ElementSpan<Tag>(elements_)), sorted_preconditions, details, builder);
+    auto initial_entry = try_create_stack_entry(BaseEntry<Tag>(static_cast<size_t>(0), ElementSpan<Tag>(elements_)), sorted_preconditions, details, builder);
     if (!initial_entry)
         return;
 

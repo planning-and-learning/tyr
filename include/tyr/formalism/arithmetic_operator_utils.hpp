@@ -29,7 +29,7 @@ namespace tyr::formalism
  */
 
 template<typename T>
-inline T apply(ArithmeticOperatorKind op, T el)
+inline T apply(ArithmeticOperatorKind op, const T& el)
 {
     if (op != ArithmeticOperatorKind::Sub)
         throw std::invalid_argument("arithmetic operator is not unary");
@@ -37,7 +37,7 @@ inline T apply(ArithmeticOperatorKind op, T el)
 }
 
 template<typename T>
-inline T apply(ArithmeticOperatorKind op, T lhs, T rhs)
+inline T apply(ArithmeticOperatorKind op, const T& lhs, const T& rhs)
 {
     switch (op)
     {

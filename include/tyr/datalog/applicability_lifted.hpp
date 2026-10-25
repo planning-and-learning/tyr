@@ -25,6 +25,7 @@
 #include "tyr/formalism/numeric_expression_utils.hpp"
 
 #include <algorithm>
+#include <utility>
 #include <yggdrasil/core/closed_interval.hpp>
 
 namespace tyr::datalog
@@ -82,12 +83,12 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
+    return formalism::evaluate_numeric_expression(std::move(element), [&](const auto term) { return evaluate(term, context); });
 }
 
 inline bool evaluate(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
 {
-    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, context); });
+    return formalism::evaluate_numeric_expression(std::move(element), [&](const auto term) { return evaluate(term, context); });
 }
 
 template<formalism::FactKind T>
@@ -123,7 +124,7 @@ bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, T> elements, c
 }
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(element, context); }
+{ return evaluate(std::move(element), context); }
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {

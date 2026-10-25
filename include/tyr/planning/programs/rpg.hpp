@@ -56,10 +56,10 @@ public:
     /// With split_rules, action rules project away the variables that only some of their preconditions use (lifted tasks only).
     explicit RPGProgram(Task task, CostMode cost_mode = CostMode::UNIT, bool split_rules = false);
 
-    const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
+    [[nodiscard]] const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
 
     template<formalism::RelationKind R>
-    const RuleToActionMapping<R>& get_rule_to_action_mapping() const noexcept
+    [[nodiscard]] const RuleToActionMapping<R>& get_rule_to_action_mapping() const noexcept
     {
         if constexpr (std::same_as<R, formalism::PredicateTag>)
             return m_rule_to_action.predicate;
@@ -68,11 +68,12 @@ public:
     }
 
     /// The splitting of the action rules, empty unless they were split.
-    const datalog::RuleSplitting& get_rule_splitting() const noexcept { return m_rule_splitting; }
+    [[nodiscard]] const datalog::RuleSplitting& get_rule_splitting() const noexcept { return m_rule_splitting; }
 
     datalog::Program<Kind>& get_datalog_program() noexcept { return m_datalog_program; }
-    const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
-    formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const noexcept { return m_datalog_program.get_program().get_goal().value(); }
+    [[nodiscard]] const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
+    [[nodiscard]] formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const noexcept
+    { return m_datalog_program.get_program().get_goal().value(); }
 
 private:
     TranslationContext<Kind> m_translation_context;

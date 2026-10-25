@@ -21,21 +21,21 @@ struct FakeObjectView
 {
     Object index;
 
-    Object get_index() const noexcept { return index; }
+    [[nodiscard]] Object get_index() const noexcept { return index; }
 };
 
 struct FakePredicateView
 {
     ygg::uint_t index;
 
-    ygg::uint_t get_index() const noexcept { return index; }
+    [[nodiscard]] ygg::uint_t get_index() const noexcept { return index; }
 };
 
 struct FakeTermView
 {
     std::variant<FakeObjectView, ygg::uint_t> variant;
 
-    const auto& get_variant() const noexcept { return variant; }
+    [[nodiscard]] const auto& get_variant() const noexcept { return variant; }
 };
 
 struct FakeAtomView
@@ -43,8 +43,8 @@ struct FakeAtomView
     FakePredicateView predicate;
     std::vector<FakeTermView> terms;
 
-    FakePredicateView get_predicate() const noexcept { return predicate; }
-    const auto& get_terms() const noexcept { return terms; }
+    [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
+    [[nodiscard]] const auto& get_terms() const noexcept { return terms; }
 };
 
 struct FakeLiteralView
@@ -52,8 +52,8 @@ struct FakeLiteralView
     bool polarity;
     FakeAtomView atom;
 
-    bool get_polarity() const noexcept { return polarity; }
-    const FakeAtomView& get_atom() const noexcept { return atom; }
+    [[nodiscard]] bool get_polarity() const noexcept { return polarity; }
+    [[nodiscard]] const FakeAtomView& get_atom() const noexcept { return atom; }
 };
 
 struct FakeGroundAtomView
@@ -61,8 +61,8 @@ struct FakeGroundAtomView
     FakePredicateView predicate;
     std::vector<FakeObjectView> objects;
 
-    FakePredicateView get_predicate() const noexcept { return predicate; }
-    const auto& get_objects() const noexcept { return objects; }
+    [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
+    [[nodiscard]] const auto& get_objects() const noexcept { return objects; }
 };
 
 FakeTermView parameter(ygg::uint_t index) { return FakeTermView { index }; }
@@ -103,13 +103,13 @@ public:
         }
     }
 
-    const tyr::kckp::Graph& get_graph() const noexcept { return m_graph; }
-    bool is_satisfiable() const noexcept { return m_graph.is_satisfiable(); }
-    const tyr::analysis::VariableDomainList& get_domains() const noexcept { return m_domains; }
+    [[nodiscard]] const tyr::kckp::Graph& get_graph() const noexcept { return m_graph; }
+    [[nodiscard]] bool is_satisfiable() const noexcept { return m_graph.is_satisfiable(); }
+    [[nodiscard]] const tyr::analysis::VariableDomainList& get_domains() const noexcept { return m_domains; }
 
-    Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.get_layout().vertex_labels[vertex.index]); }
+    [[nodiscard]] Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.get_layout().vertex_labels[vertex.index]); }
 
-    tyr::kckp::Vertex find_vertex(ygg::uint_t partition, Object object) const noexcept
+    [[nodiscard]] tyr::kckp::Vertex find_vertex(ygg::uint_t partition, Object object) const noexcept
     {
         const auto& layout = m_graph.get_layout();
         if (partition >= layout.num_partitions)
@@ -173,8 +173,8 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
 
             if (universal)
             {
-                universal_partition_pairs.set(size_t(first_partition) * layout.num_partitions + second_partition);
-                universal_partition_pairs.set(size_t(second_partition) * layout.num_partitions + first_partition);
+                universal_partition_pairs.set(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
+                universal_partition_pairs.set(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
             }
         }
 

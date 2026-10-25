@@ -48,7 +48,7 @@ public:
                                        std::optional<std::filesystem::path> task_filepath,
                                        const loki::semantic::ParserOptions& options = loki::semantic::ParserOptions());
 
-    PlanningDomain get_domain() const;
+    [[nodiscard]] PlanningDomain get_domain() const;
 
     Parser(Parser&&) noexcept;
     Parser& operator=(Parser&&) noexcept;

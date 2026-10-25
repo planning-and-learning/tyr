@@ -43,12 +43,12 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
                     "variables"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
-                    "cost"_a = ygg::float_t(0));
+                    "cost"_a = static_cast<ygg::float_t>(0));
             cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, RuleHeadT<LiftedTag, R>, ygg::float_t>(),
                     "variables"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
-                    "cost"_a = ygg::float_t(0));
+                    "cost"_a = static_cast<ygg::float_t>(0));
         }
         else
         {
@@ -56,13 +56,13 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
                     "binding"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
-                    "cost"_a = ygg::float_t(0));
+                    "cost"_a = static_cast<ygg::float_t>(0));
             cls.def(
                 nb::init<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::float_t>(),
                 "binding"_a,
                 "body"_a,
                 std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
-                "cost"_a = ygg::float_t(0));
+                "cost"_a = static_cast<ygg::float_t>(0));
         }
         ygg::add_print(cls);
         ygg::add_comparison(cls);

@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 #include <yggdrasil/core/closed_interval.hpp>
 
 namespace tyr::datalog
@@ -89,12 +90,12 @@ inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTe
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<GroundTag> element, const FactSets& fact_sets)
 {
-    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, fact_sets); });
+    return formalism::evaluate_numeric_expression(std::move(element), [&](const auto term) { return evaluate(term, fact_sets); });
 }
 
 inline bool evaluate(formalism::datalog::BooleanOperatorView<GroundTag> element, const FactSets& fact_sets)
 {
-    return formalism::evaluate_numeric_expression(element, [&](const auto term) { return evaluate(term, fact_sets); });
+    return formalism::evaluate_numeric_expression(std::move(element), [&](const auto term) { return evaluate(term, fact_sets); });
 }
 
 /**

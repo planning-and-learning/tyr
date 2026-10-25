@@ -40,14 +40,14 @@ struct BinaryExpression
     NumericLeaf lhs;
     NumericLeaf rhs;
 
-    auto get_operator() const noexcept { return op; }
-    auto get_lhs() const noexcept { return lhs; }
-    auto get_rhs() const noexcept { return rhs; }
+    [[nodiscard]] auto get_operator() const noexcept { return op; }
+    [[nodiscard]] auto get_lhs() const noexcept { return lhs; }
+    [[nodiscard]] auto get_rhs() const noexcept { return rhs; }
 };
 
 struct ReferenceBooleanExpression : BinaryExpression<formalism::BooleanOperatorKind>
 {
-    const auto& get_operator() const noexcept { return op; }
+    [[nodiscard]] const auto& get_operator() const noexcept { return op; }
 };
 
 struct MultiExpression
@@ -55,8 +55,8 @@ struct MultiExpression
     formalism::ArithmeticOperatorKind op;
     std::vector<NumericLeaf> args;
 
-    auto get_operator() const noexcept { return op; }
-    const auto& get_args() const noexcept { return args; }
+    [[nodiscard]] auto get_operator() const noexcept { return op; }
+    [[nodiscard]] const auto& get_args() const noexcept { return args; }
 };
 
 struct NumericEffect
@@ -65,9 +65,9 @@ struct NumericEffect
     NumericLeaf target;
     NumericLeaf rhs;
 
-    auto get_operator() const noexcept { return op; }
-    auto get_fterm() const noexcept { return target; }
-    auto get_fexpr() const noexcept { return rhs; }
+    [[nodiscard]] auto get_operator() const noexcept { return op; }
+    [[nodiscard]] auto get_fterm() const noexcept { return target; }
+    [[nodiscard]] auto get_fexpr() const noexcept { return rhs; }
 };
 
 }
@@ -75,7 +75,7 @@ struct NumericEffect
 TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder)
 {
     auto order = std::vector<int> {};
-    const auto resolve = [&](const NumericLeaf leaf)
+    const auto resolve = [&](const NumericLeaf& leaf)
     {
         order.push_back(leaf.id);
         return leaf.value;
@@ -109,7 +109,7 @@ TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder
 TEST(TyrDatalogNumericUtilsTest, EvaluatesNumericEffectsLazilyRhsFirst)
 {
     auto order = std::vector<int> {};
-    const auto resolve = [&](const NumericLeaf leaf)
+    const auto resolve = [&](const NumericLeaf& leaf)
     {
         order.push_back(leaf.id);
         return leaf.value;

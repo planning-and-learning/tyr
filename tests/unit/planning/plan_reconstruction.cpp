@@ -164,7 +164,7 @@ public:
         return std::make_unique<CountingGBFSWorkerEventHandler<Kind>>(worker_statistics.at(ygg::uint_t(index)));
     }
 
-    tyr::planning::Statistics totals() const
+    [[nodiscard]] tyr::planning::Statistics totals() const
     {
         auto result = tyr::planning::Statistics {};
         for (const auto& statistics : worker_statistics)
@@ -299,7 +299,7 @@ private:
         std::atomic<uint64_t> num_accesses { 0 };
     };
 
-    ygg::Index<tyr::planning::Worker> owner(const tyr::planning::StateView<Kind>& state) const
+    [[nodiscard]] ygg::Index<tyr::planning::Worker> owner(const tyr::planning::StateView<Kind>& state) const
     {
         if (m_mode == RepositoryMode::SHARED)
             return ygg::Index<tyr::planning::Worker>(static_cast<ygg::uint_t>(ygg::uint_t(state.get_index()) % num_workers));
@@ -382,7 +382,7 @@ public:
     {
     }
 
-    tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker> worker) const override
+    [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker> worker) const override
     { return std::make_shared<GuardedPruningStrategy>(worker, m_guard); }
 
     bool should_prune_state(const tyr::planning::StateView<Kind>& state) override

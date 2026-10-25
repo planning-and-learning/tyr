@@ -70,7 +70,7 @@ public:
     void on_solved(const Plan<Kind>& plan) override;
     WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<Worker> index) override;
 
-    const tyr::planning::ProgressStatistics& get_progress_statistics() const noexcept { return m_progress_statistics; }
+    [[nodiscard]] const tyr::planning::ProgressStatistics& get_progress_statistics() const noexcept { return m_progress_statistics; }
 
     static DefaultEventHandlerPtr<Kind> create(size_t verbosity = 0);
 

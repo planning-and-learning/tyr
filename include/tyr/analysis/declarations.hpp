@@ -153,11 +153,11 @@ struct VariableDomainView
 
     auto begin() noexcept { return objects.begin(); }
     auto end() noexcept { return objects.end(); }
-    auto begin() const noexcept { return objects.begin(); }
-    auto end() const noexcept { return objects.end(); }
+    [[nodiscard]] auto begin() const noexcept { return objects.begin(); }
+    [[nodiscard]] auto end() const noexcept { return objects.end(); }
 
-    auto size() const noexcept { return objects.size(); }
-    bool empty() const noexcept { return objects.empty(); }
+    [[nodiscard]] auto size() const noexcept { return objects.size(); }
+    [[nodiscard]] bool empty() const noexcept { return objects.empty(); }
 
     auto& operator[](std::size_t i) noexcept { return objects[i]; }
     const auto& operator[](std::size_t i) const noexcept { return objects[i]; }

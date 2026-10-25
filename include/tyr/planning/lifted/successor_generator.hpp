@@ -308,9 +308,9 @@ public:
     void print_summary(size_t verbosity) const;
 
     // Getters
-    const ApplicableActionProgram<LiftedTag>& get_action_program() const noexcept;
-    const TaskPtr<LiftedTag>& get_task() const noexcept;
-    ygg::uint_t get_index() const noexcept;
+    [[nodiscard]] const ApplicableActionProgram<LiftedTag>& get_action_program() const noexcept;
+    [[nodiscard]] const TaskPtr<LiftedTag>& get_task() const noexcept;
+    [[nodiscard]] ygg::uint_t get_index() const noexcept;
 
 private:
     std::unique_ptr<Impl> m_impl;

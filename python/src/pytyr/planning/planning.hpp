@@ -42,7 +42,7 @@ template<typename Range, typename Value>
 class OwningIterator
 {
 public:
-    explicit OwningIterator(Range range) : m_range(std::move(range)), m_it(std::ranges::begin(m_range)), m_end(std::ranges::end(m_range)), m_exhausted(false) {}
+    explicit OwningIterator(Range range) : m_range(std::move(range)), m_it(std::ranges::begin(m_range)), m_end(std::ranges::end(m_range)) {}
 
     OwningIterator(OwningIterator&& other) noexcept :
         m_range(std::move(other.m_range)),
@@ -73,7 +73,7 @@ private:
     Range m_range;
     std::ranges::iterator_t<Range> m_it;
     std::ranges::sentinel_t<Range> m_end;
-    bool m_exhausted;
+    bool m_exhausted = false;
 };
 
 template<typename Value, typename Range>
@@ -589,7 +589,7 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
+    [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { NB_OVERRIDE_PURE(is_static_goal_satisfied, task); }
 
@@ -642,7 +642,7 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
+    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
     bool should_prune_state(const StateView<Kind>& state) override { NB_OVERRIDE(should_prune_state, state); }
 

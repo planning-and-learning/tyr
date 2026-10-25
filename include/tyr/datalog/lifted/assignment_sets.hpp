@@ -41,7 +41,7 @@ namespace tyr::datalog
 
 struct PerfectAssignmentHash
 {
-    size_t m_num_assignments;
+    size_t m_num_assignments = 1;
     size_t m_num_objects;
     std::vector<ygg::uint_t> m_remapping;
     std::vector<size_t> m_vertex_offsets;
@@ -49,12 +49,12 @@ struct PerfectAssignmentHash
 
     PerfectAssignmentHash(const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
-    size_t get_rank(const VertexAssignment& assignment) const noexcept;
-    size_t get_rank(const EdgeAssignment& assignment) const noexcept;
-    std::optional<size_t> find_rank(const VertexAssignment& assignment) const noexcept;
-    std::optional<size_t> find_rank(const EdgeAssignment& assignment) const noexcept;
+    [[nodiscard]] size_t get_rank(const VertexAssignment& assignment) const noexcept;
+    [[nodiscard]] size_t get_rank(const EdgeAssignment& assignment) const noexcept;
+    [[nodiscard]] std::optional<size_t> find_rank(const VertexAssignment& assignment) const noexcept;
+    [[nodiscard]] std::optional<size_t> find_rank(const EdgeAssignment& assignment) const noexcept;
 
-    size_t size() const noexcept;
+    [[nodiscard]] size_t size() const noexcept;
 };
 
 template<formalism::FactKind T>
@@ -77,12 +77,12 @@ public:
 
     bool operator[](const VertexAssignment& assignment) const noexcept;
     bool operator[](const EdgeAssignment& assignment) const noexcept;
-    bool at(const VertexAssignment& assignment) const noexcept;
-    bool at(const EdgeAssignment& assignment) const noexcept;
+    [[nodiscard]] bool at(const VertexAssignment& assignment) const noexcept;
+    [[nodiscard]] bool at(const EdgeAssignment& assignment) const noexcept;
 
-    size_t size() const noexcept;
-    const PerfectAssignmentHash& get_hash() const noexcept;
-    ygg::BitsetSpan<const uint64_t> get_set() const noexcept;
+    [[nodiscard]] size_t size() const noexcept;
+    [[nodiscard]] const PerfectAssignmentHash& get_hash() const noexcept;
+    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_set() const noexcept;
 };
 
 template<formalism::FactKind T>
@@ -101,11 +101,11 @@ public:
     void insert(formalism::datalog::PredicateBindingView<T> binding);
     void insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
 
-    const PredicateAssignmentSet<T>& get_set(ygg::Index<formalism::Predicate<T>> index) const noexcept;
+    [[nodiscard]] const PredicateAssignmentSet<T>& get_set(ygg::Index<formalism::Predicate<T>> index) const noexcept;
 
-    size_t size() const noexcept;
+    [[nodiscard]] size_t size() const noexcept;
 
-    const std::vector<PredicateAssignmentSet<T>>& get_sets() const noexcept;
+    [[nodiscard]] const std::vector<PredicateAssignmentSet<T>>& get_sets() const noexcept;
 };
 
 template<formalism::FactKind T>
@@ -123,7 +123,7 @@ public:
 
     void reset() noexcept;
 
-    bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::ClosedInterval<ygg::float_t> interval);
+    bool insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
     bool insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value);
 
@@ -132,13 +132,13 @@ public:
     ygg::ClosedInterval<ygg::float_t> operator[](const EdgeAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept;
 
-    ygg::ClosedInterval<ygg::float_t> at(const EmptyAssignment& assignment) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> at(const VertexAssignment& assignment) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> at(const EdgeAssignment& assignment) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(const EmptyAssignment& assignment) const noexcept;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(const VertexAssignment& assignment) const noexcept;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(const EdgeAssignment& assignment) const noexcept;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
 
-    size_t size() const noexcept;
-    const PerfectAssignmentHash& get_hash() const noexcept;
+    [[nodiscard]] size_t size() const noexcept;
+    [[nodiscard]] const PerfectAssignmentHash& get_hash() const noexcept;
 };
 
 template<formalism::FactKind T>
@@ -159,13 +159,13 @@ public:
     void insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const std::vector<ygg::float_t>& values);
     void insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
 
-    const FunctionAssignmentSet<T>& get_set(ygg::Index<formalism::Function<T>> index) const noexcept;
+    [[nodiscard]] const FunctionAssignmentSet<T>& get_set(ygg::Index<formalism::Function<T>> index) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
     std::vector<FunctionAssignmentSet<T>>& get_sets() noexcept;
-    const std::vector<FunctionAssignmentSet<T>>& get_sets() const noexcept;
+    [[nodiscard]] const std::vector<FunctionAssignmentSet<T>>& get_sets() const noexcept;
 
-    size_t size() const noexcept;
+    [[nodiscard]] size_t size() const noexcept;
 };
 
 template<formalism::FactKind T>

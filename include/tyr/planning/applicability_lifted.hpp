@@ -40,6 +40,7 @@
 #include <limits>
 #include <numeric>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 #include <yggdrasil/containers/dynamic_bitset.hpp>
 #include <yggdrasil/containers/vector.hpp>
@@ -261,7 +262,7 @@ bool is_applicable(formalism::planning::LiteralListView<LiftedTag, T> elements, 
 }
 
 inline bool is_applicable(formalism::planning::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(element, context); }
+{ return evaluate(std::move(element), context); }
 
 inline bool is_applicable(formalism::planning::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {
@@ -323,7 +324,8 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
     return !std::isnan(evaluate(element.get_fexpr(), context));
 }
 
-inline bool is_applicable(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element,
+                          const ApplicabilityContext& context)
 {
     return visit([&](auto&& arg) { return is_applicable(arg, context); }, element.get_variant());
 }

@@ -52,7 +52,7 @@ struct FFRPGHeuristic<Kind>::Impl :
         FunctionHead head;
         ygg::ClosedInterval<ygg::float_t> interval;
 
-        NumericCertificate(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval) : head(head), interval(interval) {}
+        NumericCertificate(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval) : head(head), interval(std::move(interval)) {}
 
         static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericCertificate::head, &NumericCertificate::interval> {}; }
     };
@@ -120,7 +120,7 @@ private:
             extract_relaxed_plan(*witness);
     }
 
-    void extract_relaxed_plan(FunctionHead head, ygg::ClosedInterval<ygg::float_t> interval)
+    void extract_relaxed_plan(FunctionHead head, const ygg::ClosedInterval<ygg::float_t>& interval)
     {
         if (!m_numeric_markings.emplace(head, interval).second)
             return;
@@ -137,10 +137,10 @@ private:
     void extract_numeric_constraint_support(formalism::datalog::BooleanOperatorView<GroundTag> constraint)
     {
         const auto& selector = this->m_workspace.get_numeric_support_selector();
-        selector.for_each_constraint_support(constraint,
+        selector.for_each_constraint_support(std::move(constraint),
                                              m_numeric_support_workspace.selection,
                                              datalog::SumAggregation {},
-                                             [&](const auto head, const auto interval, const auto&) { extract_relaxed_plan(head, interval); });
+                                             [&](const auto head, const auto& interval, const auto&) { extract_relaxed_plan(head, interval); });
     }
 
     template<formalism::RelationKind R>

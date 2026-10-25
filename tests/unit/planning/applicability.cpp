@@ -158,7 +158,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_heads().front().get_predicate() == predicate; }); };
     auto expected_rules =
         ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>> {};
-    auto num_rules = size_t(0);
+    auto num_rules = static_cast<size_t>(0);
     for (const auto& [predicate, action] : action_mapping)
     {
         expected_rules[action].push_back(rule_of(predicate));

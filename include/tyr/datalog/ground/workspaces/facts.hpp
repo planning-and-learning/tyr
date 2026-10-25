@@ -22,6 +22,7 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <utility>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -43,7 +44,7 @@ struct FactsWorkspace<GroundTag>
     bool insert(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> binding) { return fact_sets.predicate.insert(binding); }
 
     bool insert(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding, ygg::ClosedInterval<ygg::float_t> interval)
-    { return fact_sets.function.insert(binding, interval); }
+    { return fact_sets.function.insert(binding, std::move(interval)); }
 
     void reset();
 };

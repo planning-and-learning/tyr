@@ -46,7 +46,7 @@ public:
     using iterator_concept = std::input_iterator_tag;
     using pointer = void;
 
-    FDRFactIterator() noexcept : m_storage(nullptr), m_i(0) {}
+    FDRFactIterator() noexcept {}
     FDRFactIterator(const FactUnpackedStorage<LiftedTag>& storage, bool begin) noexcept :
         m_storage(&storage),
         m_i(begin ? m_storage->indices.find_first() : boost::dynamic_bitset<>::npos)
@@ -88,8 +88,8 @@ public:
     FDRFactRange() = default;
     explicit FDRFactRange(const FactUnpackedStorage<LiftedTag>& storage) : m_storage(&storage) {}
 
-    auto begin() const { return FDRFactIterator<LiftedTag, Tag>(*m_storage, true); }
-    auto end() const { return FDRFactIterator<LiftedTag, Tag>(*m_storage, false); }
+    [[nodiscard]] auto begin() const { return FDRFactIterator<LiftedTag, Tag>(*m_storage, true); }
+    [[nodiscard]] auto end() const { return FDRFactIterator<LiftedTag, Tag>(*m_storage, false); }
 
 private:
     const FactUnpackedStorage<LiftedTag>* m_storage { nullptr };

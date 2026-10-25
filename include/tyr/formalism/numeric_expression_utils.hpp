@@ -25,6 +25,7 @@
 
 #include <concepts>
 #include <type_traits>
+#include <utility>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/concepts.hpp>
@@ -38,7 +39,7 @@ namespace numeric_evaluation_detail
 {
 
 template<typename Expression, typename ResolveTerm>
-auto evaluate(Expression expression, ResolveTerm& resolve_term)
+auto evaluate(const Expression& expression, ResolveTerm& resolve_term)
 {
     using Type = std::remove_cvref_t<Expression>;
 
@@ -48,7 +49,7 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
     }
     else if constexpr (requires { expression.get_variant(); })
     {
-        return ygg::visit([&](const auto child) { return evaluate(child, resolve_term); }, expression.get_variant());
+        return ygg::visit([&](const auto& child) { return evaluate(child, resolve_term); }, expression.get_variant());
     }
     else if constexpr (requires {
                            expression.get_operator();
@@ -71,7 +72,7 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
     }
     else if constexpr (requires { expression.get_args(); })
     {
-        const auto args = expression.get_args();
+        const auto& args = expression.get_args();
         auto it = args.begin();
         if (it == args.end())
             return ygg::ClosedInterval<ygg::float_t>();
@@ -84,7 +85,7 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
     }
     else
     {
-        return resolve_term(expression);
+        return resolve_term(std::move(expression));
     }
 }
 
@@ -94,11 +95,11 @@ auto evaluate(Expression expression, ResolveTerm& resolve_term)
 /// fact lookup, lazy grounding, and support selection share one deterministic traversal.
 template<typename Expression, typename ResolveTerm>
 auto evaluate_numeric_expression(Expression expression, ResolveTerm&& resolve_term)
-{ return numeric_evaluation_detail::evaluate(expression, resolve_term); }
+{ return numeric_evaluation_detail::evaluate(std::move(expression), resolve_term); }
 
 /// Evaluates the right-hand side before resolving the target. Assign never resolves its target.
 template<typename Effect, typename ResolveTerm>
-ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(Effect effect, ResolveTerm&& resolve_term)
+ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(const Effect& effect, ResolveTerm&& resolve_term)
 {
     const auto rhs = numeric_evaluation_detail::evaluate(effect.get_fexpr(), resolve_term);
     if (empty(rhs))

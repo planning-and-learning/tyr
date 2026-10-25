@@ -37,6 +37,7 @@
 #include <limits>
 #include <numeric>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 #include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
@@ -368,7 +369,7 @@ bool is_applicable(formalism::planning::FDRFactListView<formalism::FluentTag> el
 
 template<TaskKind Kind>
 bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<Kind>& context)
-{ return evaluate(element, context); }
+{ return evaluate(std::move(element), context); }
 
 template<TaskKind Kind>
 bool is_applicable(formalism::planning::BooleanOperatorListView<GroundTag> elements, const StateContext<Kind>& context)

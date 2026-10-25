@@ -22,6 +22,7 @@
 #include "tyr/formalism/views.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace tyr::formalism::datalog
 {
@@ -66,7 +67,7 @@ static void insert_literal(LiteralView<LiftedTag, F> literal, details::UnaryDepe
 
 static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_constraint, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
 {
-    const auto parameters_set = collect_parameters(numeric_constraint);
+    const auto parameters_set = collect_parameters(std::move(numeric_constraint));
     auto parameters = std::vector<ParameterIndex>(parameters_set.begin(), parameters_set.end());
     std::sort(parameters.begin(), parameters.end());
 

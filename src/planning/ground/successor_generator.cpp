@@ -190,7 +190,7 @@ SuccessorGenerator<GroundTag>::Impl::Evaluator::Evaluator(const Definition& defi
 
 SuccessorGenerator<GroundTag>::SuccessorGenerator(ygg::uint_t index,
                                                   TaskPtr<GroundTag> task,
-                                                  ygg::ExecutionContextPtr execution_context,
+                                                  const ygg::ExecutionContextPtr& execution_context,
                                                   std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
     m_impl(std::make_unique<Impl>(index, std::move(task), std::move(next_index)))
 { static_cast<void>(execution_context); }
@@ -201,7 +201,7 @@ SuccessorGenerator<GroundTag>::~SuccessorGenerator() = default;
 SuccessorGenerator<GroundTag>::SuccessorGenerator(SuccessorGenerator&&) noexcept = default;
 SuccessorGenerator<GroundTag>& SuccessorGenerator<GroundTag>::operator=(SuccessorGenerator&&) noexcept = default;
 
-SuccessorGeneratorPtr<GroundTag> SuccessorGenerator<GroundTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
+SuccessorGeneratorPtr<GroundTag> SuccessorGenerator<GroundTag>::make_worker(const ygg::ExecutionContextPtr& execution_context) const
 {
     static_cast<void>(execution_context);
     return SuccessorGeneratorPtr<GroundTag>(new SuccessorGenerator<GroundTag>(
