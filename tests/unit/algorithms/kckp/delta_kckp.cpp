@@ -86,7 +86,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
         if (is_pick)
         {
             ASSERT_TRUE(rules[i].has_value());
-            pick_workspace = &*rules[i];
+            pick_workspace = &rules[i].value();
             break;
         }
     }
@@ -225,7 +225,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
             continue;
 
         ASSERT_TRUE(rules[i].has_value());
-        move_workspace = &*rules[i];
+        move_workspace = &rules[i].value();
         break;
     }
     ASSERT_NE(move_workspace, nullptr);
@@ -318,7 +318,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
             if (object.get_name() == "loc-x0-y0")
                 binding.objects.push_back(object.get_index());
         ASSERT_EQ(binding.objects.size(), 1);
-        assignments.predicate.insert(tyr::formalism::datalog::insert(additional.workspace_repository, binding).first);
+        assignments.predicate.insert(tyr::formalism::datalog::insert(*additional.workspace_repository, binding).first);
         break;
     }
     update();
@@ -352,7 +352,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
             continue;
 
         ASSERT_TRUE(rules[i].has_value());
-        drive_workspace = &*rules[i];
+        drive_workspace = &rules[i].value();
         break;
     }
     ASSERT_NE(drive_workspace, nullptr);

@@ -77,7 +77,7 @@ namespace tyr::formalism::datalog
 
 /// Calls f for each head of a predicate rule, or for the single head of a function rule.
 template<TaskKind T, RelationKind R, typename C, typename F>
-void for_each_head(::ygg::View<ygg::Index<Rule<T, R>>, C> rule, F&& f)
+void for_each_head(::ygg::View<ygg::Index<Rule<T, R>>, C> rule, F f)
 {
     if constexpr (std::same_as<R, PredicateTag>)
         for (const auto head : rule.get_heads())

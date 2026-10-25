@@ -36,7 +36,7 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_delta.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/task_utils.hpp"
 
@@ -86,7 +86,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     struct SchemaEvaluator
     {
         formalism::datalog::ProgramView<LiftedTag> program;
-        const P2DTranslationContext<LiftedTag>& input_translation;
+        const P2DTranslationContext<LiftedTag>* input_translation;
         std::vector<datalog::Scheduler<LiftedTag>> schedulers;
     };
 
@@ -222,9 +222,9 @@ struct SuccessorGenerator<LiftedTag>::Impl
     template<StateViewConcept<LiftedTag> S, typename Accept, typename Callback, typename Stop>
     bool for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
                                             std::optional<formalism::planning::ActionView<LiftedTag>> action,
-                                            Accept&& accept,
-                                            Callback&& callback,
-                                            Stop&& stop);
+                                            Accept accept,
+                                            Callback callback,
+                                            Stop stop);
 
     template<StateViewConcept<LiftedTag> S>
     ygg::float_t generate_successor_state(const Node<LiftedTag, S>& node,
@@ -250,14 +250,14 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     effect_atom_index(definition.action_program.get_predicate_to_action_mapping(),
                       definition.action_program.get_conditional_effect_to_predicate_mapping(),
                       workspace.facts.fact_sets.predicate,
-                      workspace.workspace_repository),
+                      *workspace.workspace_repository),
     executor()
 {
     assert(execution_context);
     for (const auto& [action, schema] : definition.action_program.get_schema_programs())
         schema_evaluators.emplace(action,
                                   SchemaEvaluator { schema.program,
-                                                    schema.input_translation,
+                                                    &schema.input_translation,
                                                     datalog::create_schedulers(schema.strata,
                                                                                schema.listeners,
                                                                                schema.program.get_context(),
@@ -277,7 +277,7 @@ void SuccessorGenerator<LiftedTag>::Impl::compute_action_facts(const Node<Lifted
     const auto& state = node.get_state();
     insert_extended_state(state.get_state_builder(),
                           *definition->task->get_repository(),
-                          schema ? schema->input_translation : definition->action_program.get_translation_context().p2d,
+                          schema ? *schema->input_translation : definition->action_program.get_translation_context().p2d,
                           evaluator.workspace);
 
     auto ctx =
@@ -296,9 +296,9 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
 template<StateViewConcept<LiftedTag> S, typename Accept, typename Callback, typename Stop>
 bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(const Node<LiftedTag, S>& node,
                                                                              std::optional<formalism::planning::ActionView<LiftedTag>> action,
-                                                                             Accept&& accept,
-                                                                             Callback&& callback,
-                                                                             Stop&& stop)
+                                                                             Accept accept,
+                                                                             Callback callback,
+                                                                             Stop stop)
 {
     const auto program = action ? get_schema_evaluator(*action).program : definition->action_program.get_datalog_program().get_program();
     if (stop())
@@ -309,14 +309,20 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
     evaluator.facts.enumerating = true;
     struct EndEnumeration
     {
-        Evaluator::Facts& facts;
-        bool registered;
+        EndEnumeration(Evaluator::Facts& facts_, bool registered_) : facts(&facts_), registered(registered_) {}
+        EndEnumeration(const EndEnumeration&) = delete;
+        EndEnumeration& operator=(const EndEnumeration&) = delete;
+        EndEnumeration(EndEnumeration&&) = delete;
+        EndEnumeration& operator=(EndEnumeration&&) = delete;
         ~EndEnumeration()
         {
-            facts.enumerating = false;
+            facts->enumerating = false;
             if (!registered)
-                facts.state = std::nullopt;
+                facts->state = std::nullopt;
         }
+
+        Evaluator::Facts* facts;
+        bool registered;
     } end_enumeration { evaluator.facts, is_registered<S> };
     auto& scratch_binding = *evaluator.scratch_action_binding;
 
@@ -352,7 +358,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
                     state_context,
                     grounder_context,
                     *definition->task->get_fdr_context(),
-                    [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding, apply); }))
+                    [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding(), apply); }))
                 continue;
             if (!callback(scratch_binding))
                 return false;
@@ -383,7 +389,7 @@ SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedT
         action,
         grounder_context,
         *definition->task->get_fdr_context(),
-        [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding, apply); },
+        [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder_context.binding(), apply); },
         out_state,
         out_delta);
     end_single_binding_work<S>();
@@ -623,7 +629,7 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Node<LiftedTag, 
         state,
         grounder,
         *task->get_fdr_context(),
-        [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder.binding, apply); });
+        [&](auto effect, auto apply) { evaluator.effect_atom_index.for_each_effect_binding(action, effect, grounder.binding(), apply); });
     end_single_binding_work<S>();
     return applicable ? ActionBindingStatus::APPLICABLE : ActionBindingStatus::INAPPLICABLE;
 }
@@ -730,11 +736,11 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
                                                    m_impl->evaluator.static_extension_workspace,
                                                    [&](auto extension)
                                                    {
-                                                       grounder_context.binding.resize(objects.size());
-                                                       grounder_context.binding.insert(grounder_context.binding.end(), extension.begin(), extension.end());
+                                                       grounder_context.binding().resize(objects.size());
+                                                       grounder_context.binding().insert(grounder_context.binding().end(), extension.begin(), extension.end());
                                                        apply();
                                                    });
-                grounder_context.binding.resize(objects.size());
+                grounder_context.binding().resize(objects.size());
             })
             .first;
     m_impl->evaluator.action_binding_to_ground_action.emplace(binding, ground_action);
@@ -1165,7 +1171,7 @@ bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(
         action,
         [&](auto& binding) { return accept(ygg::make_view(binding, repository)); },
         [&](auto& binding) { return callback(ygg::make_view(binding, repository)); },
-        stop);
+        [&] { return stop(); });
 }
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_initial_node(StateRepository<LiftedTag>& state_repository,

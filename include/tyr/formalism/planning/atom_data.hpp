@@ -60,6 +60,7 @@ struct Data<::tyr::formalism::planning::Atom<::tyr::LiftedTag, F>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::predicate, &Data::terms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::predicate, &Data::terms> {}; }
@@ -84,6 +85,7 @@ struct Data<::tyr::formalism::planning::Atom<::tyr::GroundTag, F>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }

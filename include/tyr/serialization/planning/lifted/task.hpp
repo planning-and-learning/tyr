@@ -2,7 +2,7 @@
 #define TYR_SERIALIZATION_PLANNING_LIFTED_TASK_HPP_
 
 #include "tyr/planning/lifted/task.hpp"
-#include "tyr/serialization/formalism/planning/planning_task.hpp"
+#include "tyr/serialization/formalism/planning/planning.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
 namespace ygg::serialization

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -19,24 +21,29 @@ struct BenchmarkCase
 
 inline std::filesystem::path extract_suite_path(int& argc, char** argv)
 {
+    constexpr auto suite_option = std::string_view("--suite-json");
+    constexpr auto suite_assignment = std::string_view("--suite-json=");
+    // argv[argc] is the terminating null pointer.
+    const auto arguments = std::span(argv, static_cast<std::size_t>(argc) + 1);
+    const auto num_arguments = static_cast<std::size_t>(argc);
     auto suite = std::filesystem::path {};
-    auto remaining = 1;
-    for (int i = 1; i < argc; ++i)
+    auto remaining = std::size_t { 1 };
+    for (std::size_t i = 1; i < num_arguments; ++i)
     {
-        const auto argument = std::string_view(argv[i]);
-        if (argument.starts_with("--suite-json="))
-            suite = argument.substr(13);
-        else if (argument == "--suite-json")
+        const auto argument = std::string_view(arguments[i]);
+        if (argument.starts_with(suite_assignment))
+            suite = argument.substr(suite_assignment.size());
+        else if (argument == suite_option)
         {
-            if (++i == argc)
+            if (++i == num_arguments)
                 throw std::invalid_argument("Missing value for --suite-json.");
-            suite = argv[i];
+            suite = arguments[i];
         }
         else
-            argv[remaining++] = argv[i];
+            arguments[remaining++] = arguments[i];
     }
-    argc = remaining;
-    argv[argc] = nullptr;
+    argc = static_cast<int>(remaining);
+    arguments[remaining] = nullptr;
     if (suite.empty())
         throw std::invalid_argument("Required option: --suite-json=<path>.");
     return suite;

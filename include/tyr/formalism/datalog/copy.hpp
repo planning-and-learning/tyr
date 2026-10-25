@@ -122,20 +122,20 @@ void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, Co
 
 inline std::pair<VariableView, bool> copy(VariableView element, CopyContext& context)
 {
-    auto variable = datalog::checkout<Variable>(context.builder);
+    auto variable = datalog::checkout<Variable>(context.builder());
 
     variable->name = element.get_name();
 
-    return datalog::insert(context.destination, *variable);
+    return datalog::insert(context.destination(), *variable);
 }
 
 inline std::pair<ObjectView, bool> copy(ObjectView element, CopyContext& context)
 {
-    auto object = datalog::checkout<Object>(context.builder);
+    auto object = datalog::checkout<Object>(context.builder());
 
     object->name = element.get_name();
 
-    return datalog::insert(context.destination, *object);
+    return datalog::insert(context.destination(), *object);
 }
 
 inline TermView copy(TermView element, CopyContext& context)
@@ -151,7 +151,7 @@ inline TermView copy(TermView element, CopyContext& context)
                 static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
         },
         element.get_variant());
-    return ygg::make_view(data, context.destination);
+    return ygg::make_view(data, context.destination());
 }
 
 // Propositional
@@ -159,57 +159,57 @@ inline TermView copy(TermView element, CopyContext& context)
 template<FactKind F>
 std::pair<PredicateView<F>, bool> copy(PredicateView<F> element, CopyContext& context)
 {
-    auto predicate = datalog::checkout<Predicate<F>>(context.builder);
+    auto predicate = datalog::checkout<Predicate<F>>(context.builder());
 
     predicate->name = element.get_name();
     predicate->arity = element.get_arity();
 
-    return datalog::insert(context.destination, *predicate);
+    return datalog::insert(context.destination(), *predicate);
 }
 
 template<FactKind F>
 std::pair<AtomView<LiftedTag, F>, bool> copy(AtomView<LiftedTag, F> element, CopyContext& context)
 {
-    auto atom = datalog::checkout<Atom<LiftedTag, F>>(context.builder);
+    auto atom = datalog::checkout<Atom<LiftedTag, F>>(context.builder());
 
     atom->predicate = copy(element.get_predicate(), context).first.get_index();
     for (const auto term : element.get_terms())
         atom->terms.push_back(copy(term, context).get_data());
 
-    return datalog::insert(context.destination, *atom);
+    return datalog::insert(context.destination(), *atom);
 }
 
 template<FactKind F>
 std::pair<PredicateBindingView<F>, bool> copy(PredicateBindingView<F> element, CopyContext& context)
 {
-    auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder);
+    auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder());
 
     binding->relation = copy(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
         binding->objects.push_back(copy(object, context).first.get_index());
 
-    return datalog::insert(context.destination, *binding);
+    return datalog::insert(context.destination(), *binding);
 }
 
 template<FactKind F>
 std::pair<AtomView<GroundTag, F>, bool> copy(AtomView<GroundTag, F> element, CopyContext& context)
 {
-    auto atom = datalog::checkout<Atom<GroundTag, F>>(context.builder);
+    auto atom = datalog::checkout<Atom<GroundTag, F>>(context.builder());
 
     atom->binding = copy(element.get_row(), context).first.get_index();
 
-    return datalog::insert(context.destination, *atom);
+    return datalog::insert(context.destination(), *atom);
 }
 
 template<TaskKind T, FactKind F>
 std::pair<LiteralView<T, F>, bool> copy(LiteralView<T, F> element, CopyContext& context)
 {
-    auto literal = datalog::checkout<Literal<T, F>>(context.builder);
+    auto literal = datalog::checkout<Literal<T, F>>(context.builder());
 
     literal->polarity = element.get_polarity();
     literal->atom = copy(element.get_atom(), context).first.get_index();
 
-    return datalog::insert(context.destination, *literal);
+    return datalog::insert(context.destination(), *literal);
 }
 
 // Numeric
@@ -217,57 +217,57 @@ std::pair<LiteralView<T, F>, bool> copy(LiteralView<T, F> element, CopyContext& 
 template<FactKind F>
 std::pair<FunctionView<F>, bool> copy(FunctionView<F> element, CopyContext& context)
 {
-    auto function = datalog::checkout<Function<F>>(context.builder);
+    auto function = datalog::checkout<Function<F>>(context.builder());
 
     function->name = element.get_name();
     function->arity = element.get_arity();
 
-    return datalog::insert(context.destination, *function);
+    return datalog::insert(context.destination(), *function);
 }
 
 template<FactKind F>
 std::pair<FunctionTermView<LiftedTag, F>, bool> copy(FunctionTermView<LiftedTag, F> element, CopyContext& context)
 {
-    auto fterm = datalog::checkout<FunctionTerm<LiftedTag, F>>(context.builder);
+    auto fterm = datalog::checkout<FunctionTerm<LiftedTag, F>>(context.builder());
 
     fterm->function = copy(element.get_function(), context).first.get_index();
     for (const auto term : element.get_terms())
         fterm->terms.push_back(copy(term, context).get_data());
 
-    return datalog::insert(context.destination, *fterm);
+    return datalog::insert(context.destination(), *fterm);
 }
 
 template<FactKind F>
 std::pair<FunctionBindingView<F>, bool> copy(FunctionBindingView<F> element, CopyContext& context)
 {
-    auto binding = datalog::checkout<RelationBinding<Function<F>>>(context.builder);
+    auto binding = datalog::checkout<RelationBinding<Function<F>>>(context.builder());
 
     binding->relation = copy(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
         binding->objects.push_back(copy(object, context).first.get_index());
 
-    return datalog::insert(context.destination, *binding);
+    return datalog::insert(context.destination(), *binding);
 }
 
 template<FactKind F>
 std::pair<FunctionTermView<GroundTag, F>, bool> copy(FunctionTermView<GroundTag, F> element, CopyContext& context)
 {
-    auto fterm = datalog::checkout<FunctionTerm<GroundTag, F>>(context.builder);
+    auto fterm = datalog::checkout<FunctionTerm<GroundTag, F>>(context.builder());
 
     fterm->binding = copy(element.get_row(), context).first.get_index();
 
-    return datalog::insert(context.destination, *fterm);
+    return datalog::insert(context.destination(), *fterm);
 }
 
 template<FactKind F>
 std::pair<FunctionTermValueView<GroundTag, F>, bool> copy(FunctionTermValueView<GroundTag, F> element, CopyContext& context)
 {
-    auto fterm_value = datalog::checkout<FunctionTermValue<GroundTag, F>>(context.builder);
+    auto fterm_value = datalog::checkout<FunctionTermValue<GroundTag, F>>(context.builder());
 
     fterm_value->fterm = copy(element.get_fterm(), context).first.get_index();
     fterm_value->value = element.get_value();
 
-    return datalog::insert(context.destination, *fterm_value);
+    return datalog::insert(context.destination(), *fterm_value);
 }
 
 template<TaskKind T>
@@ -284,68 +284,68 @@ FunctionExpressionView<T> copy(FunctionExpressionView<T> element, CopyContext& c
                 return ygg::Data<FunctionExpression<T>>(copy(arg, context).first.get_index());
         },
         element.get_variant());
-    return ygg::make_view(data, context.destination);
+    return ygg::make_view(data, context.destination());
 }
 
 template<TaskKind T>
 std::pair<UnaryOperatorView<T>, bool> copy(UnaryOperatorView<T> element, CopyContext& context)
 {
-    auto unary = datalog::checkout<UnaryOperator<T>>(context.builder);
+    auto unary = datalog::checkout<UnaryOperator<T>>(context.builder());
 
     unary->operator_kind = element.get_operator();
     unary->arg = copy(element.get_arg(), context).get_data();
 
-    return datalog::insert(context.destination, *unary);
+    return datalog::insert(context.destination(), *unary);
 }
 
 template<TaskKind T, BinaryOperatorKind O>
 std::pair<BinaryOperatorView<T, O>, bool> copy(BinaryOperatorView<T, O> element, CopyContext& context)
 {
-    auto binary = datalog::checkout<BinaryOperator<T, O>>(context.builder);
+    auto binary = datalog::checkout<BinaryOperator<T, O>>(context.builder());
 
     binary->operator_kind = element.get_operator();
     binary->lhs = copy(element.get_lhs(), context).get_data();
     binary->rhs = copy(element.get_rhs(), context).get_data();
 
-    return datalog::insert(context.destination, *binary);
+    return datalog::insert(context.destination(), *binary);
 }
 
 template<TaskKind T>
 std::pair<MultiOperatorView<T>, bool> copy(MultiOperatorView<T> element, CopyContext& context)
 {
-    auto multi = datalog::checkout<MultiOperator<T>>(context.builder);
+    auto multi = datalog::checkout<MultiOperator<T>>(context.builder());
 
     multi->operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
         multi->args.push_back(copy(arg, context).get_data());
 
-    return datalog::insert(context.destination, *multi);
+    return datalog::insert(context.destination(), *multi);
 }
 
 template<TaskKind T>
 ArithmeticOperatorView<T> copy(ArithmeticOperatorView<T> element, CopyContext& context)
 {
     const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
-    return ygg::make_view(data, context.destination);
+    return ygg::make_view(data, context.destination());
 }
 
 template<TaskKind T>
 BooleanOperatorView<T> copy(BooleanOperatorView<T> element, CopyContext& context)
 {
     const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
-    return ygg::make_view(data, context.destination);
+    return ygg::make_view(data, context.destination());
 }
 
 template<TaskKind T, FactKind F>
 std::pair<NumericEffectView<T, F>, bool> copy(NumericEffectView<T, F> element, CopyContext& context)
 {
-    auto numeric_effect = datalog::checkout<NumericEffect<T, F>>(context.builder);
+    auto numeric_effect = datalog::checkout<NumericEffect<T, F>>(context.builder());
 
     numeric_effect->operator_kind = element.get_operator();
     numeric_effect->fterm = copy(element.get_fterm(), context).first.get_index();
     numeric_effect->fexpr = copy(element.get_fexpr(), context).get_data();
 
-    return datalog::insert(context.destination, *numeric_effect);
+    return datalog::insert(context.destination(), *numeric_effect);
 }
 
 template<TaskKind T, FactKind F>
@@ -353,12 +353,12 @@ NumericEffectOperatorView<T, F> copy(NumericEffectOperatorView<T, F> element, Co
 {
     const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T, F>>(arg.get_operator(), copy(arg, context).first.get_index()); },
                             element.get_variant());
-    return ygg::make_view(data, context.destination);
+    return ygg::make_view(data, context.destination());
 }
 
 inline std::pair<ConjunctiveConditionView<LiftedTag>, bool> copy(ConjunctiveConditionView<LiftedTag> element, CopyContext& context)
 {
-    auto conj_cond = datalog::checkout<ConjunctiveCondition<LiftedTag>>(context.builder);
+    auto conj_cond = datalog::checkout<ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : element.get_variables())
         conj_cond->variables.push_back(copy(variable, context).first.get_index());
@@ -369,12 +369,12 @@ inline std::pair<ConjunctiveConditionView<LiftedTag>, bool> copy(ConjunctiveCond
     for (const auto numeric_constraint : element.get_numeric_constraints())
         conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).get_data());
 
-    return datalog::insert(context.destination, *conj_cond);
+    return datalog::insert(context.destination(), *conj_cond);
 }
 
 inline std::pair<ConjunctiveConditionView<GroundTag>, bool> copy(ConjunctiveConditionView<GroundTag> element, CopyContext& context)
 {
-    auto conj_cond = datalog::checkout<ConjunctiveCondition<GroundTag>>(context.builder);
+    auto conj_cond = datalog::checkout<ConjunctiveCondition<GroundTag>>(context.builder());
 
     for (const auto literal : element.template get_literals<StaticTag>())
         conj_cond->static_literals.push_back(copy(literal, context).first.get_index());
@@ -383,7 +383,7 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> copy(ConjunctiveCond
     for (const auto numeric_constraint : element.get_numeric_constraints())
         conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).get_data());
 
-    return datalog::insert(context.destination, *conj_cond);
+    return datalog::insert(context.destination(), *conj_cond);
 }
 
 template<TaskKind T, RelationKind R, typename C>
@@ -399,7 +399,7 @@ void copy_rule_heads(ygg::View<ygg::Index<Rule<T, R>>, C> element, ygg::Data<Rul
 template<RelationKind R>
 std::pair<RuleView<LiftedTag, R>, bool> copy(RuleView<LiftedTag, R> element, CopyContext& context)
 {
-    auto rule = datalog::checkout<Rule<LiftedTag, R>>(context.builder);
+    auto rule = datalog::checkout<Rule<LiftedTag, R>>(context.builder());
 
     for (const auto variable : element.get_variables())
         rule->variables.push_back(copy(variable, context).first.get_index());
@@ -407,32 +407,32 @@ std::pair<RuleView<LiftedTag, R>, bool> copy(RuleView<LiftedTag, R> element, Cop
     copy_rule_heads(element, *rule, context);
     rule->cost = element.get_cost();
 
-    return datalog::insert(context.destination, *rule);
+    return datalog::insert(context.destination(), *rule);
 }
 
 template<RelationKind R>
 std::pair<RuleBindingView<R>, bool> copy(RuleBindingView<R> element, CopyContext& context)
 {
-    auto binding = datalog::checkout<RelationBinding<Rule<LiftedTag, R>>>(context.builder);
+    auto binding = datalog::checkout<RelationBinding<Rule<LiftedTag, R>>>(context.builder());
 
     binding->relation = copy(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
         binding->objects.push_back(copy(object, context).first.get_index());
 
-    return datalog::insert(context.destination, *binding);
+    return datalog::insert(context.destination(), *binding);
 }
 
 template<RelationKind R>
 std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, CopyContext& context)
 {
-    auto rule = datalog::checkout<Rule<GroundTag, R>>(context.builder);
+    auto rule = datalog::checkout<Rule<GroundTag, R>>(context.builder());
 
     rule->binding = copy(element.get_row(), context).first.get_index();
     rule->body = copy(element.get_body(), context).first.get_index();
     copy_rule_heads(element, *rule, context);
     rule->cost = element.get_cost();
 
-    return datalog::insert(context.destination, *rule);
+    return datalog::insert(context.destination(), *rule);
 }
 
 }

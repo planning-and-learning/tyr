@@ -77,10 +77,10 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         if constexpr (std::same_as<Kind, GroundTag>)
             return definition.rpg_program.get_datalog_program().get_program_repository();
         else
-            return workspace.workspace_repository;
+            return *workspace.workspace_repository;
     }();
     auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, destination };
-    auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(merge_context.builder);
+    auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(merge_context.builder());
 
     const auto translate_atom = [&](const auto atom)
     {
@@ -97,16 +97,16 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         if (!atom)
             continue;
 
-        auto literal = formalism::datalog::checkout<formalism::datalog::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder);
+        auto literal = formalism::datalog::checkout<formalism::datalog::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder());
         literal->atom = translate_atom(*atom).get_index();
         literal->polarity = true;
-        condition->fluent_literals.push_back(formalism::datalog::insert(merge_context.destination, *literal).first.get_index());
+        condition->fluent_literals.push_back(formalism::datalog::insert(merge_context.destination(), *literal).first.get_index());
     }
 
     for (const auto numeric_constraint : source_goal.get_numeric_constraints())
         condition->numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, merge_context));
 
-    workspace.tp.set_goals(formalism::datalog::insert(merge_context.destination, *condition).first);
+    workspace.tp.set_goals(formalism::datalog::insert(merge_context.destination(), *condition).first);
 }
 
 template<typename Derived,
@@ -168,12 +168,12 @@ protected:
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
         datalog::execute_model(ctx, *m_execution_context);
 
-        return m_workspace.tp.check(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets }) ?
+        return m_workspace.tp.check(datalog::FactSets { m_workspace.const_workspace->facts.fact_sets, m_workspace.facts.fact_sets }) ?
                    static_cast<Derived&>(*this).compute_result(state) :
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
-    ygg::float_t compute_result(const ygg::Builder<State<Kind>>&) const noexcept { return get_goal_cost(); }
+    ygg::float_t compute_result(const ygg::Builder<State<Kind>>&) const { return get_goal_cost(); }
 
     void set_action_binding_cost(formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
@@ -185,10 +185,10 @@ protected:
         return annotation ? datalog::get_cost(*annotation) : datalog::Cost(0);
     }
 
-    datalog::Cost get_goal_cost() const noexcept
+    datalog::Cost get_goal_cost() const
     {
         const auto& numeric_support_selector = m_workspace.get_numeric_support_selector();
-        return m_workspace.tp.get_total_cost(datalog::FactSets { m_workspace.const_workspace.facts.fact_sets, m_workspace.facts.fact_sets },
+        return m_workspace.tp.get_total_cost(datalog::FactSets { m_workspace.const_workspace->facts.fact_sets, m_workspace.facts.fact_sets },
                                              m_workspace.annotations,
                                              m_workspace.numeric_annotations,
                                              numeric_support_selector);
@@ -217,7 +217,7 @@ protected:
     }
 
     template<formalism::RelationKind R, typename Callback>
-    void for_each_witness_precondition(const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
+    void for_each_witness_precondition(const datalog::WitnessAnnotation<R>& witness, Callback callback)
     {
         Policy::visit_witness_rule_instance(m_workspace,
                                             witness,
@@ -230,7 +230,7 @@ protected:
     }
 
     template<typename Callback>
-    void for_each_achiever(formalism::datalog::PredicateBindingView<formalism::FluentTag> head, Callback&& callback)
+    void for_each_achiever(formalism::datalog::PredicateBindingView<formalism::FluentTag> head, Callback callback)
         requires AP::records_propositional_achievers
     {
         const auto* achievers = m_workspace.annotation_policy.find_achievers(head.get_index());
@@ -243,12 +243,15 @@ protected:
 
     const Task<Kind>& get_task() const noexcept { return *m_definition->task; }
 
+    Workspace& workspace() noexcept { return m_workspace; }
+    const Workspace& workspace() const noexcept { return m_workspace; }
+
+private:
     std::shared_ptr<Definition> m_definition;
     ygg::ExecutionContextPtr m_execution_context;
     formalism::planning::ConjunctiveConditionView<GroundTag> m_source_goal;
     Workspace m_workspace;
 
-private:
     static CP make_cost_policy(const Definition& definition)
     {
         if constexpr (std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>)

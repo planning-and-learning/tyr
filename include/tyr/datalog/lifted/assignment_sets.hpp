@@ -130,12 +130,12 @@ public:
     ygg::ClosedInterval<ygg::float_t> operator[](const EmptyAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](const VertexAssignment& assignment) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](const EdgeAssignment& assignment) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const;
 
     [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(const EmptyAssignment& assignment) const noexcept;
     [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(const VertexAssignment& assignment) const noexcept;
     [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(const EdgeAssignment& assignment) const noexcept;
-    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const;
 
     [[nodiscard]] size_t size() const noexcept;
     [[nodiscard]] const PerfectAssignmentHash& get_hash() const noexcept;
@@ -160,8 +160,8 @@ public:
     void insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
 
     [[nodiscard]] const FunctionAssignmentSet<T>& get_set(ygg::Index<formalism::Function<T>> index) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept;
-    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const noexcept;
+    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const;
+    [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const;
     std::vector<FunctionAssignmentSet<T>>& get_sets() noexcept;
     [[nodiscard]] const std::vector<FunctionAssignmentSet<T>>& get_sets() const noexcept;
 
@@ -192,15 +192,20 @@ struct TaggedAssignmentSets
     void reset() noexcept;
 };
 
-struct AssignmentSets
+class AssignmentSets
 {
-    const TaggedAssignmentSets<formalism::StaticTag>& static_sets;
-    const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets;
-
+public:
     AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets);
 
     template<formalism::FactKind T>
     const TaggedAssignmentSets<T>& get() const noexcept;
+
+    [[nodiscard]] const TaggedAssignmentSets<formalism::StaticTag>& static_sets() const noexcept { return *m_static_sets; }
+    [[nodiscard]] const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets() const noexcept { return *m_fluent_sets; }
+
+private:
+    const TaggedAssignmentSets<formalism::StaticTag>* m_static_sets;
+    const TaggedAssignmentSets<formalism::FluentTag>* m_fluent_sets;
 };
 
 }

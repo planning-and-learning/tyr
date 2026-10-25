@@ -15,6 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "module.hpp"
+
 #include "../../gbfs_lazy.hpp"
 
 namespace tyr::planning::gbfs_lazy

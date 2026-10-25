@@ -98,7 +98,7 @@ class PredicateFactSet
 {
 private:
     formalism::datalog::PredicateView<T> m_predicate;
-    const formalism::datalog::Repository& m_repository;
+    const formalism::datalog::Repository* m_repository;
 
     ygg::Index<formalism::Predicate<T>> m_predicate_index;
 
@@ -152,7 +152,7 @@ class FunctionFactSet
 {
 private:
     formalism::datalog::FunctionView<T> m_function;
-    const formalism::datalog::Repository& m_repository;
+    const formalism::datalog::Repository* m_repository;
 
     ygg::Index<formalism::Function<T>> m_function_index;
     std::vector<ygg::uint_t> m_remap;
@@ -238,15 +238,20 @@ struct TaggedFactSets
     void reset() noexcept;
 };
 
-struct FactSets
+class FactSets
 {
-    const TaggedFactSets<formalism::StaticTag>& static_sets;
-    const TaggedFactSets<formalism::FluentTag>& fluent_sets;
-
+public:
     FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const TaggedFactSets<formalism::FluentTag>& fluent_sets) noexcept;
 
     template<formalism::FactKind T>
     [[nodiscard]] const TaggedFactSets<T>& get() const;
+
+    [[nodiscard]] const TaggedFactSets<formalism::StaticTag>& static_sets() const noexcept { return *m_static_sets; }
+    [[nodiscard]] const TaggedFactSets<formalism::FluentTag>& fluent_sets() const noexcept { return *m_fluent_sets; }
+
+private:
+    const TaggedFactSets<formalism::StaticTag>* m_static_sets;
+    const TaggedFactSets<formalism::FluentTag>* m_fluent_sets;
 };
 
 }

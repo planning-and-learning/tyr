@@ -46,8 +46,18 @@ namespace tyr::planning::detail
 template<TaskKind Kind>
 struct StateRepositoryPolicy;
 
+namespace
+{
+
+/// Identifies the storage cohorts of a task kind; repositories share storage iff their identities match.
 template<TaskKind Kind>
-inline std::atomic<ygg::uint_t> next_state_storage_identity { 0 };
+ygg::uint_t next_state_storage_identity() noexcept
+{
+    static auto next = std::atomic<ygg::uint_t> { 0 };
+    return next.fetch_add(1, std::memory_order_relaxed);
+}
+
+}
 
 template<>
 struct StateRepositoryPolicy<GroundTag>
@@ -106,16 +116,18 @@ struct StateRepository<Kind>::Impl
     template<bool ThreadSafe>
     struct Storage
     {
-        using PackedStates = ygg::IndexedHashSet<State<Kind>, ygg::Hash<ygg::Data<State<Kind>>>, ygg::EqualTo<ygg::Data<State<Kind>>>, 32, ThreadSafe>;
+        static constexpr size_t packed_states_first_segment_size = 32;
+        using PackedStates = ygg::
+            IndexedHashSet<State<Kind>, ygg::Hash<ygg::Data<State<Kind>>>, ygg::EqualTo<ygg::Data<State<Kind>>>, packed_states_first_segment_size, ThreadSafe>;
 
         explicit Storage(const Definition& definition) :
-            identity(detail::next_state_storage_identity<Kind>.fetch_add(1, std::memory_order_relaxed)),
+            identity(detail::next_state_storage_identity<Kind>()),
             context(Policy::template make_storage_context<ThreadSafe>(*definition.task)),
             packed_states()
         {
         }
 
-        const ygg::uint_t identity;
+        ygg::uint_t identity;
         StateStorageContext<Kind, StateStoragePolicyTag, ThreadSafe> context;
         PackedStates packed_states;
     };
@@ -289,7 +301,7 @@ struct StateRepository<Kind>::Impl
     std::shared_ptr<const Definition> definition;
     std::unique_ptr<Evaluator<false>> evaluator;
     std::unique_ptr<Evaluator<true>> shared_evaluator;
-    const ygg::uint_t storage_identity;
+    ygg::uint_t storage_identity;
 };
 
 template<TaskKind Kind>

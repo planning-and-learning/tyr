@@ -100,7 +100,7 @@ inline std::optional<SearchStatistics> parse_optional_statistics(const boost::js
     if (!value)
         return std::nullopt;
     const auto& stats = value->as_object();
-    return SearchStatistics { *parse_optional_counters(stats), parse_optional_plan(stats) };
+    return SearchStatistics { parse_optional_counters(stats).value(), parse_optional_plan(stats) };
 }
 
 template<TaskKind Kind>
@@ -127,7 +127,7 @@ void expect_statistics(const SearchStatistics& expected, const planning::Statist
 
     ASSERT_EQ(result.plan.has_value(), expected.plan.has_value());
     if (expected.plan)
-        expect_plan(*expected.plan, *result.plan);
+        expect_plan(expected.plan.value(), result.plan.value());
 }
 
 inline planning::SearchStatus parse_search_status(const std::string& status)
@@ -175,7 +175,7 @@ inline SearchCase parse_search_case(const boost::json::object& object)
                                {} };
     for (const auto& [key, value] : object)
         if (value.is_object() && value.as_object().if_contains("num_generated_successors"))
-            result.configs.emplace_back(std::string(key), *parse_optional_statistics(object, std::string(key).c_str()));
+            result.configs.emplace_back(std::string(key), parse_optional_statistics(object, std::string(key).c_str()).value());
     return result;
 }
 

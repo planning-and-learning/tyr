@@ -74,7 +74,7 @@ struct structure_traits<planning::MutableAtom<T>>
     using Type = planning::MutableAtom<T>;
 
     template<typename F>
-    static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
+    static bool zip_terms(const Type& lhs, const Type& rhs, F f)
     {
         if (lhs.predicate != rhs.predicate)
             return false;
@@ -86,7 +86,7 @@ struct structure_traits<planning::MutableAtom<T>>
     }
 
     template<typename F>
-    static Type transform_terms(const Type& value, F&& f)
+    static Type transform_terms(const Type& value, F f)
     { return Type(value.predicate, unification::transform_terms(value.terms, f)); }
 };
 

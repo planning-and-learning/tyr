@@ -78,7 +78,7 @@ auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<Groun
                              TranslationContext<LiftedTag>& translation_context,
                              formalism::planning::MergeDatalogContext& context)
 {
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder());
 
     for (const auto fact : goal.get_facts<formalism::PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_predicate, context))
@@ -87,7 +87,7 @@ auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<Groun
     for (const auto numeric_constraint : goal.get_numeric_constraints())
         conj_cond->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 
-    return formalism::datalog::insert(context.destination, *conj_cond);
+    return formalism::datalog::insert(context.destination(), *conj_cond);
 }
 
 auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
@@ -95,13 +95,13 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
                              TranslationContext<LiftedTag>& translation_context,
                              formalism::planning::MergeDatalogContext& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder);
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = formalism::datalog::insert(context.destination, *conj_cond).first;
+    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
@@ -110,7 +110,7 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
             rule->heads.push_back(merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
     rule->cost = 1;
 
-    return formalism::datalog::insert(context.destination, *rule);
+    return formalism::datalog::insert(context.destination(), *rule);
 }
 
 auto create_cond_numeric_effect_rule(formalism::planning::ActionView<LiftedTag> action,
@@ -119,20 +119,20 @@ auto create_cond_numeric_effect_rule(formalism::planning::ActionView<LiftedTag> 
                                      TranslationContext<LiftedTag>& translation_context,
                                      formalism::planning::MergeDatalogContext& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::FunctionTag>>(context.builder);
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::FunctionTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = formalism::datalog::insert(context.destination, *conj_cond).first;
+    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
     ygg::extend(new_conj_cond.get_variables(), rule->variables);
     rule->body = new_conj_cond.get_index();
     rule->head = merge_p2d(std::move(effect), context);
     rule->cost = 1;
 
-    return formalism::datalog::insert(context.destination, *rule);
+    return formalism::datalog::insert(context.destination(), *rule);
 }
 
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<LiftedTag> action,

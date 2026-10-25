@@ -68,8 +68,8 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    typename Context::BitsetSet& m_bitsets;
-    const std::vector<VariableInfo>& m_infos;
+    typename Context::BitsetSet* m_bitsets;
+    const std::vector<VariableInfo>* m_infos;
     ygg::uint_t m_num_blocks;
 
     std::vector<tree_bitset::Block> m_blocks;

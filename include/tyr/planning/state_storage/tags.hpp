@@ -19,9 +19,16 @@
 #define TYR_PLANNING_STATE_STORAGE_TAGS_HPP_
 
 #include <concepts>
+#include <cstddef>
 
 namespace tyr::planning
 {
+namespace hash_set
+{
+/// Bytes of the first storage segment of the hash sets that store state values.
+inline constexpr size_t first_segment_bytes = 1024;
+}
+
 /// Stores state components as tree-compressed vectors.
 struct TreeVector
 {

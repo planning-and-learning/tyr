@@ -31,7 +31,7 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <cassert>
 #include <fmt/ostream.h>
@@ -95,7 +95,7 @@ struct RPGPolicy<LiftedTag>
                 return formalism::planning::ground(it->second, grounder_context).first;
             }
         }
-        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
+        const auto rule_binding = ygg::make_view(witness.get_rule_key(), *workspace.workspace_repository);
         ygg::extend(rule_binding.get_objects(), workspace.binding);
         return formalism::planning::ground(it->second, grounder_context).first;
     }
@@ -107,7 +107,7 @@ struct RPGPolicy<LiftedTag>
     recover_split_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<formalism::PredicateTag>& witness)
     {
         const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().relation);
-        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
+        const auto rule_binding = ygg::make_view(witness.get_rule_key(), *workspace.workspace_repository);
         auto position = size_t(0);
         for (const auto object : rule_binding.get_objects())
             workspace.binding[origin.source_positions[position++]] = object.get_index();
@@ -134,11 +134,11 @@ struct RPGPolicy<LiftedTag>
     template<formalism::RelationKind R, typename Workspace, typename Callback>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
-        const auto rule_binding = ygg::make_view(witness.get_rule_key(), workspace.workspace_repository);
-        const auto& const_rule_workspace = *workspace.const_workspace.template get_rules<R>()[ygg::uint_t(witness.get_rule_key().relation)];
+        const auto rule_binding = ygg::make_view(witness.get_rule_key(), *workspace.workspace_repository);
+        const auto& const_rule_workspace = *workspace.const_workspace->template get_rules<R>()[ygg::uint_t(witness.get_rule_key().relation)];
         auto binding = ygg::IndexList<formalism::Object> {};
         ygg::extend(rule_binding.get_objects(), binding);
-        auto grounder_context = formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, binding };
+        auto grounder_context = formalism::datalog::GrounderContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
         const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace, grounder_context);
         std::forward<Callback>(callback)(instance);
     }

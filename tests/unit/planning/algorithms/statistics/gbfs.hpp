@@ -32,7 +32,8 @@ template<TaskKind Kind>
 void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, CostMode cost_mode)
 {
     auto context = create_search_context<Kind>(test_case.domain_file, test_case.task_file);
-    const auto num_ground_actions_before = context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>();
+    // Read only for lifted tasks, whose search must not intern ground actions.
+    [[maybe_unused]] const auto num_ground_actions_before = context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>();
     auto heuristic = create_search_heuristic<Kind>(heuristic_name, context, cost_mode);
 
     auto options = tyr::planning::gbfs_lazy::Options<Kind>();

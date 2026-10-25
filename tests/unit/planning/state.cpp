@@ -28,7 +28,6 @@
 #include "tyr/planning/state_storage/config.hpp"
 #include "tyr/planning/state_storage/hash_set/numeric.hpp"
 #include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>
@@ -52,6 +51,8 @@ template<typename Kind>
 concept StateIndexContract =
     std::constructible_from<ygg::Index<tyr::planning::State<Kind>>, ygg::uint_t> && std::totally_ordered<ygg::Index<tyr::planning::State<Kind>>>;
 
+namespace
+{
 template<typename State>
 class StateWithoutMetadata : public State
 {
@@ -66,15 +67,15 @@ private:
 template<tyr::planning::IterableViewStateConcept State>
 struct StateFormattingView
 {
-    const State& state;
+    const State* state;
 
     template<tyr::formalism::FactKind F>
     [[nodiscard]] auto get_atoms_view() const
-    { return state.template get_atoms_view<F>(); }
-    [[nodiscard]] auto get_fluent_facts_view() const { return state.get_fluent_facts_view(); }
+    { return state->template get_atoms_view<F>(); }
+    [[nodiscard]] auto get_fluent_facts_view() const { return state->get_fluent_facts_view(); }
     template<tyr::formalism::FactKind F>
     [[nodiscard]] auto get_fterm_values_view() const
-    { return state.template get_fterm_values_view<F>(); }
+    { return state->template get_fterm_values_view<F>(); }
 };
 
 template<tyr::TaskKind Kind>
@@ -105,7 +106,12 @@ struct StateWithThrowingMove : tyr::planning::BuilderStateView<Kind>
 {
     explicit StateWithThrowingMove(tyr::planning::BuilderStateView<Kind> state) : tyr::planning::BuilderStateView<Kind>(state) {}
     StateWithThrowingMove(const StateWithThrowingMove&) = default;
-    StateWithThrowingMove(StateWithThrowingMove&& other) : tyr::planning::BuilderStateView<Kind>(other) { throw std::runtime_error("state move"); }
+    // Throws by design: the tests check that a throwing state move propagates.
+    StateWithThrowingMove(StateWithThrowingMove&& other) noexcept(false) : tyr::planning::BuilderStateView<Kind>(other)
+    { throw std::runtime_error("state move"); }
+    StateWithThrowingMove& operator=(const StateWithThrowingMove&) = delete;
+    StateWithThrowingMove& operator=(StateWithThrowingMove&&) = delete;
+    ~StateWithThrowingMove() = default;
 };
 
 template<tyr::TaskKind Kind>
@@ -114,6 +120,7 @@ struct StateWithThrowingPack : tyr::planning::StateView<Kind>
     explicit StateWithThrowingPack(tyr::planning::StateView<Kind> state) : tyr::planning::StateView<Kind>(std::move(state)) {}
     [[nodiscard]] tyr::planning::PackedStateView<Kind> pack() const { throw std::runtime_error("state pack"); }
 };
+}  // namespace
 
 using StateKinds = ygg::TypeList<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(ygg::TypeList<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
@@ -174,6 +181,8 @@ static_assert(
                 && ...);
     }(StateKinds {}));
 
+namespace
+{
 template<tyr::TaskKind Kind>
 struct NodeWithoutMetadata
 {
@@ -185,6 +194,7 @@ struct NodeWithMutableState : NodeWithoutMetadata<tyr::GroundTag>
 {
     tyr::planning::StateView<tyr::GroundTag> get_state();
 };
+}  // namespace
 
 static_assert(
     []<typename... Kinds>(ygg::TypeList<Kinds...>)
@@ -411,7 +421,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_TRUE(std::ranges::equal(owned->template get_fterm_values_view<formalism::FluentTag>(*task->get_repository()),
                                    registered.template get_fterm_values_view<formalism::FluentTag>()));
     static_assert(std::same_as<decltype(state), const tyr::planning::BuilderStateView<Kind>>);
-    const auto formatting_view = StateFormattingView<tyr::planning::BuilderStateView<Kind>> { state };
+    const auto formatting_view = StateFormattingView<tyr::planning::BuilderStateView<Kind>> { &state };
     static_assert(tyr::planning::IterableViewStateConcept<decltype(formatting_view)>);
     static_assert(!tyr::planning::StateViewConcept<decltype(formatting_view), Kind>);
     EXPECT_EQ(fmt::format("{}", formatting_view), fmt::format("{}", state));
@@ -521,9 +531,9 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     {
         EXPECT_EQ(state.get(fact.get_variable().get_index()), fact.get_value());
         EXPECT_EQ(state.get(fact.get_variable()), fact.get_value());
-        EXPECT_TRUE(state.test(*fact.get_atom()));
-        EXPECT_TRUE(registered.test(*fact.get_atom()));
-        EXPECT_EQ(fact.get_atom_index(), fact.get_atom()->get_index());
+        EXPECT_TRUE(state.test(fact.get_atom().value()));
+        EXPECT_TRUE(registered.test(fact.get_atom().value()));
+        EXPECT_EQ(fact.get_atom_index(), fact.get_atom().value().get_index());
         const auto unassigned = ygg::make_view(
             ygg::Data<tyr::formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable().get_index(), tyr::formalism::planning::FDRValue::none()),
             fact.get_context());
@@ -781,7 +791,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                                      start.arrive_and_wait();
                                      return worker_generator->get_successor_node(cheap->node, *raise, *worker_repository, *worker_axioms);
                                  });
-        const auto first_node = first.get();
+        auto first_node = first.get();
         const auto second_node = second.get();
         EXPECT_EQ(first_node, second_node);
         EXPECT_EQ(derived_names(first_node.get_state()), derived_names(second_node.get_state()));

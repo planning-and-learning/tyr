@@ -42,9 +42,9 @@ class DefaultEventHandler;
 template<typename Derived, TaskKind Kind>
 class EventHandlerBase : public EventHandler<Kind>
 {
-protected:
+private:
     Statistics<Kind> m_statistics;
-    size_t m_verbosity;
+    size_t m_verbosity = 0;
 
 private:
     EventHandlerBase() = default;

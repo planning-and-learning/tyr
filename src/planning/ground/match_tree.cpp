@@ -25,12 +25,8 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/atom_view.hpp"
-#include "tyr/planning/ground/match_tree/nodes/constraint_view.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_view.hpp"
-#include "tyr/planning/ground/match_tree/nodes/negative_fact_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/variable_view.hpp"
+#include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 #include "tyr/planning/state_builder.hpp"
 
@@ -48,6 +44,9 @@
 #include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning::match_tree
+{
+
+namespace
 {
 
 using PreconditionVariant = std::variant<ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>,
@@ -592,12 +591,14 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
     {
         for (; base.depth < sorted_preconditions.size(); ++base.depth)
             if (auto entry = try_create_selector_stack_entry(base, sorted_preconditions, details, builder))
-                return std::move(entry.value());
+                return entry;
     }
     else
         return std::nullopt;
 
     return create_generator_stack_entry(base, builder);
+}
+
 }
 
 template<typename Tag>
@@ -768,7 +769,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
 
                 if constexpr (std::is_same_v<Handle, ygg::Index<AtomSelectorNode<Tag>>>)
                 {
-                    const auto holds = state.state_builder.test(arg.get_atom());
+                    const auto holds = state.state_builder().test(arg.get_atom());
 
                     if (const auto child = holds ? arg.get_true_child() : arg.get_false_child())
                         stack.push_back(*child);
@@ -789,7 +790,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                 }
                 else if constexpr (std::is_same_v<Handle, ygg::Index<VariableSelectorNode<Tag>>>)
                 {
-                    const auto value = state.state_builder.get(arg.get_variable());
+                    const auto value = state.state_builder().get(arg.get_variable());
                     const auto children = arg.get_domain_children();
                     assert(ygg::uint_t(value) < children.size());
 
@@ -802,7 +803,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                 else if constexpr (std::is_same_v<Handle, ygg::Index<NegativeFactSelectorNode<Tag>>>)
                 {
                     const auto fact = arg.get_fact();
-                    const auto holds = state.state_builder.get(fact.get_variable()) != fact.get_value();
+                    const auto holds = state.state_builder().get(fact.get_variable()) != fact.get_value();
 
                     if (holds)
                         if (const auto child = arg.get_true_child())

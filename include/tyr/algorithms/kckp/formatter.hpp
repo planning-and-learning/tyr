@@ -14,6 +14,7 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <span>
 #include <sstream>
 #include <vector>
 #include <yggdrasil/formatting/dynamic_bitset_formatters.hpp>
@@ -58,7 +59,7 @@ struct formatter<tyr::kckp::VertexPartitions, char>
             for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
             {
                 const auto& info = value.layout().info.infos[partition];
-                fmt::print(os, "{}, ", ygg::BitsetSpan<const uint64_t>(value.data().data() + info.block_offset, info.num_bits));
+                fmt::print(os, "{}, ", value.get_bitset(info));
             }
             os << "]\n";
         }
@@ -112,14 +113,14 @@ struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
             for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
             {
                 const auto& info = value.layout().info.infos[partition];
-                fmt::print(os, "{}, ", ygg::BitsetSpan<const uint64_t>(value.affected_partitions().data().data() + info.block_offset, info.num_bits));
+                fmt::print(os, "{}, ", value.affected_partitions().get_bitset(info));
             }
             os << "]\n";
             os << ygg::print_indent << "delta partitions = [";
             for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
             {
                 const auto& info = value.layout().info.infos[partition];
-                fmt::print(os, "{}, ", ygg::BitsetSpan<const uint64_t>(value.delta_partitions().data().data() + info.block_offset, info.num_bits));
+                fmt::print(os, "{}, ", value.delta_partitions().get_bitset(info));
             }
             os << "]\n";
             os << ygg::print_indent << "adjacency lists = [\n";
@@ -132,7 +133,8 @@ struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
                 for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
                 {
                     const auto& info = value.layout().info.infos[partition];
-                    auto adjacency = ygg::BitsetSpan<uint64_t>(adjacency_data.data() + info.block_offset, info.num_bits);
+                    auto adjacency =
+                        ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(adjacency_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
                     value.copy_adjacency_to(vertex, partition, adjacency);
                     fmt::print(os, "{}, ", adjacency);
                 }

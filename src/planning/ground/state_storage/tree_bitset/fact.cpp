@@ -27,8 +27,8 @@ namespace tyr::planning
 
 template<bool ThreadSafe>
 FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::FactStorageBackend(Context& ctx) :
-    m_bitsets(ctx.bitsets),
-    m_infos(ctx.fluent_infos),
+    m_bitsets(&ctx.bitsets),
+    m_infos(&ctx.fluent_infos),
     m_num_blocks(ctx.fluent_num_blocks)
 {
 }
@@ -37,14 +37,14 @@ template<bool ThreadSafe>
 typename FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::Packed FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
 {
     m_blocks.assign(m_num_blocks, tree_bitset::Block { 0 });
-    for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
+    for (ygg::uint_t i = 0; i < m_infos->size(); ++i)
     {
-        const auto& info = m_infos[i];
+        const auto& info = (*m_infos)[i];
         ygg::bit::write_int(std::span(m_blocks).subspan(info.begin), static_cast<tree_bitset::Block>(unpacked.values[i]), info.offset, info.length);
     }
 
     ygg::trim_trailing_zero_blocks(m_blocks);
-    return Packed { m_bitsets.insert(m_blocks) };
+    return Packed { m_bitsets->insert(m_blocks) };
 }
 
 template<bool ThreadSafe>
@@ -55,7 +55,7 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     m_flips.clear();
     for (const auto& change : changes)
     {
-        const auto& info = m_infos[ygg::uint_t(change.variable)];
+        const auto& info = (*m_infos)[ygg::uint_t(change.variable)];
         ygg::append_int_flips(info.begin,
                               info.offset,
                               info.length,
@@ -64,20 +64,20 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     }
     ygg::normalize_flips(m_flips);
 
-    return Packed { m_bitsets.insert(parent.index, m_flips) };
+    return Packed { m_bitsets->insert(parent.index, m_flips) };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     m_blocks.assign(m_num_blocks, tree_bitset::Block { 0 });
-    m_bitsets.read(packed.index, std::span(m_blocks).first(packed.index.size));
+    m_bitsets->read(packed.index, std::span(m_blocks).first(packed.index.size));
 
     auto& values = unpacked.values;
-    values.resize(m_infos.size());
-    for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
+    values.resize(m_infos->size());
+    for (ygg::uint_t i = 0; i < m_infos->size(); ++i)
     {
-        const auto& info = m_infos[i];
+        const auto& info = (*m_infos)[i];
         values[i] = ygg::uint_t(ygg::bit::read_int<tree_bitset::Block>(std::span(m_blocks).subspan(info.begin), info.offset, info.length));
     }
 }

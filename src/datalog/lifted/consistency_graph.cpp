@@ -44,6 +44,8 @@ namespace tyr::datalog
 {
 namespace details
 {
+namespace
+{
 
 /**
  * Vertex
@@ -143,37 +145,37 @@ template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag> element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
-                                                      const AssignmentSets& assignment_sets) noexcept;
+                                                      const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
-                                                      const AssignmentSets& assignment_sets) noexcept;
+                                                      const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag> element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
-                                                      const AssignmentSets& assignment_sets) noexcept;
+                                                      const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
-                                                      const AssignmentSets& assignment_sets) noexcept;
+                                                      const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::ArithmeticOperatorView<LiftedTag> element,
                                                       const GraphStructure& structure,
                                                       const RuleToConstraintInfo& constraint_info,
-                                                      const AssignmentSets& assignment_sets) noexcept;
+                                                      const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
                                    const GraphStructure& structure,
                                    const RuleToConstraintInfo& constraint_info,
-                                   const AssignmentSets& assignment_sets) noexcept;
+                                   const AssignmentSets& assignment_sets);
 
 template<formalism::FactKind T>
 inline ygg::ClosedInterval<ygg::float_t>
@@ -408,14 +410,14 @@ template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
-                                                             const AssignmentSets& assignment_sets) noexcept
+                                                             const AssignmentSets& assignment_sets)
 { return apply(element.get_operator(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets)); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
-                                                             const AssignmentSets& assignment_sets) noexcept
+                                                             const AssignmentSets& assignment_sets)
 {
     return apply(element.get_operator(),
                  consistent_interval(element.get_lhs(), structure, constraint_info, assignment_sets),
@@ -426,7 +428,7 @@ template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
-                                                             const AssignmentSets& assignment_sets) noexcept
+                                                             const AssignmentSets& assignment_sets)
 {
     const auto child_fexprs = element.get_args();
 
@@ -441,7 +443,7 @@ template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
-                                                             const AssignmentSets& assignment_sets) noexcept
+                                                             const AssignmentSets& assignment_sets)
 {
     return visit(
         [&]<typename Alternative>(const Alternative& arg)
@@ -451,9 +453,9 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
             else if constexpr (std::is_same_v<Alternative, formalism::datalog::ArithmeticOperatorView<LiftedTag>>)
                 return consistent_interval(arg, structure, constraint_info, assignment_sets);
             else if constexpr (std::is_same_v<Alternative, formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag>>)
-                return consistent_interval(constraint_info.static_infos.infos.at(arg.get_index()), structure, assignment_sets.static_sets.function);
+                return consistent_interval(constraint_info.static_infos.infos.at(arg.get_index()), structure, assignment_sets.static_sets().function);
             else if constexpr (std::is_same_v<Alternative, formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag>>)
-                return consistent_interval(constraint_info.fluent_infos.infos.at(arg.get_index()), structure, assignment_sets.fluent_sets.function);
+                return consistent_interval(constraint_info.fluent_infos.infos.at(arg.get_index()), structure, assignment_sets.fluent_sets().function);
             else
                 static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
         },
@@ -464,7 +466,7 @@ template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::ArithmeticOperatorView<LiftedTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
-                                                             const AssignmentSets& assignment_sets) noexcept
+                                                             const AssignmentSets& assignment_sets)
 {
     return visit([&](auto&& arg) { return consistent_interval(arg, structure, constraint_info, assignment_sets); }, element.get_variant());
 }
@@ -473,7 +475,7 @@ template<typename GraphStructure>
 inline bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
                                           const GraphStructure& structure,
                                           const RuleToConstraintInfo& constraint_info,
-                                          const AssignmentSets& assignment_sets) noexcept
+                                          const AssignmentSets& assignment_sets)
 {
     return visit(
         [&](auto&& arg) -> bool
@@ -488,7 +490,7 @@ inline bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorVie
 inline bool consistent_numeric_constraints(const Vertex& vertex,
                                            formalism::datalog::BooleanOperatorListView<LiftedTag> numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const AssignmentSets& assignment_sets) noexcept
+                                           const AssignmentSets& assignment_sets)
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -645,7 +647,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
 inline bool consistent_numeric_constraints(const Edge& edge,
                                            formalism::datalog::BooleanOperatorListView<LiftedTag> numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const AssignmentSets& assignment_sets) noexcept
+                                           const AssignmentSets& assignment_sets)
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -663,6 +665,7 @@ inline bool consistent_numeric_constraints(const Edge& edge,
     return true;
 }
 
+}
 }
 
 template<formalism::FactKind T>
@@ -946,11 +949,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         const auto v = info.bit_offset + bit;
                         const auto vertex = details::Vertex(formalism::ParameterIndex(p), ygg::Index<formalism::Object>(layout.vertex_labels[v]));
 
-                        if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
-                            && consistent_numeric_constraints(vertex,
-                                                              unary_overapproximation_constraints,
-                                                              m_unary_overapproximation_indexed_constraints,
-                                                              assignment_sets))
+                        if (details::consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                            && details::consistent_numeric_constraints(vertex,
+                                                                       unary_overapproximation_constraints,
+                                                                       m_unary_overapproximation_indexed_constraints,
+                                                                       assignment_sets))
                         {
                             /// Process delta consistent vertex.
                             full_affected_partition.set(bit);
@@ -1071,11 +1074,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                             const auto edge = details::Edge(vertex_i, vertex_j);
 
-                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets.predicate)
-                                && consistent_numeric_constraints(edge,
-                                                                  binary_overapproximation_constraints,
-                                                                  m_binary_overapproximation_indexed_constraints,
-                                                                  assignment_sets))
+                            if (details::consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                                && details::consistent_numeric_constraints(edge,
+                                                                           binary_overapproximation_constraints,
+                                                                           m_binary_overapproximation_indexed_constraints,
+                                                                           assignment_sets))
                             {
                                 /// Process delta consistent edge.
                                 process_delta_edge(bj);

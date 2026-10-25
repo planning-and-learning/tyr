@@ -18,7 +18,7 @@
 #include "tyr/planning/heuristic.hpp"
 
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 namespace tyr::planning
 {

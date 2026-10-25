@@ -25,10 +25,18 @@
 namespace tyr::formalism::planning
 {
 
-struct MergeDatalogContext
+/// Where grounding, copying or merging writes: the objects are the caller's and outlive the context.
+class MergeDatalogContext
 {
-    datalog::Builder& builder;
-    datalog::Repository& destination;
+public:
+    MergeDatalogContext(datalog::Builder& builder, datalog::Repository& destination) noexcept : m_builder(&builder), m_destination(&destination) {}
+
+    [[nodiscard]] datalog::Builder& builder() const noexcept { return *m_builder; }
+    [[nodiscard]] datalog::Repository& destination() const noexcept { return *m_destination; }
+
+private:
+    datalog::Builder* m_builder;
+    datalog::Repository* m_destination;
 };
 
 }

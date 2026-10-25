@@ -91,7 +91,7 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<Kind>>& state,
     }
     else
     {
-        auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+        auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, *workspace.workspace_repository };
         detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
     }
 }
@@ -108,7 +108,7 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<Kind>>& state
     }
     else
     {
-        auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+        auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, *workspace.workspace_repository };
         detail::insert_numeric_variables_to_fact_set(state,
                                                      repository,
                                                      translation_context.fluent_to_fluent_function,
@@ -123,7 +123,7 @@ void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& stat
                                       const P2DTranslationContext<LiftedTag>& translation_context,
                                       datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
-    auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, workspace.workspace_repository };
+    auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, *workspace.workspace_repository };
     detail::insert_derived_atoms_to_fact_set(state, repository, translation_context.derived_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
 }
 

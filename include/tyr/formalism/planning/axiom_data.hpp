@@ -67,6 +67,7 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::body, &Data::head> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::body, &Data::head> {}; }
@@ -111,6 +112,7 @@ struct Data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding, &Data::body, &Data::head> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }

@@ -21,7 +21,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/action.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
 #include <atomic>

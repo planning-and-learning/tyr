@@ -36,12 +36,19 @@ template<TaskKind Kind>
 class WorkerEventHandler
 {
 public:
+    WorkerEventHandler() = default;
     virtual ~WorkerEventHandler() = default;
 
     virtual void on_expand_node(const Node<Kind>&) {}
     virtual void on_expand_goal_node(const Node<Kind>&) {}
     virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
     virtual void on_finish_f_layer(ygg::float_t) {}
+
+protected:
+    WorkerEventHandler(const WorkerEventHandler&) = default;
+    WorkerEventHandler& operator=(const WorkerEventHandler&) = default;
+    WorkerEventHandler(WorkerEventHandler&&) = default;
+    WorkerEventHandler& operator=(WorkerEventHandler&&) = default;
 };
 
 /// @brief Search-lifecycle events shared by all A* workers. on_finish_f_layer runs after a sequential f-layer completes or on the worker that completes a
@@ -51,6 +58,7 @@ template<TaskKind Kind>
 class EventHandler
 {
 public:
+    EventHandler() = default;
     virtual ~EventHandler() = default;
 
     virtual void on_start_search(const Node<Kind>& node, ygg::float_t f_value) = 0;
@@ -58,6 +66,12 @@ public:
     virtual void on_end_search(SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(const Plan<Kind>& plan) = 0;
     virtual WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<Worker>) { return nullptr; }
+
+protected:
+    EventHandler(const EventHandler&) = default;
+    EventHandler& operator=(const EventHandler&) = default;
+    EventHandler(EventHandler&&) = default;
+    EventHandler& operator=(EventHandler&&) = default;
 };
 
 template<TaskKind Kind>

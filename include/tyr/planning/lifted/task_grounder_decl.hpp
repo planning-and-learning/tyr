@@ -21,13 +21,14 @@
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {
 
-enum class GroundTaskInstantiationStatus
+enum class GroundTaskInstantiationStatus : std::uint8_t
 {
     SUCCESS,
     PROVEN_UNSOLVABLE,

@@ -59,8 +59,8 @@ public:
 
     void on_finish_iteration();
 
-    [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return m_context; }
-    [[nodiscard]] const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_rules() const noexcept { return m_rules; }
+    [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return *m_context; }
+    [[nodiscard]] const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_rules() const noexcept { return *m_rules; }
 
     /// Active rules in sorted index order: hash-set iteration order is platform-unspecified, but the
     /// rule processing order assigns program-repository rows (first-derivation order) that delta
@@ -73,9 +73,9 @@ public:
 private:
     void rebuild_sorted_active_rules();
 
-    const analysis::TypedRuleStratum<R>& m_rules;
-    const analysis::TypedListenerStratum<R>& m_listeners;
-    const formalism::datalog::Repository& m_context;
+    const analysis::TypedRuleStratum<R>* m_rules;
+    const analysis::TypedListenerStratum<R>* m_listeners;
+    const formalism::datalog::Repository* m_context;
 
     boost::dynamic_bitset<> m_active_predicates;
     boost::dynamic_bitset<> m_active_functions;

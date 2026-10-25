@@ -95,9 +95,9 @@ TEST(TyrTests, TyrFormalismUnificationComposeSubstitutions)
     ASSERT_TRUE(composed[tyr::formalism::ParameterIndex(1)].has_value());
     ASSERT_TRUE(composed[tyr::formalism::ParameterIndex(2)].has_value());
 
-    expect_term_eq(*composed[tyr::formalism::ParameterIndex(0)], object(4));
-    expect_term_eq(*composed[tyr::formalism::ParameterIndex(1)], object(4));
-    expect_term_eq(*composed[tyr::formalism::ParameterIndex(2)], object(9));
+    expect_term_eq(composed[tyr::formalism::ParameterIndex(0)].value(), object(4));
+    expect_term_eq(composed[tyr::formalism::ParameterIndex(1)].value(), object(4));
+    expect_term_eq(composed[tyr::formalism::ParameterIndex(2)].value(), object(9));
 
     expect_term_eq(tyr::formalism::unification::apply_substitution_fixpoint(parameter(0), composed), object(4));
     expect_term_eq(tyr::formalism::unification::apply_substitution_fixpoint(parameter(1), composed), object(4));
@@ -117,7 +117,7 @@ TEST(TyrTests, TyrFormalismUnificationSubstitutionTryGet)
     auto* slot = sigma.try_get(tyr::formalism::ParameterIndex(1));
     ASSERT_NE(slot, nullptr);
     ASSERT_TRUE(slot->has_value());
-    expect_term_eq(**slot, object(11));
+    expect_term_eq(slot->value(), object(11));
     EXPECT_TRUE(sigma.has_binding(tyr::formalism::ParameterIndex(1)));
     EXPECT_FALSE(sigma.has_binding(tyr::formalism::ParameterIndex(0)));
 }
@@ -130,7 +130,7 @@ TEST(TyrTests, TyrFormalismUnificationSubstitutionAssignOrCheckAndReset)
     EXPECT_TRUE(sigma.assign_or_check(tyr::formalism::ParameterIndex(0), object(5)));
     EXPECT_FALSE(sigma.assign_or_check(tyr::formalism::ParameterIndex(0), object(6)));
     EXPECT_TRUE(sigma.has_binding(tyr::formalism::ParameterIndex(0)));
-    expect_term_eq(*sigma[tyr::formalism::ParameterIndex(0)], object(5));
+    expect_term_eq(sigma[tyr::formalism::ParameterIndex(0)].value(), object(5));
 
     EXPECT_TRUE(sigma.assign_or_check(tyr::formalism::ParameterIndex(1), parameter(0)));
     EXPECT_FALSE(sigma.is_identity());
@@ -172,7 +172,7 @@ TEST(TyrTests, TyrFormalismUnificationMatchTermBindsSigmaParameters)
 
     EXPECT_TRUE(tyr::formalism::unification::match_term(parameter(0), object(3), state));
     ASSERT_TRUE(state.sigma[tyr::formalism::ParameterIndex(0)].has_value());
-    expect_term_eq(*state.sigma[tyr::formalism::ParameterIndex(0)], object(3));
+    expect_term_eq(state.sigma[tyr::formalism::ParameterIndex(0)].value(), object(3));
 }
 
 TEST(TyrTests, TyrFormalismUnificationMatchTermRejectsConflictingBindings)
@@ -207,8 +207,8 @@ TEST(TyrTests, TyrFormalismUnificationMatchExReportsFailure)
 
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.failure, tyr::formalism::unification::MatchFailure::none);
-    ASSERT_TRUE(result.state->sigma[tyr::formalism::ParameterIndex(0)].has_value());
-    expect_term_eq(*result.state->sigma[tyr::formalism::ParameterIndex(0)], object(8));
+    ASSERT_TRUE(result.state.value().sigma[tyr::formalism::ParameterIndex(0)].has_value());
+    expect_term_eq(result.state.value().sigma[tyr::formalism::ParameterIndex(0)].value(), object(8));
 }
 
 TEST(TyrTests, TyrFormalismUnificationMatchExReportsStructureMismatch)

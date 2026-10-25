@@ -77,9 +77,10 @@ std::optional<std::vector<ygg::Index<Object>>> extract_rigid_values(InvariantVie
     rigid_values.reserve(inv.get_num_rigid_variables());
     for (std::size_t i = 0; i < inv.get_num_rigid_variables(); ++i)
     {
-        if (!binding[i].has_value())
+        const auto& value = binding[i];
+        if (!value.has_value())
             return std::nullopt;
-        rigid_values.push_back(*binding[i]);
+        rigid_values.push_back(*value);
     }
     return rigid_values;
 }

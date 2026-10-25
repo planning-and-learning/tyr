@@ -258,7 +258,7 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 
     auto side_state = repository->get_state_builder();
     side_state->assign_unextended_part(initial.get_state_builder());
-    side_state->set(task->get_fdr_context()->get_fact(*side).get_data());
+    side_state->set(task->get_fdr_context()->get_fact(side.value()).get_data());
     EXPECT_EQ(first_hash.hash(*side_state), first_hash.hash(initial.get_state_builder()));
 
     auto landmark_state = repository->get_state_builder();

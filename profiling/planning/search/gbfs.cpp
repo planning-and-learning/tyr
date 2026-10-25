@@ -55,6 +55,8 @@ public:
 
     ScopedCoutSilencer(const ScopedCoutSilencer&) = delete;
     ScopedCoutSilencer& operator=(const ScopedCoutSilencer&) = delete;
+    ScopedCoutSilencer(ScopedCoutSilencer&&) = delete;
+    ScopedCoutSilencer& operator=(ScopedCoutSilencer&&) = delete;
 
 private:
     std::ofstream m_null_stream;
@@ -89,7 +91,7 @@ try
     auto num_generated_successors = static_cast<uint64_t>(0);
     auto solved = false;
 
-    for (auto _ : state)
+    for ([[maybe_unused]] auto _ : state)
     {
         auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
         auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);

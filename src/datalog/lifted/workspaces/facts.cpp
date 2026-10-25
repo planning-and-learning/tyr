@@ -33,7 +33,7 @@ FactsWorkspace<LiftedTag>::FactsWorkspace(formalism::datalog::PredicateListView<
     fact_sets(predicates, functions, atoms, fterm_values, workspace_repository),
     assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects, fact_sets),
     delta_fact_sets(predicates, functions, workspace_repository),
-    m_repository(&workspace_repository)
+    repository(&workspace_repository)
 {
 }
 

@@ -40,62 +40,62 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     class In
     {
     public:
-        explicit In(const ConstProgramWorkspace<LiftedTag>& cws) : m_cws(cws) {}
+        explicit In(const ConstProgramWorkspace<LiftedTag>& cws) : m_cws(&cws) {}
 
-        [[nodiscard]] const auto& facts() const noexcept { return m_cws.facts; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_cws->facts; }
         template<formalism::RelationKind R>
         [[nodiscard]] const auto& get_rules() const noexcept
-        { return m_cws.template get_rules<R>(); }
+        { return m_cws->template get_rules<R>(); }
 
     private:
-        const ConstProgramWorkspace<LiftedTag>& m_cws;
+        const ConstProgramWorkspace<LiftedTag>* m_cws;
     };
 
     class Out
     {
     public:
-        Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers) : m_ws(ws), m_schedulers(schedulers) {}
+        Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers) : m_ws(&ws), m_schedulers(&schedulers) {}
 
-        auto& facts() noexcept { return m_ws.facts; }
-        [[nodiscard]] const auto& facts() const noexcept { return m_ws.facts; }
-        auto& annotation_policy() noexcept { return m_ws.annotation_policy; }
-        [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
-        auto& annotations() noexcept { return m_ws.annotations; }
-        [[nodiscard]] const auto& annotations() const noexcept { return m_ws.annotations; }
-        auto& numeric_annotations() noexcept { return m_ws.numeric_annotations; }
-        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
-        auto& delta_annotations() noexcept { return m_ws.delta_annotations; }
-        [[nodiscard]] const auto& delta_annotations() const noexcept { return m_ws.delta_annotations; }
-        auto& delta_numeric_annotations() noexcept { return m_ws.delta_numeric_annotations; }
-        [[nodiscard]] const auto& delta_numeric_annotations() const noexcept { return m_ws.delta_numeric_annotations; }
-        [[nodiscard]] const auto& numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
+        auto& facts() noexcept { return m_ws->facts; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
+        auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
+        [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
+        auto& annotations() noexcept { return m_ws->annotations; }
+        [[nodiscard]] const auto& annotations() const noexcept { return m_ws->annotations; }
+        auto& numeric_annotations() noexcept { return m_ws->numeric_annotations; }
+        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws->numeric_annotations; }
+        auto& delta_annotations() noexcept { return m_ws->delta_annotations; }
+        [[nodiscard]] const auto& delta_annotations() const noexcept { return m_ws->delta_annotations; }
+        auto& delta_numeric_annotations() noexcept { return m_ws->delta_numeric_annotations; }
+        [[nodiscard]] const auto& delta_numeric_annotations() const noexcept { return m_ws->delta_numeric_annotations; }
+        [[nodiscard]] const auto& numeric_support_selector() const noexcept { return m_ws->get_numeric_support_selector(); }
         void rebuild_numeric_support_selector(const TaggedFactSets<formalism::StaticTag>& static_fact_sets)
-        { m_ws.numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws.facts.fact_sets }, m_ws.numeric_annotations, !AP::stores_annotations); }
-        void reset_numeric_support_selector() noexcept { m_ws.numeric_support_selector.reset(); }
-        auto& tp() noexcept { return m_ws.tp; }
-        [[nodiscard]] const auto& tp() const noexcept { return m_ws.tp; }
-        auto& cost_policy() noexcept { return m_ws.cost_policy; }
-        [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
-        auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
-        auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
+        { m_ws->numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws->facts.fact_sets }, m_ws->numeric_annotations, !AP::stores_annotations); }
+        void reset_numeric_support_selector() noexcept { m_ws->numeric_support_selector.reset(); }
+        auto& tp() noexcept { return m_ws->tp; }
+        [[nodiscard]] const auto& tp() const noexcept { return m_ws->tp; }
+        auto& cost_policy() noexcept { return m_ws->cost_policy; }
+        [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws->cost_policy; }
+        auto& cost_buckets() noexcept { return m_ws->cost_buckets; }
+        auto& pending_achievers() noexcept { return m_ws->pending_achievers; }
         template<formalism::RelationKind R>
         auto& get_rules() noexcept
-        { return m_ws.template get_rules<R>(); }
+        { return m_ws->template get_rules<R>(); }
         template<formalism::RelationKind R>
         [[nodiscard]] const auto& get_rules() const noexcept
-        { return m_ws.template get_rules<R>(); }
-        auto& datalog_builder() noexcept { return m_ws.datalog_builder; }
-        [[nodiscard]] const auto& datalog_builder() const noexcept { return m_ws.datalog_builder; }
-        auto& workspace_repository() noexcept { return m_ws.workspace_repository; }
-        [[nodiscard]] const auto& workspace_repository() const noexcept { return m_ws.workspace_repository; }
-        auto& schedulers() noexcept { return m_schedulers; }
-        [[nodiscard]] const auto& schedulers() const noexcept { return m_schedulers; }
-        auto& statistics() noexcept { return m_ws.statistics; }
-        [[nodiscard]] const auto& statistics() const noexcept { return m_ws.statistics; }
+        { return m_ws->template get_rules<R>(); }
+        auto& datalog_builder() noexcept { return m_ws->datalog_builder; }
+        [[nodiscard]] const auto& datalog_builder() const noexcept { return m_ws->datalog_builder; }
+        auto& workspace_repository() noexcept { return *m_ws->workspace_repository; }
+        [[nodiscard]] const auto& workspace_repository() const noexcept { return *m_ws->workspace_repository; }
+        auto& schedulers() noexcept { return *m_schedulers; }
+        [[nodiscard]] const auto& schedulers() const noexcept { return *m_schedulers; }
+        auto& statistics() noexcept { return m_ws->statistics; }
+        [[nodiscard]] const auto& statistics() const noexcept { return m_ws->statistics; }
 
     private:
-        ProgramWorkspace<LiftedTag, AP, TP, CP>& m_ws;
-        std::vector<Scheduler<LiftedTag>>& m_schedulers;
+        ProgramWorkspace<LiftedTag, AP, TP, CP>* m_ws;
+        std::vector<Scheduler<LiftedTag>>* m_schedulers;
     };
 
     explicit ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, size_t num_threads = 1) :
@@ -105,7 +105,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 
     /// Schedulers must use the workspace's repository and a subset of its rules.
     ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1) :
-        ProgramExecutionContext(In(ws.const_workspace), Out(ws, schedulers), num_threads)
+        ProgramExecutionContext(In(*ws.const_workspace), Out(ws, schedulers), num_threads)
     { clear(); }
 
     /// The caller has reset the workspace and inserted this evaluation's input facts.
@@ -115,12 +115,12 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     static ProgramExecutionContext
     from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1)
     {
-        auto context = ProgramExecutionContext(In(ws.const_workspace), Out(ws, schedulers), num_threads);
+        auto context = ProgramExecutionContext(In(*ws.const_workspace), Out(ws, schedulers), num_threads);
         context.initialize();
         return context;
     }
 
-    void clear() noexcept
+    void clear()
     {
         auto& out = this->out();
 

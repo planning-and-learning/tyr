@@ -34,21 +34,21 @@ template<>
 struct structure_traits<ygg::Data<Term>>
 {
     template<typename F>
-    static bool zip_terms(const ygg::Data<Term>& lhs, const ygg::Data<Term>& rhs, F&& f)
+    static bool zip_terms(const ygg::Data<Term>& lhs, const ygg::Data<Term>& rhs, F f)
     { return f(lhs, rhs); }
 
     template<typename F>
-    static ygg::Data<Term> transform_terms(const ygg::Data<Term>& value, F&& f)
+    static ygg::Data<Term> transform_terms(const ygg::Data<Term>& value, F f)
     { return f(value); }
 };
 
 /// @brief Free helper function to zip terms and template argument deduction.
 template<typename T, typename F>
-bool zip_terms(const T& lhs, const T& rhs, F&& f);
+bool zip_terms(const T& lhs, const T& rhs, F f);
 
 /// @brief Free helper function to transform terms and template argument deduction.
 template<typename T, typename F>
-T transform_terms(const T& value, F&& f);
+T transform_terms(const T& value, F f);
 
 namespace detail
 {

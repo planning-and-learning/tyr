@@ -48,6 +48,7 @@ struct Data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::elements> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::elements> {}; }

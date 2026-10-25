@@ -188,7 +188,8 @@ struct formatter<tyr::datalog::ProgramStatistics, char>
         const double parallel_ns = static_cast<double>(ygg::to_ns(value.parallel_time));
         const double total_ns = static_cast<double>(ygg::to_ns(value.total_time));
         const double frac = parallel_ns > 0.0 && total_ns > 0.0 ? parallel_ns / total_ns : 1.0;
-        const auto avg_total_us = value.num_executions > 0 ? ygg::to_us(value.total_time) / value.num_executions : 0.0;
+        const auto avg_total_us =
+            value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
 
         return fmt::format_to(ctx.out(),
                               "[ProgramStatistics] N_exec = {:>10}    | executions\n"
@@ -213,7 +214,8 @@ struct formatter<tyr::datalog::RuleStatistics, char>
     template<typename FormatContext>
     auto format(const tyr::datalog::RuleStatistics& value, FormatContext& ctx) const
     {
-        const auto avg_total_us = value.num_executions > 0 ? ygg::to_us(value.total_time) / value.num_executions : 0.0;
+        const auto avg_total_us =
+            value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
         return fmt::format_to(ctx.out(),
                               "[RuleStatistics] N_exec = {:>10}    | executions\n"
                               "[RuleStatistics] T_seq  = {:>10} ms | sequential time\n"
@@ -235,7 +237,8 @@ struct formatter<tyr::datalog::AggregatedRuleStatistics, char>
     template<typename FormatContext>
     auto format(const tyr::datalog::AggregatedRuleStatistics& value, FormatContext& ctx) const
     {
-        const auto avg_total_us = value.num_executions > 0 ? ygg::to_us(value.total_time) / value.num_executions : 0.0;
+        const auto avg_total_us =
+            value.num_executions > 0 ? static_cast<double>(ygg::to_us(value.total_time)) / static_cast<double>(value.num_executions) : 0.0;
         const double tot_max_ns = static_cast<double>(ygg::to_ns(value.tot_time_max));
         const double tot_med_ns = static_cast<double>(ygg::to_ns(value.tot_time_median));
         const double tot_skew = tot_max_ns > 0.0 && tot_med_ns > 0.0 ? tot_max_ns / tot_med_ns : 1.0;

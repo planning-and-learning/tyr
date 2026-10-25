@@ -71,16 +71,17 @@ struct InequalityDisjunction
     explicit InequalityDisjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts_);
 };
 
-struct EqualityConjunction
+class EqualityConjunction
 {
-    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities;
-
+public:
     explicit EqualityConjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities_);
 
+    const std::vector<std::pair<ConstraintTerm, ConstraintTerm>>& get_equalities() const noexcept { return m_equalities; }
     bool is_consistent() const;
     const ygg::Map<ConstraintTerm, ConstraintTerm>& get_representative() const;
 
 private:
+    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> m_equalities;
     mutable bool m_computed = false;
     mutable bool m_consistent = true;
     mutable ygg::Map<ConstraintTerm, ConstraintTerm> m_representative;

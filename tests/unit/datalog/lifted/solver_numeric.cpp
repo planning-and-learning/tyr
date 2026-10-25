@@ -98,15 +98,15 @@ TEST(TyrDatalogLiftedBottomUpTest, MissingLiteralBindingUsesClosedWorldPolarityW
 
     auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(fixture.program);
     workspace.binding.push_back(object.get_index());
-    auto grounder = tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, workspace.workspace_repository, workspace.binding };
-    const auto fact_sets = tyr::datalog::FactSets { workspace.const_workspace.facts.fact_sets, workspace.facts.fact_sets };
+    auto grounder = tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, *workspace.workspace_repository, workspace.binding };
+    const auto fact_sets = tyr::datalog::FactSets { workspace.const_workspace->facts.fact_sets, workspace.facts.fact_sets };
     const auto applicability_context = tyr::datalog::ApplicabilityContext { fact_sets, grounder };
     const auto relation = positive.get_atom().get_predicate().get_index();
-    const auto num_bindings = workspace.workspace_repository.size(relation);
+    const auto num_bindings = workspace.workspace_repository->size(relation);
 
     EXPECT_FALSE(tyr::datalog::is_applicable(positive, applicability_context));
     EXPECT_TRUE(tyr::datalog::is_applicable(negative, applicability_context));
-    EXPECT_EQ(workspace.workspace_repository.size(relation), num_bindings);
+    EXPECT_EQ(workspace.workspace_repository->size(relation), num_bindings);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, SumAnnotationPricesEachNumericSupportOccurrence)
@@ -210,8 +210,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
 
     tyr::datalog::compute_model(lifted_context);
 
-    EXPECT_EQ((lifted_workspace.workspace_repository.template size<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::PredicateTag>>()), 0);
-    EXPECT_EQ((lifted_workspace.workspace_repository.template size<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::FunctionTag>>()), 0);
+    EXPECT_EQ((lifted_workspace.workspace_repository->template size<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::PredicateTag>>()), 0);
+    EXPECT_EQ((lifted_workspace.workspace_repository->template size<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::FunctionTag>>()), 0);
 
     auto builder = tyr::formalism::datalog::Builder {};
     auto binding = ygg::IndexList<tyr::formalism::Object> {};
@@ -399,7 +399,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
     {
         EXPECT_EQ(achiever.get_rule_key().relation, goal_rule.get_index());
         auto& binding = bindings.emplace_back();
-        for (const auto object : ygg::make_view(achiever.get_rule_key(), workspace.workspace_repository).get_objects())
+        for (const auto object : ygg::make_view(achiever.get_rule_key(), *workspace.workspace_repository).get_objects())
             binding.push_back(object.get_index());
     }
     std::ranges::sort(bindings);
@@ -581,8 +581,8 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     auto context = tyr::datalog::ProgramExecutionContext(workspace);
     tyr::datalog::compute_model(context);
 
-    EXPECT_EQ(workspace.workspace_repository.size(rule.get_index()), 1);
-    EXPECT_EQ(workspace.workspace_repository.size(goal.get_index()), 1);
+    EXPECT_EQ(workspace.workspace_repository->size(rule.get_index()), 1);
+    EXPECT_EQ(workspace.workspace_repository->size(goal.get_index()), 1);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
@@ -607,34 +607,34 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     auto first = tyr::datalog::ProgramWorkspace<LiftedTag>(program);
     auto second = tyr::datalog::ProgramWorkspace<LiftedTag>(program);
 
-    EXPECT_NE(&first.workspace_repository, &second.workspace_repository);
-    EXPECT_EQ(&first.workspace_repository.get_root(), &program.get_program_repository());
-    EXPECT_EQ(&second.workspace_repository.get_root(), &program.get_program_repository());
+    EXPECT_NE(first.workspace_repository.get(), second.workspace_repository.get());
+    EXPECT_EQ(&first.workspace_repository->get_root(), &program.get_program_repository());
+    EXPECT_EQ(&second.workspace_repository->get_root(), &program.get_program_repository());
 
     auto variable = ygg::Data<tyr::formalism::Variable>(std::string("workspace-only"));
-    EXPECT_TRUE(first.workspace_repository.insert(variable).second);
-    EXPECT_FALSE(second.workspace_repository.find(variable).has_value());
+    EXPECT_TRUE(first.workspace_repository->insert(variable).second);
+    EXPECT_FALSE(second.workspace_repository->find(variable).has_value());
 
     auto second_variable = ygg::Data<tyr::formalism::Variable>(std::string("second-workspace-only"));
-    EXPECT_TRUE(second.workspace_repository.insert(second_variable).second);
+    EXPECT_TRUE(second.workspace_repository->insert(second_variable).second);
 
     auto binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     binding_data.relation = predicate.get_index();
     binding_data.objects.push_back(object.get_index());
-    const auto binding = first.workspace_repository.insert(binding_data).first;
+    const auto binding = first.workspace_repository->insert(binding_data).first;
     const auto binding_index = binding.get_index();
     first.annotations.insert_or_assign(binding.get_index(), tyr::datalog::BaseAnnotation(3));
 
     first.reset_evaluation();
 
-    EXPECT_FALSE(first.workspace_repository.find(ygg::Data<tyr::formalism::Variable>(std::string("workspace-only"))).has_value());
-    EXPECT_TRUE(second.workspace_repository.find(ygg::Data<tyr::formalism::Variable>(std::string("second-workspace-only"))).has_value());
-    EXPECT_EQ(&first.workspace_repository.get_root(), &program.get_program_repository());
+    EXPECT_FALSE(first.workspace_repository->find(ygg::Data<tyr::formalism::Variable>(std::string("workspace-only"))).has_value());
+    EXPECT_TRUE(second.workspace_repository->find(ygg::Data<tyr::formalism::Variable>(std::string("second-workspace-only"))).has_value());
+    EXPECT_EQ(&first.workspace_repository->get_root(), &program.get_program_repository());
 
     auto reused_binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     reused_binding_data.relation = predicate.get_index();
     reused_binding_data.objects.push_back(object.get_index());
-    const auto reused_binding = first.workspace_repository.insert(reused_binding_data).first;
+    const auto reused_binding = first.workspace_repository->insert(reused_binding_data).first;
     EXPECT_EQ(reused_binding.get_index(), binding_index);
     EXPECT_EQ(first.annotations.find(reused_binding.get_index()), nullptr);
 }

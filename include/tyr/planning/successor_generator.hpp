@@ -41,7 +41,7 @@ namespace tyr::planning
 /// The binding is present exactly when status is APPLICABLE and borrows the task repository.
 struct ActionBindingResult
 {
-    ActionBindingStatus status;
+    ActionBindingStatus status = ActionBindingStatus::INAPPLICABLE;
     std::optional<formalism::planning::ActionBindingView> binding;
 };
 

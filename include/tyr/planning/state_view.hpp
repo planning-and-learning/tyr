@@ -421,7 +421,4 @@ extern template class View<Index<::tyr::planning::State<::tyr::LiftedTag>>, std:
 extern template class View<Index<::tyr::planning::PackedState<::tyr::LiftedTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::LiftedTag>>>;
 }
 
-// State identity resolves through the owning StateRepository, which itself includes this header.
-#include "tyr/planning/state_repository.hpp"
-
 #endif

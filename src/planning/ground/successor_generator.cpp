@@ -30,7 +30,7 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_delta.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/task_utils.hpp"
 
 #include <algorithm>
@@ -128,9 +128,9 @@ struct SuccessorGenerator<GroundTag>::Impl
     template<StateViewConcept<GroundTag> S, typename Accept, typename Callback, typename Stop>
     bool for_each_applicable_action(const Node<GroundTag, S>& node,
                                     match_tree::MatchTree<formalism::planning::Action<GroundTag>>& tree,
-                                    Accept&& accept,
-                                    Callback&& callback,
-                                    Stop&& stop)
+                                    Accept accept,
+                                    Callback callback,
+                                    Stop stop)
     {
         if (stop())
             return false;
@@ -438,7 +438,7 @@ ActionBindingResult SuccessorGenerator<GroundTag>::Impl::try_get_applicable_acti
     const auto state = StateContext<GroundTag>(*task, node.get_state().get_state_builder(), node.get_metric());
     if (!evaluator.executor.is_applicable(found->second, state))
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
-    return { ActionBindingStatus::APPLICABLE, *binding };
+    return { ActionBindingStatus::APPLICABLE, binding };
 }
 
 template<StateViewConcept<GroundTag> S>
@@ -639,7 +639,7 @@ bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(
         tree,
         [&](const auto candidate) { return accept(candidate.get_row()); },
         [&](const auto candidate) { return callback(candidate.get_row()); },
-        stop);
+        [&] { return stop(); });
 }
 
 template<StateViewConcept<GroundTag> S>

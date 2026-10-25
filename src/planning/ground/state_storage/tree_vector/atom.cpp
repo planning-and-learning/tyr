@@ -27,9 +27,9 @@ namespace tyr::planning
 
 template<bool ThreadSafe>
 AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::AtomStorageBackend(Context& ctx) :
-    m_array_set(ctx.derived_array_set),
+    m_array_set(&ctx.derived_array_set),
     m_num_bits(ctx.derived_num_bits),
-    m_buffer(m_array_set.array_size())
+    m_buffer(m_array_set->array_size())
 {
 }
 
@@ -39,13 +39,13 @@ typename AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed AtomStora
     std::fill(m_buffer.begin(), m_buffer.end(), static_cast<ygg::uint_t>(0));
     for (ygg::uint_t i = 0; i < m_num_bits; ++i)
         ygg::bit::bit_reference(std::span(m_buffer), i) = unpacked.indices.test(i);
-    return Packed { m_array_set.insert(m_buffer) };
+    return Packed { m_array_set->insert(m_buffer) };
 }
 
 template<bool ThreadSafe>
 void AtomStorageBackend<GroundTag, TreeVector, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    const auto data = m_array_set[packed.index];
+    const auto data = (*m_array_set)[packed.index];
     auto& indices = unpacked.indices;
 
     if (indices.size() != m_num_bits)

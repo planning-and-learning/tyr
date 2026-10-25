@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <limits>
+#include <span>
 #include <vector>
 #include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/types.hpp>
@@ -60,13 +61,13 @@ private:
         auto get_row(size_t first)
         {
             const auto num_blocks = ygg::BitsetSpan<uint64_t>::num_blocks(m_second_size);
-            return ygg::BitsetSpan<uint64_t>(num_blocks == 0 ? m_rows.data() : m_rows.data() + first * num_blocks, m_second_size);
+            return ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
         }
 
         auto get_row(size_t first) const
         {
             const auto num_blocks = ygg::BitsetSpan<uint64_t>::num_blocks(m_second_size);
-            return ygg::BitsetSpan<const uint64_t>(num_blocks == 0 ? m_rows.data() : m_rows.data() + first * num_blocks, m_second_size);
+            return ygg::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
         }
 
         void set(size_t first, size_t second)
@@ -114,7 +115,7 @@ private:
         }
 
         template<typename Callback>
-        void for_each(Callback&& callback) const
+        void for_each(Callback callback) const
         {
             assert(constrained());
             for (size_t first = 0; first < m_first_size; ++first)
@@ -325,7 +326,7 @@ public:
     }
 
     template<typename Callback>
-    void for_each_binary_compatible(ygg::uint_t first_parameter, ygg::uint_t second_parameter, Callback&& callback) const
+    void for_each_binary_compatible(ygg::uint_t first_parameter, ygg::uint_t second_parameter, Callback callback) const
     {
         assert(first_parameter < second_parameter);
         const auto& compatible = m_binary_compatible[pair_index(m_unary_compatible.size(), first_parameter, second_parameter)];

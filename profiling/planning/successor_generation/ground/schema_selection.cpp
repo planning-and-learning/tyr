@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <benchmark/benchmark.h>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -86,7 +87,7 @@ void generate_forest(Forest& forest,
     }
 }
 
-enum class Operation
+enum class Operation : std::uint8_t
 {
     ONE,
     ALL,
@@ -244,7 +245,7 @@ try
             || !std::ranges::equal(reference, successors, [](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && lhs.node == rhs.node; }))
             throw std::runtime_error("Schema successor API disagrees with global filtering.");
     }
-    for (auto _ : state)
+    for ([[maybe_unused]] auto _ : state)
         generate();
     state.SetLabel(std::string(schema.get_name()));
     state.counters["num_ground_actions"] = static_cast<double>(all_actions.size());

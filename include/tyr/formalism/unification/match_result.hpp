@@ -18,12 +18,13 @@
 #ifndef TYR_FORMALISM_UNIFICATION_MATCH_RESULT_HPP_
 #define TYR_FORMALISM_UNIFICATION_MATCH_RESULT_HPP_
 
+#include <cstdint>
 #include <optional>
 
 namespace tyr::formalism::unification
 {
 
-enum class MatchFailure
+enum class MatchFailure : std::uint8_t
 {
     none,
     structure_mismatch,

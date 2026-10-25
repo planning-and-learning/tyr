@@ -258,15 +258,15 @@ ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag> element,
 
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
-{ return context.task.get_static_state().get(element); }
+{ return context.task().get_static_state().get(element); }
 
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> element, const StateContext<Kind>& context)
-{ return context.state_builder.get(element.get_index()); }
+{ return context.state_builder().get(element.get_index()); }
 
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::AuxiliaryTag>, const StateContext<Kind>& context)
-{ return context.auxiliary_value; }
+{ return context.auxiliary_value(); }
 
 template<TaskKind Kind>
 ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<Kind>& context)
@@ -334,11 +334,11 @@ bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView<Groun
 
 template<TaskKind Kind>
 bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::StaticTag> element, const StateContext<Kind>& context)
-{ return context.task.get_static_state().test(element.get_atom()) == element.get_polarity(); }
+{ return context.task().get_static_state().test(element.get_atom()) == element.get_polarity(); }
 
 template<TaskKind Kind>
 bool is_applicable(formalism::planning::LiteralView<GroundTag, formalism::DerivedTag> element, const StateContext<Kind>& context)
-{ return context.state_builder.test(element.get_atom().get_index()) == element.get_polarity(); }
+{ return context.state_builder().test(element.get_atom().get_index()) == element.get_polarity(); }
 
 template<TaskKind Kind, formalism::FactKind T>
 bool is_applicable(formalism::planning::LiteralListView<GroundTag, T> elements, const StateContext<Kind>& context)
@@ -351,7 +351,7 @@ bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> elemen
 {
     assert(element.has_value());
 
-    const auto value = context.state_builder.get(element.get_variable().get_index());
+    const auto value = context.state_builder().get(element.get_variable().get_index());
 
     if constexpr (std::same_as<P, formalism::PositiveTag>)
         return value == element.get_value();
@@ -396,7 +396,7 @@ bool is_applicable(formalism::planning::NumericEffectView<GroundTag, formalism::
     // Check fterm is well-defined in context
     if (element.get_operator() != formalism::NumericEffectOperatorKind::Assign)
     {
-        if (std::isnan(context.state_builder.get(fterm_index)))
+        if (std::isnan(context.state_builder().get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
     }
 

@@ -122,6 +122,7 @@ struct Data<::tyr::formalism::datalog::Program<T>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     /// Dispatches on the relation kind, mirroring FactSets::get<F>() and AssignmentSets::get<F>().
     template<::tyr::formalism::RelationKind R>

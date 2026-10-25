@@ -114,7 +114,7 @@ template<TaskKind Kind, SerializedSolverConcept<Kind> Solver, std::copy_construc
     requires requires(Reader& reader, const Solver& solver, const SearchResult<Kind>& result) {
         { std::invoke(reader, solver, result) } -> std::same_as<const Stats*>;
     }
-SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& options, Reader&& read_statistics)
+SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& options, Reader read_statistics)
 {
     const auto event_handler = options.event_handler ? options.event_handler : DefaultEventHandler<Kind, Stats>::create();
 

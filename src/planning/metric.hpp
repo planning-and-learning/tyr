@@ -53,11 +53,11 @@ ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const ygg::Builde
 {
     auto context = StateContext<Kind> { task, state, auxiliary_value };
     if (const auto metric = task.get_task().get_metric())
-        context.auxiliary_value = evaluate(metric.value().get_fexpr(), context);
+        context.auxiliary_value() = evaluate(metric.value().get_fexpr(), context);
     else
-        ++context.auxiliary_value;  // Assume unit cost if no metric is given.
+        ++context.auxiliary_value();  // Assume unit cost if no metric is given.
 
-    const auto result = ygg::FloatTolerance<ygg::float_t>::canonicalize(context.auxiliary_value);
+    const auto result = ygg::FloatTolerance<ygg::float_t>::canonicalize(context.auxiliary_value());
     if (!std::isfinite(result))
         throw std::runtime_error("Successor metric value is not finite.");
     return result;

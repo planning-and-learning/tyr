@@ -42,7 +42,7 @@ void TerminationPolicy<AggregationFunction>::set_goals(formalism::datalog::Conju
 }
 
 template<typename AggregationFunction>
-bool TerminationPolicy<AggregationFunction>::check(const FactSets& fact_sets) const noexcept
+bool TerminationPolicy<AggregationFunction>::check(const FactSets& fact_sets) const
 {
     if (!goals)
         return false;
@@ -51,14 +51,14 @@ bool TerminationPolicy<AggregationFunction>::check(const FactSets& fact_sets) co
 }
 
 template<typename AggregationFunction>
-bool TerminationPolicy<AggregationFunction>::should_terminate(const FactSets& fact_sets) const noexcept
+bool TerminationPolicy<AggregationFunction>::should_terminate(const FactSets& fact_sets) const
 { return early_termination && check(fact_sets); }
 
 template<typename AggregationFunction>
 Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&,
                                                             const PredicateAnnotations<>& annotations,
                                                             const FunctionAnnotations<>&,
-                                                            const NumericSupportSelector& numeric_support_selector) const noexcept
+                                                            const NumericSupportSelector& numeric_support_selector) const
 {
     if (!goals)
         return AggregationFunction::identity();

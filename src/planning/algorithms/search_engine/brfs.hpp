@@ -173,7 +173,7 @@ public:
                                       SearchNode& successor_search_node,
                                       bool is_new,
                                       EvaluateHeuristic&&,
-                                      EmitTransition&& emit_transition)
+                                      EmitTransition emit_transition)
     {
         if (!is_new)
         {
@@ -232,10 +232,11 @@ private:
     std::deque<PoppedEntry> m_openlist;
 };
 
-static_assert(sizeof(BreadthFirstPolicy<LiftedTag, SequentialSearch>::SearchNode) == 12);
-static_assert(sizeof(BreadthFirstPolicy<GroundTag, SequentialSearch>::SearchNode) == 12);
-static_assert(sizeof(BreadthFirstPolicy<LiftedTag, ParallelSearch>::SearchNode) == 16);
-static_assert(sizeof(BreadthFirstPolicy<GroundTag, ParallelSearch>::SearchNode) == 16);
+// Search nodes are dense in hot loops; these sizes guard their layout.
+static_assert(sizeof(BreadthFirstPolicy<LiftedTag, SequentialSearch>::SearchNode) == 3 * sizeof(ygg::uint_t));
+static_assert(sizeof(BreadthFirstPolicy<GroundTag, SequentialSearch>::SearchNode) == 3 * sizeof(ygg::uint_t));
+static_assert(sizeof(BreadthFirstPolicy<LiftedTag, ParallelSearch>::SearchNode) == 4 * sizeof(ygg::uint_t));
+static_assert(sizeof(BreadthFirstPolicy<GroundTag, ParallelSearch>::SearchNode) == 4 * sizeof(ygg::uint_t));
 
 }
 

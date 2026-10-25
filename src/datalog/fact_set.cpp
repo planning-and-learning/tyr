@@ -35,7 +35,7 @@ namespace tyr::datalog
 template<formalism::FactKind T>
 PredicateFactSet<T>::PredicateFactSet(formalism::datalog::PredicateView<T> predicate, const formalism::datalog::Repository& repository) :
     m_predicate(predicate),
-    m_repository(repository),
+    m_repository(&repository),
     m_predicate_index(m_predicate.get_index()),
     m_bitset()
 {
@@ -98,7 +98,7 @@ template<formalism::FactKind T>
 PredicateBindingViewRange<T> PredicateFactSet<T>::get_bindings() const noexcept
 {
     auto rows = detail::PredicateFactRowRange { detail::PredicateFactRowIterator { m_bitset, true }, detail::PredicateFactRowIterator { m_bitset, false } };
-    auto bindings = ygg::make_view(detail::PredicateBindingRange<T> { &m_predicate_index, &rows }, m_repository);
+    auto bindings = ygg::make_view(detail::PredicateBindingRange<T> { &m_predicate_index, &rows }, *m_repository);
     return { bindings.begin(), bindings.end() };
 }
 
@@ -174,7 +174,7 @@ template class PredicateFactSets<formalism::FluentTag>;
 template<formalism::FactKind T>
 FunctionFactSet<T>::FunctionFactSet(formalism::datalog::FunctionView<T> function, const formalism::datalog::Repository& repository) :
     m_function(function),
-    m_repository(repository),
+    m_repository(&repository),
     m_function_index(function.get_index()),
     m_bindings(),
     m_values()
@@ -310,7 +310,7 @@ formalism::datalog::FunctionBindingRandomAccessRangeView<T> FunctionFactSet<T>::
 {
     return ygg::make_view(
         formalism::RelationBindingsRandomAccessRange<formalism::Function<T>, std::vector<ygg::Index<formalism::Row>>> { &m_function_index, &m_bindings },
-        m_repository);
+        *m_repository);
 }
 
 template<formalism::FactKind T>
@@ -459,8 +459,8 @@ template struct TaggedFactSets<formalism::FluentTag>;
  */
 
 FactSets::FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const TaggedFactSets<formalism::FluentTag>& fluent_sets) noexcept :
-    static_sets(static_sets),
-    fluent_sets(fluent_sets)
+    m_static_sets(&static_sets),
+    m_fluent_sets(&fluent_sets)
 {
 }
 
@@ -468,9 +468,9 @@ template<formalism::FactKind T>
 const TaggedFactSets<T>& FactSets::get() const
 {
     if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return static_sets;
+        return *m_static_sets;
     else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-        return fluent_sets;
+        return *m_fluent_sets;
     else
         throw std::logic_error("FactSets stores only static and fluent fact sets.");
 }

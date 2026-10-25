@@ -32,6 +32,9 @@
 namespace tyr::planning::gbfs_lazy
 {
 
+/// Default of Options::boost_preferred_queue: the boost given to the preferred queue when search makes progress.
+inline constexpr ygg::uint_t default_boost_preferred_queue = 1000;
+
 template<TaskKind Kind>
 struct Options
 {
@@ -43,7 +46,7 @@ struct Options
     SearchBudget search_budget;
     CostMode cost_mode = CostMode::GENERAL;
     bool use_preferred_actions = true;
-    ygg::uint_t boost_preferred_queue = 1000;
+    ygg::uint_t boost_preferred_queue = default_boost_preferred_queue;
     /// Values above one enable parallel search. A concurrent state repository shares storage; a private one is hash-distributed.
     size_t num_search_workers = 1;
     DistHashMode dist_hash_mode = DistHashMode::RANDOM;

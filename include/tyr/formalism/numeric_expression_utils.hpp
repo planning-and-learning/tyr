@@ -94,14 +94,14 @@ auto evaluate(const Expression& expression, ResolveTerm& resolve_term)
 /// Evaluates a lifted or ground numeric expression. Term resolution is supplied by the caller so
 /// fact lookup, lazy grounding, and support selection share one deterministic traversal.
 template<typename Expression, typename ResolveTerm>
-auto evaluate_numeric_expression(Expression expression, ResolveTerm&& resolve_term)
+auto evaluate_numeric_expression(Expression expression, ResolveTerm resolve_term)
 { return numeric_evaluation_detail::evaluate(std::move(expression), resolve_term); }
 
 /// Evaluates the right-hand side before resolving the target. Assign never resolves its target.
 template<typename Effect, typename ResolveTerm>
-ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(const Effect& effect, ResolveTerm&& resolve_term)
+ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(const Effect& effect, ResolveTerm resolve_term)
 {
-    const auto rhs = numeric_evaluation_detail::evaluate(effect.get_fexpr(), resolve_term);
+    auto rhs = numeric_evaluation_detail::evaluate(effect.get_fexpr(), resolve_term);
     if (empty(rhs))
         return {};
 

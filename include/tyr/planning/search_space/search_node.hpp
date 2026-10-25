@@ -26,7 +26,7 @@
 namespace tyr::planning
 {
 
-enum SearchNodeStatus : uint8_t
+enum class SearchNodeStatus : uint8_t
 {
     GOAL = 0,
     DEAD_END = 1,

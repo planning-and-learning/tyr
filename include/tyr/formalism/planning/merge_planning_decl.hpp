@@ -25,10 +25,18 @@
 namespace tyr::formalism::planning
 {
 
-struct MergePlanningContext
+/// Where grounding, copying or merging writes: the objects are the caller's and outlive the context.
+class MergePlanningContext
 {
-    Builder& builder;
-    Repository& destination;
+public:
+    MergePlanningContext(Builder& builder, Repository& destination) noexcept : m_builder(&builder), m_destination(&destination) {}
+
+    [[nodiscard]] Builder& builder() const noexcept { return *m_builder; }
+    [[nodiscard]] Repository& destination() const noexcept { return *m_destination; }
+
+private:
+    Builder* m_builder;
+    Repository* m_destination;
 };
 
 }

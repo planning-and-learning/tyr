@@ -39,18 +39,18 @@ namespace
 {
 std::pair<FDRVariableView<FluentTag>, bool> copy(FDRVariableView<FluentTag> element, CopyContext& context)
 {
-    auto variable = planning::checkout<FDRVariable<FluentTag>>(context.builder);
+    auto variable = planning::checkout<FDRVariable<FluentTag>>(context.builder());
 
     for (const auto atom : element.get_atoms())
         variable->atoms.push_back(copy(atom, context).first.get_index());
 
-    return planning::insert(context.destination, *variable);
+    return planning::insert(context.destination(), *variable);
 }
 
 FDRFactView<FluentTag> copy(FDRFactView<FluentTag> element, CopyContext& context)
 {
     const auto variable = copy(element.get_variable(), context).first;
-    return ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable.get_index(), element.get_value()), context.destination);
+    return ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable.get_index(), element.get_value()), context.destination());
 }
 }
 

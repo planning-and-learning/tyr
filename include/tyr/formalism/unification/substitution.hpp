@@ -128,12 +128,12 @@ public:
     }
 
     template<typename F>
-    void for_each_binding(F&& f) const
+    void for_each_binding(F f) const
     {
         for (size_t i = 0; i < m_parameters.size(); ++i)
         {
-            if (m_data[i].has_value())
-                std::forward<F>(f)(m_parameters[i], *m_data[i]);
+            if (const auto& slot = m_data[i]; slot.has_value())
+                f(m_parameters[i], *slot);
         }
     }
 

@@ -44,6 +44,11 @@ private:
 public:
     ~AxiomEvaluator();
 
+    AxiomEvaluator(const AxiomEvaluator&) = delete;
+    AxiomEvaluator& operator=(const AxiomEvaluator&) = delete;
+    AxiomEvaluator(AxiomEvaluator&&) = delete;
+    AxiomEvaluator& operator=(AxiomEvaluator&&) = delete;
+
     void compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder);
     [[nodiscard]] AxiomEvaluatorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 

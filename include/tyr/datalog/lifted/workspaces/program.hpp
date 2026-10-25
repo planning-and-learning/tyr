@@ -48,14 +48,10 @@ namespace tyr::datalog
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 {
-    const ConstProgramWorkspace<LiftedTag>& const_workspace;
-    const formalism::datalog::Repository& program_repository;
-
-private:
-    formalism::datalog::RepositoryPtr m_workspace_repository;
-
-public:
-    formalism::datalog::Repository& workspace_repository;
+    const ConstProgramWorkspace<LiftedTag>* const_workspace;
+    const formalism::datalog::Repository* program_repository;
+    /// Holds what evaluation derives; the program's repository is its parent.
+    formalism::datalog::RepositoryPtr workspace_repository;
 
     FactsWorkspace<LiftedTag> facts;
 

@@ -75,9 +75,9 @@ PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const GraphLayout& layout
 }
 
 DeltaKCKP::DeltaKCKP(const Graph& graph, const PartitionedAdjacencyLayout& adjacency_layout) :
-    m_layout(graph.get_layout()),
-    m_delta_graph(m_layout, adjacency_layout, graph.get_adjacency_matrix()),
-    m_full_graph(m_layout, adjacency_layout, graph.get_adjacency_matrix())
+    m_layout(&graph.get_layout()),
+    m_delta_graph(graph.get_layout(), adjacency_layout, graph.get_adjacency_matrix()),
+    m_full_graph(graph.get_layout(), adjacency_layout, graph.get_adjacency_matrix())
 {
 }
 
@@ -98,35 +98,36 @@ const std::vector<Edge>& DeltaKCKP::materialize_delta_edges()
 
 void DeltaKCKP::seed_without_anchor(Workspace& workspace) const
 {
-    workspace.prepare(m_layout);
+    workspace.prepare(*m_layout);
     workspace.partial_solution_size = 0;
     workspace.partition_bits.reset();
     workspace.anchor_pi = std::numeric_limits<ygg::uint_t>::max();
     workspace.anchor_pj = std::numeric_limits<ygg::uint_t>::max();
 
     auto compatible_row = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
-        const auto& info = m_layout.info.infos[partition];
-        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.data() + info.block_offset, info.num_bits);
+        const auto& info = m_layout->info.infos[partition];
+        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         compatible.copy_from(m_full_graph.matrix.affected_partitions().get_bitset(info));
     }
 }
 
 bool DeltaKCKP::seed_from_anchor(const Edge& edge, Workspace& workspace) const
-{ return prepare_anchor_source(edge.src, m_layout.vertex_to_partition[edge.dst.index], workspace) && seed_from_prepared_anchor(edge, workspace); }
+{ return prepare_anchor_source(edge.src, m_layout->vertex_to_partition[edge.dst.index], workspace) && seed_from_prepared_anchor(edge, workspace); }
 
 bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partition, Workspace& workspace) const
 {
-    workspace.prepare(m_layout);
-    const auto source_partition = m_layout.vertex_to_partition[source.index];
-    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+    workspace.prepare(*m_layout);
+    const auto source_partition = m_layout->vertex_to_partition[source.index];
+    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
         if (partition == source_partition || partition == target_partition)
             continue;
 
-        const auto& info = m_layout.info.infos[partition];
-        auto row = ygg::BitsetSpan<uint64_t>(workspace.anchor_source_data.data() + info.block_offset, info.num_bits);
+        const auto& info = m_layout->info.infos[partition];
+        auto row =
+            ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         m_full_graph.matrix.copy_adjacency_to(source.index, partition, row);
         if (partition < target_partition)
             m_delta_graph.matrix.subtract_adjacency_from(source.index, partition, row);
@@ -138,8 +139,8 @@ bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partitio
 
 bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace) const
 {
-    const auto source_partition = m_layout.vertex_to_partition[edge.src.index];
-    const auto target_partition = m_layout.vertex_to_partition[edge.dst.index];
+    const auto source_partition = m_layout->vertex_to_partition[edge.src.index];
+    const auto target_partition = m_layout->vertex_to_partition[edge.dst.index];
     assert(source_partition < target_partition);
 
     workspace.partial_solution[source_partition] = edge.src;
@@ -152,14 +153,16 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
     workspace.partition_bits.set(target_partition);
 
     auto compatible_row = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
         if (partition == source_partition || partition == target_partition)
             continue;
 
-        const auto& info = m_layout.info.infos[partition];
-        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.data() + info.block_offset, info.num_bits);
-        compatible.copy_from(ygg::BitsetSpan<const uint64_t>(workspace.anchor_source_data.data() + info.block_offset, info.num_bits));
+        const auto& info = m_layout->info.infos[partition];
+        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        compatible.copy_from(
+            ygg::BitsetSpan<const uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(),
+                                            info.num_bits));
         m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, partition, compatible);
         if (partition < source_partition)
             m_delta_graph.matrix.subtract_adjacency_from(edge.dst.index, partition, compatible);
@@ -172,7 +175,7 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
 bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const
 {
     assert(!vertices.empty());
-    workspace.prepare(m_layout);
+    workspace.prepare(*m_layout);
     workspace.partial_solution_size = 0;
     workspace.partition_bits.reset();
     workspace.anchor_pi = std::numeric_limits<ygg::uint_t>::max();
@@ -181,9 +184,9 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
     for (size_t i = 0; i < vertices.size(); ++i)
     {
         const auto vertex = vertices[i].index;
-        const auto partition = m_layout.vertex_to_partition[vertex];
-        const auto& info = m_layout.info.infos[partition];
-        const auto bit = m_layout.vertex_to_bit[vertex];
+        const auto partition = m_layout->vertex_to_partition[vertex];
+        const auto& info = m_layout->info.infos[partition];
+        const auto bit = m_layout->vertex_to_bit[vertex];
         assert(!workspace.partition_bits.test(partition));
 
         if (!m_full_graph.affected_partitions.get_bitset(info).test(bit) || m_delta_graph.delta_partitions.get_bitset(info).test(bit))
@@ -201,13 +204,13 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
     }
 
     auto compatible_row = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
         if (workspace.partition_bits.test(partition))
             continue;
 
-        const auto& info = m_layout.info.infos[partition];
-        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.data() + info.block_offset, info.num_bits);
+        const auto& info = m_layout->info.infos[partition];
+        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         m_full_graph.matrix.copy_adjacency_to(vertices.front().index, partition, compatible);
         for (const auto vertex : vertices.subspan(1))
             m_full_graph.matrix.intersect_adjacency_with(vertex.index, partition, compatible);
@@ -225,13 +228,13 @@ ygg::uint_t DeltaKCKP::choose_best_partition(size_t depth, const Workspace& work
     auto best_set_bits = std::numeric_limits<ygg::uint_t>::max();
     const auto current_row = workspace.compatible_vertices(depth);
 
-    for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
         if (workspace.partition_bits.test(partition))
             continue;
 
-        const auto& info = m_layout.info.infos[partition];
-        const auto current = ygg::BitsetSpan<const uint64_t>(current_row.data() + info.block_offset, info.num_bits);
+        const auto& info = m_layout->info.infos[partition];
+        const auto current = ygg::BitsetSpan<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         const auto num_set_bits = current.count();
         if (num_set_bits < best_set_bits)
         {

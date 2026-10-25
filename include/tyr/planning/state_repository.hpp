@@ -49,6 +49,11 @@ private:
 public:
     ~StateRepository();
 
+    StateRepository(const StateRepository&) = delete;
+    StateRepository& operator=(const StateRepository&) = delete;
+    StateRepository(StateRepository&&) = delete;
+    StateRepository& operator=(StateRepository&&) = delete;
+
     StateView<Kind> get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator);
     StateView<Kind> get_registered_state(ygg::Index<State<Kind>> state_index);
 
@@ -90,6 +95,7 @@ public:
 
     /// A repository owns the states it registers.
     friend const StateRepository& get_repository(const StateRepository& repository) noexcept { return repository; }
+    friend const StateRepository& get_repository(const StateRepository&& repository) = delete;
 
 private:
     std::unique_ptr<Impl> m_impl;

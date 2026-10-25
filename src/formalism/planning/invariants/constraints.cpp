@@ -22,6 +22,7 @@
 #include <set>
 #include <type_traits>
 #include <yggdrasil/containers/associative_containers.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -68,7 +69,7 @@ struct DisjointSet
 
 InequalityDisjunction::InequalityDisjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts_) : parts(std::move(parts_)) {}
 
-EqualityConjunction::EqualityConjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities_) : equalities(std::move(equalities_)) {}
+EqualityConjunction::EqualityConjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities_) : m_equalities(std::move(equalities_)) {}
 
 void EqualityConjunction::compute() const
 {
@@ -91,7 +92,7 @@ void EqualityConjunction::compute() const
         return id;
     };
 
-    for (const auto& [a, b] : equalities)
+    for (const auto& [a, b] : m_equalities)
     {
         get_id(a);
         get_id(b);
@@ -99,7 +100,7 @@ void EqualityConjunction::compute() const
 
     DisjointSet dsu(terms.size());
 
-    for (const auto& [a, b] : equalities)
+    for (const auto& [a, b] : m_equalities)
         dsu.unite(ids.at(a), ids.at(b));
 
     ygg::Map<size_t, std::vector<ConstraintTerm>> classes;
@@ -133,9 +134,11 @@ void EqualityConjunction::compute() const
             return;
         }
 
-        const auto representative = object_rep.has_value() ? *object_rep : *fallback_rep;
+        // A class without object terms has a non-object term, so one of the two is set.
+        const auto& representative = object_rep.has_value() ? object_rep : fallback_rep;
+        YGG_ASSUME(representative.has_value());
         for (const auto& term : eq_class)
-            m_representative.emplace(term, representative);
+            m_representative.emplace(term, *representative);
     }
 }
 
@@ -170,13 +173,13 @@ EqualityConjunction ConstraintSystem::combine_equality_conjunctions(const std::v
 {
     size_t total = 0;
     for (const auto& c : conjunctions)
-        total += c.equalities.size();
+        total += c.get_equalities().size();
 
     std::vector<std::pair<ConstraintTerm, ConstraintTerm>> all_equalities;
     all_equalities.reserve(total);
 
     for (const auto& c : conjunctions)
-        all_equalities.insert(all_equalities.end(), c.equalities.begin(), c.equalities.end());
+        all_equalities.insert(all_equalities.end(), c.get_equalities().begin(), c.get_equalities().end());
     return EqualityConjunction(std::move(all_equalities));
 }
 

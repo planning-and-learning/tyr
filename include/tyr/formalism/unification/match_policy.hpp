@@ -21,12 +21,13 @@
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
 
+#include <cstdint>
 #include <optional>
 
 namespace tyr::formalism::unification
 {
 
-enum class ParameterRole
+enum class ParameterRole : std::uint8_t
 {
     rigid,
     sigma,

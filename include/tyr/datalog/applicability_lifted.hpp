@@ -74,11 +74,11 @@ bool is_applicable(formalism::datalog::RuleView<LiftedTag, R> element, const App
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
-    const auto binding = try_ground_binding(element, context.grounder);
+    const auto binding = try_ground_binding(element, context.grounder());
     if (!binding)
         return {};
 
-    return context.fact_sets.template get<T>().function[*binding];
+    return context.fact_sets().template get<T>().function[*binding];
 }
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
@@ -110,11 +110,11 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectOper
 template<formalism::FactKind T>
 bool is_applicable(formalism::datalog::LiteralView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
-    const auto binding = try_ground_binding(element.get_atom(), context.grounder);
+    const auto binding = try_ground_binding(element.get_atom(), context.grounder());
     if (!binding)
         return !element.get_polarity();
 
-    return context.fact_sets.template get<T>().predicate.contains(*binding) == element.get_polarity();
+    return context.fact_sets().template get<T>().predicate.contains(*binding) == element.get_polarity();
 }
 
 template<formalism::FactKind T>

@@ -21,6 +21,8 @@
 #include "tyr/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <cstdint>
+
 namespace tyr::datalog
 {
 template<formalism::FactKind T>
@@ -35,7 +37,7 @@ class FunctionAssignmentSets;
 template<formalism::FactKind T>
 struct TaggedAssignmentSets;
 
-struct AssignmentSets;
+class AssignmentSets;
 
 template<formalism::FactKind T>
 class PredicateFactSet;
@@ -45,9 +47,9 @@ class FunctionFactSet;
 template<formalism::FactKind T>
 struct TaggedFactSets;
 
-struct FactSets;
+class FactSets;
 
-enum class SchedulerIterationTrigger
+enum class SchedulerIterationTrigger : std::uint8_t
 {
     AnnotationImproved,
     FactChanged
@@ -104,9 +106,6 @@ struct AggregatedRuleWorkerStatistics;
 
 namespace details
 {
-class Vertex;
-class Edge;
-
 struct RuleToLiteralInfoMappings;
 struct RuleToLiteralPositionMappings;
 template<formalism::FactKind T>

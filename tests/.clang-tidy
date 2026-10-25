@@ -1,7 +1,12 @@
 # Tests: literal values are the test data. Tests read optionals with value(), whose
-# bad_optional_access fails the test: the check cannot see gtest's ASSERTs.
+# bad_optional_access fails the test: the check cannot see gtest's ASSERTs. Concept tests
+# shadow a method to show that the concept rejects the type, a test checks a handle's
+# moved-from state, and validation tests cast invalid enum values to show they are rejected.
 InheritParentConfig: true
 Checks: >
-  -cppcoreguidelines-avoid-magic-numbers
+  -cppcoreguidelines-avoid-magic-numbers,
+  -bugprone-derived-method-shadowing-base-method,
+  -bugprone-use-after-move,
+  -clang-analyzer-optin.core.EnumCastOutOfRange
 CheckOptions:
   bugprone-unchecked-optional-access.IgnoreValueCalls: true

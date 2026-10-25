@@ -78,10 +78,13 @@ struct GraphLayout
 class VertexPartitions
 {
 public:
-    explicit VertexPartitions(const GraphLayout& layout) : m_layout(layout), m_data(layout.info.num_blocks, 0) {}
+    explicit VertexPartitions(const GraphLayout& layout) : m_layout(&layout), m_data(layout.info.num_blocks, 0) {}
 
     friend bool operator==(const VertexPartitions& lhs, const VertexPartitions& rhs) noexcept
-    { return lhs.m_layout.num_vertices == rhs.m_layout.num_vertices && lhs.m_layout.num_partitions == rhs.m_layout.num_partitions && lhs.m_data == rhs.m_data; }
+    {
+        return lhs.m_layout->num_vertices == rhs.m_layout->num_vertices && lhs.m_layout->num_partitions == rhs.m_layout->num_partitions
+               && lhs.m_data == rhs.m_data;
+    }
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), uint64_t { 0 }); }
 
@@ -92,10 +95,10 @@ public:
 
     auto& data() noexcept { return m_data; }
     [[nodiscard]] const auto& data() const noexcept { return m_data; }
-    [[nodiscard]] const auto& layout() const noexcept { return m_layout; }
+    [[nodiscard]] const auto& layout() const noexcept { return *m_layout; }
 
 private:
-    const GraphLayout& m_layout;
+    const GraphLayout* m_layout;
     std::vector<uint64_t> m_data;
 };
 
@@ -207,7 +210,7 @@ void complete_clique(const GraphLayout& layout,
 
     const auto& info = layout.info.infos[partition];
     const auto row = workspace.compatible_vertices(depth);
-    const auto candidates = ygg::BitsetSpan<const uint64_t>(row.data() + info.block_offset, info.num_bits);
+    const auto candidates = ygg::BitsetSpan<const uint64_t>(row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
 
     for (const auto bit : ygg::set_bit_indices(candidates))
     {
@@ -233,16 +236,16 @@ void complete_clique(const GraphLayout& layout,
 class KCKP
 {
 public:
-    explicit KCKP(const Graph& graph) : m_graph(graph) {}
+    explicit KCKP(const Graph& graph) : m_graph(&graph) {}
     KCKP(Graph&&) = delete;
 
     template<typename Callback>
-    void for_each_clique(Callback&& callback, Workspace& workspace) const
+    void for_each_clique(Callback callback, Workspace& workspace) const
     {
-        if (!m_graph.is_satisfiable() || !seed_from_prefix(std::span<const Vertex> {}, workspace))
+        if (!m_graph->is_satisfiable() || !seed_from_prefix(std::span<const Vertex> {}, workspace))
             return;
 
-        if (m_graph.get_layout().num_partitions == 0)
+        if (m_graph->get_layout().num_partitions == 0)
         {
             callback(workspace.partial_solution);
             return;
@@ -252,11 +255,11 @@ public:
     }
 
     template<typename Callback>
-    void for_each_compatible_extension(std::span<const Vertex> prefix, Workspace& workspace, Callback&& callback) const
+    void for_each_compatible_extension(std::span<const Vertex> prefix, Workspace& workspace, Callback callback) const
     {
-        const auto& layout = m_graph.get_layout();
+        const auto& layout = m_graph->get_layout();
         assert(prefix.size() <= layout.num_partitions);
-        if (!m_graph.is_satisfiable() || !seed_from_prefix(prefix, workspace))
+        if (!m_graph->is_satisfiable() || !seed_from_prefix(prefix, workspace))
             return;
 
         if (prefix.size() == layout.num_partitions)
@@ -266,12 +269,11 @@ public:
         }
 
         const auto first_partition = static_cast<ygg::uint_t>(prefix.size());
-        auto emit = [&](const std::vector<Vertex>& clique)
-        { callback(std::span<const Vertex>(clique.data() + first_partition, layout.num_partitions - first_partition)); };
+        auto emit = [&](const std::vector<Vertex>& clique) { callback(std::span<const Vertex>(clique).subspan(first_partition)); };
         complete_from_prefix(first_partition, workspace, emit);
     }
 
-    [[nodiscard]] const Graph& get_graph() const noexcept { return m_graph; }
+    [[nodiscard]] const Graph& get_graph() const noexcept { return *m_graph; }
 
 private:
     bool seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace) const;
@@ -281,45 +283,46 @@ private:
     bool update_candidates(ygg::uint_t first_partition, Vertex source, size_t depth, Workspace& workspace) const;
 
     template<typename Callback>
-    void complete_from_prefix(ygg::uint_t first_partition, Workspace& workspace, Callback&& callback) const
+    void complete_from_prefix(ygg::uint_t first_partition, Workspace& workspace, Callback& callback) const
     {
-        const auto& layout = m_graph.get_layout();
+        const auto& layout = m_graph->get_layout();
         auto select_partition = [&](size_t, const Workspace& current) { return choose_next_partition(first_partition, current); };
         auto update_compatible = [&](Vertex source, size_t depth, Workspace& current) { return update_candidates(first_partition, source, depth, current); };
         detail::complete_clique(layout, 0, workspace, select_partition, update_compatible, callback);
     }
 
-    const Graph& m_graph;
+    const Graph* m_graph;
 };
 
 inline ygg::BitsetSpan<uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) noexcept
-{ return ygg::BitsetSpan<uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+{ return ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(m_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits); }
 
 inline ygg::BitsetSpan<const uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) const noexcept
-{ return ygg::BitsetSpan<const uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+{ return ygg::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits); }
 
-inline ygg::BitsetSpan<uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) noexcept { return get_bitset(m_layout.info.infos[partition]); }
+inline ygg::BitsetSpan<uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) noexcept { return get_bitset(m_layout->info.infos[partition]); }
 
-inline ygg::BitsetSpan<const uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) const noexcept { return get_bitset(m_layout.info.infos[partition]); }
+inline ygg::BitsetSpan<const uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) const noexcept
+{ return get_bitset(m_layout->info.infos[partition]); }
 
 inline std::span<const uint64_t> AdjacencyMatrix::get_row(ygg::uint_t vertex) const noexcept
 {
     const auto offset = m_layout.info.num_blocks * vertex;
-    return std::span<const uint64_t>(m_bitset_data.data() + offset, m_layout.info.num_blocks);
+    return std::span<const uint64_t>(m_bitset_data).subspan(offset, m_layout.info.num_blocks);
 }
 
 inline ygg::BitsetSpan<uint64_t> AdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept
 {
     const auto offset = m_layout.info.num_blocks * vertex;
     const auto& info = m_layout.info.infos[partition];
-    return ygg::BitsetSpan<uint64_t>(m_bitset_data.data() + offset + info.block_offset, info.num_bits);
+    return ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(), info.num_bits);
 }
 
 inline ygg::BitsetSpan<const uint64_t> AdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
 {
     const auto offset = m_layout.info.num_blocks * vertex;
     const auto& info = m_layout.info.infos[partition];
-    return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + offset + info.block_offset, info.num_bits);
+    return ygg::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(), info.num_bits);
 }
 
 inline ygg::BitsetSpan<const uint64_t> DeduplicatedAdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
@@ -328,14 +331,14 @@ inline ygg::BitsetSpan<const uint64_t> DeduplicatedAdjacencyMatrix::get_bitset(y
     assert(vertex < m_row_offset.size());
     assert(m_row_offset[vertex] + partition < m_row_data.size());
     const auto start = m_row_data[m_row_offset[vertex] + partition];
-    return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + start, info.num_bits);
+    return ygg::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(start, info.num_blocks).data(), info.num_bits);
 }
 
 inline std::span<uint64_t> Workspace::compatible_vertices(size_t depth) noexcept
-{ return std::span<uint64_t>(compatible_vertices_data.data() + depth * compatible_row_blocks, compatible_row_blocks); }
+{ return std::span<uint64_t>(compatible_vertices_data).subspan(depth * compatible_row_blocks, compatible_row_blocks); }
 
 inline std::span<const uint64_t> Workspace::compatible_vertices(size_t depth) const noexcept
-{ return std::span<const uint64_t>(compatible_vertices_data.data() + depth * compatible_row_blocks, compatible_row_blocks); }
+{ return std::span<const uint64_t>(compatible_vertices_data).subspan(depth * compatible_row_blocks, compatible_row_blocks); }
 
 }
 

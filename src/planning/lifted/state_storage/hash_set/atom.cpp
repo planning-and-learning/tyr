@@ -24,7 +24,7 @@ namespace tyr::planning
 {
 
 template<bool ThreadSafe>
-AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_uint_vec_set(ctx.uint_vec_set), m_buffer()
+AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_uint_vec_set(&ctx.uint_vec_set), m_buffer()
 {
 }
 
@@ -36,13 +36,13 @@ typename AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::Packed AtomStorageB
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return Packed { m_uint_vec_set.insert(m_buffer) };
+    return Packed { m_uint_vec_set->insert(m_buffer) };
 }
 
 template<bool ThreadSafe>
 void AtomStorageBackend<LiftedTag, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    const auto view = m_uint_vec_set[packed.index];
+    const auto view = (*m_uint_vec_set)[packed.index];
 
     unpacked.indices.clear();
     for (ygg::uint_t i = 0; i < view.size(); ++i)

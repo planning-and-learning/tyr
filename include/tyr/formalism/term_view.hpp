@@ -39,7 +39,7 @@ public:
 };
 
 template<typename C>
-const C& get_canonical_context(const ygg::Data<::tyr::formalism::Term>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::Term>& element, const C& context)
 {
     return std::visit(
         [&]<typename Alternative>(const Alternative& arg) -> const C&

@@ -35,22 +35,43 @@
 namespace tyr::planning
 {
 
+/// Borrows the search space of one worker; the referenced objects must outlive the view.
 template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>
-struct WorkerSearchSpaceView
+class WorkerSearchSpaceView
 {
-    StateRepository<Kind>& state_repository;
-    AxiomEvaluator<Kind>& axiom_evaluator;
-    SuccessorGenerator<Kind>& successor_generator;
-    const ygg::SegmentedVector<SearchNode>& search_nodes;
-    size_t state_index_divisor = 1;
+public:
+    WorkerSearchSpaceView(StateRepository<Kind>& state_repository,
+                          AxiomEvaluator<Kind>& axiom_evaluator,
+                          SuccessorGenerator<Kind>& successor_generator,
+                          const ygg::SegmentedVector<SearchNode>& search_nodes,
+                          size_t state_index_divisor = 1) :
+        m_state_repository(&state_repository),
+        m_axiom_evaluator(&axiom_evaluator),
+        m_successor_generator(&successor_generator),
+        m_search_nodes(&search_nodes),
+        m_state_index_divisor(state_index_divisor)
+    {
+    }
+
+    [[nodiscard]] StateRepository<Kind>& state_repository() const noexcept { return *m_state_repository; }
+    [[nodiscard]] AxiomEvaluator<Kind>& axiom_evaluator() const noexcept { return *m_axiom_evaluator; }
+    [[nodiscard]] SuccessorGenerator<Kind>& successor_generator() const noexcept { return *m_successor_generator; }
+    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& search_nodes() const noexcept { return *m_search_nodes; }
 
     [[nodiscard]] const SearchNode& get_search_node(ygg::Index<State<Kind>> state) const
     {
-        assert(state_index_divisor > 0);
-        const auto index = static_cast<size_t>(ygg::uint_t(state)) / state_index_divisor;
-        assert(index < search_nodes.size());
-        return search_nodes[index];
+        assert(m_state_index_divisor > 0);
+        const auto index = static_cast<size_t>(ygg::uint_t(state)) / m_state_index_divisor;
+        assert(index < m_search_nodes->size());
+        return (*m_search_nodes)[index];
     }
+
+private:
+    StateRepository<Kind>* m_state_repository;
+    AxiomEvaluator<Kind>* m_axiom_evaluator;
+    SuccessorGenerator<Kind>* m_successor_generator;
+    const ygg::SegmentedVector<SearchNode>* m_search_nodes;
+    size_t m_state_index_divisor;
 };
 
 template<>
@@ -88,13 +109,13 @@ struct PlanReconstructionPolicy<ParallelSearch>
             const auto& source_worker = get_worker(trajectory[i - 1], workers);
             const auto& source_search_node = get_search_node(trajectory[i - 1], workers);
             const auto& target_search_node = get_search_node(trajectory[i], workers);
-            const auto source_state = source_worker.state_repository.get_registered_state(trajectory[i - 1].state);
-            const auto target_state = get_worker(trajectory[i], workers).state_repository.get_registered_state(trajectory[i].state);
+            const auto source_state = source_worker.state_repository().get_registered_state(trajectory[i - 1].state);
+            const auto target_state = get_worker(trajectory[i], workers).state_repository().get_registered_state(trajectory[i].state);
 
-            source_worker.successor_generator.get_labeled_successor_nodes(Node<Kind>(source_state, source_search_node.g_value),
-                                                                          source_worker.state_repository,
-                                                                          source_worker.axiom_evaluator,
-                                                                          successors);
+            source_worker.successor_generator().get_labeled_successor_nodes(Node<Kind>(source_state, source_search_node.g_value),
+                                                                            source_worker.state_repository(),
+                                                                            source_worker.axiom_evaluator(),
+                                                                            successors);
 
             const auto match =
                 std::ranges::find_if(successors,
@@ -150,7 +171,7 @@ private:
                                   AxiomEvaluator<Kind>& caller_axiom_evaluator)
     {
         const auto& worker = get_worker(state, workers);
-        auto source_state = worker.state_repository.get_registered_state(state.state);
+        auto source_state = worker.state_repository().get_registered_state(state.state);
         const auto g_value = get_search_node(state, workers).g_value;
         return Node<Kind>(materialize_state(source_state, caller_repository, caller_axiom_evaluator), g_value);
     }

@@ -26,6 +26,7 @@
 #include "tyr/formalism/unification/substitution.hpp"
 
 #include <algorithm>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -94,7 +95,11 @@ struct EffectCoverPolicy
         if (rhs_is_effect_local)
         {
             if (state.counted.is_bound(lhs))
-                return state.sigma.assign_or_check(rhs, *state.counted[lhs]);
+            {
+                const auto& value = state.counted[lhs];
+                YGG_ASSUME(value.has_value());
+                return state.sigma.assign_or_check(rhs, *value);
+            }
 
             return true;
         }
@@ -102,7 +107,9 @@ struct EffectCoverPolicy
         if (state.counted.is_unbound(lhs))
             return state.counted.assign(lhs, T(rhs));
 
-        return *state.counted[lhs] == T(rhs);
+        const auto& value = state.counted[lhs];
+        YGG_ASSUME(value.has_value());
+        return *value == T(rhs);
     }
 
     template<typename T>
@@ -114,7 +121,9 @@ struct EffectCoverPolicy
         if (state.counted.is_unbound(lhs))
             return state.counted.assign(lhs, rhs);
 
-        return *state.counted[lhs] == rhs;
+        const auto& value = state.counted[lhs];
+        YGG_ASSUME(value.has_value());
+        return *value == rhs;
     }
 
     template<typename T>
@@ -128,7 +137,7 @@ struct EffectCoverPolicy
 };
 
 template<typename T, typename State, typename Matcher>
-std::optional<State> match_structure(const T& pattern, const T& element, State state, Matcher&& matcher)
+std::optional<State> match_structure(const T& pattern, const T& element, State state, Matcher matcher)
 {
     const bool ok = unification::zip_terms(pattern, element, [&](const ygg::Data<Term>& lhs, const ygg::Data<Term>& rhs) { return matcher(lhs, rhs, state); });
 

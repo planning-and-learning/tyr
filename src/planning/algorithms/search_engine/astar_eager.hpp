@@ -215,7 +215,7 @@ public:
                                       SearchNode& successor_search_node,
                                       bool is_new,
                                       EvaluateHeuristic&& evaluate_heuristic,
-                                      EmitTransition&& emit_transition)
+                                      EmitTransition emit_transition)
     {
         const auto& source_state = source_node.get_state();
         const auto& successor_state = successor_node.get_state();
@@ -316,12 +316,13 @@ private:
     PriorityQueue<QueueEntry> m_openlist;
 };
 
-static_assert(sizeof(EagerAStarPolicy<LiftedTag, SequentialSearch>::SearchNode) == 24);
-static_assert(sizeof(EagerAStarPolicy<GroundTag, SequentialSearch>::SearchNode) == 24);
-static_assert(sizeof(EagerAStarPolicy<LiftedTag, ParallelSearch>::SearchNode) == 32);
-static_assert(sizeof(EagerAStarPolicy<GroundTag, ParallelSearch>::SearchNode) == 32);
-static_assert(sizeof(EagerAStarPolicy<LiftedTag, SequentialSearch>::QueueEntry) == 24);
-static_assert(sizeof(EagerAStarPolicy<GroundTag, SequentialSearch>::QueueEntry) == 24);
+// Search nodes and queue entries are dense in hot loops; these sizes guard their layout.
+static_assert(sizeof(EagerAStarPolicy<LiftedTag, SequentialSearch>::SearchNode) == 3 * sizeof(ygg::float_t));
+static_assert(sizeof(EagerAStarPolicy<GroundTag, SequentialSearch>::SearchNode) == 3 * sizeof(ygg::float_t));
+static_assert(sizeof(EagerAStarPolicy<LiftedTag, ParallelSearch>::SearchNode) == 4 * sizeof(ygg::float_t));
+static_assert(sizeof(EagerAStarPolicy<GroundTag, ParallelSearch>::SearchNode) == 4 * sizeof(ygg::float_t));
+static_assert(sizeof(EagerAStarPolicy<LiftedTag, SequentialSearch>::QueueEntry) == 3 * sizeof(ygg::float_t));
+static_assert(sizeof(EagerAStarPolicy<GroundTag, SequentialSearch>::QueueEntry) == 3 * sizeof(ygg::float_t));
 
 }
 

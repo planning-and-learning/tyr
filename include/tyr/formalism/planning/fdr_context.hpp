@@ -25,6 +25,7 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 
 #include <atomic>
+#include <cstddef>
 #include <mutex>
 #include <optional>
 #include <vector>
@@ -63,13 +64,15 @@ private:
         std::atomic_bool ready { false };
     };
 
+    static constexpr std::size_t first_fact_segment_size = 32;
+
     std::optional<FDRFactView<FluentTag>> find_fact(AtomView<GroundTag, FluentTag> atom) const;
     void ensure_fact_slot(AtomView<GroundTag, FluentTag> atom);
     bool publish_fact(AtomView<GroundTag, FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact);
 
     RepositoryPtr m_context;
     // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.
-    ygg::SegmentedVector<FactSlot, 32, true> m_facts;
+    ygg::SegmentedVector<FactSlot, first_fact_segment_size, true> m_facts;
     std::mutex m_registration_mutex;
     Builder m_builder;
     FDRVariableViewList<FluentTag> m_variables;

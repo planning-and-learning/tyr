@@ -21,6 +21,7 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <cstddef>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::datalog::details
@@ -115,11 +116,11 @@ struct BinaryDependencies
 {
     explicit BinaryDependencies(ygg::uint_t k_) :
         k(k_),
-        static_positive_literal(k_ * k_),
-        static_negative_literal(k_ * k_),
-        fluent_positive_literal(k_ * k_),
-        fluent_negative_literal(k_ * k_),
-        numeric_constraint(k_ * k_)
+        static_positive_literal(static_cast<std::size_t>(k_) * k_),
+        static_negative_literal(static_cast<std::size_t>(k_) * k_),
+        fluent_positive_literal(static_cast<std::size_t>(k_) * k_),
+        fluent_negative_literal(static_cast<std::size_t>(k_) * k_),
+        numeric_constraint(static_cast<std::size_t>(k_) * k_)
     {
     }
 

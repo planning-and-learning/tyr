@@ -34,37 +34,37 @@ class RuleInstance<LiftedTag, R>
 {
 public:
     RuleInstance(const ConstRuleWorkspace<LiftedTag, R>& workspace, formalism::datalog::GrounderContext& grounder) :
-        m_workspace(workspace),
-        m_grounder(grounder)
+        m_workspace(&workspace),
+        m_grounder(&grounder)
     {
     }
 
-    formalism::datalog::RuleView<LiftedTag, R> get_rule() const noexcept { return m_workspace.get_rule(); }
+    formalism::datalog::RuleView<LiftedTag, R> get_rule() const noexcept { return m_workspace->get_rule(); }
     auto get_body() const noexcept { return get_rule().get_body(); }
     auto get_head() const noexcept { return get_rule().get_head(); }
 
     auto resolve(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
-    { return formalism::datalog::ground_binding(atom, m_grounder).first; }
+    { return formalism::datalog::ground_binding(atom, *m_grounder).first; }
 
-    auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(std::move(constraint), m_grounder); }
+    auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(std::move(constraint), *m_grounder); }
 
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> effect) const
     {
         return { effect.get_operator(),
-                 formalism::datalog::ground_binding(effect.get_fterm(), m_grounder).first.get_index(),
-                 formalism::datalog::ground(effect.get_fexpr(), m_grounder) };
+                 formalism::datalog::ground_binding(effect.get_fterm(), *m_grounder).first.get_index(),
+                 formalism::datalog::ground(effect.get_fexpr(), *m_grounder) };
     }
 
     auto witness_key() const
     {
         if (!m_witness_key)
-            m_witness_key = formalism::datalog::ground_binding(get_rule(), m_grounder).first;
+            m_witness_key = formalism::datalog::ground_binding(get_rule(), *m_grounder).first;
         return *m_witness_key;
     }
 
 private:
-    const ConstRuleWorkspace<LiftedTag, R>& m_workspace;
-    formalism::datalog::GrounderContext& m_grounder;
+    const ConstRuleWorkspace<LiftedTag, R>* m_workspace;
+    formalism::datalog::GrounderContext* m_grounder;
     mutable std::optional<formalism::datalog::RuleBindingView<R>> m_witness_key;
 };
 

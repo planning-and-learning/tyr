@@ -72,6 +72,7 @@ struct Data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variable, &Data::domain_children, &Data::dontcare_child> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variable, &Data::domain_children, &Data::dontcare_child> {}; }

@@ -57,10 +57,9 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<::tyr::LiftedTag>>>)
                     return Variant(arg.get_data());
                 else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>)
-                    return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>)
+                                                     ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>
+                                   || ygg::is_view_of_v<Alternative,
+                                                        ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -72,6 +71,7 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }
@@ -106,13 +106,11 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<::tyr::GroundTag>>>)
                     return Variant(arg.get_data());
                 else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>)
-                    return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>)
-                    return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>)
+                                                     ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>
+                                   || ygg::is_view_of_v<Alternative,
+                                                        ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>
+                                   || ygg::is_view_of_v<Alternative,
+                                                        ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -124,6 +122,7 @@ struct Data<::tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variant> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variant> {}; }

@@ -19,7 +19,7 @@
 #define TYR_PLANNING_ALGORITHMS_STRATEGIES_PRUNING_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <memory>
 
@@ -30,6 +30,7 @@ template<TaskKind Kind>
 class PruningStrategy
 {
 public:
+    PruningStrategy() = default;
     virtual ~PruningStrategy() = default;
 
     static PruningStrategyPtr<Kind> create();
@@ -42,6 +43,12 @@ public:
     virtual bool should_prune_state(const StateView<Kind>&) { return false; }
 
     virtual bool should_prune_successor_state(const StateView<Kind>&, const StateView<Kind>&, bool) { return false; }
+
+protected:
+    PruningStrategy(const PruningStrategy&) = default;
+    PruningStrategy& operator=(const PruningStrategy&) = default;
+    PruningStrategy(PruningStrategy&&) = default;
+    PruningStrategy& operator=(PruningStrategy&&) = default;
 };
 
 namespace detail

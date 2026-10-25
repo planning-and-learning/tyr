@@ -274,7 +274,7 @@ namespace
 {
 
 template<typename T, std::ranges::sized_range Range, typename Translate>
-auto to_binding(ygg::View<ygg::Index<T>, Repository> element, const Range& terms, Builder& builder, Repository& context, Translate&& translate)
+auto to_binding(ygg::View<ygg::Index<T>, Repository> element, const Range& terms, Builder& builder, Repository& context, Translate translate)
 {
     if (std::ranges::size(terms) != element.get_arity())
         throw std::invalid_argument("RelationBinding object count does not match relation arity.");
@@ -954,12 +954,10 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Build
     return std::visit(
         [&]<typename T>(const T& arg) -> GroundAtomOrFactViewVariant
         {
-            if constexpr (std::is_same_v<T, AtomView<GroundTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, AtomView<GroundTag, StaticTag>> || std::is_same_v<T, AtomView<GroundTag, DerivedTag>>)
                 return arg;
             else if constexpr (std::is_same_v<T, AtomView<GroundTag, FluentTag>>)
                 return fdr_context.get_fact(arg);
-            else if constexpr (std::is_same_v<T, AtomView<GroundTag, DerivedTag>>)
-                return arg;
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
         },
@@ -1001,12 +999,10 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
     return std::visit(
         [&]<typename T>(const T& arg) -> GroundLiteralOrFactViewVariant
         {
-            if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>>)
+            if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>> || std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
                 return arg;
             else if constexpr (std::is_same_v<T, LiteralView<GroundTag, FluentTag>>)
                 return std::make_pair(fdr_context.get_fact(arg.get_atom()), arg.get_polarity());
-            else if constexpr (std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
-                return arg;
             else
                 static_assert(ygg::dependent_false<T>::value, "Missing case for type");
         },

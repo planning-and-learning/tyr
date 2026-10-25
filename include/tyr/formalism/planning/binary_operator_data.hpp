@@ -53,6 +53,7 @@ struct Data<::tyr::formalism::planning::BinaryOperator<T, O>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::lhs, &Data::rhs> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::lhs, &Data::rhs> {}; }

@@ -22,6 +22,7 @@
 #include <concepts>
 #include <deque>
 #include <filesystem>
+#include <functional>
 #include <gtest/gtest.h>
 #include <limits>
 #include <memory>
@@ -151,15 +152,9 @@ public:
     bool should_prune_successor_state(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&, bool) override { return true; }
 };
 
-class ScriptedSolver
+/// Public members, as the solvers it stands in for.
+struct ScriptedSolver
 {
-private:
-    std::shared_ptr<std::deque<tyr::planning::SearchResult<GroundTag>>> m_results;
-    tyr::planning::TaskPtr<GroundTag> m_task;
-    tyr::planning::StateRepositoryPtr<GroundTag> m_state_repository;
-    tyr::planning::AxiomEvaluatorPtr<GroundTag> m_axiom_evaluator;
-
-public:
     struct Options
     {
         std::optional<tyr::planning::Node<GroundTag>> start_node;
@@ -167,16 +162,20 @@ public:
         tyr::planning::SearchBudget search_budget;
     };
 
+    std::shared_ptr<std::deque<tyr::planning::SearchResult<GroundTag>>> results;
+    tyr::planning::TaskPtr<GroundTag> task;
+    tyr::planning::StateRepositoryPtr<GroundTag> state_repository;
+    tyr::planning::AxiomEvaluatorPtr<GroundTag> axiom_evaluator;
     Options options;
 
-    explicit ScriptedSolver(std::deque<tyr::planning::SearchResult<GroundTag>> results,
-                            tyr::planning::TaskPtr<GroundTag> task = nullptr,
-                            tyr::planning::StateRepositoryPtr<GroundTag> state_repository = nullptr,
-                            tyr::planning::AxiomEvaluatorPtr<GroundTag> axiom_evaluator = nullptr) :
-        m_results(std::make_shared<std::deque<tyr::planning::SearchResult<GroundTag>>>(std::move(results))),
-        m_task(std::move(task)),
-        m_state_repository(std::move(state_repository)),
-        m_axiom_evaluator(std::move(axiom_evaluator))
+    explicit ScriptedSolver(std::deque<tyr::planning::SearchResult<GroundTag>> results_,
+                            tyr::planning::TaskPtr<GroundTag> task_ = nullptr,
+                            tyr::planning::StateRepositoryPtr<GroundTag> state_repository_ = nullptr,
+                            tyr::planning::AxiomEvaluatorPtr<GroundTag> axiom_evaluator_ = nullptr) :
+        results(std::make_shared<std::deque<tyr::planning::SearchResult<GroundTag>>>(std::move(results_))),
+        task(std::move(task_)),
+        state_repository(std::move(state_repository_)),
+        axiom_evaluator(std::move(axiom_evaluator_))
     {
     }
 
@@ -184,27 +183,34 @@ public:
     {
         if (!start_node)
             start_node = options.start_node;
-        if (!m_task || !m_state_repository || !m_axiom_evaluator)
+        if (!task || !state_repository || !axiom_evaluator)
             throw std::invalid_argument("ScriptedSolver::normalize_start_node(): context is required.");
-        return tyr::planning::normalize_start_node(*m_task, *m_state_repository, *m_axiom_evaluator, std::move(start_node));
+        return tyr::planning::normalize_start_node(*task, *state_repository, *axiom_evaluator, std::move(start_node));
     }
 
     tyr::planning::SearchResult<GroundTag> solve()
     {
-        auto result = std::move(m_results->front());
-        m_results->pop_front();
+        auto result = std::move(results->front());
+        results->pop_front();
         return result;
     }
 };
 
-struct SolverWithoutNormalization : ScriptedSolver
+/// ScriptedSolver without normalize_start_node.
+struct SolverWithoutNormalization
 {
-    tyr::planning::Node<GroundTag> normalize_start_node(std::optional<tyr::planning::Node<GroundTag>>) = delete;
+    ScriptedSolver::Options options;
+
+    tyr::planning::SearchResult<GroundTag> solve();
 };
 
 struct NoncopyableSolver : ScriptedSolver
 {
     NoncopyableSolver(const NoncopyableSolver&) = delete;
+    NoncopyableSolver& operator=(const NoncopyableSolver&) = delete;
+    NoncopyableSolver(NoncopyableSolver&&) = delete;
+    NoncopyableSolver& operator=(NoncopyableSolver&&) = delete;
+    ~NoncopyableSolver() = default;
 };
 
 struct OptionsWithoutStateLimit : ScriptedSolver::Options
@@ -269,17 +275,19 @@ public:
 class RecordingIwEventHandler : public tyr::planning::iw::EventHandler<GroundTag>
 {
 public:
-    explicit RecordingIwEventHandler(std::chrono::steady_clock::duration end_arity_delay = {}) : m_end_arity_delay(end_arity_delay) {}
+    explicit RecordingIwEventHandler(std::chrono::steady_clock::duration end_arity_delay_ = {}) : end_arity_delay(end_arity_delay_) {}
 
     size_t num_search_starts = 0;
     size_t num_search_ends = 0;
     size_t num_arity_starts = 0;
     size_t num_arity_ends = 0;
     std::chrono::steady_clock::duration start_arity_delay {};
+    std::chrono::steady_clock::duration end_arity_delay;
+    tyr::planning::iw::Statistics<GroundTag> statistics;
 
     void on_start_search(ygg::uint_t) override
     {
-        m_statistics.clear();
+        statistics.clear();
         ++num_search_starts;
     }
     void on_start_arity(ygg::uint_t) override
@@ -290,15 +298,11 @@ public:
     void on_end_arity(ygg::uint_t, tyr::planning::SearchStatus) override
     {
         ++num_arity_ends;
-        std::this_thread::sleep_for(m_end_arity_delay);
+        std::this_thread::sleep_for(end_arity_delay);
     }
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override { ++num_search_ends; }
-    void on_solved(ygg::uint_t arity) override { m_statistics.set_solution_arity(arity); }
-    [[nodiscard]] const tyr::planning::iw::Statistics<GroundTag>& get_statistics() const override { return m_statistics; }
-
-private:
-    tyr::planning::iw::Statistics<GroundTag> m_statistics;
-    std::chrono::steady_clock::duration m_end_arity_delay;
+    void on_solved(ygg::uint_t arity) override { statistics.set_solution_arity(arity); }
+    [[nodiscard]] const tyr::planning::iw::Statistics<GroundTag>& get_statistics() const override { return statistics; }
 };
 }
 
@@ -468,7 +472,7 @@ TEST(TyrPlanningSerialized, BorrowsNoncopyableReaderAndCopiesEachCustomPayload)
     };
     static_assert(!std::copy_constructible<decltype(reader)>);
 
-    const auto result = tyr::planning::serialized::find_solution(solver, options, reader);
+    const auto result = tyr::planning::serialized::find_solution(solver, options, std::ref(reader));
 
     EXPECT_EQ(result.status, tyr::planning::SearchStatus::EXHAUSTED);
     EXPECT_EQ(result.statistics.get_num_generated_successors(), 2);
@@ -545,9 +549,9 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesUsesDefaultStartAndReturnsExhaustedPa
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::EXHAUSTED);
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.goal_node);
-    EXPECT_TRUE(result.plan->empty());
-    EXPECT_EQ(result.plan->get_start_node(), initial_node);
-    EXPECT_EQ(*result.goal_node, initial_node);
+    EXPECT_TRUE(result.plan.value().empty());
+    EXPECT_EQ(result.plan.value().get_start_node(), initial_node);
+    EXPECT_EQ(result.goal_node.value(), initial_node);
     EXPECT_EQ(event_handler->num_search_starts, 1);
     EXPECT_EQ(event_handler->num_search_ends, 1);
     EXPECT_EQ(event_handler->num_subsearch_starts, 0);
@@ -568,7 +572,7 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesReturnsSolvedForSatisfiedStart)
 
     EXPECT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_TRUE(result.plan->empty());
+    EXPECT_TRUE(result.plan.value().empty());
 }
 
 TEST(TyrPlanningSerialized, ZeroSubsearchesReturnsUnsolvableForStaticGoal)
@@ -604,9 +608,9 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesMaterializesCompatibleForeignStart)
     const auto result = tyr::planning::serialized::find_solution(solver, options);
 
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan->get_start_node().get_state().get_state_repository(), context.state_repository);
-    EXPECT_NE(result.plan->get_start_node().get_state().get_state_repository(), foreign_start.get_state().get_state_repository());
-    EXPECT_EQ(result.plan->get_start_node().get_metric(), 7);
+    EXPECT_EQ(result.plan.value().get_start_node().get_state().get_state_repository(), context.state_repository);
+    EXPECT_NE(result.plan.value().get_start_node().get_state().get_state_repository(), foreign_start.get_state().get_state_repository());
+    EXPECT_EQ(result.plan.value().get_start_node().get_metric(), 7);
 }
 
 TEST(TyrPlanningSerialized, RejectsStartFromDifferentTaskBeforeZeroSubsearchShortcut)
@@ -829,9 +833,9 @@ TEST(TyrPlanningSerialized, BrfsWrapperMatchesDirectBrfs)
     ASSERT_EQ(serialized_result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(serialized_result.plan);
 
-    EXPECT_FALSE(serialized_result.plan->empty());
-    EXPECT_EQ(serialized_result.plan->get_length(), direct_result.plan->get_length());
-    EXPECT_EQ(serialized_result.plan->get_cost(), direct_result.plan->get_cost());
+    EXPECT_FALSE(serialized_result.plan.value().empty());
+    EXPECT_EQ(serialized_result.plan.value().get_length(), direct_result.plan.value().get_length());
+    EXPECT_EQ(serialized_result.plan.value().get_cost(), direct_result.plan.value().get_cost());
     EXPECT_GE(event_handler->get_statistics().get_num_subsearches(), 1);
     EXPECT_EQ(event_handler->get_statistics().get_search_statistics().size(), event_handler->get_statistics().get_num_subsearches());
     EXPECT_EQ(event_handler->get_statistics().get_solver_statistics().size(), event_handler->get_statistics().get_num_subsearches());
@@ -900,11 +904,11 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::CYCLE);
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.cycle_range);
-    EXPECT_FALSE(result.plan->empty());
-    EXPECT_EQ(result.plan->get_length(), 2);
-    EXPECT_EQ(result.plan->get_cost(), 2);
-    EXPECT_EQ(result.cycle_range->first, 0);
-    EXPECT_EQ(result.cycle_range->second, 2);
+    EXPECT_FALSE(result.plan.value().empty());
+    EXPECT_EQ(result.plan.value().get_length(), 2);
+    EXPECT_EQ(result.plan.value().get_cost(), 2);
+    EXPECT_EQ(result.cycle_range.value().first, 0);
+    EXPECT_EQ(result.cycle_range.value().second, 2);
     EXPECT_EQ(result.statistics.get_num_generated_successors(), 2);
     EXPECT_EQ(result.statistics.get_num_expanded(), 1);
     EXPECT_EQ(result.statistics.get_num_pruned(), 1);
@@ -965,11 +969,11 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::CYCLE);
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.cycle_range);
-    EXPECT_EQ(result.plan->get_start_node().get_state(), initial_node.get_state());
-    EXPECT_EQ(result.plan->get_length(), 2);
-    EXPECT_EQ(result.plan->get_labeled_succ_nodes()[0].node.get_state(), successor.node.get_state());
-    EXPECT_EQ(result.plan->get_labeled_succ_nodes()[1].node.get_state(), initial_node.get_state());
-    EXPECT_EQ(*result.cycle_range, (std::pair<size_t, size_t> { 0, 2 }));
+    EXPECT_EQ(result.plan.value().get_start_node().get_state(), initial_node.get_state());
+    EXPECT_EQ(result.plan.value().get_length(), 2);
+    EXPECT_EQ(result.plan.value().get_labeled_succ_nodes()[0].node.get_state(), successor.node.get_state());
+    EXPECT_EQ(result.plan.value().get_labeled_succ_nodes()[1].node.get_state(), initial_node.get_state());
+    EXPECT_EQ(result.cycle_range.value(), (std::pair<size_t, size_t> { 0, 2 }));
 }
 
 }

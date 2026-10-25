@@ -65,7 +65,7 @@ struct RuleWorkspace<LiftedTag, R>
         void clear() noexcept;
 
         /// KCKP
-        const StaticConsistencyGraph& static_consistency_graph;
+        const StaticConsistencyGraph* static_consistency_graph;
         kckp::DeltaKCKP kckp;
 
         /// Statistics
@@ -131,6 +131,7 @@ struct RuleWorkspace<LiftedTag, R>
     RuleWorkspace& operator=(const RuleWorkspace& other) = delete;
     RuleWorkspace(RuleWorkspace&& other) = delete;
     RuleWorkspace& operator=(RuleWorkspace&& other) = delete;
+    ~RuleWorkspace() = default;
 
     void clear() noexcept;
 
@@ -178,7 +179,7 @@ inline bool supports_inner_parallelism(formalism::FunctionTag) noexcept { return
 
 template<formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph) :
-    static_consistency_graph(static_consistency_graph),
+    static_consistency_graph(&static_consistency_graph),
     kckp(static_consistency_graph.get_graph(), static_consistency_graph.get_partitioned_adjacency_layout()),
     statistics()
 {
@@ -192,7 +193,7 @@ template<formalism::RelationKind R>
 void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
 {
     kckp.update([&](auto& delta_graph, auto& full_graph)
-                { static_consistency_graph.initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph); });
+                { static_consistency_graph->initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph); });
 }
 
 template<formalism::RelationKind R>

@@ -52,7 +52,7 @@ struct FactsWorkspace<GroundTag>
 template<>
 struct ConstFactsWorkspace<GroundTag>
 {
-    const TaggedFactSets<formalism::StaticTag> fact_sets;
+    TaggedFactSets<formalism::StaticTag> fact_sets;
 
     explicit ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
                                  formalism::datalog::FunctionListView<formalism::StaticTag> functions,

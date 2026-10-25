@@ -25,6 +25,7 @@
 #include <cassert>
 #include <optional>
 #include <yggdrasil/containers/tuple.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -66,15 +67,19 @@ private:
         return m_weights[m_pos];
     }
 
+    void advance_pos()
+    {
+        if (++m_pos == N)
+        {
+            m_pos = 0;
+        }
+    }
+
     void find_next_nonempty_queue()
     {
-        do
-        {
-            if (++m_pos == N)
-            {
-                m_pos = 0;
-            }
-        } while (cur_empty());
+        advance_pos();
+        while (cur_empty())
+            advance_pos();
 
         m_count = 0;
     }
@@ -93,6 +98,7 @@ public:
 
         std::optional<ItemType> result;
         ygg::visit_at(m_queues, m_pos, [&result](auto&& queue) { result.emplace(queue.get().top()); });
+        YGG_ASSUME(result.has_value());
         return std::move(*result);
     }
 

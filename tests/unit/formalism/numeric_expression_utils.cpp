@@ -45,9 +45,16 @@ struct BinaryExpression
     [[nodiscard]] auto get_rhs() const noexcept { return rhs; }
 };
 
-struct ReferenceBooleanExpression : BinaryExpression<formalism::BooleanOperatorKind>
+/// Returns its operator by reference.
+struct ReferenceBooleanExpression
 {
+    formalism::BooleanOperatorKind op;
+    NumericLeaf lhs;
+    NumericLeaf rhs;
+
     [[nodiscard]] const auto& get_operator() const noexcept { return op; }
+    [[nodiscard]] auto get_lhs() const noexcept { return lhs; }
+    [[nodiscard]] auto get_rhs() const noexcept { return rhs; }
 };
 
 struct MultiExpression
@@ -92,7 +99,7 @@ TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder
     EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
 
     order.clear();
-    const auto reference_boolean = ReferenceBooleanExpression { { formalism::BooleanOperatorKind::Eq, { 1, Interval(1, 3) }, { 2, Interval(2, 4) } } };
+    const auto reference_boolean = ReferenceBooleanExpression { formalism::BooleanOperatorKind::Eq, { 1, Interval(1, 3) }, { 2, Interval(2, 4) } };
     EXPECT_TRUE(formalism::evaluate_numeric_expression(reference_boolean, resolve));
     EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
 

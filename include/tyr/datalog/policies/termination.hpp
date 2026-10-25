@@ -53,15 +53,15 @@ public:
 
     void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag> goals_);
 
-    bool check(const FactSets& fact_sets) const noexcept;
-    bool should_terminate(const FactSets& fact_sets) const noexcept;
+    bool check(const FactSets& fact_sets) const;
+    bool should_terminate(const FactSets& fact_sets) const;
 
     void set_early_termination(bool value) noexcept { early_termination = value; }
 
     Cost get_total_cost(const FactSets& fact_sets,
                         const PredicateAnnotations<>& annotations,
                         const FunctionAnnotations<>&,
-                        const NumericSupportSelector& numeric_support_selector) const noexcept;
+                        const NumericSupportSelector& numeric_support_selector) const;
 
     const auto& get_goal() const noexcept { return goals; }
 

@@ -36,6 +36,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -48,19 +49,24 @@ using Kind = tyr::TYR_PROFILE_TASK_KIND;
 using Clock = std::chrono::steady_clock;
 using tyr::profiling::BenchmarkCase;
 
+constexpr auto default_cores = std::array<ygg::uint_t, 5> { 1, 2, 4, 8, 16 };
+constexpr double default_search_timeout_seconds = 60;
+constexpr ygg::uint_t default_max_states = 1'000'000;
+
 struct Options
 {
-    std::vector<ygg::uint_t> cores { 1, 2, 4, 8, 16 };
-    double search_timeout = 60;
-    ygg::uint_t max_states = 1'000'000;
+    std::vector<ygg::uint_t> cores = std::vector<ygg::uint_t>(default_cores.begin(), default_cores.end());
+    double search_timeout = default_search_timeout_seconds;
+    ygg::uint_t max_states = default_max_states;
     tyr::planning::astar_eager::ParallelSearchMode search_mode = tyr::planning::astar_eager::ParallelSearchMode::SYNCHRONOUS;
 };
 
 ygg::uint_t parse_count(std::string_view value)
 {
     auto result = ygg::uint_t {};
-    const auto [end, error] = std::from_chars(value.data(), value.data() + value.size(), result);
-    if (error != std::errc {} || end != value.data() + value.size())
+    const auto* const last = std::to_address(value.end());
+    const auto [end, error] = std::from_chars(value.data(), last, result);
+    if (error != std::errc {} || end != last)
         throw std::invalid_argument("Expected a nonnegative integer: " + std::string(value));
     return result;
 }
@@ -68,20 +74,23 @@ ygg::uint_t parse_count(std::string_view value)
 Options parse_options(int& argc, char** argv)
 {
     auto options = Options {};
-    auto remaining = 1;
-    for (int i = 1; i < argc; ++i)
+    // argv[argc] is the terminating null pointer.
+    const auto arguments = std::span(argv, static_cast<std::size_t>(argc) + 1);
+    const auto num_arguments = static_cast<std::size_t>(argc);
+    auto remaining = std::size_t { 1 };
+    for (std::size_t i = 1; i < num_arguments; ++i)
     {
-        const auto argument = std::string_view(argv[i]);
+        const auto argument = std::string_view(arguments[i]);
         const auto separator = argument.find('=');
         const auto name = argument.substr(0, separator);
         if (name != "--cores" && name != "--search-timeout" && name != "--max-states" && name != "--search-mode")
         {
-            argv[remaining++] = argv[i];
+            arguments[remaining++] = arguments[i];
             continue;
         }
-        if (separator == std::string_view::npos && i + 1 == argc)
+        if (separator == std::string_view::npos && i + 1 == num_arguments)
             throw std::invalid_argument("Missing value for " + std::string(name));
-        const auto value = separator == std::string_view::npos ? std::string_view(argv[++i]) : argument.substr(separator + 1);
+        const auto value = separator == std::string_view::npos ? std::string_view(arguments[++i]) : argument.substr(separator + 1);
         if (name == "--cores")
         {
             options.cores.clear();
@@ -114,8 +123,8 @@ Options parse_options(int& argc, char** argv)
         else
             throw std::invalid_argument("--search-mode must be sync or async.");
     }
-    argc = remaining;
-    argv[argc] = nullptr;
+    argc = static_cast<int>(remaining);
+    arguments[remaining] = nullptr;
     return options;
 }
 
@@ -165,7 +174,7 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
             prepared.component_setup_seconds = std::chrono::duration<double>(Clock::now() - component_start).count();
         }
 
-        for (auto _ : state)
+        for ([[maybe_unused]] auto _ : state)
         {
             const auto worker_setup_start = Clock::now();
             auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(prepared.task);

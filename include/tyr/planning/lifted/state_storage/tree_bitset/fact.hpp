@@ -65,7 +65,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    typename Context::BitsetSet& m_bitsets;
+    typename Context::BitsetSet* m_bitsets;
 
     std::vector<tree_bitset::Block> m_blocks;
     std::vector<tree_bitset::Flip> m_flips;

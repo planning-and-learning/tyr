@@ -23,6 +23,8 @@
 namespace tyr::formalism::planning
 {
 
+namespace
+{
 template<TaskKind T>
 void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* index_name, const char* data_name, const char* view_name)
 {
@@ -191,6 +193,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
 
     bind_insert<Task<T>>(repository);
 }
+}  // namespace
 
 void bind_task(nb::module_& m, RepositoryBinding& repository)
 {

@@ -66,7 +66,7 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 class SolverPolicy<LiftedTag, AP, TP, CP>
 {
 public:
-    explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx), m_program_stopwatch(ctx.out().statistics().total_time)
+    explicit SolverPolicy(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(&ctx), m_program_stopwatch(ctx.out().statistics().total_time)
     {
         ++ctx.out().statistics().num_executions;
         initialize_goal_cutoff();
@@ -74,10 +74,10 @@ public:
 
     bool next_stratum()
     {
-        auto& schedulers = m_ctx.out().schedulers();
+        auto& schedulers = m_ctx->out().schedulers();
         if (m_next_stratum == schedulers.size())
             return false;
-        m_stratum.emplace(schedulers[m_next_stratum++], m_ctx);
+        m_stratum.emplace(schedulers[m_next_stratum++], *m_ctx);
         return true;
     }
 
@@ -105,17 +105,18 @@ private:
         if constexpr (AP::stores_annotations && !AP::records_propositional_achievers
                       && std::same_as<CP, RuleCostPolicy> && !std::same_as<TP, NoTerminationPolicy>)
         {
-            const auto& goal = m_ctx.out().tp().get_goal();
-            if (!goal || !goal->get_numeric_constraints().empty() || m_ctx.out().schedulers().size() != 1
-                || !m_ctx.in().template get_rules<formalism::FunctionTag>().empty())
+            const auto& goal = m_ctx->out().tp().get_goal();
+            if (!goal || !goal->get_numeric_constraints().empty() || m_ctx->out().schedulers().size() != 1
+                || !m_ctx->in().template get_rules<formalism::FunctionTag>().empty())
                 return;
-            const auto fact_sets = FactSets { m_ctx.in().facts().fact_sets, m_ctx.out().facts().fact_sets };
+            const auto fact_sets = FactSets { m_ctx->in().facts().fact_sets, m_ctx->out().facts().fact_sets };
             if (!is_applicable(goal->template get_literals<formalism::StaticTag>(), fact_sets))
                 return;
 
             auto min_edge_cost = std::numeric_limits<Cost>::max();
-            for (const auto& rule : m_ctx.in().template get_rules<formalism::PredicateTag>())
-                min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
+            for (const auto& rule : m_ctx->in().template get_rules<formalism::PredicateTag>())
+                if (rule)
+                    min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
             m_goal_atoms.clear();
             m_goal_positions.clear();
@@ -240,7 +241,7 @@ private:
         ++out.statistics().num_executions;
         ++out.statistics().num_generated_rules;
 
-        create_nullary_binding(out.ground_context().binding);
+        create_nullary_binding(out.ground_context().binding());
 
         const auto nullary_condition = in.cws_rule().get_nullary_condition();
         const auto conflicting_condition = in.cws_rule().get_rule().get_body();
@@ -362,12 +363,12 @@ private:
         auto missing = false;
         for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
-            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder);
+            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder());
             binding->relation = head_atom.get_predicate().get_index();
             formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
             formalism::canonicalize(*binding);
             const auto head =
-                intern ? std::optional(formalism::datalog::insert(ground_context.destination, *binding).first) : ground_context.destination.find(*binding);
+                intern ? std::optional(formalism::datalog::insert(ground_context.destination(), *binding).first) : ground_context.destination().find(*binding);
             if (!head)
             {
                 missing = true;
@@ -431,7 +432,7 @@ private:
     template<formalism::RelationKind R>
     void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding)
     {
-        create_general_binding(clique, wrctx.in().cws_rule().get_static_consistency_graph(), wrctx.out().ground_context().binding);
+        create_general_binding(clique, wrctx.in().cws_rule().get_static_consistency_graph(), wrctx.out().ground_context().binding());
         process_binding(wrctx, require_novel_binding);
     }
 
@@ -469,7 +470,7 @@ private:
         // The check only fills the nullary cache with the value the gating in run_active_rules established.
         if (is_current_binding_dynamically_applicable(wrctx, applicability_context))
         {
-            const auto novel_binding = ensure_novel_binding(out.ground_context().binding, out.seen_bindings());
+            const auto novel_binding = ensure_novel_binding(out.ground_context().binding(), out.seen_bindings());
             assert((!require_novel_binding || novel_binding) && "Delta-KCKP generated duplicate binding.");
         }
 #endif
@@ -541,7 +542,7 @@ private:
                     {
                         if (goal_cutoff_stopped())
                             return;
-                        create_general_binding(clique, graph, out.ground_context().binding);
+                        create_general_binding(clique, graph, out.ground_context().binding());
                         for (size_t j = 0; j < i; ++j)
                             if (is_applicable(literals[j], delta_context))
                                 return;  // An earlier literal's new atom anchors this clique.
@@ -701,7 +702,7 @@ private:
         return *m_stratum;
     }
 
-    ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;
+    ProgramExecutionContext<LiftedTag, AP, TP, CP>* m_ctx;
     ygg::StopwatchScope<std::chrono::nanoseconds> m_program_stopwatch;
     std::optional<StratumExecutionContext<AP, TP, CP>> m_stratum;
     size_t m_next_stratum = 0;

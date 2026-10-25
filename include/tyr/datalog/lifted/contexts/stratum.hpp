@@ -33,27 +33,27 @@ struct StratumExecutionContext
     class In
     {
     public:
-        explicit In(const ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(ctx) {}
+        explicit In(const ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_ctx(&ctx) {}
 
-        [[nodiscard]] const auto& program() const noexcept { return m_ctx.in(); }
-        [[nodiscard]] bool is_single_threaded() const noexcept { return m_ctx.is_single_threaded(); }
+        [[nodiscard]] const auto& program() const noexcept { return m_ctx->in(); }
+        [[nodiscard]] bool is_single_threaded() const noexcept { return m_ctx->is_single_threaded(); }
 
     private:
-        const ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;
+        const ProgramExecutionContext<LiftedTag, AP, TP, CP>* m_ctx;
     };
 
     class Out
     {
     public:
-        Out(Scheduler<LiftedTag>& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_scheduler(scheduler), m_ctx(ctx) {}
+        Out(Scheduler<LiftedTag>& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_scheduler(&scheduler), m_ctx(&ctx) {}
 
-        auto& scheduler() noexcept { return m_scheduler; }
-        auto& program() noexcept { return m_ctx.out(); }
-        auto& program_context() noexcept { return m_ctx; }
+        auto& scheduler() noexcept { return *m_scheduler; }
+        auto& program() noexcept { return m_ctx->out(); }
+        auto& program_context() noexcept { return *m_ctx; }
 
     private:
-        Scheduler<LiftedTag>& m_scheduler;
-        ProgramExecutionContext<LiftedTag, AP, TP, CP>& m_ctx;
+        Scheduler<LiftedTag>* m_scheduler;
+        ProgramExecutionContext<LiftedTag, AP, TP, CP>* m_ctx;
     };
 
     StratumExecutionContext(Scheduler<LiftedTag>& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}

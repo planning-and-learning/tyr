@@ -151,14 +151,14 @@ LMCutImplementation<Kind>::LMCutImplementation(std::shared_ptr<detail::RPGDefini
 {
     // Classic action cuts require every reachable operator arc. Numeric-edge
     // cuts retain goal-directed evaluation to avoid unbounded numeric closure.
-    this->m_workspace.tp.set_early_termination(m_use_numeric_edge_cuts);
+    this->workspace().tp.set_early_termination(m_use_numeric_edge_cuts);
 }
 
 template<TaskKind Kind>
 LMCutImplementation<Kind>::LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context) :
     Base(source, std::move(execution_context)),
     m_use_numeric_edge_cuts(source.m_use_numeric_edge_cuts)
-{ this->m_workspace.tp.set_early_termination(m_use_numeric_edge_cuts); }
+{ this->workspace().tp.set_early_termination(m_use_numeric_edge_cuts); }
 
 template<TaskKind Kind>
 ygg::float_t LMCutImplementation<Kind>::evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms)
@@ -271,27 +271,27 @@ void LMCutImplementation<Kind>::use_numeric_edge_cost(const NumericEdge& edge, d
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::apply_residual_costs()
 {
-    this->m_workspace.clear_costs();
+    this->workspace().clear_costs();
     for (const auto& [action_binding, used_cost] : m_action_used_costs)
         this->set_action_binding_cost(action_binding, used_cost);
 
     for (const auto& [edge, used_cost] : m_rule_edge_used_costs)
-        this->m_workspace.cost_policy.set_cost(edge, used_cost);
+        this->workspace().cost_policy.set_cost(edge, used_cost);
     for (const auto& [edge, used_cost] : m_numeric_edge_used_costs)
-        this->m_workspace.cost_policy.set_cost(edge.rule_key, edge.numeric_key, edge.interval, used_cost);
+        this->workspace().cost_policy.set_cost(edge.rule_key, edge.numeric_key, edge.interval, used_cost);
 }
 
 template<TaskKind Kind>
 datalog::Cost LMCutImplementation<Kind>::get_numeric_cost(const NumericNode& node) const noexcept
 {
-    const auto* annotation = this->m_workspace.numeric_annotations.find(node.key, node.interval);
+    const auto* annotation = this->workspace().numeric_annotations.find(node.key, node.interval);
     return annotation ? datalog::get_cost(*annotation) : static_cast<datalog::Cost>(0);
 }
 
 template<TaskKind Kind>
 const datalog::WitnessAnnotation<formalism::FunctionTag>* LMCutImplementation<Kind>::get_numeric_witness(const NumericNode& node) const noexcept
 {
-    const auto* annotation = this->m_workspace.numeric_annotations.find(node.key, node.interval);
+    const auto* annotation = this->workspace().numeric_annotations.find(node.key, node.interval);
     return annotation ? std::get_if<datalog::WitnessAnnotation<formalism::FunctionTag>>(annotation) : nullptr;
 }
 
@@ -401,7 +401,7 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std:
             if constexpr (std::same_as<std::remove_cvref_t<decltype(key)>, PredicateHead>)
             {
                 // Facts of the state start the justification graph, whether or not a rule derives them again.
-                if (const auto* annotation = this->m_workspace.annotations.find(key.get_index());
+                if (const auto* annotation = this->workspace().annotations.find(key.get_index());
                     annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation))
                 {
                     is_base = true;
@@ -536,7 +536,7 @@ template<TaskKind Kind>
 void LMCutImplementation<Kind>::seed_goal_zone()
 {
     const auto goal_cost = this->get_goal_cost();
-    if (const auto& goal = this->m_workspace.tp.get_goal())
+    if (const auto& goal = this->workspace().tp.get_goal())
     {
         for (const auto literal : goal->template get_literals<formalism::FluentTag>())
         {
@@ -548,7 +548,7 @@ void LMCutImplementation<Kind>::seed_goal_zone()
             }
         }
 
-        const auto& selector = this->m_workspace.get_numeric_support_selector();
+        const auto& selector = this->workspace().get_numeric_support_selector();
         for (const auto constraint : goal->get_numeric_constraints())
         {
             if (selector.get_constraint_cost(constraint, m_numeric_support_selector_workspace.selection, datalog::MaxAggregation {}) != goal_cost)

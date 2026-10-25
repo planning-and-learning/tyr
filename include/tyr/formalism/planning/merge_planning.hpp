@@ -120,20 +120,20 @@ ygg::Data<BooleanOperator<T>> merge_d2p(datalog::BooleanOperatorView<T> element,
 
 inline std::pair<VariableView, bool> merge_d2p(datalog::VariableView element, MergePlanningContext& context)
 {
-    auto variable = planning::checkout<Variable>(context.builder);
+    auto variable = planning::checkout<Variable>(context.builder());
 
     variable->name = element.get_name();
 
-    return planning::insert(context.destination, *variable);
+    return planning::insert(context.destination(), *variable);
 }
 
 inline std::pair<ObjectView, bool> merge_d2p(datalog::ObjectView element, MergePlanningContext& context)
 {
-    auto object = planning::checkout<Object>(context.builder);
+    auto object = planning::checkout<Object>(context.builder());
 
     object->name = element.get_name();
 
-    return planning::insert(context.destination, *object);
+    return planning::insert(context.destination(), *object);
 }
 
 inline ygg::Data<Term> merge_d2p(datalog::TermView element, MergePlanningContext& context)
@@ -156,12 +156,12 @@ inline ygg::Data<Term> merge_d2p(datalog::TermView element, MergePlanningContext
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<PredicateView<T_DST>, bool> merge_d2p(datalog::PredicateView<T_SRC> element, MergePlanningContext& context)
 {
-    auto predicate = planning::checkout<Predicate<T_DST>>(context.builder);
+    auto predicate = planning::checkout<Predicate<T_DST>>(context.builder());
 
     predicate->name = element.get_name();
     predicate->arity = element.get_arity();
 
-    return planning::insert(context.destination, *predicate);
+    return planning::insert(context.destination(), *predicate);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -169,13 +169,13 @@ std::pair<AtomView<LiftedTag, T_DST>, bool> merge_d2p(datalog::AtomView<LiftedTa
                                                       const ygg::UnorderedMap<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
                                                       MergePlanningContext& context)
 {
-    auto atom = planning::checkout<Atom<LiftedTag, T_DST>>(context.builder);
+    auto atom = planning::checkout<Atom<LiftedTag, T_DST>>(context.builder());
 
     atom->predicate = predicate_mapping.at(element.get_predicate()).get_index();
     for (const auto term : element.get_terms())
         atom->terms.push_back(merge_d2p(term, context));
 
-    return planning::insert(context.destination, *atom);
+    return planning::insert(context.destination(), *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -183,13 +183,13 @@ std::pair<PredicateBindingView<T_DST>, bool> merge_d2p(datalog::PredicateBinding
                                                        const ygg::UnorderedMap<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
                                                        MergePlanningContext& context)
 {
-    auto binding = planning::checkout<RelationBinding<Predicate<T_DST>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Predicate<T_DST>>>(context.builder());
 
     binding->relation = predicate_mapping.at(element.get_relation()).get_index();
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
-    return planning::insert(context.destination, *binding);
+    return planning::insert(context.destination(), *binding);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -197,11 +197,11 @@ std::pair<AtomView<GroundTag, T_DST>, bool> merge_atom_d2p(datalog::PredicateBin
                                                            const ygg::UnorderedMap<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
                                                            MergePlanningContext& context)
 {
-    auto atom = planning::checkout<Atom<GroundTag, T_DST>>(context.builder);
+    auto atom = planning::checkout<Atom<GroundTag, T_DST>>(context.builder());
 
     atom->binding = merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first.get_index();
 
-    return planning::insert(context.destination, *atom);
+    return planning::insert(context.destination(), *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -209,11 +209,11 @@ std::pair<AtomView<GroundTag, T_DST>, bool> merge_d2p(datalog::AtomView<GroundTa
                                                       const ygg::UnorderedMap<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
                                                       MergePlanningContext& context)
 {
-    auto atom = planning::checkout<Atom<GroundTag, T_DST>>(context.builder);
+    auto atom = planning::checkout<Atom<GroundTag, T_DST>>(context.builder());
 
     atom->binding = merge_d2p<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.get_index();
 
-    return planning::insert(context.destination, *atom);
+    return planning::insert(context.destination(), *atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -221,12 +221,12 @@ std::pair<LiteralView<LiftedTag, T_DST>, bool> merge_d2p(datalog::LiteralView<Li
                                                          const ygg::UnorderedMap<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
                                                          MergePlanningContext& context)
 {
-    auto literal = planning::checkout<Literal<LiftedTag, T_DST>>(context.builder);
+    auto literal = planning::checkout<Literal<LiftedTag, T_DST>>(context.builder());
 
     literal->polarity = element.get_polarity();
     literal->atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    return planning::insert(context.destination, *literal);
+    return planning::insert(context.destination(), *literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
@@ -234,12 +234,12 @@ std::pair<LiteralView<GroundTag, T_DST>, bool> merge_d2p(datalog::LiteralView<Gr
                                                          const ygg::UnorderedMap<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
                                                          MergePlanningContext& context)
 {
-    auto literal = planning::checkout<Literal<GroundTag, T_DST>>(context.builder);
+    auto literal = planning::checkout<Literal<GroundTag, T_DST>>(context.builder());
 
     literal->polarity = element.get_polarity();
     literal->atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
-    return planning::insert(context.destination, *literal);
+    return planning::insert(context.destination(), *literal);
 }
 
 // Numeric
@@ -247,57 +247,57 @@ std::pair<LiteralView<GroundTag, T_DST>, bool> merge_d2p(datalog::LiteralView<Gr
 template<FactKind T>
 std::pair<FunctionView<T>, bool> merge_d2p(datalog::FunctionView<T> element, MergePlanningContext& context)
 {
-    auto function = planning::checkout<Function<T>>(context.builder);
+    auto function = planning::checkout<Function<T>>(context.builder());
 
     function->name = element.get_name();
     function->arity = element.get_arity();
 
-    return planning::insert(context.destination, *function);
+    return planning::insert(context.destination(), *function);
 }
 
 template<FactKind T>
 std::pair<FunctionTermView<LiftedTag, T>, bool> merge_d2p(datalog::FunctionTermView<LiftedTag, T> element, MergePlanningContext& context)
 {
-    auto fterm = planning::checkout<FunctionTerm<LiftedTag, T>>(context.builder);
+    auto fterm = planning::checkout<FunctionTerm<LiftedTag, T>>(context.builder());
 
     fterm->function = element.get_function().get_index();
     for (const auto term : element.get_terms())
         fterm->terms.push_back(merge_d2p(term, context));
 
-    return planning::insert(context.destination, *fterm);
+    return planning::insert(context.destination(), *fterm);
 }
 
 template<FactKind T>
 std::pair<FunctionBindingView<T>, bool> merge_d2p(datalog::FunctionBindingView<T> element, MergePlanningContext& context)
 {
-    auto binding = planning::checkout<RelationBinding<Function<T>>>(context.builder);
+    auto binding = planning::checkout<RelationBinding<Function<T>>>(context.builder());
 
     binding->relation = merge_d2p(element.get_relation(), context).first.get_index();
     for (const auto object : element.get_objects())
         binding->objects.push_back(object.get_index());
 
-    return planning::insert(context.destination, *binding);
+    return planning::insert(context.destination(), *binding);
 }
 
 template<FactKind T>
 std::pair<FunctionTermView<GroundTag, T>, bool> merge_d2p(datalog::FunctionTermView<GroundTag, T> element, MergePlanningContext& context)
 {
-    auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder);
+    auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
     fterm->binding = merge_d2p(element.get_row(), context).first.get_index();
 
-    return planning::insert(context.destination, *fterm);
+    return planning::insert(context.destination(), *fterm);
 }
 
 template<FactKind T>
 std::pair<FunctionTermValueView<GroundTag, T>, bool> merge_d2p(datalog::FunctionTermValueView<GroundTag, T> element, MergePlanningContext& context)
 {
-    auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, T>>(context.builder);
+    auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, T>>(context.builder());
 
     fterm_value->fterm = merge_d2p(element.get_fterm(), context).first.get_index();
     fterm_value->value = element.get_value();
 
-    return planning::insert(context.destination, *fterm_value);
+    return planning::insert(context.destination(), *fterm_value);
 }
 
 inline ygg::Data<FunctionExpression<LiftedTag>> merge_d2p(datalog::FunctionExpressionView<LiftedTag> element, MergePlanningContext& context)
@@ -335,36 +335,36 @@ inline ygg::Data<FunctionExpression<GroundTag>> merge_d2p(datalog::FunctionExpre
 template<TaskKind T>
 std::pair<UnaryOperatorView<T>, bool> merge_d2p(datalog::UnaryOperatorView<T> element, MergePlanningContext& context)
 {
-    auto unary = planning::checkout<UnaryOperator<T>>(context.builder);
+    auto unary = planning::checkout<UnaryOperator<T>>(context.builder());
 
     unary->operator_kind = element.get_operator();
     unary->arg = merge_d2p(element.get_arg(), context);
 
-    return planning::insert(context.destination, *unary);
+    return planning::insert(context.destination(), *unary);
 }
 
 template<TaskKind T, BinaryOperatorKind O>
 std::pair<BinaryOperatorView<T, O>, bool> merge_d2p(datalog::BinaryOperatorView<T, O> element, MergePlanningContext& context)
 {
-    auto binary = planning::checkout<BinaryOperator<T, O>>(context.builder);
+    auto binary = planning::checkout<BinaryOperator<T, O>>(context.builder());
 
     binary->operator_kind = element.get_operator();
     binary->lhs = merge_d2p(element.get_lhs(), context);
     binary->rhs = merge_d2p(element.get_rhs(), context);
 
-    return planning::insert(context.destination, *binary);
+    return planning::insert(context.destination(), *binary);
 }
 
 template<TaskKind T>
 std::pair<MultiOperatorView<T>, bool> merge_d2p(datalog::MultiOperatorView<T> element, MergePlanningContext& context)
 {
-    auto multi = planning::checkout<MultiOperator<T>>(context.builder);
+    auto multi = planning::checkout<MultiOperator<T>>(context.builder());
 
     multi->operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
         multi->args.push_back(merge_d2p(arg, context));
 
-    return planning::insert(context.destination, *multi);
+    return planning::insert(context.destination(), *multi);
 }
 
 template<TaskKind T>

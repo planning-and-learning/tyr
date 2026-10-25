@@ -1,6 +1,6 @@
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_view.hpp"
+#include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 
 #include <concepts>
@@ -63,7 +63,7 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     EXPECT_EQ(&duplicate.get_context(), &repository);
     const auto found = repository.find(*data);
     ASSERT_TRUE(found);
-    EXPECT_EQ(&found->get_context(), &repository);
+    EXPECT_EQ(&found.value().get_context(), &repository);
     EXPECT_EQ(&repository.front<Generator>(), &view.get_data());
     EXPECT_EQ(repository.size<Generator>(), 1);
 }

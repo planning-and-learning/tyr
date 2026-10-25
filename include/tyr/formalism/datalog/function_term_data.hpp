@@ -59,6 +59,7 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, F>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::function, &Data::terms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::function, &Data::terms> {}; }
@@ -82,6 +83,7 @@ struct Data<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }

@@ -34,8 +34,8 @@ namespace tyr::formalism::planning
 {
 struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCondition>
 {
-    size_t num_parent_variables;
-    size_t num_variables;
+    size_t num_parent_variables = 0;
+    size_t num_variables = 0;
     MutableLiteralList<StaticTag> static_literals;
     MutableLiteralList<FluentTag> fluent_literals;
     MutableLiteralList<DerivedTag> derived_literals;
@@ -89,7 +89,7 @@ struct structure_traits<planning::MutableConjunctiveCondition>
     using Type = planning::MutableConjunctiveCondition;
 
     template<typename F>
-    static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
+    static bool zip_terms(const Type& lhs, const Type& rhs, F f)
     {
         if (lhs.num_parent_variables != rhs.num_parent_variables)
             return false;
@@ -102,7 +102,7 @@ struct structure_traits<planning::MutableConjunctiveCondition>
     }
 
     template<typename F>
-    static Type transform_terms(const Type& value, F&& f)
+    static Type transform_terms(const Type& value, F f)
     {
         return Type(value.num_parent_variables,
                     value.num_variables,

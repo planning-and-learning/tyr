@@ -55,8 +55,7 @@ SiwExpectation parse_expectation(const boost::json::object& object)
     if (const auto value = ygg::common::find_string(object, "status", "case"))
         result.status = parse_search_status(*value);
     result.plan = parse_optional_plan(object);
-    if (const auto value = ygg::common::find_uint_t(object, "maximum_effective_width", "case"))
-        result.maximum_effective_width = *value;
+    result.maximum_effective_width = ygg::common::find_uint_t(object, "maximum_effective_width", "case");
     result.counters = parse_optional_counters(object);
     return result;
 }
@@ -111,7 +110,7 @@ void check_expectation(const SiwExpectation& expectation, const SiwCase& test_ca
     {
         EXPECT_TRUE(average_effective_width);
         EXPECT_GT(num_solved_subsearches, 0);
-        EXPECT_LE(*average_effective_width, static_cast<double>(*maximum_effective_width));
+        EXPECT_LE(average_effective_width.value(), static_cast<double>(*maximum_effective_width));
     }
     else
     {
@@ -126,12 +125,12 @@ void check_expectation(const SiwExpectation& expectation, const SiwCase& test_ca
     if (expectation.plan)
     {
         ASSERT_TRUE(result.plan);
-        expect_plan(*expectation.plan, *result.plan);
+        expect_plan(*expectation.plan, result.plan.value());
     }
     if (expectation.maximum_effective_width)
     {
         ASSERT_TRUE(maximum_effective_width);
-        EXPECT_EQ(*maximum_effective_width, *expectation.maximum_effective_width);
+        EXPECT_EQ(maximum_effective_width.value(), *expectation.maximum_effective_width);
     }
     if (expectation.counters)
     {

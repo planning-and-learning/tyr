@@ -32,7 +32,7 @@ namespace tyr::tests
 namespace
 {
 template<typename Callable>
-void expect_invalid_argument_message(Callable&& callable, std::string_view expected_message)
+void expect_invalid_argument_message(Callable callable, std::string_view expected_message)
 {
     try
     {

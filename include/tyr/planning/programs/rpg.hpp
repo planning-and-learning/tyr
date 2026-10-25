@@ -72,8 +72,8 @@ public:
 
     datalog::Program<Kind>& get_datalog_program() noexcept { return m_datalog_program; }
     [[nodiscard]] const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
-    [[nodiscard]] formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const noexcept
-    { return m_datalog_program.get_program().get_goal().value(); }
+    /// Not noexcept: the view accessors it goes through are checked and may throw.
+    [[nodiscard]] formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const { return m_datalog_program.get_program().get_goal().value(); }
 
 private:
     TranslationContext<Kind> m_translation_context;

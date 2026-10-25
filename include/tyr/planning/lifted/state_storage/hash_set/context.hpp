@@ -37,8 +37,8 @@ namespace tyr::planning
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, HashSet, ThreadSafe>
 {
-    using UintVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::uint_t, 1024, ThreadSafe>;
-    using FloatVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::float_t, 1024, ThreadSafe>;
+    using UintVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::uint_t, hash_set::first_segment_bytes, ThreadSafe>;
+    using FloatVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::float_t, hash_set::first_segment_bytes, ThreadSafe>;
 
     UintVectorSet uint_vec_set;
     FloatVectorSet float_vec_set;

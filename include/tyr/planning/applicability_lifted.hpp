@@ -169,24 +169,24 @@ inline ygg::float_t evaluate(formalism::planning::MultiOperatorView<LiftedTag> e
 
 inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context)
 {
-    const auto fterm_or_nullopt = formalism::planning::try_ground(element, context.grounder);
+    const auto fterm_or_nullopt = formalism::planning::try_ground(element, context.grounder());
     if (!fterm_or_nullopt.has_value())
         return std::numeric_limits<ygg::float_t>::quiet_NaN();
 
-    return context.state.task.get_static_state().get(*fterm_or_nullopt);
+    return context.state().task().get_static_state().get(*fterm_or_nullopt);
 }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)
 {
-    const auto fterm_or_nullopt = formalism::planning::try_ground(element, context.grounder);
+    const auto fterm_or_nullopt = formalism::planning::try_ground(element, context.grounder());
     if (!fterm_or_nullopt.has_value())
         return std::numeric_limits<ygg::float_t>::quiet_NaN();
 
-    return context.state.state_builder.get(fterm_or_nullopt->get_index());
+    return context.state().state_builder().get(fterm_or_nullopt->get_index());
 }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::AuxiliaryTag>, const ApplicabilityContext& context)
-{ return context.state.auxiliary_value; }
+{ return context.state().auxiliary_value(); }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
@@ -224,35 +224,35 @@ ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, 
 
 inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context)
 {
-    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder);
+    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder());
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
-    return context.state.task.get_static_state().test(*atom_or_nullopt) == element.get_polarity();
+    return context.state().task().get_static_state().test(*atom_or_nullopt) == element.get_polarity();
 }
 
 inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context)
 {
-    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder);
+    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder());
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
-    const auto fact_or_nullopt = context.fdr.get_fact(*atom_or_nullopt);
+    const auto fact_or_nullopt = context.fdr().get_fact(*atom_or_nullopt);
 
     if (!fact_or_nullopt.has_value())
         return !element.get_polarity();
 
     const auto& fact = *fact_or_nullopt;
-    return (context.state.state_builder.get(fact.get_variable()) == fact.get_value()) == element.get_polarity();
+    return (context.state().state_builder().get(fact.get_variable()) == fact.get_value()) == element.get_polarity();
 }
 
 inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context)
 {
-    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder);
+    const auto atom_or_nullopt = formalism::planning::try_ground(element.get_atom(), context.grounder());
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
-    return context.state.state_builder.test(atom_or_nullopt->get_index()) == element.get_polarity();
+    return context.state().state_builder().test(atom_or_nullopt->get_index()) == element.get_polarity();
 }
 
 template<formalism::FactKind T>
@@ -273,11 +273,11 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
                           const ApplicabilityContext& context,
                           formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
-    auto fterm = formalism::planning::try_ground(element.get_fterm(), context.grounder);
+    auto fterm = formalism::planning::try_ground(element.get_fterm(), context.grounder());
     if (!fterm.has_value())
     {
         if (element.get_operator() == formalism::NumericEffectOperatorKind::Assign)
-            fterm = formalism::planning::ground(element.get_fterm(), context.grounder).first;
+            fterm = formalism::planning::ground(element.get_fterm(), context.grounder()).first;
         else
             return false;
     }
@@ -296,7 +296,7 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
     // Check fterm is well-defined in context
     if (element.get_operator() != formalism::NumericEffectOperatorKind::Assign)
     {
-        if (std::isnan(context.state.state_builder.get(fterm_index)))
+        if (std::isnan(context.state().state_builder().get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
     }
 
@@ -324,8 +324,7 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
     return !std::isnan(evaluate(element.get_fexpr(), context));
 }
 
-inline bool is_applicable(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element,
-                          const ApplicabilityContext& context)
+inline bool is_applicable(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context)
 {
     return visit([&](auto&& arg) { return is_applicable(arg, context); }, element.get_variant());
 }

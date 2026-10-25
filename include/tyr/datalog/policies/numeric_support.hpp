@@ -87,7 +87,7 @@ public:
         if (const auto* entry = find_selection_entry(key, selection))
             return entry->interval;
 
-        const auto current = current_interval(key);
+        auto current = current_interval(key);
         if (empty(current))
             return ygg::ClosedInterval<ygg::float_t>();
 
@@ -295,7 +295,7 @@ private:
     }
 
     FactSets m_fact_sets;
-    const NumericIntervalAnnotations<>& m_annotations;
+    const NumericIntervalAnnotations<>* m_annotations;
     bool m_initial_intervals_cost_zero;
 };
 }

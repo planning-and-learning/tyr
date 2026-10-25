@@ -60,7 +60,7 @@ public:
     void for_each_effect_binding(formalism::planning::ActionView<LiftedTag> action,
                                  formalism::planning::ConditionalEffectView<LiftedTag> effect,
                                  ygg::IndexList<formalism::Object>& binding,
-                                 Apply&& apply)
+                                 Apply apply)
     {
         const auto atoms = get_atoms(action, effect, binding);
         if (!atoms)
@@ -72,7 +72,7 @@ public:
         for (const auto atom : *atoms)
         {
             binding.clear();
-            ygg::extend(ygg::make_view(atom, m_repository).get_objects(), binding);
+            ygg::extend(ygg::make_view(atom, *m_repository).get_objects(), binding);
             apply();
             binding.resize(action_arity);
         }
@@ -105,9 +105,9 @@ private:
     std::optional<ygg::uint_t> find_row(formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
                                         std::span<const ygg::Index<formalism::Object>> binding);
 
-    const ConditionalEffectToPredicateMapping& m_effect_to_predicate;
-    const datalog::PredicateFactSets<formalism::FluentTag>& m_facts;
-    const formalism::datalog::Repository& m_repository;
+    const ConditionalEffectToPredicateMapping* m_effect_to_predicate;
+    const datalog::PredicateFactSets<formalism::FluentTag>* m_facts;
+    const formalism::datalog::Repository* m_repository;
     ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>> m_applicability_predicates;
     ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, Groups> m_groups;
     ygg::IndexList<formalism::Object> m_prefix;

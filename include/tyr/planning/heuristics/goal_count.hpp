@@ -21,7 +21,7 @@
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <memory>
 
@@ -44,7 +44,7 @@ public:
 
     [[nodiscard]] HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override;
 
-protected:
+private:
     std::shared_ptr<const Task<Kind>> m_task;
 
     formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;

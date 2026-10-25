@@ -55,6 +55,7 @@ struct Data<::tyr::formalism::planning::Metric>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::optimization_direction, &Data::fexpr> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::optimization_direction, &Data::fexpr> {}; }

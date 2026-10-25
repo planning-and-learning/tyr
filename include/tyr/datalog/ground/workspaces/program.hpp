@@ -73,7 +73,7 @@ struct ConstProgramWorkspace<GroundTag>
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramWorkspace<GroundTag, AP, TP, CP>
 {
-    const ConstProgramWorkspace<GroundTag>& const_workspace;
+    const ConstProgramWorkspace<GroundTag>* const_workspace;
     FactsWorkspace<GroundTag> facts;
     AP annotation_policy;
     PredicateAnnotations<> annotations;
@@ -86,7 +86,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     formalism::datalog::Builder datalog_builder;
 
     explicit ProgramWorkspace(const ConstProgramWorkspace<GroundTag>& cws, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP()) :
-        const_workspace(cws),
+        const_workspace(&cws),
         facts(cws.program.template get_predicates<formalism::FluentTag>(),
               cws.program.template get_functions<formalism::FluentTag>(),
               cws.program.template get_atoms<formalism::FluentTag>(),
@@ -109,7 +109,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     void clear_costs() { cost_policy.clear(); }
 
     auto get_numeric_support_selector() const noexcept
-    { return NumericSupportSelector(FactSets { const_workspace.facts.fact_sets, facts.fact_sets }, numeric_annotations, !AP::stores_annotations); }
+    { return NumericSupportSelector(FactSets { const_workspace->facts.fact_sets, facts.fact_sets }, numeric_annotations, !AP::stores_annotations); }
 };
 
 template<>

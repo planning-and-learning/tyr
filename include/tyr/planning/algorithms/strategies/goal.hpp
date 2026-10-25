@@ -22,7 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_repository.hpp"
 #include "tyr/planning/lifted/state_repository.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <memory>
 
@@ -33,6 +33,7 @@ template<TaskKind Kind>
 class GoalStrategy
 {
 public:
+    GoalStrategy() = default;
     virtual ~GoalStrategy() = default;
 
     /// Custom strategies opt into parallel search by returning an independently usable worker. Each returned worker is called serially, without OS-thread
@@ -45,6 +46,12 @@ public:
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state)
     { return is_dynamic_goal_satisfied(seed_state, state.get_state_builder()); }
     virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) = 0;
+
+protected:
+    GoalStrategy(const GoalStrategy&) = default;
+    GoalStrategy& operator=(const GoalStrategy&) = default;
+    GoalStrategy(GoalStrategy&&) = default;
+    GoalStrategy& operator=(GoalStrategy&&) = default;
 };
 
 template<TaskKind Kind>

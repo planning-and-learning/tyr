@@ -35,7 +35,7 @@ namespace tyr::formalism::planning
 {
 struct MutableAction : ygg::comparison::Mixin<MutableAction>
 {
-    size_t num_variables;
+    size_t num_variables = 0;
     MutableConjunctiveCondition condition;
     MutableConditionalEffectList effects;
 
@@ -67,7 +67,7 @@ struct structure_traits<planning::MutableAction>
     using Type = planning::MutableAction;
 
     template<typename F>
-    static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
+    static bool zip_terms(const Type& lhs, const Type& rhs, F f)
     {
         if (lhs.num_variables != rhs.num_variables)
             return false;
@@ -76,7 +76,7 @@ struct structure_traits<planning::MutableAction>
     }
 
     template<typename F>
-    static Type transform_terms(const Type& value, F&& f)
+    static Type transform_terms(const Type& value, F f)
     { return Type(value.num_variables, unification::transform_terms(value.condition, f), unification::transform_terms(value.effects, f)); }
 };
 }

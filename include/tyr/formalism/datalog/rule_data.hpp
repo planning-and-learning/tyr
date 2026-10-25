@@ -108,6 +108,7 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> : ::tyr::forma
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     auto cista_members() noexcept { return std::tie(index, variables, body, this->head_member(), cost); }
     auto cista_members() const noexcept { return std::tie(index, variables, body, this->head_member(), cost); }
@@ -162,6 +163,7 @@ struct Data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>> : ::tyr::forma
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     auto cista_members() noexcept { return std::tie(index, binding, body, this->head_member(), cost); }
     auto cista_members() const noexcept { return std::tie(index, binding, body, this->head_member(), cost); }

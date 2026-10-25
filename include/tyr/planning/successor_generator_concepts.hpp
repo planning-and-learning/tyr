@@ -25,6 +25,7 @@
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <concepts>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <type_traits>
@@ -38,7 +39,7 @@ namespace tyr::planning
 {
 
 /// Result of checking an offered tuple without publishing its action binding.
-enum class ActionBindingStatus
+enum class ActionBindingStatus : std::uint8_t
 {
     APPLICABLE,
     OUTSIDE_PARAMETER_DOMAIN,

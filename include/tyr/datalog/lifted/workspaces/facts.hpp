@@ -48,7 +48,7 @@ struct FactsWorkspace<LiftedTag>
     {
         if (!fact_sets.predicate.insert(binding))
             return false;
-        assignment_sets.predicate.insert(ygg::make_view(binding, *m_repository));
+        assignment_sets.predicate.insert(ygg::make_view(binding, *repository));
         delta_fact_sets.predicate.insert(binding);
         return true;
     }
@@ -57,21 +57,20 @@ struct FactsWorkspace<LiftedTag>
     {
         if (!fact_sets.function.insert(binding, interval))
             return false;
-        assignment_sets.function.insert(ygg::make_view(binding, *m_repository), interval);
+        assignment_sets.function.insert(ygg::make_view(binding, *repository), interval);
         return true;
     }
 
     void reset();
 
-private:
-    const formalism::datalog::Repository* m_repository;  ///< The workspace repository the bindings live in (or below).
+    const formalism::datalog::Repository* repository;  ///< The workspace repository the bindings live in (or below).
 };
 
 template<>
 struct ConstFactsWorkspace<LiftedTag>
 {
-    const TaggedFactSets<formalism::StaticTag> fact_sets;
-    const TaggedAssignmentSets<formalism::StaticTag> assignment_sets;
+    TaggedFactSets<formalism::StaticTag> fact_sets;
+    TaggedAssignmentSets<formalism::StaticTag> assignment_sets;
 
     explicit ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
                                  formalism::datalog::FunctionListView<formalism::StaticTag> functions,

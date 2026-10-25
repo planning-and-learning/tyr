@@ -53,8 +53,7 @@ IwExpectation parse_expectation(const boost::json::object& object)
     if (const auto value = ygg::common::find_string(object, "status", "case"))
         result.status = parse_search_status(*value);
     result.plan = parse_optional_plan(object);
-    if (const auto value = ygg::common::find_uint_t(object, "solution_arity", "case"))
-        result.solution_arity = *value;
+    result.solution_arity = ygg::common::find_uint_t(object, "solution_arity", "case");
     result.counters = parse_optional_counters(object);
     return result;
 }
@@ -120,13 +119,13 @@ void check_expectation(const IwExpectation& expectation, const IwCase& test_case
     if (expectation.plan)
     {
         ASSERT_TRUE(result.plan);
-        expect_plan(*expectation.plan, *result.plan);
+        expect_plan(*expectation.plan, result.plan.value());
         EXPECT_TRUE(solution_arity);
     }
     if (expectation.solution_arity)
     {
         ASSERT_TRUE(solution_arity);
-        EXPECT_EQ(*solution_arity, *expectation.solution_arity);
+        EXPECT_EQ(solution_arity.value(), *expectation.solution_arity);
     }
     if (expectation.counters)
     {

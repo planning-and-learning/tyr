@@ -57,6 +57,7 @@ struct Data<::tyr::formalism::datalog::UnaryOperator<T>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::arg> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::arg> {}; }

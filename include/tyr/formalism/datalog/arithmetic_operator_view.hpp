@@ -44,7 +44,7 @@ public:
 
 /// Canonical context depends on variable.
 template<::tyr::TaskKind T, typename C>
-const C& get_canonical_context(const ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T>>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::datalog::ArithmeticOperator<T>>& element, const C& context)
 {
     return std::visit([&](auto&& arg) -> decltype(auto) { return ygg::make_view(arg, context).get_context(); }, element.variant);
 }

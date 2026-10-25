@@ -83,7 +83,8 @@ void instantiate_factored_mapping_rec(const std::vector<std::pair<std::vector<si
     auto perm = images;
     std::sort(perm.begin(), perm.end(), optional_parameter_less);
 
-    do
+    // Visits every permutation, starting with the sorted one.
+    for (auto more = true; more; more = std::next_permutation(perm.begin(), perm.end(), optional_parameter_less))
     {
         for (size_t i = 0; i < positions.size(); ++i)
             current.push_back({ positions[i], perm[i] });
@@ -92,7 +93,7 @@ void instantiate_factored_mapping_rec(const std::vector<std::pair<std::vector<si
 
         for (size_t i = 0; i < positions.size(); ++i)
             current.pop_back();
-    } while (std::next_permutation(perm.begin(), perm.end(), optional_parameter_less));
+    }
 }
 
 std::vector<PositionMapping> instantiate_factored_mapping(const std::vector<std::pair<std::vector<size_t>, std::vector<std::optional<ParameterIndex>>>>& groups)

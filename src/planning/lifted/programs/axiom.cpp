@@ -60,16 +60,16 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                        const TranslationContext<LiftedTag>& translation_context,
                        formalism::planning::MergeDatalogContext& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder);
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
 
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder);
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
         conj_cond->variables.push_back(formalism::planning::merge_p2d(variable, context).first.get_index());
 
     process_axiom_body(axiom.get_body(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = formalism::datalog::insert(context.destination, *conj_cond).first.get_index();
+    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first.get_index();
 
     rule->body = new_conj_cond;
 
@@ -80,7 +80,7 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 
     rule->heads.push_back(new_head);
 
-    return formalism::datalog::insert(context.destination, *rule);
+    return formalism::datalog::insert(context.destination(), *rule);
 }
 
 auto create_program(formalism::planning::TaskView<LiftedTag> task,

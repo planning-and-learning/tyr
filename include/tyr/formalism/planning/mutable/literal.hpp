@@ -36,7 +36,7 @@ template<FactKind T>
 struct MutableLiteral : ygg::comparison::Mixin<MutableLiteral<T>>
 {
     MutableAtom<T> atom;
-    bool polarity;
+    bool polarity = false;
 
     MutableLiteral() = default;
     MutableLiteral(MutableAtom<T> atom, bool polarity) : atom(std::move(atom)), polarity(polarity) {}
@@ -57,7 +57,7 @@ struct structure_traits<planning::MutableLiteral<T>>
     using Type = planning::MutableLiteral<T>;
 
     template<typename F>
-    static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
+    static bool zip_terms(const Type& lhs, const Type& rhs, F f)
     {
         if (lhs.polarity != rhs.polarity)
             return false;
@@ -66,7 +66,7 @@ struct structure_traits<planning::MutableLiteral<T>>
     }
 
     template<typename F>
-    static Type transform_terms(const Type& value, F&& f)
+    static Type transform_terms(const Type& value, F f)
     { return Type(unification::transform_terms(value.atom, f), value.polarity); }
 };
 }

@@ -206,7 +206,12 @@ using Annotation = std::variant<BaseAnnotation, WitnessAnnotation<R>>;
 template<formalism::RelationKind R>
 inline Cost get_cost(const Annotation<R>& annotation) noexcept
 {
-    return std::visit([](const auto& value) { return value.get_cost(); }, annotation);
+    // get_if rather than std::visit, which throws for a valueless variant; annotations are never valueless.
+    if (const auto* base = std::get_if<BaseAnnotation>(&annotation))
+        return base->get_cost();
+    const auto* witness = std::get_if<WitnessAnnotation<R>>(&annotation);
+    YGG_ASSUME(witness != nullptr);
+    return witness->get_cost();
 }
 
 struct CostUpdate
@@ -221,7 +226,7 @@ struct CostUpdate
         new_cost(new_cost)
     { assert(is_monotone()); }
 
-    [[nodiscard]] bool is_monotone() const noexcept { return !old_cost || new_cost <= old_cost.value(); }
+    [[nodiscard]] bool is_monotone() const noexcept { return !old_cost || new_cost <= *old_cost; }
     [[nodiscard]] bool is_strict_improvement() const noexcept { return new_cost < old_cost.value_or(std::numeric_limits<Cost>::max()); }
 };
 
@@ -254,6 +259,7 @@ public:
     = delete;
     DenseRelationMap(DenseRelationMap&&) noexcept = default;
     DenseRelationMap& operator=(DenseRelationMap&&) noexcept = default;
+    ~DenseRelationMap() = default;
 
     void initialize(size_t num_relations) { m_lanes = std::vector<Lane>(num_relations); }
 
@@ -316,7 +322,9 @@ private:
         Value value {};
     };
 
-    using Lane = std::conditional_t<ThreadSafe, ygg::SegmentedVector<Slot, 32, true>, std::vector<Slot>>;
+    static constexpr size_t first_lane_segment_size = 32;
+
+    using Lane = std::conditional_t<ThreadSafe, ygg::SegmentedVector<Slot, first_lane_segment_size, true>, std::vector<Slot>>;
 
     template<typename SlotT, typename Callback>
     static decltype(auto) with_slot_lock(SlotT& slot, Callback&& callback)

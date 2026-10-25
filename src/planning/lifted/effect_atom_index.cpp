@@ -27,9 +27,9 @@ EffectAtomIndex::EffectAtomIndex(const AppPredicateToActionMapping& predicate_to
                                  const ConditionalEffectToPredicateMapping& effect_to_predicate,
                                  const datalog::PredicateFactSets<formalism::FluentTag>& facts,
                                  const formalism::datalog::Repository& repository) :
-    m_effect_to_predicate(effect_to_predicate),
-    m_facts(facts),
-    m_repository(repository)
+    m_effect_to_predicate(&effect_to_predicate),
+    m_facts(&facts),
+    m_repository(&repository)
 {
     for (const auto& [predicate, action] : predicate_to_action)
         m_applicability_predicates.emplace(action, predicate);
@@ -45,8 +45,8 @@ std::optional<std::span<const EffectAtomIndex::AtomIndex>> EffectAtomIndex::get_
                                                                                       formalism::planning::ConditionalEffectView<LiftedTag> effect,
                                                                                       std::span<const ygg::Index<formalism::Object>> binding)
 {
-    const auto effect_predicate = m_effect_to_predicate.find(std::pair(action, effect));
-    if (effect_predicate == m_effect_to_predicate.end())
+    const auto effect_predicate = m_effect_to_predicate->find(std::pair(action, effect));
+    if (effect_predicate == m_effect_to_predicate->end())
         return std::nullopt;
 
     const auto applicability_predicate = m_applicability_predicates.at(action);
@@ -65,7 +65,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
                               formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
                               size_t action_arity)
 {
-    const auto atoms = m_facts.get_sets()[ygg::uint_t(effect_predicate.get_index())].get_bindings();
+    const auto atoms = m_facts->get_sets()[ygg::uint_t(effect_predicate.get_index())].get_bindings();
 
     // The applicability row of each atom's action binding, which holds since the effect rule's body contains the precondition.
     groups.atom_rows.clear();
@@ -107,7 +107,7 @@ std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::datalog::Predica
     m_lookup.objects.clear();
     m_lookup.objects.insert(m_lookup.objects.end(), binding.begin(), binding.end());
     m_lookup.relation = applicability_predicate.get_index();
-    const auto atom = m_repository.find(m_lookup);
+    const auto atom = m_repository->find(m_lookup);
     if (!atom)
         return std::nullopt;
     return ygg::uint_t(atom->get_index().row);

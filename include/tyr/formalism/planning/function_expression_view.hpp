@@ -43,7 +43,7 @@ public:
 };
 
 template<::tyr::TaskKind T, typename C>
-const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>& element, const C& context)
 {
     return std::visit(
         [&]<typename Alternative>(const Alternative& arg) -> decltype(auto)

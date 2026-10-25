@@ -85,7 +85,8 @@ struct SearchResult
             return 0;
 
         const auto idle_time = std::chrono::duration<long double>(statistics.get_idle_time()).count();
-        return static_cast<ygg::float_t>(std::clamp(1.0L - idle_time / capacity, 0.0L, 1.0L));
+        constexpr auto full_utilization = 1.0L;
+        return static_cast<ygg::float_t>(std::clamp(full_utilization - idle_time / capacity, 0.0L, full_utilization));
     }
 };
 

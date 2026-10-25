@@ -106,6 +106,9 @@ template<typename Tag>
 inline const Repository<Tag>& get_repository(const Repository<Tag>& context) noexcept
 { return context; }
 
+template<typename Tag>
+const Repository<Tag>& get_repository(const Repository<Tag>&& context) = delete;
+
 template<typename T, typename Tag>
 concept Context = requires(const T& a) {
     { get_repository(a) } -> RepositoryConcept<Tag>;

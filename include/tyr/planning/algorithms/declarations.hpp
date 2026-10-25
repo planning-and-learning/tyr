@@ -29,7 +29,7 @@ enum class DistHashMode : uint8_t
     LMCUT,
 };
 
-enum class SearchStatus
+enum class SearchStatus : uint8_t
 {
     IN_PROGRESS,
     OUT_OF_TIME,

@@ -44,7 +44,7 @@ public:
 };
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, typename C>
-const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::NumericEffectOperator<T, F>>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::NumericEffectOperator<T, F>>& element, const C& context)
 {
     return std::visit([&](const auto& arg) -> decltype(auto) { return ygg::make_view(arg, context).get_context(); }, element.variant);
 }

@@ -59,13 +59,13 @@ struct FFRPGHeuristic<Kind>::Impl :
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         Base(std::move(task), std::move(execution_context), cost_mode),
-        m_predicate_markings(this->m_workspace.facts.fact_sets.predicate.get_sets().size())
+        m_predicate_markings(this->workspace().facts.fact_sets.predicate.get_sets().size())
     {
     }
 
     Impl(const Impl& source, ygg::ExecutionContextPtr execution_context) :
         Base(source, std::move(execution_context)),
-        m_predicate_markings(this->m_workspace.facts.fact_sets.predicate.get_sets().size())
+        m_predicate_markings(this->workspace().facts.fact_sets.predicate.get_sets().size())
     {
     }
 
@@ -88,7 +88,7 @@ struct FFRPGHeuristic<Kind>::Impl :
         for (auto& bits : m_predicate_markings)
             bits.reset();
 
-        if (const auto& goal = this->m_workspace.tp.get_goal())
+        if (const auto& goal = this->workspace().tp.get_goal())
         {
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
             {
@@ -111,7 +111,7 @@ private:
         if (mark(m_predicate_markings, head.get_index().relation, head.get_index().row))
             return;
 
-        const auto* annotation = this->m_workspace.annotations.find(head.get_index());
+        const auto* annotation = this->workspace().annotations.find(head.get_index());
         if (!annotation)
             return;
 
@@ -125,7 +125,7 @@ private:
         if (!m_numeric_markings.emplace(head, interval).second)
             return;
 
-        const auto* annotation = this->m_workspace.numeric_annotations.find(head, interval);
+        const auto* annotation = this->workspace().numeric_annotations.find(head, interval);
         if (!annotation)
             return;
 
@@ -136,7 +136,7 @@ private:
 
     void extract_numeric_constraint_support(formalism::datalog::BooleanOperatorView<GroundTag> constraint)
     {
-        const auto& selector = this->m_workspace.get_numeric_support_selector();
+        const auto& selector = this->workspace().get_numeric_support_selector();
         selector.for_each_constraint_support(std::move(constraint),
                                              m_numeric_support_workspace.selection,
                                              datalog::SumAggregation {},

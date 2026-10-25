@@ -17,7 +17,6 @@
 
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_view.hpp"
 
 namespace ygg
 {

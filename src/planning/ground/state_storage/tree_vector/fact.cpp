@@ -27,9 +27,9 @@ namespace tyr::planning
 
 template<bool ThreadSafe>
 FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::FactStorageBackend(Context& ctx) :
-    m_array_set(ctx.fluent_array_set),
-    m_infos(ctx.fluent_infos),
-    m_buffer(m_array_set.array_size())
+    m_array_set(&ctx.fluent_array_set),
+    m_infos(&ctx.fluent_infos),
+    m_buffer(m_array_set->array_size())
 {
 }
 
@@ -39,28 +39,28 @@ typename FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::Packed FactStora
     const auto& values = unpacked.values;
 
     std::fill(m_buffer.begin(), m_buffer.end(), static_cast<ygg::uint_t>(0));
-    for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
+    for (ygg::uint_t i = 0; i < m_infos->size(); ++i)
     {
-        const auto& info = m_infos[i];
+        const auto& info = (*m_infos)[i];
 
         ygg::bit::int_reference(std::span(m_buffer).subspan(info.begin), info.offset, info.length) = values[i];
     }
 
-    return Packed { m_array_set.insert(m_buffer) };
+    return Packed { m_array_set->insert(m_buffer) };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<GroundTag, TreeVector, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    const auto data = m_array_set[packed.index];
+    const auto data = (*m_array_set)[packed.index];
     auto& values = unpacked.values;
 
-    if (values.size() != m_infos.size())
-        values.resize(m_infos.size());
+    if (values.size() != m_infos->size())
+        values.resize(m_infos->size());
 
-    for (ygg::uint_t i = 0; i < m_infos.size(); ++i)
+    for (ygg::uint_t i = 0; i < m_infos->size(); ++i)
     {
-        const auto& info = m_infos[i];
+        const auto& info = (*m_infos)[i];
 
         values[i] = ygg::bit::read_int<ygg::uint_t>(std::span(data.data(), data.size()).subspan(info.begin), info.offset, info.length);
     }

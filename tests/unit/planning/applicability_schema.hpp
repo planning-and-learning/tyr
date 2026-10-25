@@ -171,7 +171,7 @@ void expect_schema_queries_match_filtered_successors()
     auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
     auto source = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
-    const auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
+    auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
     auto pool = ygg::UniqueObjectPool<ygg::Builder<tyr::planning::State<Kind>>> {};
     auto owned = pool.get_or_allocate();
     *owned = registered_initial.get_state().get_state_builder();
@@ -257,8 +257,8 @@ void expect_schema_queries_match_filtered_successors()
             const auto result = generator->try_get_applicable_action_binding(initial_node, action, objects);
             ASSERT_EQ(result.status, tyr::planning::ActionBindingStatus::APPLICABLE);
             ASSERT_TRUE(result.binding);
-            EXPECT_EQ(result.binding->get_relation(), action);
-            EXPECT_TRUE(std::ranges::equal(result.binding->get_data(), objects.get_data()));
+            EXPECT_EQ(result.binding.value().get_relation(), action);
+            EXPECT_TRUE(std::ranges::equal(result.binding.value().get_data(), objects.get_data()));
             const auto published = count_action_bindings(task);
             EXPECT_EQ(published, before + (std::same_as<Kind, LiftedTag> && generator == source.get() ? 1 : 0));
             const auto repeated = generator->try_get_applicable_action_binding(initial_node, action, objects);
@@ -266,7 +266,7 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_EQ(repeated.binding, result.binding);
             EXPECT_EQ(count_action_bindings(task), published);
             EXPECT_EQ(generator->check_action_binding(initial_node, action, objects), tyr::planning::ActionBindingStatus::APPLICABLE);
-            EXPECT_EQ(generator->check_action_binding(initial_node, *result.binding), tyr::planning::ActionBindingStatus::APPLICABLE);
+            EXPECT_EQ(generator->check_action_binding(initial_node, result.binding.value()), tyr::planning::ActionBindingStatus::APPLICABLE);
             EXPECT_EQ(count_action_bindings(task), published);
         }
     }
@@ -710,7 +710,7 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(source->check_action_binding(initial_node, outside_binding), rejected_domain);
     EXPECT_EQ(count_action_bindings(task), outside_count);
 
-    const auto foreign_task = make_lifted_task();
+    auto foreign_task = make_lifted_task();
     const auto foreign_action = foreign_task->get_domain().get_domain().get_actions()[0];
     const auto foreign_constants = foreign_task->get_task().get_domain().get_constants();
     const auto foreign_low = std::ranges::find_if(foreign_constants, [](auto object) { return object.get_name().str() == "low"; });

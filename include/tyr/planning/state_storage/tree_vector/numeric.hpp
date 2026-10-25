@@ -61,7 +61,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    typename Context::FloatVectorSet& m_float_vectors;
+    typename Context::FloatVectorSet* m_float_vectors;
 
     std::vector<ygg::TreeVectorWrite<ygg::float_t>> m_writes;
 };

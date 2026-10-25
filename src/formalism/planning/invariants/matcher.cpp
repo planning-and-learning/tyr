@@ -28,6 +28,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -73,7 +74,9 @@ void InvariantMatchData::build_postings()
             if (!binding.is_bound(parameter))
                 continue;
 
-            const auto object = *binding[parameter];
+            const auto& bound = binding[parameter];
+            YGG_ASSUME(bound.has_value());
+            const auto object = *bound;
 
             auto& bitset = m_postings[p][object];
             if (bitset.size() == 0)
@@ -102,7 +105,9 @@ bool intersect_matching_bindings(const InvariantMatchData& data, const Invariant
         if (!sigma.is_bound(parameter))
             continue;
 
-        const auto& value = *sigma[parameter];
+        const auto& bound = sigma[parameter];
+        YGG_ASSUME(bound.has_value());
+        const auto& value = *bound;
         const auto object = unification::get_object(value);
 
         const auto it = postings[p].find(object);

@@ -63,11 +63,11 @@ ygg::Data<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::Fluent
     auto function = formalism::datalog::checkout<formalism::Function<formalism::FluentTag>>(context.builder);
     function->name = "__tyr_ground_rule_binding";
     function->arity = 0;
-    const auto function_view = formalism::datalog::insert(context.merge_context.destination, *function).first;
+    const auto function_view = formalism::datalog::insert(context.merge_context.destination(), *function).first;
 
     auto term = formalism::datalog::checkout<formalism::datalog::FunctionTerm<LiftedTag, formalism::FluentTag>>(context.builder);
     term->function = function_view.get_index();
-    const auto term_view = formalism::datalog::insert(context.merge_context.destination, *term).first;
+    const auto term_view = formalism::datalog::insert(context.merge_context.destination(), *term).first;
 
     auto effect = formalism::datalog::checkout<formalism::datalog::NumericEffect<LiftedTag, formalism::FluentTag>>(context.builder);
     effect->operator_kind = formalism::NumericEffectOperatorKind::Assign;
@@ -75,7 +75,7 @@ ygg::Data<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::Fluent
     effect->fexpr = ygg::Data<formalism::datalog::FunctionExpression<LiftedTag>>(static_cast<ygg::float_t>(0));
     return ygg::Data<formalism::datalog::NumericEffectOperator<LiftedTag, formalism::FluentTag>>(
         formalism::NumericEffectOperatorKind::Assign,
-        formalism::datalog::insert(context.merge_context.destination, *effect).first.get_index());
+        formalism::datalog::insert(context.merge_context.destination(), *effect).first.get_index());
 }
 
 template<formalism::RelationKind R, typename CreateHead>
@@ -84,31 +84,31 @@ formalism::datalog::RuleBindingView<R> create_rule_binding(GroundProgramBuildCon
     auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder);
     predicate->name = "ground_rule_" + std::to_string(context.next_rule_id++);
     predicate->arity = 0;
-    const auto new_predicate = formalism::datalog::insert(context.merge_context.destination, *predicate).first;
+    const auto new_predicate = formalism::datalog::insert(context.merge_context.destination(), *predicate).first;
     context.program->fluent_predicates.push_back(new_predicate.get_index());
 
     auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder);
     atom->predicate = new_predicate.get_index();
-    const auto new_atom = formalism::datalog::insert(context.merge_context.destination, *atom).first;
+    const auto new_atom = formalism::datalog::insert(context.merge_context.destination(), *atom).first;
 
     auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::FluentTag>>(context.builder);
     literal->atom = new_atom.get_index();
     literal->polarity = false;
-    const auto new_literal = formalism::datalog::insert(context.merge_context.destination, *literal).first;
+    const auto new_literal = formalism::datalog::insert(context.merge_context.destination(), *literal).first;
 
     auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder);
     // Keep synthetic function-rule keys distinct without adding a positive witness precondition.
     condition->fluent_literals.push_back(new_literal.get_index());
-    const auto new_condition = formalism::datalog::insert(context.merge_context.destination, *condition).first;
+    const auto new_condition = formalism::datalog::insert(context.merge_context.destination(), *condition).first;
 
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, R>>(context.builder);
     rule->body = new_condition.get_index();
-    rule->head_member() = create_head(new_atom);
-    const auto new_rule = formalism::datalog::insert(context.merge_context.destination, *rule).first;
+    rule->head_member() = std::forward<CreateHead>(create_head)(new_atom);
+    const auto new_rule = formalism::datalog::insert(context.merge_context.destination(), *rule).first;
 
     auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::datalog::Rule<LiftedTag, R>>>(context.builder);
     binding->relation = new_rule.get_index();
-    return formalism::datalog::insert(context.merge_context.destination, *binding).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 }
 
 formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicability_atom(formalism::planning::ActionView<GroundTag> action,
@@ -117,7 +117,7 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
     auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder);
     predicate->name = create_applicability_name(action.get_action());
     predicate->arity = action.get_objects().size();
-    const auto new_predicate = formalism::datalog::insert(context.merge_context.destination, *predicate).first;
+    const auto new_predicate = formalism::datalog::insert(context.merge_context.destination(), *predicate).first;
 
     context.program->fluent_predicates.push_back(new_predicate.get_index());
 
@@ -125,11 +125,11 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
     binding->relation = new_predicate.get_index();
     for (const auto object : action.get_objects())
         binding->objects.push_back(object.get_index());
-    const auto new_binding = formalism::datalog::insert(context.merge_context.destination, *binding).first;
+    const auto new_binding = formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 
     auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::FluentTag>>(context.builder);
     atom->binding = new_binding.get_index();
-    return formalism::datalog::insert(context.merge_context.destination, *atom).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *atom).first;
 }
 
 formalism::datalog::LiteralView<GroundTag, formalism::FluentTag> create_positive_literal(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom,
@@ -138,7 +138,7 @@ formalism::datalog::LiteralView<GroundTag, formalism::FluentTag> create_positive
     auto literal = formalism::datalog::checkout<formalism::datalog::Literal<GroundTag, formalism::FluentTag>>(context.builder);
     literal->atom = atom.get_index();
     literal->polarity = true;
-    return formalism::datalog::insert(context.merge_context.destination, *literal).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *literal).first;
 }
 
 void fill_delete_free_condition(formalism::planning::ConjunctiveConditionView<GroundTag> condition,
@@ -162,7 +162,7 @@ formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condi
     auto result = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder);
     fill_delete_free_condition(condition, translation_context, context, *result);
 
-    return formalism::datalog::insert(context.merge_context.destination, *result).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *result).first;
 }
 
 formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal,
@@ -179,7 +179,7 @@ create_delete_free_effect_condition(formalism::datalog::AtomView<GroundTag, form
     auto result = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder);
     fill_delete_free_condition(effect_condition, translation_context, context, *result);
     result->fluent_literals.push_back(create_positive_literal(applicability_atom, context).get_index());
-    return formalism::datalog::insert(context.merge_context.destination, *result).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *result).first;
 }
 
 formalism::datalog::ConjunctiveConditionView<GroundTag>
@@ -191,7 +191,7 @@ create_delete_free_numeric_effect_condition(formalism::planning::ConjunctiveCond
     auto result = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder);
     fill_delete_free_condition(action_condition, translation_context, context, *result);
     fill_delete_free_condition(effect_condition, translation_context, context, *result);
-    return formalism::datalog::insert(context.merge_context.destination, *result).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *result).first;
 }
 
 formalism::datalog::RuleView<GroundTag, formalism::PredicateTag>
@@ -212,7 +212,7 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
     rule->body = body.get_index();
     rule->heads = heads;
     rule->cost = cost;
-    return formalism::datalog::insert(context.merge_context.destination, *rule).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *rule).first;
 }
 
 formalism::datalog::RuleView<GroundTag, formalism::FunctionTag>
@@ -226,7 +226,7 @@ create_ground_numeric_effect_rule(formalism::datalog::ConjunctiveConditionView<G
     rule->body = body.get_index();
     rule->head = datalog_head;
     rule->cost = 1;
-    return formalism::datalog::insert(context.merge_context.destination, *rule).first;
+    return formalism::datalog::insert(context.merge_context.destination(), *rule).first;
 }
 
 formalism::datalog::RuleView<GroundTag, formalism::PredicateTag>
@@ -241,7 +241,7 @@ create_applicability_rule(formalism::planning::ActionView<GroundTag> action,
 }
 
 formalism::datalog::ProgramView<GroundTag> finish_program(GroundProgramBuildContext& context)
-{ return formalism::datalog::insert(context.merge_context.destination, *context.program).first; }
+{ return formalism::datalog::insert(context.merge_context.destination(), *context.program).first; }
 
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<GroundTag> action,
                                            ygg::Data<formalism::datalog::Program<GroundTag>>& program,

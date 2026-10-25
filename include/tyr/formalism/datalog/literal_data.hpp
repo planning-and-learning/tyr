@@ -33,7 +33,7 @@ struct Data<::tyr::formalism::datalog::Literal<T, F>>
 {
     ygg::Index<::tyr::formalism::datalog::Literal<T, F>> index;
     ygg::Index<::tyr::formalism::datalog::Atom<T, F>> atom;
-    bool polarity;
+    bool polarity = false;
 
     Data() = default;
     Data(ygg::Index<::tyr::formalism::datalog::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
@@ -44,6 +44,7 @@ struct Data<::tyr::formalism::datalog::Literal<T, F>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atom, &Data::polarity> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::polarity> {}; }

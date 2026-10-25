@@ -26,7 +26,7 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>

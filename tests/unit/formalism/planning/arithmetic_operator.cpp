@@ -26,7 +26,7 @@ static_assert(ArithmeticOperatorContract<GroundArithmeticOperator>);
 static_assert(std::same_as<ygg::View<ygg::Data<GroundArithmeticOperator>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::ArithmeticOperatorView<::tyr::GroundTag>>);
 
-static_assert(tyr::formalism::ArithmeticOperatorKind::Add == tyr::formalism::ArithmeticOperatorKind::Add);
+static_assert(std::equality_comparable<tyr::formalism::ArithmeticOperatorKind>);
 static_assert(tyr::formalism::ArithmeticOperatorKind::Add < tyr::formalism::ArithmeticOperatorKind::Sub);
 static_assert(tyr::formalism::to_string(tyr::formalism::ArithmeticOperatorKind::Mul) == "*");
 static_assert(tyr::formalism::is_unary(tyr::formalism::ArithmeticOperatorKind::Sub));

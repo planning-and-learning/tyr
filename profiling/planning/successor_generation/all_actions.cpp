@@ -67,7 +67,7 @@ try
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     auto successors = std::vector<tyr::planning::LabeledNode<Kind>>();
 
-    for (auto _ : state)
+    for ([[maybe_unused]] auto _ : state)
     {
         successor_generator->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator, successors);
         benchmark::DoNotOptimize(successors.data());
@@ -92,7 +92,7 @@ try
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     auto bindings = std::vector<tyr::formalism::planning::ActionBindingView>();
 
-    for (auto _ : state)
+    for ([[maybe_unused]] auto _ : state)
     {
         successor_generator->get_applicable_action_bindings(initial_node, bindings);
         benchmark::DoNotOptimize(bindings.data());

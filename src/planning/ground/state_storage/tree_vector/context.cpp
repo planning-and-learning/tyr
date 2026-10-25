@@ -19,6 +19,8 @@
 
 #include "tyr/planning/ground/task.hpp"
 
+#include <utility>
+
 namespace tyr::planning
 {
 namespace
@@ -67,10 +69,10 @@ StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(cons
 
 template<bool ThreadSafe>
 StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(LayoutData&& layout_data) :
-    fluent_infos(layout_data.fluent_infos),
     fluent_array_set(layout_data.fluent_array_size),
-    derived_num_bits(layout_data.derived_num_bits),
-    derived_array_set(layout_data.derived_array_size)
+    derived_array_set(layout_data.derived_array_size),
+    fluent_infos(std::move(layout_data.fluent_infos)),
+    derived_num_bits(layout_data.derived_num_bits)
 {
 }
 

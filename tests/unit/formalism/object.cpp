@@ -48,8 +48,8 @@ namespace
 {
 struct ObjectContext
 {
-    const tyr::formalism::planning::Repository& repository;
-    friend const tyr::formalism::planning::Repository& get_repository(const ObjectContext& context) noexcept { return context.repository; }
+    const tyr::formalism::planning::Repository* repository;
+    friend const tyr::formalism::planning::Repository& get_repository(const ObjectContext& context) noexcept { return *context.repository; }
 };
 static_assert(ygg::formalism::SymbolRepositoryFor<tyr::formalism::planning::Repository, tyr::formalism::Object>);
 static_assert(ygg::formalism::SymbolContextFor<ObjectContext, tyr::formalism::Object>);
@@ -62,7 +62,7 @@ TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
     auto data = ObjectData(std::string("truck"));
     const auto object = tyr::formalism::planning::insert(repository, data).first;
-    const auto context = ObjectContext { repository };
+    const auto context = ObjectContext { &repository };
     const auto view = ygg::make_view(object.get_index(), context);
     EXPECT_EQ(&view.get_data(), &object.get_data());
     EXPECT_EQ(&view.get_context(), &context);

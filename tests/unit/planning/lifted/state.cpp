@@ -8,7 +8,6 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>

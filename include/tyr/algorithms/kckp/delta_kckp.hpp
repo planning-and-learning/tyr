@@ -26,6 +26,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <span>
 #include <type_traits>
@@ -52,7 +53,7 @@ struct Hyperedge
 {
 };
 
-enum class AdjacencyKind
+enum class AdjacencyKind : std::uint8_t
 {
     IMPLICIT,
     STATIC_ONLY,
@@ -100,12 +101,12 @@ public:
                                const DeduplicatedAdjacencyMatrix& static_matrix,
                                const VertexPartitions& affected_partitions,
                                const VertexPartitions& delta_partitions) :
-        m_layout(layout),
-        m_adjacency_layout(adjacency_layout),
-        m_static_matrix(static_matrix),
-        m_affected_partitions(affected_partitions),
-        m_delta_partitions(delta_partitions),
-        m_touched_partitions(m_layout.num_vertices * m_layout.num_partitions, false),
+        m_layout(&layout),
+        m_adjacency_layout(&adjacency_layout),
+        m_static_matrix(&static_matrix),
+        m_affected_partitions(&affected_partitions),
+        m_delta_partitions(&delta_partitions),
+        m_touched_partitions(layout.num_vertices * layout.num_partitions, false),
         m_bitset_data(adjacency_layout.num_blocks(), 0)
     {
     }
@@ -115,30 +116,30 @@ public:
 
     void copy_adjacency_to(ygg::uint_t vertex, ygg::uint_t partition, ygg::BitsetSpan<uint64_t> destination) const
     {
-        assert(destination.size() == m_layout.info.infos[partition].num_bits);
+        assert(destination.size() == m_layout->info.infos[partition].num_bits);
         for_each_adjacency_block(vertex, partition, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] = adjacency; });
     }
 
     void intersect_adjacency_with(ygg::uint_t vertex, ygg::uint_t partition, ygg::BitsetSpan<uint64_t> destination) const
     {
-        assert(destination.size() == m_layout.info.infos[partition].num_bits);
+        assert(destination.size() == m_layout->info.infos[partition].num_bits);
         for_each_adjacency_block(vertex, partition, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] &= adjacency; });
     }
 
     void subtract_adjacency_from(ygg::uint_t vertex, ygg::uint_t partition, ygg::BitsetSpan<uint64_t> destination) const
     {
-        assert(destination.size() == m_layout.info.infos[partition].num_bits);
+        assert(destination.size() == m_layout->info.infos[partition].num_bits);
         for_each_adjacency_block(vertex, partition, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] &= ~adjacency; });
     }
 
     [[nodiscard]] bool is_adjacent(ygg::uint_t vertex, ygg::uint_t target) const noexcept
     {
-        const auto source_partition = m_layout.vertex_to_partition[vertex];
-        const auto target_partition = m_layout.vertex_to_partition[target];
-        const auto target_bit = m_layout.vertex_to_bit[target];
+        const auto source_partition = m_layout->vertex_to_partition[vertex];
+        const auto target_partition = m_layout->vertex_to_partition[target];
+        const auto target_bit = m_layout->vertex_to_bit[target];
         const auto block = target_bit / ygg::BitsetSpan<const uint64_t>::Digits;
         const auto mask = static_cast<uint64_t>(1) << (target_bit % ygg::BitsetSpan<const uint64_t>::Digits);
-        const auto offset = m_adjacency_layout.get_offset(vertex, source_partition, target_partition);
+        const auto offset = m_adjacency_layout->get_offset(vertex, source_partition, target_partition);
 
         if (offset < PartitionedAdjacencyLayout::STATIC_ONLY)
             return m_bitset_data[offset + block] & mask;
@@ -146,44 +147,44 @@ public:
         const auto contextual = get_contextual_partition(vertex, target_partition).blocks()[block] & mask;
         if (offset == PartitionedAdjacencyLayout::IMPLICIT)
             return contextual;
-        return contextual && (m_static_matrix.get_bitset(vertex, target_partition).blocks()[block] & mask);
+        return contextual && (m_static_matrix->get_bitset(vertex, target_partition).blocks()[block] & mask);
     }
 
     template<typename Callback>
-    void for_each_vertex(Callback&& callback) const noexcept
+    void for_each_vertex(Callback callback) const
     {
-        for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+        for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
         {
-            const auto& info = m_layout.info.infos[partition];
-            const auto vertices = m_affected_partitions.get_bitset(info);
+            const auto& info = m_layout->info.infos[partition];
+            const auto vertices = m_affected_partitions->get_bitset(info);
             for (const auto bit : ygg::set_bit_indices(vertices))
                 callback(Vertex(info.bit_offset + static_cast<ygg::uint_t>(bit)));
         }
     }
 
     template<std::invocable<Edge> Callback>
-    void for_each_edge(Callback&& callback) const noexcept
+    void for_each_edge(Callback callback) const
     {
-        for_each_edge([](Vertex, ygg::uint_t) noexcept { return true; }, std::forward<Callback>(callback));
+        for_each_edge([](Vertex, ygg::uint_t) noexcept { return true; }, std::move(callback));
     }
 
     /// for_each_edge, but each source vertex and target partition are first passed to visit_source, which can skip their edges.
     template<std::predicate<Vertex, ygg::uint_t> VisitSource, std::invocable<Edge> Callback>
-    void for_each_edge(VisitSource&& visit_source, Callback&& callback) const noexcept
+    void for_each_edge(VisitSource visit_source, Callback callback) const
     {
-        for (ygg::uint_t source_partition = 0; source_partition < m_layout.num_partitions; ++source_partition)
+        for (ygg::uint_t source_partition = 0; source_partition < m_layout->num_partitions; ++source_partition)
         {
-            const auto& source_info = m_layout.info.infos[source_partition];
-            const auto source_bits = m_affected_partitions.get_bitset(source_info);
+            const auto& source_info = m_layout->info.infos[source_partition];
+            const auto source_bits = m_affected_partitions->get_bitset(source_info);
 
             for (const auto source_bit : ygg::set_bit_indices(source_bits))
             {
                 const auto source_vertex = source_info.bit_offset + static_cast<ygg::uint_t>(source_bit);
-                for (ygg::uint_t target_partition = source_partition + 1; target_partition < m_layout.num_partitions; ++target_partition)
+                for (ygg::uint_t target_partition = source_partition + 1; target_partition < m_layout->num_partitions; ++target_partition)
                 {
                     if (!visit_source(Vertex(source_vertex), target_partition))
                         continue;
-                    const auto& target_info = m_layout.info.infos[target_partition];
+                    const auto& target_info = m_layout->info.infos[target_partition];
                     for_each_adjacent_vertex(source_vertex,
                                              target_partition,
                                              [&](size_t target_bit)
@@ -197,34 +198,34 @@ public:
     {
         for (auto touched = m_touched_partitions.find_first(); touched != boost::dynamic_bitset<>::npos; touched = m_touched_partitions.find_next(touched))
         {
-            const auto vertex = touched / m_layout.num_partitions;
-            const auto partition = touched % m_layout.num_partitions;
+            const auto vertex = touched / m_layout->num_partitions;
+            const auto partition = touched % m_layout->num_partitions;
             get_runtime_bitset(vertex, partition).reset();
         }
         m_touched_partitions.reset();
     }
 
-    [[nodiscard]] const auto& layout() const noexcept { return m_layout; }
-    [[nodiscard]] const auto& affected_partitions() const noexcept { return m_affected_partitions; }
-    [[nodiscard]] const auto& delta_partitions() const noexcept { return m_delta_partitions; }
+    [[nodiscard]] const auto& layout() const noexcept { return *m_layout; }
+    [[nodiscard]] const auto& affected_partitions() const noexcept { return *m_affected_partitions; }
+    [[nodiscard]] const auto& delta_partitions() const noexcept { return *m_delta_partitions; }
     auto& touched_partitions() noexcept { return m_touched_partitions; }
     [[nodiscard]] const auto& touched_partitions() const noexcept { return m_touched_partitions; }
-    auto touched_partitions(ygg::uint_t vertex, ygg::uint_t partition) noexcept { return m_touched_partitions[vertex * m_layout.num_partitions + partition]; }
+    auto touched_partitions(ygg::uint_t vertex, ygg::uint_t partition) noexcept { return m_touched_partitions[vertex * m_layout->num_partitions + partition]; }
     [[nodiscard]] const auto& bitset_data() const noexcept { return m_bitset_data; }
 
 private:
     [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_contextual_partition(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
 
     template<typename Callback>
-    void for_each_adjacency_block(ygg::uint_t vertex, ygg::uint_t partition, Callback&& callback) const
+    void for_each_adjacency_block(ygg::uint_t vertex, ygg::uint_t partition, Callback callback) const
     {
-        const auto source_partition = m_layout.vertex_to_partition[vertex];
-        const auto offset = m_adjacency_layout.get_offset(vertex, source_partition, partition);
+        const auto source_partition = m_layout->vertex_to_partition[vertex];
+        const auto offset = m_adjacency_layout->get_offset(vertex, source_partition, partition);
 
         if (offset < PartitionedAdjacencyLayout::STATIC_ONLY)
         {
-            const auto& info = m_layout.info.infos[partition];
-            const auto blocks = std::span<const uint64_t>(m_bitset_data.data() + offset, info.num_blocks);
+            const auto& info = m_layout->info.infos[partition];
+            const auto blocks = std::span<const uint64_t>(m_bitset_data).subspan(offset, info.num_blocks);
             for (size_t block = 0; block < blocks.size(); ++block)
                 callback(block, blocks[block]);
             return;
@@ -239,17 +240,17 @@ private:
         }
 
         assert(offset == PartitionedAdjacencyLayout::STATIC_ONLY);
-        const auto static_blocks = m_static_matrix.get_bitset(vertex, partition).blocks();
+        const auto static_blocks = m_static_matrix->get_bitset(vertex, partition).blocks();
         assert(static_blocks.size() == partition_blocks.size());
         for (size_t block = 0; block < partition_blocks.size(); ++block)
             callback(block, static_blocks[block] & partition_blocks[block]);
     }
 
     template<typename Callback>
-    void for_each_adjacent_vertex(ygg::uint_t vertex, ygg::uint_t partition, Callback&& callback) const
+    void for_each_adjacent_vertex(ygg::uint_t vertex, ygg::uint_t partition, Callback callback) const
     {
-        const auto active_blocks = m_affected_partitions.get_bitset(partition).blocks();
-        const auto num_bits = m_layout.info.infos[partition].num_bits;
+        const auto active_blocks = m_affected_partitions->get_bitset(partition).blocks();
+        const auto num_bits = m_layout->info.infos[partition].num_bits;
         for_each_adjacency_block(vertex,
                                  partition,
                                  [&](size_t block, uint64_t adjacency)
@@ -266,11 +267,11 @@ private:
                                  });
     }
 
-    const GraphLayout& m_layout;
-    const PartitionedAdjacencyLayout& m_adjacency_layout;
-    const DeduplicatedAdjacencyMatrix& m_static_matrix;
-    const VertexPartitions& m_affected_partitions;
-    const VertexPartitions& m_delta_partitions;
+    const GraphLayout* m_layout;
+    const PartitionedAdjacencyLayout* m_adjacency_layout;
+    const DeduplicatedAdjacencyMatrix* m_static_matrix;
+    const VertexPartitions* m_affected_partitions;
+    const VertexPartitions* m_delta_partitions;
     boost::dynamic_bitset<> m_touched_partitions;
     std::vector<uint64_t> m_bitset_data;
 };
@@ -287,6 +288,7 @@ struct FullGraph
     FullGraph& operator=(const FullGraph&) = delete;
     FullGraph(FullGraph&&) = delete;
     FullGraph& operator=(FullGraph&&) = delete;
+    ~FullGraph() = default;
 
     void reset() noexcept
     {
@@ -311,6 +313,7 @@ struct DeltaGraph
     DeltaGraph& operator=(const DeltaGraph&) = delete;
     DeltaGraph(DeltaGraph&&) = delete;
     DeltaGraph& operator=(DeltaGraph&&) = delete;
+    ~DeltaGraph() = default;
 
     void reset() noexcept
     {
@@ -335,6 +338,7 @@ public:
     DeltaKCKP& operator=(const DeltaKCKP&) = delete;
     DeltaKCKP(DeltaKCKP&&) = delete;
     DeltaKCKP& operator=(DeltaKCKP&&) = delete;
+    ~DeltaKCKP() = default;
 
     template<typename Initializer>
     void update(Initializer&& initializer)
@@ -348,10 +352,10 @@ public:
     void reset();
 
     template<typename Callback>
-    void for_each_clique(Callback&& callback, Workspace& workspace) const
+    void for_each_clique(Callback callback, Workspace& workspace) const
     {
-        workspace.prepare(m_layout);
-        const auto num_partitions = m_layout.num_partitions;
+        workspace.prepare(*m_layout);
+        const auto num_partitions = m_layout->num_partitions;
         if (num_partitions == 0)
         {
             workspace.partial_solution_size = 0;
@@ -381,21 +385,21 @@ public:
         else
         {
             seed_without_anchor(workspace);
-            complete_from_seed<void>(std::forward<Callback>(callback), 0, workspace);
+            complete_from_seed<void>(std::move(callback), 0, workspace);
         }
     }
 
     template<typename Callback>
-    void for_each_delta_clique(Callback&& callback, Workspace& workspace) const
+    void for_each_delta_clique(Callback callback, Workspace& workspace) const
     {
-        workspace.prepare(m_layout);
+        workspace.prepare(*m_layout);
         if (m_iteration == 1)
         {
-            for_each_clique(std::forward<Callback>(callback), workspace);
+            for_each_clique(std::move(callback), workspace);
             return;
         }
 
-        const auto num_partitions = m_layout.num_partitions;
+        const auto num_partitions = m_layout->num_partitions;
         if (num_partitions == 0)
             return;
         if (num_partitions == 1)
@@ -428,20 +432,20 @@ public:
                                            [&](Edge edge)
                                            {
                                                if (seed_from_prepared_anchor(edge, workspace))
-                                                   complete_from_seed<Edge>(callback, 0, workspace);
+                                                   complete_from_seed<Edge>(std::ref(callback), 0, workspace);
                                            });
     }
 
     /// Cliques that contain all anchor vertices (at most one per partition) and no delta vertex or edge.
     template<typename Callback>
-    void for_each_hyperedge_clique(std::span<const Vertex> anchor, Callback&& callback, Workspace& workspace) const
+    void for_each_hyperedge_clique(std::span<const Vertex> anchor, Callback callback, Workspace& workspace) const
     {
         if (!seed_from_vertices(anchor, workspace))
             return;
-        if (workspace.partial_solution_size == m_layout.num_partitions)
+        if (workspace.partial_solution_size == m_layout->num_partitions)
             callback(workspace.partial_solution);
         else
-            complete_from_seed<Hyperedge>(callback, 0, workspace);
+            complete_from_seed<Hyperedge>(std::move(callback), 0, workspace);
     }
 
     const std::vector<Edge>& materialize_delta_edges();
@@ -455,16 +459,16 @@ public:
     bool seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const;
 
     template<typename Anchor, typename Callback>
-    void complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const
+    void complete_from_seed(Callback callback, size_t depth, Workspace& workspace) const
     {
-        assert(depth < m_layout.num_partitions);
+        assert(depth < m_layout->num_partitions);
         auto select_partition = [&](size_t current_depth, const Workspace& current) { return choose_best_partition(current_depth, current); };
         auto update_candidates = [&](Vertex source, size_t current_depth, Workspace& current)
         { return update_candidates_for<Anchor>(source, current_depth, current); };
-        detail::complete_clique(m_layout, depth, workspace, select_partition, update_candidates, callback);
+        detail::complete_clique(*m_layout, depth, workspace, select_partition, update_candidates, callback);
     }
 
-    [[nodiscard]] const GraphLayout& get_graph_layout() const noexcept { return m_layout; }
+    [[nodiscard]] const GraphLayout& get_graph_layout() const noexcept { return *m_layout; }
     [[nodiscard]] const DeltaGraph& get_delta_graph() const noexcept { return m_delta_graph; }
     [[nodiscard]] const FullGraph& get_full_graph() const noexcept { return m_full_graph; }
     [[nodiscard]] size_t get_iteration() const noexcept { return m_iteration; }
@@ -475,20 +479,20 @@ private:
     template<typename Anchor>
     bool update_candidates_for(Vertex source, size_t depth, Workspace& workspace) const
     {
-        const auto source_partition = m_layout.vertex_to_partition[source.index];
+        const auto source_partition = m_layout->vertex_to_partition[source.index];
         assert(source_partition != workspace.anchor_pi);
         assert(source_partition != workspace.anchor_pj);
 
         const auto current_row = workspace.compatible_vertices(depth);
         auto next_row = workspace.compatible_vertices(depth + 1);
-        for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
+        for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
         {
             if (workspace.partition_bits.test(partition))
                 continue;
 
-            const auto& info = m_layout.info.infos[partition];
-            const auto current = ygg::BitsetSpan<const uint64_t>(current_row.data() + info.block_offset, info.num_bits);
-            auto next = ygg::BitsetSpan<uint64_t>(next_row.data() + info.block_offset, info.num_bits);
+            const auto& info = m_layout->info.infos[partition];
+            const auto current = ygg::BitsetSpan<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+            auto next = ygg::BitsetSpan<uint64_t>(next_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
             next.copy_from(current);
             m_full_graph.matrix.intersect_adjacency_with(source.index, partition, next);
             if (!next.any())
@@ -513,7 +517,7 @@ private:
         return true;
     }
 
-    const GraphLayout& m_layout;
+    const GraphLayout* m_layout;
     size_t m_iteration { 0 };
     DeltaGraph m_delta_graph;
     FullGraph m_full_graph;
@@ -539,27 +543,27 @@ inline ygg::uint_t PartitionedAdjacencyLayout::get_pair_offset(ygg::uint_t sourc
 
 inline ygg::BitsetSpan<uint64_t> PartitionedAdjacencyMatrix::get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept
 {
-    const auto offset = m_adjacency_layout.get_offset(vertex, m_layout.vertex_to_partition[vertex], partition);
+    const auto offset = m_adjacency_layout->get_offset(vertex, m_layout->vertex_to_partition[vertex], partition);
     assert(offset < PartitionedAdjacencyLayout::STATIC_ONLY && "Only runtime-dependent adjacency is mutable");
-    const auto& info = m_layout.info.infos[partition];
-    return ygg::BitsetSpan<uint64_t>(m_bitset_data.data() + offset, info.num_bits);
+    const auto& info = m_layout->info.infos[partition];
+    return ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(m_bitset_data).subspan(offset, info.num_blocks).data(), info.num_bits);
 }
 
 inline ygg::BitsetSpan<const uint64_t> PartitionedAdjacencyMatrix::get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
 {
-    const auto& info = m_layout.info.infos[partition];
-    const auto source_partition = m_layout.vertex_to_partition[vertex];
-    const auto offset = m_adjacency_layout.get_offset(vertex, source_partition, partition);
+    const auto& info = m_layout->info.infos[partition];
+    const auto source_partition = m_layout->vertex_to_partition[vertex];
+    const auto offset = m_adjacency_layout->get_offset(vertex, source_partition, partition);
     assert(offset < PartitionedAdjacencyLayout::STATIC_ONLY && "Only runtime-dependent adjacency is stored");
-    return ygg::BitsetSpan<const uint64_t>(m_bitset_data.data() + offset, info.num_bits);
+    return ygg::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset, info.num_blocks).data(), info.num_bits);
 }
 
 inline ygg::BitsetSpan<const uint64_t> PartitionedAdjacencyMatrix::get_contextual_partition(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
 {
-    const auto source_partition = m_layout.vertex_to_partition[vertex];
-    const auto source_bit = m_layout.vertex_to_bit[vertex];
-    const auto source_is_delta = m_delta_partitions.get_bitset(m_layout.info.infos[source_partition]).test(source_bit);
-    return source_is_delta ? m_affected_partitions.get_bitset(partition) : m_delta_partitions.get_bitset(partition);
+    const auto source_partition = m_layout->vertex_to_partition[vertex];
+    const auto source_bit = m_layout->vertex_to_bit[vertex];
+    const auto source_is_delta = m_delta_partitions->get_bitset(m_layout->info.infos[source_partition]).test(source_bit);
+    return source_is_delta ? m_affected_partitions->get_bitset(partition) : m_delta_partitions->get_bitset(partition);
 }
 
 }

@@ -69,7 +69,6 @@
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_routing/dist_hash.hpp"
 #include "tyr/planning/state_storage/iterators.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 

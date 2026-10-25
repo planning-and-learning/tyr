@@ -67,6 +67,7 @@ struct Data<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::constraint, &Data::true_child, &Data::dontcare_child> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::constraint, &Data::true_child, &Data::dontcare_child> {}; }

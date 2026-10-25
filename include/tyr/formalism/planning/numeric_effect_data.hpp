@@ -76,6 +76,7 @@ struct Data<::tyr::formalism::planning::NumericEffect<T, F>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::fterm, &Data::fexpr> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::fterm, &Data::fexpr> {}; }

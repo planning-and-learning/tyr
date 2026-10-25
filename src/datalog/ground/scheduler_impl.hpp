@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/ground/scheduler.hpp"
+#ifndef TYR_SRC_DATALOG_GROUND_SCHEDULER_IMPL_HPP_
+#define TYR_SRC_DATALOG_GROUND_SCHEDULER_IMPL_HPP_
 
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/ground/rule_instance.hpp"
+#include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 
 #include <algorithm>
@@ -152,3 +154,5 @@ void Scheduler<GroundTag>::notify_generated(const CostBuckets::Bucket& bucket, P
 }
 
 }
+
+#endif

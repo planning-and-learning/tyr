@@ -34,7 +34,7 @@ struct Data<::tyr::formalism::Function<T>>
 {
     ygg::Index<::tyr::formalism::Function<T>> index;
     ::cista::offset::string name;
-    ygg::uint_t arity;
+    ygg::uint_t arity = 0;
 
     Data() = default;
     Data(::cista::offset::string name_, ygg::uint_t arity_) : index(), name(std::move(name_)), arity(arity_) {}
@@ -44,6 +44,7 @@ struct Data<::tyr::formalism::Function<T>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::arity> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name, &Data::arity> {}; }

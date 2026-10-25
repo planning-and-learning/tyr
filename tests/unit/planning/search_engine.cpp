@@ -104,8 +104,14 @@ struct QueueEntryWithoutKeyType
 static_assert(tyr::planning::IsPriorityQueueEntry<QueueEntryWithoutKeyType>);
 static_assert(tyr::planning::IsOpenList<tyr::planning::PriorityQueue<QueueEntryWithoutKeyType>>);
 
-struct QueueEntryWithWrongItem : QueueEntryWithoutKeyType
+/// QueueEntryWithoutKeyType, but its item is not of ItemType.
+struct QueueEntryWithWrongItem
 {
+    using ItemType = int;
+
+    int key;
+
+    [[nodiscard]] int get_key() const { return key; }
     [[nodiscard]] std::string_view get_item() const { return {}; }
 };
 
@@ -123,6 +129,7 @@ struct NonDefaultItem
     NonDefaultItem(NonDefaultItem&&) = default;
     NonDefaultItem& operator=(const NonDefaultItem&) = delete;
     NonDefaultItem& operator=(NonDefaultItem&&) = delete;
+    ~NonDefaultItem() = default;
 };
 
 struct QueueEntryWithNonDefaultItem
@@ -242,19 +249,19 @@ class WorkerContextRecordingHeuristic final : public tyr::planning::Heuristic<Ki
 public:
     using tyr::planning::Heuristic<Kind>::evaluate;
 
-    explicit WorkerContextRecordingHeuristic(std::vector<size_t>& worker_threads) : m_worker_threads(worker_threads) {}
+    explicit WorkerContextRecordingHeuristic(std::vector<size_t>& worker_threads) : m_worker_threads(&worker_threads) {}
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
     ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>&) override { return 0; }
 
     [[nodiscard]] tyr::planning::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override
     {
-        m_worker_threads.push_back(execution_context->get_num_threads());
-        return std::make_shared<WorkerContextRecordingHeuristic>(m_worker_threads);
+        m_worker_threads->push_back(execution_context->get_num_threads());
+        return std::make_shared<WorkerContextRecordingHeuristic>(*m_worker_threads);
     }
 
 private:
-    std::vector<size_t>& m_worker_threads;
+    std::vector<size_t>* m_worker_threads;
 };
 
 template<TaskKind Kind>
@@ -582,7 +589,7 @@ private:
 };
 
 template<typename Callback>
-void for_each_execution_mode(Callback&& callback)
+void for_each_execution_mode(Callback callback)
 {
     callback(size_t { 1 }, false);
     callback(size_t { 2 }, false);
@@ -626,7 +633,7 @@ void expect_sequential_astar_root_layer_statistics(const tyr::planning::TaskPtr<
 
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan->get_length(), 3);
+    EXPECT_EQ(result.plan.value().get_length(), 3);
     ASSERT_EQ(event_handler->snapshots.size(), 3);
 
     const auto expanded = std::vector<uint64_t> { 1, 3, 4 };
@@ -699,7 +706,7 @@ void expect_one_step_goal_result(const tyr::planning::SearchResult<Kind>& result
 {
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan->get_length(), 1);
+    EXPECT_EQ(result.plan.value().get_length(), 1);
     EXPECT_EQ(result.statistics.get_num_generated_successors(), 1);
     EXPECT_EQ(result.statistics.get_num_pruned(), 0);
 }
@@ -1143,7 +1150,7 @@ void expect_sequential_expansion_stops_materializing_after_goal(const tyr::plann
     const auto result = tyr::planning::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options);
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan->get_length(), 1);
+    EXPECT_EQ(result.plan.value().get_length(), 1);
     EXPECT_EQ(result.statistics.get_num_registered_states(), 2);
 }
 
@@ -1180,7 +1187,7 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     }
     ASSERT_TRUE(expensive);
     ASSERT_TRUE(cheap);
-    const auto cheap_successors = probe.successor_generator->get_labeled_successor_nodes(*cheap, *probe.repository, *probe.axiom_evaluator);
+    const auto cheap_successors = probe.successor_generator->get_labeled_successor_nodes(cheap.value(), *probe.repository, *probe.axiom_evaluator);
     const auto cheap_wait = std::ranges::find_if(
         cheap_successors,
         [&](const auto& successor) { return is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "cheap-wait"); });
@@ -1191,8 +1198,8 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     {
         auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(start.get_state());
-        const auto expensive_owner = hash.owner(expensive->get_state().get_state_builder(), 3);
-        const auto cheap_owner = hash.owner(cheap->get_state().get_state_builder(), 3);
+        const auto expensive_owner = hash.owner(expensive.value().get_state().get_state_builder(), 3);
+        const auto cheap_owner = hash.owner(cheap.value().get_state().get_state_builder(), 3);
         if (expensive_owner != cheap_owner && hash.owner(cheap_wait->node.get_state().get_state_builder(), 3) == cheap_owner)
             seed = candidate;
     }
@@ -1206,15 +1213,15 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     options.num_search_workers = 3;
     options.dist_hash_mode = tyr::planning::DistHashMode::RANDOM;
     options.parallel_search_mode = tyr::planning::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
-    options.random_seed = *seed;
+    options.random_seed = seed.value();
 
     const auto result =
         tyr::planning::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
 
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan->get_cost(), 4);
-    EXPECT_EQ(result.plan->get_length(), 4);
+    EXPECT_EQ(result.plan.value().get_cost(), 4);
+    EXPECT_EQ(result.plan.value().get_length(), 4);
     EXPECT_TRUE(gate->transition_seen.load(std::memory_order_relaxed));
     EXPECT_EQ(gate->num_target_evaluations.load(std::memory_order_relaxed), 1);
 }
@@ -1344,7 +1351,7 @@ TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeurist
         options.event_handler = std::make_shared<ReleasingAStarEventHandler<LiftedTag>>(gate, tyr::planning::TransitionOutcome::DUPLICATE);
         options.num_search_workers = concurrent ? 2 : 3;
         options.collect_destination_lock_statistics = true;
-        options.random_seed = *seed;
+        options.random_seed = seed.value();
 
         const auto result =
             tyr::planning::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
@@ -1459,7 +1466,7 @@ TEST(TyrPlanningSearchEngineTest, HashDistributedPolicyUsesOwnerRepositoriesWith
 
     ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan->get_length(), 1);
+    EXPECT_EQ(result.plan.value().get_length(), 1);
 }
 
 TEST(TyrPlanningSearchEngineTest, QueuedPreferredBoostAffectsTheNextPop)
@@ -1570,7 +1577,7 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
     } worker;
     struct Handler
     {
-        std::mutex& worker_mutex;
+        std::mutex* worker_mutex;
         bool called { false };
 
         void on_new_best_h_value(ygg::float_t h_value)
@@ -1581,13 +1588,13 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
             auto receiver = std::thread(
                 [&]
                 {
-                    auto lock = std::unique_lock(worker_mutex, std::try_to_lock);
+                    auto lock = std::unique_lock(*worker_mutex, std::try_to_lock);
                     unlocked = lock.owns_lock();
                 });
             receiver.join();
             EXPECT_TRUE(unlocked);
         }
-    } handler { worker.execution.mutex };
+    } handler { &worker.execution.mutex };
 
     const auto task = parse_tasks("parallel_search_simple.pddl").ground;
     auto context = make_search_context(task);

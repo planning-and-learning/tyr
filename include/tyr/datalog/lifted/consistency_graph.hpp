@@ -66,10 +66,10 @@ template<formalism::FactKind T>
 struct RuleToLiteralInfo
 {
     ygg::Index<formalism::Predicate<T>> predicate;
-    bool polarity;
-    size_t kckp_arity;
-    size_t num_parameters;
-    size_t num_constants;
+    bool polarity = false;
+    size_t kckp_arity = 0;
+    size_t num_parameters = 0;
+    size_t num_constants = 0;
 
     RuleToLiteralPositionMappings position_mappings;
 };
@@ -86,9 +86,9 @@ template<formalism::FactKind T>
 struct RuleToFunctionTermInfo
 {
     ygg::Index<formalism::Function<T>> function;
-    size_t kckp_arity;
-    size_t num_parameters;
-    size_t num_constants;
+    size_t kckp_arity = 0;
+    size_t num_parameters = 0;
+    size_t num_constants = 0;
 
     RuleToLiteralPositionMappings position_mappings;
 };
@@ -106,7 +106,7 @@ struct RuleToConstraintInfo
     TaggedRuleToFunctionTermInfos<formalism::StaticTag> static_infos;
     TaggedRuleToFunctionTermInfos<formalism::FluentTag> fluent_infos;
 
-    size_t kckp_arity;
+    size_t kckp_arity = 0;
 
     template<formalism::FactKind T>
     const auto& get() const noexcept

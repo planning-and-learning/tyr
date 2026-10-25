@@ -72,6 +72,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept
     { return ygg::Members<&Data::index, &Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
@@ -127,6 +128,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     template<::tyr::formalism::PolarityKind T>
     [[nodiscard]] const auto& get_facts() const

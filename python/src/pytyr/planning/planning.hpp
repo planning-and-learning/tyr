@@ -55,6 +55,7 @@ public:
     OwningIterator(const OwningIterator&) = delete;
     OwningIterator& operator=(const OwningIterator&) = delete;
     OwningIterator& operator=(OwningIterator&&) = delete;
+    ~OwningIterator() = default;
 
     Value next()
     {
@@ -674,8 +675,6 @@ public:
     using Base = Heuristic<Kind>;
     using Base::evaluate;
 
-    NB_TRAMPOLINE(Base);
-
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 
     ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
@@ -694,6 +693,9 @@ public:
     }
 
 private:
+    // The inherited constructors keep the access of the base constructors.
+    NB_TRAMPOLINE(Base);
+
     mutable std::optional<ygg::UnorderedSet<formalism::planning::ActionBindingView>> m_relaxed_plan;
 };
 

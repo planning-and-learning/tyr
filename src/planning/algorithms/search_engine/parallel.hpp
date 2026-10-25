@@ -76,7 +76,7 @@ public:
         m_dist_hash.initialize(start_state);
         const auto owner = m_dist_hash.owner(start_state.get_state_builder(), engine.num_workers());
         auto& worker = engine.get_worker(owner);
-        return { owner, materialize_state(start_state, worker.state_repository, worker.axiom_evaluator) };
+        return { owner, materialize_state(start_state, *worker.state_repository, *worker.axiom_evaluator) };
     }
 
     template<typename Engine, typename WorkerData>
@@ -100,8 +100,8 @@ public:
             target = std::move(receiver_target);
         }
 
-        auto node = Node<Kind>(repository.register_state(sender.axiom_evaluator, std::move(target), parent, delta), metric);
-        assert(repository.shares_storage_with(engine.get_worker(owner).state_repository));
+        auto node = Node<Kind>(repository.register_state(*sender.axiom_evaluator, std::move(target), parent, delta), metric);
+        assert(repository.shares_storage_with(*engine.get_worker(owner).state_repository));
         return PreparedTarget { owner, std::move(node) };
     }
 
@@ -115,7 +115,7 @@ public:
         for (size_t i = 0; i < engine.num_workers(); ++i)
         {
             auto& worker = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i)));
-            detail::snapshot_state_repository_statistics(worker.state_repository, worker.statistics);
+            detail::snapshot_state_repository_statistics(*worker.state_repository, worker.statistics);
         }
     }
 
@@ -161,7 +161,7 @@ public:
                                          ygg::float_t metric,
                                          size_t num_workers)
     {
-        auto node = Node<Kind>(worker.state_repository.register_state(worker.axiom_evaluator, std::move(target), parent, delta), metric);
+        auto node = Node<Kind>(worker.state_repository->register_state(*worker.axiom_evaluator, std::move(target), parent, delta), metric);
         return PreparedTarget { owner(node.get_state().get_index(), num_workers), std::move(node) };
     }
 
@@ -183,7 +183,7 @@ public:
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
     {
-        const auto& repository = engine.get_worker(ygg::Index<Worker>(0)).state_repository;
+        const auto& repository = *engine.get_worker(ygg::Index<Worker>(0)).state_repository;
         const auto num_states = repository.num_states();
         const auto memory_usage = repository.memory_usage();
         for (size_t i = 0; i < engine.num_workers(); ++i)
@@ -545,7 +545,7 @@ public:
                            Metadata metadata)
     {
         const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);
-        const auto g_value = compute_successor_g_value(metadata.source_g_value, metric, engine.m_options.cost_mode);
+        const auto g_value = compute_successor_g_value(metadata.source_g_value, metric, engine.m_options->cost_mode);
         if (!std::isfinite(g_value))
             throw std::runtime_error("find_solution(...): successor path cost is not finite.");
 
@@ -572,7 +572,7 @@ public:
             {
                 record_lock();
                 lock.unlock();
-                const auto h_value = sender.heuristic.evaluate(state);
+                const auto h_value = sender.heuristic->evaluate(state);
                 wait_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
                 lock.lock();
                 hold_start = m_collect_destination_lock_statistics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point {};
@@ -736,8 +736,8 @@ public:
                  Heuristic<Kind>& heuristic,
                  const OptionsT<SearchPolicy>& options,
                  const EventHandlerPtrT<SearchPolicy>& event_handler) :
-        m_caller_state_repository(state_repository),
-        m_caller_axiom_evaluator(axiom_evaluator)
+        m_caller_state_repository(&state_repository),
+        m_caller_axiom_evaluator(&axiom_evaluator)
     {
         const auto num_workers = ExecutionPolicy::num_workers(options);
         constexpr auto uses_owner_repositories = ExecutionPolicy::uses_owner_repositories;
@@ -829,7 +829,7 @@ public:
     }
 
     template<typename Callback>
-    void for_each(Callback&& callback)
+    void for_each(Callback callback)
     {
         for (auto& worker : m_workers)
             callback(*worker);
@@ -844,9 +844,9 @@ public:
             [&](const auto& worker)
             {
                 views.push_back(WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>> {
-                    worker.state_repository,
-                    worker.axiom_evaluator,
-                    worker.successor_generator,
+                    *worker.state_repository,
+                    *worker.axiom_evaluator,
+                    *worker.successor_generator,
                     worker.search.get_search_nodes(),
                     state_index_divisor,
                 });
@@ -855,16 +855,16 @@ public:
         auto plan =
             PlanReconstructionPolicy<ParallelSearch>::extract_total_ordered_plan(goal,
                                                                                  std::span<const WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>>(views),
-                                                                                 m_caller_state_repository,
-                                                                                 m_caller_axiom_evaluator,
+                                                                                 *m_caller_state_repository,
+                                                                                 *m_caller_axiom_evaluator,
                                                                                  options.cost_mode);
         auto goal_node = plan.empty() ? plan.get_start_node() : plan.get_labeled_succ_nodes().back().node;
         return { std::move(plan), std::move(goal_node) };
     }
 
 private:
-    StateRepository<Kind>& m_caller_state_repository;
-    AxiomEvaluator<Kind>& m_caller_axiom_evaluator;
+    StateRepository<Kind>* m_caller_state_repository;
+    AxiomEvaluator<Kind>* m_caller_axiom_evaluator;
     std::vector<StateRepositoryPtr<Kind>> m_owner_state_repositories;
     std::vector<std::unique_ptr<WorkerData>> m_workers;
 };

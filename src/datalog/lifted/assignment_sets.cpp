@@ -392,7 +392,7 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const Edg
 }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const
 {
     const auto objects = binding.get_objects();
     const auto arity = objects.size();
@@ -433,7 +433,7 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EdgeAssignm
 { return m_set[m_hash.get_rank(assignment)]; }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(formalism::datalog::FunctionBindingView<T> binding) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(formalism::datalog::FunctionBindingView<T> binding) const
 {
     const auto objects = binding.get_objects();
     const auto arity = objects.size();
@@ -536,11 +536,11 @@ const FunctionAssignmentSet<T>& FunctionAssignmentSets<T>::get_set(ygg::Index<fo
 { return m_sets[index.get_value()]; }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSets<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSets<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const
 { return get_set(binding.get_relation().get_index())[binding]; }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSets<T>::at(formalism::datalog::FunctionBindingView<T> binding) const noexcept
+ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSets<T>::at(formalism::datalog::FunctionBindingView<T> binding) const
 { return get_set(binding.get_relation().get_index()).at(binding); }
 
 template<formalism::FactKind T>
@@ -625,8 +625,8 @@ template struct TaggedAssignmentSets<formalism::FluentTag>;
  */
 
 AssignmentSets::AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets) :
-    static_sets(static_sets),
-    fluent_sets(fluent_sets)
+    m_static_sets(&static_sets),
+    m_fluent_sets(&fluent_sets)
 {
 }
 
@@ -634,9 +634,9 @@ template<formalism::FactKind T>
 const TaggedAssignmentSets<T>& AssignmentSets::get() const noexcept
 {
     if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return static_sets;
+        return *m_static_sets;
     else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-        return fluent_sets;
+        return *m_fluent_sets;
     else
         static_assert(ygg::dependent_false<T>::value, "Missing case");
 }

@@ -23,6 +23,8 @@
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 
+#include <cstdint>
+
 namespace tyr::formalism::planning::invariant
 {
 
@@ -40,7 +42,7 @@ struct Threat
     size_t add_index;
 };
 
-enum class ProofStatus
+enum class ProofStatus : std::uint8_t
 {
     Proven,
     TooHeavy,
@@ -49,7 +51,7 @@ enum class ProofStatus
 
 struct ProofResult
 {
-    ProofStatus status;
+    ProofStatus status = ProofStatus::Proven;
     std::optional<Threat> threat;
 };
 

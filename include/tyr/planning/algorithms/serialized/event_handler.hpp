@@ -33,6 +33,7 @@ template<TaskKind Kind, std::copy_constructible Stats = tyr::planning::Statistic
 class EventHandler
 {
 public:
+    EventHandler() = default;
     virtual ~EventHandler() = default;
 
     virtual void on_start_search() = 0;
@@ -41,14 +42,20 @@ public:
     virtual void on_end_subsearch(ygg::uint_t subsearch_index, tyr::planning::SearchStatus status) = 0;
     virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(const Plan<Kind>& plan) = 0;
+
+protected:
+    EventHandler(const EventHandler&) = default;
+    EventHandler& operator=(const EventHandler&) = default;
+    EventHandler(EventHandler&&) = default;
+    EventHandler& operator=(EventHandler&&) = default;
 };
 
 template<typename Derived, TaskKind Kind, std::copy_constructible Stats = tyr::planning::Statistics>
 class EventHandlerBase : public EventHandler<Kind, Stats>
 {
-protected:
+private:
     Statistics<Stats> m_statistics;
-    size_t m_verbosity;
+    size_t m_verbosity = 0;
 
 private:
     EventHandlerBase() = default;

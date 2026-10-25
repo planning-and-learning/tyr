@@ -55,7 +55,7 @@ public:
 
 /// Canonical context depends on variable.
 template<::tyr::formalism::FactKind T, typename C>
-const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& element, const C& context) noexcept
+const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& element, const C& context)
 { return ygg::make_view(element.variable, context).get_context(); }
 
 }

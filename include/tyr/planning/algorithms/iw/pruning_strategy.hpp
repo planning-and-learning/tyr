@@ -26,6 +26,7 @@
 #include <mutex>
 #include <optional>
 #include <stdexcept>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::iw
 {
@@ -105,7 +106,11 @@ private:
             return lock;
         }
 
-        bool matches_unlocked(const StateView<Kind>& state) const { return *identity == state.pack(); }
+        bool matches_unlocked(const StateView<Kind>& state) const
+        {
+            YGG_ASSUME(identity.has_value());
+            return *identity == state.pack();
+        }
 
         // Justification: protects the one-time state-identity publication and subsequent reads shared by arity-zero workers; without it, workers could
         // initialize different roots or race while observing the root identity.

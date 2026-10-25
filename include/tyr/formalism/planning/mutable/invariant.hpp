@@ -87,7 +87,7 @@ struct structure_traits<planning::MutableInvariant>
     using Type = planning::MutableInvariant;
 
     template<typename F>
-    static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
+    static bool zip_terms(const Type& lhs, const Type& rhs, F f)
     {
         if (lhs.num_rigid_variables != rhs.num_rigid_variables)
             return false;
@@ -98,7 +98,7 @@ struct structure_traits<planning::MutableInvariant>
     }
 
     template<typename F>
-    static Type transform_terms(const Type& value, F&& f)
+    static Type transform_terms(const Type& value, F f)
     { return Type(value.num_rigid_variables, value.num_counted_variables, transform_terms(value.atoms, f), value.predicates); }
 };
 

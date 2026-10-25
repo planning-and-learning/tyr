@@ -34,7 +34,7 @@ struct Data<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>
 {
     ygg::Index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>> index;
     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, F>> fterm;
-    ygg::float_t value;
+    ygg::float_t value = 0.0;
 
     Data() = default;
     Data(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, F>> fterm_, ygg::float_t value_) : index(), fterm(fterm_), value(value_) {}
@@ -49,6 +49,7 @@ struct Data<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, F>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fterm, &Data::value> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fterm, &Data::value> {}; }

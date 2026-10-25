@@ -24,13 +24,13 @@ namespace tyr::planning
 {
 
 template<bool ThreadSafe>
-FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::FactStorageBackend(Context& ctx) : m_bitsets(ctx.bitsets)
+FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::FactStorageBackend(Context& ctx) : m_bitsets(&ctx.bitsets)
 {
 }
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
-{ return Packed { ygg::insert_bitset(m_bitsets, unpacked.indices, m_blocks) }; }
+{ return Packed { ygg::insert_bitset(*m_bitsets, unpacked.indices, m_blocks) }; }
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
@@ -46,13 +46,13 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     }
     ygg::normalize_flips(m_flips);
 
-    return Packed { m_bitsets.insert(parent.index, m_flips) };
+    return Packed { m_bitsets->insert(parent.index, m_flips) };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    ygg::read_bitset(m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
+    ygg::read_bitset(*m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
 }
 
 template class FactStorageBackend<LiftedTag, TreeBitset, false>;

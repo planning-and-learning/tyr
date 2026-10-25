@@ -23,7 +23,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/task.hpp"
 
 #include <concepts>

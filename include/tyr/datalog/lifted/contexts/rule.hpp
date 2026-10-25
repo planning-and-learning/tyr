@@ -30,6 +30,7 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 
 #include <cstddef>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
@@ -47,58 +48,58 @@ public:
     {
     public:
         explicit In(RuleExecutionContext<R, AP, TP, CP>& rctx) :
-            m_rctx(rctx),
-            m_cws_rule(rctx.in().cws_rule()),
+            m_rctx(&rctx),
+            m_cws_rule(&rctx.in().cws_rule()),
             m_fact_sets(rctx.stratum_in().program().facts().fact_sets, rctx.stratum_out().program().facts().fact_sets)
         {
         }
 
-        [[nodiscard]] const auto& cws_rule() const noexcept { return m_cws_rule; }
+        [[nodiscard]] const auto& cws_rule() const noexcept { return *m_cws_rule; }
 
-        auto& annotation_policy() noexcept { return m_rctx.stratum_out().program().annotation_policy(); }
-        [[nodiscard]] const auto& annotations() const noexcept { return m_rctx.stratum_out().program().annotations(); }
-        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_rctx.stratum_out().program().numeric_annotations(); }
-        [[nodiscard]] const auto& numeric_support_selector() const noexcept { return m_rctx.stratum_out().program().numeric_support_selector(); }
-        [[nodiscard]] const auto& cost_policy() const noexcept { return m_rctx.stratum_out().program().cost_policy(); }
+        auto& annotation_policy() noexcept { return m_rctx->stratum_out().program().annotation_policy(); }
+        [[nodiscard]] const auto& annotations() const noexcept { return m_rctx->stratum_out().program().annotations(); }
+        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_rctx->stratum_out().program().numeric_annotations(); }
+        [[nodiscard]] const auto& numeric_support_selector() const noexcept { return m_rctx->stratum_out().program().numeric_support_selector(); }
+        [[nodiscard]] const auto& cost_policy() const noexcept { return m_rctx->stratum_out().program().cost_policy(); }
         [[nodiscard]] const auto& fact_sets() const noexcept { return m_fact_sets; }
 
     private:
-        RuleExecutionContext<R, AP, TP, CP>& m_rctx;
+        RuleExecutionContext<R, AP, TP, CP>* m_rctx;
 
-        const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
+        const ConstRuleWorkspace<LiftedTag, R>* m_cws_rule;
 
-        const FactSets m_fact_sets;
+        FactSets m_fact_sets;
     };
 
     class Out
     {
     public:
         Out(RuleExecutionContext<R, AP, TP, CP>& rctx, LiftedRuleWorkerT<R>& ws_worker) :
-            m_rctx(rctx),
-            m_ws_worker(ws_worker),
+            m_rctx(&rctx),
+            m_ws_worker(&ws_worker),
             m_ground_context(ws_worker.builder, rctx.stratum_out().program().workspace_repository(), ws_worker.binding)
         {
         }
 
-        auto& kckp_workspace() noexcept { return m_ws_worker.iteration.kckp_workspace; }
-        auto& delta_annotations() noexcept { return m_rctx.stratum_out().program().delta_annotations(); }
-        auto& delta_numeric_annotations() noexcept { return m_rctx.stratum_out().program().delta_numeric_annotations(); }
-        auto& head_updates() noexcept { return m_ws_worker.iteration.head_updates; }
+        auto& kckp_workspace() noexcept { return m_ws_worker->iteration.kckp_workspace; }
+        auto& delta_annotations() noexcept { return m_rctx->stratum_out().program().delta_annotations(); }
+        auto& delta_numeric_annotations() noexcept { return m_rctx->stratum_out().program().delta_numeric_annotations(); }
+        auto& head_updates() noexcept { return m_ws_worker->iteration.head_updates; }
 
 #ifndef NDEBUG
-        auto& seen_bindings() noexcept { return m_ws_worker.solve.seen_bindings; }
+        auto& seen_bindings() noexcept { return m_ws_worker->solve.seen_bindings; }
 #endif
-        auto& anchor_vertices() noexcept { return m_ws_worker.iteration.anchor_vertices; }
-        auto& head_bindings() noexcept { return m_ws_worker.iteration.head_bindings; }
-        auto& rule_evaluation_workspace() noexcept { return m_ws_worker.solve.rule_evaluation_workspace; }
-        auto& applicability_cache() noexcept { return m_ws_worker.solve.applicability_cache; }
-        auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
+        auto& anchor_vertices() noexcept { return m_ws_worker->iteration.anchor_vertices; }
+        auto& head_bindings() noexcept { return m_ws_worker->iteration.head_bindings; }
+        auto& rule_evaluation_workspace() noexcept { return m_ws_worker->solve.rule_evaluation_workspace; }
+        auto& applicability_cache() noexcept { return m_ws_worker->solve.applicability_cache; }
+        auto& statistics() noexcept { return m_ws_worker->solve.statistics; }
 
         auto& ground_context() noexcept { return m_ground_context; }
 
     private:
-        RuleExecutionContext<R, AP, TP, CP>& m_rctx;
-        LiftedRuleWorkerT<R>& m_ws_worker;
+        RuleExecutionContext<R, AP, TP, CP>* m_rctx;
+        LiftedRuleWorkerT<R>* m_ws_worker;
 
         formalism::datalog::GrounderContext m_ground_context;
     };
@@ -122,35 +123,35 @@ struct RuleExecutionContext
     class In
     {
     public:
-        explicit In(const ConstRuleWorkspace<LiftedTag, R>& cws_rule) : m_cws_rule(cws_rule) {}
+        explicit In(const ConstRuleWorkspace<LiftedTag, R>& cws_rule) : m_cws_rule(&cws_rule) {}
 
-        [[nodiscard]] const auto& cws_rule() const noexcept { return m_cws_rule; }
+        [[nodiscard]] const auto& cws_rule() const noexcept { return *m_cws_rule; }
 
     private:
-        const ConstRuleWorkspace<LiftedTag, R>& m_cws_rule;
+        const ConstRuleWorkspace<LiftedTag, R>* m_cws_rule;
     };
 
     class Out
     {
     public:
-        explicit Out(RuleWorkspace<LiftedTag, R>& ws_rule) : m_ws_rule(ws_rule) {}
+        explicit Out(RuleWorkspace<LiftedTag, R>& ws_rule) : m_ws_rule(&ws_rule) {}
 
-        auto& common() noexcept { return m_ws_rule.common; }
-        [[nodiscard]] const auto& common() const noexcept { return m_ws_rule.common; }
-        auto& kckp() noexcept { return m_ws_rule.common.kckp; }
-        [[nodiscard]] const auto& kckp() const noexcept { return m_ws_rule.common.kckp; }
-        auto& statistics() noexcept { return m_ws_rule.common.statistics; }
-        [[nodiscard]] const auto& statistics() const noexcept { return m_ws_rule.common.statistics; }
-        auto& workers() noexcept { return m_ws_rule.worker; }
-        [[nodiscard]] const auto& workers() const noexcept { return m_ws_rule.worker; }
+        auto& common() noexcept { return m_ws_rule->common; }
+        [[nodiscard]] const auto& common() const noexcept { return m_ws_rule->common; }
+        auto& kckp() noexcept { return m_ws_rule->common.kckp; }
+        [[nodiscard]] const auto& kckp() const noexcept { return m_ws_rule->common.kckp; }
+        auto& statistics() noexcept { return m_ws_rule->common.statistics; }
+        [[nodiscard]] const auto& statistics() const noexcept { return m_ws_rule->common.statistics; }
+        auto& workers() noexcept { return m_ws_rule->worker; }
+        [[nodiscard]] const auto& workers() const noexcept { return m_ws_rule->worker; }
 
     private:
-        RuleWorkspace<LiftedTag, R>& m_ws_rule;
+        RuleWorkspace<LiftedTag, R>* m_ws_rule;
     };
 
     RuleExecutionContext(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
-        m_ctx(ctx),
-        m_in(*ctx.in().program().template get_rules<R>()[ygg::uint_t(rule)]),
+        m_ctx(&ctx),
+        m_in(get_cws_rule(ctx.in().program().template get_rules<R>(), rule)),
         m_out(*ctx.out().program().template get_rules<R>()[ygg::uint_t(rule)])
     {
     }
@@ -171,12 +172,20 @@ struct RuleExecutionContext
     auto& out() noexcept { return m_out; }
     [[nodiscard]] const auto& out() const noexcept { return m_out; }
 
-    [[nodiscard]] const auto& stratum_in() const noexcept { return m_ctx.in(); }
-    auto& stratum_out() noexcept { return m_ctx.out(); }
-    [[nodiscard]] const auto& stratum_out() const noexcept { return m_ctx.out(); }
+    [[nodiscard]] const auto& stratum_in() const noexcept { return m_ctx->in(); }
+    auto& stratum_out() noexcept { return m_ctx->out(); }
+    [[nodiscard]] const auto& stratum_out() const noexcept { return m_ctx->out(); }
 
 private:
-    StratumExecutionContext<AP, TP, CP>& m_ctx;
+    /// Every rule a stratum schedules has a const workspace.
+    static const ConstRuleWorkspace<LiftedTag, R>& get_cws_rule(const auto& cws_rules, ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) noexcept
+    {
+        const auto& cws_rule = cws_rules[ygg::uint_t(rule)];
+        YGG_ASSUME(cws_rule.has_value());
+        return *cws_rule;
+    }
+
+    StratumExecutionContext<AP, TP, CP>* m_ctx;
 
     In m_in;
     Out m_out;

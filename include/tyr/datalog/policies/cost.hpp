@@ -42,7 +42,7 @@ struct ActionCostLookup
     formalism::planning::ActionView<LiftedTag> action;
     formalism::datalog::RuleBindingView<R> rule_binding;
 
-    [[nodiscard]] auto get_key() const noexcept
+    [[nodiscard]] auto get_key() const
     {
         assert(rule_binding.get_data().size() >= action.get_arity());
         return std::make_pair(action.get_index(), std::views::take(rule_binding.get_data(), action.get_arity()));
@@ -134,13 +134,13 @@ public:
     CostMap& get_costs() noexcept { return m_costs; }
     [[nodiscard]] const NumericTransitionCostMap& get_numeric_transition_costs() const noexcept { return m_numeric_transition_costs; }
 
-protected:
+private:
     CostMap m_costs;
     NumericTransitionCostMap m_numeric_transition_costs;
 };
 
 template<TaskKind Kind>
-class RuleCostOverridePolicy : public RuleCostPolicy
+class RuleCostOverridePolicy
 {
 public:
     template<formalism::RelationKind R>
@@ -196,7 +196,7 @@ public:
                   Cost cost)
     { storage(R {}).set_cost(rule_key, numeric_key, std::move(interval), cost); }
 
-protected:
+private:
     auto& storage(formalism::PredicateTag) noexcept { return predicate_storage; }
     auto& storage(formalism::FunctionTag) noexcept { return function_storage; }
     [[nodiscard]] const auto& storage(formalism::PredicateTag) const noexcept { return predicate_storage; }

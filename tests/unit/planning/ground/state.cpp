@@ -10,7 +10,6 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>
@@ -178,8 +177,8 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
     const auto source_fact = std::as_const(*task->get_fdr_context()).get_fact(source_atom);
     const auto target_fact = std::as_const(*task->get_fdr_context()).get_fact(target_atom);
     ASSERT_TRUE(source_fact && target_fact);
-    ASSERT_EQ(source_fact->get_variable(), target_fact->get_variable());
-    ASSERT_NE(source_fact->get_value(), target_fact->get_value());
+    ASSERT_EQ(source_fact.value().get_variable(), target_fact.value().get_variable());
+    ASSERT_NE(source_fact.value().get_value(), target_fact.value().get_value());
 
     EXPECT_TRUE(initial.test(source_atom));
     EXPECT_FALSE(initial.test(target_atom));

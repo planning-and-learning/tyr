@@ -19,6 +19,7 @@
 
 #include <argparse/argparse.hpp>
 #include <chrono>
+#include <exception>
 #include <fmt/ostream.h>
 #include <fstream>
 #include <queue>
@@ -41,10 +42,13 @@
 #include <tyr/planning/lifted/successor_generator.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/lifted/task_grounder_decl.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/core/memory.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
-int main(int argc, char** argv)
+namespace
+{
+int run(int argc, char** argv)
 {
     auto program = argparse::ArgumentParser("AStar eager search.");
     program.add_argument("-D", "--domain-filepath").required().help("The path to the PDDL domain file.");
@@ -94,7 +98,7 @@ int main(int argc, char** argv)
     {
         std::cerr << err.what() << "\n";
         std::cerr << program;
-        std::exit(1);
+        return 1;
     }
 
     auto total_time = std::chrono::nanoseconds { 0 };
@@ -200,7 +204,8 @@ int main(int argc, char** argv)
                     std::cerr << "Error opening file!" << '\n';
                     return 1;
                 }
-                fmt::print(plan_file, "{}", result.plan.value());
+                YGG_ASSUME(result.plan.has_value());
+                fmt::print(plan_file, "{}", *result.plan);
                 plan_file.close();
             }
 
@@ -268,7 +273,8 @@ int main(int argc, char** argv)
                         std::cerr << "Error opening file!" << '\n';
                         return 1;
                     }
-                    fmt::print(plan_file, "{}", result.plan.value());
+                    YGG_ASSUME(result.plan.has_value());
+                    fmt::print(plan_file, "{}", *result.plan);
                     plan_file.close();
                 }
 
@@ -283,4 +289,18 @@ int main(int argc, char** argv)
     std::cout << "[Total] Total time: " << ygg::to_ms(total_time) << " ms (" << ygg::to_ns(total_time) << " ns)" << '\n';
 
     return 0;
+}
+}  // namespace
+
+int main(int argc, char** argv)
+{
+    try
+    {
+        return run(argc, argv);
+    }
+    catch (const std::exception& err)
+    {
+        std::cerr << err.what() << "\n";
+        return 1;
+    }
 }

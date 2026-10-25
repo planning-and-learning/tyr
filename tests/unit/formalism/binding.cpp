@@ -113,6 +113,8 @@ static_assert(
     std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::storage_type, ygg::formalism::BitPackedArraySetStorage>);
 #endif
 
+namespace
+{
 template<typename Factory, typename Builder, typename Context>
 void check_binding_copy()
 {
@@ -166,6 +168,7 @@ void check_binding_copy()
     EXPECT_FALSE(copy(source_predicate_binding, context).second);
     EXPECT_FALSE(copy(source_function_binding, context).second);
 }
+}  // namespace
 
 TEST(TyrFormalismDatalogCopy, RemapsBindingRelationsAndObjects)
 { check_binding_copy<tyr::formalism::datalog::RepositoryFactory, tyr::formalism::datalog::Builder, tyr::formalism::datalog::CopyContext>(); }

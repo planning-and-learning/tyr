@@ -24,7 +24,7 @@ namespace tyr::planning
 {
 
 template<bool ThreadSafe>
-FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::FactStorageBackend(Context& ctx) : m_uint_vectors(ctx.uint_vectors)
+FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::FactStorageBackend(Context& ctx) : m_uint_vectors(&ctx.uint_vectors)
 {
 }
 
@@ -36,7 +36,7 @@ typename FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::Packed FactStora
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return Packed { m_uint_vectors.insert(m_buffer) };
+    return Packed { m_uint_vectors->insert(m_buffer) };
 }
 
 template<bool ThreadSafe>
@@ -47,7 +47,7 @@ void FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::unpack(const Packed&
     m_buffer.resize(packed.index.size);
     indices.clear();
 
-    m_uint_vectors.read(packed.index, m_buffer);
+    m_uint_vectors->read(packed.index, m_buffer);
 
     for (const auto i : m_buffer)
         ygg::set(i, true, indices);

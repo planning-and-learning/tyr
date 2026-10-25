@@ -182,7 +182,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                     auto axiom_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(axiom_program.get_datalog_program());
                     solve_workspace(axiom_workspace);
 
-                    auto merge_context = tyr::formalism::datalog::CopyContext { action_workspace.datalog_builder, action_workspace.workspace_repository };
+                    auto merge_context = tyr::formalism::datalog::CopyContext { action_workspace.datalog_builder, *action_workspace.workspace_repository };
                     for (const auto& set : axiom_workspace.facts.fact_sets.predicate.get_sets())
                         for (const auto binding : set.get_bindings())
                             action_workspace.facts.fact_sets.predicate.insert(tyr::formalism::datalog::copy(binding, merge_context).first);

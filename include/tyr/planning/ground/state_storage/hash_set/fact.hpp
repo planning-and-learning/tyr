@@ -35,7 +35,7 @@ namespace tyr::planning
 template<>
 struct FactPackedStorage<GroundTag, HashSet> : ygg::comparison::Mixin<FactPackedStorage<GroundTag, HashSet>>
 {
-    ygg::uint_t index;
+    ygg::uint_t index = 0;
 
     FactPackedStorage() = default;
     explicit FactPackedStorage(ygg::uint_t index) : index(index) {}
@@ -59,8 +59,8 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ArraySetT<Context>& m_array_set;
-    const std::vector<VariableInfo>& m_infos;
+    ArraySetT<Context>* m_array_set;
+    const std::vector<VariableInfo>* m_infos;
 
     std::vector<ygg::uint_t> m_buffer;
 };

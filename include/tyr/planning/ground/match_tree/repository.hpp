@@ -24,17 +24,12 @@
 #include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/atom_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/constraint_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/generator_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/negative_fact_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/variable_view.hpp"
 
 #include <cassert>
 #include <utility>
@@ -57,12 +52,12 @@ template<typename Tag>
 class Repository : public ygg::formalism::SymbolRepositoryBase<Repository<Tag>, RepositoryTypes<Tag>>
 {
 private:
-    const formalism::planning::Repository& m_formalism_repository;
+    const formalism::planning::Repository* m_formalism_repository;
     ygg::uint_t m_index;
 
 public:
     explicit Repository(ygg::uint_t index, const formalism::planning::Repository& formalism_repository) :
-        m_formalism_repository(formalism_repository),
+        m_formalism_repository(&formalism_repository),
         m_index(index)
     {
     }
@@ -70,10 +65,11 @@ public:
     Repository& operator=(const Repository& other) = delete;
     Repository(Repository&& other) = delete;
     Repository& operator=(Repository&& other) = delete;
+    ~Repository() = default;
 
     [[nodiscard]] const auto& get_index() const noexcept { return m_index; }
 
-    [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return m_formalism_repository; }
+    [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return *m_formalism_repository; }
 
     /// @brief Access the element with the given index.
     template<typename T>
@@ -81,7 +77,7 @@ public:
     const ygg::Data<T>& operator[](ygg::Index<T> index) const noexcept
     {
         assert(index != ygg::Index<T>::max() && "Unassigned index.");
-        return this->template at_local<T>(index);
+        return this->template local<T>(index);
     }
 
     template<typename T>

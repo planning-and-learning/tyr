@@ -63,7 +63,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    Context& m_context;
+    Context* m_context;
 
     std::vector<tree_bitset::Block> m_blocks;
     std::vector<tree_bitset::Flip> m_flips;

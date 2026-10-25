@@ -86,8 +86,8 @@ public:
     };
 
     LazyGBFSPolicy(Heuristic<Kind>& heuristic, const Options& options) :
-        m_heuristic(heuristic),
-        m_options(options),
+        m_heuristic(&heuristic),
+        m_options(&options),
         m_openlist(m_preferred_openlist, m_standard_openlist, std::array<size_t, 2> { 1, 1 })
     {
     }
@@ -145,7 +145,7 @@ public:
         m_state_h_value = std::forward<EvaluateUnlocked>(evaluate_unlocked)(
             [&]
             {
-                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic.evaluate(node.get_state()));
+                const auto h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_heuristic->evaluate(node.get_state()));
                 if (std::isnan(h_value))
                     throw std::runtime_error("GBFS heuristic value is NaN.");
                 if (h_value != std::numeric_limits<ygg::float_t>::infinity())
@@ -159,7 +159,7 @@ public:
             return ExpansionResult::SKIP;
         }
 
-        m_relaxed_plan = m_options.use_preferred_actions ? m_heuristic.get_relaxed_plan() : nullptr;
+        m_relaxed_plan = m_options->use_preferred_actions ? m_heuristic->get_relaxed_plan() : nullptr;
         search_node.status = SearchNodeStatus::CLOSED;
         return ExpansionResult::EXPAND;
     }
@@ -190,7 +190,7 @@ public:
                                       SearchNode& successor_search_node,
                                       bool is_new,
                                       EvaluateHeuristic&&,
-                                      EmitTransition&& emit_transition)
+                                      EmitTransition emit_transition)
     {
         if (!is_new)
         {
@@ -248,13 +248,13 @@ public:
     template<typename Engine>
     static void boost_preferred_queues(Engine& engine)
     {
-        if (!engine.m_options.use_preferred_actions)
+        if (!engine.m_options->use_preferred_actions)
             return;
 
         const auto num_workers = engine.num_workers();
         for (size_t i = 0; i < num_workers; ++i)
         {
-            engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search.queue_preferred_boost(engine.m_options.boost_preferred_queue);
+            engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search.queue_preferred_boost(engine.m_options->boost_preferred_queue);
         }
     }
 
@@ -263,8 +263,8 @@ private:
 
     static constexpr ParentState no_parent() noexcept { return ParentPolicy::no_parent(); }
 
-    Heuristic<Kind>& m_heuristic;
-    const Options& m_options;
+    Heuristic<Kind>* m_heuristic;
+    const Options* m_options;
     ygg::uint_t m_step { 0 };
     ygg::float_t m_start_h_value { 0 };
     ygg::float_t m_state_h_value { 0 };
@@ -276,10 +276,11 @@ private:
     std::atomic<size_t> m_pending_preferred_boost { 0 };
 };
 
-static_assert(sizeof(LazyGBFSPolicy<LiftedTag, SequentialSearch>::SearchNode) == 16);
-static_assert(sizeof(LazyGBFSPolicy<GroundTag, SequentialSearch>::SearchNode) == 16);
-static_assert(sizeof(LazyGBFSPolicy<LiftedTag, SequentialSearch>::QueueEntry) == 24);
-static_assert(sizeof(LazyGBFSPolicy<GroundTag, SequentialSearch>::QueueEntry) == 24);
+// Search nodes and queue entries are dense in hot loops; these sizes guard their layout.
+static_assert(sizeof(LazyGBFSPolicy<LiftedTag, SequentialSearch>::SearchNode) == 2 * sizeof(ygg::float_t));
+static_assert(sizeof(LazyGBFSPolicy<GroundTag, SequentialSearch>::SearchNode) == 2 * sizeof(ygg::float_t));
+static_assert(sizeof(LazyGBFSPolicy<LiftedTag, SequentialSearch>::QueueEntry) == 3 * sizeof(ygg::float_t));
+static_assert(sizeof(LazyGBFSPolicy<GroundTag, SequentialSearch>::QueueEntry) == 3 * sizeof(ygg::float_t));
 
 }
 

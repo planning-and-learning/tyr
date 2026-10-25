@@ -61,7 +61,7 @@ struct BenchmarkCase
     std::shared_ptr<PreparedCase> prepared = std::make_shared<PreparedCase>();
 };
 
-enum class Operation
+enum class Operation : std::uint8_t
 {
     ALL_BINDINGS,
     ALL_SUCCESSORS,
@@ -182,7 +182,7 @@ try
         if (!std::ranges::equal(expected, successors, [](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && lhs.node == rhs.node; }))
             throw std::runtime_error("Selected successor generation disagrees with global filtering.");
     }
-    for (auto _ : state)
+    for ([[maybe_unused]] auto _ : state)
         generate();
 }
 catch (const std::exception& error)

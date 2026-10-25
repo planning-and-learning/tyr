@@ -46,46 +46,46 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     class In
     {
     public:
-        explicit In(const ConstProgramWorkspace<GroundTag>& cws) : m_cws(cws) {}
+        explicit In(const ConstProgramWorkspace<GroundTag>& cws) : m_cws(&cws) {}
 
-        [[nodiscard]] auto program() const noexcept { return m_cws.program; }
-        [[nodiscard]] const auto& facts() const noexcept { return m_cws.facts; }
+        [[nodiscard]] auto program() const noexcept { return m_cws->program; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_cws->facts; }
         template<formalism::RelationKind R>
         [[nodiscard]] const auto& dependencies() const noexcept
-        { return m_cws.template get_dependencies<R>(); }
+        { return m_cws->template get_dependencies<R>(); }
 
     private:
-        const ConstProgramWorkspace<GroundTag>& m_cws;
+        const ConstProgramWorkspace<GroundTag>* m_cws;
     };
 
     class Out
     {
     public:
-        explicit Out(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_ws(ws) {}
+        explicit Out(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_ws(&ws) {}
 
-        auto& facts() noexcept { return m_ws.facts; }
-        [[nodiscard]] const auto& facts() const noexcept { return m_ws.facts; }
-        auto& annotation_policy() noexcept { return m_ws.annotation_policy; }
-        [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws.annotation_policy; }
-        auto& annotations() noexcept { return m_ws.annotations; }
-        [[nodiscard]] const auto& annotations() const noexcept { return m_ws.annotations; }
-        auto& numeric_annotations() noexcept { return m_ws.numeric_annotations; }
-        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws.numeric_annotations; }
-        [[nodiscard]] auto numeric_support_selector() const noexcept { return m_ws.get_numeric_support_selector(); }
-        auto& tp() noexcept { return m_ws.tp; }
-        [[nodiscard]] const auto& tp() const noexcept { return m_ws.tp; }
-        auto& cost_policy() noexcept { return m_ws.cost_policy; }
-        [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws.cost_policy; }
-        auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
-        auto& pending_achievers() noexcept { return m_ws.pending_achievers; }
-        auto& scheduler() noexcept { return m_ws.scheduler; }
-        [[nodiscard]] const auto& scheduler() const noexcept { return m_ws.scheduler; }
+        auto& facts() noexcept { return m_ws->facts; }
+        [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
+        auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
+        [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
+        auto& annotations() noexcept { return m_ws->annotations; }
+        [[nodiscard]] const auto& annotations() const noexcept { return m_ws->annotations; }
+        auto& numeric_annotations() noexcept { return m_ws->numeric_annotations; }
+        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws->numeric_annotations; }
+        [[nodiscard]] auto numeric_support_selector() const noexcept { return m_ws->get_numeric_support_selector(); }
+        auto& tp() noexcept { return m_ws->tp; }
+        [[nodiscard]] const auto& tp() const noexcept { return m_ws->tp; }
+        auto& cost_policy() noexcept { return m_ws->cost_policy; }
+        [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws->cost_policy; }
+        auto& cost_buckets() noexcept { return m_ws->cost_buckets; }
+        auto& pending_achievers() noexcept { return m_ws->pending_achievers; }
+        auto& scheduler() noexcept { return m_ws->scheduler; }
+        [[nodiscard]] const auto& scheduler() const noexcept { return m_ws->scheduler; }
 
     private:
-        ProgramWorkspace<GroundTag, AP, TP, CP>& m_ws;
+        ProgramWorkspace<GroundTag, AP, TP, CP>* m_ws;
     };
 
-    explicit ProgramExecutionContext(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_in(ws.const_workspace), m_out(ws) { clear(); }
+    explicit ProgramExecutionContext(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_in(*ws.const_workspace), m_out(ws) { clear(); }
 
     void clear() { reset_from_current_facts(); }
 

@@ -57,10 +57,9 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::LiftedTag>>>)
                     return Variant(arg.get_data());
                 else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>)
-                    return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>)
+                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>>
+                                   || ygg::is_view_of_v<Alternative,
+                                                        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
@@ -103,13 +102,11 @@ struct Data<::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>>
                 else if constexpr (ygg::is_view_of_v<Alternative, ygg::Data<::tyr::formalism::planning::ArithmeticOperator<::tyr::GroundTag>>>)
                     return Variant(arg.get_data());
                 else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>)
-                    return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>)
-                    return Variant(arg.get_index());
-                else if constexpr (ygg::is_view_of_v<Alternative,
-                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>)
+                                                     ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>>
+                                   || ygg::is_view_of_v<Alternative,
+                                                        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>>
+                                   || ygg::is_view_of_v<Alternative,
+                                                        ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>)
                     return Variant(arg.get_index());
                 else
                     static_assert(ygg::dependent_false<Alternative>::value, "Missing case");

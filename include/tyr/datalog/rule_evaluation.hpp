@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <span>
@@ -58,10 +59,21 @@ inline ygg::ClosedInterval<ygg::float_t> widen_free_growth(ygg::ClosedInterval<y
     return ygg::ClosedInterval<ygg::float_t>(lower(next) < lower(current) ? -inf : lower(next), upper(next) > upper(current) ? inf : upper(next));
 }
 
-struct RuleEvaluationInput
+class RuleEvaluationInput
 {
-    const NumericSupportSelector& selector;
-    const PredicateAnnotations<>& predicate_annotations;
+public:
+    RuleEvaluationInput(const NumericSupportSelector& selector, const PredicateAnnotations<>& predicate_annotations) noexcept :
+        m_selector(&selector),
+        m_predicate_annotations(&predicate_annotations)
+    {
+    }
+
+    [[nodiscard]] const NumericSupportSelector& selector() const noexcept { return *m_selector; }
+    [[nodiscard]] const PredicateAnnotations<>& predicate_annotations() const noexcept { return *m_predicate_annotations; }
+
+private:
+    const NumericSupportSelector* m_selector;
+    const PredicateAnnotations<>* m_predicate_annotations;
 };
 
 struct RuleEvaluationWorkspace
@@ -92,7 +104,7 @@ struct FunctionCandidate
     std::optional<CandidateEvidence> evidence;
 };
 
-struct PredicateHeadUpdates
+class PredicateHeadUpdates
 {
 private:
     using Binding = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
@@ -100,17 +112,20 @@ private:
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
     std::vector<boost::dynamic_bitset<>> m_seen_rows;
+    std::vector<Binding> m_bindings;
+    std::vector<PredicateAchiever> m_achievers;
 
 public:
-    std::vector<Binding> bindings;
-    std::vector<PredicateAchiever> achievers;
+    [[nodiscard]] const std::vector<Binding>& bindings() const noexcept { return m_bindings; }
+    /// Mutable: reducing the updates moves the achievers out.
+    std::vector<PredicateAchiever>& achievers() noexcept { return m_achievers; }
 
     void clear() noexcept
     {
-        for (const auto binding : bindings)
+        for (const auto binding : m_bindings)
             m_seen_rows[ygg::uint_t(binding.relation)].reset(ygg::uint_t(binding.row));
-        bindings.clear();
-        achievers.clear();
+        m_bindings.clear();
+        m_achievers.clear();
     }
 
     void insert(Binding binding)
@@ -123,10 +138,10 @@ public:
         if (ygg::test(row, seen))
             return;
         ygg::set(row, true, seen);
-        bindings.push_back(binding);
+        m_bindings.push_back(binding);
     }
 
-    void insert_achiever(Binding head, Witness witness) { achievers.push_back(PredicateAchiever { head, std::move(witness) }); }
+    void insert_achiever(Binding head, Witness witness) { m_achievers.push_back(PredicateAchiever { head, std::move(witness) }); }
 };
 
 struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
@@ -173,10 +188,10 @@ void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
                                    [[maybe_unused]] PendingPredicateAchievers& pending_achievers)
 {
     if constexpr (AP::records_propositional_achievers)
-        for (auto& achiever : head_updates.achievers)
+        for (auto& achiever : head_updates.achievers())
             insert_pending_achiever(pending_achievers, std::move(achiever));
 
-    for (const auto head : head_updates.bindings)
+    for (const auto head : head_updates.bindings())
     {
         if constexpr (AP::stores_annotations)
         {
@@ -264,10 +279,10 @@ struct RuleUpdateInput
 {
     RuleInstance<Kind, R> rule_instance;
     RuleEvaluationInput evaluation;
-    RuleEvaluationWorkspace& workspace;
-    const FunctionAnnotations<>& numeric_annotations;
-    AP& annotation_policy;
-    const CP& cost_policy;
+    RuleEvaluationWorkspace* workspace;
+    const FunctionAnnotations<>* numeric_annotations;
+    AP* annotation_policy;
+    const CP* cost_policy;
 };
 
 template<TaskKind Kind, formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
@@ -281,13 +296,13 @@ RuleUpdateInput<Kind, R, AP, CP> make_rule_update_input(RuleInstance<Kind, R> ru
 {
     return { std::move(rule_instance),
              RuleEvaluationInput { numeric_support_selector, predicate_annotations },
-             workspace,
-             numeric_annotations,
-             annotation_policy,
-             cost_policy };
+             &workspace,
+             &numeric_annotations,
+             &annotation_policy,
+             &cost_policy };
 }
 
-enum class RuleUpdateStatus
+enum class RuleUpdateStatus : std::uint8_t
 {
     Unavailable,
     Pruned,
@@ -297,7 +312,7 @@ enum class RuleUpdateStatus
 
 struct RuleUpdateResult
 {
-    RuleUpdateStatus status;
+    RuleUpdateStatus status = RuleUpdateStatus::Unavailable;
     std::optional<Cost> queue_label;
 
     [[nodiscard]] bool is_handled() const noexcept { return status == RuleUpdateStatus::Pruned || status == RuleUpdateStatus::Completed; }
@@ -339,9 +354,9 @@ bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationW
     {
         for (const auto& entry : workspace.selector.selection)
         {
-            const auto reported = input.selector.for_each_entry_support(entry,
-                                                                        [&](const auto key, const auto& interval, const auto& annotation)
-                                                                        { workspace.exact_supports.emplace_back(key, interval, get_cost(annotation)); });
+            const auto reported = input.selector().for_each_entry_support(entry,
+                                                                          [&](const auto key, const auto& interval, const auto& annotation)
+                                                                          { workspace.exact_supports.emplace_back(key, interval, get_cost(annotation)); });
             if (!reported)
             {
                 assert(false && "annotated rule support has no exact backing certificate");
@@ -379,7 +394,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
                                                        const CP&,
                                                        const RuleEvaluationInput& input,
                                                        RuleEvaluationWorkspace& workspace,
-                                                       CanContinue&& can_continue)
+                                                       CanContinue can_continue)
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
@@ -396,7 +411,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
             continue;
 
         const auto binding = instance.resolve(literal.get_atom());
-        const auto* annotation = input.predicate_annotations.find(binding.get_index());
+        const auto* annotation = input.predicate_annotations().find(binding.get_index());
         if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
@@ -408,7 +423,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
     for (const auto constraint : instance.get_body().get_numeric_constraints())
     {
         const auto resolved = instance.resolve(constraint);
-        const auto constraint_cost = input.selector.get_constraint_cost(resolved, workspace.selector.selection, Aggregation {});
+        const auto constraint_cost = input.selector().get_constraint_cost(resolved, workspace.selector.selection, Aggregation {});
         if (constraint_cost == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
@@ -428,12 +443,12 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         auto lhs = ygg::ClosedInterval<ygg::float_t> {};
         if (effect.operator_kind != formalism::NumericEffectOperatorKind::Assign)
         {
-            lhs = input.selector.select_fluent_interval(effect.head, workspace.selector.selection);
+            lhs = input.selector().select_fluent_interval(effect.head, workspace.selector.selection);
             if (empty(lhs))
                 return std::nullopt;
         }
 
-        const auto rhs = input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection);
+        const auto rhs = input.selector().evaluate_effect_expression(effect.rhs, workspace.selector.selection);
         if (empty(rhs))
             return std::nullopt;
 
@@ -441,7 +456,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         if (empty(state.raw_interval))
             return std::nullopt;
 
-        state.current_interval = input.selector.current_interval(effect.head);
+        state.current_interval = input.selector().current_interval(effect.head);
         aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
         if (!can_continue(state.support_cost, state.raw_edge))
             return std::nullopt;
@@ -464,12 +479,12 @@ std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind
     auto lhs = ygg::ClosedInterval<ygg::float_t> {};
     if (effect.operator_kind != formalism::NumericEffectOperatorKind::Assign)
     {
-        lhs = input.selector.select_fluent_interval(effect.head, workspace.selector.selection);
+        lhs = input.selector().select_fluent_interval(effect.head, workspace.selector.selection);
         if (empty(lhs))
             return std::nullopt;
     }
 
-    const auto rhs = input.selector.evaluate_effect_expression(effect.rhs, workspace.selector.selection);
+    const auto rhs = input.selector().evaluate_effect_expression(effect.rhs, workspace.selector.selection);
     if (empty(rhs))
         return std::nullopt;
 
@@ -477,7 +492,7 @@ std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind
     if (empty(raw_interval))
         return std::nullopt;
 
-    const auto current = input.selector.current_interval(effect.head);
+    const auto current = input.selector().current_interval(effect.head);
     auto interval = raw_interval;
     if (!empty(current) && policy.is_widening_label_preserving(static_cast<Cost>(0), static_cast<Cost>(0)))
         interval = widen_free_growth(raw_interval, current);
@@ -591,7 +606,7 @@ auto evaluate_propositional_candidate(std::span<const formalism::datalog::Predic
 {
     auto best_cost = static_cast<Cost>(0);
     for (const auto head : heads)
-        best_cost = std::max(best_cost, std::min(input.predicate_annotations.fetch_cost(head), delta_annotations.fetch_cost(head)));
+        best_cost = std::max(best_cost, std::min(input.predicate_annotations().fetch_cost(head), delta_annotations.fetch_cost(head)));
     return evaluate_propositional_candidate(rule_instance, annotation_policy, cost_policy, input, workspace, best_cost);
 }
 
@@ -623,7 +638,7 @@ std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, 
         auto interval = state->raw_interval;
         if (!empty(state->current_interval) && edge == static_cast<Cost>(0))
         {
-            const auto current_label = input.selector.get_current_interval_cost(effect.head, state->current_interval);
+            const auto current_label = input.selector().get_current_interval_cost(effect.head, state->current_interval);
             if (annotation_policy.is_widening_label_preserving(pre_transition_label, current_label))
                 interval = widen_free_growth(state->raw_interval, state->current_interval);
         }
@@ -659,10 +674,10 @@ RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog:
     assert(!heads.empty());
     auto [candidate, pruned] = evaluate_propositional_candidate(heads,
                                                                 input.rule_instance,
-                                                                input.annotation_policy,
-                                                                input.cost_policy,
+                                                                *input.annotation_policy,
+                                                                *input.cost_policy,
                                                                 input.evaluation,
-                                                                input.workspace,
+                                                                *input.workspace,
                                                                 delta_annotations);
     if (!candidate)
     {
@@ -682,14 +697,14 @@ RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog:
     {
         for (const auto head : heads)
         {
-            const auto can_update = input.annotation_policy.can_update(head, candidate->cost, input.evaluation.predicate_annotations, delta_annotations);
+            const auto can_update = input.annotation_policy->can_update(head, candidate->cost, input.evaluation.predicate_annotations(), delta_annotations);
             if constexpr (AP::records_propositional_achievers)
             {
                 auto witness = materialize_witness(input.rule_instance, *candidate);
                 if (can_update)
                 {
                     head_updates.insert_achiever(head, witness);
-                    input.annotation_policy.try_update_candidate(head, std::move(witness), delta_annotations);
+                    input.annotation_policy->try_update_candidate(head, std::move(witness), delta_annotations);
                 }
                 else
                 {
@@ -698,7 +713,7 @@ RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog:
             }
             else if (can_update)
             {
-                input.annotation_policy.try_update_candidate(head, materialize_witness(input.rule_instance, *candidate), delta_annotations);
+                input.annotation_policy->try_update_candidate(head, materialize_witness(input.rule_instance, *candidate), delta_annotations);
             }
         }
     }
@@ -714,7 +729,7 @@ RuleUpdateResult insert_numeric_update(RuleUpdateInput<Kind, formalism::Function
                                        [[maybe_unused]] DeltaAnnotations& delta_numeric_annotations,
                                        std::optional<Cost> required_queue_label = std::nullopt)
 {
-    auto candidate = evaluate_function_candidate(input.rule_instance, input.annotation_policy, input.cost_policy, input.evaluation, input.workspace);
+    auto candidate = evaluate_function_candidate(input.rule_instance, *input.annotation_policy, *input.cost_policy, input.evaluation, *input.workspace);
     if (!candidate)
         return { RuleUpdateStatus::Unavailable, std::nullopt };
 
@@ -729,10 +744,10 @@ RuleUpdateResult insert_numeric_update(RuleUpdateInput<Kind, formalism::Function
     else
     {
         auto staged = false;
-        if (input.annotation_policy.can_update(candidate->head, candidate->interval, candidate->cost, input.numeric_annotations, delta_numeric_annotations))
+        if (input.annotation_policy->can_update(candidate->head, candidate->interval, candidate->cost, *input.numeric_annotations, delta_numeric_annotations))
         {
             auto witness = materialize_witness(input.rule_instance, *candidate);
-            staged = input.annotation_policy.try_update_candidate(candidate->head, candidate->interval, std::move(witness), delta_numeric_annotations);
+            staged = input.annotation_policy->try_update_candidate(candidate->head, candidate->interval, std::move(witness), delta_numeric_annotations);
         }
         if (staged || candidate->grows_fact)
             head_updates.insert(FunctionHeadUpdate(candidate->head, candidate->interval, candidate->grows_fact));

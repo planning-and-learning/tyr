@@ -2,7 +2,7 @@
 #define TYR_SERIALIZATION_PLANNING_NODE_HPP_
 
 #include "tyr/planning/node.hpp"
-#include "tyr/serialization/formalism/binding_view.hpp"
+#include "tyr/serialization/formalism/planning/planning.hpp"
 #include "tyr/serialization/planning/state_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 

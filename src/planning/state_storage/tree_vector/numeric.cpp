@@ -30,7 +30,7 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
-NumericStorageBackend<Kind, Tag, ThreadSafe>::NumericStorageBackend(Context& ctx) : m_float_vectors(ctx.float_vectors)
+NumericStorageBackend<Kind, Tag, ThreadSafe>::NumericStorageBackend(Context& ctx) : m_float_vectors(&ctx.float_vectors)
 {
 }
 
@@ -48,7 +48,7 @@ template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
 typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked)
 {
     canonicalize(unpacked);
-    return Packed { m_float_vectors.insert(unpacked.values) };
+    return Packed { m_float_vectors->insert(unpacked.values) };
 }
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
@@ -61,7 +61,7 @@ NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const P
     // and a write delta cannot grow a stored vector.
     const auto& values = unpacked.values;
     if (values.size() != parent.index.size)
-        return Packed { m_float_vectors.insert(values) };
+        return Packed { m_float_vectors->insert(values) };
 
     m_writes.clear();
     for (const auto& change : changes)
@@ -70,14 +70,14 @@ NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const P
         m_writes.push_back(ygg::TreeVectorWrite<ygg::float_t> { position, values[position] });
     }
 
-    return Packed { m_float_vectors.insert(parent.index, m_writes) };
+    return Packed { m_float_vectors->insert(parent.index, m_writes) };
 }
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
 void NumericStorageBackend<Kind, Tag, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     unpacked.values.resize(packed.index.size);
-    m_float_vectors.read(packed.index, unpacked.values);
+    m_float_vectors->read(packed.index, unpacked.values);
 }
 
 template class NumericStorageBackend<LiftedTag, TreeVector, false>;

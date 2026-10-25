@@ -47,8 +47,8 @@ namespace
 using formalism::planning::InvariantView;
 using formalism::planning::InvariantViewList;
 
-const auto ferry_domain = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/domain.pddl";
-const auto ferry_task = std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/test-1.pddl";
+std::filesystem::path ferry_domain() { return std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/domain.pddl"; }
+std::filesystem::path ferry_task() { return std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/test-1.pddl"; }
 
 std::set<std::string> predicate_names(InvariantView invariant)
 {
@@ -104,7 +104,7 @@ ParsedTask parse(const std::filesystem::path& domain_file,
 
 ParsedTask parse_ferry()
 {
-    return parse(ferry_domain, [](formalism::planning::Parser& parser) { return parser.parse_task(ferry_task); });
+    return parse(ferry_domain(), [](formalism::planning::Parser& parser) { return parser.parse_task(ferry_task()); });
 }
 
 /// The ferry invariants: car position, ferry contents and ferry location.
@@ -188,7 +188,7 @@ TEST(TyrPlanningInvariantOrderTest, DisabledInvariantSynthesisIgnoresTheOrder)
 
 TEST(TyrPlanningInvariantOrderTest, ViolatedInstanceStaysSingle)
 {
-    auto ferry = parse(ferry_domain,
+    auto ferry = parse(ferry_domain(),
                        [](formalism::planning::Parser& parser)
                        {
                            return parser.parse_task(R"(

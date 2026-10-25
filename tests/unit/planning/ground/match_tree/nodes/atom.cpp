@@ -1,6 +1,6 @@
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/atom_view.hpp"
+#include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 
 #include <concepts>

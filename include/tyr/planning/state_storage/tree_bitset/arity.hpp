@@ -24,6 +24,8 @@ namespace tyr::planning::tree_bitset
 {
 /// Children per internal node of the TreeBitsetSets that store fluent facts and derived atoms.
 inline constexpr size_t arity = 4;
+/// Size of the first storage segment of these sets.
+inline constexpr size_t first_segment_size = 32;
 }
 
 #endif

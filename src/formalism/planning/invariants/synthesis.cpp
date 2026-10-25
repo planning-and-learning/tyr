@@ -35,6 +35,7 @@
 #include <optional>
 #include <variant>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparators.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
@@ -120,6 +121,8 @@ MutableInvariantList synthesize_mutable_invariants(DomainView domain)
         }
         else if (result.status == ProofStatus::UnbalancedAddEffect)
         {
+            // prove_invariant names the threatening add effect of an unbalanced candidate.
+            YGG_ASSUME(result.threat.has_value());
             for (auto& refined : refine_candidate(candidate, *result.threat, ops, domain.get_predicates<FluentTag>()))
                 enqueue(std::move(refined));
         }

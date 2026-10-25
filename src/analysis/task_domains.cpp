@@ -266,7 +266,7 @@ void insert_into_function_domain_sets(formalism::planning::FunctionTermValueList
 }
 
 template<typename Fn>
-void for_each_term_with_position(Fn&& fn, formalism::planning::TermListView terms)
+void for_each_term_with_position(Fn fn, formalism::planning::TermListView terms)
 {
     size_t pos = 0;
     for (const auto term : terms)
@@ -282,11 +282,11 @@ void for_each_term_with_position(Fn&& fn, formalism::planning::TermListView term
 
 struct InsertConstantPolicy
 {
-    TmpPredicateDomainMap<formalism::StaticTag>& static_predicate_domain_sets;
-    TmpPredicateDomainMap<formalism::FluentTag>& fluent_predicate_domain_sets;
-    TmpPredicateDomainMap<formalism::DerivedTag>& derived_predicate_domain_sets;
-    TmpFunctionDomainMap<formalism::StaticTag>& static_function_domain_sets;
-    TmpFunctionDomainMap<formalism::FluentTag>& fluent_function_domain_sets;
+    TmpPredicateDomainMap<formalism::StaticTag>* static_predicate_domain_sets;
+    TmpPredicateDomainMap<formalism::FluentTag>* fluent_predicate_domain_sets;
+    TmpPredicateDomainMap<formalism::DerivedTag>* derived_predicate_domain_sets;
+    TmpFunctionDomainMap<formalism::StaticTag>* static_function_domain_sets;
+    TmpFunctionDomainMap<formalism::FluentTag>* fluent_function_domain_sets;
 
     template<typename Element>
     [[nodiscard]] bool should_skip(Element) const
@@ -294,11 +294,11 @@ struct InsertConstantPolicy
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
-    auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return static_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return fluent_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) { return derived_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) { return static_function_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) { return fluent_function_domain_sets; }
+    auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return *static_predicate_domain_sets; }
+    auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return *fluent_predicate_domain_sets; }
+    auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) { return *derived_predicate_domain_sets; }
+    auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) { return *static_function_domain_sets; }
+    auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)
@@ -315,12 +315,12 @@ struct InsertConstantPolicy
 
 struct RestrictPolicy
 {
-    const TmpPredicateDomainMap<formalism::StaticTag>& static_predicate_domain_sets;
-    const TmpPredicateDomainMap<formalism::FluentTag>& fluent_predicate_domain_sets;
-    const TmpPredicateDomainMap<formalism::DerivedTag>& derived_predicate_domain_sets;
-    const TmpFunctionDomainMap<formalism::StaticTag>& static_function_domain_sets;
-    const TmpFunctionDomainMap<formalism::FluentTag>& fluent_function_domain_sets;
-    TmpVariableDomainList& parameter_domains;
+    const TmpPredicateDomainMap<formalism::StaticTag>* static_predicate_domain_sets;
+    const TmpPredicateDomainMap<formalism::FluentTag>* fluent_predicate_domain_sets;
+    const TmpPredicateDomainMap<formalism::DerivedTag>* derived_predicate_domain_sets;
+    const TmpFunctionDomainMap<formalism::StaticTag>* static_function_domain_sets;
+    const TmpFunctionDomainMap<formalism::FluentTag>* fluent_function_domain_sets;
+    TmpVariableDomainList* parameter_domains;
 
     template<typename Element>
     [[nodiscard]] bool should_skip(Element) const
@@ -332,11 +332,11 @@ struct RestrictPolicy
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
-    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return static_predicate_domain_sets; }
-    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return fluent_predicate_domain_sets; }
-    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return derived_predicate_domain_sets; }
-    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return static_function_domain_sets; }
-    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return fluent_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+    [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t, formalism::planning::ObjectView, Symbol)
@@ -346,7 +346,7 @@ struct RestrictPolicy
     template<typename Symbol>
     void on_parameter(size_t pos, formalism::ParameterIndex param, Symbol symbol)
     {
-        auto& parameter_domain = parameter_domains[ygg::uint_t(param)];
+        auto& parameter_domain = (*parameter_domains)[ygg::uint_t(param)];
         const auto& symbol_domain = get_domains(symbol).at(symbol.get_index())[pos];
         ygg::intersect_inplace(parameter_domain.objects, symbol_domain.objects);
     }
@@ -354,12 +354,12 @@ struct RestrictPolicy
 
 struct LiftPolicy
 {
-    TmpPredicateDomainMap<formalism::StaticTag>& static_predicate_domain_sets;
-    TmpPredicateDomainMap<formalism::FluentTag>& fluent_predicate_domain_sets;
-    TmpPredicateDomainMap<formalism::DerivedTag>& derived_predicate_domain_sets;
-    TmpFunctionDomainMap<formalism::StaticTag>& static_function_domain_sets;
-    TmpFunctionDomainMap<formalism::FluentTag>& fluent_function_domain_sets;
-    const TmpVariableDomainList& parameter_domains;
+    TmpPredicateDomainMap<formalism::StaticTag>* static_predicate_domain_sets;
+    TmpPredicateDomainMap<formalism::FluentTag>* fluent_predicate_domain_sets;
+    TmpPredicateDomainMap<formalism::DerivedTag>* derived_predicate_domain_sets;
+    TmpFunctionDomainMap<formalism::StaticTag>* static_function_domain_sets;
+    TmpFunctionDomainMap<formalism::FluentTag>* fluent_function_domain_sets;
+    const TmpVariableDomainList* parameter_domains;
 
     template<typename Element>
     [[nodiscard]] bool should_skip(Element) const
@@ -367,11 +367,11 @@ struct LiftPolicy
 
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
 
-    auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return static_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return fluent_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) { return derived_predicate_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) { return static_function_domain_sets; }
-    auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) { return fluent_function_domain_sets; }
+    auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) { return *static_predicate_domain_sets; }
+    auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) { return *fluent_predicate_domain_sets; }
+    auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) { return *derived_predicate_domain_sets; }
+    auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) { return *static_function_domain_sets; }
+    auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
     void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)
@@ -384,7 +384,7 @@ struct LiftPolicy
     void on_parameter(size_t pos, formalism::ParameterIndex param, Symbol symbol)
     {
         auto& domain = get_domains(symbol).at(symbol.get_index())[pos];
-        ygg::union_inplace(domain.objects, parameter_domains[ygg::uint_t(param)].objects);
+        ygg::union_inplace(domain.objects, (*parameter_domains)[ygg::uint_t(param)].objects);
     }
 };
 
@@ -551,7 +551,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
 
     {
         auto insert_policy = InsertConstantPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets, static_function_domain_sets, fluent_function_domain_sets,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,
         };
 
         for (const auto action : task.get_domain().get_actions())
@@ -606,8 +607,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
             domain.objects = universe;
 
         auto restrict_policy = RestrictPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-            static_function_domain_sets,  fluent_function_domain_sets,  parameter_domains,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
         for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
@@ -638,8 +639,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
                 c_parameter_domains[i].objects = universe;
 
             auto c_restrict_policy = RestrictPolicy {
-                static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-                static_function_domain_sets,  fluent_function_domain_sets,  c_parameter_domains,
+                &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+                &static_function_domain_sets,  &fluent_function_domain_sets,  &c_parameter_domains,
             };
 
             for (const auto literal : c_effect.get_condition().get_literals<formalism::StaticTag>())
@@ -694,8 +695,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
             domain.objects = universe;
 
         auto restrict_policy = RestrictPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-            static_function_domain_sets,  fluent_function_domain_sets,  parameter_domains,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
         for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
@@ -716,8 +717,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
             domain.objects = universe;
 
         auto restrict_policy = RestrictPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-            static_function_domain_sets,  fluent_function_domain_sets,  parameter_domains,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
         for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
@@ -739,8 +740,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
         auto& parameter_domains = action_domain.precondition_domain.payload;
 
         auto lift_policy = LiftPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-            static_function_domain_sets,  fluent_function_domain_sets,  parameter_domains,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
         for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
@@ -761,8 +762,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
             auto& c_parameter_domains = c_effect_domain.condition_domain.payload;
 
             auto c_lift_policy = LiftPolicy {
-                static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-                static_function_domain_sets,  fluent_function_domain_sets,  c_parameter_domains,
+                &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+                &static_function_domain_sets,  &fluent_function_domain_sets,  &c_parameter_domains,
             };
 
             for (const auto literal : c_effect.get_condition().get_literals<formalism::StaticTag>())
@@ -790,8 +791,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
         auto& parameter_domains = axiom_domain_sets.at(axiom.get_index());
 
         auto lift_policy = LiftPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-            static_function_domain_sets,  fluent_function_domain_sets,  parameter_domains,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
         for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
@@ -814,8 +815,8 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
         auto& parameter_domains = axiom_domain_sets.at(axiom.get_index());
 
         auto lift_policy = LiftPolicy {
-            static_predicate_domain_sets, fluent_predicate_domain_sets, derived_predicate_domain_sets,
-            static_function_domain_sets,  fluent_function_domain_sets,  parameter_domains,
+            &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
+            &static_function_domain_sets,  &fluent_function_domain_sets,  &parameter_domains,
         };
 
         for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())

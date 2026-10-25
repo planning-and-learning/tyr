@@ -32,6 +32,7 @@ template<TaskKind Kind>
 class EventHandler
 {
 public:
+    EventHandler() = default;
     virtual ~EventHandler() = default;
     virtual void on_start_search(ygg::uint_t max_arity) = 0;
     virtual void on_start_arity(ygg::uint_t arity) = 0;
@@ -39,6 +40,12 @@ public:
     virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(ygg::uint_t arity) = 0;
     [[nodiscard]] virtual const Statistics<Kind>& get_statistics() const = 0;
+
+protected:
+    EventHandler(const EventHandler&) = default;
+    EventHandler& operator=(const EventHandler&) = default;
+    EventHandler(EventHandler&&) = default;
+    EventHandler& operator=(EventHandler&&) = default;
 };
 
 template<TaskKind Kind>
@@ -47,9 +54,9 @@ class DefaultEventHandler;
 template<typename Derived, TaskKind Kind>
 class EventHandlerBase : public EventHandler<Kind>
 {
-protected:
+private:
     Statistics<Kind> m_statistics;
-    size_t m_verbosity;
+    size_t m_verbosity = 0;
 
 private:
     EventHandlerBase() = default;

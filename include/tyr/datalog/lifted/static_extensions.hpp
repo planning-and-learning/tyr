@@ -41,7 +41,7 @@ template<formalism::RelationKind R, typename Callback>
 void for_each_static_extension(const ConstRuleWorkspace<LiftedTag, R>& rule,
                                std::span<const ygg::Index<formalism::Object>> prefix,
                                StaticExtensionWorkspace& workspace,
-                               Callback&& callback)
+                               Callback callback)
 {
     const auto& graph = rule.get_static_consistency_graph().get_graph();
     const auto& layout = graph.get_layout();

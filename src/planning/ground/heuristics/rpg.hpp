@@ -68,7 +68,7 @@ struct RPGPolicy<GroundTag>
     template<formalism::RelationKind R, typename Workspace, typename Callback>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
-        const auto rule = formalism::datalog::find_ground_rule(witness.get_rule_key(), workspace.const_workspace.program.get_context());
+        const auto rule = formalism::datalog::find_ground_rule(witness.get_rule_key(), workspace.const_workspace->program.get_context());
         if (!rule)
             throw std::logic_error("Ground witness binding has no rule");
 

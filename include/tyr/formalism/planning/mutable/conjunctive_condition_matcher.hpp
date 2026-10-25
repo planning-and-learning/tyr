@@ -56,16 +56,16 @@ struct MutableAtomMatchData
 class ConjunctiveConditionMatcher
 {
 public:
-    ConjunctiveConditionMatcher(const MutableConjunctiveCondition& condition, const MutableAtomMatchData& data) : m_condition(condition), m_data(data) {}
+    ConjunctiveConditionMatcher(const MutableConjunctiveCondition& condition, const MutableAtomMatchData& data) : m_condition(&condition), m_data(&data) {}
 
     template<typename Callback>
-    void for_each_maximal_match(Callback&& callback) const
+    void for_each_maximal_match([[maybe_unused]] Callback callback) const
     {
     }
 
 private:
-    const MutableConjunctiveCondition& m_condition;
-    const MutableAtomMatchData& m_data;
+    const MutableConjunctiveCondition* m_condition;
+    const MutableAtomMatchData* m_data;
 };
 }
 

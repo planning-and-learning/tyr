@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cassert>
 #include <vector>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::unification
@@ -41,7 +42,9 @@ template<TermSubstitution S>
     if (!rho.is_bound(p))
         return term;
 
-    return ygg::Data<Term>(*rho[p]);
+    const auto& value = rho[p];
+    YGG_ASSUME(value.has_value());
+    return ygg::Data<Term>(*value);
 }
 
 template<TermUnifiableStructure T, TermSubstitution S>
@@ -77,7 +80,9 @@ template<TermSubstitution S>
         if (!rho.is_bound(p))
             return current;
 
-        current = ygg::Data<Term>(*rho[p]);
+        const auto& value = rho[p];
+        YGG_ASSUME(value.has_value());
+        current = ygg::Data<Term>(*value);
     }
 
     return current;

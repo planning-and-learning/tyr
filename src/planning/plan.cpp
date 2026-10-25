@@ -20,7 +20,7 @@
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <utility>
 #include <yggdrasil/core/config.hpp>

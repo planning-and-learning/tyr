@@ -34,8 +34,8 @@ namespace tyr::formalism::planning
 {
 struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffect>
 {
-    size_t num_parent_variables;
-    size_t num_variables;
+    size_t num_parent_variables = 0;
+    size_t num_variables = 0;
     MutableLiteralList<FluentTag> literals;
 
     MutableConjunctiveEffect() = default;
@@ -69,7 +69,7 @@ struct structure_traits<planning::MutableConjunctiveEffect>
     using Type = planning::MutableConjunctiveEffect;
 
     template<typename F>
-    static bool zip_terms(const Type& lhs, const Type& rhs, F&& f)
+    static bool zip_terms(const Type& lhs, const Type& rhs, F f)
     {
         if (lhs.num_parent_variables != rhs.num_parent_variables)
             return false;
@@ -81,7 +81,7 @@ struct structure_traits<planning::MutableConjunctiveEffect>
     }
 
     template<typename F>
-    static Type transform_terms(const Type& value, F&& f)
+    static Type transform_terms(const Type& value, F f)
     { return Type(value.num_parent_variables, value.num_variables, unification::transform_terms(value.literals, f)); }
 };
 }

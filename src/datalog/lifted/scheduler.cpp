@@ -55,9 +55,9 @@ TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRul
                                                         const formalism::datalog::Repository& context,
                                                         size_t num_fluent_predicates,
                                                         size_t num_fluent_functions) :
-    m_rules(rules),
-    m_listeners(listeners),
-    m_context(context),
+    m_rules(&rules),
+    m_listeners(&listeners),
+    m_context(&context),
     m_active_predicates(num_fluent_predicates),
     m_active_functions(num_fluent_functions),
     m_active_rules(),
@@ -70,7 +70,7 @@ void TypedRuleSchedulerStratum<R>::activate_all()
 {
     m_active_rules.clear();
     m_full_enumeration_rules.clear();
-    for (const auto rule : m_rules)
+    for (const auto rule : *m_rules)
         m_active_rules.insert(rule);
     rebuild_sorted_active_rules();
 }
@@ -102,8 +102,8 @@ void TypedRuleSchedulerStratum<R>::on_finish_iteration()
 {
     m_active_rules.clear();
     m_full_enumeration_rules.clear();
-    collect_active_rules(m_active_predicates, m_listeners.predicates, m_active_rules);
-    collect_active_rules(m_active_functions, m_listeners.functions, m_full_enumeration_rules);
+    collect_active_rules(m_active_predicates, m_listeners->predicates, m_active_rules);
+    collect_active_rules(m_active_functions, m_listeners->functions, m_full_enumeration_rules);
     m_active_rules.insert(m_full_enumeration_rules.begin(), m_full_enumeration_rules.end());
     rebuild_sorted_active_rules();
 }

@@ -34,8 +34,8 @@ template<>
 struct Data<::tyr::formalism::planning::Invariant>
 {
     ygg::Index<::tyr::formalism::planning::Invariant> index;
-    ygg::uint_t num_rigid_variables;
-    ygg::uint_t num_counted_variables;
+    ygg::uint_t num_rigid_variables = 0;
+    ygg::uint_t num_counted_variables = 0;
     ygg::IndexList<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> atoms;
 
     Data() = default;
@@ -62,6 +62,7 @@ struct Data<::tyr::formalism::planning::Invariant>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept
     { return ygg::Members<&Data::index, &Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }

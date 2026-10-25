@@ -65,6 +65,7 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::LiftedTag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::condition, &Data::effect> {}; }
@@ -102,6 +103,7 @@ struct Data<::tyr::formalism::datalog::ConditionalEffect<::tyr::GroundTag>>
     Data& operator=(const Data& other) = default;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::condition, &Data::effect> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::condition, &Data::effect> {}; }

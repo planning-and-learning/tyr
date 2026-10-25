@@ -45,6 +45,7 @@ struct Data<::tyr::formalism::planning::FDRVariable<T>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atoms> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atoms> {}; }

@@ -18,7 +18,7 @@
 #include "tyr/datalog/solver.hpp"
 
 #include "../solver_impl.hpp"
-#include "scheduler.cpp"
+#include "scheduler_impl.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/ground/rule_instance.hpp"
@@ -38,7 +38,7 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 class SolverPolicy<GroundTag, AP, TP, CP>
 {
 public:
-    explicit SolverPolicy(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx) : m_ctx(ctx) {}
+    explicit SolverPolicy(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx) : m_ctx(&ctx) {}
 
     // Ground programs currently reject negative fluent bodies, so every supported program has one stratum.
     bool next_stratum() noexcept { return std::exchange(m_pending_stratum, false); }
@@ -50,13 +50,13 @@ public:
         return false;
     }
 
-    Scheduler<GroundTag>& scheduler() noexcept { return m_ctx.out().scheduler(); }
+    Scheduler<GroundTag>& scheduler() noexcept { return m_ctx->out().scheduler(); }
 
 private:
     template<formalism::RelationKind R>
     void process_next_rule(CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers)
     {
-        auto& out = m_ctx.out();
+        auto& out = m_ctx->out();
         auto entry = scheduler().template pop<R>();
         assert(entry);
 
@@ -117,7 +117,7 @@ private:
                                          out.numeric_annotations(),
                                          pending_heads,
                                          scheduler(),
-                                         m_ctx);
+                                         *m_ctx);
     }
 
     void process_rule_frontier(CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers, Cost cost)
@@ -131,7 +131,7 @@ private:
         }
     }
 
-    ProgramExecutionContext<GroundTag, AP, TP, CP>& m_ctx;
+    ProgramExecutionContext<GroundTag, AP, TP, CP>* m_ctx;
     bool m_pending_stratum = true;
 };
 

@@ -131,7 +131,7 @@ private:
 };
 
 template<typename BinaryCompatible>
-LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfiable, BinaryCompatible&& binary_compatible)
+LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfiable, BinaryCompatible binary_compatible)
 {
     auto partition_sizes = std::vector<size_t> {};
     auto vertex_labels = std::vector<ygg::uint_t> {};

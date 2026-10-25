@@ -39,9 +39,11 @@ namespace tyr::formalism::planning
 
 namespace detail
 {
+namespace
+{
 
 template<typename F>
-std::string structured(std::string_view name, F&& write_fields)
+std::string structured(std::string_view name, F write_fields)
 {
     auto os = std::stringstream {};
     os << name << "(\n";
@@ -250,6 +252,7 @@ template<typename Tag>
 std::string relation_binding(const ygg::Data<RelationBinding<Tag>>& value)
 { return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
 
+}  // namespace
 }  // namespace detail
 
 std::string to_string(const ygg::Data<UnaryOperator<LiftedTag>>& value) { return detail::unary_operator(value); }

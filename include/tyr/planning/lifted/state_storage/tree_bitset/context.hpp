@@ -42,8 +42,8 @@ namespace tyr::planning
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>
 {
-    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, 32, ThreadSafe, tree_vector::arity>;
-    using BitsetSet = ygg::TreeBitsetSet<tree_bitset::Block, 32, ThreadSafe, tree_bitset::arity>;
+    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, tree_vector::first_segment_size, ThreadSafe, tree_vector::arity>;
+    using BitsetSet = ygg::TreeBitsetSet<tree_bitset::Block, tree_bitset::first_segment_size, ThreadSafe, tree_bitset::arity>;
 
     FloatVectorSet float_vectors;
     BitsetSet bitsets;

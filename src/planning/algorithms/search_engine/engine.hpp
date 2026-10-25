@@ -37,7 +37,6 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_view.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <cassert>
@@ -108,11 +107,11 @@ public:
                    WorkerEventHandlerPtrT<SearchPolicy> event_handler_) :
             index(index_),
             num_state_owners(num_state_owners_),
-            state_repository(state_repository_),
-            axiom_evaluator(axiom_evaluator_),
-            successor_generator(successor_generator_),
-            heuristic(heuristic_),
-            search(heuristic, options),
+            state_repository(&state_repository_),
+            axiom_evaluator(&axiom_evaluator_),
+            successor_generator(&successor_generator_),
+            heuristic(&heuristic_),
+            search(heuristic_, options),
             rng(options.random_seed + ygg::uint_t(index)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
@@ -135,11 +134,11 @@ public:
             owned_axiom_evaluator(std::move(axiom_evaluator_)),
             owned_successor_generator(std::move(successor_generator_)),
             owned_heuristic(std::move(heuristic_)),
-            state_repository(*owned_state_repository),
-            axiom_evaluator(*owned_axiom_evaluator),
-            successor_generator(*owned_successor_generator),
-            heuristic(*owned_heuristic),
-            search(heuristic, options),
+            state_repository(owned_state_repository.get()),
+            axiom_evaluator(owned_axiom_evaluator.get()),
+            successor_generator(owned_successor_generator.get()),
+            heuristic(owned_heuristic.get()),
+            search(*heuristic, options),
             rng(options.random_seed + ygg::uint_t(index)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
@@ -160,11 +159,12 @@ public:
         AxiomEvaluatorPtr<Kind> owned_axiom_evaluator;
         SuccessorGeneratorPtr<Kind> owned_successor_generator;
         HeuristicPtr<Kind> owned_heuristic;
-        StateRepository<Kind>& state_repository;
+        // Never null: they point at the owned objects or at the caller's.
+        StateRepository<Kind>* state_repository;
         std::vector<StateRepositoryPtr<Kind>> registration_repositories;
-        AxiomEvaluator<Kind>& axiom_evaluator;
-        SuccessorGenerator<Kind>& successor_generator;
-        Heuristic<Kind>& heuristic;
+        AxiomEvaluator<Kind>* axiom_evaluator;
+        SuccessorGenerator<Kind>* successor_generator;
+        Heuristic<Kind>* heuristic;
         SearchPolicy search;
         WorkerExecutionState execution;
         std::mt19937_64 rng;
@@ -270,8 +270,8 @@ private:
                  Heuristic<Kind>& heuristic,
                  const Options& options,
                  std::chrono::steady_clock::time_point search_start) :
-        m_task(task),
-        m_options(options),
+        m_task(&task),
+        m_options(&options),
         m_event_handler(options.event_handler),
         m_search_start_time_point(search_start),
         m_start_node(tyr::planning::normalize_start_node(task, state_repository, axiom_evaluator, options.start_node)),
@@ -282,7 +282,7 @@ private:
 
     SearchResult<Kind> run()
     {
-        const auto deadline = m_options.search_budget.max_time ? std::optional(m_search_start_time_point + *m_options.search_budget.max_time) : std::nullopt;
+        const auto deadline = m_options->search_budget.max_time ? std::optional(m_search_start_time_point + *m_options->search_budget.max_time) : std::nullopt;
         const auto timed_out = [&] { return deadline && std::chrono::steady_clock::now() >= *deadline; };
 
         m_result.statistics.set_search_start_time_point(m_search_start_time_point);
@@ -296,7 +296,7 @@ private:
         auto [start_owner, start_state] = prepare_start_state();
         auto& root_worker = get_worker(ygg::Index<Worker>(0));
 
-        if (!root_worker.goal_strategy->is_static_goal_satisfied(m_task))
+        if (!root_worker.goal_strategy->is_static_goal_satisfied(*m_task))
         {
             finalize(SearchStatus::UNSOLVABLE);
             return std::move(m_result);
@@ -313,7 +313,7 @@ private:
 
         // Count solve-local states, including an unsolved start. Existing repository population is ignored, but a pre-interned state counts when first
         // encountered, and an over-limit successor may already be interned. A satisfied start may solve even when this is zero.
-        if (m_options.search_budget.max_num_states == 0)
+        if (m_options->search_budget.max_num_states == 0)
         {
             finalize(SearchStatus::OUT_OF_STATES);
             return std::move(m_result);
@@ -341,7 +341,7 @@ private:
             return std::move(m_result);
         }
 
-        const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic.evaluate(start_state));
+        const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic->evaluate(start_state));
         if (std::isnan(start_h_value))
             throw std::runtime_error("find_solution(...): start heuristic value is NaN.");
         if (timed_out())
@@ -361,7 +361,7 @@ private:
         }
 
         start_worker.search.open_start(start_state_index, start_search_node);
-        m_execution.start(deadline, start_worker.search.get_start_priority(), m_options);
+        m_execution.start(deadline, start_worker.search.get_start_priority(), *m_options);
         try
         {
             m_execution.invoke(*this);
@@ -410,7 +410,7 @@ private:
                 if (is_stale(worker.get_search_node(entry.state).status))
                     return;
 
-                auto state = evaluate_unlocked([&] { return worker.state_repository.get_registered_state(entry.state); });
+                auto state = evaluate_unlocked([&] { return worker.state_repository->get_registered_state(entry.state); });
                 // Incoming successors can relax this node while its immutable state is being decoded.
                 auto& search_node = worker.get_search_node(entry.state);
                 if (!m_execution.running() || is_stale(search_node.status))
@@ -441,7 +441,7 @@ private:
         m_execution.notify_if_stopped(*this);
         if (prepared && m_execution.running())
         {
-            worker.successor_generator.get_applicable_action_bindings(*prepared, worker.applicable_actions);
+            worker.successor_generator->get_applicable_action_bindings(*prepared, worker.applicable_actions);
             expand_successors(worker, *prepared);
         }
         m_execution.finish_expansion(*this);
@@ -458,7 +458,7 @@ private:
         auto& successor_search_node = worker.get_search_node(successor_state.get_index());
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
-        if (is_new && m_options.search_budget.max_num_states && !m_execution.reserve_state(*m_options.search_budget.max_num_states))
+        if (is_new && m_options->search_budget.max_num_states && !m_execution.reserve_state(*m_options->search_budget.max_num_states))
         {
             m_execution.set_terminal(SearchStatus::OUT_OF_STATES);
             return AcceptanceResult::TERMINAL;
@@ -484,7 +484,7 @@ private:
 
     void expand_successors(WorkerData& worker, const Node<Kind>& node)
     {
-        if (m_options.shuffle_labeled_succ_nodes)
+        if (m_options->shuffle_labeled_succ_nodes)
             ygg::portable_shuffle(worker.applicable_actions.begin(), worker.applicable_actions.end(), worker.rng);
 
         for (const auto action : worker.applicable_actions)
@@ -492,8 +492,8 @@ private:
             if (!m_execution.running())
                 break;
 
-            auto successor_state = worker.state_repository.get_state_builder();
-            const auto auxiliary_value = worker.successor_generator.generate_successor_state(node, action, *successor_state, worker.successor_delta);
+            auto successor_state = worker.state_repository->get_state_builder();
+            const auto auxiliary_value = worker.successor_generator->generate_successor_state(node, action, *successor_state, worker.successor_delta);
             auto metadata = worker.search.make_successor_metadata(worker.index, node, action);
             if (m_execution.route(*this, worker, node, std::move(successor_state), worker.successor_delta, auxiliary_value, action, std::move(metadata))
                     == AcceptanceResult::TERMINAL
@@ -503,7 +503,7 @@ private:
     }
 
     ygg::float_t evaluate_successor_metric(const ygg::Builder<State<Kind>>& state, ygg::float_t auxiliary_value)
-    { return planning::evaluate_successor_metric(m_task, state, auxiliary_value); }
+    { return planning::evaluate_successor_metric(*m_task, state, auxiliary_value); }
 
     void solve(WorkerData& worker, const Node<Kind>& node)
     {
@@ -546,7 +546,7 @@ private:
             });
         m_result.statistics.set_num_registered_states(num_registered_states);
         m_result.statistics.set_state_storage_memory_usage(state_storage_memory_usage);
-        snapshot_task_repository_statistics(*m_task.get_repository(), m_result.statistics);
+        snapshot_task_repository_statistics(*m_task->get_repository(), m_result.statistics);
         m_result.statistics.set_search_end_time_point(search_end);
         m_statistics_snapshotted = true;
     }
@@ -568,7 +568,7 @@ private:
         {
             const auto goal = m_execution.goal();
             assert(goal);
-            auto [plan, goal_node] = m_workers.reconstruct_solution(*goal, m_options);
+            auto [plan, goal_node] = m_workers.reconstruct_solution(*goal, *m_options);
             m_result.plan = std::move(plan);
             m_result.goal_node = std::move(goal_node);
         }
@@ -593,8 +593,8 @@ private:
             std::forward<Callback>(callback)(*worker.event_handler);
     }
 
-    Task<Kind>& m_task;
-    const Options& m_options;
+    Task<Kind>* m_task;
+    const Options* m_options;
     EventHandlerPtrT<SearchPolicy> m_event_handler;
     std::chrono::steady_clock::time_point m_search_start_time_point;
     Node<Kind> m_start_node;

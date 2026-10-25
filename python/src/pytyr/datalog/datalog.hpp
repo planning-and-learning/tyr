@@ -59,9 +59,9 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
              {
                  const auto& self = nb::cast<const Set&>(owner);
                  const auto bindings = self.get_bindings();
-                 return ygg::python::make_iterator_with_owner(nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end()),
-                                                              owner,
-                                                              retain_owner);
+                 auto iterator = nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end());
+                 // Hand over the Python object itself; converting the iterator to nb::object would slice off its cached value.
+                 return ygg::python::make_iterator_with_owner(nb::steal(iterator.release()), owner, retain_owner);
              })
         .def("count",
              [](const Set& self)
@@ -91,12 +91,11 @@ void bind_function_fact_set(nb::module_& m, const char* name)
                  const auto& self = nb::cast<const Set&>(owner);
                  const auto bindings = self.get_bindings();
                  const auto project = [&self](const Binding binding) { return std::pair(binding, self[binding]); };
-                 return ygg::python::make_iterator_with_owner(nb::make_iterator(nb::type<Set>(),
-                                                                                "BindingValueIterator",
-                                                                                boost::make_transform_iterator(bindings.begin(), project),
-                                                                                boost::make_transform_iterator(bindings.end(), project)),
-                                                              owner,
-                                                              retain_owner);
+                 auto iterator = nb::make_iterator(nb::type<Set>(),
+                                                   "BindingValueIterator",
+                                                   boost::make_transform_iterator(bindings.begin(), project),
+                                                   boost::make_transform_iterator(bindings.end(), project));
+                 return ygg::python::make_iterator_with_owner(nb::steal(iterator.release()), owner, retain_owner);
              })
         .def("count", [](const Set& self) { return self.get_values().size(); })
         .def("get", [](const Set& self, Binding binding) { return self[binding]; }, "binding"_a);
@@ -393,7 +392,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                    .def(nb::init<Program<Kind>&>(), "program"_a, nb::keep_alive<1, 2>())
                    .def(
                        "get_static_fact_sets",
-                       [](const Workspace& self) -> const TaggedFactSets<formalism::StaticTag>& { return self.const_workspace.facts.fact_sets; },
+                       [](const Workspace& self) -> const TaggedFactSets<formalism::StaticTag>& { return self.const_workspace->facts.fact_sets; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_fluent_fact_sets",
@@ -445,7 +444,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
 
         cls.def(
                "get_workspace_repository",
-               [](Workspace& self) -> auto& { return self.workspace_repository; },
+               [](Workspace& self) -> auto& { return *self.workspace_repository; },
                nb::rv_policy::reference_internal)
             .def("reset_evaluation", &Workspace::reset_evaluation)
             .def("reset_facts", [](Workspace& self) { self.facts.reset(); })
@@ -453,7 +452,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom)
                 {
-                    auto context = formalism::datalog::CopyContext { self.datalog_builder, self.workspace_repository };
+                    auto context = formalism::datalog::CopyContext { self.datalog_builder, *self.workspace_repository };
                     return self.facts.fact_sets.predicate.insert(formalism::datalog::copy(atom, context).first);
                 },
                 "atom"_a)
@@ -461,7 +460,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "insert_fluent_binding",
                 [](Workspace& self, PredicateBinding binding)
                 {
-                    auto context = formalism::datalog::CopyContext { self.datalog_builder, self.workspace_repository };
+                    auto context = formalism::datalog::CopyContext { self.datalog_builder, *self.workspace_repository };
                     return self.facts.fact_sets.predicate.insert(formalism::datalog::copy(binding, context).first);
                 },
                 "binding"_a)
@@ -469,7 +468,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "set_fluent_function",
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
-                    auto context = formalism::datalog::CopyContext { self.datalog_builder, self.workspace_repository };
+                    auto context = formalism::datalog::CopyContext { self.datalog_builder, *self.workspace_repository };
                     return self.facts.fact_sets.function.insert(formalism::datalog::copy(binding, context).first, interval);
                 },
                 "binding"_a,

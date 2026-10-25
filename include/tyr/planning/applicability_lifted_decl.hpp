@@ -25,11 +25,24 @@
 
 namespace tyr::planning
 {
-struct ApplicabilityContext
+class ApplicabilityContext
 {
-    const StateContext<LiftedTag>& state;
-    formalism::planning::GrounderContext& grounder;
-    const formalism::planning::FDRContext& fdr;
+public:
+    ApplicabilityContext(const StateContext<LiftedTag>& state, formalism::planning::GrounderContext& grounder, const formalism::planning::FDRContext& fdr) :
+        m_state(&state),
+        m_grounder(&grounder),
+        m_fdr(&fdr)
+    {
+    }
+
+    [[nodiscard]] const StateContext<LiftedTag>& state() const noexcept { return *m_state; }
+    [[nodiscard]] formalism::planning::GrounderContext& grounder() const noexcept { return *m_grounder; }
+    [[nodiscard]] const formalism::planning::FDRContext& fdr() const noexcept { return *m_fdr; }
+
+private:
+    const StateContext<LiftedTag>* m_state;
+    formalism::planning::GrounderContext* m_grounder;
+    const formalism::planning::FDRContext* m_fdr;
 };
 }
 

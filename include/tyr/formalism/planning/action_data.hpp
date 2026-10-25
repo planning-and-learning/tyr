@@ -39,7 +39,7 @@ struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
     ygg::Index<::tyr::formalism::planning::Action<::tyr::LiftedTag>> index;
     ::cista::offset::string name;
     ::cista::offset::string original_name;
-    ygg::uint_t original_arity;
+    ygg::uint_t original_arity = 0;
     ygg::IndexList<::tyr::formalism::Variable> variables;
     ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition;
     ygg::IndexList<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> effects;
@@ -105,8 +105,9 @@ struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
     }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
+    Data(Data&& other) noexcept = default;
+    Data& operator=(Data&& other) noexcept = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept
     { return ygg::Members<&Data::index, &Data::name, &Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {}; }
@@ -153,6 +154,7 @@ struct Data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding, &Data::condition, &Data::effects> {}; }
     // Have to include effects because row only binds objects to non-effect quantified variables.

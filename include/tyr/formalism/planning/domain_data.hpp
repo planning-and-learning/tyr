@@ -108,8 +108,9 @@ struct Data<::tyr::formalism::planning::Domain>
     }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
+    Data(Data&& other) noexcept = default;
+    Data& operator=(Data&& other) noexcept = default;
+    ~Data() = default;
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_predicates() const

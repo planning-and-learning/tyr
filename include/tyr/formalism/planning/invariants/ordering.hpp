@@ -21,6 +21,8 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 
+#include <cstdint>
+
 namespace tyr::formalism::planning::invariant
 {
 
@@ -34,7 +36,7 @@ namespace tyr::formalism::planning::invariant
 ///
 /// The result depends only on the set of invariants, not on their order: ties go to the invariant interned first.
 
-enum class GreedyCriterion
+enum class GreedyCriterion : std::uint8_t
 {
     /// The residual with the largest estimated group G(n) first, a lifted proxy for Fast Downward's largest-first
     /// ground mutex-group cover: prefer more atoms per FDR variable. Ties: larger estimated coverage n^r * G(n).

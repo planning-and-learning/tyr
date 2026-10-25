@@ -50,6 +50,8 @@ public:
 
     [[nodiscard]] PlanningDomain get_domain() const;
 
+    Parser(const Parser&) = delete;
+    Parser& operator=(const Parser&) = delete;
     Parser(Parser&&) noexcept;
     Parser& operator=(Parser&&) noexcept;
     ~Parser();

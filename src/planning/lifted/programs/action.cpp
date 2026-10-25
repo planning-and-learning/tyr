@@ -37,17 +37,17 @@ namespace
 
 auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action, formalism::planning::MergeDatalogContext& context)
 {
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder);
+    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
 
     predicate->name = create_applicability_name(action);
     predicate->arity = action.get_arity();
 
-    return formalism::datalog::insert(context.destination, *predicate);
+    return formalism::datalog::insert(context.destination(), *predicate);
 }
 
 auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action, formalism::planning::MergeDatalogContext& context)
 {
-    auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder);
+    auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
 
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -55,7 +55,7 @@ auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         atom->terms.push_back(ygg::Data<formalism::Term>(formalism::ParameterIndex(i)));
 
-    return formalism::datalog::insert(context.destination, *atom);
+    return formalism::datalog::insert(context.destination(), *atom);
 }
 
 auto create_program(formalism::planning::TaskView<LiftedTag> task,

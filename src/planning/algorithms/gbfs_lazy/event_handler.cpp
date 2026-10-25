@@ -23,7 +23,7 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/state_repository.hpp"
 
 #include <fmt/ostream.h>
 

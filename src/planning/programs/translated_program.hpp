@@ -38,7 +38,7 @@ public:
     SymbolRemapper(formalism::datalog::Repository& destination, const datalog::RuleMapping& rules) :
         m_builder(),
         m_context { m_builder, destination },
-        m_rules(rules)
+        m_rules(&rules)
     {
     }
 
@@ -48,14 +48,14 @@ public:
 
     template<formalism::RelationKind R>
     auto rule(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const
-    { return m_rules.get<R>().at(rule); }
+    { return m_rules->get<R>().at(rule); }
 
     TranslationContext<LiftedTag> translation_context(const TranslationContext<LiftedTag>& source) { return remap_translation_context(source, m_context); }
 
 private:
     formalism::datalog::Builder m_builder;
     formalism::datalog::CopyContext m_context;
-    const datalog::RuleMapping& m_rules;
+    const datalog::RuleMapping* m_rules;
 };
 
 /// A Datalog program with the tables that refer to its symbols: Tables provide `Tables remap(SymbolRemapper&) const`.

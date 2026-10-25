@@ -37,6 +37,9 @@
 namespace tyr::planning::iw
 {
 
+namespace
+{
+
 template<TaskKind Kind>
 class CombinedPruningStrategy : public PruningStrategy<Kind>
 {
@@ -70,6 +73,8 @@ PruningStrategyPtr<Kind> make_pruning_strategy(ygg::uint_t arity, PruningStrateg
         return novelty_pruning_strategy;
 
     return std::make_shared<CombinedPruningStrategy<Kind>>(std::move(base_pruning_strategy), std::move(novelty_pruning_strategy));
+}
+
 }
 
 template<TaskKind Kind>

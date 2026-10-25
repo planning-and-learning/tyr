@@ -46,6 +46,7 @@ template<TaskKind Kind>
 class Heuristic
 {
 public:
+    Heuristic() = default;
     virtual ~Heuristic() = default;
 
     virtual void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) = 0;
@@ -60,6 +61,12 @@ public:
     [[nodiscard]] virtual const ygg::UnorderedSet<formalism::planning::ActionBindingView>* get_relaxed_plan() const { return nullptr; }
 
     virtual void print_summary([[maybe_unused]] size_t verbosity) const {}
+
+protected:
+    Heuristic(const Heuristic&) = default;
+    Heuristic& operator=(const Heuristic&) = default;
+    Heuristic(Heuristic&&) = default;
+    Heuristic& operator=(Heuristic&&) = default;
 };
 
 }

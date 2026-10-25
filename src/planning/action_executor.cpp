@@ -40,6 +40,9 @@
 namespace tyr::planning
 {
 
+namespace
+{
+
 template<TaskKind Kind>
 void process_effects(formalism::planning::ActionView<GroundTag> action,
                      ygg::Builder<State<Kind>>& successor_state_builder,
@@ -72,21 +75,21 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
 
             /// Collect the increment (total-cost) in the state_context
             if (effect.get_auxiliary_numeric_effect().has_value())
-                state_context.auxiliary_value = evaluate(effect.get_auxiliary_numeric_effect().value(), state_context);
+                state_context.auxiliary_value() = evaluate(effect.get_auxiliary_numeric_effect().value(), state_context);
         }
     }
 }
 
 /// Applies the effect of a firing conditional effect whose variables the grounder context's binding already extends.
-inline void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> cond_effect,
-                                ygg::Builder<State<LiftedTag>>& successor_state_builder,
-                                StateContext<LiftedTag>& state_context,
-                                const ApplicabilityContext& applicability_context,
-                                formalism::planning::GrounderContext& grounder_context,
-                                formalism::planning::FDRContext& fdr_context,
-                                ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
-                                ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects,
-                                std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& tmp_numeric_writes)
+void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> cond_effect,
+                         ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                         StateContext<LiftedTag>& state_context,
+                         const ApplicabilityContext& applicability_context,
+                         formalism::planning::GrounderContext& grounder_context,
+                         formalism::planning::FDRContext& fdr_context,
+                         ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_del_effects,
+                         ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& tmp_add_effects,
+                         std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& tmp_numeric_writes)
 {
     const auto effect = cond_effect.get_effect();
 
@@ -112,7 +115,7 @@ inline void apply_lifted_effect(formalism::planning::ConditionalEffectView<Lifte
 
     /// Collect the increment (total-cost) in the state_context
     if (effect.get_auxiliary_numeric_effect().has_value())
-        state_context.auxiliary_value = evaluate(effect.get_auxiliary_numeric_effect().value(), applicability_context);
+        state_context.auxiliary_value() = evaluate(effect.get_auxiliary_numeric_effect().value(), applicability_context);
 }
 
 /// Writes the exact changes of `successor` relative to `parent` at the touched variables and function terms into `delta`.
@@ -148,7 +151,7 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
                                             ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>>& add_effects,
                                             std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>& numeric_writes,
                                             StateDelta& delta,
-                                            ProcessEffects&& process_effects)
+                                            ProcessEffects process_effects)
 {
     del_effects.clear();
     add_effects.clear();
@@ -156,7 +159,7 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
     auto tmp_state_context = state_context;
 
-    successor_state_builder.assign_unextended_part(tmp_state_context.state_builder);
+    successor_state_builder.assign_unextended_part(tmp_state_context.state_builder());
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
 
@@ -167,9 +170,11 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
     for (const auto fact : add_effects)
         successor_state_builder.set(fact);
 
-    compute_touched_delta(state_context.state_builder, successor_state_builder, del_effects, add_effects, numeric_writes, delta);
+    compute_touched_delta(state_context.state_builder(), successor_state_builder, del_effects, add_effects, numeric_writes, delta);
 
-    return tmp_state_context.auxiliary_value;
+    return tmp_state_context.auxiliary_value();
+}
+
 }
 
 // Ground action API

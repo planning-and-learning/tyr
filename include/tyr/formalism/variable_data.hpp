@@ -41,8 +41,9 @@ struct Data<::tyr::formalism::Variable>
     Data(const std::string& name_) : index(), name(name_) {}
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
+    Data(Data&& other) noexcept = default;
+    Data& operator=(Data&& other) noexcept = default;
+    ~Data() = default;
 
     static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name> {}; }
     static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name> {}; }

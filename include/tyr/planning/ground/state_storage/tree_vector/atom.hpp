@@ -35,7 +35,7 @@ namespace tyr::planning
 template<>
 struct AtomPackedStorage<GroundTag, TreeVector> : ygg::comparison::Mixin<AtomPackedStorage<GroundTag, TreeVector>>
 {
-    ygg::uint_t index;
+    ygg::uint_t index = 0;
 
     AtomPackedStorage() = default;
     explicit AtomPackedStorage(ygg::uint_t index) : index(index) {}
@@ -58,7 +58,7 @@ public:
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    ArraySetT<Context>& m_array_set;
+    ArraySetT<Context>* m_array_set;
     ygg::uint_t m_num_bits;
 
     std::vector<ygg::uint_t> m_buffer;
