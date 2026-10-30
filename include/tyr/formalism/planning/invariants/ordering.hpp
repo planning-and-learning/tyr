@@ -39,6 +39,9 @@ enum class InvariantOrderCriterion : std::uint8_t
     /// Keep the invariants that take the fewest predicates from the others: residual predicates that another
     /// remaining invariant's residual also contains.
     MinStolenPredicates,
+    /// Keep the invariants whose residual has the most atoms: more atom forms in one variable, counted without
+    /// assumptions about the number of objects.
+    MaxResidualAtoms,
     /// Keep the invariants whose fmt text (to_string) is smallest.
     Lexicographic,
     /// Keep one invariant drawn uniformly at random with InvariantOrderOptions::random_seed.
@@ -48,7 +51,9 @@ enum class InvariantOrderCriterion : std::uint8_t
 struct InvariantOrderOptions
 {
     /// Applied in this order at each greedy step.
-    std::vector<InvariantOrderCriterion> criteria = { InvariantOrderCriterion::MinStolenPredicates, InvariantOrderCriterion::Lexicographic };
+    std::vector<InvariantOrderCriterion> criteria = { InvariantOrderCriterion::MinStolenPredicates,
+                                                      InvariantOrderCriterion::MaxResidualAtoms,
+                                                      InvariantOrderCriterion::Lexicographic };
     std::uint64_t random_seed = 0;
 };
 

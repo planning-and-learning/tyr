@@ -191,7 +191,8 @@ void check_orders(const std::filesystem::path& fixture)
     namespace invariant = tyr::formalism::planning::invariant;
     using Criterion = invariant::InvariantOrderCriterion;
     const auto criteria = std::vector<std::pair<const char*, invariant::InvariantOrderOptions>> {
-        { "min_stolen_predicates", invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates, Criterion::Lexicographic } } },
+        { "min_stolen_predicates",
+          invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates, Criterion::MaxResidualAtoms, Criterion::Lexicographic } } },
         { "lexicographic", invariant::InvariantOrderOptions { { Criterion::Lexicographic } } },
     };
 
@@ -252,6 +253,24 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderTakesFewestStolenPredicatesFirs
     EXPECT_NE(order.front(), greedy);
     // The order depends on the set of invariants, not on their order.
     EXPECT_EQ(invariant::compute_invariant_order_greedy({ second, first, greedy }), order);
+}
+
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderPrefersMoreResidualAtomsOnStolenTies)
+{
+    namespace planning = tyr::formalism::planning;
+    namespace invariant = planning::invariant;
+    using Criterion = invariant::InvariantOrderCriterion;
+    auto repository = planning::RepositoryFactory().create();
+    const auto free = atom(repository, "free", { 0 });
+    const auto alone = intern_invariant(repository, planning::MutableInvariant(0, 1, { free }));
+    const auto pair = intern_invariant(repository, planning::MutableInvariant(0, 1, { free, atom(repository, "loaded", { 0 }) }));
+
+    // Both steal free from each other. More residual atoms keeps free and loaded in one variable; the text alone
+    // would take the smaller group first and leave loaded on its own.
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ alone, pair }), (planning::InvariantViewList { pair }));
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ alone, pair },
+                                                        invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates, Criterion::Lexicographic } }),
+              (planning::InvariantViewList { alone, pair }));
 }
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderDropsResidualsWithoutMutexInformation)

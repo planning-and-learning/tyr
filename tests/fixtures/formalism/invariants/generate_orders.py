@@ -34,7 +34,11 @@ SOURCES = (HERE / "ipc.json", HERE / "synthesis.json")
 OUTPUT = HERE / "orders.json"
 CRITERIA = {
     "min_stolen_predicates": InvariantOrderOptions(
-        [InvariantOrderCriterion.MinStolenPredicates, InvariantOrderCriterion.Lexicographic]
+        [
+            InvariantOrderCriterion.MinStolenPredicates,
+            InvariantOrderCriterion.MaxResidualAtoms,
+            InvariantOrderCriterion.Lexicographic,
+        ]
     ),
     "lexicographic": InvariantOrderOptions([InvariantOrderCriterion.Lexicographic]),
 }

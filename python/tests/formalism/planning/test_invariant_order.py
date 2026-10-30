@@ -69,7 +69,13 @@ def test_ferry_orders(ferry: Ferry) -> None:
     assert names(compute_invariant_order_greedy(invariants)) == [{"at-ferry"}, {"at", "on"}]
     assert compute_invariant_order_greedy(invariants) == compute_invariant_order_greedy(
         invariants,
-        InvariantOrderOptions([InvariantOrderCriterion.MinStolenPredicates, InvariantOrderCriterion.Lexicographic]),
+        InvariantOrderOptions(
+            [
+                InvariantOrderCriterion.MinStolenPredicates,
+                InvariantOrderCriterion.MaxResidualAtoms,
+                InvariantOrderCriterion.Lexicographic,
+            ]
+        ),
     )
 
 

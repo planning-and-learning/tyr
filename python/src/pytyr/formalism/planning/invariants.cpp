@@ -205,6 +205,7 @@ void bind_invariants(nb::module_& m)
         "domain: a repository must not change once tasks branch from it; later calls only find the interned invariants.");
     nb::enum_<invariant::InvariantOrderCriterion>(m, "InvariantOrderCriterion")
         .value("MinStolenPredicates", invariant::InvariantOrderCriterion::MinStolenPredicates)
+        .value("MaxResidualAtoms", invariant::InvariantOrderCriterion::MaxResidualAtoms)
         .value("Lexicographic", invariant::InvariantOrderCriterion::Lexicographic)
         .value("Random", invariant::InvariantOrderCriterion::Random);
     nb::class_<invariant::InvariantOrderOptions>(m, "InvariantOrderOptions")

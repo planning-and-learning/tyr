@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <random>
 #include <string>
 #include <type_traits>
@@ -39,13 +40,13 @@ using Predicates = ygg::UnorderedSet<PredicateView<FluentTag>>;
 struct Residual
 {
     std::vector<PredicateView<FluentTag>> predicates;
+    std::size_t atoms = 0;
     bool informative = false;  ///< more than one atom, or one atom with a counted variable
 };
 
 Residual compute_residual(InvariantView invariant, const Predicates& taken)
 {
     auto residual = Residual {};
-    auto atoms = std::size_t { 0 };
     auto counted = false;
     const auto r = invariant.get_num_rigid_variables();
     for (const auto atom : invariant.get_atoms())
@@ -53,7 +54,7 @@ Residual compute_residual(InvariantView invariant, const Predicates& taken)
         const auto predicate = atom.get_predicate();
         if (taken.contains(predicate))
             continue;
-        ++atoms;
+        ++residual.atoms;
         if (std::ranges::find(residual.predicates, predicate) == residual.predicates.end())
             residual.predicates.push_back(predicate);
         for (const auto term : atom.get_terms())
@@ -65,7 +66,7 @@ Residual compute_residual(InvariantView invariant, const Predicates& taken)
                 },
                 term.get_data().variant);
     }
-    residual.informative = atoms > 1 || (atoms == 1 && counted);
+    residual.informative = residual.atoms > 1 || (residual.atoms == 1 && counted);
     return residual;
 }
 
@@ -133,6 +134,9 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
             {
                 case InvariantOrderCriterion::MinStolenPredicates:
                     candidates = keep_minimal(candidates, [&](std::size_t i) { return count_stolen_predicates(i, candidates, residuals); });
+                    break;
+                case InvariantOrderCriterion::MaxResidualAtoms:
+                    candidates = keep_minimal(candidates, [&](std::size_t i) { return std::numeric_limits<std::size_t>::max() - residuals[i].atoms; });
                     break;
                 case InvariantOrderCriterion::Lexicographic:
                     candidates = keep_minimal(candidates, [&](std::size_t i) { return texts[i]; });
