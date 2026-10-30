@@ -22,31 +22,38 @@
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 
 #include <cstdint>
+#include <vector>
 
 namespace tyr::formalism::planning::invariant
 {
 
 /// Invariant orders for GroundTaskInstantiationOptions::invariant_order, computed from the invariants alone.
 ///
-/// Sizes are estimated under uniform object-domain growth, using a common object count n. Each residual atom (whose
-/// predicate no earlier invariant took) contributes n^k, where k is its number of distinct counted variables, including
-/// 1 when k is zero. Their sum G(n) estimates the group size; an invariant with r rigid variables has estimated coverage
-/// n^r * G(n). Polynomials compare asymptotically by degree, then coefficients from highest to lowest degree. Empty
-/// residuals and constant singleton groups carry no mutex information and are left out.
-///
-/// The result depends only on the set of invariants, not on their order: ties go to the invariant interned first.
+/// The order is built greedily. Taking an invariant takes its predicates: later invariants keep only their residual,
+/// the atoms whose predicate no earlier invariant took. An invariant whose residual is empty or a single atom without
+/// counted variables carries no mutex information and is left out. At each step the criteria narrow the remaining
+/// invariants in turn, in any composition; of those left, the first in the input is taken.
 
-enum class GreedyCriterion : std::uint8_t
+enum class InvariantOrderCriterion : std::uint8_t
 {
-    /// The residual with the largest estimated group G(n) first, a lifted proxy for Fast Downward's largest-first
-    /// ground mutex-group cover: prefer more atoms per FDR variable. Ties: larger estimated coverage n^r * G(n).
-    MaxGroupSize,
-    /// The residual with the largest estimated coverage n^r * G(n) first. Can prefer many small groups to one large group.
-    MaxCoverage,
+    /// Keep the invariants that take the fewest predicates from the others: residual predicates that another
+    /// remaining invariant's residual also contains.
+    MinStolenPredicates,
+    /// Keep the invariants whose fmt text (to_string) is smallest.
+    Lexicographic,
+    /// Keep one invariant drawn uniformly at random with InvariantOrderOptions::random_seed.
+    Random,
 };
 
-/// Repeatedly takes the best residual under `criterion`.
-InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, GreedyCriterion criterion = GreedyCriterion::MaxGroupSize);
+struct InvariantOrderOptions
+{
+    /// Applied in this order at each greedy step.
+    std::vector<InvariantOrderCriterion> criteria = { InvariantOrderCriterion::MinStolenPredicates, InvariantOrderCriterion::Lexicographic };
+    std::uint64_t random_seed = 0;
+};
+
+/// Repeatedly takes the invariant the criteria choose among those whose residual carries mutex information.
+InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, const InvariantOrderOptions& options = {});
 
 }
 

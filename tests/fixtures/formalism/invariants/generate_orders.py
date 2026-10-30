@@ -3,8 +3,8 @@
 
 """Expected greedy invariant orders: tyr's own, recorded so that changes to the orders show up in review.
 
-For every domain of ipc.json and synthesis.json, records the order of each GreedyCriterion over the synthesized
-invariants, in the invariant format of those fixtures.
+For every domain of ipc.json and synthesis.json, records the order under each composition of criteria below over the
+synthesized invariants, in the invariant format of those fixtures. Random is left out: it is tested for reproducibility.
 
 Usage:
     python generate_orders.py
@@ -21,8 +21,9 @@ import pypddl_datasets
 from pypddl.formalism import ParserOptions
 
 from pytyr.formalism.planning import (
-    GreedyCriterion,
     Invariant,
+    InvariantOrderCriterion,
+    InvariantOrderOptions,
     Parser,
     compute_invariant_order_greedy,
     synthesize_invariants,
@@ -31,7 +32,12 @@ from pytyr.formalism.planning import (
 HERE = Path(__file__).resolve().parent
 SOURCES = (HERE / "ipc.json", HERE / "synthesis.json")
 OUTPUT = HERE / "orders.json"
-CRITERIA = {"max_group_size": GreedyCriterion.MaxGroupSize, "max_coverage": GreedyCriterion.MaxCoverage}
+CRITERIA = {
+    "min_stolen_predicates": InvariantOrderOptions(
+        [InvariantOrderCriterion.MinStolenPredicates, InvariantOrderCriterion.Lexicographic]
+    ),
+    "lexicographic": InvariantOrderOptions([InvariantOrderCriterion.Lexicographic]),
+}
 
 
 def as_fixture(invariant: Invariant) -> dict[str, Any]:
@@ -59,8 +65,8 @@ def main() -> None:
             parser = Parser(str(pypddl_datasets.data_root() / case["domain_file"]), ParserOptions())
             invariants = synthesize_invariants(parser.get_domain())
             orders = {
-                key: [as_fixture(invariant) for invariant in compute_invariant_order_greedy(invariants, criterion)]
-                for key, criterion in CRITERIA.items()
+                key: [as_fixture(invariant) for invariant in compute_invariant_order_greedy(invariants, options)]
+                for key, options in CRITERIA.items()
             }
             cases.append({"name": case["name"], "domain_file": case["domain_file"], "orders": orders})
     OUTPUT.write_text(json.dumps({"cases": cases}, indent=4) + "\n")

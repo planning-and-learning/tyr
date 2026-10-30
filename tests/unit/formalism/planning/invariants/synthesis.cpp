@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <boost/json.hpp>
+#include <cstdint>
 #include <filesystem>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -188,8 +189,11 @@ void check_suite(const std::filesystem::path& fixture)
 void check_orders(const std::filesystem::path& fixture)
 {
     namespace invariant = tyr::formalism::planning::invariant;
-    const auto criteria = std::vector<std::pair<const char*, invariant::GreedyCriterion>> { { "max_group_size", invariant::GreedyCriterion::MaxGroupSize },
-                                                                                            { "max_coverage", invariant::GreedyCriterion::MaxCoverage } };
+    using Criterion = invariant::InvariantOrderCriterion;
+    const auto criteria = std::vector<std::pair<const char*, invariant::InvariantOrderOptions>> {
+        { "min_stolen_predicates", invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates, Criterion::Lexicographic } } },
+        { "lexicographic", invariant::InvariantOrderOptions { { Criterion::Lexicographic } } },
+    };
 
     const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");
@@ -231,55 +235,62 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisIpc) { check_suite("tests/
 /// Every domain of ipc.json and synthesis.json, so that any change to an order shows up in review.
 TEST(TyrTests, TyrFormalismPlanningInvariantOrders) { check_orders("tests/fixtures/formalism/invariants/orders.json"); }
 
-TEST(TyrTests, TyrFormalismPlanningInvariantOrderCountsDistinctVariables)
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderTakesFewestStolenPredicatesFirst)
 {
     namespace planning = tyr::formalism::planning;
     namespace invariant = planning::invariant;
     auto repository = planning::RepositoryFactory().create();
-    auto object_data = ygg::Data<tyr::formalism::Object>(std::string("fixed"));
-    const auto object = repository.insert(object_data).first;
-    auto repeated_atom = atom(repository, "repeated", { 0, 1, 1, 1 });
-    repeated_atom.terms.back() = ygg::Data<tyr::formalism::Term>(object.get_index());
+    const auto s1 = atom(repository, "s1", { 0, 1 });
+    const auto s2 = atom(repository, "s2", { 0, 1 });
+    // greedy steals s1 and s2, each of the others only one of them.
+    const auto greedy = intern_invariant(repository, planning::MutableInvariant(1, 1, { s1, s2, atom(repository, "a", { 0, 1 }) }));
+    const auto first = intern_invariant(repository, planning::MutableInvariant(1, 1, { s1, atom(repository, "b", { 0, 1 }) }));
+    const auto second = intern_invariant(repository, planning::MutableInvariant(1, 1, { s2, atom(repository, "c", { 0, 1 }) }));
 
-    const auto repeated = intern_invariant(repository, planning::MutableInvariant(1, 1, { repeated_atom }));
-    const auto linear = intern_invariant(repository, planning::MutableInvariant(1, 1, { atom(repository, "p", { 0, 1 }), atom(repository, "q", { 0, 1 }) }));
-    const auto quadratic = intern_invariant(repository, planning::MutableInvariant(1, 2, { atom(repository, "pair", { 0, 1, 2 }) }));
-    const auto expected = planning::InvariantViewList { quadratic, linear, repeated };
-    for (const auto criterion : { invariant::GreedyCriterion::MaxGroupSize, invariant::GreedyCriterion::MaxCoverage })
-    {
-        EXPECT_EQ(invariant::compute_invariant_order_greedy({ repeated, linear, quadratic }, criterion), expected);
-        EXPECT_EQ(invariant::compute_invariant_order_greedy({ quadratic, linear, repeated }, criterion), expected);
-    }
+    const auto order = invariant::compute_invariant_order_greedy({ greedy, first, second });
+    ASSERT_EQ(order.size(), 3);
+    EXPECT_NE(order.front(), greedy);
+    // The order depends on the set of invariants, not on their order.
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ second, first, greedy }), order);
 }
 
-TEST(TyrTests, TyrFormalismPlanningInvariantOrderMultipliesCoverage)
-{
-    namespace planning = tyr::formalism::planning;
-    namespace invariant = planning::invariant;
-    auto repository = planning::RepositoryFactory().create();
-    const auto linear = intern_invariant(repository, planning::MutableInvariant(2, 1, { atom(repository, "linear", { 0, 1, 2 }) }));
-    const auto quadratic = intern_invariant(repository, planning::MutableInvariant(1, 2, { atom(repository, "quadratic", { 0, 1, 2 }) }));
-
-    EXPECT_EQ(invariant::compute_invariant_order_greedy({ linear, quadratic }, invariant::GreedyCriterion::MaxGroupSize),
-              (planning::InvariantViewList { quadratic, linear }));
-    // Both cover n^3 atoms, so coverage ties go to the invariant interned first.
-    EXPECT_EQ(invariant::compute_invariant_order_greedy({ quadratic, linear }, invariant::GreedyCriterion::MaxCoverage),
-              (planning::InvariantViewList { linear, quadratic }));
-}
-
-TEST(TyrTests, TyrFormalismPlanningInvariantOrderRecomputesResidualPolynomial)
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderDropsResidualsWithoutMutexInformation)
 {
     namespace planning = tyr::formalism::planning;
     namespace invariant = planning::invariant;
     auto repository = planning::RepositoryFactory().create();
     const auto shared = atom(repository, "shared", { 0, 1 });
-    const auto residual = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "tail", { 0 }) }));
-    const auto winner = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "pair", { 0, 1 }) }));
-    const auto linear = intern_invariant(repository, planning::MutableInvariant(0, 1, { atom(repository, "p", { 0 }), atom(repository, "q", { 0 }) }));
+    const auto taker = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "pair", { 0, 1 }) }));
+    // Once taker takes shared, singleton keeps one atom without counted variables, residual one with them.
     const auto singleton = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "fixed", {}) }));
+    const auto residual = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "tail", { 0 }) }));
+    // Without criteria the input order decides, so taker goes first.
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ taker, singleton, residual }, invariant::InvariantOrderOptions { {} }),
+              (planning::InvariantViewList { taker, residual }));
+}
 
-    for (const auto criterion : { invariant::GreedyCriterion::MaxGroupSize, invariant::GreedyCriterion::MaxCoverage })
-        EXPECT_EQ(invariant::compute_invariant_order_greedy({ residual, winner, linear, singleton }, criterion),
-                  (planning::InvariantViewList { winner, linear, residual }));
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderCriteriaCompose)
+{
+    namespace planning = tyr::formalism::planning;
+    namespace invariant = planning::invariant;
+    using Criterion = invariant::InvariantOrderCriterion;
+    auto repository = planning::RepositoryFactory().create();
+    const auto p = intern_invariant(repository, planning::MutableInvariant(0, 1, { atom(repository, "p", { 0 }), atom(repository, "q", { 0 }) }));
+    const auto r = intern_invariant(repository, planning::MutableInvariant(0, 1, { atom(repository, "r", { 0 }), atom(repository, "s", { 0 }) }));
+
+    // No criterion: the first remaining invariant in the input.
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ r, p }, invariant::InvariantOrderOptions { {} }), (planning::InvariantViewList { r, p }));
+    // Neither steals a predicate, so MinStolenPredicates alone keeps both and the input order decides.
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ r, p }, invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates } }),
+              (planning::InvariantViewList { r, p }));
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ r, p }, invariant::InvariantOrderOptions { { Criterion::Lexicographic } }),
+              invariant::compute_invariant_order_greedy({ p, r }, invariant::InvariantOrderOptions { { Criterion::Lexicographic } }));
+    // Random is reproducible from its seed.
+    for (const auto seed : { std::uint64_t { 0 }, std::uint64_t { 1 }, std::uint64_t { 42 } })
+    {
+        const auto random = invariant::InvariantOrderOptions { { Criterion::Random }, seed };
+        EXPECT_EQ(invariant::compute_invariant_order_greedy({ p, r }, random), invariant::compute_invariant_order_greedy({ p, r }, random));
+        EXPECT_EQ(invariant::compute_invariant_order_greedy({ p, r }, random).size(), 2);
+    }
 }
 }

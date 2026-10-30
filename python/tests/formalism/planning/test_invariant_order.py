@@ -12,8 +12,9 @@ from pytyr.formalism.planning import (
     FluentFDRFact,
     FluentFDRVariable,
     FluentGroundAtom,
-    GreedyCriterion,
     Invariant,
+    InvariantOrderCriterion,
+    InvariantOrderOptions,
     LiftedPlanningTask,
     Parser,
     compute_all_mutex_groups,
@@ -44,8 +45,10 @@ def ferry() -> Ferry:
 
 
 ALL_ORDERS: list[InvariantOrder] = [
-    lambda invariants: compute_invariant_order_greedy(invariants, GreedyCriterion.MaxGroupSize),
-    lambda invariants: compute_invariant_order_greedy(invariants, GreedyCriterion.MaxCoverage),
+    compute_invariant_order_greedy,
+    lambda invariants: compute_invariant_order_greedy(
+        invariants, InvariantOrderOptions([InvariantOrderCriterion.Lexicographic])
+    ),
 ]
 
 
@@ -62,10 +65,19 @@ def test_ferry_orders(ferry: Ferry) -> None:
     def names(order: list[Invariant]) -> list[set[str]]:
         return [_predicate_names(i) for i in order]
 
-    assert names(compute_invariant_order_greedy(invariants)) == [{"at", "on"}, {"at-ferry"}]
+    # at-ferry shares no predicate, so it steals none and goes first; {at, on} then steals on from {empty-ferry, on}.
+    assert names(compute_invariant_order_greedy(invariants)) == [{"at-ferry"}, {"at", "on"}]
     assert compute_invariant_order_greedy(invariants) == compute_invariant_order_greedy(
-        invariants, GreedyCriterion.MaxGroupSize
+        invariants,
+        InvariantOrderOptions([InvariantOrderCriterion.MinStolenPredicates, InvariantOrderCriterion.Lexicographic]),
     )
+
+
+def test_random_order_is_reproducible(ferry: Ferry) -> None:
+    _, _, invariants = ferry
+    options = InvariantOrderOptions([InvariantOrderCriterion.Random], random_seed=7)
+
+    assert compute_invariant_order_greedy(invariants, options) == compute_invariant_order_greedy(invariants, options)
 
 
 def _ground(

@@ -203,8 +203,26 @@ void bind_invariants(nb::module_& m)
         "domain"_a,
         "The domain's invariants, interned into its repository, which must outlive them. Call it before parsing tasks of the "
         "domain: a repository must not change once tasks branch from it; later calls only find the interned invariants.");
-    nb::enum_<GreedyCriterion>(m, "GreedyCriterion").value("MaxGroupSize", GreedyCriterion::MaxGroupSize).value("MaxCoverage", GreedyCriterion::MaxCoverage);
-    m.def("compute_invariant_order_greedy", &invariant::compute_invariant_order_greedy, "invariants"_a, "criterion"_a = GreedyCriterion::MaxGroupSize);
+    nb::enum_<invariant::InvariantOrderCriterion>(m, "InvariantOrderCriterion")
+        .value("MinStolenPredicates", invariant::InvariantOrderCriterion::MinStolenPredicates)
+        .value("Lexicographic", invariant::InvariantOrderCriterion::Lexicographic)
+        .value("Random", invariant::InvariantOrderCriterion::Random);
+    nb::class_<invariant::InvariantOrderOptions>(m, "InvariantOrderOptions")
+        .def(nb::init<>())
+        .def(
+            "__init__",
+            [](invariant::InvariantOrderOptions* self, std::vector<invariant::InvariantOrderCriterion> criteria, std::uint64_t random_seed)
+            { new (self) invariant::InvariantOrderOptions { std::move(criteria), random_seed }; },
+            "criteria"_a,
+            "random_seed"_a = 0)
+        .def_rw("criteria", &invariant::InvariantOrderOptions::criteria)
+        .def_rw("random_seed", &invariant::InvariantOrderOptions::random_seed);
+    // Two overloads instead of a default InvariantOrderOptions object, which nanobind would keep for the module's lifetime.
+    m.def("compute_invariant_order_greedy", &invariant::compute_invariant_order_greedy, "invariants"_a, "options"_a);
+    m.def(
+        "compute_invariant_order_greedy",
+        [](const InvariantViewList& invariants) { return invariant::compute_invariant_order_greedy(invariants); },
+        "invariants"_a);
     m.def("compute_mutex_groups", &invariant::compute_mutex_groups, "initial_atoms"_a, "all_atoms"_a, "invariants"_a);
     m.def("compute_mutex_groups_in_order", &invariant::compute_mutex_groups_in_order, "initial_atoms"_a, "all_atoms"_a, "invariant_order"_a);
     m.def("compute_all_mutex_groups", &invariant::compute_all_mutex_groups, "initial_atoms"_a, "all_atoms"_a, "invariants"_a);
