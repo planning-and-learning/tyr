@@ -26,6 +26,7 @@
 #include <random>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
@@ -117,14 +118,18 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
     while (true)
     {
         auto candidates = std::vector<std::size_t> {};
+        auto rest = std::vector<std::size_t> {};
         for (std::size_t i = 0; i < unique.size(); ++i)
         {
             if (used[i])
                 continue;
             residuals[i] = compute_residual(unique[i], taken);
-            if (residuals[i].informative)
-                candidates.push_back(i);
+            (residuals[i].informative ? candidates : rest).push_back(i);
         }
+        // Informative invariants first; the others still follow, since their atoms that no earlier ground group
+        // covered can form non-trivial mutex groups.
+        if (candidates.empty())
+            candidates = std::move(rest);
         if (candidates.empty())
             return order;
 
