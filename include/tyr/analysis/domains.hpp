@@ -25,11 +25,10 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::analysis
 {

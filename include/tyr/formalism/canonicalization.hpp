@@ -21,8 +21,8 @@
 #include "tyr/formalism/datas.hpp"
 
 #include <algorithm>
+#include <urd/elements/less.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::formalism
 {
@@ -31,52 +31,52 @@ namespace tyr::formalism
  * Datalog
  */
 
-inline bool is_canonical(const ygg::Data<Variable>&) { return true; }
+inline bool is_canonical(const urd::data<Variable>&) { return true; }
 
-inline bool is_canonical(const ygg::Data<Object>&) { return true; }
+inline bool is_canonical(const urd::data<Object>&) { return true; }
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<RelationBinding<Tag>>&)
+bool is_canonical(const urd::data<RelationBinding<Tag>>&)
 { return true; }
 
-inline bool is_canonical(const ygg::Data<Term>&) { return true; }
+inline bool is_canonical(const Term&) { return true; }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<Predicate<T>>&)
+bool is_canonical(const urd::data<Predicate<T>>&)
 { return true; }
 
 template<FactKind T>
-bool is_canonical(const ygg::Data<Function<T>>&)
+bool is_canonical(const urd::data<Function<T>>&)
 { return true; }
 
-inline void canonicalize(ygg::Data<Variable>&)
+inline void canonicalize(urd::data<Variable>&)
 {  // Trivially canonical
 }
 
-inline void canonicalize(ygg::Data<Object>&)
+inline void canonicalize(urd::data<Object>&)
 {
     // Trivially canonical
 }
 
 template<typename Tag>
-void canonicalize(ygg::Data<RelationBinding<Tag>>&)
+void canonicalize(urd::data<RelationBinding<Tag>>&)
 {
     // Trivially canonical
 }
 
-inline void canonicalize(ygg::Data<Term>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(ygg::Data<Predicate<T>>&)
+inline void canonicalize(Term&)
 {
     // Trivially canonical
 }
 
 template<FactKind T>
-void canonicalize(ygg::Data<Function<T>>&)
+void canonicalize(urd::data<Predicate<T>>&)
+{
+    // Trivially canonical
+}
+
+template<FactKind T>
+void canonicalize(urd::data<Function<T>>&)
 {
     // Trivially canonical
 }

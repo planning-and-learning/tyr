@@ -1015,8 +1015,8 @@
             "domain_file": "numeric/tests/mprime/domain.pddl",
             "task_file": "numeric/tests/mprime/test-1.pddl",
             "default": {
-                "num_generated_successors": 2901,
-                "num_expanded": 885,
+                "num_generated_successors": 3508,
+                "num_expanded": 994,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

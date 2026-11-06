@@ -27,13 +27,17 @@
 #include <gtl/phmap.hpp>
 #include <stddef.h>
 #include <type_traits>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/unordered_set.hpp>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/containers/vector.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/core/dependent_false.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
 
 namespace tyr::analysis
@@ -48,22 +52,22 @@ namespace
 template<typename Element, typename Payload>
 struct TmpScoped
 {
-    ygg::Index<Element> element;
+    urd::index<Element> element;
     Payload payload;
 };
 
 struct TmpVariableDomain
 {
-    ygg::UnorderedSet<ygg::Index<formalism::Object>> objects;
+    urd::Store<urd::set<urd::index<formalism::Object>>> objects;
 };
 
-using TmpVariableDomainList = std::vector<TmpVariableDomain>;
+using TmpVariableDomainList = urd::Store<urd::sequence<TmpVariableDomain>>;
 
 template<typename Element>
 using TmpSimpleScopedDomain = TmpScoped<Element, TmpVariableDomainList>;
 
 template<typename Element>
-using TmpSimpleScopedDomainMap = ygg::UnorderedMap<ygg::Index<Element>, TmpVariableDomainList>;
+using TmpSimpleScopedDomainMap = urd::Store<urd::map<urd::index<Element>, TmpVariableDomainList>>;
 
 template<formalism::FactKind T>
 using TmpPredicateDomainMap = TmpSimpleScopedDomainMap<formalism::Predicate<T>>;
@@ -82,7 +86,7 @@ struct TmpConditionalEffectDomain
     TmpConjunctiveEffectDomain effect_domain;
 };
 
-using TmpConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<formalism::planning::ConditionalEffect<LiftedTag>>, TmpConditionalEffectDomain>;
+using TmpConditionalEffectDomainMap = urd::Store<urd::map<urd::index<formalism::planning::ConditionalEffect<LiftedTag>>, TmpConditionalEffectDomain>>;
 
 struct TmpActionDomain
 {
@@ -90,7 +94,7 @@ struct TmpActionDomain
     TmpConditionalEffectDomainMap effect_domains;
 };
 
-using TmpActionDomainMap = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, TmpActionDomain>;
+using TmpActionDomainMap = urd::Store<urd::map<urd::index<formalism::planning::Action<LiftedTag>>, TmpActionDomain>>;
 
 /**
  * Conversion helpers to public representation.
@@ -98,7 +102,7 @@ using TmpActionDomainMap = ygg::UnorderedMap<ygg::Index<formalism::planning::Act
 
 VariableDomain to_variable_domain(const TmpVariableDomain& domain)
 {
-    auto objects = std::vector<ygg::Index<formalism::Object>>(domain.objects.begin(), domain.objects.end());
+    auto objects = urd::Store<urd::sequence<urd::index<formalism::Object>>>(domain.objects.begin(), domain.objects.end());
     std::sort(objects.begin(), objects.end());
     return VariableDomain { std::move(objects) };
 }
@@ -219,7 +223,7 @@ TmpPredicateDomainMap<T> initialize_predicate_domain_sets(formalism::planning::P
     predicate_domain_sets.reserve(predicates.size());
 
     for (const auto predicate : predicates)
-        predicate_domain_sets.emplace(predicate.get_index(), TmpVariableDomainList(predicate.get_arity()));
+        predicate_domain_sets.emplace(predicate.index(), TmpVariableDomainList(predicate.get_arity()));
 
     return predicate_domain_sets;
 }
@@ -230,11 +234,11 @@ void insert_into_predicate_domain_sets(formalism::planning::AtomListView<GroundT
     for (const auto atom : atoms)
     {
         const auto predicate = atom.get_predicate();
-        auto& variable_domains = predicate_domain_sets.at(predicate.get_index());
+        auto& variable_domains = predicate_domain_sets.at(predicate.index());
 
         auto pos = size_t { 0 };
         for (const auto object : atom.get_objects())
-            variable_domains[pos++].objects.insert(object.get_index());
+            variable_domains[pos++].objects.insert(object.index());
     }
 }
 
@@ -245,7 +249,7 @@ TmpFunctionDomainMap<T> initialize_function_domain_sets(formalism::planning::Fun
     function_domain_sets.reserve(functions.size());
 
     for (const auto function : functions)
-        function_domain_sets.emplace(function.get_index(), TmpVariableDomainList(function.get_arity()));
+        function_domain_sets.emplace(function.index(), TmpVariableDomainList(function.get_arity()));
 
     return function_domain_sets;
 }
@@ -257,11 +261,11 @@ void insert_into_function_domain_sets(formalism::planning::FunctionTermValueList
     {
         const auto fterm = term_value.get_fterm();
         const auto function = fterm.get_function();
-        auto& variable_domains = function_domain_sets.at(function.get_index());
+        auto& variable_domains = function_domain_sets.at(function.index());
 
         auto pos = size_t { 0 };
         for (const auto object : fterm.get_objects())
-            variable_domains[pos++].objects.insert(object.get_index());
+            variable_domains[pos++].objects.insert(object.index());
     }
 }
 
@@ -271,7 +275,7 @@ void for_each_term_with_position(Fn fn, formalism::planning::TermListView terms)
     size_t pos = 0;
     for (const auto term : terms)
     {
-        visit([&](auto&& arg) { fn(pos, arg); }, term.get_variant());
+        visit([&](auto&& arg) { fn(pos, arg); }, term);
         ++pos;
     }
 }
@@ -303,8 +307,8 @@ struct InsertConstantPolicy
     template<typename Symbol>
     void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)
     {
-        auto& domain = get_domains(symbol).at(symbol.get_index())[pos];
-        domain.objects.insert(object.get_index());
+        auto& domain = get_domains(symbol).at(symbol.index())[pos];
+        domain.objects.insert(object.index());
     }
 
     template<typename Symbol>
@@ -346,9 +350,9 @@ struct RestrictPolicy
     template<typename Symbol>
     void on_parameter(size_t pos, formalism::ParameterIndex param, Symbol symbol)
     {
-        auto& parameter_domain = (*parameter_domains)[static_cast<ygg::uint_t>(param)];
-        const auto& symbol_domain = get_domains(symbol).at(symbol.get_index())[pos];
-        ygg::intersect_inplace(parameter_domain.objects, symbol_domain.objects);
+        auto& parameter_domain = (*parameter_domains)[param.value];
+        const auto& symbol_domain = get_domains(symbol).at(symbol.index())[pos];
+        erase_if(parameter_domain.objects, [&](const auto& object) { return !symbol_domain.objects.contains(object); });
     }
 };
 
@@ -376,15 +380,15 @@ struct LiftPolicy
     template<typename Symbol>
     void on_object(size_t pos, formalism::planning::ObjectView object, Symbol symbol)
     {
-        auto& domain = get_domains(symbol).at(symbol.get_index())[pos];
-        domain.objects.insert(object.get_index());
+        auto& domain = get_domains(symbol).at(symbol.index())[pos];
+        domain.objects.insert(object.index());
     }
 
     template<typename Symbol>
     void on_parameter(size_t pos, formalism::ParameterIndex param, Symbol symbol)
     {
-        auto& domain = get_domains(symbol).at(symbol.get_index())[pos];
-        ygg::union_inplace(domain.objects, (*parameter_domains)[static_cast<ygg::uint_t>(param)].objects);
+        auto& domain = get_domains(symbol).at(symbol.index())[pos];
+        { const auto& source = (*parameter_domains)[param.value].objects; domain.objects.insert(source.begin(), source.end()); }
     }
 };
 
@@ -401,10 +405,10 @@ void apply_policy(ygg::float_t, Policy&)
 }
 
 template<typename Policy>
-void apply_policy(formalism::planning::UnaryOperatorView<LiftedTag> element, Policy& policy)
+void apply_policy(formalism::planning::UnaryOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
 { apply_policy(element.get_arg(), policy); }
 
-template<formalism::BinaryOperatorKind O, typename Policy>
+template<formalism::OperatorKind O, typename Policy>
 void apply_policy(formalism::planning::BinaryOperatorView<LiftedTag, O> element, Policy& policy)
 {
     apply_policy(element.get_lhs(), policy);
@@ -412,7 +416,7 @@ void apply_policy(formalism::planning::BinaryOperatorView<LiftedTag, O> element,
 }
 
 template<typename Policy>
-void apply_policy(formalism::planning::MultiOperatorView<LiftedTag> element, Policy& policy)
+void apply_policy(formalism::planning::MultiOperatorView<LiftedTag, ::tyr::formalism::ArithmeticOperatorKind> element, Policy& policy)
 {
     for (const auto arg : element.get_args())
         apply_policy(arg, policy);
@@ -439,7 +443,7 @@ void apply_policy(formalism::planning::AtomView<LiftedTag, T> element, Policy& p
             }
             else
             {
-                static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+                static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             }
         },
         element.get_terms());
@@ -475,7 +479,7 @@ void apply_policy(formalism::planning::FunctionTermView<LiftedTag, T> element, P
             }
             else
             {
-                static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+                static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             }
         },
         element.get_terms());
@@ -489,51 +493,33 @@ void apply_policy(formalism::planning::NumericEffectView<LiftedTag, T> element, 
 }
 
 template<typename Policy>
-void apply_policy(formalism::planning::ArithmeticOperatorView<LiftedTag> element, Policy& policy)
-{
-    visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
-}
-
-template<typename Policy>
 void apply_policy(formalism::planning::FunctionExpressionView<LiftedTag> element, Policy& policy)
 {
-    visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
-}
-
-template<typename Policy>
-void apply_policy(formalism::planning::BooleanOperatorView<LiftedTag> element, Policy& policy)
-{
-    visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
-}
-
-template<formalism::FactKind T, typename Policy>
-void apply_policy(formalism::planning::NumericEffectOperatorView<LiftedTag, T> element, Policy& policy)
-{
-    visit([&](auto&& arg) { apply_policy(arg, policy); }, element.get_variant());
+    visit([&](auto&& arg) { apply_policy(arg, policy); }, element);
 }
 
 }  // namespace
 
 TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<LiftedTag> task)
 {
-    auto universe = ygg::UnorderedSet<ygg::Index<formalism::Object>> {};
+    auto universe = urd::Store<urd::set<urd::index<formalism::Object>>> {};
     for (const auto object : task.get_domain().get_constants())
-        universe.insert(object.get_index());
+        universe.insert(object.index());
     for (const auto object : task.get_objects())
-        universe.insert(object.get_index());
+        universe.insert(object.index());
 
     ///--- Step 1: Initialize static, fluent, and derived predicate parameter domains
 
     auto static_predicate_domain_sets = initialize_predicate_domain_sets(task.get_domain().get_predicates<formalism::StaticTag>());
     auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(task.get_domain().get_predicates<formalism::FluentTag>());
 
-    auto derived_predicate_indices = ygg::IndexList<formalism::Predicate<formalism::DerivedTag>> {};
+    auto derived_predicate_indices = urd::flat_vector<urd::index<formalism::Predicate<formalism::DerivedTag>>> {};
     for (const auto predicate : task.get_domain().get_predicates<formalism::DerivedTag>())
-        derived_predicate_indices.push_back(predicate.get_index());
+        derived_predicate_indices.push_back(predicate.index());
     for (const auto predicate : task.get_derived_predicates())
-        derived_predicate_indices.push_back(predicate.get_index());
+        derived_predicate_indices.push_back(predicate.index());
 
-    const auto derived_predicates = ygg::make_view(derived_predicate_indices, task.get_context());
+    const auto derived_predicates = urd::resolve(derived_predicate_indices, task.context());
     auto derived_predicate_domain_sets = initialize_predicate_domain_sets(derived_predicates);
 
     insert_into_predicate_domain_sets(task.get_atoms<formalism::StaticTag>(), static_predicate_domain_sets);
@@ -621,9 +607,9 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
         const auto action_static_compatibility = detail::StaticLiteralCompatibility(action.get_condition().template get_literals<formalism::StaticTag>(),
                                                                                     task.get_atoms<formalism::StaticTag>(),
                                                                                     action_variable_domains,
-                                                                                    task.get_context().template size<formalism::Object>());
+                                                                                    task.context().template size<formalism::Object>());
         const auto action_compatibility = detail::create_pairwise_compatibility_graph(action_variable_domains,
-                                                                                      task.get_context().template size<formalism::Object>(),
+                                                                                      task.context().template size<formalism::Object>(),
                                                                                       { &action_static_compatibility });
         parameter_domains = to_tmp_variable_domain_list(action_compatibility.domains);
 
@@ -653,22 +639,22 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
             const auto effect_static_compatibility = detail::StaticLiteralCompatibility(c_effect.get_condition().template get_literals<formalism::StaticTag>(),
                                                                                         task.get_atoms<formalism::StaticTag>(),
                                                                                         effect_variable_domains,
-                                                                                        task.get_context().template size<formalism::Object>());
+                                                                                        task.context().template size<formalism::Object>());
             const auto compatibility = detail::create_pairwise_compatibility_graph(effect_variable_domains,
-                                                                                   task.get_context().template size<formalism::Object>(),
+                                                                                   task.context().template size<formalism::Object>(),
                                                                                    { &action_static_compatibility, &effect_static_compatibility });
             c_parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
 
-            effect_domains.emplace(c_effect.get_index(),
+            effect_domains.emplace(c_effect.index(),
                                    TmpConditionalEffectDomain {
-                                       TmpConjunctiveConditionDomain { c_effect.get_condition().get_index(), c_parameter_domains },
-                                       TmpConjunctiveEffectDomain { c_effect.get_effect().get_index(), c_parameter_domains },
+                                       TmpConjunctiveConditionDomain { c_effect.get_condition().index(), c_parameter_domains },
+                                       TmpConjunctiveEffectDomain { c_effect.get_effect().index(), c_parameter_domains },
                                    });
         }
 
-        action_domain_sets.emplace(action.get_index(),
+        action_domain_sets.emplace(action.index(),
                                    TmpActionDomain {
-                                       TmpConjunctiveConditionDomain { action.get_condition().get_index(), parameter_domains },
+                                       TmpConjunctiveConditionDomain { action.get_condition().index(), parameter_domains },
                                        std::move(effect_domains),
                                    });
     }
@@ -682,9 +668,9 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
         const auto static_compatibility = detail::StaticLiteralCompatibility(condition.template get_literals<formalism::StaticTag>(),
                                                                              task.get_atoms<formalism::StaticTag>(),
                                                                              domains,
-                                                                             task.get_context().template size<formalism::Object>());
+                                                                             task.context().template size<formalism::Object>());
         const auto compatibility =
-            detail::create_pairwise_compatibility_graph(domains, task.get_context().template size<formalism::Object>(), { &static_compatibility });
+            detail::create_pairwise_compatibility_graph(domains, task.context().template size<formalism::Object>(), { &static_compatibility });
         parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
     };
 
@@ -707,7 +693,7 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
 
         refine_condition_domains(axiom.get_body(), parameter_domains);
 
-        axiom_domain_sets.emplace(axiom.get_index(), std::move(parameter_domains));
+        axiom_domain_sets.emplace(axiom.index(), std::move(parameter_domains));
     }
 
     for (const auto axiom : task.get_axioms())
@@ -729,14 +715,14 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
 
         refine_condition_domains(axiom.get_body(), parameter_domains);
 
-        axiom_domain_sets.emplace(axiom.get_index(), std::move(parameter_domains));
+        axiom_domain_sets.emplace(axiom.index(), std::move(parameter_domains));
     }
 
     ///--- Step 4: Lift predicate/function domains given the variable relationships in actions and axioms.
 
     for (const auto action : task.get_domain().get_actions())
     {
-        auto& action_domain = action_domain_sets.at(action.get_index());
+        auto& action_domain = action_domain_sets.at(action.index());
         auto& parameter_domains = action_domain.precondition_domain.payload;
 
         auto lift_policy = LiftPolicy {
@@ -758,7 +744,7 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
 
         for (const auto c_effect : action.get_effects())
         {
-            auto& c_effect_domain = action_domain.effect_domains.at(c_effect.get_index());
+            auto& c_effect_domain = action_domain.effect_domains.at(c_effect.index());
             auto& c_parameter_domains = c_effect_domain.condition_domain.payload;
 
             auto c_lift_policy = LiftPolicy {
@@ -788,7 +774,7 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
 
     for (const auto axiom : task.get_domain().get_axioms())
     {
-        auto& parameter_domains = axiom_domain_sets.at(axiom.get_index());
+        auto& parameter_domains = axiom_domain_sets.at(axiom.index());
 
         auto lift_policy = LiftPolicy {
             &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,
@@ -812,7 +798,7 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
 
     for (const auto axiom : task.get_axioms())
     {
-        auto& parameter_domains = axiom_domain_sets.at(axiom.get_index());
+        auto& parameter_domains = axiom_domain_sets.at(axiom.index());
 
         auto lift_policy = LiftPolicy {
             &static_predicate_domain_sets, &fluent_predicate_domain_sets, &derived_predicate_domain_sets,

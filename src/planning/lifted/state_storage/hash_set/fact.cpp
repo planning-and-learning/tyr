@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/lifted/state_storage/hash_set/fact.hpp"
+#include "tyr/containers.hpp"
 
 #include "tyr/planning/lifted/state_storage/hash_set/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
@@ -36,17 +37,17 @@ typename FactStorageBackend<LiftedTag, HashSet, ThreadSafe>::Packed FactStorageB
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return Packed { m_uint_vec_set->insert(m_buffer) };
+    return Packed { m_uint_vec_set->insert(m_buffer).first.value };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<LiftedTag, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    const auto view = (*m_uint_vec_set)[packed.index];
+    const auto view = m_uint_vec_set->view(typename UintVectorSetT<Context>::handle_type(packed.index));
 
     unpacked.indices.clear();
     for (ygg::uint_t i = 0; i < view.size(); ++i)
-        ygg::set(view[i], true, unpacked.indices);
+        tyr::set(view[i], true, unpacked.indices);
 }
 
 template class FactStorageBackend<LiftedTag, HashSet, false>;

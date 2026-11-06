@@ -19,6 +19,8 @@
 #define TYR_PLANNING_LIFTED_SUCCESSOR_GENERATOR_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/state_repository.hpp"
@@ -62,10 +64,6 @@ public:
     /// Foreign states, schemas or objects and wrong arity throw invalid_argument. May be called from a binding callback for the
     /// callback's state; for another state it throws logic_error.
     /// Ground tuples absent from the compiled action set are INAPPLICABLE; lifted domain failures are OUTSIDE_PARAMETER_DOMAIN.
-    template<StateViewConcept<LiftedTag> S>
-    ActionBindingStatus
-    check_action_binding(const Node<LiftedTag, S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
-
     /// Accepts repository-backed and data-backed action bindings without publishing them.
     template<StateViewConcept<LiftedTag> S, ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
     ActionBindingStatus check_action_binding(const Node<LiftedTag, S>& node, Binding binding);
@@ -75,10 +73,8 @@ public:
 
     /// Checks the same contract as check_action_binding and publishes only an applicable binding.
     /// The returned binding borrows the task repository. May be called from a binding callback.
-    template<StateViewConcept<LiftedTag> S>
-    ActionBindingResult try_get_applicable_action_binding(const Node<LiftedTag, S>& node,
-                                                          formalism::planning::ActionView<LiftedTag> action,
-                                                          formalism::planning::ObjectSpanView objects);
+    template<StateViewConcept<LiftedTag> S, ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+    ActionBindingResult try_get_applicable_action_binding(const Node<LiftedTag, S>& node, Binding binding);
 
     // Indexed inputs intern successors; builder inputs write caller-owned storage.
     // List storage appends builders and never clears them, preserving earlier returned views.
@@ -141,17 +137,17 @@ public:
                                           AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
     template<StateViewConcept<LiftedTag> S>
-    std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<LiftedTag, S>& node);
+    urd::Store<urd::sequence<formalism::planning::ActionBindingView>> get_applicable_action_bindings(const Node<LiftedTag, S>& node);
 
     template<StateViewConcept<LiftedTag> S>
-    void get_applicable_action_bindings(const Node<LiftedTag, S>& node, std::vector<formalism::planning::ActionBindingView>& out_bindings);
+    void get_applicable_action_bindings(const Node<LiftedTag, S>& node, urd::Store<urd::sequence<formalism::planning::ActionBindingView>>& out_bindings);
     template<StateViewConcept<LiftedTag> S>
-    std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<LiftedTag, S>& node,
+    urd::Store<urd::sequence<formalism::planning::ActionBindingView>> get_applicable_action_bindings(const Node<LiftedTag, S>& node,
                                                                                        formalism::planning::ActionView<LiftedTag> action);
     template<StateViewConcept<LiftedTag> S>
     void get_applicable_action_bindings(const Node<LiftedTag, S>& node,
                                         formalism::planning::ActionView<LiftedTag> action,
-                                        std::vector<formalism::planning::ActionBindingView>& out_bindings);
+                                        urd::Store<urd::sequence<formalism::planning::ActionBindingView>>& out_bindings);
 
     /// Callbacks return true to continue, false to stop. The result is true iff enumeration was exhausted.
     /// Enumeration must not reenter this generator's enumeration APIs: they share scratch storage, and reentering throws logic_error.
@@ -209,7 +205,7 @@ public:
 
     // Packed output retains registered state handles without retaining unpacked builders.
     PackedNode<LiftedTag> get_packed_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator);
-    PackedNode<LiftedTag> get_packed_node(StateRepository<LiftedTag>& state_repository, ygg::Index<State<LiftedTag>> state_index);
+    PackedNode<LiftedTag> get_packed_node(StateRepository<LiftedTag>& state_repository, urd::index<State<LiftedTag>> state_index);
     template<StateViewConcept<LiftedTag> S>
     PackedNode<LiftedTag> get_packed_successor_node(const Node<LiftedTag, S>& node,
                                                     formalism::planning::ActionBindingView binding,
@@ -262,7 +258,7 @@ public:
 
     template<StateViewConcept<LiftedTag> S>
     PackedNode<LiftedTag> get_packed_successor_node(const Node<LiftedTag, S>& node,
-                                                    const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
+                                                    const urd::data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
                                                     StateRepository<LiftedTag>& state_repository,
                                                     AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
@@ -272,17 +268,17 @@ public:
     template<StateViewConcept<LiftedTag> S>
     ygg::float_t generate_successor_state(const Node<LiftedTag, S>& node,
                                           formalism::planning::ActionBindingView binding,
-                                          ygg::Builder<State<LiftedTag>>& out_state,
+                                          urd::builder<State<LiftedTag>>& out_state,
                                           StateDelta& out_delta);
     /// Computes axiom closure and the final metric, then interns the completed state.
     Node<LiftedTag> finalize_successor_state(StateRepository<LiftedTag>& state_repository,
                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
+                                             std::shared_ptr<urd::builder<State<LiftedTag>>> state,
                                              ygg::float_t auxiliary_value);
     /// Like finalize_successor_state(), but `state` was generated from `parent` with exact changes `delta`.
     Node<LiftedTag> finalize_successor_state(StateRepository<LiftedTag>& state_repository,
                                              AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<LiftedTag>>, true> state,
+                                             std::shared_ptr<urd::builder<State<LiftedTag>>> state,
                                              ygg::float_t auxiliary_value,
                                              const StateView<LiftedTag>& parent,
                                              const StateDelta& delta);
@@ -296,12 +292,12 @@ public:
     // Raw action-binding input; bindings are not interned and state storage follows S.
     template<StateViewConcept<LiftedTag> S>
     Node<LiftedTag, S> get_successor_node(const Node<LiftedTag, S>& node,
-                                          const ygg::Data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
+                                          const urd::data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
                                           SuccessorStorage<LiftedTag, S>& storage,
                                           AxiomEvaluator<LiftedTag>& axiom_evaluator);
 
     // Lookup
-    Node<LiftedTag> get_node(StateRepository<LiftedTag>& state_repository, ygg::Index<State<LiftedTag>> state_index);
+    Node<LiftedTag> get_node(StateRepository<LiftedTag>& state_repository, urd::index<State<LiftedTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<LiftedTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
     // Diagnostics

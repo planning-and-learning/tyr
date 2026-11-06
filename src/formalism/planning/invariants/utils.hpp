@@ -19,6 +19,8 @@
 #define TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 
 #include "tyr/formalism/planning/mutable/atom.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -43,11 +45,11 @@ inline size_t part_arity(const MutableAtom<FluentTag>& part, size_t num_rigid_va
             {
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
-                    if (static_cast<ygg::uint_t>(arg) >= num_rigid_variables)
+                    if (arg.value >= num_rigid_variables)
                         has_counted = true;
                 }
             },
-            term.variant);
+            term);
     }
 
     return has_counted ? part.terms.size() - 1 : part.terms.size();
@@ -58,14 +60,14 @@ inline bool atom_uses_counted(const MutableAtom<FluentTag>& atom, size_t num_rig
     return std::ranges::any_of(atom.terms,
                                [&](const auto& term)
                                {
-                                   return std::visit(
+                                   return visit(
                                        [&]<typename T>(const T& arg) -> bool
                                        {
                                            if constexpr (std::is_same_v<T, ParameterIndex>)
-                                               return static_cast<ygg::uint_t>(arg) >= num_rigid_variables;
+                                               return arg.value >= num_rigid_variables;
                                            return false;
                                        },
-                                       term.variant);
+                                       term);
                                });
 }
 
@@ -73,7 +75,7 @@ inline MutableAtom<FluentTag> make_initial_atom(PredicateView<FluentTag> predica
 {
     const auto arity = static_cast<size_t>(predicate.get_arity());
 
-    std::vector<ygg::Data<Term>> terms;
+    urd::Store<urd::sequence<Term>> terms;
     terms.reserve(arity);
 
     if (counted_position == arity)

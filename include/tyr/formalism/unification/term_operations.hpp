@@ -18,18 +18,19 @@
 #ifndef TYR_FORMALISM_UNIFICATION_TERM_OPERATIONS_HPP_
 #define TYR_FORMALISM_UNIFICATION_TERM_OPERATIONS_HPP_
 
-#include "tyr/formalism/term_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+
 
 namespace tyr::formalism::unification
 {
 
-inline bool is_parameter(const ygg::Data<Term>& term) { return holds_alternative<ParameterIndex>(term.variant); }
+inline bool is_parameter(const Term& term) { return holds_alternative<ParameterIndex>(term); }
 
-inline bool is_object(const ygg::Data<Term>& term) { return holds_alternative<ygg::Index<Object>>(term.variant); }
+inline bool is_object(const Term& term) { return holds_alternative<urd::index<Object>>(term); }
 
-inline ParameterIndex get_parameter(const ygg::Data<Term>& term) { return std::get<ParameterIndex>(term.variant); }
+inline ParameterIndex get_parameter(const Term& term) { return std::get<ParameterIndex>(term); }
 
-inline ygg::Index<Object> get_object(const ygg::Data<Term>& term) { return std::get<ygg::Index<Object>>(term.variant); }
+inline urd::index<Object> get_object(const Term& term) { return std::get<urd::index<Object>>(term); }
 
 }
 

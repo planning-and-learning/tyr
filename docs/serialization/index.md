@@ -35,7 +35,6 @@ Use a native type's `Fields` enum to inspect the ordered default column names wi
 from pytyr.formalism import planning as fp
 
 list(fp.ActionBinding.Fields.__members__)  # ["relation", "objects"]
-list(fp.FunctionExpression.Fields.__members__)  # ["variant"]
 ```
 
 This describes the native declaration; registration's `fields` selection and `project` callback do not change it.

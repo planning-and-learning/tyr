@@ -16,6 +16,7 @@
  */
 
 #include "module.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include "bindings.hpp"
 #include "datalog/module.hpp"
@@ -36,7 +37,6 @@ void alias_shared_types(nb::module_& source, nb::module_& target)
                               "ObjectData",
                               "VariableIndex",
                               "VariableData",
-                              "TermData",
                               "StaticPredicateBindingIndex",
                               "StaticPredicateBindingData",
                               "FluentPredicateBindingIndex",

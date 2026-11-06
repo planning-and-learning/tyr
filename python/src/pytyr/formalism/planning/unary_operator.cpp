@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
@@ -31,24 +32,24 @@ template<TaskKind T>
 void bind_unary_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
     using namespace nb::literals;
-    using Tag = UnaryOperator<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    using Tag = UnaryOperator<T, ArithmeticOperatorKind>;
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
-        auto cls = nb::class_<V>(m, (name + "Data").c_str()).def(nb::init<ArithmeticOperatorKind, FunctionExpressionView<T>>(), "operator"_a, "arg"_a);
-        cls.def(nb::init<ArithmeticOperatorKind, ygg::Data<FunctionExpression<T>>>(), "operator"_a, "arg"_a);
+        using V = urd::data<Tag>;
+        auto cls = nb::class_<V>(m, (name + "Data").c_str()).def(urd::python::init_from_views<ArithmeticOperatorKind, FunctionExpressionView<T>>(), "operator"_a, "arg"_a);
+        cls.def(nb::init<ArithmeticOperatorKind, FunctionExpression<T>>(), "operator"_a, "arg"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
-        using V = UnaryOperatorView<T>;
-        auto cls = nb::class_<V>(m, name.c_str()).def("get_index", &V::get_index).def("get_operator", &V::get_operator).def("get_arg", &V::get_arg);
+        using V = UnaryOperatorView<T, ArithmeticOperatorKind>;
+        auto cls = nb::class_<V>(m, name.c_str()).def("get_index", &V::index).def("get_operator", &V::get_operator).def("get_arg", &V::get_arg);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
@@ -31,30 +32,30 @@ template<FactKind F>
 void bind_function_term_value_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<FunctionTermValue<GroundTag, F>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<FunctionTermView<GroundTag, F>, ygg::float_t>(), "fterm"_a, "value"_a);
-    cls.def(nb::init<ygg::Index<FunctionTerm<GroundTag, F>>, ygg::float_t>(), "fterm"_a, "value"_a);
+    using V = urd::data<FunctionTermValue<GroundTag, F>>;
+    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<FunctionTermView<GroundTag, F>, ygg::float_t>(), "fterm"_a, "value"_a);
+    cls.def(nb::init<urd::index<FunctionTerm<GroundTag, F>>, ygg::float_t>(), "fterm"_a, "value"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<FactKind F>
 void bind_function_term_value_view(nb::module_& m, const char* name)
 {
     using V = FunctionTermValueView<GroundTag, F>;
-    auto cls = nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>()).def("get_value", &V::get_value);
+    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>()).def("get_value", &V::get_value);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_function_term_value(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<FunctionTermValue<GroundTag, StaticTag>>>(m, "StaticGroundFunctionTermValueIndex");
-    ygg::bind_index<ygg::Index<FunctionTermValue<GroundTag, FluentTag>>>(m, "FluentGroundFunctionTermValueIndex");
-    ygg::bind_index<ygg::Index<FunctionTermValue<GroundTag, AuxiliaryTag>>>(m, "AuxiliaryGroundFunctionTermValueIndex");
+    urd::python::bind_index<urd::index<FunctionTermValue<GroundTag, StaticTag>>>(m, "StaticGroundFunctionTermValueIndex");
+    urd::python::bind_index<urd::index<FunctionTermValue<GroundTag, FluentTag>>>(m, "FluentGroundFunctionTermValueIndex");
+    urd::python::bind_index<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>(m, "AuxiliaryGroundFunctionTermValueIndex");
 
     bind_function_term_value_data<StaticTag>(m, "StaticGroundFunctionTermValueData");
     bind_function_term_value_data<FluentTag>(m, "FluentGroundFunctionTermValueData");

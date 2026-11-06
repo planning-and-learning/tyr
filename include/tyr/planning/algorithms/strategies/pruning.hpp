@@ -38,7 +38,7 @@ public:
     /// Custom strategies opt into parallel search by returning an independently usable worker. Each returned worker is called serially, without OS-thread
     /// affinity. State views retain the repository wrappers that produced them; these wrappers may differ in hash-distributed mode and need not identify the
     /// logical owner in shared mode. A strategy must not re-enter the search or wait for work from the same logical worker.
-    [[nodiscard]] virtual PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const { return nullptr; }
+    [[nodiscard]] virtual PruningStrategyPtr<Kind> make_worker(urd::index<Worker>) const { return nullptr; }
 
     virtual bool should_prune_state(const StateView<Kind>&) { return false; }
 
@@ -58,7 +58,7 @@ template<TaskKind Kind>
 class NoPruningStrategy final : public PruningStrategy<Kind>
 {
 public:
-    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override { return PruningStrategy<Kind>::create(); }
+    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return PruningStrategy<Kind>::create(); }
 };
 
 }

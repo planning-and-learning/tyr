@@ -19,6 +19,8 @@
 #define TYR_PLANNING_FORMATTER_HPP_
 
 #include "tyr/formalism/planning/formatter.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/algorithms/iw/statistics.hpp"
 #include "tyr/planning/algorithms/siw/statistics.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
@@ -60,38 +62,38 @@ struct formatter<tyr::planning::Task<::tyr::GroundTag>, char>
 };
 
 template<>
-struct formatter<ygg::Data<tyr::planning::State<::tyr::LiftedTag>>, char>
+struct formatter<urd::data<tyr::planning::State<::tyr::LiftedTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
+    auto format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
 };
 
 template<>
-struct formatter<ygg::Builder<tyr::planning::State<::tyr::LiftedTag>>, char>
+struct formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Builder<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
+    auto format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
 };
 
 template<>
-struct formatter<ygg::Data<tyr::planning::State<::tyr::GroundTag>>, char>
+struct formatter<urd::data<tyr::planning::State<::tyr::GroundTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
+    auto format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
 };
 
 template<>
-struct formatter<ygg::Builder<tyr::planning::State<::tyr::GroundTag>>, char>
+struct formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const ygg::Builder<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
+    auto format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
 };
 
@@ -237,13 +239,13 @@ struct formatter<State, char>
     template<typename FormatContext>
     auto format(const State& value, FormatContext& ctx) const
     {
-        auto static_atoms = std::vector<tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>> {};
+        auto static_atoms = urd::Store<urd::sequence<tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>> {};
         for (auto&& atom : value.template get_atoms_view<::tyr::formalism::StaticTag>())
         {
             static_atoms.push_back(atom);
         }
 
-        auto fluent_facts = std::vector<tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>> {};
+        auto fluent_facts = urd::Store<urd::sequence<std::ranges::range_value_t<decltype(value.get_fluent_facts_view())>>> {};
         for (auto&& fact : value.get_fluent_facts_view())
         {
             if (fact.has_value())
@@ -252,19 +254,19 @@ struct formatter<State, char>
             }
         }
 
-        auto derived_atoms = std::vector<tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>> {};
+        auto derived_atoms = urd::Store<urd::sequence<tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>> {};
         for (auto&& atom : value.template get_atoms_view<::tyr::formalism::DerivedTag>())
         {
             derived_atoms.push_back(atom);
         }
 
-        auto static_fterm_values = std::vector<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::StaticTag>> {};
+        auto static_fterm_values = urd::Store<urd::sequence<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::StaticTag>>> {};
         for (auto&& fterm_value : value.template get_fterm_values_view<::tyr::formalism::StaticTag>())
         {
             static_fterm_values.push_back(fterm_value);
         }
 
-        auto fluent_fterm_values = std::vector<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::FluentTag>> {};
+        auto fluent_fterm_values = urd::Store<urd::sequence<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::FluentTag>>> {};
         for (auto&& fterm_value : value.template get_fterm_values_view<::tyr::formalism::FluentTag>())
         {
             fluent_fterm_values.push_back(fterm_value);
@@ -274,10 +276,10 @@ struct formatter<State, char>
         os << "State(\n";
         {
             ygg::IndentScope scope(os);
-            if constexpr (requires { value.get_index(); })
+            if constexpr (requires { value.index(); })
             {
                 os << ygg::print_indent;
-                fmt::print(os, "{}{}\n", "index = ", value.get_index());
+                fmt::print(os, "{}{}\n", "index = ", value.index());
             }
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "static atoms = ", static_atoms);

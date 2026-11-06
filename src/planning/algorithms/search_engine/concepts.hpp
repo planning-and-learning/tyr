@@ -33,9 +33,10 @@
 #include <optional>
 #include <span>
 #include <type_traits>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/segmented_vector.hpp>
 
 namespace tyr::planning::detail
 {
@@ -74,7 +75,7 @@ concept SearchPolicyConcept =
     && requires {
            typename std::bool_constant<T::supports_priority_layer_synchronization>;
            requires SearchKind<SearchTagT<T>>;
-       } && std::constructible_from<T, Heuristic<Kind>&, const OptionsT<T>&> && requires(T& policy, const T& const_policy, ygg::Index<Worker> worker, ygg::Index<State<Kind>> state, ygg::float_t value, const SearchNodeT<T>& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const EventHandlerPtrT<T>& event_handler) {
+       } && std::constructible_from<T, Heuristic<Kind>&, const OptionsT<T>&> && requires(T& policy, const T& const_policy, urd::index<Worker> worker, urd::index<State<Kind>> state, ygg::float_t value, const SearchNodeT<T>& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const EventHandlerPtrT<T>& event_handler) {
            { T::terminate_on_goal } -> std::convertible_to<bool>;
            { policy.initialize_start(state, value, value) } -> std::same_as<SearchNodeT<T>&>;
            { const_policy.get_start_priority() } -> std::same_as<ygg::float_t>;
@@ -85,7 +86,7 @@ concept SearchPolicyConcept =
            { policy.get_search_node(state) } -> std::same_as<SearchNodeT<T>&>;
            { const_policy.make_successor_metadata(worker, node, action) } -> std::same_as<SuccessorMetadataT<T>>;
            { T::make_worker_event_handler(event_handler, worker) } -> std::same_as<WorkerEventHandlerPtrT<T>>;
-           { const_policy.get_search_nodes() } -> std::same_as<const ygg::SegmentedVector<SearchNodeT<T>>&>;
+           { const_policy.get_search_nodes() } -> std::same_as<const urd::Store<urd::sequence<SearchNodeT<T>>, urd::stable_refs>&>;
        } && (!T::supports_priority_layer_synchronization || requires(const T& policy, const OptionsT<T>& options) {
            { T::synchronize_priority_layers(options) } -> std::convertible_to<bool>;
            { policy.get_min_priority() } -> std::same_as<ygg::float_t>;
@@ -95,10 +96,10 @@ concept SearchPolicyConcept =
 template<typename T, typename Kind>
 concept StateRoutingPolicyConcept = TaskKind<Kind> && std::constructible_from<T, uint64_t> && requires {
     typename std::bool_constant<T::uses_owner_repositories>;
-} && requires(ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers, typename T::PreparedTarget prepared) {
+} && requires(urd::index<State<Kind>> state, urd::index<Worker> worker, size_t num_workers, typename T::PreparedTarget prepared) {
     { T::search_node_divisor(num_workers) } -> std::same_as<size_t>;
-    { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
-    { prepared.owner } -> std::same_as<ygg::Index<Worker>&>;
+    { T::search_node_index(state, worker, num_workers) } -> std::same_as<urd::index<State<Kind>>>;
+    { prepared.owner } -> std::same_as<urd::index<Worker>&>;
     { prepared.node } -> std::same_as<Node<Kind>&>;
 };
 
@@ -109,15 +110,15 @@ concept ExecutionPolicyConcept =
     && requires(T& policy,
                 const T& const_policy,
                 const OptionsT<SearchPolicy>& options,
-                ygg::Index<State<Kind>> state,
-                ygg::Index<Worker> worker,
+                urd::index<State<Kind>> state,
+                urd::index<Worker> worker,
                 size_t num_workers,
                 ygg::float_t value,
                 std::optional<std::chrono::steady_clock::time_point> deadline,
                 ygg::uint_t max_num_states) {
            { T::validate(options) } -> std::same_as<void>;
            { T::num_workers(options) } -> std::same_as<size_t>;
-           { T::search_node_index(state, worker, num_workers) } -> std::same_as<ygg::Index<State<Kind>>>;
+           { T::search_node_index(state, worker, num_workers) } -> std::same_as<urd::index<State<Kind>>>;
            { policy.initialize_best_h(value) } -> std::same_as<void>;
            {
                policy.improve_best_h(value, [] {})
@@ -134,7 +135,7 @@ concept ExecutionPolicyConcept =
 
 template<typename T, typename WorkerData, typename Kind, typename SearchPolicy>
 concept WorkerPolicyConcept = TaskKind<Kind> && SearchPolicyConcept<SearchPolicy, Kind>
-                              && requires(T& policy, ygg::Index<Worker> worker, WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options) {
+                              && requires(T& policy, urd::index<Worker> worker, WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options) {
                                      { policy.size() } -> std::same_as<size_t>;
                                      { policy.get(worker) } -> std::same_as<WorkerData&>;
                                      {

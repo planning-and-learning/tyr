@@ -23,8 +23,8 @@
 #include "tyr/formalism/planning/views.hpp"
 
 #include <numeric>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -51,9 +51,9 @@ inline void collect_parameters(TermView element, ParameterList& result)
                 result.push_back(arg);
             else if constexpr (std::is_same_v<Alternative, ObjectView>) {}
             else
-                static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+                static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
         },
-        element.get_variant());
+        element);
 }
 
 template<FactKind T>

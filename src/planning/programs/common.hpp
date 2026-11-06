@@ -28,7 +28,6 @@
 #include <memory>
 #include <stdexcept>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning
 {

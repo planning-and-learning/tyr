@@ -37,13 +37,17 @@
 #include <span>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include "tyr/containers.hpp"
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
@@ -79,7 +83,7 @@ private:
 struct RuleEvaluationWorkspace
 {
     NumericSupportSelectorWorkspace selector;
-    std::vector<NumericSupport> exact_supports;
+    urd::Store<urd::sequence<NumericSupport>> exact_supports;
 };
 
 struct CandidateEvidence
@@ -111,40 +115,40 @@ private:
     using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
-    std::vector<boost::dynamic_bitset<>> m_seen_rows;
-    std::vector<Binding> m_bindings;
-    std::vector<PredicateAchiever> m_achievers;
+    urd::Store<urd::sequence<boost::dynamic_bitset<>>> m_seen_rows;
+    urd::Store<urd::sequence<Binding>> m_bindings;
+    urd::Store<urd::sequence<PredicateAchiever>> m_achievers;
 
 public:
-    [[nodiscard]] const std::vector<Binding>& bindings() const noexcept { return m_bindings; }
+    [[nodiscard]] const urd::Store<urd::sequence<Binding>>& bindings() const noexcept { return m_bindings; }
     /// Mutable: reducing the updates moves the achievers out.
-    std::vector<PredicateAchiever>& achievers() noexcept { return m_achievers; }
+    urd::Store<urd::sequence<PredicateAchiever>>& achievers() noexcept { return m_achievers; }
 
     void clear() noexcept
     {
         for (const auto binding : m_bindings)
-            m_seen_rows[static_cast<ygg::uint_t>(binding.relation)].reset(static_cast<ygg::uint_t>(binding.row));
+            m_seen_rows[static_cast<ygg::uint_t>(binding.relation.value)].reset(static_cast<ygg::uint_t>(binding.row.value));
         m_bindings.clear();
         m_achievers.clear();
     }
 
     void insert(Binding binding)
     {
-        const auto relation = static_cast<size_t>(static_cast<ygg::uint_t>(binding.relation));
-        const auto row = static_cast<size_t>(static_cast<ygg::uint_t>(binding.row));
+        const auto relation = static_cast<size_t>(static_cast<ygg::uint_t>(binding.relation.value));
+        const auto row = static_cast<size_t>(static_cast<ygg::uint_t>(binding.row.value));
         if (relation >= m_seen_rows.size())
             m_seen_rows.resize(relation + 1);
         auto& seen = m_seen_rows[relation];
-        if (ygg::test(row, seen))
+        if (tyr::test(row, seen))
             return;
-        ygg::set(row, true, seen);
+        tyr::set(row, true, seen);
         m_bindings.push_back(binding);
     }
 
     void insert_achiever(Binding head, Witness witness) { m_achievers.push_back(PredicateAchiever { head, std::move(witness) }); }
 };
 
-struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
+struct FunctionHeadUpdate : urd::compared_by_identity<FunctionHeadUpdate>
 {
     formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
@@ -157,13 +161,13 @@ struct FunctionHeadUpdate : ygg::comparison::Mixin<FunctionHeadUpdate>
     {
     }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&FunctionHeadUpdate::binding, &FunctionHeadUpdate::interval> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&FunctionHeadUpdate::binding, &FunctionHeadUpdate::interval> {}; }
 };
 
 struct FunctionHeadUpdates
 {
-    ygg::UnorderedSet<FunctionHeadUpdate> seen_updates;
-    std::vector<FunctionHeadUpdate> updates;
+    urd::Store<urd::set<FunctionHeadUpdate>> seen_updates;
+    urd::Store<urd::sequence<FunctionHeadUpdate>> updates;
 
     void clear() noexcept
     {
@@ -385,7 +389,7 @@ Cost get_transition_credit(const CP& policy,
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return static_cast<Cost>(0);
     else
-        return policy.get_cost(instance.witness_key().get_index(), head, interval);
+        return policy.get_cost(instance.witness_key().index(), head, interval);
 }
 
 template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
@@ -411,7 +415,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
             continue;
 
         const auto binding = instance.resolve(literal.get_atom());
-        const auto* annotation = input.predicate_annotations().find(binding.get_index());
+        const auto* annotation = input.predicate_annotations().find(binding.index());
         if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
@@ -436,7 +440,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
 
     if constexpr (std::same_as<R, formalism::FunctionTag>)
     {
-        state.numeric_effect = ygg::visit([&](const auto effect) { return instance.resolve(effect); }, instance.get_head().get_variant());
+        state.numeric_effect = instance.resolve(instance.get_head());
         const auto& effect = *state.numeric_effect;
         workspace.selector.clear();
 
@@ -473,7 +477,7 @@ std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind
                                                                const RuleEvaluationInput& input,
                                                                RuleEvaluationWorkspace& workspace)
 {
-    const auto effect = ygg::visit([&](const auto source) { return instance.resolve(source); }, instance.get_head().get_variant());
+    const auto effect = instance.resolve(instance.get_head());
     workspace.selector.clear();
 
     auto lhs = ygg::ClosedInterval<ygg::float_t> {};
@@ -660,7 +664,7 @@ template<TaskKind Kind, formalism::RelationKind R, typename Candidate>
 WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
 {
     assert(candidate.evidence);
-    return WitnessAnnotation<R>(instance.witness_key().get_index(), candidate.cost, candidate.evidence->numeric_supports);
+    return WitnessAnnotation<R>(instance.witness_key().index(), candidate.cost, candidate.evidence->numeric_supports);
 }
 
 /// Evaluates the rule instance once and updates each of its heads with the shared witness.

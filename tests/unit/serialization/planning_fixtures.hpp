@@ -2,6 +2,8 @@
 #define TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
@@ -35,18 +37,18 @@ namespace tyr::tests
 inline tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag> make_atom(tyr::formalism::planning::Repository& repository,
                                                                                           const std::string& object_name)
 {
-    auto predicate_data = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 1);
+    auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 1);
     canonicalize(predicate_data);
     const auto predicate = repository.insert(predicate_data).first;
-    auto object_data = ygg::Data<tyr::formalism::Object>(object_name);
+    auto object_data = urd::data<tyr::formalism::Object>(object_name);
     canonicalize(object_data);
     const auto object = repository.insert(object_data).first;
-    auto binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
-    binding_data.relation = predicate.get_index();
-    binding_data.objects.push_back(object.get_index());
+    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+    binding_data.relation = predicate.index();
+    binding_data.objects.push_back(object.index());
     canonicalize(binding_data);
     const auto binding = repository.insert(binding_data).first;
-    auto atom_data = ygg::Data<tyr::formalism::planning::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.get_index());
+    auto atom_data = urd::data<tyr::formalism::planning::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index());
     canonicalize(atom_data);
     return repository.insert(atom_data).first;
 }
@@ -75,8 +77,9 @@ tyr::planning::TaskPtr<Kind> make_task()
     }
 }
 
+/// A plan and the repository its states borrow (the plan goes first).
 template<TaskKind Kind>
-tyr::planning::Plan<Kind> make_plan()
+std::pair<tyr::planning::StateRepositoryPtr<Kind>, tyr::planning::Plan<Kind>> make_plan()
 {
     auto task = make_task<Kind>();
     auto execution = ygg::ExecutionContext::create(1);
@@ -87,27 +90,27 @@ tyr::planning::Plan<Kind> make_plan()
     const auto successors = generator->get_labeled_successor_nodes(initial, *repository, *evaluator);
     if (successors.size() != 1)
         throw std::runtime_error("Serialization fixture requires one successor");
-    return tyr::planning::Plan<Kind>(initial, { successors.front(), successors.front() });
+    return { repository, tyr::planning::Plan<Kind>(initial, { successors.front(), successors.front() }) };
 }
 
 template<TaskKind Kind>
 void check_runtime_serialization()
 {
-    // The returned plan owns its states after the parser, task, evaluator and generator locals have gone away.
-    const auto plan = make_plan<Kind>();
+    // The plan's states stay valid after the parser, task, evaluator and generator locals have gone away.
+    const auto [repository, plan] = make_plan<Kind>();
     auto rejected = ygg::serialization::Dictionaries {};
     EXPECT_THROW(rejected.serialize(plan), std::invalid_argument);
     EXPECT_THROW(rejected.tables(), std::logic_error);
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.template register_table<tyr::planning::StateView<Kind>>("states", "s");
     dictionaries.template register_table<tyr::planning::Node<Kind>>("nodes", "n");
-    dictionaries.template register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", std::vector<std::string> {});
+    dictionaries.template register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", urd::Store<urd::sequence<std::string>> {});
     dictionaries.template register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::DerivedTag>>("derived",
                                                                                                                     "d",
-                                                                                                                    std::vector<std::string> {});
+                                                                                                                    urd::Store<urd::sequence<std::string>> {});
     dictionaries.template register_table<tyr::formalism::planning::FunctionTermView<GroundTag, tyr::formalism::FluentTag>>("functions",
                                                                                                                            "f",
-                                                                                                                           std::vector<std::string> {});
+                                                                                                                           urd::Store<urd::sequence<std::string>> {});
     EXPECT_TRUE(dictionaries.template table<tyr::planning::StateView<Kind>>().empty());
     EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].node).as_string(), "n1");
@@ -140,8 +143,8 @@ void check_runtime_serialization()
     const auto& formalism_task = task->get_formalism_task();
 
     auto task_dictionaries = ygg::serialization::Dictionaries {};
-    task_dictionaries.template register_table<tyr::formalism::planning::TaskView<Kind>>("tasks", "t", std::vector<std::string> { "name" });
-    task_dictionaries.template register_table<tyr::formalism::planning::DomainView>("domains", "d", std::vector<std::string> {});
+    task_dictionaries.template register_table<tyr::formalism::planning::TaskView<Kind>>("tasks", "t", urd::Store<urd::sequence<std::string>> { "name" });
+    task_dictionaries.template register_table<tyr::formalism::planning::DomainView>("domains", "d", urd::Store<urd::sequence<std::string>> {});
     EXPECT_EQ(task_dictionaries.serialize(formalism_task.get_task()).as_string(), "t0");
     EXPECT_EQ(task_dictionaries.serialize(formalism_task.get_domain().get_domain()).as_string(), "d0");
     EXPECT_EQ(task_dictionaries.template table<tyr::formalism::planning::TaskView<Kind>>()[0].as_object().at("name").as_string(), "serialization-1");
@@ -150,8 +153,8 @@ void check_runtime_serialization()
     const auto check_rejected_owner = [](const auto& owner)
     {
         auto owner_dictionaries = ygg::serialization::Dictionaries {};
-        owner_dictionaries.template register_table<tyr::formalism::planning::TaskView<Kind>>("tasks", "t", std::vector<std::string> { "name" });
-        owner_dictionaries.template register_table<tyr::formalism::planning::DomainView>("domains", "d", std::vector<std::string> {});
+        owner_dictionaries.template register_table<tyr::formalism::planning::TaskView<Kind>>("tasks", "t", urd::Store<urd::sequence<std::string>> { "name" });
+        owner_dictionaries.template register_table<tyr::formalism::planning::DomainView>("domains", "d", urd::Store<urd::sequence<std::string>> {});
         EXPECT_THROW(owner_dictionaries.serialize(owner), std::invalid_argument);
         EXPECT_THROW(owner_dictionaries.tables(), std::logic_error);
     };

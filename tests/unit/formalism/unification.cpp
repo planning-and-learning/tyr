@@ -16,6 +16,8 @@
  */
 
 #include "tyr/formalism/unification/apply_substitution.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
 
@@ -26,7 +28,7 @@ namespace tyr::tests
 {
 namespace
 {
-using TermSubstitution = tyr::formalism::unification::SubstitutionFunction<ygg::Data<tyr::formalism::Term>>;
+using TermSubstitution = tyr::formalism::unification::SubstitutionFunction<tyr::formalism::Term>;
 
 class TermSubstitutionWithoutValueType : public TermSubstitution
 {
@@ -43,13 +45,13 @@ static_assert(!tyr::formalism::unification::TermSubstitution<const TermSubstitut
 static_assert(!tyr::formalism::unification::TermSubstitution<volatile TermSubstitutionWithoutValueType&>);
 static_assert(!tyr::formalism::unification::ObjectSubstitution<TermSubstitutionWithoutValueType>);
 
-static_assert(tyr::formalism::unification::TermUnifiableStructure<ygg::Data<tyr::formalism::Term>>);
+static_assert(tyr::formalism::unification::TermUnifiableStructure<tyr::formalism::Term>);
 
-ygg::Data<tyr::formalism::Term> parameter(size_t index) { return ygg::Data<tyr::formalism::Term>(tyr::formalism::ParameterIndex(index)); }
+tyr::formalism::Term parameter(size_t index) { return tyr::formalism::Term(tyr::formalism::ParameterIndex(index)); }
 
-ygg::Data<tyr::formalism::Term> object(size_t index) { return ygg::Data<tyr::formalism::Term>(ygg::Index<tyr::formalism::Object>(index)); }
+tyr::formalism::Term object(size_t index) { return tyr::formalism::Term(urd::index<tyr::formalism::Object>(index)); }
 
-void expect_term_eq(const ygg::Data<tyr::formalism::Term>& lhs, const ygg::Data<tyr::formalism::Term>& rhs) { EXPECT_EQ(lhs, rhs); }
+void expect_term_eq(const tyr::formalism::Term& lhs, const tyr::formalism::Term& rhs) { EXPECT_EQ(lhs, rhs); }
 }
 
 TEST(TyrTests, TyrFormalismUnificationApplySubstitutionFixpoint)
@@ -153,7 +155,7 @@ TEST(TyrTests, TyrFormalismUnificationSubstitutionForEachBindingAndIdentity)
     EXPECT_TRUE(sigma.assign(tyr::formalism::ParameterIndex(2), object(2)));
     EXPECT_FALSE(sigma.is_identity());
 
-    auto seen = std::vector<std::pair<tyr::formalism::ParameterIndex, ygg::Data<tyr::formalism::Term>>> {};
+    auto seen = urd::Store<urd::sequence<std::pair<tyr::formalism::ParameterIndex, tyr::formalism::Term>>> {};
     sigma.for_each_binding([&](const auto parameter, const auto& value) { seen.emplace_back(parameter, value); });
 
     ASSERT_EQ(seen.size(), 2);
@@ -216,7 +218,7 @@ TEST(TyrTests, TyrFormalismUnificationMatchExReportsStructureMismatch)
     auto sigma = TermSubstitution::from_range(tyr::formalism::ParameterIndex(0), 1);
     tyr::formalism::unification::TermMatchState state { std::move(sigma), TermSubstitution {} };
 
-    const auto result = tyr::formalism::unification::match_ex(std::vector { parameter(0) }, std::vector { object(8), object(9) }, std::move(state));
+    const auto result = tyr::formalism::unification::match_ex(urd::Store<urd::sequence<tyr::formalism::Term>> { parameter(0) }, urd::Store<urd::sequence<tyr::formalism::Term>> { object(8), object(9) }, std::move(state));
 
     EXPECT_FALSE(result.has_value());
     EXPECT_EQ(result.failure, tyr::formalism::unification::MatchFailure::structure_mismatch);

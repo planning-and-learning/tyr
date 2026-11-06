@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 #include <tyr/formalism/binding_data.hpp>
@@ -31,49 +32,43 @@ template<typename Relation>
 void bind_binding_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<RelationBinding<Relation>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<ygg::View<ygg::Index<Relation>, Repository>, const ObjectViewList&>(), "relation"_a, "objects"_a);
+    using V = urd::data<RelationBinding<Relation>>;
+    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<urd::view<Relation, Repository>, const ObjectViewList&>(), "relation"_a, "objects"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<typename Relation>
 void bind_binding_view(nb::module_& m, const char* name)
 {
-    using V = ygg::View<ygg::Index<RelationBinding<Relation>>, Repository>;
-    const auto retain_owner = ygg::python::make_owner_retainer();
+    using V = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>;
     auto cls = nb::class_<V>(m, name)
-                   .def("get_index", &V::get_index)
+                   .def("get_index", &V::index)
                    .def("get_relation", &V::get_relation, nb::keep_alive<0, 1>())
-                   .def("get_objects",
-                        [retain_owner](nb::typed<nb::handle, V> owner) -> nb::typed<nb::list, ObjectView>
-                        {
-                            return nb::borrow<nb::typed<nb::list, ObjectView>>(
-                                ygg::python::cast_with_owner(nb::cast<const V&>(owner).get_objects(), owner, retain_owner));
-                        });
+                   .def("get_objects", [](const V& self) { return self.get_objects(); });
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_binding(nb::module_& m, RepositoryBinding& repository)
 {
     {
-        using V = ygg::Index<RelationBinding<Rule<LiftedTag, PredicateTag>>>;
+        using V = ygg::formalism::RelationBindingIndex<Rule<LiftedTag, PredicateTag>, ::tyr::formalism::ObjectTag>;
         auto cls = nb::class_<V>(m, "RuleBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
-        using V = ygg::Index<RelationBinding<Rule<LiftedTag, FunctionTag>>>;
+        using V = ygg::formalism::RelationBindingIndex<Rule<LiftedTag, FunctionTag>, ::tyr::formalism::ObjectTag>;
         auto cls = nb::class_<V>(m, "FunctionRuleBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_binding_data<Rule<LiftedTag, PredicateTag>>(m, "RuleBindingData");

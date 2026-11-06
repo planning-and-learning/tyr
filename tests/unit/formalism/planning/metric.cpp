@@ -5,9 +5,9 @@
 
 #include <concepts>
 
-using MetricIndex = ygg::Index<tyr::formalism::planning::Metric>;
-using MetricData = ygg::Data<tyr::formalism::planning::Metric>;
-using MetricView = ygg::View<MetricIndex, tyr::formalism::planning::Repository>;
+using MetricIndex = urd::index<tyr::formalism::planning::Metric>;
+using MetricData = urd::data<tyr::formalism::planning::Metric>;
+using MetricView = urd::view<tyr::formalism::planning::Metric, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<MetricIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<MetricIndex>);
@@ -18,11 +18,10 @@ static_assert(requires(MetricData& data) {
     data.index;
     data.optimization_direction;
     data.fexpr;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const MetricView& view) {
-    view.get_index();
+    view.index();
     view.get_optimization_direction();
     view.get_fexpr();
     { view == view } -> std::same_as<bool>;

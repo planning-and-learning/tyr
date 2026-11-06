@@ -23,7 +23,6 @@
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/term_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #endif

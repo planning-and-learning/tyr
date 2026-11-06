@@ -27,14 +27,14 @@
 #include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
 #include <cassert>
 #include <utility>
-#include <yggdrasil/core/type_list.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <boost/mp11.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/interning.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
@@ -42,8 +42,8 @@
 namespace tyr::planning::match_tree
 {
 
-using GroundActionBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Action<GroundTag>>>;
-using GroundAxiomBuilder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Axiom<GroundTag>>>;
+using GroundActionBuilder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Action<GroundTag>>>;
+using GroundAxiomBuilder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, RepositoryTypes<formalism::planning::Axiom<GroundTag>>>;
 
 using ygg::formalism::checkout;
 using ygg::formalism::insert;
@@ -68,22 +68,24 @@ public:
     ~Repository() = default;
 
     [[nodiscard]] const auto& get_index() const noexcept { return m_index; }
+    /// The repository's number, as urd::view asks of a context.
+    [[nodiscard]] std::size_t layer() const noexcept { return m_index; }
 
     [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return *m_formalism_repository; }
 
     /// @brief Access the element with the given index.
     template<typename T>
         requires ygg::formalism::SupportsSymbol<Repository, T>
-    const ygg::Data<T>& operator[](ygg::Index<T> index) const noexcept
+    const urd::data<T>& operator[](urd::index<T> index) const noexcept
     {
-        assert(index != ygg::Index<T>::max() && "Unassigned index.");
+        assert(index != urd::index<T>() && "Unassigned index.");
         return this->template local<T>(index);
     }
 
+    /// An index as its view here (urd's resolves contract): what compositions of indices are read through (urd::resolve).
     template<typename T>
-        requires ygg::formalism::SupportsSymbol<Repository, T>
-    [[nodiscard]] const Repository& get_canonical_context(ygg::Index<T>) const noexcept
-    { return *this; }
+    [[nodiscard]] urd::view<T, Repository> view(urd::index<T> index) const noexcept
+    { return { index, *this }; }
 };
 
 static_assert(RepositoryConcept<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);
@@ -92,7 +94,7 @@ static_assert(Context<Repository<formalism::planning::Action<GroundTag>>, formal
 
 template<typename Tag, typename T>
     requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
-void prepare_for_insert(Repository<Tag>&, ygg::Data<T>& data)
+void prepare_for_insert(Repository<Tag>&, urd::data<T>& data)
 { canonicalize(data); }
 
 }

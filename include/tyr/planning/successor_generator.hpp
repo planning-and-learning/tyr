@@ -23,15 +23,13 @@
 #include "tyr/planning/successor_generator_concepts.hpp"
 
 #include <concepts>
-#include <deque>
 #include <functional>
 #include <optional>
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/shared_object_pool.hpp>
-#include <yggdrasil/containers/span.hpp>
-#include <yggdrasil/core/concepts.hpp>
+#include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/binding_view.hpp>
 

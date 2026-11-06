@@ -22,38 +22,24 @@
 
 #include <tuple>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-struct Data<::tyr::formalism::planning::Literal<T, F>>
+struct data<::tyr::formalism::planning::Literal<T, F>>
 {
-    ygg::Index<::tyr::formalism::planning::Literal<T, F>> index;
-    ygg::Index<::tyr::formalism::planning::Atom<T, F>> atom;
+    urd::index<::tyr::formalism::planning::Literal<T, F>> index;
+    urd::index<::tyr::formalism::planning::Atom<T, F>> atom;
     bool polarity = false;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::planning::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
-    // Python constructor
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<T, F>>, C> atom_, bool polarity_) : index(), atom(), polarity(polarity_)
-    { set(atom_, atom); }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(urd::index<::tyr::formalism::planning::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atom, &Data::polarity> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::polarity> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atom, &data::polarity> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::polarity> {}; }
 };
-
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);
 
 }
 

@@ -47,7 +47,7 @@ public:
     { return formalism::datalog::copy(view, m_context).first; }
 
     template<formalism::RelationKind R>
-    auto rule(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const
+    auto rule(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule) const
     { return m_rules->get<R>().at(rule); }
 
     TranslationContext<LiftedTag> translation_context(const TranslationContext<LiftedTag>& source) { return remap_translation_context(source, m_context); }

@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/heuristics/lmcut.hpp"
+#include <urd/repr/sequences/segmented.hpp>
 
 #include "../ground/heuristics/rpg.hpp"
 #include "../lifted/heuristics/rpg.hpp"
@@ -27,25 +28,29 @@
 
 #include <algorithm>
 #include <cassert>
-#include <deque>
 #include <limits>
 #include <ranges>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
 namespace
 {
 
-struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode>
+struct LMCutNumericNode : urd::compared_by_identity<LMCutNumericNode>
 {
     formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
@@ -57,7 +62,9 @@ struct LMCutNumericNode : ygg::comparison::Mixin<LMCutNumericNode>
     {
     }
 
-    [[nodiscard]] auto identifying_members() const noexcept { return std::make_tuple(key, lower(interval), upper(interval)); }
+    [[nodiscard]] ygg::float_t lower_bound() const noexcept { return lower(interval); }
+    [[nodiscard]] ygg::float_t upper_bound() const noexcept { return upper(interval); }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&LMCutNumericNode::key, &LMCutNumericNode::lower_bound, &LMCutNumericNode::upper_bound> {}; }
 };
 
 template<TaskKind Kind>
@@ -92,7 +99,7 @@ struct LMCutImplementation :
 
     LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition, ygg::ExecutionContextPtr execution_context, bool use_numeric_edge_cuts);
     LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context);
-    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
+    ygg::float_t evaluate(const urd::data<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
 
 private:
     template<formalism::RelationKind R>
@@ -100,7 +107,7 @@ private:
     template<formalism::RelationKind R>
     datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness);
     datalog::Cost get_numeric_support_cost(const datalog::NumericSupport& support);
-    void append_numeric_support_preconditions(const datalog::NumericSupport& support, datalog::Cost body_cost, std::vector<Precondition>& result);
+    void append_numeric_support_preconditions(const datalog::NumericSupport& support, datalog::Cost body_cost, urd::Store<urd::sequence<Precondition>>& result);
     void use_action_cost(ActionBinding action_binding, datalog::Cost cost);
     void use_rule_edge_cost(RuleEdge edge, datalog::Cost cost);
     void use_numeric_edge_cost(const NumericEdge& edge, datalog::Cost cost);
@@ -108,11 +115,11 @@ private:
     [[nodiscard]] datalog::Cost get_numeric_cost(const NumericNode& node) const noexcept;
     [[nodiscard]] const datalog::WitnessAnnotation<formalism::FunctionTag>* get_numeric_witness(const NumericNode& node) const noexcept;
     template<formalism::RelationKind R>
-    const std::vector<Precondition>& get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth);
+    const urd::Store<urd::sequence<Precondition>>& get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth);
     void mark_goal_zone(PredicateHead head, size_t depth);
     void mark_goal_zone(const NumericNode& node, size_t depth);
     void mark_goal_zone(Precondition precondition, size_t depth);
-    void explore_before_goal_zone(Precondition node, std::vector<Precondition>& stack, std::vector<Precondition>& base);
+    void explore_before_goal_zone(Precondition node, urd::Store<urd::sequence<Precondition>>& stack, urd::Store<urd::sequence<Precondition>>& base);
     void compute_before_goal_zone();
     [[nodiscard]] bool is_before_goal_zone(Precondition precondition) const;
     void clear_zones() noexcept;
@@ -124,21 +131,21 @@ private:
     [[nodiscard]] bool use_numeric_edge_cuts() const noexcept { return m_use_numeric_edge_cuts; }
 
     bool m_use_numeric_edge_cuts;
-    ygg::UnorderedMap<ActionBinding, datalog::Cost> m_action_used_costs;
-    ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_edge_used_costs;
-    ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_edge_used_costs;
-    ygg::UnorderedSet<PredicateHead> m_goal_zone;
-    ygg::UnorderedSet<NumericNode> m_numeric_goal_zone;
-    ygg::UnorderedSet<PredicateHead> m_before_goal_zone;
-    ygg::UnorderedSet<NumericNode> m_numeric_before_goal_zone;
-    ygg::UnorderedSet<PredicateHead> m_before_goal_zone_explored;
-    ygg::UnorderedSet<NumericNode> m_numeric_before_goal_zone_explored;
-    ygg::UnorderedMap<PredicateHead, std::vector<Precondition>> m_before_goal_zone_dependents;
-    ygg::UnorderedMap<NumericNode, std::vector<Precondition>> m_numeric_before_goal_zone_dependents;
-    ygg::UnorderedMap<ActionBinding, datalog::Cost> m_cut;
-    ygg::UnorderedMap<RuleEdge, datalog::Cost> m_rule_cut;
-    ygg::UnorderedMap<NumericEdge, datalog::Cost> m_numeric_cut;
-    std::deque<std::vector<Precondition>> m_max_precondition_buffers;
+    urd::Store<urd::map<ActionBinding, datalog::Cost>> m_action_used_costs;
+    urd::Store<urd::map<RuleEdge, datalog::Cost>> m_rule_edge_used_costs;
+    urd::Store<urd::map<NumericEdge, datalog::Cost>> m_numeric_edge_used_costs;
+    urd::Store<urd::set<PredicateHead>> m_goal_zone;
+    urd::Store<urd::set<NumericNode>> m_numeric_goal_zone;
+    urd::Store<urd::set<PredicateHead>> m_before_goal_zone;
+    urd::Store<urd::set<NumericNode>> m_numeric_before_goal_zone;
+    urd::Store<urd::set<PredicateHead>> m_before_goal_zone_explored;
+    urd::Store<urd::set<NumericNode>> m_numeric_before_goal_zone_explored;
+    urd::Store<urd::map<PredicateHead, urd::Store<urd::sequence<Precondition>>>> m_before_goal_zone_dependents;
+    urd::Store<urd::map<NumericNode, urd::Store<urd::sequence<Precondition>>>> m_numeric_before_goal_zone_dependents;
+    urd::Store<urd::map<ActionBinding, datalog::Cost>> m_cut;
+    urd::Store<urd::map<RuleEdge, datalog::Cost>> m_rule_cut;
+    urd::Store<urd::map<NumericEdge, datalog::Cost>> m_numeric_cut;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<Precondition>>>, urd::stable_refs> m_max_precondition_buffers;
     datalog::NumericSupportSelectorWorkspace m_numeric_support_selector_workspace;
 };
 
@@ -161,7 +168,7 @@ LMCutImplementation<Kind>::LMCutImplementation(const LMCutImplementation& source
 { this->workspace().tp.set_early_termination(m_use_numeric_edge_cuts); }
 
 template<TaskKind Kind>
-ygg::float_t LMCutImplementation<Kind>::evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms)
+ygg::float_t LMCutImplementation<Kind>::evaluate(const urd::data<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms)
 {
     auto value = static_cast<datalog::Cost>(0);
     clear_evaluation_views();
@@ -248,7 +255,7 @@ datalog::Cost LMCutImplementation<Kind>::get_numeric_support_cost(const datalog:
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::append_numeric_support_preconditions(const datalog::NumericSupport& support,
                                                                      datalog::Cost body_cost,
-                                                                     std::vector<Precondition>& result)
+                                                                     urd::Store<urd::sequence<Precondition>>& result)
 {
     if (support.get_cost() == body_cost)
         result.emplace_back(NumericNode { support.get_key(), support.get_interval() });
@@ -297,7 +304,7 @@ const datalog::WitnessAnnotation<formalism::FunctionTag>* LMCutImplementation<Ki
 
 template<TaskKind Kind>
 template<formalism::RelationKind R>
-const std::vector<typename LMCutImplementation<Kind>::Precondition>&
+const urd::Store<urd::sequence<typename LMCutImplementation<Kind>::Precondition>>&
 LMCutImplementation<Kind>::get_witness_max_preconditions(const datalog::WitnessAnnotation<R>& witness, datalog::Cost edge_cost, size_t depth)
 {
     if (m_max_precondition_buffers.size() <= depth)
@@ -373,10 +380,10 @@ void LMCutImplementation<Kind>::mark_goal_zone(const NumericNode& node, size_t d
 }
 
 template<TaskKind Kind>
-void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std::vector<Precondition>& stack, std::vector<Precondition>& base)
+void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, urd::Store<urd::sequence<Precondition>>& stack, urd::Store<urd::sequence<Precondition>>& base)
 {
     auto is_base = false;
-    const auto add_preconditions = [&](const std::vector<Precondition>& preconditions)
+    const auto add_preconditions = [&](const urd::Store<urd::sequence<Precondition>>& preconditions)
     {
         if (preconditions.empty())
             is_base = true;
@@ -401,7 +408,7 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std:
             if constexpr (std::same_as<std::remove_cvref_t<decltype(key)>, PredicateHead>)
             {
                 // Facts of the state start the justification graph, whether or not a rule derives them again.
-                if (const auto* annotation = this->workspace().annotations.find(key.get_index());
+                if (const auto* annotation = this->workspace().annotations.find(key.index());
                     annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation))
                 {
                     is_base = true;
@@ -448,9 +455,9 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, std:
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::compute_before_goal_zone()
 {
-    auto stack = std::vector<Precondition> {};
-    auto base = std::vector<Precondition> {};
-    const auto push_preconditions = [&](const std::vector<Precondition>& preconditions)
+    auto stack = urd::Store<urd::sequence<Precondition>> {};
+    auto base = urd::Store<urd::sequence<Precondition>> {};
+    const auto push_preconditions = [&](const urd::Store<urd::sequence<Precondition>>& preconditions)
     { stack.insert(stack.end(), preconditions.begin(), preconditions.end()); };
 
     for (const auto head : m_goal_zone)
@@ -714,7 +721,7 @@ struct LMCutHeuristic<Kind>::Impl
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
-    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
+    ygg::float_t evaluate(const urd::data<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
     { return m_implementation.evaluate(state, cut_frontier_atoms); }
 
     void print_summary(size_t verbosity) const { m_implementation.print_summary(verbosity); }
@@ -759,11 +766,11 @@ void LMCutHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionVie
 { m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
-ygg::float_t LMCutHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
+ygg::float_t LMCutHeuristic<Kind>::evaluate(const urd::data<State<Kind>>& state)
 { return m_impl->evaluate(state); }
 
 template<TaskKind Kind>
-formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const ygg::Builder<State<Kind>>& state)
+formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const urd::data<State<Kind>>& state)
 {
     auto atoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> {};
     static_cast<void>(m_impl->evaluate(state, &atoms));

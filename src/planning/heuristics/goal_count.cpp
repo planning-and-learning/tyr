@@ -38,7 +38,7 @@ void GoalCountHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditio
 { m_goal = goal; }
 
 template<TaskKind Kind>
-ygg::float_t GoalCountHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
+ygg::float_t GoalCountHeuristic<Kind>::evaluate(const urd::data<State<Kind>>& state)
 {
     auto unsat_counter = ygg::float_t { 0 };
 

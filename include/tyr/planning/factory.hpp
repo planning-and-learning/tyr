@@ -22,7 +22,7 @@
 
 #include <atomic>
 #include <memory>
-#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning

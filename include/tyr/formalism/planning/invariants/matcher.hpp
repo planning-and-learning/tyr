@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHER_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/unification/match.hpp"
@@ -32,7 +34,7 @@ namespace tyr::formalism::planning::invariant
 struct InvariantMatchData
 {
 public:
-    InvariantMatchData(InvariantView invariant, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings);
+    InvariantMatchData(InvariantView invariant, urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> rigid_variable_bindings);
 
     [[nodiscard]] auto invariant() const noexcept { return m_invariant; }
     [[nodiscard]] const auto& mutable_invariant() const noexcept { return m_inv; }
@@ -45,13 +47,13 @@ private:
 private:
     InvariantView m_invariant;
     MutableInvariant m_inv;
-    std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> m_rigid_variable_bindings;
+    urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> m_rigid_variable_bindings;
 
     /// postings[p][o][b] is true iff the b-th binding binds object o to rigid parameter p.
-    std::vector<ygg::UnorderedMap<ygg::Index<Object>, boost::dynamic_bitset<>>> m_postings;
+    urd::Store<urd::sequence<urd::Store<urd::map<urd::index<Object>, boost::dynamic_bitset<>>>>> m_postings;
 };
 
-using InvariantMatchDataList = std::vector<InvariantMatchData>;
+using InvariantMatchDataList = urd::Store<urd::sequence<InvariantMatchData>>;
 
 struct QueryResult
 {
@@ -61,7 +63,7 @@ struct QueryResult
         size_t binding_index;
     };
 
-    std::vector<Match> matches;
+    urd::Store<urd::sequence<Match>> matches;
 };
 
 struct QueryWorkspace

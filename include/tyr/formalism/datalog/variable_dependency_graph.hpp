@@ -22,9 +22,7 @@
 #include "tyr/formalism/datalog/variable_dependency_graph_details.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::datalog
 {

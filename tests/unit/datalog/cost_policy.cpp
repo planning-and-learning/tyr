@@ -24,6 +24,7 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#include <urd/memory.hpp>
 
 namespace tyr::tests
 {
@@ -37,33 +38,33 @@ struct RuleBindingFixture
 
 RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository& repository)
 {
-    auto predicate_builder = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>();
+    auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>();
     predicate_builder.name = "p";
     predicate_builder.arity = 0;
     canonicalize(predicate_builder);
     const auto [predicate, predicate_success] = repository.insert(predicate_builder);
     EXPECT_TRUE(predicate_success);
 
-    auto atom_builder = ygg::Data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
-    atom_builder.predicate = predicate.get_index();
+    auto atom_builder = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
+    atom_builder.predicate = predicate.index();
     canonicalize(atom_builder);
     const auto [atom, atom_success] = repository.insert(atom_builder);
     EXPECT_TRUE(atom_success);
 
-    auto condition_builder = ygg::Data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
+    auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
     canonicalize(condition_builder);
     const auto [condition, condition_success] = repository.insert(condition_builder);
     EXPECT_TRUE(condition_success);
 
-    auto rule_builder = ygg::Data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
-    rule_builder.body = condition.get_index();
-    rule_builder.heads.push_back(atom.get_index());
+    auto rule_builder = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
+    rule_builder.body = condition.index();
+    rule_builder.heads.push_back(atom.index());
     canonicalize(rule_builder);
     const auto [rule, rule_success] = repository.insert(rule_builder);
     EXPECT_TRUE(rule_success);
 
-    auto binding_builder = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
-    binding_builder.relation = rule.get_index();
+    auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
+    binding_builder.relation = rule.index();
     canonicalize(binding_builder);
     const auto [binding, binding_success] = repository.insert(binding_builder);
     EXPECT_TRUE(binding_success);
@@ -74,13 +75,13 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
 tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> make_nullary_function_binding(tyr::formalism::datalog::Repository& repository,
                                                                                                       const char* name)
 {
-    auto function_builder = ygg::Data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string(name), 0);
+    auto function_builder = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string(name), 0);
     canonicalize(function_builder);
     const auto [function, function_success] = repository.insert(function_builder);
     EXPECT_TRUE(function_success);
 
-    auto binding_builder = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
-    binding_builder.relation = function.get_index();
+    auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
+    binding_builder.relation = function.index();
     canonicalize(binding_builder);
     const auto [binding, binding_success] = repository.insert(binding_builder);
     EXPECT_TRUE(binding_success);
@@ -92,52 +93,52 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
 {
     auto repository = tyr::formalism::datalog::RepositoryFactory().create();
     const auto fixture = make_nullary_rule_binding(repository);
-    auto predicate_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
-    predicate_data.relation = fixture.rule.get_heads().front().get_predicate().get_index();
+    auto predicate_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+    predicate_data.relation = fixture.rule.get_heads().front().get_predicate().index();
     const auto predicate = repository.insert(predicate_data).first;
     const auto function = make_nullary_function_binding(repository, "value");
     auto buckets = tyr::datalog::CostBuckets {};
 
-    EXPECT_TRUE(buckets.insert(3, predicate.get_index()));
-    EXPECT_FALSE(buckets.insert(3, predicate.get_index()));
-    EXPECT_TRUE(buckets.insert(3, function.get_index(), { 2, 4 }));
-    EXPECT_TRUE(buckets.insert(3, function.get_index(), { 1, 3 }));
-    EXPECT_FALSE(buckets.insert(3, function.get_index(), { 2, 3 }));
+    EXPECT_TRUE(buckets.insert(3, predicate.index()));
+    EXPECT_FALSE(buckets.insert(3, predicate.index()));
+    EXPECT_TRUE(buckets.insert(3, function.index(), { 2, 4 }));
+    EXPECT_TRUE(buckets.insert(3, function.index(), { 1, 3 }));
+    EXPECT_FALSE(buckets.insert(3, function.index(), { 2, 3 }));
     EXPECT_EQ(buckets.min_cost(), 3);
 
-    EXPECT_EQ(buckets.at(3).function.at(function.get_index()), (ygg::ClosedInterval<ygg::float_t> { 1, 4 }));
+    EXPECT_EQ(buckets.at(3).function.at(function.index()), (ygg::ClosedInterval<ygg::float_t> { 1, 4 }));
     const auto* address = &buckets.at(3);
-    const auto predicate_capacity = buckets.at(3).predicate.capacity();
-    const auto function_capacity = buckets.at(3).function.capacity();
+    const auto predicate_capacity = urd::memory_usage(buckets.at(3).predicate);
+    const auto function_capacity = urd::memory_usage(buckets.at(3).function);
     EXPECT_TRUE(buckets.erase(3));
     EXPECT_TRUE(buckets.is_empty());
     EXPECT_FALSE(buckets.erase(3));
 
-    EXPECT_TRUE(buckets.insert(5, predicate.get_index()));
+    EXPECT_TRUE(buckets.insert(5, predicate.index()));
     auto& bucket = buckets.at(5);
     EXPECT_EQ(&bucket, address);
-    EXPECT_EQ(bucket.predicate.capacity(), predicate_capacity);
-    EXPECT_EQ(bucket.function.capacity(), function_capacity);
+    EXPECT_EQ(urd::memory_usage(bucket.predicate), predicate_capacity);
+    EXPECT_EQ(urd::memory_usage(bucket.function), function_capacity);
     EXPECT_TRUE(bucket.function.empty());
     bucket.predicate.clear();
     EXPECT_TRUE(buckets.erase(5));
 
-    buckets.insert(7, predicate.get_index());
-    buckets.insert(2, function.get_index(), { 8, 9 });
+    buckets.insert(7, predicate.index());
+    buckets.insert(2, function.index(), { 8, 9 });
     EXPECT_EQ(buckets.min_cost(), 2);
     buckets.clear();
     EXPECT_TRUE(buckets.is_empty());
-    EXPECT_TRUE(buckets.insert(2, function.get_index(), { 1, 1 }));
+    EXPECT_TRUE(buckets.insert(2, function.index(), { 1, 1 }));
     EXPECT_TRUE(buckets.at(2).predicate.empty());
-    EXPECT_EQ(buckets.at(2).function.at(function.get_index()), (ygg::ClosedInterval<ygg::float_t> { 1, 1 }));
+    EXPECT_EQ(buckets.at(2).function.at(function.index()), (ygg::ClosedInterval<ygg::float_t> { 1, 1 }));
     EXPECT_TRUE(buckets.erase(2));
     buckets.clear();
 
-    buckets.insert(1, predicate.get_index());
-    EXPECT_TRUE(buckets.erase(1, predicate.get_index()));
+    buckets.insert(1, predicate.index());
+    EXPECT_TRUE(buckets.erase(1, predicate.index()));
     EXPECT_TRUE(buckets.is_empty());
-    EXPECT_FALSE(buckets.erase(1, predicate.get_index()));
-    EXPECT_TRUE(buckets.insert(1, predicate.get_index()));
+    EXPECT_FALSE(buckets.erase(1, predicate.index()));
+    EXPECT_TRUE(buckets.insert(1, predicate.index()));
 }
 
 TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
@@ -176,7 +177,7 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     const auto fixture = make_nullary_rule_binding(repository);
 
     auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
-    policy.set_cost(fixture.binding.get_index(), 3);
+    policy.set_cost(fixture.binding.index(), 3);
 
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
 }

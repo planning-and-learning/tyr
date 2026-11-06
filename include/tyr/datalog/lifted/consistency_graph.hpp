@@ -19,6 +19,8 @@
 #define TYR_DATALOG_CONSISTENCY_GRAPH_HPP_
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -26,7 +28,9 @@
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <vector>
-#include <yggdrasil/containers/vector.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
+#include <urd/repr/core/dependent_false.hpp>
 
 namespace tyr::datalog
 {
@@ -44,28 +48,28 @@ namespace details
 struct RuleToLiteralInfoMappings
 {
     // For building vertex assignments (p/o)
-    std::vector<std::vector<ygg::uint_t>> parameter_to_infos;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> parameter_to_infos;
 
     // For building edge assignments (p/o,q/c)
-    std::vector<std::vector<std::vector<ygg::uint_t>>> parameter_pairs_to_infos;
-    std::vector<std::vector<ygg::uint_t>> parameter_to_infos_with_constants;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>> parameter_pairs_to_infos;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> parameter_to_infos_with_constants;
 
     // For global vertex assignments (c) for constant c
-    std::vector<ygg::uint_t> infos_with_constants;
+    urd::Store<urd::sequence<ygg::uint_t>> infos_with_constants;
     // For global edge assignments (c,c') for constants c,c'
-    std::vector<ygg::uint_t> infos_with_constant_pairs;
+    urd::Store<urd::sequence<ygg::uint_t>> infos_with_constant_pairs;
 };
 
 struct RuleToLiteralPositionMappings
 {
-    std::vector<std::pair<ygg::uint_t, ygg::Index<formalism::Object>>> constant_positions;
-    std::vector<std::vector<ygg::uint_t>> parameter_to_positions;
+    urd::Store<urd::sequence<std::pair<ygg::uint_t, urd::index<formalism::Object>>>> constant_positions;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> parameter_to_positions;
 };
 
 template<formalism::FactKind T>
 struct RuleToLiteralInfo
 {
-    ygg::Index<formalism::Predicate<T>> predicate;
+    urd::index<formalism::Predicate<T>> predicate;
     bool polarity = false;
     size_t kckp_arity = 0;
     size_t num_parameters = 0;
@@ -77,7 +81,7 @@ struct RuleToLiteralInfo
 template<formalism::FactKind T>
 struct TaggedRuleToLiteralInfos
 {
-    std::vector<RuleToLiteralInfo<T>> infos;
+    urd::Store<urd::sequence<RuleToLiteralInfo<T>>> infos;
 
     RuleToLiteralInfoMappings info_mappings;
 };
@@ -85,7 +89,7 @@ struct TaggedRuleToLiteralInfos
 template<formalism::FactKind T>
 struct RuleToFunctionTermInfo
 {
-    ygg::Index<formalism::Function<T>> function;
+    urd::index<formalism::Function<T>> function;
     size_t kckp_arity = 0;
     size_t num_parameters = 0;
     size_t num_constants = 0;
@@ -96,7 +100,7 @@ struct RuleToFunctionTermInfo
 template<formalism::FactKind T>
 struct TaggedRuleToFunctionTermInfos
 {
-    ygg::UnorderedMap<ygg::Index<formalism::datalog::FunctionTerm<LiftedTag, T>>, RuleToFunctionTermInfo<T>> infos;
+    urd::Store<urd::map<urd::index<formalism::datalog::FunctionTerm<LiftedTag, T>>, RuleToFunctionTermInfo<T>>> infos;
 
     RuleToLiteralInfoMappings info_mappings;
 };
@@ -116,13 +120,13 @@ struct RuleToConstraintInfo
         else if constexpr (std::is_same_v<T, formalism::FluentTag>)
             return fluent_infos;
         else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
     }
 };
 
 struct RuleToRuleToConstraintInfos
 {
-    std::vector<RuleToConstraintInfo> infos;
+    urd::Store<urd::sequence<RuleToConstraintInfo>> infos;
 };
 
 /**
@@ -134,10 +138,10 @@ class Vertex
 {
 private:
     formalism::ParameterIndex m_parameter_index;
-    ygg::Index<formalism::Object> m_object_index;
+    urd::index<formalism::Object> m_object_index;
 
 public:
-    Vertex(formalism::ParameterIndex parameter_index, ygg::Index<formalism::Object> object_index) noexcept :
+    Vertex(formalism::ParameterIndex parameter_index, urd::index<formalism::Object> object_index) noexcept :
         m_parameter_index(parameter_index),
         m_object_index(object_index)
     {

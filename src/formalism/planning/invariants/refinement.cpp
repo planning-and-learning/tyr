@@ -16,6 +16,8 @@
  */
 
 #include "refinement.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "matching.hpp"
 #include "normalization.hpp"
@@ -32,12 +34,12 @@ namespace tyr::formalism::planning::invariant
 namespace
 {
 
-using PositionMapping = std::vector<std::pair<size_t, std::optional<ParameterIndex>>>;
+using PositionMapping = urd::Store<urd::sequence<std::pair<size_t, std::optional<ParameterIndex>>>>;
 
-ygg::Map<ParameterIndex, ygg::Data<Term>>
+urd::Store<urd::map<ParameterIndex, Term>, urd::sorted>
 get_parameters_from_part(const MutableAtom<FluentTag>& part, const MutableAtom<FluentTag>& literal, size_t num_rigid_variables)
 {
-    ygg::Map<ParameterIndex, ygg::Data<Term>> result;
+    urd::Store<urd::map<ParameterIndex, Term>, urd::sorted> result;
 
     for (size_t pos = 0; pos < part.terms.size(); ++pos)
     {
@@ -46,11 +48,11 @@ get_parameters_from_part(const MutableAtom<FluentTag>& part, const MutableAtom<F
             {
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
-                    if (static_cast<ygg::uint_t>(arg) < num_rigid_variables)
+                    if (arg.value < num_rigid_variables)
                         result.emplace(arg, literal.terms[pos]);
                 }
             },
-            part.terms[pos].variant);
+            part.terms[pos]);
     }
 
     return result;
@@ -67,10 +69,10 @@ bool optional_parameter_less(const std::optional<ParameterIndex>& a, const std::
     return *a < *b;
 }
 
-void instantiate_factored_mapping_rec(const std::vector<std::pair<std::vector<size_t>, std::vector<std::optional<ParameterIndex>>>>& groups,
+void instantiate_factored_mapping_rec(const urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<size_t>>, urd::Store<urd::sequence<std::optional<ParameterIndex>>>>>>& groups,
                                       size_t group_index,
                                       PositionMapping& current,
-                                      std::vector<PositionMapping>& out)
+                                      urd::Store<urd::sequence<PositionMapping>>& out)
 {
     if (group_index == groups.size())
     {
@@ -96,15 +98,15 @@ void instantiate_factored_mapping_rec(const std::vector<std::pair<std::vector<si
     }
 }
 
-std::vector<PositionMapping> instantiate_factored_mapping(const std::vector<std::pair<std::vector<size_t>, std::vector<std::optional<ParameterIndex>>>>& groups)
+urd::Store<urd::sequence<PositionMapping>> instantiate_factored_mapping(const urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<size_t>>, urd::Store<urd::sequence<std::optional<ParameterIndex>>>>>>& groups)
 {
-    std::vector<PositionMapping> result;
+    urd::Store<urd::sequence<PositionMapping>> result;
     PositionMapping current;
     instantiate_factored_mapping_rec(groups, 0, current, result);
     return result;
 }
 
-std::vector<PositionMapping> possible_mappings(const MutableAtom<FluentTag>& part,
+urd::Store<urd::sequence<PositionMapping>> possible_mappings(const MutableAtom<FluentTag>& part,
                                                const MutableAtom<FluentTag>& own_literal,
                                                const MutableAtom<FluentTag>& other_literal,
                                                size_t num_rigid_variables)
@@ -115,15 +117,15 @@ std::vector<PositionMapping> possible_mappings(const MutableAtom<FluentTag>& par
 
     const auto own_parameters = get_parameters_from_part(part, own_literal, num_rigid_variables);
 
-    ygg::Map<ygg::Data<Term>, std::vector<ParameterIndex>> ownarg_to_invariant_parameters;
+    urd::Store<urd::map<Term, urd::Store<urd::sequence<ParameterIndex>>>, urd::sorted> ownarg_to_invariant_parameters;
     for (const auto& [inv_param, term] : own_parameters)
         ownarg_to_invariant_parameters[term].push_back(inv_param);
 
-    ygg::Map<ygg::Data<Term>, std::vector<size_t>> other_arg_to_positions;
+    urd::Store<urd::map<Term, urd::Store<urd::sequence<size_t>>>, urd::sorted> other_arg_to_positions;
     for (size_t pos = 0; pos < other_literal.terms.size(); ++pos)
         other_arg_to_positions[other_literal.terms[pos]].push_back(pos);
 
-    std::vector<std::pair<std::vector<size_t>, std::vector<std::optional<ParameterIndex>>>> factored_mapping;
+    urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<size_t>>, urd::Store<urd::sequence<std::optional<ParameterIndex>>>>>> factored_mapping;
 
     for (const auto& [term, other_positions] : other_arg_to_positions)
     {
@@ -133,7 +135,7 @@ std::vector<PositionMapping> possible_mappings(const MutableAtom<FluentTag>& par
         if (len_diff >= 1 || len_diff <= -2 || (len_diff == -1 && !allowed_omissions))
             return {};
 
-        std::vector<std::optional<ParameterIndex>> images;
+        urd::Store<urd::sequence<std::optional<ParameterIndex>>> images;
         images.reserve(inv_params.size() + (len_diff != 0 ? 1 : 0));
 
         for (const auto& p : inv_params)
@@ -160,10 +162,10 @@ MutableAtomList<FluentTag> possible_matches(const MutableAtom<FluentTag>& part,
 
     for (const auto& mapping : possible_mappings(part, own_literal, other_literal, num_rigid_variables))
     {
-        std::vector<ygg::Data<Term>> args(other_literal.terms.size(), ygg::Data<Term>(ParameterIndex(num_rigid_variables)));
+        urd::Store<urd::sequence<Term>> args(other_literal.terms.size(), Term(ParameterIndex(num_rigid_variables)));
 
         for (const auto& [other_pos, inv_var] : mapping)
-            args[other_pos] = ygg::Data<Term>(inv_var.value_or(ParameterIndex(num_rigid_variables)));
+            args[other_pos] = Term(inv_var.value_or(ParameterIndex(num_rigid_variables)));
 
         result.emplace_back(other_literal.predicate, std::move(args));
     }

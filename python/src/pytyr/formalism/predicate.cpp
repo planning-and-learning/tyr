@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -31,19 +32,19 @@ template<FactKind T>
 void bind_predicate_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<Predicate<T>>;
+    using V = urd::data<Predicate<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
     cls.def(nb::init<::cista::offset::string, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_predicate(nb::module_& m)
 {
-    ygg::bind_index<ygg::Index<Predicate<StaticTag>>>(m, "StaticPredicateIndex");
-    ygg::bind_index<ygg::Index<Predicate<FluentTag>>>(m, "FluentPredicateIndex");
+    urd::python::bind_index<urd::index<Predicate<StaticTag>>>(m, "StaticPredicateIndex");
+    urd::python::bind_index<urd::index<Predicate<FluentTag>>>(m, "FluentPredicateIndex");
 
     bind_predicate_data<StaticTag>(m, "StaticPredicateData");
     bind_predicate_data<FluentTag>(m, "FluentPredicateData");

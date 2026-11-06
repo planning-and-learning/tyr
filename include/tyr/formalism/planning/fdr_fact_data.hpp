@@ -23,39 +23,23 @@
 
 #include <tuple>
 #include <utility>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<::tyr::formalism::FactKind T>
-struct Data<::tyr::formalism::planning::FDRFact<T>>
+struct data<::tyr::formalism::planning::FDRFact<T>>
 {
-    ygg::Index<::tyr::formalism::planning::FDRVariable<T>> variable;
+    urd::index<::tyr::formalism::planning::FDRVariable<T>> variable;
     ::tyr::formalism::planning::FDRValue value;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::planning::FDRVariable<T>> variable_, ::tyr::formalism::planning::FDRValue value_) : variable(variable_), value(value_) {}
-    // Python constructor
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::planning::FDRVariable<T>>, C> variable_, ::tyr::formalism::planning::FDRValue value_) :
-        variable(),
-        value(value_)
-    { set(variable_, variable); }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(urd::index<::tyr::formalism::planning::FDRVariable<T>> variable_, ::tyr::formalism::planning::FDRValue value_) : variable(variable_), value(value_) {}
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::variable, &Data::value> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variable, &Data::value> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
 };
-
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>);
 
 }
 

@@ -19,13 +19,15 @@
 #define TYR_PLANNING_STATE_DELTA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <urd/elements/equal_to.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {
@@ -35,7 +37,7 @@ struct StateDelta
 {
     struct FluentChange
     {
-        ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable;
+        urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> variable;
         formalism::planning::FDRValue from;
         formalism::planning::FDRValue to;
 
@@ -44,16 +46,16 @@ struct StateDelta
 
     struct NumericChange
     {
-        ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fterm;
+        urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fterm;
         ygg::float_t from;
         ygg::float_t to;
 
         friend bool operator==(const NumericChange& lhs, const NumericChange& rhs) noexcept
-        { return lhs.fterm == rhs.fterm && ygg::EqualTo<ygg::float_t> {}(lhs.from, rhs.from) && ygg::EqualTo<ygg::float_t> {}(lhs.to, rhs.to); }
+        { return lhs.fterm == rhs.fterm && urd::EqualTo<ygg::float_t> {}(lhs.from, rhs.from) && urd::EqualTo<ygg::float_t> {}(lhs.to, rhs.to); }
     };
 
-    std::vector<FluentChange> fluents;    ///< Sorted by variable, unique.
-    std::vector<NumericChange> numerics;  ///< Sorted by function term, unique.
+    urd::Store<urd::sequence<FluentChange>> fluents;    ///< Sorted by variable, unique.
+    urd::Store<urd::sequence<NumericChange>> numerics;  ///< Sorted by function term, unique.
 
     void clear() noexcept
     {
@@ -67,7 +69,7 @@ struct StateDelta
 /// Computes the delta from `parent` to `successor` by comparing every fluent variable and function term.
 /// Linear in the state size, so it is meant for tests and debug checks only.
 template<TaskKind Kind>
-void compute_state_delta(const ygg::Builder<State<Kind>>& parent, const ygg::Builder<State<Kind>>& successor, StateDelta& out);
+void compute_state_delta(const urd::data<State<Kind>>& parent, const urd::data<State<Kind>>& successor, StateDelta& out);
 
 }
 

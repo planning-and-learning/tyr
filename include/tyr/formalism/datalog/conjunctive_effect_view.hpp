@@ -19,25 +19,21 @@
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_EFFECT_VIEW_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/numeric_effect_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
-
-template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::ConjunctiveEffect<T>> C>
-class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::ConjunctiveEffect<T>, C>
+template<::tyr::TaskKind T, typename V>
+struct view_mixin<::tyr::formalism::datalog::ConjunctiveEffect<T>, V>
 {
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::formalism::datalog::ConjunctiveEffect<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::datalog::ConjunctiveEffect<T>, C>(handle, context)
-    {
-    }
-
-    auto get_numeric_effects() const noexcept { return ygg::make_view(this->get_data().numeric_effects, this->get_context()); }
+    auto get_numeric_effects() const noexcept { return self().template get<&urd::record_of<V>::numeric_effects>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

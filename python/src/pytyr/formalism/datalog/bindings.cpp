@@ -16,6 +16,7 @@
  */
 
 #include "bindings.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include <tyr/formalism/datalog/repository.hpp>
 
@@ -39,13 +40,8 @@ void bind_formalism(nb::module_& m)
     bind_conditional_effect(m, repository);
     bind_rule(m, repository);
     bind_program(m, repository);
-    bind_arithmetic_operator(m, repository);
-    bind_boolean_operator(m, repository);
-    bind_function_expression(m, repository);
-    bind_numeric_effect_operator(m, repository);
     bind_object(m, repository);
     bind_variable(m, repository);
-    bind_term(m, repository);
     bind_predicate(m, repository);
     bind_function(m, repository);
 }

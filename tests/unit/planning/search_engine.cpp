@@ -16,6 +16,8 @@
  */
 
 #include "planning/algorithms/search_engine/astar_eager.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "planning/algorithms/search_engine/gbfs_lazy.hpp"
 #include "planning/algorithms/search_engine/parallel.hpp"
 #include "planning/parser.hpp"
@@ -214,7 +216,7 @@ public:
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { m_goal = goal; }
 
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>& state) override
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>& state) override
     {
         const auto context = tyr::planning::StateContext<Kind>(*m_task, state, 0);
         return tyr::planning::is_dynamically_applicable(m_goal, context) ? std::numeric_limits<ygg::float_t>::infinity() : 0;
@@ -239,7 +241,7 @@ public:
     using tyr::planning::Heuristic<Kind>::evaluate;
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>&) override { return 0; }
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>&) override { return 0; }
     [[nodiscard]] tyr::planning::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return nullptr; }
 };
 
@@ -249,10 +251,10 @@ class WorkerContextRecordingHeuristic final : public tyr::planning::Heuristic<Ki
 public:
     using tyr::planning::Heuristic<Kind>::evaluate;
 
-    explicit WorkerContextRecordingHeuristic(std::vector<size_t>& worker_threads) : m_worker_threads(&worker_threads) {}
+    explicit WorkerContextRecordingHeuristic(urd::Store<urd::sequence<size_t>>& worker_threads) : m_worker_threads(&worker_threads) {}
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>&) override { return 0; }
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>&) override { return 0; }
 
     [[nodiscard]] tyr::planning::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override
     {
@@ -261,11 +263,11 @@ public:
     }
 
 private:
-    std::vector<size_t>* m_worker_threads;
+    urd::Store<urd::sequence<size_t>>* m_worker_threads;
 };
 
 template<TaskKind Kind>
-bool is_at_location(const ygg::Builder<tyr::planning::State<Kind>>& state, const formalism::planning::Repository& repository, std::string_view location)
+bool is_at_location(const urd::data<tyr::planning::State<Kind>>& state, const formalism::planning::Repository& repository, std::string_view location)
 {
     return std::ranges::any_of(state.get_fluent_facts_view(repository),
                                [&](const auto fact)
@@ -304,7 +306,7 @@ public:
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
 
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>& state) override
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>& state) override
     {
         m_gate->num_evaluations.fetch_add(1, std::memory_order_relaxed);
         if (m_wait_location && is_at_location(state, *m_task->get_repository(), *m_wait_location)
@@ -341,7 +343,7 @@ public:
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
 
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>& state) override
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>& state) override
     {
         if (is_at_location(state, *m_task->get_repository(), m_location))
             throw std::runtime_error("Successor heuristic evaluation failed.");
@@ -391,7 +393,7 @@ public:
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override {}
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
-    tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) override
+    tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
     { return std::make_unique<ReleasingAStarWorkerEventHandler<Kind>>(m_gate, m_expected); }
 
 private:
@@ -403,7 +405,7 @@ template<TaskKind Kind>
 class RecordingAStarLayerEventHandler final : public tyr::planning::astar_eager::EventHandler<Kind>
 {
 public:
-    std::vector<std::pair<ygg::float_t, tyr::planning::Statistics>> snapshots;
+    urd::Store<urd::sequence<std::pair<ygg::float_t, tyr::planning::Statistics>>> snapshots;
 
     void on_start_search(const tyr::planning::Node<Kind>&, ygg::float_t) override {}
     void on_finish_f_layer(ygg::float_t f_value, const tyr::planning::Statistics& statistics) override { snapshots.emplace_back(f_value, statistics); }
@@ -418,7 +420,7 @@ public:
     using tyr::planning::Heuristic<Kind>::evaluate;
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>&) override { throw std::runtime_error("Unexpected heuristic evaluation."); }
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>&) override { throw std::runtime_error("Unexpected heuristic evaluation."); }
     [[nodiscard]] tyr::planning::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<ThrowingHeuristic>(); }
 };
 
@@ -432,7 +434,7 @@ public:
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { m_goal = goal; }
 
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>& state) override
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>& state) override
     {
         const auto context = tyr::planning::StateContext<Kind>(*m_task, state, 0);
         if (tyr::planning::is_dynamically_applicable(m_goal, context))
@@ -459,7 +461,7 @@ public:
     using tyr::planning::Heuristic<Kind>::evaluate;
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag>) override {}
-    ygg::float_t evaluate(const ygg::Builder<tyr::planning::State<Kind>>&) override { return std::numeric_limits<ygg::float_t>::infinity(); }
+    ygg::float_t evaluate(const urd::data<tyr::planning::State<Kind>>&) override { return std::numeric_limits<ygg::float_t>::infinity(); }
     [[nodiscard]] tyr::planning::HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr) const override { return std::make_shared<InfiniteHeuristic>(); }
 };
 
@@ -467,7 +469,7 @@ template<TaskKind Kind>
 class DuplicatePruningStrategy final : public tyr::planning::PruningStrategy<Kind>
 {
 public:
-    [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
+    [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<DuplicatePruningStrategy>(); }
 
     bool should_prune_successor_state(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&, bool is_new) override { return !is_new; }
@@ -477,7 +479,7 @@ template<TaskKind Kind>
 class AlwaysPruningStrategy final : public tyr::planning::PruningStrategy<Kind>
 {
 public:
-    [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
+    [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<AlwaysPruningStrategy>(); }
     bool should_prune_state(const tyr::planning::StateView<Kind>&) override { return true; }
 };
@@ -486,7 +488,7 @@ template<TaskKind Kind>
 class AlwaysSuccessorPruningStrategy final : public tyr::planning::PruningStrategy<Kind>
 {
 public:
-    [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
+    [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<AlwaysSuccessorPruningStrategy>(); }
     bool should_prune_successor_state(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&, bool) override { return true; }
 };
@@ -495,37 +497,38 @@ template<TaskKind Kind>
 class AlwaysGoalStrategy final : public tyr::planning::GoalStrategy<Kind>
 {
 public:
-    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
+    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<AlwaysGoalStrategy>(); }
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return true; }
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const ygg::Builder<tyr::planning::State<Kind>>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const urd::data<tyr::planning::State<Kind>>&) override { return true; }
 };
 
 template<TaskKind Kind>
 class StaticallyUnsatisfiedGoalStrategy final : public tyr::planning::GoalStrategy<Kind>
 {
 public:
-    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
+    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<StaticallyUnsatisfiedGoalStrategy>(); }
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return false; }
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const ygg::Builder<tyr::planning::State<Kind>>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const urd::data<tyr::planning::State<Kind>>&) override { return false; }
 };
 
 template<TaskKind Kind>
 class NonRootGoalStrategy final : public tyr::planning::GoalStrategy<Kind>
 {
 public:
-    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
+    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return std::make_shared<NonRootGoalStrategy>(); }
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return true; }
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const ygg::Builder<tyr::planning::State<Kind>>& state) override
-    { return &seed_state.get_state_builder() != &state; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const urd::data<tyr::planning::State<Kind>>& state) override
+    { return &seed_state.data() != &state; }
 };
 
 template<TaskKind Kind>
 class SeedRecordingGoalStrategy final : public tyr::planning::GoalStrategy<Kind>
 {
-    using SeedIdentity = decltype(std::declval<tyr::planning::StateView<Kind>>().identifying_members());
+    // A seed is identified as its state packed: its index and its repository.
+    using SeedIdentity = tyr::planning::PackedStateView<Kind>;
 
     struct Observations
     {
@@ -545,24 +548,24 @@ public:
     {
     }
 
-    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(ygg::Index<tyr::planning::Worker>) const override
+    [[nodiscard]] tyr::planning::GoalStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) const override
     { return tyr::planning::GoalStrategyPtr<Kind>(new SeedRecordingGoalStrategy(m_goal, m_observations)); }
 
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>& task) override
     { return tyr::planning::is_statically_applicable(m_goal, task.get_static_state()); }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const ygg::Builder<tyr::planning::State<Kind>>& state) override
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const urd::data<tyr::planning::State<Kind>>& state) override
     {
-        const auto context = tyr::planning::StateContext<Kind>(*seed_state.get_state_repository()->get_task(), state, 0);
+        const auto context = tyr::planning::StateContext<Kind>(*seed_state.get_state_repository().get_task(), state, 0);
         const auto is_goal = tyr::planning::is_dynamically_applicable(m_goal, context);
         if (is_goal)
         {
-            m_observations->successor_seed = seed_state.identifying_members();
+            m_observations->successor_seed = seed_state.pack();
             ++m_observations->num_successor_checks;
         }
         else
         {
-            m_observations->root_seed = seed_state.identifying_members();
+            m_observations->root_seed = seed_state.pack();
             ++m_observations->num_root_checks;
         }
         return is_goal;
@@ -636,9 +639,9 @@ void expect_sequential_astar_root_layer_statistics(const tyr::planning::TaskPtr<
     EXPECT_EQ(result.plan.value().get_length(), 3);
     ASSERT_EQ(event_handler->snapshots.size(), 3);
 
-    const auto expanded = std::vector<uint64_t> { 1, 3, 4 };
-    const auto generated_successors = std::vector<uint64_t> { 2, 3, 4 };
-    const auto generated_candidates = std::vector<uint64_t> { 2, 4, 5 };
+    const auto expanded = urd::Store<urd::sequence<uint64_t>> { 1, 3, 4 };
+    const auto generated_successors = urd::Store<urd::sequence<uint64_t>> { 2, 3, 4 };
+    const auto generated_candidates = urd::Store<urd::sequence<uint64_t>> { 2, 4, 5 };
     for (size_t i = 0; i < event_handler->snapshots.size(); ++i)
     {
         const auto& [f_value, statistics] = event_handler->snapshots[i];
@@ -791,9 +794,9 @@ void expect_parallel_goal_workers_receive_caller_seed(const tyr::planning::TaskP
         auto foreign = make_search_context(task);
         const auto foreign_start = foreign.successor_generator->get_initial_node(*foreign.repository, *foreign.axiom_evaluator);
         const auto normalized_start = tyr::planning::materialize_state(foreign_start.get_state(), *caller.repository, *caller.axiom_evaluator);
-        ASSERT_NE(normalized_start.identifying_members(), foreign_start.get_state().identifying_members());
+        ASSERT_NE(normalized_start.pack(), foreign_start.get_state().pack());
 
-        auto goal_strategy = std::make_shared<SeedRecordingGoalStrategy<Kind>>(*task, normalized_start.identifying_members());
+        auto goal_strategy = std::make_shared<SeedRecordingGoalStrategy<Kind>>(*task, normalized_start.pack());
         auto options = tyr::planning::brfs::Options<Kind> {};
         options.start_node = foreign_start;
         options.goal_strategy = goal_strategy;
@@ -821,14 +824,15 @@ void expect_root_inclusive_state_limits(const tyr::planning::TaskPtr<Kind>& task
 
                 options.search_budget.max_num_states = limit;
                 options.goal_strategy = std::move(goal_strategy);
-                return tyr::planning::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options);
+                // The result's states borrow the local repository: only its status leaves.
+                return tyr::planning::brfs::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, options).status;
             };
 
-            EXPECT_EQ(solve(0).status, tyr::planning::SearchStatus::OUT_OF_STATES);
-            EXPECT_EQ(solve(1).status, tyr::planning::SearchStatus::OUT_OF_STATES);
-            EXPECT_EQ(solve(2).status, tyr::planning::SearchStatus::SOLVED);
-            EXPECT_EQ(solve(std::nullopt).status, tyr::planning::SearchStatus::SOLVED);
-            EXPECT_EQ(solve(0, std::make_shared<AlwaysGoalStrategy<Kind>>()).status, tyr::planning::SearchStatus::SOLVED);
+            EXPECT_EQ(solve(0), tyr::planning::SearchStatus::OUT_OF_STATES);
+            EXPECT_EQ(solve(1), tyr::planning::SearchStatus::OUT_OF_STATES);
+            EXPECT_EQ(solve(2), tyr::planning::SearchStatus::SOLVED);
+            EXPECT_EQ(solve(std::nullopt), tyr::planning::SearchStatus::SOLVED);
+            EXPECT_EQ(solve(0, std::make_shared<AlwaysGoalStrategy<Kind>>()), tyr::planning::SearchStatus::SOLVED);
         });
 
     auto context = make_search_context(task);
@@ -859,14 +863,14 @@ void expect_foreign_start_handling(const tyr::planning::TaskPtr<Kind>& task, con
                 tyr::planning::astar_eager::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, *heuristic, options);
             ASSERT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
             ASSERT_TRUE(result.plan);
-            EXPECT_EQ(result.plan->get_start_node().get_state().get_state_repository(), caller.repository);
+            EXPECT_EQ(&result.plan->get_start_node().get_state().get_state_repository(), caller.repository.get());
             EXPECT_EQ(result.plan->get_start_node().get_metric(), 7);
 
             options.goal_strategy = std::make_shared<AlwaysGoalStrategy<Kind>>();
             const auto immediate_result =
                 tyr::planning::astar_eager::find_solution(*task, *caller.repository, *caller.axiom_evaluator, *caller.successor_generator, *heuristic, options);
             ASSERT_TRUE(immediate_result.plan);
-            EXPECT_EQ(immediate_result.plan->get_start_node().get_state().get_state_repository(), caller.repository);
+            EXPECT_EQ(&immediate_result.plan->get_start_node().get_state().get_state_repository(), caller.repository.get());
         });
 
     auto caller = make_search_context(task);
@@ -1180,9 +1184,9 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     auto cheap = std::optional<tyr::planning::Node<Kind>> {};
     for (const auto& successor : probe.successor_generator->get_labeled_successor_nodes(start, *probe.repository, *probe.axiom_evaluator))
     {
-        if (is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "expensive"))
+        if (is_at_location(successor.node.get_state().data(), *task->get_repository(), "expensive"))
             expensive = successor.node;
-        else if (is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "cheap"))
+        else if (is_at_location(successor.node.get_state().data(), *task->get_repository(), "cheap"))
             cheap = successor.node;
     }
     ASSERT_TRUE(expensive);
@@ -1190,7 +1194,7 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     const auto cheap_successors = probe.successor_generator->get_labeled_successor_nodes(cheap.value(), *probe.repository, *probe.axiom_evaluator);
     const auto cheap_wait = std::ranges::find_if(
         cheap_successors,
-        [&](const auto& successor) { return is_at_location(successor.node.get_state().get_state_builder(), *task->get_repository(), "cheap-wait"); });
+        [&](const auto& successor) { return is_at_location(successor.node.get_state().data(), *task->get_repository(), "cheap-wait"); });
     ASSERT_NE(cheap_wait, cheap_successors.end());
 
     auto seed = std::optional<uint64_t> {};
@@ -1198,9 +1202,9 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     {
         auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(start.get_state());
-        const auto expensive_owner = hash.owner(expensive.value().get_state().get_state_builder(), 3);
-        const auto cheap_owner = hash.owner(cheap.value().get_state().get_state_builder(), 3);
-        if (expensive_owner != cheap_owner && hash.owner(cheap_wait->node.get_state().get_state_builder(), 3) == cheap_owner)
+        const auto expensive_owner = hash.owner(expensive.value().get_state().data(), 3);
+        const auto cheap_owner = hash.owner(cheap.value().get_state().data(), 3);
+        if (expensive_owner != cheap_owner && hash.owner(cheap_wait->node.get_state().data(), 3) == cheap_owner)
             seed = candidate;
     }
     ASSERT_TRUE(seed);
@@ -1337,7 +1341,7 @@ TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeurist
     {
         auto hash = tyr::planning::DistHash<LiftedTag, tyr::planning::RandomDistHashTag>(candidate);
         hash.initialize(start.get_state());
-        if (hash.owner(successors.front().node.get_state().get_state_builder(), 3) != hash.owner(successors.back().node.get_state().get_state_builder(), 3))
+        if (hash.owner(successors.front().node.get_state().data(), 3) != hash.owner(successors.back().node.get_state().data(), 3))
             seed = candidate;
     }
     ASSERT_TRUE(seed);
@@ -1433,7 +1437,7 @@ TEST(TyrPlanningSearchEngineTest, SecondarySearchWorkersInheritPrototypeInnerCon
 {
     const auto task = parse_tasks("parallel_search_simple.pddl").lifted;
     auto context = make_search_context(task, false, 2);
-    auto worker_threads = std::vector<size_t> {};
+    auto worker_threads = urd::Store<urd::sequence<size_t>> {};
     auto heuristic = WorkerContextRecordingHeuristic<LiftedTag>(worker_threads);
     auto options = tyr::planning::gbfs_lazy::Options<LiftedTag> {};
     options.num_search_workers = 2;
@@ -1442,7 +1446,7 @@ TEST(TyrPlanningSearchEngineTest, SecondarySearchWorkersInheritPrototypeInnerCon
         tyr::planning::gbfs_lazy::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options);
 
     EXPECT_EQ(result.status, tyr::planning::SearchStatus::SOLVED);
-    EXPECT_EQ(worker_threads, (std::vector<size_t> { 2 }));
+    EXPECT_EQ(worker_threads, (urd::Store<urd::sequence<size_t>> { 2 }));
 }
 
 TEST(TyrPlanningSearchEngineTest, HashDistributedPolicyUsesOwnerRepositoriesWithAConcurrentCaller)
@@ -1474,9 +1478,9 @@ TEST(TyrPlanningSearchEngineTest, QueuedPreferredBoostAffectsTheNextPop)
     auto heuristic = tyr::planning::BlindHeuristic<GroundTag> {};
     auto options = tyr::planning::gbfs_lazy::Options<GroundTag> {};
     auto policy = tyr::planning::detail::LazyGBFSPolicy<GroundTag, tyr::planning::SequentialSearch>(heuristic, options);
-    const auto first_preferred = ygg::Index<tyr::planning::State<GroundTag>>(0);
-    const auto second_preferred = ygg::Index<tyr::planning::State<GroundTag>>(1);
-    const auto standard = ygg::Index<tyr::planning::State<GroundTag>>(2);
+    const auto first_preferred = urd::index<tyr::planning::State<GroundTag>>(0);
+    const auto second_preferred = urd::index<tyr::planning::State<GroundTag>>(1);
+    const auto standard = urd::index<tyr::planning::State<GroundTag>>(2);
 
     policy.open_successor(first_preferred, 0, 0, tyr::planning::SearchNodeStatus::OPEN, true);
     policy.open_successor(second_preferred, 0, 0, tyr::planning::SearchNodeStatus::OPEN, true);
@@ -1500,7 +1504,7 @@ TEST(TyrPlanningSearchEngineTest, ParallelAStarSnapshotExcludesTimedOutWaitersBu
     };
     struct Worker
     {
-        ygg::Index<tyr::planning::Worker> index;
+        urd::index<tyr::planning::Worker> index;
         Execution::WorkerState execution;
         Search search;
         tyr::planning::Statistics statistics;
@@ -1514,7 +1518,7 @@ TEST(TyrPlanningSearchEngineTest, ParallelAStarSnapshotExcludesTimedOutWaitersBu
         size_t num_callbacks { 0 };
 
         [[nodiscard]] size_t num_workers() const { return workers.size(); }
-        Worker& get_worker(ygg::Index<tyr::planning::Worker> index) { return workers[static_cast<ygg::uint_t>(index)]; }
+        Worker& get_worker(urd::index<tyr::planning::Worker> index) { return workers[static_cast<ygg::uint_t>(index.value)]; }
 
         std::optional<tyr::planning::Statistics> collect_priority_layer_statistics()
         {
@@ -1535,7 +1539,7 @@ TEST(TyrPlanningSearchEngineTest, ParallelAStarSnapshotExcludesTimedOutWaitersBu
         }
     } engine;
     for (size_t i = 0; i < engine.num_workers(); ++i)
-        engine.workers[i].index = ygg::Index<tyr::planning::Worker>(static_cast<ygg::uint_t>(i));
+        engine.workers[i].index = urd::index<tyr::planning::Worker>(static_cast<ygg::uint_t>(i));
 
     auto execution = Execution(0);
     auto options = tyr::planning::astar_eager::Options<GroundTag> {};
@@ -1545,7 +1549,7 @@ TEST(TyrPlanningSearchEngineTest, ParallelAStarSnapshotExcludesTimedOutWaitersBu
     execution.start(deadline, 0, options);
     execution.retain_successor();
 
-    auto threads = std::vector<std::jthread> {};
+    auto threads = urd::Store<urd::sequence<std::jthread>> {};
     for (auto& worker : engine.workers)
     {
         threads.emplace_back(
@@ -1604,7 +1608,7 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
     auto policy = Policy(heuristic, options);
     auto execution = Execution(0);
     execution.initialize_best_h(1);
-    auto& search_node = policy.initialize_start(start.get_state().get_index(), start.get_metric(), 1);
+    auto& search_node = policy.initialize_start(start.get_state().index(), start.get_metric(), 1);
     auto statistics = tyr::planning::Statistics {};
 
     const auto result =
@@ -1612,7 +1616,7 @@ TEST(TyrPlanningSearchEngineTest, LazyGbfsBestHCallbackReleasesTheWorkerLock)
                                    [&](auto&& evaluate_unlocked)
                                    {
                                        return policy.prepare_expansion(
-                                           Policy::PoppedEntry { start.get_state().get_index() },
+                                           Policy::PoppedEntry { start.get_state().index() },
                                            start,
                                            search_node,
                                            statistics,

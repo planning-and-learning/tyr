@@ -42,8 +42,11 @@
 #include <memory>
 #include <type_traits>
 #include <unordered_set>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 static_assert(tyr::formalism::planning::Repository::thread_safe);
@@ -123,8 +126,8 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
 
     const auto source_initial = source->get_initial_node(*source_state_repository, *source_axiom_evaluator);
     EXPECT_EQ(source_state_repository->num_states(), 1);
-    EXPECT_EQ(source_initial.get_state().get_index(), worker_initial.get_state().get_index());
-    EXPECT_EQ(source_initial.get_state().get_index(), nested_initial.get_state().get_index());
+    EXPECT_EQ(source_initial.get_state().index(), worker_initial.get_state().index());
+    EXPECT_EQ(source_initial.get_state().index(), nested_initial.get_state().index());
     EXPECT_NE(source_initial.get_state(), worker_initial.get_state());
     EXPECT_NE(source_initial.get_state(), nested_initial.get_state());
     EXPECT_EQ(source_initial.get_metric(), worker_initial.get_metric());
@@ -150,7 +153,7 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
 
         auto indices = std::unordered_set<ygg::uint_t> {};
         for (const auto variable : variables)
-            indices.insert(ygg::uint_t(variable.get_index()));
+            indices.insert(ygg::uint_t(variable.index().value));
         EXPECT_EQ(indices.size(), variables.size());
     }
 
@@ -183,7 +186,7 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_NE(goal_count.get(), goal_count_worker.get());
     EXPECT_EQ(goal_count->evaluate(source_initial.get_state()), goal_count_worker->evaluate(worker_initial.get_state()));
 
-    const auto worker_index = ygg::Index<tyr::planning::Worker>(0);
+    const auto worker_index = urd::index<tyr::planning::Worker>(0);
 
     auto pruning = tyr::planning::PruningStrategy<Kind>::create();
     auto pruning_worker = pruning->make_worker(worker_index);
@@ -226,11 +229,11 @@ void expect_independent_repository_identity(const tyr::planning::TaskPtr<Kind>& 
 
     EXPECT_EQ(first_repository->get_worker_index(), 0);
     EXPECT_EQ(second_repository->get_worker_index(), 0);
-    EXPECT_EQ(first_state.get_index(), second_state.get_index());
+    EXPECT_EQ(first_state.index(), second_state.index());
     EXPECT_NE(first_state, second_state);
     EXPECT_NE(first_state.pack(), second_state.pack());
 
-    auto states = ygg::UnorderedSet<tyr::planning::StateView<Kind>> {};
+    auto states = urd::Store<urd::set<tyr::planning::StateView<Kind>>> {};
     states.insert(first_state);
     states.insert(second_state);
     EXPECT_EQ(states.size(), 2);
@@ -292,15 +295,15 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     ASSERT_EQ(second_repository->num_states(), 1);
     EXPECT_EQ(first_initial.get_state(), second_initial.get_state());
     EXPECT_EQ(first_initial.get_state().pack(), second_initial.get_state().pack());
-    EXPECT_EQ(ygg::Hash<tyr::planning::PackedStateView<Kind>> {}(first_initial.get_state().pack()),
-              ygg::Hash<tyr::planning::PackedStateView<Kind>> {}(second_initial.get_state().pack()));
+    EXPECT_EQ(urd::Hash<tyr::planning::PackedStateView<Kind>> {}(first_initial.get_state().pack()),
+              urd::Hash<tyr::planning::PackedStateView<Kind>> {}(second_initial.get_state().pack()));
     EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
-    EXPECT_EQ(tyr::planning::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).get_state_repository(),
-              source_repository);
+    EXPECT_EQ(&tyr::planning::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).get_state_repository(),
+              source_repository.get());
 
     auto novelty = tyr::planning::iw::NoveltyPruningStrategy<Kind>::create(0);
-    auto first_novelty_worker = novelty->make_worker(ygg::Index<tyr::planning::Worker>(0));
-    auto second_novelty_worker = novelty->make_worker(ygg::Index<tyr::planning::Worker>(1));
+    auto first_novelty_worker = novelty->make_worker(urd::index<tyr::planning::Worker>(0));
+    auto second_novelty_worker = novelty->make_worker(urd::index<tyr::planning::Worker>(1));
     ASSERT_NE(first_novelty_worker, nullptr);
     ASSERT_NE(second_novelty_worker, nullptr);
     EXPECT_FALSE(first_novelty_worker->should_prune_state(first_initial.get_state()));
@@ -325,13 +328,13 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     const auto first_successor = first_future.get();
     const auto second_successor = second_future.get();
 
-    EXPECT_EQ(first_successor.get_state().get_index(), ygg::Index<tyr::planning::State<Kind>>(1));
+    EXPECT_EQ(first_successor.get_state().index(), urd::index<tyr::planning::State<Kind>>(1));
     EXPECT_EQ(first_successor.get_state(), second_successor.get_state());
     EXPECT_EQ(first_successor.get_metric(), second_successor.get_metric());
     EXPECT_EQ(first_repository->num_states(), 2);
     EXPECT_EQ(second_repository->num_states(), 2);
-    EXPECT_EQ(first_repository->get_registered_state(first_successor.get_state().get_index()),
-              second_repository->get_registered_state(second_successor.get_state().get_index()));
+    EXPECT_EQ(first_repository->get_registered_state(first_successor.get_state().index()),
+              second_repository->get_registered_state(second_successor.get_state().index()));
 }
 }
 

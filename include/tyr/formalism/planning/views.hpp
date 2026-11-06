@@ -19,30 +19,25 @@
 #define TYR_FORMALISM_PLANNING_VIEWS_HPP_
 
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/arithmetic_operator_view.hpp"
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/binary_operator_view.hpp"
-#include "tyr/formalism/planning/boolean_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_expression_view.hpp"
 #include "tyr/formalism/planning/function_term_value_view.hpp"
 #include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_operator_view.hpp"
 #include "tyr/formalism/planning/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/planning/unary_operator_view.hpp"
 #include "tyr/formalism/views.hpp"
 
-#include <yggdrasil/containers/span.hpp>
 
 #endif

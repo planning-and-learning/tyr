@@ -19,78 +19,55 @@
 #define TYR_FORMALISM_DATALOG_ATOM_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/term_data.hpp"
 
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<::tyr::formalism::FactKind F>
-struct Data<::tyr::formalism::datalog::Atom<::tyr::LiftedTag, F>>
+struct data<::tyr::formalism::datalog::Atom<::tyr::LiftedTag, F>>
 {
-    ygg::Index<::tyr::formalism::datalog::Atom<::tyr::LiftedTag, F>> index;
-    ygg::Index<::tyr::formalism::Predicate<F>> predicate;
-    ygg::DataList<::tyr::formalism::Term> terms;
+    urd::index<::tyr::formalism::datalog::Atom<::tyr::LiftedTag, F>> index;
+    urd::index<::tyr::formalism::Predicate<F>> predicate;
+    ::tyr::formalism::TermList terms;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::Predicate<F>> predicate_, ygg::DataList<::tyr::formalism::Term> terms_) :
+    data() = default;
+    data(urd::index<::tyr::formalism::Predicate<F>> predicate_, ::tyr::formalism::TermList terms_) :
         index(),
         predicate(predicate_),
         terms(std::move(terms_))
     {
     }
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate_, const std::vector<::ygg::View<ygg::Data<::tyr::formalism::Term>, C>>& terms_) :
-        index(),
-        predicate(),
-        terms()
-    {
-        set(predicate_, predicate);
-        set(terms_, terms);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::predicate, &Data::terms> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::predicate, &Data::terms> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::predicate, &data::terms> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::predicate, &data::terms> {}; }
 };
-
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Atom<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>);
 
 template<::tyr::formalism::FactKind F>
-struct Data<::tyr::formalism::datalog::Atom<::tyr::GroundTag, F>>
+struct data<::tyr::formalism::datalog::Atom<::tyr::GroundTag, F>>
 {
-    ygg::Index<::tyr::formalism::datalog::Atom<::tyr::GroundTag, F>> index;
-    ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<F>>> binding;
+    urd::index<::tyr::formalism::datalog::Atom<::tyr::GroundTag, F>> index;
+    ygg::formalism::RelationBindingIndex<::tyr::formalism::Predicate<F>, ::tyr::formalism::ObjectTag> binding;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<F>>> binding_) : index(), binding(binding_) {}
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::Predicate<F>>>, C> binding_) : index(), binding()
-    { set(binding_, binding); }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(ygg::formalism::RelationBindingIndex<::tyr::formalism::Predicate<F>, ::tyr::formalism::ObjectTag> binding_) : index(), binding(binding_) {}
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::binding> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::binding> {}; }
 };
-
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);
 
 }
 

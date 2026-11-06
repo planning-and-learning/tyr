@@ -23,30 +23,26 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<::tyr::TaskKind T, typename V>
+struct view_mixin<::tyr::formalism::planning::ConditionalEffect<T>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::ConditionalEffect<T>> C>
-class View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::ConditionalEffect<T>, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::planning::ConditionalEffect<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::ConditionalEffect<T>, C>(handle, context)
-    {
-    }
-
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return get_variables().size(); }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return ygg::make_view(this->get_data().variables, this->get_context()); }
-    auto get_condition() const noexcept { return ygg::make_view(this->get_data().condition, this->get_context()); }
-    auto get_effect() const noexcept { return ygg::make_view(this->get_data().effect, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::variables>(); }
+    auto get_condition() const noexcept { return self().template get<&urd::record_of<V>::condition>(); }
+    auto get_effect() const noexcept { return self().template get<&urd::record_of<V>::effect>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

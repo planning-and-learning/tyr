@@ -30,11 +30,6 @@ namespace tyr::planning
 template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
 template ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
 
-// NumericEffectOperatorView
-
-template ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> element, const ApplicabilityContext& context);
-template ygg::float_t evaluate(formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag> element, const ApplicabilityContext& context);
-
 /**
  * is_applicable
  */

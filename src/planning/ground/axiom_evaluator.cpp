@@ -16,6 +16,8 @@
  */
 
 #include "tyr/planning/ground/axiom_evaluator.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
@@ -27,10 +29,10 @@
 
 #include <atomic>
 #include <memory>
+#include <urd/elements/less.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::planning
 {
@@ -45,11 +47,11 @@ struct AxiomEvaluator<GroundTag>::Impl
             match_tree_prototypes.reserve(axiom_strata.data.size());
             for (const auto& stratum : axiom_strata.data)
                 match_tree_prototypes.emplace_back(
-                    match_tree::MatchTree<formalism::planning::Axiom<GroundTag>>::create(stratum, task->get_task().get_context()));
+                    match_tree::MatchTree<formalism::planning::Axiom<GroundTag>>::create(stratum, task->get_task().context()));
         }
 
         TaskPtr<GroundTag> task;
-        std::vector<match_tree::MatchTreePtr<formalism::planning::Axiom<GroundTag>>> match_tree_prototypes;
+        urd::Store<urd::sequence<match_tree::MatchTreePtr<formalism::planning::Axiom<GroundTag>>>> match_tree_prototypes;
     };
 
     struct Evaluator
@@ -65,7 +67,7 @@ struct AxiomEvaluator<GroundTag>::Impl
         }
 
         ygg::ExecutionContextPtr execution_context;
-        std::vector<match_tree::MatchTreePtr<formalism::planning::Axiom<GroundTag>>> match_tree_workers;
+        urd::Store<urd::sequence<match_tree::MatchTreePtr<formalism::planning::Axiom<GroundTag>>>> match_tree_workers;
         formalism::planning::AxiomViewList<GroundTag> applicable_axioms;
     };
 
@@ -114,7 +116,7 @@ AxiomEvaluatorPtr<GroundTag> AxiomEvaluator<GroundTag>::make_worker(ygg::Executi
                                                                                              m_impl->next_index)));
 }
 
-void AxiomEvaluator<GroundTag>::compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder)
+void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>>& state_builder)
 {
     auto state_context = StateContext<GroundTag> { *m_impl->definition->task, state_builder, static_cast<ygg::float_t>(0) };
 

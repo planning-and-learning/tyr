@@ -19,6 +19,8 @@
 #define TYR_DATALOG_LIFTED_STATIC_EXTENSIONS_HPP_
 
 #include "tyr/algorithms/kckp/kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
 
 #include <span>
@@ -30,16 +32,16 @@ namespace tyr::datalog
 /// Scratch of for_each_static_extension.
 struct StaticExtensionWorkspace
 {
-    std::vector<kckp::Vertex> prefix;
+    urd::Store<urd::sequence<kckp::Vertex>> prefix;
     kckp::Workspace kckp;
-    ygg::IndexList<formalism::Object> extension;
+    urd::flat_vector<urd::index<formalism::Object>> extension;
 };
 
 /// Calls `callback` with the objects of the rule's remaining variables for each binding that extends the objects of its first
 /// variables and is consistent with the rule's static consistency graph: the pairwise static constraints of its body.
 template<formalism::RelationKind R, typename Callback>
 void for_each_static_extension(const ConstRuleWorkspace<LiftedTag, R>& rule,
-                               std::span<const ygg::Index<formalism::Object>> prefix,
+                               std::span<const urd::index<formalism::Object>> prefix,
                                StaticExtensionWorkspace& workspace,
                                Callback callback)
 {
@@ -50,7 +52,7 @@ void for_each_static_extension(const ConstRuleWorkspace<LiftedTag, R>& rule,
     workspace.prefix.clear();
     for (ygg::uint_t partition = 0; partition < prefix.size(); ++partition)
     {
-        const auto vertex = layout.find_vertex(partition, static_cast<ygg::uint_t>(prefix[partition]));
+        const auto vertex = layout.find_vertex(partition, static_cast<ygg::uint_t>(prefix[partition].value));
         if (!vertex)
             return;
         workspace.prefix.push_back(*vertex);
@@ -63,8 +65,8 @@ void for_each_static_extension(const ConstRuleWorkspace<LiftedTag, R>& rule,
         {
             workspace.extension.clear();
             for (const auto vertex : extension)
-                workspace.extension.push_back(ygg::Index<formalism::Object>(layout.vertex_labels[vertex.index]));
-            callback(std::span<const ygg::Index<formalism::Object>>(workspace.extension.data(), workspace.extension.size()));
+                workspace.extension.push_back(urd::index<formalism::Object>(layout.vertex_labels[vertex.index]));
+            callback(std::span<const urd::index<formalism::Object>>(workspace.extension.data(), workspace.extension.size()));
         });
 }
 

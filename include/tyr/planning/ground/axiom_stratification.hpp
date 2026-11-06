@@ -18,10 +18,13 @@
 #ifndef TYR_PLANNING_GROUND_AXIOM_STRATIFICATION_HPP_
 #define TYR_PLANNING_GROUND_AXIOM_STRATIFICATION_HPP_
 
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <vector>
-#include <yggdrasil/core/types.hpp>
 
 namespace tyr::planning
 {
@@ -30,7 +33,7 @@ using GroundAxiomStratum = formalism::planning::AxiomViewList<GroundTag>;
 
 struct GroundAxiomStrata
 {
-    std::vector<GroundAxiomStratum> data;
+    urd::Store<urd::sequence<GroundAxiomStratum>> data;
 };
 
 /// @brief Compute the rule stratification for the rules in the given program.

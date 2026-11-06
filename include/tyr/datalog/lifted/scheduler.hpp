@@ -29,13 +29,17 @@
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cassert>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <boost/dynamic_bitset.hpp>
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
 {
@@ -54,20 +58,20 @@ public:
 
     void on_start_iteration() noexcept;
 
-    void on_generate(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate);
-    void on_generate(ygg::Index<formalism::Function<formalism::FluentTag>> function);
+    void on_generate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate);
+    void on_generate(urd::index<formalism::Function<formalism::FluentTag>> function);
 
     void on_finish_iteration();
 
     [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return *m_context; }
-    [[nodiscard]] const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_rules() const noexcept { return *m_rules; }
+    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_rules() const noexcept { return *m_rules; }
 
     /// Active rules in sorted index order: hash-set iteration order is platform-unspecified, but the
     /// rule processing order assigns program-repository rows (first-derivation order) that delta
     /// bitsets are indexed by, so it must be identical on every platform.
-    [[nodiscard]] const ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
+    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
-    [[nodiscard]] bool requires_full_enumeration(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept
+    [[nodiscard]] bool requires_full_enumeration(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept
     { return m_full_enumeration_rules.contains(rule); }
 
 private:
@@ -79,9 +83,9 @@ private:
 
     boost::dynamic_bitset<> m_active_predicates;
     boost::dynamic_bitset<> m_active_functions;
-    ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>> m_active_rules;
-    ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>> m_full_enumeration_rules;
-    ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>> m_sorted_active_rules;
+    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>> m_active_rules;
+    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>> m_full_enumeration_rules;
+    urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>> m_sorted_active_rules;
 };
 
 template<>
@@ -148,15 +152,15 @@ public:
 private:
     void activate_all();
     void on_start_iteration() noexcept;
-    void activate(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate);
-    void activate(ygg::Index<formalism::Function<formalism::FluentTag>> function);
+    void activate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate);
+    void activate(urd::index<formalism::Function<formalism::FluentTag>> function);
     void on_finish_iteration();
 
     TypedRuleSchedulerStratum<formalism::PredicateTag> predicate_rules;
     TypedRuleSchedulerStratum<formalism::FunctionTag> function_rules;
 };
 
-std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& rules,
+urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
                                                     const analysis::ListenerStrata& listeners,
                                                     const formalism::datalog::Repository& context,
                                                     size_t num_fluent_predicates,

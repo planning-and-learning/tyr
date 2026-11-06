@@ -23,15 +23,17 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <cassert>
+#include <gtl/phmap.hpp>
 #include <ranges>
 #include <tuple>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/unordered_set.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/binding_key.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::datalog
 {
@@ -44,13 +46,13 @@ struct ActionCostLookup
 
     [[nodiscard]] auto get_key() const
     {
-        assert(rule_binding.get_data().size() >= action.get_arity());
-        return std::make_pair(action.get_index(), std::views::take(rule_binding.get_data(), action.get_arity()));
+        assert(rule_binding.data().objects.size() >= action.get_arity());
+        return std::make_pair(action.index(), std::views::take(rule_binding.data().objects, action.get_arity()));
     }
 };
 
 template<formalism::RelationKind R>
-struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKey<R>>
+struct NumericTransitionCostKey : urd::compared_by_identity<NumericTransitionCostKey<R>>
 {
     formalism::datalog::RuleBindingIndex<R> rule_key;
     formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key;
@@ -66,7 +68,15 @@ struct NumericTransitionCostKey : ygg::comparison::Mixin<NumericTransitionCostKe
     {
     }
 
-    [[nodiscard]] auto identifying_members() const noexcept { return std::make_tuple(rule_key, numeric_key, lower(interval), upper(interval)); }
+    [[nodiscard]] ygg::float_t lower_bound() const noexcept { return lower(interval); }
+    [[nodiscard]] ygg::float_t upper_bound() const noexcept { return upper(interval); }
+    static constexpr auto identifying_members() noexcept
+    {
+        return urd::Members<&NumericTransitionCostKey::rule_key,
+                            &NumericTransitionCostKey::numeric_key,
+                            &NumericTransitionCostKey::lower_bound,
+                            &NumericTransitionCostKey::upper_bound> {};
+    }
 };
 
 class RuleCostPolicy
@@ -97,8 +107,8 @@ class RuleCostOverrideStorage
 {
     using RuleKey = formalism::datalog::RuleBindingIndex<R>;
     using NumericKey = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
-    using CostMap = ygg::UnorderedMap<RuleKey, Cost>;
-    using NumericTransitionCostMap = ygg::UnorderedMap<NumericTransitionCostKey<R>, Cost>;
+    using CostMap = urd::Store<urd::map<RuleKey, Cost>>;
+    using NumericTransitionCostMap = urd::Store<urd::map<NumericTransitionCostKey<R>, Cost>>;
 
 public:
     RuleCostOverrideStorage() = default;
@@ -144,12 +154,12 @@ class RuleCostOverridePolicy
 {
 public:
     template<formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingIndex<R>, ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
 
 private:
     template<formalism::RelationKind R>
-    using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
+    using RuleToActionMapping = urd::Store<urd::map<Rule<R>, Action>>;
 
 public:
     RuleCostOverridePolicy() = default;
@@ -165,7 +175,7 @@ public:
     [[nodiscard]] Cost get_cost(formalism::datalog::RuleBindingView<R> rule_key) const
     {
         const auto& costs = storage(R {}).get_costs();
-        if (const auto it = costs.find(rule_key.get_index()); it != costs.end())
+        if (const auto it = costs.find(rule_key.index()); it != costs.end())
             return it->second;
         return get_action_cost(rule_key);
     }
@@ -213,7 +223,7 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto action = rule_to_action->find(rule_binding.get_index());
+        const auto action = rule_to_action->find(rule_binding.index());
         if (action == rule_to_action->end())
             return static_cast<Cost>(0);
         const auto cost = m_action_costs.find(action->second.get_row());
@@ -228,8 +238,8 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto action = rule_to_action->find(rule_binding.get_index().relation);
-        if (action == rule_to_action->end() || rule_binding.get_data().size() < action->second.get_arity())
+        const auto action = rule_to_action->find(rule_binding.index().relation);
+        if (action == rule_to_action->end() || rule_binding.data().objects.size() < action->second.get_arity())
             return static_cast<Cost>(0);
         const auto cost = m_action_costs.find(ActionCostLookup<R> { action->second, rule_binding });
         return cost == m_action_costs.end() ? static_cast<Cost>(0) : cost->second;
@@ -239,7 +249,7 @@ private:
     RuleCostOverrideStorage<formalism::FunctionTag> function_storage;
     const RuleToActionMapping<formalism::PredicateTag>* m_predicate_rule_to_action { nullptr };
     const RuleToActionMapping<formalism::FunctionTag>* m_function_rule_to_action { nullptr };
-    ygg::UnorderedMap<formalism::planning::ActionBindingView, Cost, ygg::formalism::BindingKeyHash, ygg::formalism::BindingKeyEqualTo> m_action_costs;
+    gtl::flat_hash_map<formalism::planning::ActionBindingView, Cost, ygg::formalism::BindingKeyHash, ygg::formalism::BindingKeyEqualTo> m_action_costs;
 };
 
 }

@@ -19,53 +19,36 @@
 #define TYR_FORMALISM_PLANNING_UNARY_OPERATOR_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_expression_data.hpp"
 
 #include <stdexcept>
 #include <tuple>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
-template<::tyr::TaskKind T>
-struct Data<::tyr::formalism::planning::UnaryOperator<T>>
+template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
+struct data<::tyr::formalism::planning::UnaryOperator<T, O>>
 {
-    using Operand = ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>;
-    using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
+    static_assert(std::same_as<O, ::tyr::formalism::ArithmeticOperatorKind>);
+    using Operand = ::tyr::formalism::planning::FunctionExpression<T>;
+    using OperatorType = O;
 
-    ygg::Index<::tyr::formalism::planning::UnaryOperator<T>> index;
+    urd::index<::tyr::formalism::planning::UnaryOperator<T, O>> index;
     OperatorType operator_kind = OperatorType::Sub;
     Operand arg;
 
-    Data() = default;
-    Data(OperatorType operator_kind_, Operand arg_) : index(), operator_kind(operator_kind_), arg(arg_)
+    data() = default;
+    data(OperatorType operator_kind_, Operand arg_) : index(), operator_kind(operator_kind_), arg(arg_)
     {
         if (!is_unary(operator_kind))
             throw std::invalid_argument("unary operator must be Sub");
     }
-    // Python constructor
-    template<typename C>
-    Data(OperatorType operator_kind_, ::ygg::View<Operand, C> arg_) : index(), operator_kind(operator_kind_), arg()
-    {
-        if (!is_unary(operator_kind))
-            throw std::invalid_argument("unary operator must be Sub");
-        set(arg_, arg);
-    }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::arg> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::arg> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::arg> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::arg> {}; }
 };
-
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::UnaryOperator<::tyr::LiftedTag>>);
 
 }
 

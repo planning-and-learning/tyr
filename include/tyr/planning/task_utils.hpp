@@ -19,6 +19,8 @@
 #define TYR_PLANNING_TASK_UTILS_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
@@ -42,45 +44,45 @@ namespace tyr::planning
 namespace detail
 {
 
-void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
+void insert_fluent_atoms_to_fact_set(const urd::data<State<GroundTag>>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<GroundTag>::FluentToFluentAtomMapping& fluent_to_fluent_atom,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
+void insert_numeric_variables_to_fact_set(const urd::data<State<GroundTag>>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<GroundTag>::FluentToFluentFunctionTermMapping& fluent_to_fluent_fterm,
                                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+void insert_fluent_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<LiftedTag>::FluentToFluentPredicateMapping& fluent_to_fluent_predicate,
                                      formalism::planning::MergeDatalogContext& merge_context,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+void insert_derived_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                       const formalism::planning::Repository& repository,
                                       const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
                                       formalism::planning::MergeDatalogContext& merge_context,
                                       datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+void insert_numeric_variables_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<LiftedTag>::FluentToFluentFunctionMapping& fluent_to_fluent_function,
                                           formalism::planning::MergeDatalogContext& merge_context,
                                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
+void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,
                                       const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                                      std::vector<formalism::datalog::PredicateBindingView<formalism::FluentTag>>& derived_bindings);
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>>& derived_bindings);
 
 }
 
 template<TaskKind Kind, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<Kind>>& state,
+void insert_fluent_atoms_to_fact_set(const urd::data<State<Kind>>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<Kind>& translation_context,
                                      datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
@@ -97,7 +99,7 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<Kind>>& state,
 }
 
 template<TaskKind Kind, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_numeric_variables_to_fact_set(const ygg::Builder<State<Kind>>& state,
+void insert_numeric_variables_to_fact_set(const urd::data<State<Kind>>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<Kind>& translation_context,
                                           datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
@@ -118,7 +120,7 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<Kind>>& state
 }
 
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+void insert_derived_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                       const formalism::planning::Repository& repository,
                                       const P2DTranslationContext<LiftedTag>& translation_context,
                                       datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
@@ -130,7 +132,7 @@ void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& stat
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
 /// ProgramExecutionContext populates assignment indices after insertion.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state,
+void insert_extended_state(const urd::data<State<LiftedTag>>& state,
                            const formalism::planning::Repository& repository,
                            const P2DTranslationContext<LiftedTag>& translation_context,
                            datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
@@ -143,7 +145,7 @@ void insert_extended_state(const ygg::Builder<State<LiftedTag>>& state,
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
 /// ProgramExecutionContext populates lifted assignment indices after insertion.
 template<TaskKind Kind, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_unextended_state(const ygg::Builder<State<Kind>>& state,
+void insert_unextended_state(const urd::data<State<Kind>>& state,
                              const formalism::planning::Repository& repository,
                              const P2DTranslationContext<Kind>& translation_context,
                              datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
@@ -153,11 +155,11 @@ void insert_unextended_state(const ygg::Builder<State<Kind>>& state,
 }
 
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
+void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>& translation_context,
                                       datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace,
-                                      std::vector<formalism::datalog::PredicateBindingView<formalism::FluentTag>>& derived_bindings)
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>>& derived_bindings)
 {
     detail::read_derived_atoms_from_fact_set(state,
                                              repository,

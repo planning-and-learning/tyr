@@ -19,20 +19,21 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_CONDITION_HPP_
 
 #include "tyr/formalism/planning/mutable/literal.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 #include <cstddef>
 #include <tuple>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
-struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCondition>
+struct MutableConjunctiveCondition : urd::compared_by_identity<MutableConjunctiveCondition>
 {
     size_t num_parent_variables = 0;
     size_t num_variables = 0;
@@ -70,7 +71,7 @@ struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCo
 
     static constexpr auto identifying_members() noexcept
     {
-        return ygg::Members<&MutableConjunctiveCondition::num_parent_variables,
+        return urd::Members<&MutableConjunctiveCondition::num_parent_variables,
                             &MutableConjunctiveCondition::num_variables,
                             &MutableConjunctiveCondition::static_literals,
                             &MutableConjunctiveCondition::fluent_literals,
@@ -78,7 +79,7 @@ struct MutableConjunctiveCondition : ygg::comparison::Mixin<MutableConjunctiveCo
     }
 };
 
-using MutableConjunctiveConditionList = std::vector<MutableConjunctiveCondition>;
+using MutableConjunctiveConditionList = urd::Store<urd::sequence<MutableConjunctiveCondition>>;
 }
 
 namespace tyr::formalism::unification

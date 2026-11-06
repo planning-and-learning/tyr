@@ -17,7 +17,7 @@ namespace tyr::analysis
 {
 
 template<formalism::RelationKind R>
-using RuleCompatibilityGraphMap = ygg::UnorderedMap<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>, kckp::Graph>;
+using RuleCompatibilityGraphMap = urd::Store<urd::map<urd::index<formalism::datalog::Rule<LiftedTag, R>>, kckp::Graph>>;
 
 struct ProgramCompatibilityGraphs
 {
@@ -32,7 +32,7 @@ struct ProgramCompatibilityGraphs
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 };
 

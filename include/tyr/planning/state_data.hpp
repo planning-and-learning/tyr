@@ -27,24 +27,27 @@
 #include <tuple>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/core/dependent_false.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
-namespace ygg
+namespace tyr::planning
 {
-template<::tyr::TaskKind Kind>
-struct Data<::tyr::planning::State<Kind>>
+/// A registered state as its repository stores it, packed (StateRepository::packed): its index and its packed
+/// storage. It compares by its fluent facts and numeric values, by which the repository deduplicates states; its
+/// derived atoms follow from them.
+template<TaskKind Kind>
+struct PackedState
 {
-    ygg::Index<::tyr::planning::State<Kind>> index;
-    ::tyr::planning::FactPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> fact_storage;
-    ::tyr::planning::AtomPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> atom_storage;
-    ::tyr::planning::NumericPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> numeric_storage;
+    urd::index<State<Kind>> index;
+    FactPackedStorage<Kind, StateStoragePolicyTag> fact_storage;
+    AtomPackedStorage<Kind, StateStoragePolicyTag> atom_storage;
+    NumericPackedStorage<Kind, StateStoragePolicyTag> numeric_storage;
 
-    Data() = default;
-    Data(::tyr::planning::FactPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> fact_storage_,
-         ::tyr::planning::AtomPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> atom_storage_,
-         ::tyr::planning::NumericPackedStorage<Kind, ::tyr::planning::StateStoragePolicyTag> numeric_storage_) :
+    PackedState() = default;
+    PackedState(FactPackedStorage<Kind, StateStoragePolicyTag> fact_storage_,
+                AtomPackedStorage<Kind, StateStoragePolicyTag> atom_storage_,
+                NumericPackedStorage<Kind, StateStoragePolicyTag> numeric_storage_) :
         index(),
         fact_storage(fact_storage_),
         atom_storage(atom_storage_),
@@ -52,32 +55,34 @@ struct Data<::tyr::planning::State<Kind>>
     {
     }
 
-    ygg::Index<::tyr::planning::State<Kind>> get_index() const noexcept { return index; }
+    urd::index<State<Kind>> get_index() const noexcept { return index; }
 
-    template<::tyr::formalism::FactKind T>
+    template<formalism::FactKind T>
     auto get_atom_storage() const noexcept
     {
-        if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
+        if constexpr (std::same_as<T, formalism::FluentTag>)
             return fact_storage;
-        else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
+        else if constexpr (std::same_as<T, formalism::DerivedTag>)
             return atom_storage;
         else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
     }
 
     auto get_numeric_variables() const noexcept { return numeric_storage; }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fact_storage, &Data::atom_storage, &Data::numeric_storage> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fact_storage, &Data::numeric_storage> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    friend bool operator==(const PackedState& lhs, const PackedState& rhs) { return urd::EqualTo<PackedState> {}(lhs, rhs); }
+
+    static constexpr auto cista_members() noexcept
+    { return urd::Members<&PackedState::index, &PackedState::fact_storage, &PackedState::atom_storage, &PackedState::numeric_storage> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&PackedState::fact_storage, &PackedState::numeric_storage> {}; }
 };
 
-template<::tyr::TaskKind Kind>
-bool is_canonical(const ygg::Data<::tyr::planning::State<Kind>>&) noexcept
+template<TaskKind Kind>
+bool is_canonical(const PackedState<Kind>&) noexcept
 { return true; }
 
-template<::tyr::TaskKind Kind>
-void canonicalize(ygg::Data<::tyr::planning::State<Kind>>&) noexcept
+template<TaskKind Kind>
+void canonicalize(PackedState<Kind>&) noexcept
 {
 }
 }

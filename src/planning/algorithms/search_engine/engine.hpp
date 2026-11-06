@@ -49,9 +49,11 @@
 #include <optional>
 #include <random>
 #include <stdexcept>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/portable_shuffle.hpp>
 
 namespace tyr::planning::detail
@@ -65,12 +67,12 @@ enum class ExpansionResult : uint8_t
 };
 
 template<TaskKind Kind, typename SearchNode>
-SearchNode& get_or_create_search_node(ygg::Index<State<Kind>> state_index, ygg::SegmentedVector<SearchNode>& search_nodes, const SearchNode& default_node)
+SearchNode& get_or_create_search_node(urd::index<State<Kind>> state_index, urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes, const SearchNode& default_node)
 {
-    while (static_cast<ygg::uint_t>(state_index) >= search_nodes.size())
+    while (static_cast<ygg::uint_t>(state_index.value) >= search_nodes.size())
         search_nodes.push_back(default_node);
 
-    return search_nodes[static_cast<ygg::uint_t>(state_index)];
+    return search_nodes[static_cast<ygg::uint_t>(state_index.value)];
 }
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, ExecutionPolicyConcept<Kind, SearchPolicy> ExecutionPolicy>
@@ -95,7 +97,7 @@ public:
 
     struct WorkerData
     {
-        WorkerData(ygg::Index<Worker> index_,
+        WorkerData(urd::index<Worker> index_,
                    StateRepository<Kind>& state_repository_,
                    AxiomEvaluator<Kind>& axiom_evaluator_,
                    SuccessorGenerator<Kind>& successor_generator_,
@@ -112,13 +114,13 @@ public:
             successor_generator(&successor_generator_),
             heuristic(&heuristic_),
             search(heuristic_, options),
-            rng(options.random_seed + static_cast<ygg::uint_t>(index)),
+            rng(options.random_seed + static_cast<ygg::uint_t>(index.value)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
         { assert(num_state_owners > 0); }
 
-        WorkerData(ygg::Index<Worker> index_,
+        WorkerData(urd::index<Worker> index_,
                    StateRepositoryPtr<Kind> state_repository_,
                    AxiomEvaluatorPtr<Kind> axiom_evaluator_,
                    SuccessorGeneratorPtr<Kind> successor_generator_,
@@ -139,21 +141,21 @@ public:
             successor_generator(owned_successor_generator.get()),
             heuristic(owned_heuristic.get()),
             search(*heuristic, options),
-            rng(options.random_seed + static_cast<ygg::uint_t>(index)),
+            rng(options.random_seed + static_cast<ygg::uint_t>(index.value)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
         { assert(num_state_owners > 0); }
 
-        ygg::Index<State<Kind>> get_search_node_index(ygg::Index<State<Kind>> state) const noexcept
+        urd::index<State<Kind>> get_search_node_index(urd::index<State<Kind>> state) const noexcept
         { return ExecutionPolicy::search_node_index(state, index, num_state_owners); }
 
-        SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
+        SearchNode& initialize_start(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
         { return search.initialize_start(get_search_node_index(state), g_value, h_value); }
 
-        SearchNode& get_search_node(ygg::Index<State<Kind>> state) { return search.get_search_node(get_search_node_index(state)); }
+        SearchNode& get_search_node(urd::index<State<Kind>> state) { return search.get_search_node(get_search_node_index(state)); }
 
-        ygg::Index<Worker> index;
+        urd::index<Worker> index;
         size_t num_state_owners { 1 };
         StateRepositoryPtr<Kind> owned_state_repository;
         AxiomEvaluatorPtr<Kind> owned_axiom_evaluator;
@@ -161,14 +163,14 @@ public:
         HeuristicPtr<Kind> owned_heuristic;
         // Never null: they point at the owned objects or at the caller's.
         StateRepository<Kind>* state_repository;
-        std::vector<StateRepositoryPtr<Kind>> registration_repositories;
+        urd::Store<urd::sequence<StateRepositoryPtr<Kind>>> registration_repositories;
         AxiomEvaluator<Kind>* axiom_evaluator;
         SuccessorGenerator<Kind>* successor_generator;
         Heuristic<Kind>* heuristic;
         SearchPolicy search;
         WorkerExecutionState execution;
         std::mt19937_64 rng;
-        std::vector<formalism::planning::ActionBindingView> applicable_actions;
+        urd::Store<urd::sequence<formalism::planning::ActionBindingView>> applicable_actions;
         StateDelta successor_delta;
         PruningStrategyPtr<Kind> pruning_strategy;
         GoalStrategyPtr<Kind> goal_strategy;
@@ -201,7 +203,7 @@ public:
 
     [[nodiscard]] size_t num_workers() const noexcept { return m_workers.size(); }
 
-    WorkerData& get_worker(ygg::Index<Worker> index) noexcept { return m_workers.get(index); }
+    WorkerData& get_worker(urd::index<Worker> index) noexcept { return m_workers.get(index); }
 
     std::optional<Statistics> collect_priority_layer_statistics()
     {
@@ -294,7 +296,7 @@ private:
             });
 
         auto [start_owner, start_state] = prepare_start_state();
-        auto& root_worker = get_worker(ygg::Index<Worker>(0));
+        auto& root_worker = get_worker(urd::index<Worker>(0));
 
         if (!root_worker.goal_strategy->is_static_goal_satisfied(*m_task))
         {
@@ -326,7 +328,7 @@ private:
         }
 
         auto& start_worker = get_worker(start_owner);
-        const auto start_state_index = start_state.get_index();
+        const auto start_state_index = start_state.index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
 
         if (start_worker.pruning_strategy->should_prune_state(start_state))
@@ -375,7 +377,7 @@ private:
         }
     }
 
-    std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, m_start_node.get_state()); }
+    std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state() { return m_execution.prepare_start_state(*this, m_start_node.get_state()); }
 
     template<typename Callback>
     bool improve_best_h(ygg::float_t h_value, Callback&& callback)
@@ -455,7 +457,7 @@ private:
         const auto& labeled_successor = routed_successor.labeled_node;
         const auto& successor_node = labeled_successor.node;
         const auto& successor_state = successor_node.get_state();
-        auto& successor_search_node = worker.get_search_node(successor_state.get_index());
+        auto& successor_search_node = worker.get_search_node(successor_state.index());
 
         const auto is_new = successor_search_node.status == SearchNodeStatus::NEW;
         if (is_new && m_options->search_budget.max_num_states && !m_execution.reserve_state(*m_options->search_budget.max_num_states))
@@ -502,12 +504,12 @@ private:
         }
     }
 
-    ygg::float_t evaluate_successor_metric(const ygg::Builder<State<Kind>>& state, ygg::float_t auxiliary_value)
+    ygg::float_t evaluate_successor_metric(const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value)
     { return planning::evaluate_successor_metric(*m_task, state, auxiliary_value); }
 
     void solve(WorkerData& worker, const Node<Kind>& node)
     {
-        const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().get_index() };
+        const auto goal = WorkerStateIndex<Kind> { worker.index, node.get_state().index() };
         if (m_execution.consider_goal(goal, node.get_metric(), SearchPolicy::terminate_on_goal))
             call_worker_event(worker, [&](auto& handler) { handler.on_expand_goal_node(node); });
     }

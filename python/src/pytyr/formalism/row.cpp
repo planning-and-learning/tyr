@@ -16,11 +16,12 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism
 {
 
-void bind_row(nb::module_& m) { ygg::bind_index<ygg::Index<Row>>(m, "RowIndex"); }
+void bind_row(nb::module_& m) { urd::python::bind_index<urd::index<Row>>(m, "RowIndex"); }
 
 }  // namespace tyr::formalism

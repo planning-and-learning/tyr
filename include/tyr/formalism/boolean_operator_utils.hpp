@@ -25,7 +25,7 @@
 #include <iostream>
 #include <type_traits>
 #include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism
 {

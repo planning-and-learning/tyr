@@ -5,18 +5,17 @@
 #include <concepts>
 
 template<typename Entity>
-concept FdrFactContract = std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>>
-                          && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Data<Entity>, tyr::formalism::planning::Repository>& view) {
+concept FdrFactContract = std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::borrowed_view<Entity, tyr::formalism::planning::Repository>>
+                          && requires(urd::data<Entity>& data, const urd::borrowed_view<Entity, tyr::formalism::planning::Repository>& view) {
                                  data.variable;
                                  data.value;
-                                 data.clear();
                                  { data == data } -> std::same_as<bool>;
                                  view.get_variable();
                                  view.get_value();
                                  view.has_value();
                                  {
                                      view.get_atom_index()
-                                 } -> std::same_as<std::optional<ygg::Index<tyr::formalism::planning::Atom<tyr::GroundTag, tyr::formalism::FluentTag>>>>;
+                                 } -> std::same_as<std::optional<urd::index<tyr::formalism::planning::Atom<tyr::GroundTag, tyr::formalism::FluentTag>>>>;
                                  {
                                      view.get_atom()
                                  } -> std::same_as<std::optional<tyr::formalism::planning::AtomView<tyr::GroundTag, tyr::formalism::FluentTag>>>;
@@ -25,5 +24,5 @@ concept FdrFactContract = std::totally_ordered<ygg::Data<Entity>> && std::totall
                              };
 
 static_assert(FdrFactContract<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>);
-static_assert(std::same_as<ygg::View<ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>, tyr::formalism::planning::Repository>,
+static_assert(std::same_as<urd::borrowed_view<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>>);

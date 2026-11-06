@@ -19,6 +19,8 @@
 #define TYR_DATALOG_POLICIES_NUMERIC_SUPPORT_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -52,7 +54,7 @@ public:
 
     void clear() noexcept { selection.clear(); }
 
-    std::vector<SelectionEntry> selection;
+    urd::Store<urd::sequence<SelectionEntry>> selection;
 };
 
 /// Selects fluent interval supports and prices numeric constraints against the
@@ -61,7 +63,7 @@ class NumericSupportSelector
 {
     using Key = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using SelectionEntry = NumericSupportSelectorWorkspace::SelectionEntry;
-    using Selection = std::vector<SelectionEntry>;
+    using Selection = urd::Store<urd::sequence<SelectionEntry>>;
 
 public:
     NumericSupportSelector(const FactSets& fact_sets, const NumericIntervalAnnotations<>& annotations, bool initial_intervals_cost_zero = false);

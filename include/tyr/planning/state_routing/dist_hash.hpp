@@ -19,6 +19,8 @@
 #define TYR_PLANNING_STATE_ROUTING_DIST_HASH_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -30,9 +32,9 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <urd/elements/hash.hpp>
 #include <vector>
-#include <yggdrasil/semantics/containers/dynamic_bitset_hash.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/hash_dynamic_bitset.hpp>
 
 namespace tyr::planning
 {
@@ -48,20 +50,20 @@ public:
 
     void initialize(const StateView<Kind>&) const noexcept {}
 
-    [[nodiscard]] ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept
+    [[nodiscard]] ygg::hash_t hash(const urd::data<State<Kind>>& state) const noexcept
     {
         auto result = static_cast<ygg::hash_t>(m_seed);
-        ygg::hash_combine(result, state.template get_atom_storage<formalism::FluentTag>());
-        ygg::hash_combine(result, state.get_numeric_variables());
+        urd::hash_combine(result, state.template get_atom_storage<formalism::FluentTag>());
+        urd::hash_combine(result, state.get_numeric_variables());
         // Final avalanche over the accumulated hash, using XXH64's 64-bit seed and result.
         return boost::hash2::xxhash_64(result).result();
     }
 
-    [[nodiscard]] ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept
+    [[nodiscard]] urd::index<Worker> owner(const urd::data<State<Kind>>& state, size_t num_workers) const noexcept
     {
         assert(num_workers > 0);
         // The ordinary single-worker search path pays no state-hashing cost.
-        return ygg::Index<Worker>(static_cast<ygg::uint_t>(num_workers == 1 ? 0 : hash(state) % num_workers));
+        return urd::index<Worker>(static_cast<ygg::uint_t>(num_workers == 1 ? 0 : hash(state) % num_workers));
     }
 
 private:
@@ -77,24 +79,24 @@ public:
     /// Select the initial state's unit-cost LM-cut frontier and positive task goals once before routing.
     void initialize(const StateView<Kind>& start_state);
 
-    [[nodiscard]] ygg::hash_t hash(const ygg::Builder<State<Kind>>& state) const noexcept;
+    [[nodiscard]] ygg::hash_t hash(const urd::data<State<Kind>>& state) const noexcept;
 
-    [[nodiscard]] ygg::Index<Worker> owner(const ygg::Builder<State<Kind>>& state, size_t num_workers) const noexcept
+    [[nodiscard]] urd::index<Worker> owner(const urd::data<State<Kind>>& state, size_t num_workers) const noexcept
     {
         assert(num_workers > 0);
-        return ygg::Index<Worker>(static_cast<ygg::uint_t>(num_workers == 1 ? 0 : hash(state) % num_workers));
+        return urd::index<Worker>(static_cast<ygg::uint_t>(num_workers == 1 ? 0 : hash(state) % num_workers));
     }
 
 private:
     struct Feature
     {
-        ygg::Index<formalism::planning::Atom<GroundTag, formalism::FluentTag>> atom;
-        ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact;
+        urd::index<formalism::planning::Atom<GroundTag, formalism::FluentTag>> atom;
+        urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact;
     };
 
     DistHash<Kind, RandomDistHashTag> m_fallback;
     uint64_t m_seed;
-    std::vector<Feature> m_features;
+    urd::Store<urd::sequence<Feature>> m_features;
     bool m_initialized { false };
 };
 

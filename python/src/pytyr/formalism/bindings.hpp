@@ -32,7 +32,6 @@ void bind_variable(nb::module_& m);
 void bind_binding(nb::module_& m);
 void bind_predicate(nb::module_& m);
 void bind_function(nb::module_& m);
-void bind_term(nb::module_& m);
 
 }  // namespace tyr::formalism
 

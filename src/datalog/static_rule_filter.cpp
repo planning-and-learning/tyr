@@ -32,12 +32,12 @@ formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(
                                                                        program.get_functions<formalism::StaticTag>(),
                                                                        program.get_atoms<formalism::StaticTag>(),
                                                                        program.get_fterm_values<formalism::StaticTag>(),
-                                                                       program.get_context());
+                                                                       program.context());
     const auto fluent_fact_sets = TaggedFactSets<formalism::FluentTag>(program.get_predicates<formalism::FluentTag>(),
                                                                        program.get_functions<formalism::FluentTag>(),
                                                                        program.get_atoms<formalism::FluentTag>(),
                                                                        program.get_fterm_values<formalism::FluentTag>(),
-                                                                       program.get_context());
+                                                                       program.context());
     const auto fact_sets = FactSets { static_fact_sets, fluent_fact_sets };
 
     auto builder = formalism::datalog::Builder {};
@@ -49,7 +49,7 @@ formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(
     {
         for (const auto rule : program.get_rules<R>())
             if (is_statically_applicable(rule, fact_sets))
-                result->get_rules<R>().push_back(formalism::datalog::copy(rule, context).first.get_index());
+                result->get_rules<R>().push_back(formalism::datalog::copy(rule, context).first.index());
     };
     merge_applicable_rules.template operator()<formalism::PredicateTag>();
     merge_applicable_rules.template operator()<formalism::FunctionTag>();

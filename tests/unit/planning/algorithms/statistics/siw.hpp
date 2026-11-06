@@ -19,6 +19,8 @@
 #define TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_SIW_HPP_
 
 #include "statistics.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <filesystem>
 #include <tyr/planning/algorithms/brfs.hpp>
@@ -44,7 +46,7 @@ struct SiwCase
     std::filesystem::path domain_file;
     std::filesystem::path task_file;
     ygg::uint_t max_arity;
-    std::vector<std::pair<std::string, SiwExpectation>> configs;
+    urd::Store<urd::sequence<std::pair<std::string, SiwExpectation>>> configs;
 };
 
 inline void PrintTo(const SiwCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
@@ -73,11 +75,11 @@ inline SiwCase parse_case(const boost::json::object& suite, const boost::json::o
     return result;
 }
 
-inline std::vector<SiwCase> load_cases(const std::filesystem::path& fixture)
+inline urd::Store<urd::sequence<SiwCase>> load_cases(const std::filesystem::path& fixture)
 {
     const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");
-    auto result = std::vector<SiwCase> {};
+    auto result = urd::Store<urd::sequence<SiwCase>> {};
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
         result.push_back(parse_case(suite_object, ygg::common::as_object(case_value, "case")));
     return result;

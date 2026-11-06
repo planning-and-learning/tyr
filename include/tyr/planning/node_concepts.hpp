@@ -19,6 +19,8 @@
 #define TYR_PLANNING_NODE_CONCEPTS_HPP_
 
 #include "tyr/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -43,19 +45,19 @@ template<TaskKind Kind,
 struct LabeledNode;
 
 template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
-using NodeList = std::vector<Node<Kind, State>>;
+using NodeList = urd::Store<urd::sequence<Node<Kind, State>>>;
 
 template<TaskKind Kind>
-using PackedNodeList = std::vector<PackedNode<Kind>>;
+using PackedNodeList = urd::Store<urd::sequence<PackedNode<Kind>>>;
 
 template<TaskKind Kind,
          StateViewConcept<Kind> State = StateView<Kind>,
          ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding =
              formalism::planning::ActionBindingView>
-using LabeledNodeList = std::vector<LabeledNode<Kind, State, Binding>>;
+using LabeledNodeList = urd::Store<urd::sequence<LabeledNode<Kind, State, Binding>>>;
 
 template<TaskKind Kind>
-using PackedLabeledNodeList = std::vector<PackedLabeledNode<Kind>>;
+using PackedLabeledNodeList = urd::Store<urd::sequence<PackedLabeledNode<Kind>>>;
 
 template<typename T, typename Kind>
 concept NodeConcept = TaskKind<Kind> && requires(const std::remove_reference_t<T>& cn) {

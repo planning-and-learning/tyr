@@ -16,6 +16,10 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <urd/python/sequences/sequence.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
@@ -31,25 +35,25 @@ template<TaskKind T>
 void bind_multi_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
     using namespace nb::literals;
-    using Tag = MultiOperator<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    using Tag = MultiOperator<T, ArithmeticOperatorKind>;
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str())
-                       .def(nb::init<ArithmeticOperatorKind, const std::vector<FunctionExpressionView<T>>&>(), "operator"_a, "args"_a);
-        cls.def(nb::init<ArithmeticOperatorKind, ygg::DataList<FunctionExpression<T>>>(), "operator"_a, "args"_a);
+                       .def(urd::python::init_from_views<ArithmeticOperatorKind, const urd::Store<urd::sequence<FunctionExpressionView<T>>>&>(), "operator"_a, "args"_a);
+        cls.def(nb::init<ArithmeticOperatorKind, FunctionExpressionList<T>>(), "operator"_a, "args"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
-        using V = MultiOperatorView<T>;
-        auto cls = nb::class_<V>(m, name.c_str()).def("get_index", &V::get_index).def("get_operator", &V::get_operator).def("get_args", &V::get_args);
+        using V = MultiOperatorView<T, ArithmeticOperatorKind>;
+        auto cls = nb::class_<V>(m, name.c_str()).def("get_index", &V::index).def("get_operator", &V::get_operator).def("get_args", &V::get_args);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

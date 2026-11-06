@@ -19,21 +19,22 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_LITERAL_HPP_
 
 #include "tyr/formalism/planning/mutable/atom.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 #include <cstddef>
 #include <tuple>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
 template<FactKind T>
-struct MutableLiteral : ygg::comparison::Mixin<MutableLiteral<T>>
+struct MutableLiteral : urd::compared_by_identity<MutableLiteral<T>>
 {
     MutableAtom<T> atom;
     bool polarity = false;
@@ -42,11 +43,11 @@ struct MutableLiteral : ygg::comparison::Mixin<MutableLiteral<T>>
     MutableLiteral(MutableAtom<T> atom_, bool polarity_) : atom(std::move(atom_)), polarity(polarity_) {}
     MutableLiteral(LiteralView<LiftedTag, T> element) : atom(element.get_atom()), polarity(element.get_polarity()) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&MutableLiteral::atom, &MutableLiteral::polarity> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&MutableLiteral::atom, &MutableLiteral::polarity> {}; }
 };
 
 template<FactKind T>
-using MutableLiteralList = std::vector<MutableLiteral<T>>;
+using MutableLiteralList = urd::Store<urd::sequence<MutableLiteral<T>>>;
 }
 
 namespace tyr::formalism::unification

@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_ACTION_HPP_
 
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
@@ -26,14 +28,13 @@
 
 #include <cstddef>
 #include <tuple>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
-struct MutableAction : ygg::comparison::Mixin<MutableAction>
+struct MutableAction : urd::compared_by_identity<MutableAction>
 {
     size_t num_variables = 0;
     MutableConjunctiveCondition condition;
@@ -53,10 +54,10 @@ struct MutableAction : ygg::comparison::Mixin<MutableAction>
     }
 
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&MutableAction::num_variables, &MutableAction::condition, &MutableAction::effects> {}; }
+    { return urd::Members<&MutableAction::num_variables, &MutableAction::condition, &MutableAction::effects> {}; }
 };
 
-using MutableActionList = std::vector<MutableAction>;
+using MutableActionList = urd::Store<urd::sequence<MutableAction>>;
 }
 
 namespace tyr::formalism::unification

@@ -19,13 +19,16 @@
 #define TYR_PLANNING_STATE_STORAGE_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
 #include <limits>
 #include <tuple>
 #include <vector>
-#include <yggdrasil/containers/vector.hpp>
+#include "tyr/containers.hpp"
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -83,13 +86,13 @@ struct FactUnpackedStorage;
 template<TaskKind Kind>
 struct NumericUnpackedStorage
 {
-    std::vector<ygg::float_t> values;
+    urd::Store<urd::sequence<ygg::float_t>> values;
 
-    [[nodiscard]] ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
-    { return ygg::get(static_cast<ygg::uint_t>(index), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
-    void set(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
+    [[nodiscard]] ygg::float_t get(urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
+    { return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    void set(urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
     {
-        ygg::set(static_cast<ygg::uint_t>(index),
+        tyr::set(static_cast<ygg::uint_t>(index.value),
                  ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
                  values,
                  std::numeric_limits<ygg::float_t>::quiet_NaN());
@@ -97,7 +100,7 @@ struct NumericUnpackedStorage
     void clear() { values.clear(); }
     void swap(NumericUnpackedStorage& other) noexcept { values.swap(other.values); }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericUnpackedStorage::values> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&NumericUnpackedStorage::values> {}; }
 };
 
 }

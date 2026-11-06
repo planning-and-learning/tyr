@@ -59,7 +59,7 @@ struct StratumExecutionContext
     StratumExecutionContext(Scheduler<LiftedTag>& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}
 
     template<formalism::RelationKind R>
-    auto get_rule_execution_context(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule)
+    auto get_rule_execution_context(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule)
     { return RuleExecutionContext<R, AP, TP, CP> { rule, *this }; }
 
     [[nodiscard]] const auto& in() const noexcept { return m_in; }

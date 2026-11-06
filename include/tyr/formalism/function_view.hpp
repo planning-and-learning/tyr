@@ -20,19 +20,20 @@
 
 #include "tyr/formalism/declarations.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
-template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::Function<T>> C>
-class View<ygg::Index<::tyr::formalism::Function<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::Function<T>, C>
+template<::tyr::formalism::FactKind T, typename V>
+struct view_mixin<::tyr::formalism::Function<T>, V>
 {
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::formalism::Function<T>> handle, const C& context) noexcept : ygg::IndexViewBase<::tyr::formalism::Function<T>, C>(handle, context) {}
-
-    const auto& get_name() const noexcept { return this->get_data().name; }
-    auto get_arity() const noexcept { return this->get_data().arity; }
+    const auto& get_name() const noexcept { return self().data().name; }
+    auto get_arity() const noexcept { return self().data().arity; }
 };
-}
+}  // namespace urd
 
 #endif

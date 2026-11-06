@@ -19,6 +19,8 @@
 #define TYR_DATALOG_LIFTED_CONTEXTS_PROGRAM_HPP_
 
 #include "tyr/datalog/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/lifted/workspaces/rule.hpp"
@@ -54,7 +56,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     class Out
     {
     public:
-        Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers) : m_ws(&ws), m_schedulers(&schedulers) {}
+        Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, urd::Store<urd::sequence<Scheduler<LiftedTag>>>& schedulers) : m_ws(&ws), m_schedulers(&schedulers) {}
 
         auto& facts() noexcept { return m_ws->facts; }
         [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
@@ -95,7 +97,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 
     private:
         ProgramWorkspace<LiftedTag, AP, TP, CP>* m_ws;
-        std::vector<Scheduler<LiftedTag>>* m_schedulers;
+        urd::Store<urd::sequence<Scheduler<LiftedTag>>>* m_schedulers;
     };
 
     explicit ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, size_t num_threads = 1) :
@@ -104,7 +106,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     }
 
     /// Schedulers must use the workspace's repository and a subset of its rules.
-    ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1) :
+    ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, urd::Store<urd::sequence<Scheduler<LiftedTag>>>& schedulers, size_t num_threads = 1) :
         ProgramExecutionContext(In(*ws.const_workspace), Out(ws, schedulers), num_threads)
     { clear(); }
 
@@ -113,7 +115,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     { return from_reset_workspace(ws, ws.schedulers, num_threads); }
 
     static ProgramExecutionContext
-    from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, std::vector<Scheduler<LiftedTag>>& schedulers, size_t num_threads = 1)
+    from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, urd::Store<urd::sequence<Scheduler<LiftedTag>>>& schedulers, size_t num_threads = 1)
     {
         auto context = ProgramExecutionContext(In(*ws.const_workspace), Out(ws, schedulers), num_threads);
         context.initialize();
@@ -167,7 +169,7 @@ private:
         {
             for (const auto binding : set.get_bindings())
             {
-                out.annotation_policy().initialize_annotation(binding.get_index(), out.annotations());
+                out.annotation_policy().initialize_annotation(binding.index(), out.annotations());
                 out.facts().assignment_sets.predicate.insert(binding);
             }
         }
@@ -179,7 +181,7 @@ private:
             assert(bindings.size() == values.size());
             for (size_t i = 0; i < bindings.size(); ++i)
             {
-                out.annotation_policy().initialize_annotation(bindings[i].get_index(), values[i], out.numeric_annotations());
+                out.annotation_policy().initialize_annotation(bindings[i].index(), values[i], out.numeric_annotations());
                 out.facts().assignment_sets.function.insert(bindings[i], values[i]);
             }
         }
@@ -199,7 +201,7 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, size_t) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, std::vector<Scheduler<LiftedTag>>&, size_t = 1)
+ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, urd::Store<urd::sequence<Scheduler<LiftedTag>>>&, size_t = 1)
     -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 }
 

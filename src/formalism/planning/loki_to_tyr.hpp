@@ -29,12 +29,15 @@
 #include <ranges>
 #include <string>
 #include <unordered_set>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -73,12 +76,12 @@ private:
     /* Computed in prepare step */
 
     // For type analysis of predicates.
-    std::unordered_set<std::string> m_fluent_predicates;   ///< Fluent predicates that appear in an effect
-    std::unordered_set<std::string> m_derived_predicates;  ///< Derived predicates
+    urd::Store<urd::set<std::string>, urd::stable_refs> m_fluent_predicates;   ///< Fluent predicates that appear in an effect
+    urd::Store<urd::set<std::string>, urd::stable_refs> m_derived_predicates;  ///< Derived predicates
 
     // For type analysis of functions.
-    std::unordered_set<std::string> m_fexpr_functions;            ///< Functions that appear in a lifted function expression, i.e., numeric effect or constraint
-    std::unordered_set<std::string> m_effect_function_skeletons;  ///< Functions that appear in an effect
+    urd::Store<urd::set<std::string>, urd::stable_refs> m_fexpr_functions;            ///< Functions that appear in a lifted function expression, i.e., numeric effect or constraint
+    urd::Store<urd::set<std::string>, urd::stable_refs> m_effect_function_skeletons;  ///< Functions that appear in an effect
 
     template<std::ranges::input_range Range>
     void prepare(const Range& range)
@@ -87,14 +90,6 @@ private:
     }
     template<typename T>
     void prepare(const std::optional<T>& element)
-    {
-        if (element.has_value())
-        {
-            this->prepare(element.value());
-        }
-    }
-    template<typename T, typename C>
-    void prepare(const ygg::View<::cista::optional<T>, C>& element)
     {
         if (element.has_value())
         {
@@ -134,13 +129,13 @@ private:
     {
         ParameterIndexMapping() = default;
 
-        ygg::UnorderedMap<ygg::Index<Variable>, ParameterIndex> map;
+        urd::Store<urd::map<urd::index<Variable>, ParameterIndex>> map;
 
-        void push_parameters(const ygg::IndexList<Variable>& parameters);
+        void push_parameters(const urd::flat_vector<urd::index<Variable>>& parameters);
 
-        void pop_parameters(const ygg::IndexList<Variable>& parameters);
+        void pop_parameters(const urd::flat_vector<urd::index<Variable>>& parameters);
 
-        ParameterIndex lookup_parameter_index(ygg::Index<Variable> variable);
+        ParameterIndex lookup_parameter_index(urd::index<Variable> variable);
     };
 
     ParameterIndexMapping m_param_map;
@@ -156,13 +151,13 @@ private:
 
     FunctionViewVariant translate_common(loki::formalism::FunctionSkeletonView element, Builder& builder, Repository& context);
 
-    ygg::Index<Object> translate_common(loki::formalism::ObjectView element, Builder& builder, Repository& context);
+    urd::index<Object> translate_common(loki::formalism::ObjectView element, Builder& builder, Repository& context);
 
-    ygg::Index<Variable> translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context);
+    urd::index<Variable> translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context);
 
     PredicateViewVariant translate_common(loki::formalism::PredicateView element, Builder& builder, Repository& context);
 
-    ygg::Index<Variable> translate_common(loki::formalism::VariableView element, Builder& builder, Repository& context);
+    urd::index<Variable> translate_common(loki::formalism::VariableView element, Builder& builder, Repository& context);
 
     /**
      * Lifted translation.
@@ -177,56 +172,56 @@ private:
             output.push_back(this->translate_lifted(element, builder, context));
     }
 
-    ygg::Data<Term> translate_lifted(loki::formalism::TermView element, Builder& builder, Repository& context);
+    Term translate_lifted(loki::formalism::TermView element, Builder& builder, Repository& context);
 
     AtomViewVariant translate_lifted(loki::formalism::AtomView element, Builder& builder, Repository& context);
 
     LiteralViewVariant translate_lifted(loki::formalism::LiteralView element, Builder& builder, Repository& context);
 
-    ygg::Data<FunctionExpression<LiftedTag>>
+    FunctionExpression<LiftedTag>
     translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                      Builder& builder,
                      Repository& context);
 
-    ygg::Data<FunctionExpression<LiftedTag>>
+    FunctionExpression<LiftedTag>
     translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
                      Builder& builder,
                      Repository& context);
 
-    ygg::Data<FunctionExpression<LiftedTag>>
+    FunctionExpression<LiftedTag>
     translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
                      Builder& builder,
                      Repository& context);
 
-    ygg::Data<FunctionExpression<LiftedTag>>
+    FunctionExpression<LiftedTag>
     translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
                      Builder& builder,
                      Repository& context);
 
-    ygg::Data<FunctionExpression<LiftedTag>> translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
+    FunctionExpression<LiftedTag> translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
     FunctionTermViewVariant translate_lifted(loki::formalism::FunctionTermView element, Builder& builder, Repository& context);
 
-    ygg::Data<BooleanOperator<LiftedTag>>
+    urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>
     translate_lifted(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element,
                      Builder& builder,
                      Repository& context);
 
-    ygg::Index<ConjunctiveCondition<LiftedTag>>
-    translate_lifted(loki::formalism::ConditionView element, const ygg::IndexList<Variable>& parameters, Builder& builder, Repository& context);
+    urd::index<ConjunctiveCondition<LiftedTag>>
+    translate_lifted(loki::formalism::ConditionView element, const urd::flat_vector<urd::index<Variable>>& parameters, Builder& builder, Repository& context);
 
     NumericEffectViewVariant
     translate_lifted(loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>> element, Builder& builder, Repository& context);
 
     void translate_lifted(loki::formalism::EffectView element,
-                          const ygg::IndexList<Variable>& parameters,
+                          const urd::flat_vector<urd::index<Variable>>& parameters,
                           Builder& builder,
                           Repository& context,
-                          ygg::IndexList<ConditionalEffect<LiftedTag>>& output);
+                          urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>& output);
 
-    ygg::Index<Action<LiftedTag>> translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context);
+    urd::index<Action<LiftedTag>> translate_lifted(loki::formalism::ActionView element, Builder& builder, Repository& context);
 
-    ygg::Index<Axiom<LiftedTag>> translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context);
+    urd::index<Axiom<LiftedTag>> translate_lifted(loki::formalism::AxiomView element, Builder& builder, Repository& context);
 
     /**
      * Grounded translation
@@ -241,7 +236,7 @@ private:
             output.push_back(this->translate_grounded(element, builder, context));
     }
 
-    ygg::Index<Object> translate_grounded(loki::formalism::TermView element, Builder& builder, Repository& context);
+    urd::index<Object> translate_grounded(loki::formalism::TermView element, Builder& builder, Repository& context);
 
     GroundAtomViewVariant translate_grounded(loki::formalism::AtomView element, Builder& builder, Repository& context);
 
@@ -251,41 +246,41 @@ private:
 
     GroundLiteralOrFactViewVariant translate_grounded(loki::formalism::LiteralView element, Builder& builder, Repository& context, FDRContext& fdr_context);
 
-    ygg::Data<FunctionExpression<GroundTag>>
+    FunctionExpression<GroundTag>
     translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                        Builder& builder,
                        Repository& context);
 
-    ygg::Data<FunctionExpression<GroundTag>>
+    FunctionExpression<GroundTag>
     translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
                        Builder& builder,
                        Repository& context);
 
-    ygg::Data<FunctionExpression<GroundTag>>
+    FunctionExpression<GroundTag>
     translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
                        Builder& builder,
                        Repository& context);
 
-    ygg::Data<FunctionExpression<GroundTag>>
+    FunctionExpression<GroundTag>
     translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
                        Builder& builder,
                        Repository& context);
 
-    ygg::Data<FunctionExpression<GroundTag>> translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
+    FunctionExpression<GroundTag> translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
     GroundFunctionTermViewVariant translate_grounded(loki::formalism::FunctionTermView element, Builder& builder, Repository& context);
 
     GroundFunctionTermValueViewVariant translate_grounded(loki::formalism::InitialFunctionValueView element, Builder& builder, Repository& context);
 
-    ygg::Data<BooleanOperator<GroundTag>>
+    urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>
     translate_grounded(loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>> element,
                        Builder& builder,
                        Repository& context);
 
-    ygg::Index<ConjunctiveCondition<GroundTag>>
+    urd::index<ConjunctiveCondition<GroundTag>>
     translate_grounded(loki::formalism::ConditionView element, Builder& builder, Repository& context, FDRContext& fdr_context);
 
-    ygg::Index<Metric> translate_grounded(loki::formalism::MetricView element, Builder& builder, Repository& context);
+    urd::index<Metric> translate_grounded(loki::formalism::MetricView element, Builder& builder, Repository& context);
 
 public:
     LokiToTyrTranslator() = default;

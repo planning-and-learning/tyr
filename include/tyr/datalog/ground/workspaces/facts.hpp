@@ -22,8 +22,10 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 

@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism::planning
@@ -28,37 +29,37 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
 {
     using namespace nb::literals;
     using Tag = Axiom<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<const VariableViewList&, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "variables"_a, "body"_a, "head"_a);
-            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, ygg::Index<Atom<LiftedTag, DerivedTag>>>(),
+            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "variables"_a, "body"_a, "head"_a);
+            cls.def(nb::init<urd::flat_vector<urd::index<Variable>>, urd::index<ConjunctiveCondition<LiftedTag>>, urd::index<Atom<LiftedTag, DerivedTag>>>(),
                     "variables"_a,
                     "body"_a,
                     "head"_a);
         }
         else
         {
-            cls.def(nb::init<AxiomBindingView, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "binding"_a, "body"_a, "head"_a);
+            cls.def(urd::python::init_from_views<AxiomBindingView, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "binding"_a, "body"_a, "head"_a);
             cls.def(
-                nb::init<ygg::Index<RelationBinding<Axiom<LiftedTag>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, ygg::Index<Atom<GroundTag, DerivedTag>>>(),
+                nb::init<ygg::formalism::RelationBindingIndex<Axiom<LiftedTag>, ::tyr::formalism::ObjectTag>, urd::index<ConjunctiveCondition<GroundTag>>, urd::index<Atom<GroundTag, DerivedTag>>>(),
                 "binding"_a,
                 "body"_a,
                 "head"_a);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = AxiomView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_arity", &V::get_arity);
@@ -73,8 +74,8 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
         cls.def("get_body", &V::get_body, nb::keep_alive<0, 1>());
         cls.def("get_head", &V::get_head, nb::keep_alive<0, 1>());
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

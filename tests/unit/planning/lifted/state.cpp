@@ -1,3 +1,4 @@
+#include "tyr/containers.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
@@ -5,22 +6,24 @@
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/state_data.hpp"
+#include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>
+#include <boost/dynamic_bitset.hpp>
 #include <concepts>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <yggdrasil/execution/onetbb.hpp>
 
 using Entity = tyr::planning::State<tyr::LiftedTag>;
-using Index = ygg::Index<Entity>;
-using Data = ygg::Data<Entity>;
-using Builder = ygg::Builder<Entity>;
-using View = ygg::View<Index, std::shared_ptr<tyr::planning::StateRepository<tyr::LiftedTag>>>;
+using Index = urd::index<Entity>;
+using Data = urd::data<Entity>;
+using Builder = urd::builder<Entity>;
+using View = tyr::planning::StateView<tyr::LiftedTag>;
 
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
@@ -40,7 +43,7 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     builder.template get_atoms_view<tyr::formalism::FluentTag>(repository);
     builder.template get_atoms_view<tyr::formalism::DerivedTag>(repository);
     builder.template get_fterm_values_view<tyr::formalism::FluentTag>(repository);
-    view.get_index();
+    view.index();
     view.template get_atoms<::tyr::formalism::StaticTag>();
     view.get_fluent_facts();
     view.template get_atoms<tyr::formalism::FluentTag>();
@@ -54,19 +57,19 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     view.template get_fterm_values_view<tyr::formalism::FluentTag>();
     view.get_formalism_repository();
     view.get_state_repository();
-    view.get_state_builder();
+    view.data();
 });
 
 TEST(TyrPlanningLiftedStateTest, ClearResetsRegistrationWithoutReallocatingVectorStorage)
 {
-    auto builder = ygg::Builder<Entity> {};
+    auto builder = urd::builder<Entity> {};
     builder.set(Index(7));
     builder.get_numeric_variables().values.resize(64);
     const auto numeric_capacity = builder.get_numeric_variables().values.capacity();
 
     builder.clear();
 
-    EXPECT_TRUE(builder.get_index().is_max());
+    EXPECT_TRUE(builder.get_index().is_none());
     EXPECT_EQ(builder.get_numeric_variables().values.capacity(), numeric_capacity);
 }
 
@@ -101,22 +104,22 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     const auto initial = source_repository->get_initial_state(*axioms);
     const auto derived = initial.template get_atoms<::tyr::formalism::DerivedTag>();
     ASSERT_FALSE(derived.begin() == derived.end());
-    auto source = initial.get_state_builder();
+    auto source = urd::builder<tyr::planning::State<tyr::LiftedTag>> { initial.data() };
     source.set(Index {});
-    const auto borrowed = ygg::make_view(source, *task);
+    const auto borrowed = urd::resolve(source, *source_repository);
     auto target = tyr::planning::StateRepositoryFactory<tyr::LiftedTag>().create(task);
     auto warm = target->get_state_builder();
     warm->get_numeric_variables().values.reserve(64);
     const auto slot = warm.get();
-    const auto buffer = warm->get_numeric_variables().values.data();
+    const auto buffer = std::ranges::data(warm->get_numeric_variables().values);
     const auto capacity = warm->get_numeric_variables().values.capacity();
     warm = {};
 
     const auto retained = target->register_extended_state(borrowed);
-    EXPECT_EQ(&retained.get_state_builder(), slot);
-    EXPECT_EQ(retained.get_state_builder().get_numeric_variables().values.data(), buffer);
-    EXPECT_EQ(retained.get_state_builder().get_numeric_variables().values.capacity(), capacity);
-    EXPECT_TRUE(source.get_index().is_max());
+    EXPECT_EQ(&retained.data(), slot);
+    EXPECT_EQ(std::ranges::data(retained.data().get_numeric_variables().values), buffer);
+    EXPECT_EQ(retained.data().get_numeric_variables().values.capacity(), capacity);
+    EXPECT_TRUE(source.get_index().is_none());
     EXPECT_TRUE(std::ranges::equal(source.get_fluent_facts(), initial.get_fluent_facts()));
     EXPECT_TRUE(std::ranges::equal(source.template get_atoms<tyr::formalism::DerivedTag>(*task->get_repository()),
                                    initial.template get_atoms<tyr::formalism::DerivedTag>()));
@@ -129,9 +132,62 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     EXPECT_EQ(foreign->num_states(), 0);
 
     source.clear();
-    target.reset();
     EXPECT_TRUE(std::ranges::equal(retained.get_fluent_facts(), initial.get_fluent_facts()));
     EXPECT_TRUE(std::ranges::equal(retained.template get_atoms<::tyr::formalism::DerivedTag>(), initial.template get_atoms<::tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(
         std::ranges::equal(retained.template get_fterm_values<tyr::formalism::FluentTag>(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
+}
+
+TEST(TyrPlanningLiftedStateTest, BitsetHelpersTreatOutOfRangeTestAsFalseAndResizeOnSet)
+{
+    auto bitset = boost::dynamic_bitset<>();
+
+    EXPECT_FALSE(tyr::test(3, bitset));
+
+    tyr::set(3, true, bitset);
+    EXPECT_EQ(bitset.size(), 4);
+    EXPECT_TRUE(tyr::test(3, bitset));
+
+    tyr::set(6, false, bitset);
+    EXPECT_EQ(bitset.size(), 7);
+    EXPECT_FALSE(tyr::test(6, bitset));
+    EXPECT_TRUE(tyr::test(3, bitset));
+}
+
+TEST(TyrPlanningLiftedStateTest, TrimTrailingZerosEndsAtLastSetBit)
+{
+    auto bitset = boost::dynamic_bitset<>(10);
+    bitset.set(2);
+    bitset.set(7);
+
+    tyr::planning::trim_trailing_zeros(bitset);
+    EXPECT_EQ(bitset.size(), 8);
+
+    bitset.reset(7);
+    tyr::planning::trim_trailing_zeros(bitset);
+    EXPECT_EQ(bitset.size(), 3);
+    EXPECT_TRUE(bitset.test(2));
+
+    bitset.reset();
+    tyr::planning::trim_trailing_zeros(bitset);
+    EXPECT_TRUE(bitset.empty());
+
+    // Block boundaries and many trailing zero blocks.
+    auto sparse = boost::dynamic_bitset<>(100001);
+    sparse.set(3);
+    sparse.set(63);
+    sparse.set(64);
+    sparse.set(100000);
+    tyr::planning::trim_trailing_zeros(sparse);
+    EXPECT_EQ(sparse.size(), 100001);
+    sparse.reset(100000);
+    tyr::planning::trim_trailing_zeros(sparse);
+    EXPECT_EQ(sparse.size(), 65);
+    sparse.reset(64);
+    tyr::planning::trim_trailing_zeros(sparse);
+    EXPECT_EQ(sparse.size(), 64);
+    sparse.reset(63);
+    tyr::planning::trim_trailing_zeros(sparse);
+    EXPECT_EQ(sparse.size(), 4);
+    EXPECT_TRUE(sparse.test(3));
 }

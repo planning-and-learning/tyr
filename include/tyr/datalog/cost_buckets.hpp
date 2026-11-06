@@ -24,14 +24,17 @@
 #include <algorithm>
 #include <cassert>
 #include <limits>
-#include <map>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/wrappers/recycling.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
 {
@@ -44,8 +47,8 @@ public:
 
 private:
     using Interval = ygg::ClosedInterval<ygg::float_t>;
-    using PredicateBucket = ygg::UnorderedSet<PredicateKey>;
-    using FunctionBucket = ygg::UnorderedMap<FunctionKey, Interval>;
+    using PredicateBucket = urd::Store<urd::set<PredicateKey>>;
+    using FunctionBucket = urd::Store<urd::map<FunctionKey, Interval>>;
 
 public:
     struct Bucket
@@ -54,26 +57,28 @@ public:
         FunctionBucket function;
 
         [[nodiscard]] bool empty() const noexcept { return predicate.empty() && function.empty(); }
+        /// Empties the bucket, keeping its storage for the next cost (CostBuckets' erased buckets are kept).
+        void clear()
+        {
+            predicate.clear();
+            function.clear();
+        }
     };
 
-    void clear() noexcept
-    {
-        while (!m_buckets.empty())
-            recycle(m_buckets.extract(m_buckets.begin()));
-    }
+    void clear() noexcept { m_buckets.clear(); }
 
     [[nodiscard]] bool is_empty() const noexcept { return m_buckets.empty(); }
 
     [[nodiscard]] Cost min_cost() const noexcept { return m_buckets.empty() ? std::numeric_limits<Cost>::max() : m_buckets.begin()->first; }
 
-    bool insert(Cost cost, PredicateKey key) { return get_bucket(cost).predicate.insert(key).second; }
+    bool insert(Cost cost, PredicateKey key) { return m_buckets[cost].predicate.insert(key).second; }
 
     bool insert(Cost cost, FunctionKey key, Interval interval)
     {
         if (empty(interval))
             return false;
 
-        auto& bucket = get_bucket(cost).function;
+        auto& bucket = m_buckets[cost].function;
         const auto [it, inserted] = bucket.emplace(key, interval);
         if (inserted)
             return true;
@@ -92,7 +97,7 @@ public:
 
         const auto erased = it->second.predicate.erase(key) > 0;
         if (it->second.empty())
-            recycle(m_buckets.extract(it));
+            m_buckets.erase(it);
         return erased;
     }
 
@@ -106,44 +111,12 @@ public:
 
     Bucket& at(Cost cost) { return m_buckets.at(cost); }
 
-    bool erase(Cost cost)
-    {
-        auto node = m_buckets.extract(cost);
-        const auto erased = !node.empty();
-        recycle(std::move(node));
-        return erased;
-    }
+    bool erase(Cost cost) { return m_buckets.erase(cost) > 0; }
 
 private:
-    void recycle(std::map<Cost, Bucket>::node_type node) noexcept
-    {
-        if (node.empty())
-            return;
-        node.mapped().predicate.clear();
-        node.mapped().function.clear();
-        assert(m_free.size() < m_free.capacity());
-        m_free.push_back(std::move(node));
-    }
-
-    Bucket& get_bucket(Cost cost)
-    {
-        if (const auto it = m_buckets.find(cost); it != m_buckets.end())
-            return it->second;
-        if (!m_free.empty())
-        {
-            auto node = std::move(m_free.back());
-            m_free.pop_back();
-            node.key() = cost;
-            return m_buckets.insert(std::move(node)).position->second;
-        }
-        // Reserve before creating a node so reset and recycling never allocate.
-        if (m_free.capacity() <= m_buckets.size())
-            m_free.reserve(std::max(m_buckets.size() + 1, m_free.capacity() * 2));
-        return m_buckets.try_emplace(cost).first->second;
-    }
-
-    std::map<Cost, Bucket> m_buckets;
-    std::vector<std::map<Cost, Bucket>::node_type> m_free;
+    /// The buckets by cost, least first; an erased bucket is kept, emptied, for the next cost (retains), and a bucket
+    /// stays where it is while others come and go (stable_refs).
+    urd::Store<urd::map<Cost, Bucket>, urd::sorted, urd::retains, urd::stable_refs> m_buckets;
 };
 
 }

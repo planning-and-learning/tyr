@@ -24,36 +24,32 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
-#include <yggdrasil/containers/array.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<::tyr::TaskKind T, typename V>
+struct view_mixin<::tyr::formalism::planning::Axiom<T>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Axiom<T>> C>
-class View<ygg::Index<::tyr::formalism::planning::Axiom<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Axiom<T>, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::planning::Axiom<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::Axiom<T>, C>(handle, context)
-    {
-    }
-
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return get_body().get_arity(); }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return ygg::make_view(this->get_data().variables, this->get_context()); }
-    auto get_body() const noexcept { return ygg::make_view(this->get_data().body, this->get_context()); }
-    auto get_head() const noexcept { return ygg::make_view(this->get_data().head, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::variables>(); }
+    auto get_body() const noexcept { return self().template get<&urd::record_of<V>::body>(); }
+    auto get_head() const noexcept { return self().template get<&urd::record_of<V>::head>(); }
 
     auto get_axiom() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_relation(); }
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return ygg::make_view(this->get_data().binding, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::binding>(); }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_objects(); }
@@ -61,7 +57,6 @@ public:
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_key(); }
 };
-
-}
+}  // namespace urd
 
 #endif

@@ -31,6 +31,7 @@
 
 #include <cstddef>
 #include <yggdrasil/core/config.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::datalog
 {
@@ -149,10 +150,10 @@ struct RuleExecutionContext
         RuleWorkspace<LiftedTag, R>* m_ws_rule;
     };
 
-    RuleExecutionContext(ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
+    RuleExecutionContext(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule, StratumExecutionContext<AP, TP, CP>& ctx) :
         m_ctx(&ctx),
         m_in(get_cws_rule(ctx.in().program().template get_rules<R>(), rule)),
-        m_out(*ctx.out().program().template get_rules<R>()[ygg::uint_t(rule)])
+        m_out(*ctx.out().program().template get_rules<R>()[ygg::uint_t(rule.value)])
     {
     }
 
@@ -178,10 +179,10 @@ struct RuleExecutionContext
 
 private:
     /// Every rule a stratum schedules has a const workspace.
-    static const ConstRuleWorkspace<LiftedTag, R>& get_cws_rule(const auto& cws_rules, ygg::Index<formalism::datalog::Rule<LiftedTag, R>> rule) noexcept
+    static const ConstRuleWorkspace<LiftedTag, R>& get_cws_rule(const auto& cws_rules, urd::index<formalism::datalog::Rule<LiftedTag, R>> rule) noexcept
     {
-        const auto& cws_rule = cws_rules[ygg::uint_t(rule)];
-        YGG_ASSUME(cws_rule.has_value());
+        const auto& cws_rule = cws_rules[ygg::uint_t(rule.value)];
+        URD_ASSUME(cws_rule.has_value());
         return *cws_rule;
     }
 

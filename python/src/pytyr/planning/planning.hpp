@@ -19,6 +19,9 @@
 #define TYR_PYTHON_PLANNING_PLANNING_HPP_
 
 #include "module.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <urd/python/sequences/sequence.hpp>
 
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/function.h>
@@ -36,7 +39,7 @@
 
 namespace tyr::planning
 {
-using ygg::bind_index;
+using urd::python::bind_index;
 
 template<typename Range, typename Value>
 class OwningIterator
@@ -92,11 +95,11 @@ void bind_packed_state(nb::module_& m, const std::string& name)
     using T = PackedStateView<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("get_index", &T::get_index, nb::rv_policy::copy)
-                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
-                   .def("unpack", &T::unpack);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+                   .def("get_index", &T::index, nb::rv_policy::copy)
+                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
+                   .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<TaskKind Kind>
@@ -106,10 +109,10 @@ void bind_state(nb::module_& m, const std::string& name)
     using T = StateView<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("get_index", &T::get_index, nb::rv_policy::copy)
+                   .def("get_index", &T::index, nb::rv_policy::copy)
                    .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
-                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
-                   .def("pack", &T::pack)
+                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
+                   .def("pack", &T::pack, nb::keep_alive<0, 1>())
                    // AccessibleStateConcept
                    .def("test",
                         nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
@@ -124,15 +127,15 @@ void bind_state(nb::module_& m, const std::string& name)
                         nb::rv_policy::copy,
                         "derived_atom"_a)
                    .def("get",
-                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>(&T::get, nb::const_),
+                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>(&T::value, nb::const_),
                         nb::rv_policy::copy,
                         "static_fterm"_a)
                    .def("get",
-                        nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::get, nb::const_),
+                        nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::value, nb::const_),
                         nb::rv_policy::copy,
                         "fluent_variable"_a)
                    .def("get",
-                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>(&T::get, nb::const_),
+                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>(&T::value, nb::const_),
                         nb::rv_policy::copy,
                         "fluent_fterm"_a)
                    // IterableStateConcept
@@ -150,7 +153,7 @@ void bind_state(nb::module_& m, const std::string& name)
                        "fluent_facts",
                        [](const T& s)
                        {
-                           return make_owning_iterator<formalism::planning::FDRFactView<formalism::FluentTag>>(nb::type<T>(),
+                           return make_owning_iterator<urd::owned_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>(nb::type<T>(),
                                                                                                                "fluent facts iterator",
                                                                                                                s.get_fluent_facts_view());
                        },
@@ -196,21 +199,21 @@ void bind_state(nb::module_& m, const std::string& name)
                        },
                        nb::keep_alive<0, 1>());
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<TaskKind Kind>
-void bind_state_builder(nb::module_& m, const std::string& name)
+void bind_state_data(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
-    using T = ygg::Builder<State<Kind>>;
+    using T = urd::data<State<Kind>>;
 
     nb::class_<T>(m, name.c_str(), "Owning read-only state snapshot that remains valid after the callback returns.")
         .def("get", nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::get, nb::const_), "fluent_variable"_a)
         .def(
             "get",
-            [](const T& state, formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fterm) { return state.get(fterm.get_index()); },
+            [](const T& state, formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fterm) { return state.get(fterm.index()); },
             "fluent_fterm"_a)
         .def("test", nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_), "derived_atom"_a);
 }
@@ -222,13 +225,13 @@ void bind_node(nb::module_& m, const std::string& name)
     using T = Node<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())
-                   .def(nb::init<StateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a)
+                   .def(nb::init<StateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a, nb::keep_alive<1, 2>())
                    .def("get_state", &T::get_state, nb::rv_policy::reference_internal)
                    .def("get_metric", &T::get_metric, nb::rv_policy::copy)
-                   .def("pack", &T::pack);
+                   .def("pack", &T::pack, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<TaskKind Kind>
@@ -238,13 +241,13 @@ void bind_packed_node(nb::module_& m, const std::string& name)
     using T = PackedNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())
-                   .def(nb::init<PackedStateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a)
+                   .def(nb::init<PackedStateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a, nb::keep_alive<1, 2>())
                    .def("get_state", &T::get_state, nb::rv_policy::reference_internal)
                    .def("get_metric", &T::get_metric, nb::rv_policy::copy)
-                   .def("unpack", &T::unpack);
+                   .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<TaskKind Kind>
@@ -254,10 +257,10 @@ void bind_labeled_node(nb::module_& m, const std::string& name)
     using T = LabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<formalism::planning::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a)
+                   .def(nb::init<formalism::planning::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
-                   .def_ro("node", &T::node, nb::rv_policy::copy)
-                   .def("pack", &T::pack);
+                   .def_ro("node", &T::node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
+                   .def("pack", &T::pack, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
 }
 
@@ -268,10 +271,10 @@ void bind_packed_labeled_node(nb::module_& m, const std::string& name)
     using T = PackedLabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<formalism::planning::ActionBindingView, PackedNode<Kind>>(), "label"_a, "node"_a)
+                   .def(nb::init<formalism::planning::ActionBindingView, PackedNode<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
-                   .def_ro("node", &T::node, nb::rv_policy::copy)
-                   .def("unpack", &T::unpack);
+                   .def_ro("node", &T::node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
+                   .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
 }
 
@@ -282,14 +285,14 @@ void bind_plan(nb::module_& m, const std::string& name)
     using T = Plan<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<Node<Kind>>(), "start_node"_a)
-                   .def(nb::init<Node<Kind>, LabeledNodeList<Kind>>(), "start_node"_a, "labeled_succ_nodes"_a)
-                   .def("get_start_node", &T::get_start_node, nb::rv_policy::copy)
+                   .def(nb::init<Node<Kind>>(), "start_node"_a, nb::keep_alive<1, 2>())
+                   .def(nb::init<Node<Kind>, LabeledNodeList<Kind>>(), "start_node"_a, "labeled_succ_nodes"_a, nb::keep_alive<1, 2>())
+                   .def("get_start_node", &T::get_start_node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
                    .def("get_labeled_succ_nodes", &T::get_labeled_succ_nodes, nb::rv_policy::copy)
                    .def("get_cost", &T::get_cost)
                    .def("get_length", &T::get_length)
                    .def("empty", &T::empty)
-                   .def("pack", &T::pack);
+                   .def("pack", &T::pack, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
 }
 
@@ -300,14 +303,14 @@ void bind_packed_plan(nb::module_& m, const std::string& name)
     using T = PackedPlan<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<PackedNode<Kind>>(), "start_node"_a)
-                   .def(nb::init<PackedNode<Kind>, PackedLabeledNodeList<Kind>>(), "start_node"_a, "labeled_succ_nodes"_a)
-                   .def("get_start_node", &T::get_start_node, nb::rv_policy::copy)
+                   .def(nb::init<PackedNode<Kind>>(), "start_node"_a, nb::keep_alive<1, 2>())
+                   .def(nb::init<PackedNode<Kind>, PackedLabeledNodeList<Kind>>(), "start_node"_a, "labeled_succ_nodes"_a, nb::keep_alive<1, 2>())
+                   .def("get_start_node", &T::get_start_node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
                    .def("get_labeled_succ_nodes", &T::get_labeled_succ_nodes, nb::rv_policy::copy)
                    .def("get_cost", &T::get_cost)
                    .def("get_length", &T::get_length)
                    .def("empty", &T::empty)
-                   .def("unpack", &T::unpack);
+                   .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
 }
 
@@ -328,28 +331,51 @@ void bind_state_repository(nb::module_& m, const std::string& name)
     nb::class_<T>(m, name.c_str())  //
         .def("get_worker_index", &T::get_worker_index)
         .def("get_index", &T::get_index)
-        .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a)
-        .def("get_registered_state", &T::get_registered_state, nb::rv_policy::move, "state_index"_a)
+        .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a, nb::keep_alive<0, 1>())
+        .def("get_registered_state", &T::get_registered_state, nb::rv_policy::move, "state_index"_a, nb::keep_alive<0, 1>())
         .def("is_concurrent", &T::is_concurrent)
         .def("num_states", &T::num_states)
         .def("memory_usage", &T::memory_usage)
         .def("create_state",
-             nb::overload_cast<AxiomEvaluator<Kind>&,
-                               const std::vector<ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>>&,
-                               const std::vector<std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>&>(
+             static_cast<StateView<Kind> (T::*)(AxiomEvaluator<Kind>&,
+                                                const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>&,
+                                                const urd::Store<urd::sequence<std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&)>(
                  &T::create_state),
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
-             "fterm_values"_a)
+             "fterm_values"_a,
+             nb::keep_alive<0, 1>())
         .def("create_state",
-             nb::overload_cast<AxiomEvaluator<Kind>&,
-                               const std::vector<formalism::planning::FDRFactView<formalism::FluentTag>>&,
-                               const std::vector<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>&>(&T::create_state),
+             &T::template create_state<formalism::planning::FDRFactView<formalism::FluentTag>>,
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
-             "fterm_values"_a);
+             "fterm_values"_a,
+             nb::keep_alive<0, 1>())
+        .def("create_state",
+             &T::template create_state<urd::owned_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>,
+             nb::rv_policy::move,
+             "axiom_evaluator"_a,
+             "fluent_facts"_a,
+             "fterm_values"_a,
+             nb::keep_alive<0, 1>());
+}
+
+/// Runs visit(repository, emit) without the GIL, `emit` handing each value to `callback`; the values borrow the
+/// repository, so each keeps the Python state repository alive.
+template<TaskKind Kind, typename Value, typename Visit>
+auto for_each_retaining(nb::handle state_repository, const nb::callable& callback, Visit visit)
+{
+    auto& repository = nb::cast<StateRepository<Kind>&>(state_repository);
+    const auto emit = std::function<bool(Value)>(
+        [&](Value value)
+        {
+            nb::gil_scoped_acquire gil;
+            return nb::cast<bool>(callback(nb::cast(std::move(value), nb::rv_policy::move, state_repository)));
+        });
+    nb::gil_scoped_release release;
+    return visit(repository, emit);
 }
 
 template<TaskKind Kind>
@@ -361,10 +387,10 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
     auto cls = nb::class_<T>(m, name.c_str());
 
     cls.def("get_index", &T::get_index)
-        .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
-        .def("get_node", &T::get_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a)
-        .def("get_packed_initial_node", &T::get_packed_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
-        .def("get_packed_node", &T::get_packed_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a);
+        .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a, nb::keep_alive<0, 2>())
+        .def("get_node", &T::get_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a, nb::keep_alive<0, 2>())
+        .def("get_packed_initial_node", &T::get_packed_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a, nb::keep_alive<0, 2>())
+        .def("get_packed_node", &T::get_packed_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a, nb::keep_alive<0, 2>());
 
     cls.def("get_applicable_action_bindings",
             nb::overload_cast<const Node<Kind>&>(&T::template get_applicable_action_bindings<StateView<Kind>>),
@@ -386,14 +412,16 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "node"_a,
             "binding"_a,
             "state_repository"_a,
-            "axiom_evaluator"_a)
+            "axiom_evaluator"_a,
+            nb::keep_alive<0, 4>())
         .def("get_successor_node",
              nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
              "state_repository"_a,
-             "axiom_evaluator"_a);
+             "axiom_evaluator"_a,
+             nb::keep_alive<0, 4>());
 
     cls.def("get_successor_nodes",
             nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_successor_nodes<StateView<Kind>>),
@@ -435,14 +463,16 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "node"_a,
             "binding"_a,
             "state_repository"_a,
-            "axiom_evaluator"_a)
+            "axiom_evaluator"_a,
+            nb::keep_alive<0, 4>())
         .def("get_packed_successor_node",
              nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
              "state_repository"_a,
-             "axiom_evaluator"_a);
+             "axiom_evaluator"_a,
+             nb::keep_alive<0, 4>());
 
     cls.def("get_packed_successor_nodes",
             nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_packed_successor_nodes<StateView<Kind>>),
@@ -479,47 +509,79 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              "axiom_evaluator"_a,
              nb::call_guard<nb::gil_scoped_release>());
 
-    cls.def("for_each_successor_node",
-            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(Node<Kind>)>&>(
-                &T::template for_each_successor_node<StateView<Kind>>),
+    cls.def(
+           "for_each_successor_node",
+           [](T& self,
+              const Node<Kind>& node,
+              nb::typed<nb::handle, StateRepository<Kind>> state_repository,
+              AxiomEvaluator<Kind>& axiom_evaluator,
+              const nb::typed<nb::callable, bool(Node<Kind>)>& callback)
+           {
+               return for_each_retaining<Kind, Node<Kind>>(state_repository,
+                                                           callback,
+                                                           [&](auto& repository, const auto& emit)
+                                                           { return self.for_each_successor_node(node, repository, axiom_evaluator, emit); });
+           },
+           "node"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           "callback"_a)
+        .def(
+            "for_each_successor_node",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<LiftedTag> action,
+               nb::typed<nb::handle, StateRepository<Kind>> state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator,
+               const nb::typed<nb::callable, bool(Node<Kind>)>& callback)
+            {
+                return for_each_retaining<Kind, Node<Kind>>(state_repository,
+                                                            callback,
+                                                            [&](auto& repository, const auto& emit)
+                                                            { return self.for_each_successor_node(node, action, repository, axiom_evaluator, emit); });
+            },
             "node"_a,
+            "action"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            "callback"_a,
-            nb::call_guard<nb::gil_scoped_release>())
-        .def("for_each_successor_node",
-             nb::overload_cast<const Node<Kind>&,
-                               formalism::planning::ActionView<LiftedTag>,
-                               StateRepository<Kind>&,
-                               AxiomEvaluator<Kind>&,
-                               const std::function<bool(Node<Kind>)>&>(&T::template for_each_successor_node<StateView<Kind>>),
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a,
-             "callback"_a,
-             nb::call_guard<nb::gil_scoped_release>());
+            "callback"_a);
 
-    cls.def("for_each_labeled_successor_node",
-            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&, const std::function<bool(LabeledNode<Kind>)>&>(
-                &T::template for_each_labeled_successor_node<StateView<Kind>>),
+    cls.def(
+           "for_each_labeled_successor_node",
+           [](T& self,
+              const Node<Kind>& node,
+              nb::typed<nb::handle, StateRepository<Kind>> state_repository,
+              AxiomEvaluator<Kind>& axiom_evaluator,
+              const nb::typed<nb::callable, bool(LabeledNode<Kind>)>& callback)
+           {
+               return for_each_retaining<Kind, LabeledNode<Kind>>(state_repository,
+                                                                  callback,
+                                                                  [&](auto& repository, const auto& emit)
+                                                                  { return self.for_each_labeled_successor_node(node, repository, axiom_evaluator, emit); });
+           },
+           "node"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           "callback"_a)
+        .def(
+            "for_each_labeled_successor_node",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<LiftedTag> action,
+               nb::typed<nb::handle, StateRepository<Kind>> state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator,
+               const nb::typed<nb::callable, bool(LabeledNode<Kind>)>& callback)
+            {
+                return for_each_retaining<Kind, LabeledNode<Kind>>(
+                    state_repository,
+                    callback,
+                    [&](auto& repository, const auto& emit) { return self.for_each_labeled_successor_node(node, action, repository, axiom_evaluator, emit); });
+            },
             "node"_a,
+            "action"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            "callback"_a,
-            nb::call_guard<nb::gil_scoped_release>())
-        .def("for_each_labeled_successor_node",
-             nb::overload_cast<const Node<Kind>&,
-                               formalism::planning::ActionView<LiftedTag>,
-                               StateRepository<Kind>&,
-                               AxiomEvaluator<Kind>&,
-                               const std::function<bool(LabeledNode<Kind>)>&>(&T::template for_each_labeled_successor_node<StateView<Kind>>),
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a,
-             "callback"_a,
-             nb::call_guard<nb::gil_scoped_release>());
+            "callback"_a);
 
     if constexpr (std::is_same_v<Kind, LiftedTag>)
         cls.def("get_action_program", &T::get_action_program, nb::rv_policy::reference_internal);
@@ -567,8 +629,8 @@ void bind_search_result(nb::module_& m, const std::string& name)
     nb::class_<T>(m, name.c_str())
         .def(nb::init<>())
         .def_rw("status", &T::status)
-        .def_rw("plan", &T::plan)
-        .def_rw("goal_node", &T::goal_node)
+        .def_rw("plan", &T::plan, nb::for_setter(nb::keep_alive<1, 2>()))
+        .def_rw("goal_node", &T::goal_node, nb::for_setter(nb::keep_alive<1, 2>()))
         .def_rw("cycle_range", &T::cycle_range)
         .def_rw("statistics", &T::statistics)
         .def_rw("worker_statistics", &T::worker_statistics)
@@ -584,11 +646,11 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    [[nodiscard]] GoalStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
+    [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { NB_OVERRIDE_PURE(is_static_goal_satisfied, task); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const ygg::Builder<State<Kind>>& state) override
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const urd::data<State<Kind>>& state) override
     { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
 };
 
@@ -637,7 +699,7 @@ public:
 
     NB_TRAMPOLINE(Base);
 
-    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
+    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(urd::index<Worker> index) const override { NB_OVERRIDE(make_worker, index); }
 
     bool should_prune_state(const StateView<Kind>& state) override { NB_OVERRIDE(should_prune_state, state); }
 
@@ -671,18 +733,18 @@ public:
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 
-    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
+    ygg::float_t evaluate(const urd::data<State<Kind>>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
 
     HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 
     /// A Python override returns None or a set; the set is kept here so the returned pointer stays valid until the next call.
-    const ygg::UnorderedSet<formalism::planning::ActionBindingView>* get_relaxed_plan() const override
+    const urd::Store<urd::set<formalism::planning::ActionBindingView>>* get_relaxed_plan() const override
     {
         constexpr uint64_t nb_hash = nanobind::detail::str_hash("get_relaxed_plan");
         nanobind::detail::ticket nb_ticket(nb_trampoline, "get_relaxed_plan", nb_hash, false);
         if (!nb_ticket.key.is_valid())
             return Base::get_relaxed_plan();
-        m_relaxed_plan = nb::cast<std::optional<ygg::UnorderedSet<formalism::planning::ActionBindingView>>>(nb_trampoline.base().attr(nb_ticket.key)());
+        m_relaxed_plan = nb::cast<std::optional<urd::Store<urd::set<formalism::planning::ActionBindingView>>>>(nb_trampoline.base().attr(nb_ticket.key)());
         return m_relaxed_plan ? &*m_relaxed_plan : nullptr;
     }
 
@@ -690,7 +752,7 @@ private:
     // The inherited constructors keep the access of the base constructors.
     NB_TRAMPOLINE(Base);
 
-    mutable std::optional<ygg::UnorderedSet<formalism::planning::ActionBindingView>> m_relaxed_plan;
+    mutable std::optional<urd::Store<urd::set<formalism::planning::ActionBindingView>>> m_relaxed_plan;
 };
 
 template<TaskKind Kind>
@@ -708,7 +770,7 @@ void bind_heuristic(nb::module_& m, const std::string& name)
             "state"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_relaxed_plan",
-             [](const T& self) -> std::optional<ygg::UnorderedSet<formalism::planning::ActionBindingView>>
+             [](const T& self) -> std::optional<urd::Store<urd::set<formalism::planning::ActionBindingView>>>
              {
                  const auto* plan = self.get_relaxed_plan();
                  return plan ? std::optional(*plan) : std::nullopt;

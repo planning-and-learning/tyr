@@ -22,41 +22,35 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<::tyr::TaskKind T, typename V>
+struct view_mixin<::tyr::formalism::datalog::Program<T>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Program<T>> C>
-class View<ygg::Index<::tyr::formalism::datalog::Program<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::Program<T>, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::datalog::Program<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::datalog::Program<T>, C>(handle, context)
-    {
-    }
-
     template<::tyr::formalism::FactKind F>
     auto get_predicates() const noexcept
-    { return ygg::make_view(this->get_data().template get_predicates<F>(), this->get_context()); }
+    { return urd::resolve(self().data().template get_predicates<F>(), self().context()); }
     template<::tyr::formalism::FactKind F>
     auto get_functions() const noexcept
-    { return ygg::make_view(this->get_data().template get_functions<F>(), this->get_context()); }
-    auto get_objects() const noexcept { return ygg::make_view(this->get_data().objects, this->get_context()); }
+    { return urd::resolve(self().data().template get_functions<F>(), self().context()); }
+    auto get_objects() const noexcept { return self().template get<&urd::record_of<V>::objects>(); }
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept
-    { return ygg::make_view(this->get_data().template get_atoms<F>(), this->get_context()); }
+    { return urd::resolve(self().data().template get_atoms<F>(), self().context()); }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values() const noexcept
-    { return ygg::make_view(this->get_data().template get_fterm_values<F>(), this->get_context()); }
-    auto get_goal() const noexcept { return ygg::make_view(this->get_data().goal, this->get_context()); }
+    { return urd::resolve(self().data().template get_fterm_values<F>(), self().context()); }
+    auto get_goal() const noexcept { return self().template get<&urd::record_of<V>::goal>(); }
     template<::tyr::formalism::RelationKind R>
     auto get_rules() const noexcept
-    { return ygg::make_view(this->get_data().template get_rules<R>(), this->get_context()); }
+    { return urd::resolve(self().data().template get_rules<R>(), self().context()); }
 };
-
-}
+}  // namespace urd
 
 #endif

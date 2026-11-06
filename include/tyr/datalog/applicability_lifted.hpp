@@ -45,9 +45,6 @@ bool evaluate(formalism::datalog::BooleanOperatorView<LiftedTag> element, const 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context);
 
-template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectOperatorView<LiftedTag, T> element, const ApplicabilityContext& context);
-
 /**
  * is_applicable
  */
@@ -95,12 +92,6 @@ template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, T> element, const ApplicabilityContext& context)
 {
     return formalism::evaluate_numeric_effect(element, [&](const auto term) { return evaluate(term, context); });
-}
-
-template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectOperatorView<LiftedTag, T> element, const ApplicabilityContext& context)
-{
-    return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
 }
 
 /**
@@ -155,8 +146,6 @@ extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag
 extern template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, formalism::FluentTag> elements, const ApplicabilityContext& context);
 
 extern template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> element,
-                                                           const ApplicabilityContext& context);
-extern template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> element,
                                                            const ApplicabilityContext& context);
 }
 

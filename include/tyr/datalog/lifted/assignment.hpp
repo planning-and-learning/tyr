@@ -23,7 +23,7 @@
 
 #include <limits>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::datalog
 {
@@ -44,13 +44,14 @@ struct EmptyAssignment
 struct VertexAssignment
 {
     formalism::ParameterIndex index;
-    ygg::Index<formalism::Object> object;
+    urd::index<formalism::Object> object;
 
     VertexAssignment() : index(), object() {}
 
-    VertexAssignment(formalism::ParameterIndex index_, ygg::Index<formalism::Object> object_) : index(index_), object(object_) {}
+    VertexAssignment(formalism::ParameterIndex index_, urd::index<formalism::Object> object_) : index(index_), object(object_) {}
 
-    [[nodiscard]] inline bool is_valid() const noexcept { return index != formalism::ParameterIndex::max() && object != ygg::Index<formalism::Object>::max(); }
+    /// Assigned: an object is set (a default assignment has none).
+    [[nodiscard]] inline bool is_valid() const noexcept { return object != urd::index<formalism::Object>(); }
 };
 
 /**
@@ -61,16 +62,16 @@ struct VertexAssignment
 struct EdgeAssignment
 {
     formalism::ParameterIndex first_index;
-    ygg::Index<formalism::Object> first_object;
+    urd::index<formalism::Object> first_object;
     formalism::ParameterIndex second_index;
-    ygg::Index<formalism::Object> second_object;
+    urd::index<formalism::Object> second_object;
 
     EdgeAssignment() : first_index(), first_object(), second_index(), second_object() {}
 
     EdgeAssignment(formalism::ParameterIndex first_index_,
-                   ygg::Index<formalism::Object> first_object_,
+                   urd::index<formalism::Object> first_object_,
                    formalism::ParameterIndex second_index_,
-                   ygg::Index<formalism::Object> second_object_) :
+                   urd::index<formalism::Object> second_object_) :
         first_index(first_index_),
         first_object(first_object_),
         second_index(second_index_),
@@ -80,8 +81,7 @@ struct EdgeAssignment
 
     [[nodiscard]] inline bool is_valid() const noexcept
     {
-        return (first_index < second_index) && (first_index != formalism::ParameterIndex::max()) && (second_index != formalism::ParameterIndex::max())
-               && (first_object != ygg::Index<formalism::Object>::max()) && (second_object != ygg::Index<formalism::Object>::max());
+        return (first_index < second_index) && (first_object != urd::index<formalism::Object>()) && (second_object != urd::index<formalism::Object>());
     }
 };
 }

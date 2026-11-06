@@ -19,12 +19,13 @@
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_BRFS_HPP_
 
 #include "engine.hpp"
+#include <urd/store.hpp>
+#include <urd/repr/queues/queue.hpp>
 #include "parent_state.hpp"
 #include "tyr/planning/algorithms/brfs.hpp"
 #include "tyr/planning/algorithms/brfs/event_handler.hpp"
 
 #include <cstddef>
-#include <deque>
 #include <limits>
 #include <utility>
 
@@ -100,12 +101,12 @@ public:
     struct PoppedEntry
     {
         ygg::uint_t depth;
-        ygg::Index<State<Kind>> state;
+        urd::index<State<Kind>> state;
     };
 
     BreadthFirstPolicy(Heuristic<Kind>&, const Options&) {}
 
-    SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t, ygg::float_t)
+    SearchNode& initialize_start(urd::index<State<Kind>> state, ygg::float_t, ygg::float_t)
     {
         auto& search_node = get_search_node(state);
         search_node.g_value = 0;
@@ -115,7 +116,7 @@ public:
 
     static constexpr ygg::float_t get_start_priority() noexcept { return 0; }
 
-    void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node) { m_openlist.push_back(PoppedEntry { search_node.g_value, state }); }
+    void open_start(urd::index<State<Kind>> state, const SearchNode& search_node) { m_openlist.push(PoppedEntry { search_node.g_value, state }); }
 
     [[nodiscard]] bool empty() const noexcept { return m_openlist.empty(); }
 
@@ -127,13 +128,13 @@ public:
     PoppedEntry pop()
     {
         const auto entry = m_openlist.front();
-        m_openlist.pop_front();
+        m_openlist.pop();
         return entry;
     }
 
     static constexpr bool should_discard(const PoppedEntry&, ygg::float_t) noexcept { return false; }
 
-    SearchNode& get_search_node(ygg::Index<State<Kind>> state)
+    SearchNode& get_search_node(urd::index<State<Kind>> state)
     {
         static const auto default_node = SearchNode { std::numeric_limits<ygg::uint_t>::max(), ParentPolicy::no_parent(), SearchNodeStatus::NEW };
         return get_or_create_search_node(state, m_search_nodes, default_node);
@@ -156,13 +157,13 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    static SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView)
-    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() }; }
+    static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView)
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric() }; }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
-    void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
-    { m_openlist.push_back(PoppedEntry { static_cast<ygg::uint_t>(g_value), state }); }
+    void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
+    { m_openlist.push(PoppedEntry { static_cast<ygg::uint_t>(g_value), state }); }
 
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
     AcceptanceResult accept_successor(Engine& engine,
@@ -206,14 +207,14 @@ public:
             return AcceptanceResult::TERMINAL;
         }
 
-        open_successor(successor_state.get_index(), g_value, 0, SearchNodeStatus::OPEN, false);
+        open_successor(successor_state.index(), g_value, 0, SearchNodeStatus::OPEN, false);
         emit_transition(TransitionOutcome::OPENED);
         return AcceptanceResult::QUEUED;
     }
 
     static constexpr bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
 
-    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
+    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, urd::index<Worker> index)
     { return event_handler ? event_handler->make_worker(index) : nullptr; }
 
     template<typename Handler>
@@ -224,12 +225,12 @@ public:
     static void on_finish_priority_layer(Handler& handler, ygg::float_t priority, const Statistics& statistics)
     { handler.on_finish_layer(static_cast<ygg::uint_t>(priority), statistics); }
 
-    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
+    [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& get_search_nodes() const noexcept { return m_search_nodes; }
 
 private:
     ygg::uint_t m_current_layer { 0 };
-    ygg::SegmentedVector<SearchNode> m_search_nodes;
-    std::deque<PoppedEntry> m_openlist;
+    urd::Store<urd::sequence<SearchNode>, urd::stable_refs> m_search_nodes;
+    urd::Store<urd::queue<PoppedEntry>, urd::fifo> m_openlist;
 };
 
 // Search nodes are dense in hot loops; these sizes guard their layout.

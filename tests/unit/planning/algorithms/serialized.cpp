@@ -16,6 +16,8 @@
  */
 
 #include "planning/parser.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -104,7 +106,7 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const ygg::Builder<tyr::planning::State<GroundTag>>& state) override
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const urd::data<tyr::planning::State<GroundTag>>& state) override
     {
         static_cast<void>(seed_state);
         static_cast<void>(state);
@@ -115,7 +117,7 @@ public:
 class SatisfiedGoalStrategy : public NeverSatisfiedGoalStrategy
 {
 public:
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const ygg::Builder<tyr::planning::State<GroundTag>>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const urd::data<tyr::planning::State<GroundTag>>&) override { return true; }
 };
 
 class StaticallyImpossibleGoalStrategy : public NeverSatisfiedGoalStrategy
@@ -128,8 +130,8 @@ class TrackingGoalStrategy : public NeverSatisfiedGoalStrategy
 {
 public:
     size_t num_static_calls = 0;
-    std::vector<const tyr::planning::StateRepository<GroundTag>*> seed_repositories;
-    std::vector<ygg::Index<tyr::planning::State<GroundTag>>> seed_indices;
+    urd::Store<urd::sequence<const tyr::planning::StateRepository<GroundTag>*>> seed_repositories;
+    urd::Store<urd::sequence<urd::index<tyr::planning::State<GroundTag>>>> seed_indices;
 
     bool is_static_goal_satisfied(const tyr::planning::Task<GroundTag>&) override
     {
@@ -137,10 +139,10 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const ygg::Builder<tyr::planning::State<GroundTag>>&) override
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const urd::data<tyr::planning::State<GroundTag>>&) override
     {
-        seed_repositories.push_back(seed_state.get_state_repository().get());
-        seed_indices.push_back(seed_state.get_index());
+        seed_repositories.push_back(&seed_state.get_state_repository());
+        seed_indices.push_back(seed_state.index());
         return false;
     }
 };
@@ -380,7 +382,7 @@ TEST(TyrPlanningSerialized, StatisticsAggregatesAndClearsDestinationLockMetrics)
 
 TEST(TyrPlanningSerialized, AStarDefaultWorkerEventsRequireTraceVerbosity)
 {
-    const auto worker = ygg::Index<tyr::planning::Worker>(0);
+    const auto worker = urd::index<tyr::planning::Worker>(0);
     for (const auto verbosity : { 0, 1, 2 })
     {
         EXPECT_EQ(tyr::planning::astar_eager::DefaultEventHandler<GroundTag>(verbosity).make_worker(worker) != nullptr, verbosity >= 2);
@@ -407,8 +409,8 @@ TEST(TyrPlanningSerialized, BrfsEventHandlerClearsProgressSnapshotsOnSearchStart
     EXPECT_TRUE(event_handler.get_progress_statistics().empty());
     EXPECT_EQ(event_handler.get_progress_statistics().size(), 0);
 
-    EXPECT_EQ(event_handler.make_worker(ygg::Index<tyr::planning::Worker>(0)), nullptr);
-    EXPECT_NE(tyr::planning::brfs::DefaultEventHandler<GroundTag>(2).make_worker(ygg::Index<tyr::planning::Worker>(0)), nullptr);
+    EXPECT_EQ(event_handler.make_worker(urd::index<tyr::planning::Worker>(0)), nullptr);
+    EXPECT_NE(tyr::planning::brfs::DefaultEventHandler<GroundTag>(2).make_worker(urd::index<tyr::planning::Worker>(0)), nullptr);
 }
 
 TEST(TyrPlanningSerialized, MetadataFreeSolverReportsResultStatistics)
@@ -608,8 +610,8 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesMaterializesCompatibleForeignStart)
     const auto result = tyr::planning::serialized::find_solution(solver, options);
 
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(result.plan.value().get_start_node().get_state().get_state_repository(), context.state_repository);
-    EXPECT_NE(result.plan.value().get_start_node().get_state().get_state_repository(), foreign_start.get_state().get_state_repository());
+    EXPECT_EQ(&result.plan.value().get_start_node().get_state().get_state_repository(), context.state_repository.get());
+    EXPECT_NE(&result.plan.value().get_start_node().get_state().get_state_repository(), &foreign_start.get_state().get_state_repository());
     EXPECT_EQ(result.plan.value().get_start_node().get_metric(), 7);
 }
 
@@ -795,7 +797,7 @@ TEST(TyrPlanningSerialized, FinalGoalUsesNormalizedStartAsStableSeed)
     ASSERT_EQ(goal_strategy->seed_repositories.size(), 2);
     EXPECT_EQ(goal_strategy->seed_repositories[0], context.state_repository.get());
     EXPECT_EQ(goal_strategy->seed_repositories[1], goal_strategy->seed_repositories[0]);
-    EXPECT_EQ(goal_strategy->seed_indices[0], initial_node.get_state().get_index());
+    EXPECT_EQ(goal_strategy->seed_indices[0], initial_node.get_state().index());
     EXPECT_EQ(goal_strategy->seed_indices[1], goal_strategy->seed_indices[0]);
 }
 
@@ -852,7 +854,7 @@ TEST(TyrPlanningSerialized, DetectsRepeatedSubgoalState)
     const auto first_labeled_succ_node_it =
         std::find_if(labeled_succ_nodes.begin(),
                      labeled_succ_nodes.end(),
-                     [&](const auto& labeled_succ_node) { return labeled_succ_node.node.get_state().get_index() != start_node.get_state().get_index(); });
+                     [&](const auto& labeled_succ_node) { return labeled_succ_node.node.get_state().index() != start_node.get_state().index(); });
     ASSERT_NE(first_labeled_succ_node_it, labeled_succ_nodes.end());
     const auto& first_labeled_succ_node = *first_labeled_succ_node_it;
     const auto first_goal_node = first_labeled_succ_node.node;
@@ -926,13 +928,13 @@ TEST(TyrPlanningSerialized, DetectsCycleUsingCanonicalSubplanStateIdentity)
     const auto initial_node = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator);
     const auto successors = context.successor_generator->get_labeled_successor_nodes(initial_node, *context.state_repository, *context.axiom_evaluator);
     const auto successor_it =
-        std::ranges::find_if(successors, [&](const auto& successor) { return successor.node.get_state().get_index() != initial_node.get_state().get_index(); });
+        std::ranges::find_if(successors, [&](const auto& successor) { return successor.node.get_state().index() != initial_node.get_state().index(); });
     ASSERT_NE(successor_it, successors.end());
     const auto& successor = *successor_it;
 
     auto foreign = make_worker_context(context);
     const auto foreign_start = foreign.successor_generator->get_initial_node(*foreign.state_repository, *foreign.axiom_evaluator);
-    ASSERT_EQ(foreign_start.get_state().get_index(), initial_node.get_state().get_index());
+    ASSERT_EQ(foreign_start.get_state().index(), initial_node.get_state().index());
     ASSERT_NE(foreign_start.get_state(), initial_node.get_state());
     const auto foreign_successor_state = tyr::planning::materialize_state(successor.node.get_state(), *foreign.state_repository, *foreign.axiom_evaluator);
     ASSERT_NE(foreign_successor_state, successor.node.get_state());

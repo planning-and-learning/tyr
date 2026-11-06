@@ -21,31 +21,35 @@
 #include "tyr/datalog/rule_mapping.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::datalog
 {
 
 struct RuleSplitting
 {
-    using Rule = ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
+    using Rule = urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
 
     /// A rule that replaces part of a split source rule: the position of each of its variables among the source rule's variables.
     struct Origin
     {
         size_t num_source_variables;
-        std::vector<ygg::uint_t> source_positions;
+        urd::Store<urd::sequence<ygg::uint_t>> source_positions;
     };
 
     /// The rule that replaces each source rule: the main rule of a split one, or its copy.
     RuleMapping rules;
     /// The origin of every rule that splitting created, main rules and projection rules alike.
-    ygg::UnorderedMap<Rule, Origin> origins;
+    urd::Store<urd::map<Rule, Origin>> origins;
     /// The projection rule that derives each projection predicate.
-    ygg::UnorderedMap<ygg::Index<formalism::Predicate<formalism::FluentTag>>, Rule> projection_rules;
+    urd::Store<urd::map<urd::index<formalism::Predicate<formalism::FluentTag>>, Rule>> projection_rules;
 };
 
 /// Copies the program into the repository and projects the variables of its predicate rules that occur in no head and only

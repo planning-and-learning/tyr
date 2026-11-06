@@ -19,6 +19,8 @@
 #define TYR_PLANNING_ALGORITHMS_UTILS_HPP_
 
 #include "tyr/planning/algorithms/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
@@ -74,7 +76,7 @@ struct SearchResult
     /// Idle time is summed worker time and may exceed the aggregate wall time.
     Statistics statistics {};
     /// Ordered by worker index. Shared task-repository memory is reported only by statistics.
-    std::vector<Statistics> worker_statistics;
+    urd::Store<urd::sequence<Statistics>> worker_statistics;
 
     /// Fraction of aggregate search-worker capacity not spent waiting for work.
     [[nodiscard]] ygg::float_t get_worker_utilization() const noexcept

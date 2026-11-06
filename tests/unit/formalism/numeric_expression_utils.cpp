@@ -16,6 +16,8 @@
  */
 
 #include "tyr/formalism/numeric_expression_utils.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <gtest/gtest.h>
 #include <vector>
@@ -60,7 +62,7 @@ struct ReferenceBooleanExpression
 struct MultiExpression
 {
     formalism::ArithmeticOperatorKind op {};
-    std::vector<NumericLeaf> args;
+    urd::Store<urd::sequence<NumericLeaf>> args;
 
     [[nodiscard]] auto get_operator() const noexcept { return op; }
     [[nodiscard]] const auto& get_args() const noexcept { return args; }
@@ -81,7 +83,7 @@ struct NumericEffect
 
 TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder)
 {
-    auto order = std::vector<int> {};
+    auto order = urd::Store<urd::sequence<int>> {};
     const auto resolve = [&](const NumericLeaf& leaf)
     {
         order.push_back(leaf.id);
@@ -91,22 +93,22 @@ TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder
     const auto arithmetic =
         BinaryExpression<formalism::ArithmeticOperatorKind> { formalism::ArithmeticOperatorKind::Sub, { 1, Interval(8, 8) }, { 2, Interval(3, 3) } };
     EXPECT_EQ(formalism::evaluate_numeric_expression(arithmetic, resolve), Interval(5, 5));
-    EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
+    EXPECT_EQ(order, (urd::Store<urd::sequence<int>> { 2, 1 }));
 
     order.clear();
     const auto boolean = BinaryExpression<formalism::BooleanOperatorKind> { formalism::BooleanOperatorKind::Gt, { 1, Interval(8, 8) }, { 2, Interval(3, 3) } };
     EXPECT_TRUE(formalism::evaluate_numeric_expression(boolean, resolve));
-    EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
+    EXPECT_EQ(order, (urd::Store<urd::sequence<int>> { 2, 1 }));
 
     order.clear();
     const auto reference_boolean = ReferenceBooleanExpression { formalism::BooleanOperatorKind::Eq, { 1, Interval(1, 3) }, { 2, Interval(2, 4) } };
     EXPECT_TRUE(formalism::evaluate_numeric_expression(reference_boolean, resolve));
-    EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
+    EXPECT_EQ(order, (urd::Store<urd::sequence<int>> { 2, 1 }));
 
     order.clear();
     const auto multi = MultiExpression { formalism::ArithmeticOperatorKind::Add, { { 1, Interval(1, 1) }, { 2, Interval(2, 2) }, { 3, Interval(3, 3) } } };
     EXPECT_EQ(formalism::evaluate_numeric_expression(multi, resolve), Interval(6, 6));
-    EXPECT_EQ(order, (std::vector<int> { 1, 2, 3 }));
+    EXPECT_EQ(order, (urd::Store<urd::sequence<int>> { 1, 2, 3 }));
 
     order.clear();
     EXPECT_TRUE(empty(formalism::evaluate_numeric_expression(MultiExpression { formalism::ArithmeticOperatorKind::Add, {} }, resolve)));
@@ -115,7 +117,7 @@ TEST(TyrDatalogNumericUtilsTest, TraversesExpressionsInDeterministicSupportOrder
 
 TEST(TyrDatalogNumericUtilsTest, EvaluatesNumericEffectsLazilyRhsFirst)
 {
-    auto order = std::vector<int> {};
+    auto order = urd::Store<urd::sequence<int>> {};
     const auto resolve = [&](const NumericLeaf& leaf)
     {
         order.push_back(leaf.id);
@@ -124,17 +126,17 @@ TEST(TyrDatalogNumericUtilsTest, EvaluatesNumericEffectsLazilyRhsFirst)
 
     const auto assign = NumericEffect { formalism::NumericEffectOperatorKind::Assign, { 1, Interval(2, 2) }, { 2, Interval(5, 5) } };
     EXPECT_EQ(formalism::evaluate_numeric_effect(assign, resolve), Interval(5, 5));
-    EXPECT_EQ(order, (std::vector<int> { 2 }));
+    EXPECT_EQ(order, (urd::Store<urd::sequence<int>> { 2 }));
 
     order.clear();
     const auto increase = NumericEffect { formalism::NumericEffectOperatorKind::Increase, { 1, Interval(2, 2) }, { 2, Interval(5, 5) } };
     EXPECT_EQ(formalism::evaluate_numeric_effect(increase, resolve), Interval(7, 7));
-    EXPECT_EQ(order, (std::vector<int> { 2, 1 }));
+    EXPECT_EQ(order, (urd::Store<urd::sequence<int>> { 2, 1 }));
 
     order.clear();
     const auto unsupported = NumericEffect { formalism::NumericEffectOperatorKind::Increase, { 1, Interval(2, 2) }, { 2, {} } };
     EXPECT_TRUE(empty(formalism::evaluate_numeric_effect(unsupported, resolve)));
-    EXPECT_EQ(order, (std::vector<int> { 2 }));
+    EXPECT_EQ(order, (urd::Store<urd::sequence<int>> { 2 }));
 }
 
 }

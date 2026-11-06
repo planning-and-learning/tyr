@@ -20,23 +20,20 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
-template<::tyr::formalism::FactKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::FDRVariable<T>> C>
-class View<ygg::Index<::tyr::formalism::planning::FDRVariable<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::FDRVariable<T>, C>
+template<::tyr::formalism::FactKind T, typename V>
+struct view_mixin<::tyr::formalism::planning::FDRVariable<T>, V>
 {
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::formalism::planning::FDRVariable<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::FDRVariable<T>, C>(handle, context)
-    {
-    }
-
     auto get_domain_size() const noexcept { return get_atoms().size() + 1; }
-    auto get_atoms() const noexcept { return ygg::make_view(this->get_data().atoms, this->get_context()); }
+    auto get_atoms() const noexcept { return self().template get<&urd::record_of<V>::atoms>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

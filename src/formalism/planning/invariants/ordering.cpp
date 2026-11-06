@@ -26,20 +26,24 @@
 #include <random>
 #include <string>
 #include <type_traits>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <variant>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
 namespace
 {
-using Predicates = ygg::UnorderedSet<PredicateView<FluentTag>>;
+using Predicates = urd::Store<urd::set<PredicateView<FluentTag>>>;
 
 /// The predicates of an invariant's residual, the atoms whose predicate is not taken yet.
 struct Residual
 {
-    std::vector<PredicateView<FluentTag>> predicates;
+    urd::Store<urd::sequence<PredicateView<FluentTag>>> predicates;
     std::size_t atoms = 0;
     bool informative = false;  ///< more than one atom, or one atom with a counted variable
 };
@@ -62,16 +66,16 @@ Residual compute_residual(InvariantView invariant, const Predicates& taken)
                 [&]<typename T>(const T& arg)
                 {
                     if constexpr (std::is_same_v<T, ParameterIndex>)
-                        counted = counted || static_cast<ygg::uint_t>(arg) >= r;
+                        counted = counted || arg.value >= r;
                 },
-                term.get_data().variant);
+                urd::to_stored(term));
     }
     residual.informative = residual.atoms > 1 || (residual.atoms == 1 && counted);
     return residual;
 }
 
 /// The residual predicates of candidate `i` that the residual of another candidate also contains.
-std::size_t count_stolen_predicates(std::size_t i, const std::vector<std::size_t>& candidates, const std::vector<Residual>& residuals)
+std::size_t count_stolen_predicates(std::size_t i, const urd::Store<urd::sequence<std::size_t>>& candidates, const urd::Store<urd::sequence<Residual>>& residuals)
 {
     auto stolen = std::size_t { 0 };
     for (const auto predicate : residuals[i].predicates)
@@ -85,12 +89,12 @@ std::size_t count_stolen_predicates(std::size_t i, const std::vector<std::size_t
 }
 
 template<typename Key>
-std::vector<std::size_t> keep_minimal(const std::vector<std::size_t>& candidates, Key key)
+urd::Store<urd::sequence<std::size_t>> keep_minimal(const urd::Store<urd::sequence<std::size_t>>& candidates, Key key)
 {
     auto best = key(candidates.front());
     for (const auto i : candidates)
         best = std::min(best, key(i));
-    auto kept = std::vector<std::size_t> {};
+    auto kept = urd::Store<urd::sequence<std::size_t>> {};
     for (const auto i : candidates)
         if (key(i) == best)
             kept.push_back(i);
@@ -104,19 +108,19 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
     for (const auto invariant : invariants)
         if (std::ranges::find(unique, invariant) == unique.end())
             unique.push_back(invariant);
-    auto texts = std::vector<std::string> {};
+    auto texts = urd::Store<urd::sequence<std::string>> {};
     for (const auto invariant : unique)
         texts.push_back(to_string(invariant));
 
     auto rng = std::mt19937_64(options.random_seed);
     auto taken = Predicates {};
     auto used = std::vector<bool>(unique.size(), false);
-    auto residuals = std::vector<Residual>(unique.size());
+    auto residuals = urd::Store<urd::sequence<Residual>>(unique.size());
     auto order = InvariantViewList {};
 
     while (true)
     {
-        auto candidates = std::vector<std::size_t> {};
+        auto candidates = urd::Store<urd::sequence<std::size_t>> {};
         for (std::size_t i = 0; i < unique.size(); ++i)
         {
             if (used[i])

@@ -19,6 +19,8 @@
 #define TYR_PLANNING_STATIC_STATE_HPP_
 
 #include "tyr/formalism/planning/atom_view.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/planning/state_storage/iterators.hpp"
@@ -26,8 +28,9 @@
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
 #include <vector>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
-#include <yggdrasil/containers/vector.hpp>
+#include "tyr/containers.hpp"
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -41,21 +44,21 @@ public:
     template<TaskKind Kind>
     explicit StaticState(formalism::planning::TaskView<Kind> task);
 
-    [[nodiscard]] bool test(ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
-    { return ygg::test(static_cast<ygg::uint_t>(index), m_atoms); }
-    [[nodiscard]] ygg::float_t get(ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
-    { return ygg::get(static_cast<ygg::uint_t>(index), m_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    [[nodiscard]] bool test(urd::index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
+    { return tyr::test(static_cast<ygg::uint_t>(index.value), m_atoms); }
+    [[nodiscard]] ygg::float_t get(urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
+    { return tyr::get(static_cast<ygg::uint_t>(index.value), m_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
-    [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.get_index()); }
+    [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.index()); }
     [[nodiscard]] ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept
-    { return get(fterm.get_index()); }
+    { return get(fterm.index()); }
 
     [[nodiscard]] auto get_atoms() const noexcept { return AtomRange<formalism::StaticTag>(m_atoms); }
     [[nodiscard]] auto get_fterm_values() const noexcept { return FunctionTermValueRange<formalism::StaticTag>(m_numeric_variables); }
 
 private:
     boost::dynamic_bitset<> m_atoms;
-    std::vector<ygg::float_t> m_numeric_variables;
+    urd::Store<urd::sequence<ygg::float_t>> m_numeric_variables;
 };
 
 }

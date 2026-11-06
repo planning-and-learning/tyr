@@ -18,20 +18,21 @@
 #ifndef TYR_FORMALISM_PARAMETER_INDEX_HPP_
 #define TYR_FORMALISM_PARAMETER_INDEX_HPP_
 
-#include "tyr/formalism/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/ids/uint_mixins.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/unsigned_integer.hpp>
 
 namespace tyr::formalism
 {
-struct ParameterIndex : ygg::FixedUintMixin<ParameterIndex>
+/// A parameter's position: a nonnegative integer of its own type (no index: nothing resolves it).
+struct ParameterIndex : ygg::UnsignedInteger<ParameterIndex>
 {
-    using Base = ygg::FixedUintMixin<ParameterIndex>;
-    using Base::Base;
+    using UnsignedInteger::UnsignedInteger;
 };
 
-using ParameterList = std::vector<ParameterIndex>;
+using ParameterList = urd::Store<urd::sequence<ParameterIndex>>;
 
 }
 

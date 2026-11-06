@@ -11,36 +11,31 @@
 
 template<typename Entity>
 concept UnaryOperatorContract =
-    std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>> && std::totally_ordered<ygg::Data<Entity>>
-    && std::totally_ordered<ygg::View<ygg::Index<Entity>, tyr::formalism::planning::Repository>>
-    && std::same_as<ygg::IdentifyingMember<ygg::Data<Entity>, 0>, typename ygg::Data<Entity>::OperatorType>
-    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, tyr::formalism::planning::Repository>& view) {
+    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
+    && std::totally_ordered<urd::view<Entity, tyr::formalism::planning::Repository>>
+    && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, typename urd::data<Entity>::OperatorType>
+    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::planning::Repository>& view) {
            data.index;
-           { data.operator_kind } -> std::same_as<typename ygg::Data<Entity>::OperatorType&>;
-           data.clear();
+           { data.operator_kind } -> std::same_as<typename urd::data<Entity>::OperatorType&>;
            { data == data } -> std::same_as<bool>;
-           view.get_index();
-           { view.get_operator() } -> std::same_as<typename ygg::Data<Entity>::OperatorType>;
+           view.index();
+           { view.get_operator() } -> std::same_as<typename urd::data<Entity>::OperatorType>;
            view.get_arg();
            { view == view } -> std::same_as<bool>;
            { view < view } -> std::same_as<bool>;
        };
 
-using Lifted = tyr::formalism::planning::UnaryOperator<::tyr::LiftedTag>;
-using Ground = tyr::formalism::planning::UnaryOperator<::tyr::GroundTag>;
+using Lifted = tyr::formalism::planning::UnaryOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
+using Ground = tyr::formalism::planning::UnaryOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
 
 static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
-static_assert(std::same_as<ygg::View<ygg::Index<Lifted>, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::LiftedTag>>);
-static_assert(std::same_as<ygg::View<ygg::Index<Ground>, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::GroundTag>>);
-static_assert(
-    std::constructible_from<ygg::Data<Lifted>, tyr::formalism::ArithmeticOperatorKind, tyr::formalism::planning::FunctionExpressionView<::tyr::LiftedTag>>);
-static_assert(
-    std::constructible_from<ygg::Data<Ground>, tyr::formalism::ArithmeticOperatorKind, tyr::formalism::planning::FunctionExpressionView<::tyr::GroundTag>>);
+static_assert(std::same_as<urd::view<Lifted, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::view<Ground, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 
 TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
 {
-    EXPECT_THROW((ygg::Data<Lifted>(tyr::formalism::ArithmeticOperatorKind::Add,
-                                    ygg::Data<tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>(ygg::float_t(0)))),
+    EXPECT_THROW((urd::data<Lifted>(tyr::formalism::ArithmeticOperatorKind::Add,
+                                    tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
                  std::invalid_argument);
 }

@@ -21,15 +21,17 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
-#include "tyr/planning/state_storage/tree_bitset/arity.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
-#include "tyr/planning/state_storage/tree_vector/arity.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <concepts>
+#include <urd/memory.hpp>
+#include <urd/repr/pools/tree_bitset.hpp>
+#include <urd/repr/pools/tree_vector.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/tree_bitset_set.hpp>
-#include <yggdrasil/containers/tree_vector_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -42,8 +44,8 @@ namespace tyr::planning
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>
 {
-    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, tree_vector::first_segment_size, ThreadSafe, tree_vector::arity>;
-    using BitsetSet = ygg::TreeBitsetSet<tree_bitset::Block, tree_bitset::first_segment_size, ThreadSafe, tree_bitset::arity>;
+    using FloatVectorSet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, urd::structural_sharing, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using BitsetSet = urd::Store<urd::pool<urd::Store<urd::set<ygg::uint_t>, urd::dense, urd::frozen>>, urd::structural_sharing, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
     FloatVectorSet float_vectors;
     BitsetSet bitsets;
@@ -51,8 +53,8 @@ struct StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>
     [[nodiscard]] size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
-        bytes += float_vectors.memory_usage();
-        bytes += bitsets.memory_usage();
+        bytes += urd::memory_usage(float_vectors);
+        bytes += urd::memory_usage(bitsets);
         return bytes;
     }
 };

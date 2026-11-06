@@ -11,6 +11,8 @@
 #define TYR_SRC_ANALYSIS_STATIC_LITERAL_COMPATIBILITY_HPP_
 
 #include "tyr/algorithms/kckp/kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -21,12 +23,22 @@
 #include <initializer_list>
 #include <limits>
 #include <span>
+#include <urd/repr/containers/bitset_span.hpp>
 #include <vector>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::analysis::detail
 {
+/// A parameter term as its number: a ParameterIndex, or a plain integer.
+template<typename T>
+ygg::uint_t parameter_number(const T& term) noexcept
+{
+    if constexpr (requires { term.value; })
+        return term.value;
+    else
+        return static_cast<ygg::uint_t>(term);
+}
 
 /**
  * Compiles fixed static literals into final per-rule unary and pair compatibility tables.
@@ -36,7 +48,7 @@ namespace tyr::analysis::detail
 class StaticLiteralCompatibility
 {
 private:
-    using Object = ygg::Index<formalism::Object>;
+    using Object = urd::index<formalism::Object>;
     using Bitset = boost::dynamic_bitset<>;
 
     static constexpr size_t invalid_bit = std::numeric_limits<size_t>::max();
@@ -54,20 +66,20 @@ private:
             if (!constrained())
             {
                 m_constrained = true;
-                m_rows.resize(m_first_size * ygg::BitsetSpan<uint64_t>::num_blocks(m_second_size));
+                m_rows.resize(m_first_size * urd::repr::BitsetSpan<uint64_t>::num_blocks(m_second_size));
             }
         }
 
         auto get_row(size_t first)
         {
-            const auto num_blocks = ygg::BitsetSpan<uint64_t>::num_blocks(m_second_size);
-            return ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
+            const auto num_blocks = urd::repr::BitsetSpan<uint64_t>::num_blocks(m_second_size);
+            return urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
         }
 
         [[nodiscard]] auto get_row(size_t first) const
         {
-            const auto num_blocks = ygg::BitsetSpan<uint64_t>::num_blocks(m_second_size);
-            return ygg::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
+            const auto num_blocks = urd::repr::BitsetSpan<uint64_t>::num_blocks(m_second_size);
+            return urd::repr::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
         }
 
         void set(size_t first, size_t second)
@@ -121,7 +133,7 @@ private:
             for (size_t first = 0; first < m_first_size; ++first)
             {
                 const auto row = get_row(first);
-                for (auto second = row.find_first(); second != ygg::BitsetSpan<const uint64_t>::npos; second = row.find_next(second))
+                for (auto second = row.find_first(); second != urd::repr::BitsetSpan<const uint64_t>::npos; second = row.find_next(second))
                     callback(first, second);
             }
         }
@@ -130,7 +142,7 @@ private:
         size_t m_first_size { 0 };
         size_t m_second_size { 0 };
         bool m_constrained { false };
-        std::vector<uint64_t> m_rows;
+        urd::Store<urd::sequence<uint64_t>> m_rows;
     };
 
     static size_t num_pairs(size_t arity) noexcept { return arity < 2 ? 0 : arity * (arity - 1) / 2; }
@@ -141,9 +153,9 @@ private:
         return static_cast<size_t>(first) * (2 * arity - static_cast<size_t>(first) - 1) / 2 + static_cast<size_t>(second - first - 1);
     }
 
-    static std::vector<BinaryCompatibility> make_binary_compatibilities(const VariableDomainList& domains)
+    static urd::Store<urd::sequence<BinaryCompatibility>> make_binary_compatibilities(const VariableDomainList& domains)
     {
-        auto result = std::vector<BinaryCompatibility> {};
+        auto result = urd::Store<urd::sequence<BinaryCompatibility>> {};
         result.reserve(num_pairs(domains.size()));
         for (size_t first = 0; first < domains.size(); ++first)
             for (size_t second = first + 1; second < domains.size(); ++second)
@@ -156,7 +168,7 @@ private:
         if (parameter >= m_object_to_bit.size())
             return invalid_bit;
 
-        const auto object_index = static_cast<size_t>(static_cast<ygg::uint_t>(object));
+        const auto object_index = static_cast<size_t>(static_cast<ygg::uint_t>(object.value));
         return object_index < m_object_to_bit[parameter].size() ? m_object_to_bit[parameter][object_index] : invalid_bit;
     }
 
@@ -165,7 +177,7 @@ public:
     StaticLiteralCompatibility(LiteralRange literals, AtomRange atoms, const VariableDomainList& domains, size_t num_objects) :
 
         m_domains(domains),
-        m_object_to_bit(domains.size(), std::vector<size_t>(num_objects, invalid_bit)),
+        m_object_to_bit(domains.size(), urd::Store<urd::sequence<size_t>>(num_objects, invalid_bit)),
         m_unary_compatible(domains.size()),
         m_binary_compatible(make_binary_compatibilities(domains))
     {
@@ -176,7 +188,7 @@ public:
             m_unary_compatible[parameter].set();
             for (size_t bit = 0; bit < domains[parameter].objects.size(); ++bit)
             {
-                const auto object = static_cast<size_t>(static_cast<ygg::uint_t>(domains[parameter].objects[bit]));
+                const auto object = static_cast<size_t>(static_cast<ygg::uint_t>(domains[parameter].objects[bit].value));
                 assert(object < num_objects);
                 if (object < num_objects)
                 {
@@ -189,25 +201,25 @@ public:
         for (const auto& literal : literals)
         {
             const auto& terms = literal.get_atom().get_terms();
-            auto parameters = std::vector<ygg::uint_t> {};
+            auto parameters = urd::Store<urd::sequence<ygg::uint_t>> {};
             parameters.reserve(terms.size());
             for (const auto term : terms)
-                visit(
+                std::visit(
                     [&](auto value)
                     {
-                        if constexpr (!requires { value.get_index(); })
+                        if constexpr (!requires { value.index(); })
                         {
-                            const auto parameter = static_cast<ygg::uint_t>(value);
+                            const auto parameter = parameter_number(value);
                             assert(parameter < arity);
                             parameters.push_back(parameter);
                         }
                     },
-                    term.get_variant());
+                    term);
 
             std::sort(parameters.begin(), parameters.end());
             parameters.erase(std::unique(parameters.begin(), parameters.end()), parameters.end());
 
-            auto unary_supports = std::vector<Bitset>(arity);
+            auto unary_supports = urd::Store<urd::sequence<Bitset>>(arity);
             auto binary_supports = make_binary_compatibilities(domains);
             for (const auto parameter : parameters)
                 unary_supports[parameter].resize(domains[parameter].objects.size());
@@ -215,12 +227,12 @@ public:
                 for (size_t second = first + 1; second < parameters.size(); ++second)
                     binary_supports[pair_index(arity, parameters[first], parameters[second])].constrain();
 
-            auto assignment = std::vector<Object>(arity);
+            auto assignment = urd::Store<urd::sequence<Object>>(arity);
             auto assigned = std::vector<bool>(arity);
             auto has_matching_atom = false;
             for (const auto& atom : atoms)
             {
-                if (atom.get_predicate().get_index() != literal.get_atom().get_predicate().get_index())
+                if (atom.get_predicate().index() != literal.get_atom().get_predicate().index())
                     continue;
 
                 std::fill(assigned.begin(), assigned.end(), false);
@@ -234,17 +246,17 @@ public:
                         break;
                     }
 
-                    const auto object_index = object.get_index();
-                    visit(
+                    const auto object_index = object.index();
+                    std::visit(
                         [&](auto value)
                         {
-                            if constexpr (requires { value.get_index(); })
+                            if constexpr (requires { value.index(); })
                             {
-                                matches = matches && value.get_index() == object_index;
+                                matches = matches && value.index() == object_index;
                             }
                             else
                             {
-                                const auto parameter = static_cast<ygg::uint_t>(value);
+                                const auto parameter = parameter_number(value);
                                 if (assigned[parameter])
                                     matches = matches && assignment[parameter] == object_index;
                                 else
@@ -254,7 +266,7 @@ public:
                                 }
                             }
                         },
-                        terms[position++].get_variant());
+                        terms[position++]);
                 }
                 if (!matches || position != terms.size())
                     continue;
@@ -367,9 +379,9 @@ public:
 private:
     bool m_satisfiable = true;
     VariableDomainList m_domains;
-    std::vector<std::vector<size_t>> m_object_to_bit;
-    std::vector<Bitset> m_unary_compatible;
-    std::vector<BinaryCompatibility> m_binary_compatible;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<size_t>>>> m_object_to_bit;
+    urd::Store<urd::sequence<Bitset>> m_unary_compatible;
+    urd::Store<urd::sequence<BinaryCompatibility>> m_binary_compatible;
 };
 
 struct PairwiseCompatibilityResult
@@ -388,24 +400,24 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
             if (std::ranges::all_of(compatibilities, [&](const auto* compatibility) { return compatibility->unary_compatible(partition, object); }))
                 domains[partition].objects.push_back(object);
 
-    auto partition_sizes = std::vector<size_t> {};
+    auto partition_sizes = urd::Store<urd::sequence<size_t>> {};
     partition_sizes.reserve(domains.size());
-    auto vertex_labels = std::vector<ygg::uint_t> {};
+    auto vertex_labels = urd::Store<urd::sequence<ygg::uint_t>> {};
     for (const auto& domain : domains)
     {
         partition_sizes.push_back(domain.objects.size());
         for (const auto object : domain.objects)
-            vertex_labels.push_back(static_cast<ygg::uint_t>(object));
+            vertex_labels.push_back(static_cast<ygg::uint_t>(object.value));
     }
 
     const auto layout = kckp::create_graph_layout(partition_sizes, vertex_labels);
     auto adjacency = kckp::AdjacencyMatrix(layout);
     auto universal_partition_pairs = boost::dynamic_bitset<>(layout.num_partitions * layout.num_partitions);
     auto object_to_bit =
-        std::vector<std::vector<ygg::uint_t>>(layout.num_partitions, std::vector<ygg::uint_t>(num_objects, std::numeric_limits<ygg::uint_t>::max()));
+        urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(layout.num_partitions, urd::Store<urd::sequence<ygg::uint_t>>(num_objects, std::numeric_limits<ygg::uint_t>::max()));
     for (ygg::uint_t partition = 0; partition < layout.num_partitions; ++partition)
         for (ygg::uint_t bit = 0; bit < domains[partition].objects.size(); ++bit)
-            object_to_bit[partition][static_cast<ygg::uint_t>(domains[partition].objects[bit])] = bit;
+            object_to_bit[partition][static_cast<ygg::uint_t>(domains[partition].objects[bit].value)] = bit;
 
     for (ygg::uint_t first_partition = 0; first_partition < layout.num_partitions; ++first_partition)
         for (ygg::uint_t second_partition = first_partition + 1; second_partition < layout.num_partitions; ++second_partition)
@@ -431,8 +443,8 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
                 second_partition,
                 [&](const auto first_object, const auto second_object)
                 {
-                    const auto first_bit = object_to_bit[first_partition][static_cast<ygg::uint_t>(first_object)];
-                    const auto second_bit = object_to_bit[second_partition][static_cast<ygg::uint_t>(second_object)];
+                    const auto first_bit = object_to_bit[first_partition][static_cast<ygg::uint_t>(first_object.value)];
+                    const auto second_bit = object_to_bit[second_partition][static_cast<ygg::uint_t>(second_object.value)];
                     if (first_bit == std::numeric_limits<ygg::uint_t>::max() || second_bit == std::numeric_limits<ygg::uint_t>::max()
                         || !std::ranges::all_of(compatibilities,
                                                 [&](const auto* compatibility)

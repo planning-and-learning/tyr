@@ -7,10 +7,10 @@
 #include <concepts>
 #include <gtest/gtest.h>
 
-using VariableData = ygg::Data<tyr::formalism::Variable>;
-using VariableIndex = ygg::Index<tyr::formalism::Variable>;
-using VariableView = ygg::View<ygg::Index<tyr::formalism::Variable>, tyr::formalism::planning::Repository>;
-using DatalogVariableView = ygg::View<ygg::Index<tyr::formalism::Variable>, tyr::formalism::datalog::Repository>;
+using VariableData = urd::data<tyr::formalism::Variable>;
+using VariableIndex = urd::index<tyr::formalism::Variable>;
+using VariableView = urd::view<tyr::formalism::Variable, tyr::formalism::planning::Repository>;
+using DatalogVariableView = urd::view<tyr::formalism::Variable, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<VariableIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<VariableIndex>);
@@ -18,12 +18,11 @@ static_assert(std::totally_ordered<VariableData>);
 static_assert(requires(VariableData& data) {
     data.index;
     data.name;
-    data.clear();
 });
 
 template<typename View>
 concept VariableViewContract = std::totally_ordered<View> && requires(const View& view) {
-    view.get_index();
+    view.index();
     view.get_name();
 };
 

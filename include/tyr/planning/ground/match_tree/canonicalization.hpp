@@ -21,57 +21,49 @@
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
 #include <algorithm>
+#include <urd/elements/less.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
 
 namespace tyr::planning::match_tree
 {
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<AtomSelectorNode<Tag>>&)
+bool is_canonical(const urd::data<AtomSelectorNode<Tag>>&)
 { return true; };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<VariableSelectorNode<Tag>>&)
+bool is_canonical(const urd::data<VariableSelectorNode<Tag>>&)
 { return true; };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<NegativeFactSelectorNode<Tag>>&)
+bool is_canonical(const urd::data<NegativeFactSelectorNode<Tag>>&)
 { return true; };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<NumericConstraintSelectorNode<Tag>>&)
+bool is_canonical(const urd::data<NumericConstraintSelectorNode<Tag>>&)
 { return true; };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<ElementGeneratorNode<Tag>>&)
+bool is_canonical(const urd::data<ElementGeneratorNode<Tag>>&)
 { return true; };
 
 template<typename Tag>
-bool is_canonical(const ygg::Data<Node<Tag>>&)
-{ return true; };
+void canonicalize(urd::data<AtomSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<AtomSelectorNode<Tag>>&) {};
+void canonicalize(urd::data<VariableSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<VariableSelectorNode<Tag>>&) {};
+void canonicalize(urd::data<NegativeFactSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<NegativeFactSelectorNode<Tag>>&) {};
+void canonicalize(urd::data<NumericConstraintSelectorNode<Tag>>&) {};
 
 template<typename Tag>
-void canonicalize(ygg::Data<NumericConstraintSelectorNode<Tag>>&) {};
-
-template<typename Tag>
-void canonicalize(ygg::Data<ElementGeneratorNode<Tag>>&) {};
-
-template<typename Tag>
-void canonicalize(ygg::Data<Node<Tag>>&) {};
+void canonicalize(urd::data<ElementGeneratorNode<Tag>>&) {};
 
 }
 

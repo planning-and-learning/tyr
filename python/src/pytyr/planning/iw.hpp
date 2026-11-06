@@ -66,7 +66,7 @@ void bind_options(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())
         .def(nb::init<>())
-        .def_rw("start_node", &T::start_node)
+        .def_rw("start_node", &T::start_node, nb::for_setter(nb::keep_alive<1, 2>()))
         .def_rw("event_handler", &T::event_handler)
         .def_rw("goal_strategy", &T::goal_strategy)
         .def_rw("search_budget", &T::search_budget)
@@ -84,7 +84,7 @@ void bind_solver(nb::module_& m, const std::string& name)
         .def_rw("brfs_solver", &T::brfs_solver)
         .def_rw("max_arity", &T::max_arity)
         .def_rw("options", &T::options)
-        .def("solve", &T::solve, nb::call_guard<nb::gil_scoped_release>());
+        .def("solve", &T::solve, nb::call_guard<nb::gil_scoped_release>(), nb::keep_alive<0, 1>());
 }
 
 template<TaskKind Kind>
@@ -95,6 +95,7 @@ void bind_find_solution(nb::module_& m, const std::string& py_name)
         py_name.c_str(),
         [](brfs::Solver<Kind>& brfs_solver, ygg::uint_t max_arity, const Options<Kind>& options) { return find_solution(brfs_solver, max_arity, options); },
         nb::call_guard<nb::gil_scoped_release>(),
+        nb::keep_alive<0, 1>(),
         "brfs_solver"_a,
         "max_arity"_a,
         "options"_a);

@@ -27,6 +27,7 @@
 #include <optional>
 #include <stdexcept>
 #include <yggdrasil/core/config.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::planning::iw
 {
@@ -43,7 +44,7 @@ public:
 
     static std::shared_ptr<NoveltyPruningStrategy<Kind>> create(ygg::uint_t max_arity) { return std::make_shared<NoveltyPruningStrategy<Kind>>(max_arity); }
 
-    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker>) const override
+    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(urd::index<Worker>) const override
     {
         m_root_state->enable_thread_safety();
         return std::shared_ptr<NoveltyPruningStrategy>(new NoveltyPruningStrategy(m_max_arity, m_root_state, m_novelty_table.make_worker()));
@@ -108,7 +109,7 @@ private:
 
         bool matches_unlocked(const StateView<Kind>& state) const
         {
-            YGG_ASSUME(identity.has_value());
+            URD_ASSUME(identity.has_value());
             return *identity == state.pack();
         }
 

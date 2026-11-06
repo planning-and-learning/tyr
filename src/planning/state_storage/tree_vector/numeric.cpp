@@ -24,7 +24,8 @@
 #include "tyr/planning/lifted/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
-#include <yggdrasil/semantics/equal_to.hpp>
+#include <urd/elements/equal_to.hpp>
+
 
 namespace tyr::planning
 {
@@ -48,7 +49,7 @@ template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
 typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked)
 {
     canonicalize(unpacked);
-    return Packed { m_float_vectors->insert(unpacked.values) };
+    return Packed { m_float_vectors->insert(unpacked.values).first };
 }
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
@@ -61,16 +62,16 @@ NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const P
     // and a write delta cannot grow a stored vector.
     const auto& values = unpacked.values;
     if (values.size() != parent.index.size)
-        return Packed { m_float_vectors->insert(values) };
+        return Packed { m_float_vectors->insert(values).first };
 
     m_writes.clear();
     for (const auto& change : changes)
     {
-        const auto position = static_cast<ygg::uint_t>(change.fterm);
-        m_writes.push_back(ygg::TreeVectorWrite<ygg::float_t> { position, values[position] });
+        const auto position = static_cast<ygg::uint_t>(change.fterm.value);
+        m_writes.push_back(urd::Write<ygg::float_t> { position, values[position] });
     }
 
-    return Packed { m_float_vectors->insert(parent.index, m_writes) };
+    return Packed { m_float_vectors->insert(parent.index, m_writes).first };
 }
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>

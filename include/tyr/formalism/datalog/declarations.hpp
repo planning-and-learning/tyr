@@ -19,14 +19,20 @@
 #define TYR_FORMALISM_DATALOG_DECLARATIONS_HPP_
 
 #include "tyr/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <cista/containers/variant.h>
+#include <cista/containers/vector.h>
 #include <concepts>
 #include <memory>
+#include <variant>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <boost/mp11.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 
 namespace tyr::formalism::datalog
@@ -36,27 +42,18 @@ namespace tyr::formalism::datalog
  * Formalism tag
  */
 
-template<TaskKind T>
+template<TaskKind T, OperatorKind O>
 struct UnaryOperator
 {
 };
 
-template<TaskKind T, BinaryOperatorKind O>
+template<TaskKind T, OperatorKind O>
 struct BinaryOperator
 {
 };
 
-template<TaskKind T>
+template<TaskKind T, OperatorKind O>
 struct MultiOperator
-{
-};
-
-template<TaskKind T>
-class BooleanOperator
-{
-};
-template<TaskKind T>
-class ArithmeticOperator
 {
 };
 
@@ -82,18 +79,8 @@ struct NumericEffect
 };
 
 template<TaskKind T, FactKind F>
-struct NumericEffectOperator
-{
-};
-
-template<TaskKind T, FactKind F>
     requires std::same_as<T, GroundTag>
 struct FunctionTermValue
-{
-};
-
-template<TaskKind T>
-struct FunctionExpression
 {
 };
 
@@ -123,13 +110,13 @@ struct RuleHead;
 template<TaskKind T>
 struct RuleHead<T, PredicateTag>
 {
-    using type = ygg::IndexList<Atom<T, FluentTag>>;
+    using type = urd::flat_vector<urd::index<Atom<T, FluentTag>>>;
 };
 
 template<TaskKind T>
 struct RuleHead<T, FunctionTag>
 {
-    using type = ygg::Data<NumericEffectOperator<T, FluentTag>>;
+    using type = urd::index<NumericEffect<T, FluentTag>>;
 };
 
 template<TaskKind T, RelationKind R>
@@ -140,41 +127,38 @@ struct Program
 {
 };
 
-using CoreTypes = ygg::TypeList<Variable, Object>;
-using PredicateTypes = ygg::MapTypeListT<Predicate, StaticFluentTags>;
+using CoreTypes = boost::mp11::mp_list<Variable, Object>;
+using PredicateTypes = boost::mp11::mp_transform<Predicate, StaticFluentTags>;
 template<TaskKind T>
-using AtomTypes = ygg::MapTypeListSecondT<Atom, T, StaticFluentTags>;
+using AtomTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Atom, T>, StaticFluentTags>;
 template<TaskKind T>
-using LiteralTypes = ygg::MapTypeListSecondT<Literal, T, StaticFluentTags>;
-using FunctionTypes = ygg::MapTypeListT<Function, StaticFluentAuxiliaryTags>;
+using LiteralTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Literal, T>, StaticFluentTags>;
+using FunctionTypes = boost::mp11::mp_transform<Function, StaticFluentAuxiliaryTags>;
 template<TaskKind T>
-using FunctionTermTypes = ygg::MapTypeListSecondT<FunctionTerm, T, StaticFluentAuxiliaryTags>;
+using FunctionTermTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<FunctionTerm, T>, StaticFluentAuxiliaryTags>;
 template<TaskKind T>
-using FunctionTermValueTypes = ygg::MapTypeListSecondT<FunctionTermValue, T, StaticFluentAuxiliaryTags>;
+using FunctionTermValueTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<FunctionTermValue, T>, StaticFluentAuxiliaryTags>;
 template<TaskKind T>
-using NumericEffectTypes = ygg::TypeList<NumericEffect<T, FluentTag>>;
+using NumericEffectTypes = boost::mp11::mp_list<NumericEffect<T, FluentTag>>;
 template<TaskKind T>
-using NumericEffectOperatorTypes = ygg::TypeList<NumericEffectOperator<T, FluentTag>>;
-
+using ArithmeticExpressionTypes = boost::mp11::mp_list<UnaryOperator<T, ArithmeticOperatorKind>, BinaryOperator<T, ArithmeticOperatorKind>, MultiOperator<T, ArithmeticOperatorKind>>;
 template<TaskKind T>
-using ArithmeticExpressionTypes = ygg::TypeList<UnaryOperator<T>, BinaryOperator<T, ArithmeticOperatorKind>, MultiOperator<T>>;
-template<TaskKind T>
-using BooleanExpressionTypes = ygg::TypeList<BinaryOperator<T, BooleanOperatorKind>>;
-using ExpressionTypes = ygg::ConcatTypeListsT<ArithmeticExpressionTypes<LiftedTag>,
+using BooleanExpressionTypes = boost::mp11::mp_list<BinaryOperator<T, BooleanOperatorKind>>;
+using ExpressionTypes = boost::mp11::mp_append<ArithmeticExpressionTypes<LiftedTag>,
                                               BooleanExpressionTypes<LiftedTag>,
                                               ArithmeticExpressionTypes<GroundTag>,
                                               BooleanExpressionTypes<GroundTag>>;
-using EffectTypes = ygg::ConcatTypeListsT<NumericEffectTypes<LiftedTag>, NumericEffectTypes<GroundTag>>;
+using EffectTypes = boost::mp11::mp_append<NumericEffectTypes<LiftedTag>, NumericEffectTypes<GroundTag>>;
 template<TaskKind T>
-using RuleTypes = ygg::MapTypeListSecondT<Rule, T, PredicateFunctionTags>;
+using RuleTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Rule, T>, PredicateFunctionTags>;
 
-using CompoundTypes = ygg::ConcatTypeListsT<ygg::TypeList<ConjunctiveCondition<LiftedTag>, ConjunctiveEffect<LiftedTag>, ConditionalEffect<LiftedTag>>,
+using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveEffect<LiftedTag>, ConditionalEffect<LiftedTag>>,
                                             RuleTypes<LiftedTag>,
-                                            ygg::TypeList<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>, ConditionalEffect<GroundTag>>,
+                                            boost::mp11::mp_list<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>, ConditionalEffect<GroundTag>>,
                                             RuleTypes<GroundTag>,
-                                            ygg::TypeList<Program<LiftedTag>, Program<GroundTag>>>;
+                                            boost::mp11::mp_list<Program<LiftedTag>, Program<GroundTag>>>;
 
-using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
+using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
                                                     PredicateTypes,
                                                     AtomTypes<LiftedTag>,
                                                     AtomTypes<GroundTag>,
@@ -187,16 +171,16 @@ using SymbolRepositoryTypes = ygg::ConcatTypeListsT<CoreTypes,
                                                     ExpressionTypes,
                                                     EffectTypes,
                                                     CompoundTypes>;
-using RelationRepositoryTypes = ygg::ConcatTypeListsT<PredicateTypes, FunctionTypes, RuleTypes<LiftedTag>>;
-using BuilderTypes = ygg::ConcatTypeListsT<SymbolRepositoryTypes, ygg::MapTypeListT<RelationBinding, RelationRepositoryTypes>>;
-using Builder = ygg::ApplyTypeListT<ygg::formalism::BuilderStorage, BuilderTypes>;
+using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, RuleTypes<LiftedTag>>;
+using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<RelationBinding, RelationRepositoryTypes>>;
+using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, BuilderTypes>;
 
-using SymbolRepository = ygg::ApplyTypeListT<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
+using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
 
 template<typename... Ts>
 using TaggedRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<ObjectTag, Ts...>;
 
-using RelationRepository = ygg::ApplyTypeListT<TaggedRelationRepository, RelationRepositoryTypes>;
+using RelationRepository = boost::mp11::mp_apply<TaggedRelationRepository, RelationRepositoryTypes>;
 
 using Repository = ::ygg::formalism::Repository<SymbolRepository, RelationRepository>;
 using RepositoryPtr = std::shared_ptr<Repository>;
@@ -209,155 +193,186 @@ using RepositoryFactoryPtr = std::shared_ptr<RepositoryFactory>;
  *
  * Include repository.hpp before constructing, storing, or accessing views.
  */
-template<TaskKind T>
-using ArithmeticOperatorView = ygg::View<ygg::Data<ArithmeticOperator<T>>, Repository>;
+template<TaskKind T, OperatorKind O>
+using BinaryOperatorView = urd::view<BinaryOperator<T, O>, Repository>;
 
-template<TaskKind T>
-using ArithmeticOperatorListView = ygg::View<ygg::DataList<ArithmeticOperator<T>>, Repository>;
-
-template<TaskKind T, BinaryOperatorKind O>
-using BinaryOperatorView = ygg::View<ygg::Index<BinaryOperator<T, O>>, Repository>;
-
-template<TaskKind T, BinaryOperatorKind O>
-using BinaryOperatorListView = ygg::View<ygg::IndexList<BinaryOperator<T, O>>, Repository>;
+template<TaskKind T, OperatorKind O>
+using BinaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<BinaryOperator<T, O>>>, Repository>;
 
 template<FactKind F>
-using PredicateBindingView = ygg::View<ygg::Index<RelationBinding<Predicate<F>>>, Repository>;
+using PredicateBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Predicate<F>, ::tyr::formalism::ObjectTag>, Repository>;
 template<FactKind F>
-using FunctionBindingView = ygg::View<ygg::Index<RelationBinding<Function<F>>>, Repository>;
+using FunctionBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Function<F>, ::tyr::formalism::ObjectTag>, Repository>;
 template<RelationKind R>
-using RuleBindingView = ygg::View<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>, Repository>;
+using RuleBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Rule<LiftedTag, R>, ::tyr::formalism::ObjectTag>, Repository>;
 
 template<FactKind F>
-using PredicateBindingIndex = ygg::Index<RelationBinding<Predicate<F>>>;
+using PredicateBindingIndex = ygg::formalism::RelationBindingIndex<Predicate<F>, ::tyr::formalism::ObjectTag>;
 template<FactKind F>
-using FunctionBindingIndex = ygg::Index<RelationBinding<Function<F>>>;
+using FunctionBindingIndex = ygg::formalism::RelationBindingIndex<Function<F>, ::tyr::formalism::ObjectTag>;
 template<RelationKind R>
-using RuleBindingIndex = ygg::Index<RelationBinding<Rule<LiftedTag, R>>>;
+using RuleBindingIndex = ygg::formalism::RelationBindingIndex<Rule<LiftedTag, R>, ::tyr::formalism::ObjectTag>;
 
 template<FactKind F>
-using PredicateBindingForwardRangeView = ygg::View<RelationBindingsForwardRange<Predicate<F>, std::vector<ygg::Index<Row>>>, Repository>;
+using PredicateBindingForwardRangeView = RelationBindingsView<Predicate<F>, urd::Store<urd::sequence<urd::index<Row>>>, Repository>;
 template<FactKind F>
-using FunctionBindingRandomAccessRangeView = ygg::View<RelationBindingsRandomAccessRange<Function<F>, std::vector<ygg::Index<Row>>>, Repository>;
+using FunctionBindingRandomAccessRangeView = RelationBindingsView<Function<F>, urd::Store<urd::sequence<urd::index<Row>>>, Repository>;
 
 template<TaskKind T>
-using BooleanOperatorView = ygg::View<ygg::Data<BooleanOperator<T>>, Repository>;
+using BooleanOperatorView = urd::view<BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>, Repository>;
 
 template<TaskKind T>
-using BooleanOperatorListView = ygg::View<ygg::DataList<BooleanOperator<T>>, Repository>;
+using BooleanOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>>>, Repository>;
 template<TaskKind T>
-using BooleanOperatorViewList = std::vector<BooleanOperatorView<T>>;
-
-template<FactKind F>
-using FunctionView = ygg::View<ygg::Index<Function<F>>, Repository>;
+using BooleanOperatorViewList = urd::Store<urd::sequence<BooleanOperatorView<T>>>;
 
 template<FactKind F>
-using FunctionListView = ygg::View<ygg::IndexList<Function<F>>, Repository>;
-template<FactKind F>
-using FunctionViewList = std::vector<FunctionView<F>>;
-
-template<TaskKind T>
-using MultiOperatorView = ygg::View<ygg::Index<MultiOperator<T>>, Repository>;
-
-template<TaskKind T>
-using MultiOperatorListView = ygg::View<ygg::IndexList<MultiOperator<T>>, Repository>;
-
-using ObjectView = ygg::View<ygg::Index<Object>, Repository>;
-
-using ObjectListView = ygg::View<ygg::IndexList<Object>, Repository>;
-using ObjectViewList = std::vector<ObjectView>;
+using FunctionView = urd::view<Function<F>, Repository>;
 
 template<FactKind F>
-using PredicateView = ygg::View<ygg::Index<Predicate<F>>, Repository>;
+using FunctionListView = urd::resolved_range<urd::flat_vector<urd::index<Function<F>>>, Repository>;
+template<FactKind F>
+using FunctionViewList = urd::Store<urd::sequence<FunctionView<F>>>;
+
+template<TaskKind T, OperatorKind O>
+using MultiOperatorView = urd::view<MultiOperator<T, O>, Repository>;
+
+template<TaskKind T, OperatorKind O>
+using MultiOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<MultiOperator<T, O>>>, Repository>;
+
+using ObjectView = urd::view<Object, Repository>;
+
+using ObjectListView = urd::resolved_range<urd::flat_vector<urd::index<Object>>, Repository>;
+using ObjectViewList = urd::Store<urd::sequence<ObjectView>>;
 
 template<FactKind F>
-using PredicateListView = ygg::View<ygg::IndexList<Predicate<F>>, Repository>;
+using PredicateView = urd::view<Predicate<F>, Repository>;
+
 template<FactKind F>
-using PredicateViewList = std::vector<PredicateView<F>>;
+using PredicateListView = urd::resolved_range<urd::flat_vector<urd::index<Predicate<F>>>, Repository>;
+template<FactKind F>
+using PredicateViewList = urd::Store<urd::sequence<PredicateView<F>>>;
 
-using TermView = ygg::View<ygg::Data<Term>, Repository>;
+/// A term read through the repository: its object's view, or the parameter (formalism/declarations.hpp).
+using TermView = std::variant<ObjectView, ParameterIndex>;
 
-using TermListView = ygg::View<ygg::DataList<Term>, Repository>;
-using TermViewList = std::vector<TermView>;
+using TermListView = urd::resolved_range<TermList, Repository>;
+using TermViewList = urd::Store<urd::sequence<TermView>>;
 
-template<TaskKind T>
-using UnaryOperatorView = ygg::View<ygg::Index<UnaryOperator<T>>, Repository>;
+template<TaskKind T, OperatorKind O>
+using UnaryOperatorView = urd::view<UnaryOperator<T, O>, Repository>;
 
-template<TaskKind T>
-using UnaryOperatorListView = ygg::View<ygg::IndexList<UnaryOperator<T>>, Repository>;
+template<TaskKind T, OperatorKind O>
+using UnaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<UnaryOperator<T, O>>>, Repository>;
 
-using VariableView = ygg::View<ygg::Index<Variable>, Repository>;
+using VariableView = urd::view<Variable, Repository>;
 
-using VariableListView = ygg::View<ygg::IndexList<Variable>, Repository>;
-using VariableViewList = std::vector<VariableView>;
+using VariableListView = urd::resolved_range<urd::flat_vector<urd::index<Variable>>, Repository>;
+using VariableViewList = urd::Store<urd::sequence<VariableView>>;
 
 template<TaskKind T, FactKind F>
-using AtomListView = ygg::View<ygg::IndexList<Atom<T, F>>, Repository>;
+using AtomListView = urd::resolved_range<urd::flat_vector<urd::index<Atom<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
-using AtomView = ygg::View<ygg::Index<Atom<T, F>>, Repository>;
+using AtomView = urd::view<Atom<T, F>, Repository>;
 template<TaskKind T, FactKind F>
-using AtomViewList = std::vector<AtomView<T, F>>;
+using AtomViewList = urd::Store<urd::sequence<AtomView<T, F>>>;
 template<TaskKind T>
-using ConditionalEffectListView = ygg::View<ygg::IndexList<ConditionalEffect<T>>, Repository>;
+using ConditionalEffectListView = urd::resolved_range<urd::flat_vector<urd::index<ConditionalEffect<T>>>, Repository>;
 template<TaskKind T>
-using ConditionalEffectView = ygg::View<ygg::Index<ConditionalEffect<T>>, Repository>;
+using ConditionalEffectView = urd::view<ConditionalEffect<T>, Repository>;
 template<TaskKind T>
-using ConditionalEffectViewList = std::vector<ConditionalEffectView<T>>;
+using ConditionalEffectViewList = urd::Store<urd::sequence<ConditionalEffectView<T>>>;
 template<TaskKind T>
-using ConjunctiveConditionListView = ygg::View<ygg::IndexList<ConjunctiveCondition<T>>, Repository>;
+using ConjunctiveConditionListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveCondition<T>>>, Repository>;
 template<TaskKind T>
-using ConjunctiveConditionView = ygg::View<ygg::Index<ConjunctiveCondition<T>>, Repository>;
+using ConjunctiveConditionView = urd::view<ConjunctiveCondition<T>, Repository>;
 template<TaskKind T>
-using ConjunctiveEffectListView = ygg::View<ygg::IndexList<ConjunctiveEffect<T>>, Repository>;
+using ConjunctiveEffectListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveEffect<T>>>, Repository>;
 template<TaskKind T>
-using ConjunctiveEffectView = ygg::View<ygg::Index<ConjunctiveEffect<T>>, Repository>;
+using ConjunctiveEffectView = urd::view<ConjunctiveEffect<T>, Repository>;
+template<TaskKind T, FactKind F>
+using FunctionTermListView = urd::resolved_range<urd::flat_vector<urd::index<FunctionTerm<T, F>>>, Repository>;
+template<TaskKind T, FactKind F>
+using FunctionTermValueListView = urd::resolved_range<urd::flat_vector<urd::index<FunctionTermValue<T, F>>>, Repository>;
+template<TaskKind T, FactKind F>
+using FunctionTermValueView = urd::view<FunctionTermValue<T, F>, Repository>;
+template<TaskKind T, FactKind F>
+using FunctionTermValueViewList = urd::Store<urd::sequence<FunctionTermValueView<T, F>>>;
+template<TaskKind T, FactKind F>
+using FunctionTermView = urd::view<FunctionTerm<T, F>, Repository>;
+template<TaskKind T, FactKind F>
+using FunctionTermViewList = urd::Store<urd::sequence<FunctionTermView<T, F>>>;
+template<TaskKind T, FactKind F>
+using LiteralListView = urd::resolved_range<urd::flat_vector<urd::index<Literal<T, F>>>, Repository>;
+template<TaskKind T, FactKind F>
+using LiteralView = urd::view<Literal<T, F>, Repository>;
+template<TaskKind T, FactKind F>
+using LiteralViewList = urd::Store<urd::sequence<LiteralView<T, F>>>;
+template<TaskKind T, FactKind F>
+using NumericEffectOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<NumericEffect<T, F>>>, Repository>;
+template<TaskKind T, FactKind F>
+using NumericEffectOperatorView = urd::view<NumericEffect<T, F>, Repository>;
+template<TaskKind T, FactKind F>
+using NumericEffectOperatorViewList = urd::Store<urd::sequence<NumericEffectOperatorView<T, F>>>;
+template<TaskKind T, FactKind F>
+using NumericEffectView = urd::view<NumericEffect<T, F>, Repository>;
 template<TaskKind T>
-using FunctionExpressionListView = ygg::View<ygg::DataList<FunctionExpression<T>>, Repository>;
+using ProgramListView = urd::resolved_range<urd::flat_vector<urd::index<Program<T>>>, Repository>;
 template<TaskKind T>
-using FunctionExpressionView = ygg::View<ygg::Data<FunctionExpression<T>>, Repository>;
-template<TaskKind T, FactKind F>
-using FunctionTermListView = ygg::View<ygg::IndexList<FunctionTerm<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using FunctionTermValueListView = ygg::View<ygg::IndexList<FunctionTermValue<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using FunctionTermValueView = ygg::View<ygg::Index<FunctionTermValue<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using FunctionTermValueViewList = std::vector<FunctionTermValueView<T, F>>;
-template<TaskKind T, FactKind F>
-using FunctionTermView = ygg::View<ygg::Index<FunctionTerm<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using FunctionTermViewList = std::vector<FunctionTermView<T, F>>;
-template<TaskKind T, FactKind F>
-using LiteralListView = ygg::View<ygg::IndexList<Literal<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using LiteralView = ygg::View<ygg::Index<Literal<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using LiteralViewList = std::vector<LiteralView<T, F>>;
-template<TaskKind T, FactKind F>
-using NumericEffectOperatorListView = ygg::View<ygg::DataList<NumericEffectOperator<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using NumericEffectOperatorView = ygg::View<ygg::Data<NumericEffectOperator<T, F>>, Repository>;
-template<TaskKind T, FactKind F>
-using NumericEffectOperatorViewList = std::vector<NumericEffectOperatorView<T, F>>;
-template<TaskKind T, FactKind F>
-using NumericEffectView = ygg::View<ygg::Index<NumericEffect<T, F>>, Repository>;
-template<TaskKind T>
-using ProgramListView = ygg::View<ygg::IndexList<Program<T>>, Repository>;
-template<TaskKind T>
-using ProgramView = ygg::View<ygg::Index<Program<T>>, Repository>;
+using ProgramView = urd::view<Program<T>, Repository>;
 template<TaskKind T, RelationKind R>
-using RuleListView = ygg::View<ygg::IndexList<Rule<T, R>>, Repository>;
+using RuleListView = urd::resolved_range<urd::flat_vector<urd::index<Rule<T, R>>>, Repository>;
 template<TaskKind T, RelationKind R>
-using RuleView = ygg::View<ygg::Index<Rule<T, R>>, Repository>;
+using RuleView = urd::view<Rule<T, R>, Repository>;
 template<TaskKind T, RelationKind R>
-using RuleViewList = std::vector<RuleView<T, R>>;
+using RuleViewList = urd::Store<urd::sequence<RuleView<T, R>>>;
+
+/// A function expression: a number, an arithmetic operator or a function term (ground ones also the auxiliary term).
+/// Stored as it is, not interned; read through a repository as FunctionExpressionView.
+template<TaskKind T>
+using FunctionExpression =
+    std::conditional_t<std::same_as<T, GroundTag>,
+                       ::cista::offset::variant<ygg::float_t,
+                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
+                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
+                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
+                                                urd::index<FunctionTerm<T, StaticTag>>,
+                                                urd::index<FunctionTerm<T, FluentTag>>,
+                                                urd::index<FunctionTerm<T, AuxiliaryTag>>>,
+                       ::cista::offset::variant<ygg::float_t,
+                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
+                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
+                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
+                                                urd::index<FunctionTerm<T, StaticTag>>,
+                                                urd::index<FunctionTerm<T, FluentTag>>>>;
+template<TaskKind T>
+using FunctionExpressionList = ::cista::offset::vector<FunctionExpression<T>>;
+
+/// A function expression read through the repository: the number, or the view of the record, it holds.
+template<TaskKind T>
+using FunctionExpressionView = std::conditional_t<std::same_as<T, GroundTag>,
+                                                  std::variant<ygg::float_t,
+                                                               UnaryOperatorView<T, ArithmeticOperatorKind>,
+                                                               BinaryOperatorView<T, ArithmeticOperatorKind>,
+                                                               MultiOperatorView<T, ArithmeticOperatorKind>,
+                                                               FunctionTermView<T, StaticTag>,
+                                                               FunctionTermView<T, FluentTag>,
+                                                               FunctionTermView<T, AuxiliaryTag>>,
+                                                  std::variant<ygg::float_t,
+                                                               UnaryOperatorView<T, ArithmeticOperatorKind>,
+                                                               BinaryOperatorView<T, ArithmeticOperatorKind>,
+                                                               MultiOperatorView<T, ArithmeticOperatorKind>,
+                                                               FunctionTermView<T, StaticTag>,
+                                                               FunctionTermView<T, FluentTag>>>;
+template<TaskKind T>
+using FunctionExpressionListView = urd::resolved_range<FunctionExpressionList<T>, Repository>;
 
 /**
  * Context
  */
 
 template<typename Repo, typename... Tags>
-constexpr bool repository_access_for_types(ygg::TypeList<Tags...>) noexcept
+constexpr bool repository_access_for_types(boost::mp11::mp_list<Tags...>) noexcept
 { return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...); }
 
 template<typename T>

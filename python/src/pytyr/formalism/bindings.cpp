@@ -16,6 +16,7 @@
  */
 
 #include "bindings.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include <tyr/formalism/enums.hpp>
 
@@ -52,7 +53,6 @@ void bind_formalism(nb::module_& m)
     bind_binding(m);
     bind_predicate(m);
     bind_function(m);
-    bind_term(m);
 }
 
 }  // namespace tyr::formalism

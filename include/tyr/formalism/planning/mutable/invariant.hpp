@@ -25,21 +25,24 @@
 
 #include <algorithm>
 #include <tuple>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
 
-struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
+struct MutableInvariant : urd::compared_by_identity<MutableInvariant>
 {
     size_t num_rigid_variables = 0;
     size_t num_counted_variables = 0;
     MutableAtomList<FluentTag> atoms;
-    ygg::UnorderedSet<PredicateView<FluentTag>> predicates;
+    urd::Store<urd::set<PredicateView<FluentTag>>> predicates;
 
     MutableInvariant() = default;
 
@@ -52,7 +55,7 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
     MutableInvariant(size_t num_rigid_variables_,
                      size_t num_counted_variables_,
                      MutableAtomList<FluentTag> atoms_,
-                     ygg::UnorderedSet<PredicateView<FluentTag>> predicates_) :
+                     urd::Store<urd::set<PredicateView<FluentTag>>> predicates_) :
         num_rigid_variables(num_rigid_variables_),
         num_counted_variables(num_counted_variables_),
         atoms(std::move(atoms_)),
@@ -71,10 +74,10 @@ struct MutableInvariant : ygg::comparison::Mixin<MutableInvariant>
     }
 
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&MutableInvariant::num_rigid_variables, &MutableInvariant::num_counted_variables, &MutableInvariant::atoms> {}; }
+    { return urd::Members<&MutableInvariant::num_rigid_variables, &MutableInvariant::num_counted_variables, &MutableInvariant::atoms> {}; }
 };
 
-using MutableInvariantList = std::vector<MutableInvariant>;
+using MutableInvariantList = urd::Store<urd::sequence<MutableInvariant>>;
 
 }
 

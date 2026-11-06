@@ -30,8 +30,6 @@ template bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, forma
 
 template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> element,
                                                     const ApplicabilityContext& context);
-template ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> element,
-                                                    const ApplicabilityContext& context);
 
 }
 

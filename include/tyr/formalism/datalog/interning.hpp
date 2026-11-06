@@ -31,7 +31,7 @@ namespace tyr::formalism::datalog
 using ygg::formalism::insert;
 
 template<typename T>
-void prepare_for_insert(Repository&, ygg::Data<T>& data)
+void prepare_for_insert(Repository&, urd::data<T>& data)
 { canonicalize(data); }
 
 }

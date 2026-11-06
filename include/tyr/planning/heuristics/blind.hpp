@@ -39,7 +39,7 @@ public:
 
     void set_goal([[maybe_unused]] formalism::planning::ConjunctiveConditionView<GroundTag> goal) override {}
 
-    ygg::float_t evaluate([[maybe_unused]] const ygg::Builder<State<Kind>>& state) override { return ygg::float_t { 0 }; }
+    ygg::float_t evaluate([[maybe_unused]] const urd::data<State<Kind>>& state) override { return ygg::float_t { 0 }; }
 
     [[nodiscard]] HeuristicPtr<Kind> make_worker([[maybe_unused]] ygg::ExecutionContextPtr execution_context) const override { return create(); }
 };

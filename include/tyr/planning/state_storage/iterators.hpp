@@ -19,6 +19,8 @@
 #define TYR_PLANNING_STATE_STORAGE_ITERATORS_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/indices.hpp"
 #include "tyr/planning/state_storage.hpp"
 
@@ -29,7 +31,8 @@
 #include <ranges>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -42,7 +45,7 @@ template<class Tag>
 class AtomIterator
 {
 public:
-    using value_type = ygg::Index<formalism::planning::Atom<GroundTag, Tag>>;
+    using value_type = urd::index<formalism::planning::Atom<GroundTag, Tag>>;
     using reference = value_type;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
@@ -55,7 +58,7 @@ public:
     value_type operator*() const noexcept
     {
         assert(m_data);
-        return ygg::Index<formalism::planning::Atom<GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) };
+        return urd::index<formalism::planning::Atom<GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) };
     }
 
     AtomIterator& operator++() noexcept
@@ -115,7 +118,7 @@ template<class Tag>
 class FunctionTermValueIterator
 {
 public:
-    using value_type = std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>;
+    using value_type = std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>;
     using reference = value_type;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
@@ -130,7 +133,7 @@ public:
     }
 
     FunctionTermValueIterator() noexcept = default;
-    FunctionTermValueIterator(const std::vector<ygg::float_t>& data, bool begin) noexcept : m_data(&data), m_i(begin ? 0 : m_data->size())
+    FunctionTermValueIterator(const urd::Store<urd::sequence<ygg::float_t>>& data, bool begin) noexcept : m_data(&data), m_i(begin ? 0 : m_data->size())
     {
         if (begin)
             skip_nan();
@@ -139,7 +142,7 @@ public:
     value_type operator*() const noexcept
     {
         assert(m_data);
-        return { ygg::Index<formalism::planning::FunctionTerm<GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) }, (*m_data)[m_i] };
+        return { urd::index<formalism::planning::FunctionTerm<GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) }, (*m_data)[m_i] };
     }
 
     FunctionTermValueIterator& operator++() noexcept
@@ -160,7 +163,7 @@ public:
     friend bool operator!=(const FunctionTermValueIterator& lhs, const FunctionTermValueIterator& rhs) noexcept { return !(lhs == rhs); }
 
 private:
-    const std::vector<ygg::float_t>* m_data { nullptr };
+    const urd::Store<urd::sequence<ygg::float_t>>* m_data { nullptr };
     std::size_t m_i = 0;
 };
 
@@ -169,7 +172,7 @@ class FunctionTermValueRange : public std::ranges::view_interface<FunctionTermVa
 {
 public:
     FunctionTermValueRange() = default;
-    explicit FunctionTermValueRange(const std::vector<ygg::float_t>& values) : m_data(&values) {}
+    explicit FunctionTermValueRange(const urd::Store<urd::sequence<ygg::float_t>>& values) : m_data(&values) {}
     template<TaskKind Kind>
     explicit FunctionTermValueRange(const NumericUnpackedStorage<Kind>& storage) : FunctionTermValueRange(storage.values)
     {
@@ -179,7 +182,7 @@ public:
     [[nodiscard]] auto end() const { return FunctionTermValueIterator<Tag>(*m_data, false); }
 
 private:
-    const std::vector<ygg::float_t>* m_data { nullptr };
+    const urd::Store<urd::sequence<ygg::float_t>>* m_data { nullptr };
 };
 }
 

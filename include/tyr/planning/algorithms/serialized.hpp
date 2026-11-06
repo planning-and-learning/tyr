@@ -19,6 +19,8 @@
 #define TYR_PLANNING_ALGORITHMS_SERIALIZED_HPP_
 
 #include "tyr/planning/algorithms/concepts.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/algorithms/serialized/event_handler.hpp"
 #include "tyr/planning/algorithms/serialized/statistics.hpp"
 #include "tyr/planning/algorithms/serialized_concepts.hpp"
@@ -97,7 +99,7 @@ struct ReachedSubgoal
 };
 
 template<TaskKind Kind>
-std::optional<size_t> find_reached_subgoal(const std::vector<ReachedSubgoal<Kind>>& reached_subgoals, const Node<Kind>& node)
+std::optional<size_t> find_reached_subgoal(const urd::Store<urd::sequence<ReachedSubgoal<Kind>>>& reached_subgoals, const Node<Kind>& node)
 {
     for (const auto& reached_subgoal : reached_subgoals)
     {
@@ -124,7 +126,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
         throw std::invalid_argument("serialized::find_solution(...): goal strategy is required.");
 
     auto statistics = tyr::planning::Statistics {};
-    auto worker_statistics = std::vector<tyr::planning::Statistics> {};
+    auto worker_statistics = urd::Store<urd::sequence<tyr::planning::Statistics>> {};
     const auto search_start = std::chrono::steady_clock::now();
     const auto max_time =
         options.max_time ? options.max_time : std::optional<std::chrono::steady_clock::duration>(std::as_const(solver).options.search_budget.max_time);
@@ -154,7 +156,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
         return result;
     };
 
-    if (!options.goal_strategy->is_static_goal_satisfied(*final_goal_seed.get_state_repository()->get_task()))
+    if (!options.goal_strategy->is_static_goal_satisfied(*final_goal_seed.get_state_repository().get_task()))
     {
         auto result = SearchResult<Kind> {};
         result.status = SearchStatus::UNSOLVABLE;
@@ -168,7 +170,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
         return finalize(detail::make_empty_result(combined_start_node, SearchStatus::EXHAUSTED));
 
     auto combined_labeled_succ_nodes = LabeledNodeList<Kind> {};
-    auto reached_subgoals = std::vector<detail::ReachedSubgoal<Kind>> { { combined_start_node, 0 } };
+    auto reached_subgoals = urd::Store<urd::sequence<detail::ReachedSubgoal<Kind>>> { { combined_start_node, 0 } };
 
     for (auto subsearch_index = ygg::uint_t { 0 }; subsearch_index < options.max_num_subsearches; ++subsearch_index)
     {

@@ -16,6 +16,8 @@
  */
 
 #include "tyr/planning/task_utils.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
@@ -28,12 +30,11 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/state_builder.hpp"
 
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::detail
 {
 
-void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
+void insert_fluent_atoms_to_fact_set(const urd::data<State<GroundTag>>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<GroundTag>::FluentToFluentAtomMapping& fluent_to_fluent_atom,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
@@ -42,7 +43,7 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<GroundTag>>& state
         fact_sets.predicate.insert(fluent_to_fluent_atom.at(atom));
 }
 
-void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& state,
+void insert_numeric_variables_to_fact_set(const urd::data<State<GroundTag>>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<GroundTag>::FluentToFluentFunctionTermMapping& fluent_to_fluent_fterm,
                                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
@@ -52,7 +53,7 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<GroundTag>>& 
             fact_sets.function.insert(it->second, value);
 }
 
-void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+void insert_fluent_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<LiftedTag>::FluentToFluentPredicateMapping& fluent_to_fluent_predicate,
                                      formalism::planning::MergeDatalogContext& merge_context,
@@ -65,7 +66,7 @@ void insert_fluent_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state
     }
 }
 
-void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+void insert_derived_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                       const formalism::planning::Repository& repository,
                                       const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
                                       formalism::planning::MergeDatalogContext& merge_context,
@@ -76,7 +77,7 @@ void insert_derived_atoms_to_fact_set(const ygg::Builder<State<LiftedTag>>& stat
             fact_sets.predicate.insert(formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first);
 }
 
-void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& state,
+void insert_numeric_variables_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<LiftedTag>::FluentToFluentFunctionMapping& fluent_to_fluent_function,
                                           formalism::planning::MergeDatalogContext& merge_context,
@@ -87,12 +88,12 @@ void insert_numeric_variables_to_fact_set(const ygg::Builder<State<LiftedTag>>& 
             fact_sets.function.insert(formalism::planning::merge_p2d(fterm.get_row(), it->second, merge_context).first, value);
 }
 
-void read_derived_atoms_from_fact_set(ygg::Builder<State<LiftedTag>>& state,
+void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,
                                       const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                                      std::vector<formalism::datalog::PredicateBindingView<formalism::FluentTag>>& derived_bindings)
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>>& derived_bindings)
 {
     derived_bindings.clear();
     for (const auto& set : fact_sets.predicate.get_sets())

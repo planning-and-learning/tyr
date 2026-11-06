@@ -23,24 +23,27 @@
 #include "tyr/planning/state_storage/tags.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
+#include <urd/repr/pools/tree_bitset.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/tree_bitset_set.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-struct AtomPackedStorage<Kind, TreeBitset> : ygg::comparison::Mixin<AtomPackedStorage<Kind, TreeBitset>>
+struct AtomPackedStorage<Kind, TreeBitset> : urd::compared_by_identity<AtomPackedStorage<Kind, TreeBitset>>
 {
-    using Index = ygg::TreeBitsetIndex<tree_bitset::Block>;
+    using Index = urd::repr::TreeHandle;
 
     Index index;
 
     AtomPackedStorage() = default;
     explicit AtomPackedStorage(Index index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&AtomPackedStorage::index> {}; }
 };
 
 /// Stores derived atoms, given as a bitset in ground and lifted tasks alike, as a bitset tree.
@@ -65,8 +68,8 @@ public:
 private:
     Context* m_context;
 
-    std::vector<tree_bitset::Block> m_blocks;
-    std::vector<tree_bitset::Flip> m_flips;
+    urd::Store<urd::sequence<tree_bitset::Block>> m_blocks;
+    urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;
 };
 
 }

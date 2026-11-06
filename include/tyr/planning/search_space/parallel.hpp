@@ -27,10 +27,12 @@
 #include <cassert>
 #include <span>
 #include <stdexcept>
+#include <urd/elements/equal_to.hpp>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/segmented_vector.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
 
 namespace tyr::planning
 {
@@ -43,7 +45,7 @@ public:
     WorkerSearchSpaceView(StateRepository<Kind>& state_repository,
                           AxiomEvaluator<Kind>& axiom_evaluator,
                           SuccessorGenerator<Kind>& successor_generator,
-                          const ygg::SegmentedVector<SearchNode>& search_nodes,
+                          const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
                           size_t state_index_divisor = 1) :
         m_state_repository(&state_repository),
         m_axiom_evaluator(&axiom_evaluator),
@@ -56,12 +58,12 @@ public:
     [[nodiscard]] StateRepository<Kind>& state_repository() const noexcept { return *m_state_repository; }
     [[nodiscard]] AxiomEvaluator<Kind>& axiom_evaluator() const noexcept { return *m_axiom_evaluator; }
     [[nodiscard]] SuccessorGenerator<Kind>& successor_generator() const noexcept { return *m_successor_generator; }
-    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& search_nodes() const noexcept { return *m_search_nodes; }
+    [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes() const noexcept { return *m_search_nodes; }
 
-    [[nodiscard]] const SearchNode& get_search_node(ygg::Index<State<Kind>> state) const
+    [[nodiscard]] const SearchNode& get_search_node(urd::index<State<Kind>> state) const
     {
         assert(m_state_index_divisor > 0);
-        const auto index = static_cast<size_t>(ygg::uint_t(state)) / m_state_index_divisor;
+        const auto index = static_cast<size_t>(ygg::uint_t(state.value)) / m_state_index_divisor;
         assert(index < m_search_nodes->size());
         return (*m_search_nodes)[index];
     }
@@ -70,7 +72,7 @@ private:
     StateRepository<Kind>* m_state_repository;
     AxiomEvaluator<Kind>* m_axiom_evaluator;
     SuccessorGenerator<Kind>* m_successor_generator;
-    const ygg::SegmentedVector<SearchNode>* m_search_nodes;
+    const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>* m_search_nodes;
     size_t m_state_index_divisor;
 };
 
@@ -84,14 +86,14 @@ struct PlanReconstructionPolicy<ParallelSearch>
                                                  AxiomEvaluator<Kind>& caller_axiom_evaluator,
                                                  CostMode action_cost_mode = CostMode::GENERAL)
     {
-        auto trajectory = std::vector<WorkerStateIndex<Kind>> {};
+        auto trajectory = urd::Store<urd::sequence<WorkerStateIndex<Kind>>> {};
         auto current = final_state;
 
         while (true)
         {
             trajectory.push_back(current);
             const auto& search_node = get_search_node(current, workers);
-            assert(search_node.parent_state.worker.is_max() == search_node.parent_state.state.is_max());
+            assert(search_node.parent_state.worker.is_none() == search_node.parent_state.state.is_none());
             if (search_node.parent_state.is_max())
             {
                 break;
@@ -100,7 +102,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
         }
         std::reverse(trajectory.begin(), trajectory.end());
 
-        auto labels = std::vector<formalism::planning::ActionBindingView> {};
+        auto labels = urd::Store<urd::sequence<formalism::planning::ActionBindingView>> {};
         labels.reserve(trajectory.size() - 1);
         auto successors = LabeledNodeList<Kind> {};
 
@@ -146,7 +148,7 @@ private:
     static const WorkerSearchSpaceView<Kind, SearchNode>& get_worker(WorkerStateIndex<Kind> state,
                                                                      std::span<const WorkerSearchSpaceView<Kind, SearchNode>> workers)
     {
-        const auto index = static_cast<size_t>(ygg::uint_t(state.worker));
+        const auto index = static_cast<size_t>(ygg::uint_t(state.worker.value));
         assert(index < workers.size());
         return workers[index];
     }
@@ -158,10 +160,10 @@ private:
     template<TaskKind Kind>
     static bool equal_unextended(const StateView<Kind>& lhs, const StateView<Kind>& rhs) noexcept
     {
-        const auto& lhs_builder = lhs.get_state_builder();
-        const auto& rhs_builder = rhs.get_state_builder();
-        return ygg::EqualTo<> {}(lhs_builder.template get_atom_storage<formalism::FluentTag>(), rhs_builder.template get_atom_storage<formalism::FluentTag>())
-               && ygg::EqualTo<> {}(lhs_builder.get_numeric_variables(), rhs_builder.get_numeric_variables());
+        const auto& lhs_builder = lhs.data();
+        const auto& rhs_builder = rhs.data();
+        return urd::EqualTo<> {}(lhs_builder.template get_atom_storage<formalism::FluentTag>(), rhs_builder.template get_atom_storage<formalism::FluentTag>())
+               && urd::EqualTo<> {}(lhs_builder.get_numeric_variables(), rhs_builder.get_numeric_variables());
     }
 
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>

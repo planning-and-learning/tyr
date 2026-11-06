@@ -16,6 +16,8 @@
  */
 
 #include "tyr/datalog/lifted/workspaces/program.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
@@ -27,7 +29,7 @@ namespace tyr::datalog
 namespace
 {
 template<formalism::RelationKind R>
-void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace, std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>& workspaces)
+void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace, urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>>& workspaces)
 {
     const auto& const_workspaces = const_workspace.template get_rules<R>();
     workspaces.reserve(const_workspaces.size());
@@ -39,12 +41,12 @@ template<formalism::RelationKind R>
 void initialize_const_rule_workspaces(Program<LiftedTag>& program,
                                       formalism::datalog::Repository& program_repository,
                                       analysis::RuleCompatibilityGraphMap<R>& graphs,
-                                      std::vector<std::optional<ConstRuleWorkspace<LiftedTag, R>>>& workspaces)
+                                      urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, R>>>>& workspaces)
 {
     const auto rules = program.get_program().template get_rules<R>();
     workspaces.resize(rules.size());
     for (const auto rule : rules)
-        workspaces[ygg::uint_t(rule.get_index())].emplace(rule, program_repository, std::move(graphs.at(rule.get_index())));
+        workspaces[ygg::uint_t(rule.index().value)].emplace(rule, program_repository, std::move(graphs.at(rule.index())));
 }
 }
 

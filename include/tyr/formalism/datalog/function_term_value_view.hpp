@@ -21,24 +21,20 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/function_term_view.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
-template<::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>> C>
-class View<ygg::Index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>>, C> :
-    public ygg::IndexViewBase<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>, C>
+template<::tyr::formalism::FactKind F, typename V>
+struct view_mixin<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>, V>
 {
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>, C>(handle, context)
-    {
-    }
-
-    auto get_fterm() const noexcept { return ygg::make_view(this->get_data().fterm, this->get_context()); }
-    auto get_value() const noexcept { return this->get_data().value; }
+    auto get_fterm() const noexcept { return self().template get<&urd::record_of<V>::fterm>(); }
+    auto get_value() const noexcept { return self().data().value; }
 };
-
-}
+}  // namespace urd
 
 #endif

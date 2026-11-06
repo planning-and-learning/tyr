@@ -19,6 +19,8 @@
 #define TYR_PLANNING_ACTION_EXECUTOR_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability_lifted_decl.hpp"
@@ -27,7 +29,8 @@
 #include <boost/compat/function_ref.hpp>
 #include <span>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -50,7 +53,7 @@ public:
     template<TaskKind Kind>
     ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
                                            formalism::planning::ActionView<GroundTag> action,
-                                           ygg::Builder<State<Kind>>& successor_state_builder,
+                                           urd::builder<State<Kind>>& successor_state_builder,
                                            StateDelta& delta);
 
     // Lifted action API
@@ -73,13 +76,13 @@ public:
                                            formalism::planning::GrounderContext& grounder,
                                            formalism::planning::FDRContext& fdr,
                                            ForEachEffectBinding for_each_effect_binding,
-                                           ygg::Builder<State<LiftedTag>>& successor_state_builder,
+                                           urd::builder<State<LiftedTag>>& successor_state_builder,
                                            StateDelta& delta);
 
 private:
-    ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_del_effects;
-    ygg::DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_add_effects;
-    std::vector<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>> m_numeric_writes;
+    urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>> m_del_effects;
+    urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>> m_add_effects;
+    urd::Store<urd::sequence<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>> m_numeric_writes;
     formalism::planning::EffectFamilyList m_effect_families;
 };
 }

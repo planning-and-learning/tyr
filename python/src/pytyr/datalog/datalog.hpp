@@ -19,8 +19,10 @@
 #define TYR_PYTHON_DATALOG_DATALOG_HPP_
 
 #include "module.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <urd/python/sequences/sequence.hpp>
 
-#include <boost/iterator/transform_iterator.hpp>
 #include <nanobind/make_iterator.h>
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/optional.h>
@@ -34,10 +36,12 @@
 #include <tyr/datalog/policies/cost.hpp>
 #include <tyr/datalog/policies/termination.hpp>
 #include <tyr/formalism/datalog/copy.hpp>
+#include <memory>
+#include <ranges>
 #include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include <yggdrasil/python/owner.hpp>
+#include <urd/python/owner.hpp>
 #include <yggdrasil/python/type_casters.hpp>
 
 namespace tyr::datalog
@@ -45,24 +49,59 @@ namespace tyr::datalog
 
 using Interval = ygg::ClosedInterval<ygg::float_t>;
 
+/// An iterator of a range that its iterators share, so that the range lives as long as the Python iterator: a
+/// transform_view (a binding view range) made in the call, whose iterators point into it.
+template<std::ranges::forward_range R>
+class SharedRangeIterator
+{
+    std::shared_ptr<const R> m_range;
+    std::ranges::iterator_t<const R> m_it {};
+
+public:
+    using value_type = std::ranges::range_value_t<const R>;
+    using difference_type = std::ptrdiff_t;
+
+    SharedRangeIterator() = default;
+    SharedRangeIterator(std::shared_ptr<const R> range, std::ranges::iterator_t<const R> it) : m_range(std::move(range)), m_it(std::move(it)) {}
+
+    decltype(auto) operator*() const { return *m_it; }
+    SharedRangeIterator& operator++()
+    {
+        ++m_it;
+        return *this;
+    }
+    SharedRangeIterator operator++(int)
+    {
+        auto old = *this;
+        ++m_it;
+        return old;
+    }
+    friend bool operator==(const SharedRangeIterator& lhs, const SharedRangeIterator& rhs) { return lhs.m_it == rhs.m_it; }
+};
+
+template<std::ranges::forward_range R>
+    requires std::ranges::common_range<const R>
+auto make_shared_range_iterator(nb::handle scope, const char* name, R range)
+{
+    const auto shared = std::make_shared<const R>(std::move(range));
+    return nb::make_iterator(scope, name, SharedRangeIterator<R>(shared, std::ranges::begin(*shared)), SharedRangeIterator<R>(shared, std::ranges::end(*shared)));
+}
+
 template<formalism::FactKind T>
 void bind_predicate_fact_set(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
     using Set = PredicateFactSet<T>;
-    const auto retain_owner = ygg::python::make_owner_retainer();
 
     nb::class_<Set>(m, name)
         .def("get_predicate", &Set::get_predicate, nb::keep_alive<0, 1>())
-        .def("get_bindings",
-             [retain_owner](nb::typed<nb::handle, Set> owner)
-             {
-                 const auto& self = nb::cast<const Set&>(owner);
-                 const auto bindings = self.get_bindings();
-                 auto iterator = nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end());
-                 // Hand over the Python object itself; converting the iterator to nb::object would slice off its cached value.
-                 return ygg::python::make_iterator_with_owner(nb::steal(iterator.release()), owner, retain_owner);
-             })
+        .def(
+            "get_bindings",
+            [](const Set& self)
+            {
+                return make_shared_range_iterator(nb::type<Set>(), "BindingIterator", self.get_bindings());
+            },
+            nb::keep_alive<0, 1>())
         .def("count",
              [](const Set& self)
              {
@@ -81,22 +120,17 @@ void bind_function_fact_set(nb::module_& m, const char* name)
     using namespace nb::literals;
     using Set = FunctionFactSet<T>;
     using Binding = formalism::datalog::FunctionBindingView<T>;
-    const auto retain_owner = ygg::python::make_owner_retainer();
 
     nb::class_<Set>(m, name)
         .def("get_function", &Set::get_function, nb::keep_alive<0, 1>())
-        .def("get_binding_values",
-             [retain_owner](nb::typed<nb::handle, Set> owner)
-             {
-                 const auto& self = nb::cast<const Set&>(owner);
-                 const auto bindings = self.get_bindings();
-                 const auto project = [&self](const Binding binding) { return std::pair(binding, self[binding]); };
-                 auto iterator = nb::make_iterator(nb::type<Set>(),
-                                                   "BindingValueIterator",
-                                                   boost::make_transform_iterator(bindings.begin(), project),
-                                                   boost::make_transform_iterator(bindings.end(), project));
-                 return ygg::python::make_iterator_with_owner(nb::steal(iterator.release()), owner, retain_owner);
-             })
+        .def(
+            "get_binding_values",
+            [](const Set& self)
+            {
+                const auto project = [set = &self](const Binding binding) { return std::pair(binding, (*set)[binding]); };
+                return make_shared_range_iterator(nb::type<Set>(), "BindingValueIterator", self.get_bindings() | std::views::transform(project));
+            },
+            nb::keep_alive<0, 1>())
         .def("count", [](const Set& self) { return self.get_values().size(); })
         .def("get", [](const Set& self, Binding binding) { return self[binding]; }, "binding"_a);
 }
@@ -111,7 +145,7 @@ void bind_tagged_fact_sets(nb::module_& m, const char* name)
             "get_predicate_sets",
             [](const Sets& self)
             {
-                auto result = std::vector<const PredicateFactSet<T>*> {};
+                auto result = urd::Store<urd::sequence<const PredicateFactSet<T>*>> {};
                 for (const auto& set : self.predicate.get_sets())
                     result.push_back(&set);
                 return result;
@@ -121,7 +155,7 @@ void bind_tagged_fact_sets(nb::module_& m, const char* name)
             "get_function_sets",
             [](const Sets& self)
             {
-                auto result = std::vector<const FunctionFactSet<T>*> {};
+                auto result = urd::Store<urd::sequence<const FunctionFactSet<T>*>> {};
                 for (const auto& set : self.function.get_sets())
                     result.push_back(&set);
                 return result;
@@ -140,13 +174,13 @@ inline void bind_fact_sets(nb::module_& m)
 }
 
 /// Python accepts binding indices and views; the C++ stores take indices.
-template<typename T>
-ygg::Index<T> as_index(ygg::Index<T> index) noexcept
+template<typename H>
+H as_index(H index) noexcept
 { return index; }
 
-template<typename T, typename C>
-ygg::Index<T> as_index(const ygg::View<ygg::Index<T>, C>& view) noexcept
-{ return view.get_index(); }
+template<typename H, typename C>
+H as_index(const ::ygg::formalism::RelationBindingView<H, C>& view) noexcept
+{ return view.index(); }
 
 inline void bind_numeric_support(nb::module_& m)
 {
@@ -159,14 +193,14 @@ inline void bind_numeric_support(nb::module_& m)
                    .def(
                        "__init__",
                        [](NumericSupport* self, NumericKeyView key, Interval interval, Cost cost)
-                       { new (self) NumericSupport(key.get_index(), std::move(std::move(std::move(interval))), cost); },
+                       { new (self) NumericSupport(key.index(), std::move(std::move(std::move(interval))), cost); },
                        "key"_a,
                        "interval"_a,
                        "cost"_a)
                    .def("get_key", &NumericSupport::get_key)
                    .def("get_interval", &NumericSupport::get_interval)
                    .def("get_cost", &NumericSupport::get_cost);
-    ygg::add_comparison(cls);
+    urd::python::add_comparison(cls);
 }
 
 template<typename Key>
@@ -202,50 +236,50 @@ inline void bind_annotations(nb::module_& m)
 
     auto base_annotation_cls =
         nb::class_<BaseAnnotation>(m, "BaseAnnotation").def(nb::init<>()).def(nb::init<Cost>(), "cost"_a).def("get_cost", &BaseAnnotation::get_cost);
-    ygg::add_comparison(base_annotation_cls);
+    urd::python::add_comparison(base_annotation_cls);
 
     auto witness_annotation_cls =
         nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
             .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
-            .def(nb::init<RuleKey, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
+            .def(nb::init<RuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
             .def(
                 "__init__",
-                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost) { new (self) WitnessAnnotationT(rule_key.get_index(), cost); },
+                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost) { new (self) WitnessAnnotationT(rule_key.index(), cost); },
                 "rule_key"_a,
                 "cost"_a)
             .def(
                 "__init__",
-                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost, std::vector<NumericSupport> numeric_supports)
-                { new (self) WitnessAnnotationT(rule_key.get_index(), cost, std::move(numeric_supports)); },
+                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost, urd::Store<urd::sequence<NumericSupport>> numeric_supports)
+                { new (self) WitnessAnnotationT(rule_key.index(), cost, std::move(numeric_supports)); },
                 "rule_key"_a,
                 "cost"_a,
                 "numeric_supports"_a)
             .def("get_rule_key", &WitnessAnnotationT::get_rule_key)
             .def("get_cost", &WitnessAnnotationT::get_cost)
             .def("get_numeric_supports", &WitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
-    ygg::add_comparison(witness_annotation_cls);
+    urd::python::add_comparison(witness_annotation_cls);
 
     auto function_witness_annotation_cls =
         nb::class_<FunctionWitnessAnnotationT>(m, "FunctionWitnessAnnotation")
             .def(nb::init<FunctionRuleKey, Cost>(), "rule_key"_a, "cost"_a)
-            .def(nb::init<FunctionRuleKey, Cost, std::vector<NumericSupport>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
+            .def(nb::init<FunctionRuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
             .def(
                 "__init__",
                 [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost)
-                { new (self) FunctionWitnessAnnotationT(rule_key.get_index(), cost); },
+                { new (self) FunctionWitnessAnnotationT(rule_key.index(), cost); },
                 "rule_key"_a,
                 "cost"_a)
             .def(
                 "__init__",
-                [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost, std::vector<NumericSupport> numeric_supports)
-                { new (self) FunctionWitnessAnnotationT(rule_key.get_index(), cost, std::move(numeric_supports)); },
+                [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost, urd::Store<urd::sequence<NumericSupport>> numeric_supports)
+                { new (self) FunctionWitnessAnnotationT(rule_key.index(), cost, std::move(numeric_supports)); },
                 "rule_key"_a,
                 "cost"_a,
                 "numeric_supports"_a)
             .def("get_rule_key", &FunctionWitnessAnnotationT::get_rule_key)
             .def("get_cost", &FunctionWitnessAnnotationT::get_cost)
             .def("get_numeric_supports", &FunctionWitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
-    ygg::add_comparison(function_witness_annotation_cls);
+    urd::python::add_comparison(function_witness_annotation_cls);
 
     nb::class_<PredicateAnnotationStore>(m, "PredicateAnnotations")
         .def(nb::init<>())
@@ -364,7 +398,7 @@ inline void bind_policies(nb::module_& m)
             [](const MaxMinCostAnnotationWithAchievers& self,
                formalism::datalog::PredicateBindingView<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
-                const auto* achievers = self.find_achievers(binding.get_index());
+                const auto* achievers = self.find_achievers(binding.index());
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
             },
             "binding"_a);
@@ -504,7 +538,7 @@ void bind_configuration(nb::module_& m, const char* prefix)
         cls.def("initialize", [](Context& self) { self.initialize(); })
             .def(
                 "initialize",
-                [](Context& self, const std::vector<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>& fluent_atoms)
+                [](Context& self, const urd::Store<urd::sequence<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms)
                 { self.initialize(fluent_atoms); },
                 "fluent_atoms"_a);
     }

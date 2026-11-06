@@ -19,20 +19,21 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONJUNCTIVE_EFFECT_HPP_
 
 #include "tyr/formalism/planning/mutable/literal.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 #include <cstddef>
 #include <tuple>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
-struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffect>
+struct MutableConjunctiveEffect : urd::compared_by_identity<MutableConjunctiveEffect>
 {
     size_t num_parent_variables = 0;
     size_t num_variables = 0;
@@ -55,10 +56,10 @@ struct MutableConjunctiveEffect : ygg::comparison::Mixin<MutableConjunctiveEffec
     }
 
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&MutableConjunctiveEffect::num_parent_variables, &MutableConjunctiveEffect::num_variables, &MutableConjunctiveEffect::literals> {}; }
+    { return urd::Members<&MutableConjunctiveEffect::num_parent_variables, &MutableConjunctiveEffect::num_variables, &MutableConjunctiveEffect::literals> {}; }
 };
 
-using MutableConjunctiveEffectList = std::vector<MutableConjunctiveEffect>;
+using MutableConjunctiveEffectList = urd::Store<urd::sequence<MutableConjunctiveEffect>>;
 }
 
 namespace tyr::formalism::unification

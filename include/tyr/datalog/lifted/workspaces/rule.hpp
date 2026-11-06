@@ -19,6 +19,7 @@
 #define TYR_DATALOG_LIFTED_WORKSPACES_RULE_HPP_
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
+#include <urd/repr/sequences/segmented.hpp>
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
@@ -30,12 +31,15 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <cassert>
-#include <deque>
 #include <type_traits>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 
 namespace tyr::datalog
@@ -89,10 +93,10 @@ struct RuleWorkspace<LiftedTag, R>
         kckp::Workspace kckp_workspace;
 
         /// Hyperedge anchors
-        std::vector<kckp::Vertex> anchor_vertices;
+        urd::Store<urd::sequence<kckp::Vertex>> anchor_vertices;
 
         /// Heads of the current binding that the rule updates
-        std::vector<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head_bindings;
+        urd::Store<urd::sequence<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>>> head_bindings;
     };
 
     struct Solve
@@ -103,7 +107,7 @@ struct RuleWorkspace<LiftedTag, R>
 
 #ifndef NDEBUG
         /// In debug mode, we accumulate all bindings to verify the correctness of delta-kckp
-        ygg::UnorderedSet<ygg::IndexList<formalism::Object>> seen_bindings;
+        urd::Store<urd::set<urd::flat_vector<urd::index<formalism::Object>>>> seen_bindings;
 #endif
 
         RuleEvaluationWorkspace rule_evaluation_workspace;
@@ -120,7 +124,7 @@ struct RuleWorkspace<LiftedTag, R>
         void clear() noexcept;
 
         formalism::datalog::Builder builder;
-        ygg::IndexList<formalism::Object> binding;
+        urd::flat_vector<urd::index<formalism::Object>> binding;
 
         Iteration iteration;
         Solve solve;
@@ -137,7 +141,7 @@ struct RuleWorkspace<LiftedTag, R>
 
     Common common;
 
-    std::deque<Worker> worker;
+    urd::Store<urd::sequence<Worker>, urd::stable_refs> worker;
 };
 
 template<formalism::RelationKind R>

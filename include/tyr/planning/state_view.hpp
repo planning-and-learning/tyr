@@ -33,47 +33,45 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include <yggdrasil/containers/shared_object_pool.hpp>
-#include <yggdrasil/core/concepts.hpp>
+#include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
 
-namespace ygg
+namespace tyr::planning
 {
-/// Borrows the builder and task; both must outlive this view and its ranges.
-template<::tyr::TaskKind Kind>
-struct View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>> : BuilderViewBase<::tyr::planning::State<Kind>, ::tyr::planning::Task<Kind>>
+/// What every view of a state reads, through its record (self().data(): a registered state's data<State>, or a
+/// builder) and its context, the state repository of its task, which must outlive the view and its ranges.
+template<TaskKind Kind, typename V>
+struct StateAccessors
 {
+protected:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(const Builder<::tyr::planning::State<Kind>>& builder, const ::tyr::planning::Task<Kind>& task) noexcept :
-        BuilderViewBase<::tyr::planning::State<Kind>, ::tyr::planning::Task<Kind>>(builder, task)
-    {
-    }
-
-    [[nodiscard]] const auto& get_state_builder() const noexcept { return this->get_handle(); }
-    [[nodiscard]] const auto& get_task() const noexcept { return this->get_context(); }
+    [[nodiscard]] const Task<Kind>& get_task() const noexcept { return *self().context().get_task(); }
     [[nodiscard]] const auto& get_formalism_repository() const noexcept { return get_task().get_repository(); }
 
-    [[nodiscard]] bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-    { return this->get_context().get_static_state().test(index); }
-    [[nodiscard]] float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-    { return this->get_context().get_static_state().get(index); }
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-    { return this->get_handle().get(index); }
-    [[nodiscard]] float_t get(Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-    { return this->get_handle().get(index); }
-    [[nodiscard]] bool test(Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-    { return this->get_handle().test(index); }
+    [[nodiscard]] bool test(urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
+    { return get_task().get_static_state().test(index); }
+    [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
+    { return get_task().get_static_state().get(index); }
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue value(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
+    { return self().data().get(index); }
+    [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
+    { return self().data().get(index); }
+    [[nodiscard]] bool test(urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
+    { return self().data().test(index); }
 
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.get_index()); }
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.index()); }
     [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
-    [[nodiscard]] float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
-    { return get(view.get_index()); }
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-    { return get(view.get_index()); }
-    [[nodiscard]] float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-    { return get(view.get_index()); }
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.get_index()); }
+    [[nodiscard]] ygg::float_t value(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
+    { return value(view.index()); }
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue value(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
+    { return value(view.index()); }
+    [[nodiscard]] ygg::float_t value(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
+    { return value(view.index()); }
+    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
 
-    [[nodiscard]] auto get_fluent_facts() const noexcept { return this->get_handle().get_fluent_facts(); }
+    [[nodiscard]] auto get_fluent_facts() const noexcept { return self().data().get_fluent_facts(); }
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept;
     template<::tyr::formalism::FactKind F>
@@ -83,342 +81,101 @@ public:
     auto get_atoms_view() const noexcept;
 
     template<::tyr::formalism::FactKind F, typename C>
-    auto get_atoms_view(ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const;
+    auto get_atoms_view(urd::view<::tyr::formalism::Predicate<F>, C> predicate) const;
 
-    [[nodiscard]] auto get_fluent_facts_view() const noexcept { return this->get_handle().get_fluent_facts_view(*get_formalism_repository()); }
+    /// The facts, computed on the fly: each view owns its fact.
+    [[nodiscard]] auto get_fluent_facts_view() const noexcept { return self().data().get_fluent_facts_view(*get_formalism_repository()); }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values_view() const noexcept;
 };
+}  // namespace tyr::planning
 
-template<::tyr::TaskKind Kind, typename Context>
-struct View<ygg::Index<::tyr::planning::PackedState<Kind>>, Context>
-{
-    static_assert(ygg::dependent_false<Context>::value, "Packed state views require a StateRepositoryPtr context.");
-};
-
-/// Packed states are addressed by the index of the registered state they pack.
-template<::tyr::TaskKind Kind>
-struct View<ygg::Index<::tyr::planning::PackedState<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>> :
-    IndexViewBase<::tyr::planning::State<Kind>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>
-{
-public:
-    using IndexViewBase<::tyr::planning::State<Kind>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::IndexViewBase;
-
-    [[nodiscard]] const std::shared_ptr<::tyr::planning::StateRepository<Kind>>& get_state_repository() const noexcept { return this->get_context(); }
-
-    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const;
-};
-
-template<::tyr::TaskKind Kind, typename Context>
-struct View<ygg::Index<::tyr::planning::State<Kind>>, Context>
-{
-    static_assert(ygg::dependent_false<Context>::value, "State views require a StateRepositoryPtr context.");
-};
-
-template<::tyr::TaskKind Kind>
-struct View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>> :
-    IndexViewBase<::tyr::planning::State<Kind>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>
-{
-public:
-    View(std::shared_ptr<::tyr::planning::StateRepository<Kind>> owner,
-         ygg::SharedObjectPoolPtr<Builder<::tyr::planning::State<Kind>>, true> state_builder) noexcept;
-    View(const View&);
-    View(View&&) noexcept;
-    View& operator=(const View&);
-    View& operator=(View&&) noexcept;
-    ~View();
-
-    [[nodiscard]] ::tyr::planning::PackedStateView<Kind> pack() const noexcept;
-
-    [[nodiscard]] bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
-    [[nodiscard]] ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const;
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(ygg::Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const;
-    [[nodiscard]] ygg::float_t get(ygg::Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const;
-    [[nodiscard]] bool test(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const;
-
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
-    [[nodiscard]] ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const;
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const;
-    [[nodiscard]] ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const;
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const;
-
-    [[nodiscard]] ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept;
-    template<::tyr::formalism::FactKind F>
-    auto get_atoms() const noexcept;
-    template<::tyr::formalism::FactKind F>
-    ::tyr::planning::FunctionTermValueRange<F> get_fterm_values() const noexcept;
-
-    template<::tyr::formalism::FactKind F>
-    auto get_atoms_view() const noexcept;
-    template<::tyr::formalism::FactKind F, typename C>
-    auto get_atoms_view(ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const;
-
-    [[nodiscard]] auto get_fluent_facts_view() const noexcept;
-    template<::tyr::formalism::FactKind F>
-    auto get_fterm_values_view() const noexcept;
-
-    [[nodiscard]] const std::shared_ptr<::tyr::formalism::planning::Repository>& get_formalism_repository() const noexcept;
-    [[nodiscard]] const ::tyr::planning::Task<Kind>& get_task() const noexcept;
-    [[nodiscard]] const std::shared_ptr<::tyr::planning::StateRepository<Kind>>& get_state_repository() const noexcept;
-    [[nodiscard]] const Builder<::tyr::planning::State<Kind>>& get_state_builder() const noexcept;
-
-private:
-    using Base = IndexViewBase<::tyr::planning::State<Kind>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>;
-
-    // The pooled builder must be released before its owning repository, which the base holds.
-    ygg::SharedObjectPoolPtr<Builder<::tyr::planning::State<Kind>>, true> m_state_builder;
-};
-
-template<::tyr::TaskKind Kind>
-bool View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>>::test(
+template<::tyr::TaskKind Kind, typename V>
+bool ::tyr::planning::StateAccessors<Kind, V>::test(
     ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
 {
     const auto fact = std::as_const(*get_task().get_fdr_context()).get_fact(view);
-    return fact && get(fact->get_variable()) == fact->get_value();
+    return fact && value(fact->get_variable()) == fact->get_value();
 }
 
-template<::tyr::TaskKind Kind>
+template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F>
-auto View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>>::get_atoms() const noexcept
-{
-    if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-        return this->get_context().get_static_state().get_atoms();
-    else
-        return this->get_handle().template get_atoms<F>(*get_formalism_repository());
-}
-
-template<::tyr::TaskKind Kind>
-template<::tyr::formalism::FactKind F>
-auto View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>>::get_fterm_values() const noexcept
-{
-    if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-        return this->get_context().get_static_state().get_fterm_values();
-    else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-        return this->get_handle().template get_fterm_values<F>();
-    else
-        static_assert(ygg::dependent_false<F>::value);
-}
-
-template<::tyr::TaskKind Kind>
-template<::tyr::formalism::FactKind F>
-auto View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>>::get_atoms_view() const noexcept
-{
-    return get_atoms<F>() | std::views::transform([repository = get_formalism_repository().get()](auto id) { return make_view(id, *repository); });
-}
-
-template<::tyr::TaskKind Kind>
-template<::tyr::formalism::FactKind F, typename C>
-auto View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>>::get_atoms_view(
-    ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const
-{
-    return get_atoms_view<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
-}
-
-template<::tyr::TaskKind Kind>
-template<::tyr::formalism::FactKind F>
-auto View<Builder<::tyr::planning::State<Kind>>, ::tyr::planning::Task<Kind>>::get_fterm_values_view() const noexcept
-{
-    if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-        return get_fterm_values<F>()
-               | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
-                                       { return std::make_pair(make_view(pair.first, *repository), pair.second); });
-    else
-        return this->get_handle().template get_fterm_values_view<F>(*get_formalism_repository());
-}
-
-template<::tyr::TaskKind Kind>
-::tyr::planning::StateView<Kind> View<Index<::tyr::planning::PackedState<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::unpack() const
-{ return this->get_context()->get_registered_state(this->get_handle()); }
-
-template<::tyr::TaskKind Kind>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::View(
-    std::shared_ptr<::tyr::planning::StateRepository<Kind>> owner,
-    SharedObjectPoolPtr<Builder<::tyr::planning::State<Kind>>, true> state_builder) noexcept :
-    Base(state_builder->get_index(), std::move(owner)),
-    m_state_builder(std::move(state_builder))
-{
-}
-
-template<::tyr::TaskKind Kind>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::~View() = default;
-
-template<::tyr::TaskKind Kind>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::View(const View&) = default;
-
-template<::tyr::TaskKind Kind>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::View(View&&) noexcept = default;
-
-template<::tyr::TaskKind Kind>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>&
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::operator=(const View& other)
-{
-    if (this != &other)
-    {
-        m_state_builder = other.m_state_builder;
-        Base::operator=(other);
-    }
-    return *this;
-}
-
-template<::tyr::TaskKind Kind>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>&
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::operator=(View&& other) noexcept
-{
-    if (this != &other)
-    {
-        m_state_builder = std::move(other.m_state_builder);
-        Base::operator=(std::move(other));
-    }
-    return *this;
-}
-
-template<::tyr::TaskKind Kind>
-::tyr::planning::PackedStateView<Kind> View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::pack() const noexcept
-{ return ::tyr::planning::PackedStateView<Kind>(this->get_handle(), this->get_context()); }
-
-template<::tyr::TaskKind Kind>
-::tyr::formalism::planning::FDRValue View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
-    Index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-{ return m_state_builder->get(index); }
-
-template<::tyr::TaskKind Kind>
-float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
-    Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-{ return m_state_builder->get(index); }
-
-template<::tyr::TaskKind Kind>
-bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
-    Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-{ return m_state_builder->test(index); }
-
-template<::tyr::TaskKind Kind>
-const std::shared_ptr<::tyr::planning::StateRepository<Kind>>&
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_state_repository() const noexcept
-{ return this->get_context(); }
-
-template<::tyr::TaskKind Kind>
-const ::tyr::planning::Task<Kind>& View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_task() const noexcept
-{ return *get_state_repository()->get_task(); }
-
-template<::tyr::TaskKind Kind>
-const Builder<::tyr::planning::State<Kind>>&
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_state_builder() const noexcept
-{ return *m_state_builder; }
-
-template<::tyr::TaskKind Kind>
-bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
-    ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
-{ return test(view.get_index()); }
-
-template<::tyr::TaskKind Kind>
-bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
-    ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-{
-    const auto fact = std::as_const(*get_task().get_fdr_context()).get_fact(view);
-    return fact && get(fact->get_variable()) == fact->get_value();
-}
-
-template<::tyr::TaskKind Kind>
-float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
-    ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
-{ return get(view.get_index()); }
-
-template<::tyr::TaskKind Kind>
-::tyr::formalism::planning::FDRValue View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
-    ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-{ return get(view.get_index()); }
-
-template<::tyr::TaskKind Kind>
-float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
-    ::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-{ return get(view.get_index()); }
-
-template<::tyr::TaskKind Kind>
-bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
-    ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const
-{ return test(view.get_index()); }
-
-template<::tyr::TaskKind Kind>
-bool View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::test(
-    Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-{ return get_state_repository()->get_task()->get_static_state().test(index); }
-
-template<::tyr::TaskKind Kind>
-float_t View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get(
-    Index<::tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-{ return get_state_repository()->get_task()->get_static_state().get(index); }
-
-template<::tyr::TaskKind Kind>
-::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fluent_facts() const noexcept
-{ return m_state_builder->get_fluent_facts(); }
-
-template<::tyr::TaskKind Kind>
-template<::tyr::formalism::FactKind F>
-[[nodiscard]] auto View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms() const noexcept
+auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms() const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
         return get_task().get_static_state().get_atoms();
-    else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-        return get_fluent_facts_view() | std::views::transform([](auto fact) { return *fact.get_atom_index(); });
     else
-        return get_state_builder().template get_atoms<F>(*get_formalism_repository());
+        return self().data().template get_atoms<F>(*get_formalism_repository());
 }
 
-template<::tyr::TaskKind Kind>
+template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F>
-[[nodiscard]] ::tyr::planning::FunctionTermValueRange<F>
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fterm_values() const noexcept
+auto ::tyr::planning::StateAccessors<Kind, V>::get_fterm_values() const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
         return get_task().get_static_state().get_fterm_values();
     else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-        return get_state_builder().template get_fterm_values<F>();
+        return self().data().template get_fterm_values<F>();
     else
-        static_assert(ygg::dependent_false<F>::value);
+        static_assert(urd::repr::dependent_false<F>::value);
 }
 
-template<::tyr::TaskKind Kind>
-const std::shared_ptr<::tyr::formalism::planning::Repository>&
-View<Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_formalism_repository() const noexcept
-{ return get_state_repository()->get_task()->get_repository(); }
-
-template<::tyr::TaskKind Kind>
+template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F>
-[[nodiscard]] auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms_view() const noexcept
+auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms_view() const noexcept
 {
-    return get_atoms<F>() | std::views::transform([context = this->get_formalism_repository()](auto id) { return ygg::make_view(id, *context); });
+    return get_atoms<F>() | std::views::transform([repository = get_formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
 }
 
-template<::tyr::TaskKind Kind>
+template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F, typename C>
-[[nodiscard]] auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_atoms_view(
-    ygg::View<ygg::Index<::tyr::formalism::Predicate<F>>, C> predicate) const
+auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms_view(
+    urd::view<::tyr::formalism::Predicate<F>, C> predicate) const
 {
     return get_atoms_view<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
 }
 
-template<::tyr::TaskKind Kind>
-auto View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fluent_facts_view() const noexcept
-{
-    return get_fluent_facts() | std::views::transform([context = this->get_formalism_repository()](auto id) { return ygg::make_view(id, *context); });
-}
-
-template<::tyr::TaskKind Kind>
+template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F>
-[[nodiscard]] auto
-View<ygg::Index<::tyr::planning::State<Kind>>, std::shared_ptr<::tyr::planning::StateRepository<Kind>>>::get_fterm_values_view() const noexcept
+auto ::tyr::planning::StateAccessors<Kind, V>::get_fterm_values_view() const noexcept
 {
-    return get_fterm_values<F>()
-           | std::views::transform([context = this->get_formalism_repository()](auto&& pair)
-                                   { return std::make_pair(ygg::make_view(pair.first, *context), pair.second); });
+    if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
+        return get_fterm_values<F>()
+               | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
+                                       { return std::make_pair(urd::resolve(pair.first, *repository), pair.second); });
+    else
+        return self().data().template get_fterm_values_view<F>(*get_formalism_repository());
 }
 
-extern template class View<Index<::tyr::planning::State<::tyr::GroundTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::GroundTag>>>;
-extern template class View<Index<::tyr::planning::PackedState<::tyr::GroundTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::GroundTag>>>;
-extern template class View<Index<::tyr::planning::State<::tyr::LiftedTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::LiftedTag>>>;
-extern template class View<Index<::tyr::planning::PackedState<::tyr::LiftedTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::LiftedTag>>>;
-}
+
+/// A registered state (StateView: its data<State>, shared from its repository's pool): its accessors, and its identity,
+/// its index in the repository that interned it.
+template<::tyr::TaskKind Kind, typename V>
+struct urd::view_mixin<::tyr::planning::State<Kind>, V> : ::tyr::planning::StateAccessors<Kind, V>
+{
+    [[nodiscard]] const ::tyr::planning::StateRepository<Kind>& get_state_repository() const noexcept { return this->self().context(); }
+    [[nodiscard]] urd::index<::tyr::planning::State<Kind>> index() const noexcept { return this->self().data().index; }
+    [[nodiscard]] ::tyr::planning::PackedStateView<Kind> pack() const noexcept { return this->self().context().view(index()); }
+};
+
+/// A state being built (BuilderStateView): its accessors only. It has no index, so neither pack() nor a repository
+/// that would name it.
+template<::tyr::TaskKind Kind, typename V>
+struct urd::view_mixin<urd::builder<::tyr::planning::State<Kind>>, V> : ::tyr::planning::StateAccessors<Kind, V>
+{
+};
+
+/// A registered state, packed (PackedStateView: its index; the view gives index()): its repository, and the state
+/// unpacked.
+template<::tyr::TaskKind Kind>
+struct urd::view_mixin<::tyr::planning::State<Kind>, ::tyr::planning::PackedStateView<Kind>>
+{
+private:
+    [[nodiscard]] const ::tyr::planning::PackedStateView<Kind>& self() const noexcept { return static_cast<const ::tyr::planning::PackedStateView<Kind>&>(*this); }
+
+public:
+    [[nodiscard]] const ::tyr::planning::StateRepository<Kind>& get_state_repository() const noexcept { return self().context(); }
+    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const { return self().context().get_registered_state(self().index()); }
+};
 
 #endif

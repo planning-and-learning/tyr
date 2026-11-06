@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
@@ -27,33 +28,33 @@ namespace tyr::formalism::datalog
 
 namespace
 {
-template<TaskKind T, BinaryOperatorKind O>
+template<TaskKind T, OperatorKind O>
 void bind_binary_operator_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
     using namespace nb::literals;
     using Tag = BinaryOperator<T, O>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls =
-            nb::class_<V>(m, (name + "Data").c_str()).def(nb::init<O, FunctionExpressionView<T>, FunctionExpressionView<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
-        cls.def(nb::init<O, ygg::Data<FunctionExpression<T>>, ygg::Data<FunctionExpression<T>>>(), "operator"_a, "lhs"_a, "rhs"_a);
+            nb::class_<V>(m, (name + "Data").c_str()).def(urd::python::init_from_views<O, FunctionExpressionView<T>, FunctionExpressionView<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
+        cls.def(nb::init<O, FunctionExpression<T>, FunctionExpression<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = BinaryOperatorView<T, O>;
         auto cls = nb::class_<V>(m, name.c_str())
-                       .def("get_index", &V::get_index)
+                       .def("get_index", &V::index)
                        .def("get_operator", &V::get_operator)
                        .def("get_lhs", &V::get_lhs)
                        .def("get_rhs", &V::get_rhs);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

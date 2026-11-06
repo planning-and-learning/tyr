@@ -36,20 +36,20 @@ TEST(TyrDatalogLiftedBottomUpTest, FullEnumerationIsLimitedToNumericListeners)
     ASSERT_EQ(workspace.schedulers.size(), 1);
 
     const auto rule = fixture.program.get_program().get_rules<tyr::formalism::PredicateTag>().front();
-    const auto seed = rule.get_body().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_index();
+    const auto seed = rule.get_body().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().index();
     auto& scheduler = workspace.schedulers.front().get<tyr::formalism::PredicateTag>();
 
     scheduler.on_start_iteration();
     scheduler.on_generate(seed);
-    scheduler.on_generate(fixture.target.get_index().relation);
+    scheduler.on_generate(fixture.target.index().relation);
     scheduler.on_finish_iteration();
-    EXPECT_NE(std::ranges::find(scheduler.get_active_rules(), rule.get_index()), scheduler.get_active_rules().end());
-    EXPECT_FALSE(scheduler.requires_full_enumeration(rule.get_index()));
+    EXPECT_NE(std::ranges::find(scheduler.get_active_rules(), rule.index()), scheduler.get_active_rules().end());
+    EXPECT_FALSE(scheduler.requires_full_enumeration(rule.index()));
 
     scheduler.on_start_iteration();
-    scheduler.on_generate(fixture.source.get_index().relation);
+    scheduler.on_generate(fixture.source.index().relation);
     scheduler.on_finish_iteration();
-    EXPECT_TRUE(scheduler.requires_full_enumeration(rule.get_index()));
+    EXPECT_TRUE(scheduler.requires_full_enumeration(rule.index()));
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWorkspaceReuse)
@@ -61,7 +61,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     auto initial = Context(workspace);
     tyr::datalog::compute_model(initial);
     const auto expected_atoms = collect_atoms_by_predicate(workspace);
-    const auto* expected_annotation = workspace.annotations.find(fixture.goal.get_index());
+    const auto* expected_annotation = workspace.annotations.find(fixture.goal.index());
     ASSERT_NE(expected_annotation, nullptr);
     const auto expected_cost = tyr::datalog::get_cost(*expected_annotation);
 
@@ -73,14 +73,14 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     };
     for (size_t iteration = 0; iteration < 2; ++iteration)
     {
-        workspace.cost_buckets.insert(99, fixture.goal.get_index());
+        workspace.cost_buckets.insert(99, fixture.goal.index());
         workspace.reset_evaluation();
         EXPECT_TRUE(workspace.cost_buckets.is_empty());
         insert_inputs();
         auto prepared = Context::from_reset_workspace(workspace, workspace.schedulers);
         tyr::datalog::compute_model(prepared);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        const auto* annotation = workspace.annotations.find(fixture.goal.get_index());
+        const auto* annotation = workspace.annotations.find(fixture.goal.index());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
 
@@ -90,7 +90,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
         auto ordinary = Context(workspace);
         tyr::datalog::compute_model(ordinary);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        annotation = workspace.annotations.find(fixture.goal.get_index());
+        annotation = workspace.annotations.find(fixture.goal.index());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
     }
@@ -104,17 +104,17 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     const auto atom = program.get_rules<tyr::formalism::PredicateTag>()[0].get_body().get_literals<tyr::formalism::FluentTag>()[0].get_atom();
     const auto objects = program.get_objects();
     ASSERT_EQ(objects.size(), 2);
-    auto indices = ygg::IndexList<tyr::formalism::Object> { objects[0].get_index() };
+    auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };
     auto context = tyr::formalism::datalog::GrounderContext { builder, *fixture.repository, indices };
     auto prepared = tyr::formalism::datalog::checkout<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
-    prepared->relation = atom.get_predicate().get_index();
+    prepared->relation = atom.get_predicate().index();
     tyr::formalism::datalog::ground(atom.get_terms(), context, prepared->objects);
 
-    indices[0] = objects[1].get_index();
+    indices[0] = objects[1].index();
     const auto nested = tyr::formalism::datalog::ground_binding(atom, context).first;
     EXPECT_EQ(nested.get_objects()[0], objects[1]);
     ASSERT_EQ(prepared->objects.size(), 1);
-    EXPECT_EQ(prepared->objects[0], objects[0].get_index());
+    EXPECT_EQ(prepared->objects[0], objects[0].index());
     const auto retained = tyr::formalism::datalog::insert(*fixture.repository, *prepared).first;
     EXPECT_EQ(retained.get_objects()[0], objects[0]);
 }
@@ -141,7 +141,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
         auto effect_predicates = std::set<std::string> {};
         for (const auto& [_, predicate] : effect_to_predicate)
             effect_predicates.insert(predicate.get_name().str());
-        std::erase_if(atoms, [&](const auto& entry) { return effect_predicates.contains(entry.predicate); });
+        erase_if(atoms, [&](const auto& entry) { return effect_predicates.contains(entry.predicate); });
         return atoms;
     };
 

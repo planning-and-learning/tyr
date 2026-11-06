@@ -63,7 +63,7 @@ public:
     virtual void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(const Plan<Kind>& plan) = 0;
-    virtual WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<Worker>) { return nullptr; }
+    virtual WorkerEventHandlerPtr<Kind> make_worker(urd::index<Worker>) { return nullptr; }
 
 protected:
     EventHandler(const EventHandler&) = default;
@@ -82,7 +82,7 @@ public:
     void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override;
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override;
     void on_solved(const Plan<Kind>& plan) override;
-    WorkerEventHandlerPtr<Kind> make_worker(ygg::Index<Worker> index) override;
+    WorkerEventHandlerPtr<Kind> make_worker(urd::index<Worker> index) override;
 
     [[nodiscard]] const tyr::planning::ProgressStatistics& get_progress_statistics() const noexcept { return m_progress_statistics; }
 

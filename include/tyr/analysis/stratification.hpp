@@ -19,18 +19,20 @@
 #define TYR_ANALYSIS_STRATIFICATION_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 // for Program (ptr only), Rule
 
 #include <vector>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::analysis
 {
 
 template<formalism::RelationKind R>
-using TypedRuleStratum = ygg::IndexList<formalism::datalog::Rule<LiftedTag, R>>;
+using TypedRuleStratum = urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
 
 struct RuleStratum
 {
@@ -53,7 +55,7 @@ struct RuleStratum
 
 struct RuleStrata
 {
-    std::vector<RuleStratum> data;
+    urd::Store<urd::sequence<RuleStratum>> data;
 };
 
 RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag> program);

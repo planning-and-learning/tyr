@@ -2,6 +2,9 @@
 #define TYR_TESTS_UNIT_PLANNING_APPLICABILITY_SCHEMA_HPP_
 
 #include "planning/parser.hpp"
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/datalog/copy_decl.hpp"
@@ -29,8 +32,8 @@
 #include "tyr/planning/successor_generator_concepts.hpp"
 
 #include <algorithm>
-#include <array>
 #include <deque>
+#include <array>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <iterator>
@@ -41,7 +44,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/unique_object_pool.hpp>
+#include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::tests
@@ -155,7 +159,7 @@ void expect_schema_queries_match_filtered_successors()
     {
         auto count = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            count += task->get_repository()->size(action.get_index());
+            count += task->get_repository()->size(action.index());
         return count;
     };
     auto execution_context = ygg::ExecutionContext::create(1);
@@ -172,15 +176,15 @@ void expect_schema_queries_match_filtered_successors()
     auto source = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
-    auto pool = ygg::UniqueObjectPool<ygg::Builder<tyr::planning::State<Kind>>> {};
-    auto owned = pool.get_or_allocate();
-    *owned = registered_initial.get_state().get_state_builder();
-    owned->set(ygg::Index<tyr::planning::State<Kind>> {});
-    ASSERT_TRUE(owned->get_index().is_max());
+    auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
+    auto owned = pool.acquire_unique();
+    owned->assign(registered_initial.get_state().data());
+    owned->set(urd::index<tyr::planning::State<Kind>> {});
+    ASSERT_TRUE(owned->get_index().is_none());
     const auto initial_node = [&]
     {
         if constexpr (Borrowed)
-            return tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(ygg::make_view(*owned, *task), registered_initial.get_metric());
+            return tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(*owned, *state_repository), registered_initial.get_metric());
         else
             return registered_initial;
     }();
@@ -199,81 +203,86 @@ void expect_schema_queries_match_filtered_successors()
     ASSERT_NE(low, constants.end());
     ASSERT_NE(high, constants.end());
     const auto& object_repository = *task->get_repository();
-    const auto distinct_indices = std::array { (*low).get_index(), (*high).get_index() };
-    const auto aliased_indices = std::array { (*low).get_index(), (*low).get_index() };
-    const auto invalid_indices = std::array { ygg::Index<formalism::Object> {}, (*low).get_index() };
-    const auto distinct_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(distinct_indices), object_repository);
-    const auto aliased_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(aliased_indices), object_repository);
-    const auto invalid_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(invalid_indices), object_repository);
-    const auto unary_objects = ygg::make_view(distinct_objects.get_data().first(1), object_repository);
-    const auto empty_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>> {}, object_repository);
+    const auto distinct_indices = std::array { (*low).index(), (*high).index() };
+    const auto aliased_indices = std::array { (*low).index(), (*low).index() };
+    const auto invalid_indices = std::array { urd::index<formalism::Object> {}, (*low).index() };
+    using ObjectIndices = std::span<const urd::index<formalism::Object>>;
+    // An offered binding: the record a caller fills, kept for the rest of the test so that it is read through a
+    // repository as a borrowed binding.
+    auto offers = std::deque<urd::data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>>>();
+    const auto offer = [&offers](auto action, ObjectIndices objects) -> const auto&
+    {
+        auto& data = offers.emplace_back();
+        data.relation = action.index();
+        for (const auto object : objects)
+            data.objects.push_back(object);
+        return data;
+    };
     const auto task_objects = task->get_task().get_objects();
     ASSERT_EQ(task_objects.size(), 1);
-    const auto local_indices = std::array { task_objects[0].get_index(), (*low).get_index() };
-    const auto local_objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(local_indices), object_repository);
-    ASSERT_NE(&local_objects[0].get_context(), &local_objects[1].get_context());
-    // The same valid target indices are malformed in the smaller domain-only source repository.
-    const auto missing_source_objects = ygg::make_view(local_objects.get_data(), (*low).get_context());
+    const auto local_indices = std::array { task_objects[0].index(), (*low).index() };
+    ASSERT_NE(&task_objects[0].context(), &(*low).context());
+    // The same valid target indices are malformed in the smaller domain-only source repository (missing_source).
     const auto rejected_domain =
         std::same_as<Kind, GroundTag> ? tyr::planning::ActionBindingStatus::INAPPLICABLE : tyr::planning::ActionBindingStatus::OUTSIDE_PARAMETER_DOMAIN;
     const auto bindings_before_checks = count_action_bindings(task);
     for (auto* generator : { source.get(), worker.get() })
     {
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_valid, empty_objects), tyr::planning::ActionBindingStatus::APPLICABLE);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_resize, empty_objects), tyr::planning::ActionBindingStatus::INAPPLICABLE);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, distinct_objects), tyr::planning::ActionBindingStatus::APPLICABLE);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, aliased_objects), tyr::planning::ActionBindingStatus::INAPPLICABLE);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, invalid_objects), rejected_domain);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, local_objects), rejected_domain);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, missing_source_objects), rejected_domain);
-        EXPECT_EQ(generator->check_action_binding(initial_node, *offered_dormant, unary_objects), rejected_domain);
-        EXPECT_THROW(generator->check_action_binding(initial_node, *offered_alias, unary_objects), std::invalid_argument);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_valid, ObjectIndices {}), object_repository)), tyr::planning::ActionBindingStatus::APPLICABLE);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_resize, ObjectIndices {}), object_repository)), tyr::planning::ActionBindingStatus::INAPPLICABLE);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(distinct_indices)), object_repository)), tyr::planning::ActionBindingStatus::APPLICABLE);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(aliased_indices)), object_repository)), tyr::planning::ActionBindingStatus::INAPPLICABLE);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(invalid_indices)), object_repository)), rejected_domain);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(local_indices)), object_repository)), rejected_domain);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(local_indices)), (*low).context())), rejected_domain);
+        EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_dormant, ObjectIndices(distinct_indices).first(1)), object_repository)), rejected_domain);
+        EXPECT_THROW(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(distinct_indices).first(1)), object_repository)), std::invalid_argument);
     }
     EXPECT_EQ(count_action_bindings(task), bindings_before_checks);
 
     for (auto* generator : { source.get(), worker.get() })
     {
-        const auto rejected = [&](auto action, auto objects, auto expected)
+        const auto rejected = [&](auto action, ObjectIndices objects, const auto& repository, auto expected)
         {
             const auto before = count_action_bindings(task);
-            const auto result = generator->try_get_applicable_action_binding(initial_node, action, objects);
+            const auto result = generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(action, objects), repository));
             EXPECT_EQ(result.status, expected);
             EXPECT_FALSE(result.binding);
             EXPECT_EQ(count_action_bindings(task), before);
         };
-        rejected(*offered_resize, empty_objects, tyr::planning::ActionBindingStatus::INAPPLICABLE);
-        rejected(*offered_alias, aliased_objects, tyr::planning::ActionBindingStatus::INAPPLICABLE);
-        rejected(*offered_alias, invalid_objects, rejected_domain);
-        rejected(*offered_alias, local_objects, rejected_domain);
-        rejected(*offered_alias, missing_source_objects, rejected_domain);
-        rejected(*offered_dormant, unary_objects, rejected_domain);
+        rejected(*offered_resize, ObjectIndices {}, object_repository, tyr::planning::ActionBindingStatus::INAPPLICABLE);
+        rejected(*offered_alias, ObjectIndices(aliased_indices), object_repository, tyr::planning::ActionBindingStatus::INAPPLICABLE);
+        rejected(*offered_alias, ObjectIndices(invalid_indices), object_repository, rejected_domain);
+        rejected(*offered_alias, ObjectIndices(local_indices), object_repository, rejected_domain);
+        rejected(*offered_alias, ObjectIndices(local_indices), (*low).context(), rejected_domain);
+        rejected(*offered_dormant, ObjectIndices(distinct_indices).first(1), object_repository, rejected_domain);
         const auto before_wrong_arity = count_action_bindings(task);
-        EXPECT_THROW(generator->try_get_applicable_action_binding(initial_node, *offered_alias, unary_objects), std::invalid_argument);
+        EXPECT_THROW(generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(distinct_indices).first(1)), object_repository)), std::invalid_argument);
         EXPECT_EQ(count_action_bindings(task), before_wrong_arity);
 
-        for (const auto& [action, objects] : { std::pair(*offered_valid, empty_objects), std::pair(*offered_alias, distinct_objects) })
+        for (const auto& [action, objects] : { std::pair(*offered_valid, ObjectIndices {}), std::pair(*offered_alias, ObjectIndices(distinct_indices)) })
         {
             const auto before = count_action_bindings(task);
-            const auto result = generator->try_get_applicable_action_binding(initial_node, action, objects);
+            const auto result = generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(action, objects), object_repository));
             ASSERT_EQ(result.status, tyr::planning::ActionBindingStatus::APPLICABLE);
             ASSERT_TRUE(result.binding);
             EXPECT_EQ(result.binding.value().get_relation(), action);
-            EXPECT_TRUE(std::ranges::equal(result.binding.value().get_data(), objects.get_data()));
+            EXPECT_TRUE(std::ranges::equal(result.binding.value().data().objects, objects));
             const auto published = count_action_bindings(task);
             EXPECT_EQ(published, before + (std::same_as<Kind, LiftedTag> && generator == source.get() ? 1 : 0));
-            const auto repeated = generator->try_get_applicable_action_binding(initial_node, action, objects);
+            const auto repeated = generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(action, objects), object_repository));
             EXPECT_EQ(repeated.status, tyr::planning::ActionBindingStatus::APPLICABLE);
             EXPECT_EQ(repeated.binding, result.binding);
             EXPECT_EQ(count_action_bindings(task), published);
-            EXPECT_EQ(generator->check_action_binding(initial_node, action, objects), tyr::planning::ActionBindingStatus::APPLICABLE);
+            EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(action, objects), object_repository)), tyr::planning::ActionBindingStatus::APPLICABLE);
             EXPECT_EQ(generator->check_action_binding(initial_node, result.binding.value()), tyr::planning::ActionBindingStatus::APPLICABLE);
             EXPECT_EQ(count_action_bindings(task), published);
         }
     }
 
     using S = std::conditional_t<Borrowed, tyr::planning::BuilderStateView<Kind>, tyr::planning::StateView<Kind>>;
-    auto borrowed_states = std::deque<ygg::Builder<tyr::planning::State<Kind>>> {};
-    auto callback_state = pool.get_or_allocate();
+    auto borrowed_states = urd::Store<urd::sequence<urd::builder<tyr::planning::State<Kind>>>, urd::stable_refs> {};
+    auto callback_state = pool.acquire_unique();
     auto& list_storage = [&]() -> auto&
     {
         if constexpr (Borrowed)
@@ -306,9 +315,9 @@ void expect_schema_queries_match_filtered_successors()
     const auto num_action_bindings = count_action_bindings(task);
     const auto states_before_streaming = state_repository->num_states();
     auto packed_nodes = tyr::planning::PackedNodeList<Kind> {};
-    auto streamed_states = std::vector<std::pair<ygg::Builder<tyr::planning::State<Kind>>, ygg::float_t>> {};
+    auto streamed_states = urd::Store<urd::sequence<std::pair<urd::builder<tyr::planning::State<Kind>>, ygg::float_t>>> {};
     size_t streamed = 0;
-    const ygg::Builder<tyr::planning::State<Kind>>* successor_builder = nullptr;
+    const urd::data<tyr::planning::State<Kind>>* successor_builder = nullptr;
     EXPECT_TRUE(source->for_each_successor_node(initial_node,
                                                 callback_storage,
                                                 *axiom_evaluator,
@@ -317,11 +326,11 @@ void expect_schema_queries_match_filtered_successors()
                                                     static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::Node<Kind, S>>);
                                                     if (successor_builder)
                                                     {
-                                                        EXPECT_EQ(&successor.get_state().get_state_builder(), successor_builder);
+                                                        EXPECT_EQ(&successor.get_state().data(), successor_builder);
                                                     }
-                                                    successor_builder = &successor.get_state().get_state_builder();
+                                                    successor_builder = &successor.get_state().data();
                                                     if constexpr (Borrowed)
-                                                        streamed_states.emplace_back(successor.get_state().get_state_builder(), successor.get_metric());
+                                                        streamed_states.emplace_back(successor.get_state().data(), successor.get_metric());
                                                     else
                                                         packed_nodes.push_back(successor.pack());
                                                     ++streamed;
@@ -339,7 +348,7 @@ void expect_schema_queries_match_filtered_successors()
         ASSERT_EQ(streamed_states.size(), expected_packed.size());
         for (size_t i = 0; i < streamed_states.size(); ++i)
             EXPECT_TRUE(same_node(
-                tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(ygg::make_view(streamed_states[i].first, *task), streamed_states[i].second),
+                tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(streamed_states[i].first, *state_repository), streamed_states[i].second),
                 expected_packed[i].unpack()));
     }
     else
@@ -358,8 +367,8 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(state_repository->num_states(), num_states);
     for (const auto binding : all_bindings)
     {
-        auto expected = pool.get_or_allocate();
-        auto actual = pool.get_or_allocate();
+        auto expected = pool.acquire_unique();
+        auto actual = pool.acquire_unique();
         auto actual_delta = tyr::planning::StateDelta {};
         auto expected_delta = tyr::planning::StateDelta {};
         EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual, actual_delta),
@@ -368,7 +377,7 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_TRUE(std::ranges::equal(actual->get_fluent_facts(), expected->get_fluent_facts()));
         EXPECT_TRUE(std::ranges::equal(actual->template get_fterm_values<formalism::FluentTag>(), expected->template get_fterm_values<formalism::FluentTag>()));
         EXPECT_EQ(state_repository->num_states(), num_states);
-        EXPECT_TRUE(owned->get_index().is_max());
+        EXPECT_TRUE(owned->get_index().is_none());
     }
     const auto same_successor = [&](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && same_node(lhs.node, rhs.node); };
     ASSERT_EQ(all_successors.size(), 4);
@@ -383,15 +392,15 @@ void expect_schema_queries_match_filtered_successors()
             SCOPED_TRACE(action.get_name().str());
             auto expected_successors = tyr::planning::LabeledNodeList<Kind> {};
             auto expected_nodes = tyr::planning::NodeList<Kind> {};
-            auto expected_bindings = std::vector<tyr::formalism::planning::ActionBindingView> {};
+            auto expected_bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>> {};
             for (const auto& successor : all_successors)
-                if (successor.label.get_relation().get_index() == action.get_index())
+                if (successor.label.get_relation().index() == action.index())
                 {
                     expected_successors.push_back(successor);
                     expected_nodes.push_back(successor.node);
                 }
             for (const auto binding : all_bindings)
-                if (binding.get_relation().get_index() == action.get_index())
+                if (binding.get_relation().index() == action.index())
                     expected_bindings.push_back(binding);
 
             EXPECT_TRUE(std::ranges::is_permutation(generator->get_labeled_successor_nodes(initial_node, action, list_storage, *axiom_evaluator),
@@ -437,7 +446,7 @@ void expect_schema_queries_match_filtered_successors()
                       nodes.empty());
             EXPECT_EQ(schema_streamed, nodes.empty() ? 0 : 1);
 
-            auto callback_bindings = std::vector<tyr::formalism::planning::ActionBindingView> {};
+            auto callback_bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>> {};
             auto callback_successors = tyr::planning::LabeledNodeList<Kind, S> {};
             EXPECT_TRUE(generator->for_each_applicable_action_binding(
                 initial_node,
@@ -493,7 +502,7 @@ void expect_schema_queries_match_filtered_successors()
                     return true;
                 },
                 [] { return false; }));
-            auto filtered_bindings = std::vector<tyr::formalism::planning::ActionBindingView> {};
+            auto filtered_bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>> {};
             std::ranges::copy_if(bindings, std::back_inserter(filtered_bindings), accepts_low);
             EXPECT_EQ(callback_bindings, filtered_bindings);
 
@@ -565,7 +574,7 @@ void expect_schema_queries_match_filtered_successors()
                 {
                     EXPECT_TRUE(std::ranges::none_of(task->get_task().get_ground_actions(),
                                                      [&](const auto ground_action)
-                                                     { return ground_action.get_row().get_relation().get_index() == action.get_index(); }));
+                                                     { return ground_action.get_row().get_relation().index() == action.index(); }));
                 }
             }
         }
@@ -574,16 +583,17 @@ void expect_schema_queries_match_filtered_successors()
             initial_node,
             [&](auto binding)
             {
-                auto indices = std::vector<ygg::Index<formalism::Object>> {};
+                auto indices = urd::Store<urd::sequence<urd::index<formalism::Object>>> {};
                 for (const auto object : binding.get_objects())
-                    indices.push_back(object.get_index());
-                const auto objects = ygg::make_view(std::span<const ygg::Index<formalism::Object>>(indices), object_repository);
-                EXPECT_EQ(generator->check_action_binding(initial_node, binding.get_relation(), objects), tyr::planning::ActionBindingStatus::APPLICABLE);
-                EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, aliased_objects), tyr::planning::ActionBindingStatus::INAPPLICABLE);
-                const auto offered = generator->try_get_applicable_action_binding(initial_node, binding.get_relation(), objects);
+                    indices.push_back(object.index());
+                const auto objects = ObjectIndices(indices);
+                EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(binding.get_relation(), objects), object_repository)),
+                          tyr::planning::ActionBindingStatus::APPLICABLE);
+                EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(aliased_indices)), object_repository)), tyr::planning::ActionBindingStatus::INAPPLICABLE);
+                const auto offered = generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(binding.get_relation(), objects), object_repository));
                 EXPECT_EQ(offered.status, tyr::planning::ActionBindingStatus::APPLICABLE);
                 EXPECT_EQ(offered.binding, std::optional(binding));
-                const auto rejected = generator->try_get_applicable_action_binding(initial_node, *offered_alias, aliased_objects);
+                const auto rejected = generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(aliased_indices)), object_repository));
                 EXPECT_EQ(rejected.status, tyr::planning::ActionBindingStatus::INAPPLICABLE);
                 EXPECT_FALSE(rejected.binding);
                 callback_successors.push_back({ binding, generator->get_successor_node(initial_node, binding, next_storage(), *axiom_evaluator) });
@@ -592,15 +602,15 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_TRUE(std::ranges::equal(callback_successors, all_successors, same_successor));
         callback_successors.clear();
         ASSERT_GT(all_bindings.size(), 1);
-        auto unregistered = pool.get_or_allocate();
+        auto unregistered = pool.acquire_unique();
         auto saw_nullary = false;
         EXPECT_TRUE(generator->for_each_borrowed_applicable_action_binding(
             initial_node,
             [&](tyr::planning::BorrowedActionBindingView<Kind> binding)
             {
                 const auto action = binding.get_relation();
-                const auto indices = binding.get_objects().get_data();
-                const auto saved = std::vector<ygg::Index<formalism::Object>>(indices.begin(), indices.end());
+                const auto indices = binding.get_objects().base();
+                const auto saved = urd::Store<urd::sequence<urd::index<formalism::Object>>>(indices.begin(), indices.end());
                 const auto count_before_check = count_action_bindings(task);
                 EXPECT_EQ(generator->check_action_binding(initial_node, binding), tyr::planning::ActionBindingStatus::APPLICABLE);
                 EXPECT_EQ(count_action_bindings(task), count_before_check);
@@ -609,8 +619,8 @@ void expect_schema_queries_match_filtered_successors()
                 const auto other = all_bindings.front() == retained ? all_bindings.back() : all_bindings.front();
                 EXPECT_NE(other, retained);
                 EXPECT_EQ(generator->check_action_binding(initial_node, other), tyr::planning::ActionBindingStatus::APPLICABLE);
-                EXPECT_EQ(generator->check_action_binding(initial_node, *offered_alias, aliased_objects), tyr::planning::ActionBindingStatus::INAPPLICABLE);
-                const auto offered = generator->try_get_applicable_action_binding(initial_node, *offered_valid, empty_objects);
+                EXPECT_EQ(generator->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(aliased_indices)), object_repository)), tyr::planning::ActionBindingStatus::INAPPLICABLE);
+                const auto offered = generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(*offered_valid, ObjectIndices {}), object_repository));
                 EXPECT_EQ(offered.status, tyr::planning::ActionBindingStatus::APPLICABLE);
                 // All single-binding paths must leave the outer enumeration's borrowed tuple intact.
                 static_cast<void>(generator->get_successor_node(initial_node, other, next_storage(), *axiom_evaluator));
@@ -618,7 +628,7 @@ void expect_schema_queries_match_filtered_successors()
                 static_cast<void>(generator->generate_successor_state(initial_node, other, *unregistered, delta));
                 static_cast<void>(generator->get_packed_successor_node(initial_node, other, *state_repository, *axiom_evaluator));
                 EXPECT_EQ(binding.get_relation(), action);
-                EXPECT_TRUE(std::ranges::equal(binding.get_objects().get_data(), saved));
+                EXPECT_TRUE(std::ranges::equal(binding.get_objects().base(), saved));
                 const auto successor = generator->get_successor_node(initial_node, binding, next_storage(), *axiom_evaluator);
                 EXPECT_EQ(generator->materialize_action_binding(binding), retained);
                 callback_successors.push_back({ retained, successor });
@@ -655,9 +665,10 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_FALSE(borrowed_exhausted);
             EXPECT_EQ(calls, 1);
             EXPECT_EQ(count_action_bindings(fresh_task), 0);
-            auto scratch = ygg::Builder<tyr::planning::State<Kind>> {};
+            auto scratch = urd::builder<tyr::planning::State<Kind>> {};
+            const auto borrowed_state = urd::builder<tyr::planning::State<Kind>> { node.get_state().data() };
             const auto borrowed_node =
-                tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(ygg::make_view(node.get_state().get_state_builder(), *fresh_task),
+                tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(borrowed_state, *fresh_repository),
                                                                                  node.get_metric());
             const auto discard = [&](tyr::planning::BorrowedActionBindingView<Kind> binding)
             {
@@ -691,12 +702,12 @@ void expect_schema_queries_match_filtered_successors()
     }
 
     // Checking a preexisting rejected binding must not publish any additional tuple.
-    auto rejected_data = ygg::Data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>> {};
-    rejected_data.relation = (*offered_alias).get_index();
+    auto rejected_data = urd::data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>> {};
+    rejected_data.relation = (*offered_alias).index();
     for (const auto index : aliased_indices)
         rejected_data.objects.push_back(index);
     const auto count_before_check = count_action_bindings(task);
-    EXPECT_EQ(source->check_action_binding(initial_node, ygg::make_view(rejected_data, *task->get_repository())),
+    EXPECT_EQ(source->check_action_binding(initial_node, urd::resolve(rejected_data, *task->get_repository())),
               tyr::planning::ActionBindingStatus::INAPPLICABLE);
     EXPECT_EQ(count_action_bindings(task), count_before_check);
     const auto rejected_binding = tyr::formalism::planning::insert(*task->get_repository(), rejected_data).first;
@@ -716,31 +727,30 @@ void expect_schema_queries_match_filtered_successors()
     const auto foreign_constants = foreign_task->get_task().get_domain().get_constants();
     const auto foreign_low = std::ranges::find_if(foreign_constants, [](auto object) { return object.get_name().str() == "low"; });
     ASSERT_NE(foreign_low, foreign_constants.end());
-    ASSERT_EQ((*foreign_low).get_index(), (*low).get_index());
-    ASSERT_NE(&(*foreign_low).get_context(), &(*low).get_context());
-    const auto foreign_objects = ygg::make_view(distinct_objects.get_data(), *foreign_task->get_repository());
-    EXPECT_THROW(source->check_action_binding(initial_node, *offered_alias, foreign_objects), std::invalid_argument);
+    ASSERT_EQ((*foreign_low).index(), (*low).index());
+    ASSERT_NE(&(*foreign_low).context(), &(*low).context());
+    EXPECT_THROW(source->check_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(distinct_indices)), (*foreign_task->get_repository()))), std::invalid_argument);
     const auto bindings_before_foreign = count_action_bindings(task);
     const auto foreign_actions = foreign_task->get_task().get_domain().get_actions();
     const auto foreign_alias = std::ranges::find_if(foreign_actions, [](auto action) { return action.get_name().str() == "alias"; });
     ASSERT_NE(foreign_alias, foreign_actions.end());
-    auto foreign_data = ygg::Data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>> {};
-    foreign_data.relation = (*foreign_alias).get_index();
+    auto foreign_data = urd::data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>> {};
+    foreign_data.relation = (*foreign_alias).index();
     for (const auto index : distinct_indices)
         foreign_data.objects.push_back(index);
-    EXPECT_THROW(source->check_action_binding(initial_node, ygg::make_view(foreign_data, *foreign_task->get_repository())), std::invalid_argument);
+    EXPECT_THROW(source->check_action_binding(initial_node, urd::resolve(foreign_data, *foreign_task->get_repository())), std::invalid_argument);
     const auto foreign_binding = tyr::formalism::planning::insert(*foreign_task->get_repository(), foreign_data).first;
     EXPECT_THROW(source->check_action_binding(initial_node, foreign_binding), std::invalid_argument);
     if constexpr (std::same_as<Kind, GroundTag>)
         EXPECT_THROW(source->materialize_action_binding(foreign_binding), std::invalid_argument);
     else
     {
-        const auto borrowed_foreign = ygg::make_view(foreign_data, *foreign_task->get_repository());
+        const auto borrowed_foreign = urd::resolve(foreign_data, *foreign_task->get_repository());
         EXPECT_THROW(source->materialize_action_binding(borrowed_foreign), std::invalid_argument);
         EXPECT_THROW(source->get_successor_node(initial_node, borrowed_foreign, callback_storage, *axiom_evaluator), std::invalid_argument);
-        auto malformed = ygg::Data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>> {};
-        malformed.relation = (*offered_alias).get_index();
-        const auto borrowed_malformed = ygg::make_view(malformed, *task->get_repository());
+        auto malformed = urd::data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>> {};
+        malformed.relation = (*offered_alias).index();
+        const auto borrowed_malformed = urd::resolve(malformed, *task->get_repository());
         EXPECT_THROW(source->materialize_action_binding(borrowed_malformed), std::invalid_argument);
         EXPECT_THROW(source->get_successor_node(initial_node, borrowed_malformed, callback_storage, *axiom_evaluator), std::invalid_argument);
         malformed.objects.push_back(invalid_indices[0]);
@@ -751,11 +761,11 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_THROW(source->get_successor_node(initial_node, borrowed_malformed, callback_storage, *axiom_evaluator), std::invalid_argument);
     }
     EXPECT_THROW(source->for_each_borrowed_applicable_action_binding(initial_node, foreign_action, [](auto) { return true; }), std::invalid_argument);
-    EXPECT_THROW(source->try_get_applicable_action_binding(initial_node, *offered_alias, foreign_objects), std::invalid_argument);
-    EXPECT_THROW(source->try_get_applicable_action_binding(initial_node, foreign_action, empty_objects), std::invalid_argument);
+    EXPECT_THROW(source->try_get_applicable_action_binding(initial_node, urd::resolve(offer(*offered_alias, ObjectIndices(distinct_indices)), (*foreign_task->get_repository()))), std::invalid_argument);
+    EXPECT_THROW(source->try_get_applicable_action_binding(initial_node, urd::resolve(offer(foreign_action, ObjectIndices {}), object_repository)), std::invalid_argument);
     EXPECT_EQ(count_action_bindings(task), bindings_before_foreign);
     EXPECT_THROW(source->get_applicable_action_bindings(initial_node, foreign_action), std::invalid_argument);
-    EXPECT_THROW(source->check_action_binding(initial_node, foreign_action, empty_objects), std::invalid_argument);
+    EXPECT_THROW(source->check_action_binding(initial_node, urd::resolve(offer(foreign_action, ObjectIndices {}), object_repository)), std::invalid_argument);
     EXPECT_THROW(source->get_successor_nodes(initial_node, foreign_action, list_storage, *axiom_evaluator), std::invalid_argument);
     EXPECT_THROW(source->get_labeled_successor_nodes(initial_node, foreign_action, list_storage, *axiom_evaluator), std::invalid_argument);
     const auto foreign_same_kind = [&]
@@ -765,17 +775,18 @@ void expect_schema_queries_match_filtered_successors()
         else
             return foreign_task;
     }();
+    const auto foreign_repository = tyr::planning::StateRepositoryFactory<Kind>().create(foreign_same_kind);
     const auto foreign_node =
-        tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(ygg::make_view(*owned, *foreign_same_kind), initial_node.get_metric());
+        tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(*owned, *foreign_repository), initial_node.get_metric());
     EXPECT_THROW(source->get_applicable_action_bindings(foreign_node), std::invalid_argument);
     EXPECT_THROW(source->for_each_borrowed_applicable_action_binding(foreign_node, [](auto) { return true; }), std::invalid_argument);
     EXPECT_THROW(source->check_action_binding(foreign_node, all_bindings.front()), std::invalid_argument);
-    EXPECT_THROW(source->check_action_binding(foreign_node, *offered_valid, empty_objects), std::invalid_argument);
-    EXPECT_THROW(source->try_get_applicable_action_binding(foreign_node, *offered_valid, empty_objects), std::invalid_argument);
+    EXPECT_THROW(source->check_action_binding(foreign_node, urd::resolve(offer(*offered_valid, ObjectIndices {}), object_repository)), std::invalid_argument);
+    EXPECT_THROW(source->try_get_applicable_action_binding(foreign_node, urd::resolve(offer(*offered_valid, ObjectIndices {}), object_repository)), std::invalid_argument);
     EXPECT_EQ(count_action_bindings(task), bindings_before_foreign);
     EXPECT_THROW(source->get_successor_nodes(foreign_node, borrowed_states, *axiom_evaluator), std::invalid_argument);
     ASSERT_FALSE(all_bindings.empty());
-    auto out_state = pool.get_or_allocate();
+    auto out_state = pool.acquire_unique();
     auto delta = tyr::planning::StateDelta {};
     EXPECT_THROW(source->generate_successor_state(foreign_node, all_bindings.front(), *out_state, delta), std::invalid_argument);
 }

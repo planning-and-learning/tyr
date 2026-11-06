@@ -18,18 +18,11 @@
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
 
-namespace ygg
+template struct urd::builder<::tyr::planning::State<::tyr::GroundTag>>;
+template struct urd::builder<::tyr::planning::State<::tyr::LiftedTag>>;
+
+namespace tyr::planning
 {
-template struct Builder<::tyr::planning::State<::tyr::GroundTag>>;
-template struct Builder<::tyr::planning::State<::tyr::LiftedTag>>;
-
-template class View<Index<::tyr::planning::State<::tyr::GroundTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::GroundTag>>>;
-template class View<Builder<::tyr::planning::State<::tyr::GroundTag>>, ::tyr::planning::Task<::tyr::GroundTag>>;
-template class View<Index<::tyr::planning::PackedState<::tyr::GroundTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::GroundTag>>>;
-template class View<Index<::tyr::planning::State<::tyr::LiftedTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::LiftedTag>>>;
-template class View<Builder<::tyr::planning::State<::tyr::LiftedTag>>, ::tyr::planning::Task<::tyr::LiftedTag>>;
-template class View<Index<::tyr::planning::PackedState<::tyr::LiftedTag>>, std::shared_ptr<::tyr::planning::StateRepository<::tyr::LiftedTag>>>;
-
 static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateView<::tyr::GroundTag>>);
 static_assert(::tyr::planning::IterableViewStateConcept<::tyr::planning::StateView<::tyr::GroundTag>>);
 static_assert(::tyr::planning::IterableStateConcept<::tyr::planning::StateView<::tyr::LiftedTag>>);

@@ -89,7 +89,7 @@ def tyr_worker(domain: str) -> list[Parts]:
         for atom in invariant.get_atoms():
             args: list[Any] = []
             for term in atom.get_terms():
-                variant = term.get_variant()
+                variant = term
                 match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(variant))
                 index = int(match[1]) if match else None
                 args.append(

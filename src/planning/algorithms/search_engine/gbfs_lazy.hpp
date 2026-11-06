@@ -69,11 +69,11 @@ public:
     struct QueueEntry
     {
         using KeyType = std::tuple<ygg::float_t, ygg::float_t, ygg::uint_t>;
-        using ItemType = ygg::Index<State<Kind>>;
+        using ItemType = urd::index<State<Kind>>;
 
         ygg::float_t g_value;
         ygg::float_t h_value;
-        ygg::Index<State<Kind>> state;
+        urd::index<State<Kind>> state;
         ygg::uint_t step;
 
         [[nodiscard]] KeyType get_key() const { return std::make_tuple(h_value, g_value, step); }
@@ -82,7 +82,7 @@ public:
 
     struct PoppedEntry
     {
-        ygg::Index<State<Kind>> state;
+        urd::index<State<Kind>> state;
     };
 
     LazyGBFSPolicy(Heuristic<Kind>& heuristic, const Options& options) :
@@ -92,7 +92,7 @@ public:
     {
     }
 
-    SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
+    SearchNode& initialize_start(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
     {
         m_start_h_value = h_value;
         auto& search_node = get_search_node(state);
@@ -103,7 +103,7 @@ public:
 
     [[nodiscard]] ygg::float_t get_start_priority() const noexcept { return m_start_h_value; }
 
-    void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node)
+    void open_start(urd::index<State<Kind>> state, const SearchNode& search_node)
     { m_standard_openlist.insert(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ }); }
 
     [[nodiscard]] bool empty() const { return m_openlist.empty(); }
@@ -123,7 +123,7 @@ public:
 
     [[nodiscard]] bool should_discard(const PoppedEntry&, ygg::float_t) const noexcept { return false; }
 
-    SearchNode& get_search_node(ygg::Index<State<Kind>> state)
+    SearchNode& get_search_node(urd::index<State<Kind>> state)
     {
         static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), no_parent(), SearchNodeStatus::NEW };
         return get_or_create_search_node(state, m_search_nodes, default_node);
@@ -165,16 +165,16 @@ public:
     }
 
     [[nodiscard]] SuccessorMetadata
-    make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView action) const
+    make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView action) const
     {
         // Successors are applicable in the evaluated state, so the preferred ones are its relaxed plan's applicable actions.
         const auto preferred = m_relaxed_plan && m_relaxed_plan->contains(action);
-        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric(), m_state_h_value, preferred };
+        return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric(), m_state_h_value, preferred };
     }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
-    void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool preferred)
+    void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool preferred)
     {
         if (preferred)
             m_preferred_openlist.insert(QueueEntry { g_value, h_value, state, m_step++ });
@@ -223,7 +223,7 @@ public:
         }
 
         worker.statistics.increment_num_generated_successors();
-        open_successor(successor_state.get_index(),
+        open_successor(successor_state.index(),
                        g_value,
                        routed_successor.metadata.inherited_h_value,
                        successor_search_node.status,
@@ -232,9 +232,9 @@ public:
         return AcceptanceResult::QUEUED;
     }
 
-    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
+    [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& get_search_nodes() const noexcept { return m_search_nodes; }
 
-    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
+    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, urd::index<Worker> index)
     { return event_handler ? event_handler->make_worker(index) : nullptr; }
 
     template<typename Handler>
@@ -255,7 +255,7 @@ public:
         const auto num_workers = engine.num_workers();
         for (size_t i = 0; i < num_workers; ++i)
         {
-            engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search.queue_preferred_boost(engine.m_options->boost_preferred_queue);
+            engine.get_worker(urd::index<Worker>(static_cast<ygg::uint_t>(i))).search.queue_preferred_boost(engine.m_options->boost_preferred_queue);
         }
     }
 
@@ -269,8 +269,8 @@ private:
     ygg::uint_t m_step { 0 };
     ygg::float_t m_start_h_value { 0 };
     ygg::float_t m_state_h_value { 0 };
-    const ygg::UnorderedSet<formalism::planning::ActionBindingView>* m_relaxed_plan { nullptr };
-    ygg::SegmentedVector<SearchNode> m_search_nodes;
+    const urd::Store<urd::set<formalism::planning::ActionBindingView>>* m_relaxed_plan { nullptr };
+    urd::Store<urd::sequence<SearchNode>, urd::stable_refs> m_search_nodes;
     Queue m_preferred_openlist;
     Queue m_standard_openlist;
     AlternatingOpenList<Queue, Queue> m_openlist;

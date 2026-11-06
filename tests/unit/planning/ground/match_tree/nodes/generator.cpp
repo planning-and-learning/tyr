@@ -9,21 +9,20 @@
 
 template<typename Tag>
 concept ElementGeneratorContract =
-    ygg::ViewConcept<ygg::Index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>
-    && std::constructible_from<ygg::Index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>, ygg::uint_t>
-    && std::totally_ordered<ygg::Index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>>
-    && std::totally_ordered<ygg::Data<tyr::planning::match_tree::ElementGeneratorNode<Tag>>>
-    && std::totally_ordered<ygg::View<ygg::Index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>>
-    && requires(ygg::Data<tyr::planning::match_tree::ElementGeneratorNode<Tag>>& data,
-                const ygg::View<ygg::Index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>& view) {
+    urd::resolves<tyr::planning::match_tree::Repository<Tag>, tyr::planning::match_tree::ElementGeneratorNode<Tag>>
+    && std::constructible_from<urd::index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>, ygg::uint_t>
+    && std::totally_ordered<urd::index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>>
+    && std::totally_ordered<urd::data<tyr::planning::match_tree::ElementGeneratorNode<Tag>>>
+    && std::totally_ordered<urd::view<tyr::planning::match_tree::ElementGeneratorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
+    && requires(urd::data<tyr::planning::match_tree::ElementGeneratorNode<Tag>>& data,
+                const urd::view<tyr::planning::match_tree::ElementGeneratorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.elements;
-           data.clear();
            view.get_elements();
        };
 
-using MatchTreeTags = ygg::TypeList<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
-static_assert([]<typename... Tags>(ygg::TypeList<Tags...>) { return (ElementGeneratorContract<Tags> && ...); }(MatchTreeTags {}));
+using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+static_assert([]<typename... Tags>(boost::mp11::mp_list<Tags...>) { return (ElementGeneratorContract<Tags> && ...); }(MatchTreeTags {}));
 
 using Action = tyr::formalism::planning::Action<::tyr::GroundTag>;
 using Axiom = tyr::formalism::planning::Axiom<::tyr::GroundTag>;
@@ -33,15 +32,15 @@ static_assert(!ygg::formalism::SupportsSymbol<tyr::planning::match_tree::Reposit
 static_assert(!ygg::formalism::SupportsSymbol<tyr::planning::match_tree::Repository<Action>, Action>);
 
 template<typename T>
-concept MatchTreeCanIntern = requires(tyr::planning::match_tree::Repository<Action>& repository, ygg::Data<T>& data) {
+concept MatchTreeCanIntern = requires(tyr::planning::match_tree::Repository<Action>& repository, urd::data<T>& data) {
     repository.insert(data);
     tyr::planning::match_tree::insert(repository, data);
 };
 static_assert(MatchTreeCanIntern<Generator>);
 static_assert(!MatchTreeCanIntern<tyr::planning::match_tree::ElementGeneratorNode<Axiom>>);
 
-static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<Action>&>()[std::declval<ygg::Index<Generator>>()]));
-static_assert(noexcept(ygg::make_view(std::declval<ygg::Index<Generator>>(), std::declval<const tyr::planning::match_tree::Repository<Action>&>())));
+static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<Action>&>()[std::declval<urd::index<Generator>>()]));
+static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<Action>&>().view(std::declval<urd::index<Generator>>())));
 
 TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
 {
@@ -51,19 +50,19 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     auto data = tyr::planning::match_tree::checkout<Generator>(builder);
     const auto [view, inserted] = tyr::planning::match_tree::insert(repository, *data);
     EXPECT_TRUE(inserted);
-    EXPECT_EQ(&view.get_context(), &repository);
+    EXPECT_EQ(&view.context(), &repository);
     EXPECT_TRUE(view.get_elements().empty());
-    EXPECT_EQ(data->index, view.get_handle());
+    EXPECT_EQ(data->index, view.index());
 
-    data->index = ygg::Index<Generator>::max();
+    data->index = urd::index<Generator>();
     const auto [duplicate, duplicate_inserted] = tyr::planning::match_tree::insert(repository, *data);
     EXPECT_FALSE(duplicate_inserted);
     EXPECT_EQ(duplicate, view);
-    EXPECT_EQ(data->index, view.get_handle());
-    EXPECT_EQ(&duplicate.get_context(), &repository);
+    EXPECT_EQ(data->index, view.index());
+    EXPECT_EQ(&duplicate.context(), &repository);
     const auto found = repository.find(*data);
     ASSERT_TRUE(found);
-    EXPECT_EQ(&found.value().get_context(), &repository);
-    EXPECT_EQ(&repository.front<Generator>(), &view.get_data());
+    EXPECT_EQ(&found.value().context(), &repository);
+    EXPECT_EQ(&repository.front<Generator>(), &view.data());
     EXPECT_EQ(repository.size<Generator>(), 1);
 }

@@ -19,6 +19,8 @@
 #define TYR_DATALOG_STATISTICS_RULE_HPP_
 
 #include <algorithm>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -65,13 +67,13 @@ struct AggregatedRuleWorkerStatistics
     uint64_t num_rejected_rules { 0 };
 };
 
-inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::vector<datalog::RuleStatistics>& statistics)
+inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const urd::Store<urd::sequence<datalog::RuleStatistics>>& statistics)
 {
     AggregatedRuleStatistics result {};
 
-    std::vector<std::chrono::nanoseconds> samples;
+    urd::Store<urd::sequence<std::chrono::nanoseconds>> samples;
     samples.reserve(statistics.size());
-    std::vector<std::chrono::nanoseconds> avg_samples;
+    urd::Store<urd::sequence<std::chrono::nanoseconds>> avg_samples;
     avg_samples.reserve(statistics.size());
 
     for (const auto& rs : statistics)
@@ -123,7 +125,7 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
     return result;
 }
 
-inline AggregatedRuleWorkerStatistics compute_aggregated_rule_worker_statistics(const std::vector<RuleWorkerStatistics>& statistics)
+inline AggregatedRuleWorkerStatistics compute_aggregated_rule_worker_statistics(const urd::Store<urd::sequence<RuleWorkerStatistics>>& statistics)
 {
     auto result = AggregatedRuleWorkerStatistics {};
 

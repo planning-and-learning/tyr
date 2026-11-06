@@ -16,6 +16,8 @@
  */
 
 #include "../common.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/factory.hpp"
@@ -55,7 +57,7 @@ constexpr ygg::uint_t default_max_states = 1'000'000;
 
 struct Options
 {
-    std::vector<ygg::uint_t> cores = std::vector<ygg::uint_t>(default_cores.begin(), default_cores.end());
+    urd::Store<urd::sequence<ygg::uint_t>> cores = urd::Store<urd::sequence<ygg::uint_t>>(default_cores.begin(), default_cores.end());
     double search_timeout = default_search_timeout_seconds;
     ygg::uint_t max_states = default_max_states;
     tyr::planning::astar_eager::ParallelSearchMode search_mode = tyr::planning::astar_eager::ParallelSearchMode::SYNCHRONOUS;

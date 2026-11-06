@@ -52,8 +52,6 @@ from pytyr.formalism.planning import (
     StaticPredicate,
     StaticPredicateBindingData,
     StaticPredicateData,
-    Term,
-    TermData,
     Variable,
     VariableData,
 )
@@ -61,6 +59,9 @@ from pytyr.planning.lifted import (
     GroundTaskInstantiationOptions,
     Task,
 )
+
+# A term is an object or a parameter of the rule or action (the variant tyr stores, read as either).
+Term = Object | ParameterIndex
 
 
 def make_action(
@@ -183,12 +184,12 @@ def main() -> None:
     v_gripper = domain_repository.insert(VariableData("?gripper"))[0]
 
     # Terms
-    t_from = domain_repository.create(TermData(ParameterIndex(0)))
-    t_to = domain_repository.create(TermData(ParameterIndex(1)))
+    t_from = ParameterIndex(0)
+    t_to = ParameterIndex(1)
 
-    t_obj = domain_repository.create(TermData(ParameterIndex(0)))
-    t_room = domain_repository.create(TermData(ParameterIndex(1)))
-    t_gripper = domain_repository.create(TermData(ParameterIndex(2)))
+    t_obj = ParameterIndex(0)
+    t_room = ParameterIndex(1)
+    t_gripper = ParameterIndex(2)
 
     # --------------------------------------------------------------------------
     # move action

@@ -47,7 +47,7 @@ public:
     AxiomEvaluator(AxiomEvaluator&&) = delete;
     AxiomEvaluator& operator=(AxiomEvaluator&&) = delete;
 
-    void compute_extended_state(ygg::Builder<State<GroundTag>>& state_builder);
+    void compute_extended_state(urd::builder<State<GroundTag>>& state_builder);
     [[nodiscard]] AxiomEvaluatorPtr<GroundTag> make_worker(ygg::ExecutionContextPtr execution_context) const;
 
     [[nodiscard]] const TaskPtr<GroundTag>& get_task() const noexcept;

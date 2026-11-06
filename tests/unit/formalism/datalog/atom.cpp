@@ -22,24 +22,20 @@ struct AtomPublicView<tyr::formalism::datalog::Atom<::tyr::LiftedTag, T>>
 };
 
 template<typename Entity>
-concept AtomContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>>
-                       && std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>>
-                       && std::same_as<ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>, typename AtomPublicView<Entity>::type>
-                       && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>& view) {
+concept AtomContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                       && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
+                       && std::same_as<urd::view<Entity, tyr::formalism::datalog::Repository>, typename AtomPublicView<Entity>::type>
+                       && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
                               data.index;
                               data.predicate;
                               data.terms;
-                              data.clear();
-                              view.get_index();
+                              view.index();
                               view.get_predicate();
                               view.get_terms();
                           };
 
-static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
+static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (AtomContract<Entities> && ...); }(tyr::formalism::datalog::AtomTypes<::tyr::LiftedTag> {}));
-static_assert(std::constructible_from<ygg::Data<tyr::formalism::datalog::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>>,
-                                      tyr::formalism::datalog::PredicateView<tyr::formalism::StaticTag>,
-                                      tyr::formalism::datalog::TermViewList>);
 }
 
 namespace ground_tests
@@ -56,48 +52,45 @@ struct GroundAtomPublicView<tyr::formalism::datalog::Atom<::tyr::GroundTag, T>>
 
 template<typename Entity>
 concept GroundAtomContract =
-    std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>> && std::totally_ordered<ygg::Data<Entity>>
-    && std::totally_ordered<ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>>
-    && std::same_as<ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>, typename GroundAtomPublicView<Entity>::type>
-    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>& view) {
+    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
+    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
+    && std::same_as<urd::view<Entity, tyr::formalism::datalog::Repository>, typename GroundAtomPublicView<Entity>::type>
+    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            data.binding;
-           data.clear();
-           view.get_index();
+           view.index();
            view.get_predicate();
            view.get_row();
            view.get_objects();
            view.get_key();
        };
 
-static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
+static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (GroundAtomContract<Entities> && ...); }(tyr::formalism::datalog::AtomTypes<::tyr::GroundTag> {}));
-static_assert(std::constructible_from<ygg::Data<tyr::formalism::datalog::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>>,
-                                      tyr::formalism::datalog::PredicateBindingView<tyr::formalism::StaticTag>>);
 
 TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
 {
     auto repository = tyr::formalism::datalog::RepositoryFactory().create();
 
-    auto predicate_data = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
+    auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
     canonicalize(predicate_data);
     const auto [predicate, predicate_created] = repository.insert(predicate_data);
     ASSERT_TRUE(predicate_created);
 
-    auto object_data = ygg::Data<tyr::formalism::Object>(std::string("truck"));
+    auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
     canonicalize(object_data);
     const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
-    auto binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
-    binding_data.relation = predicate.get_index();
-    binding_data.objects.push_back(object.get_index());
-    binding_data.objects.push_back(object.get_index());
+    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+    binding_data.relation = predicate.index();
+    binding_data.objects.push_back(object.index());
+    binding_data.objects.push_back(object.index());
     canonicalize(binding_data);
     const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
 
-    auto ground_atom_data = ygg::Data<tyr::formalism::datalog::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.get_index());
+    auto ground_atom_data = urd::data<tyr::formalism::datalog::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
     canonicalize(ground_atom_data);
     const auto [ground_atom, ground_atom_created] = repository.insert(ground_atom_data);
     ASSERT_TRUE(ground_atom_created);

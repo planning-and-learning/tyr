@@ -19,6 +19,7 @@
 
 #include "tyr/planning/lifted/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "../../../tree_bitset.hpp"
 
 namespace tyr::planning
 {
@@ -30,7 +31,7 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::FactStorageBackend(Contex
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
-{ return Packed { ygg::insert_bitset(*m_bitsets, unpacked.indices, m_blocks) }; }
+{ return Packed { insert_bitset(*m_bitsets, unpacked.indices, m_blocks) }; }
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
@@ -40,19 +41,19 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     m_flips.clear();
     for (const auto& change : changes)
     {
-        const auto bit = static_cast<ygg::uint_t>(change.variable);
+        const auto bit = static_cast<ygg::uint_t>(change.variable.value);
         m_flips.push_back(
             tree_bitset::Flip { static_cast<ygg::uint_t>(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
     }
-    ygg::normalize_flips(m_flips);
+    normalize_flips(m_flips);
 
-    return Packed { m_bitsets->insert(parent.index, m_flips) };
+    return Packed { m_bitsets->insert_flips(parent.index, m_flips) };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    ygg::read_bitset(*m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
+    read_bitset(*m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
 }
 
 template class FactStorageBackend<LiftedTag, TreeBitset, false>;

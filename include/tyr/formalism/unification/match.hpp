@@ -30,7 +30,7 @@ namespace tyr::formalism::unification
 template<TermUnifiableStructure T, typename Policy = DefaultMatchPolicy>
 [[nodiscard]] MatchResult<TermMatchState> match_ex(const T& pattern, const T& element, TermMatchState state, const Policy& policy = {})
 {
-    const bool ok = zip_terms(pattern, element, [&](const ygg::Data<Term>& lhs, const ygg::Data<Term>& rhs) { return match_term(lhs, rhs, state, policy); });
+    const bool ok = zip_terms(pattern, element, [&](const Term& lhs, const Term& rhs) { return match_term(lhs, rhs, state, policy); });
 
     if (!ok)
         return { std::nullopt, MatchFailure::structure_mismatch };
@@ -51,9 +51,9 @@ template<TermUnifiableStructure T, typename Policy = DefaultMatchPolicy>
 
 /// Convenience overload that returns only the resulting sigma substitution.
 template<TermUnifiableStructure T>
-[[nodiscard]] std::optional<SubstitutionFunction<ygg::Data<Term>>> match(const T& pattern, const T& element, SubstitutionFunction<ygg::Data<Term>> sigma)
+[[nodiscard]] std::optional<SubstitutionFunction<Term>> match(const T& pattern, const T& element, SubstitutionFunction<Term> sigma)
 {
-    TermMatchState state { std::move(sigma), SubstitutionFunction<ygg::Data<Term>>() };
+    TermMatchState state { std::move(sigma), SubstitutionFunction<Term>() };
 
     auto result = match(pattern, element, std::move(state), DefaultMatchPolicy {});
     if (!result.has_value())

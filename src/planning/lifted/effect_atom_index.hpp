@@ -26,10 +26,16 @@
 
 #include <optional>
 #include <span>
+#include <urd/repr/maps/csr_multimap.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -40,10 +46,9 @@ namespace tyr::planning
 class EffectAtomIndex
 {
 public:
-    using AppPredicateToActionMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
+    using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>>;
     using ConditionalEffectToPredicateMapping =
-        ygg::UnorderedMap<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>,
-                          formalism::datalog::PredicateView<formalism::FluentTag>>;
+        urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
 
     /// Indexes the atoms of `facts`, interned in `repository`, of the program with the given mappings.
     EffectAtomIndex(const AppPredicateToActionMapping& predicate_to_action,
@@ -59,7 +64,7 @@ public:
     template<typename Apply>
     void for_each_effect_binding(formalism::planning::ActionView<LiftedTag> action,
                                  formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                 ygg::IndexList<formalism::Object>& binding,
+                                 urd::flat_vector<urd::index<formalism::Object>>& binding,
                                  Apply apply)
     {
         const auto atoms = get_atoms(action, effect, binding);
@@ -72,7 +77,8 @@ public:
         for (const auto atom : *atoms)
         {
             binding.clear();
-            ygg::extend(ygg::make_view(atom, *m_repository).get_objects(), binding);
+            for (const auto object : urd::resolve(atom, *m_repository).get_objects())
+                binding.push_back(urd::to_stored(object));
             apply();
             binding.resize(action_arity);
         }
@@ -81,20 +87,19 @@ public:
 private:
     using AtomIndex = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
 
-    /// The atoms of one effect predicate, grouped by the applicability row of their action binding: those of row `r` are
-    /// `atoms[offsets[r], offsets[r + 1])`.
+    /// The atoms of one effect predicate, grouped by the applicability row of their action binding, rebuilt in the
+    /// storage held from (row, atom) pairs.
     struct Groups
     {
         bool current = false;
-        std::vector<AtomIndex> atoms;
-        std::vector<ygg::uint_t> offsets;
-        std::vector<ygg::uint_t> atom_rows;
+        urd::Store<urd::map<ygg::uint_t, AtomIndex>, urd::multi, urd::dense, urd::frozen> atoms;
+        urd::Store<urd::sequence<std::pair<ygg::uint_t, AtomIndex>>> rows;
     };
 
     /// The atoms of the effect's predicate whose action binding is `binding`, or none if the effect has no predicate.
     std::optional<std::span<const AtomIndex>> get_atoms(formalism::planning::ActionView<LiftedTag> action,
                                                         formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                                        std::span<const ygg::Index<formalism::Object>> binding);
+                                                        std::span<const urd::index<formalism::Object>> binding);
 
     void rebuild(Groups& groups,
                  formalism::datalog::PredicateView<formalism::FluentTag> effect_predicate,
@@ -103,15 +108,15 @@ private:
 
     /// The row of the applicability atom of `binding`, if it holds.
     std::optional<ygg::uint_t> find_row(formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
-                                        std::span<const ygg::Index<formalism::Object>> binding);
+                                        std::span<const urd::index<formalism::Object>> binding);
 
     const ConditionalEffectToPredicateMapping* m_effect_to_predicate;
     const datalog::PredicateFactSets<formalism::FluentTag>* m_facts;
     const formalism::datalog::Repository* m_repository;
-    ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>> m_applicability_predicates;
-    ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, Groups> m_groups;
-    ygg::IndexList<formalism::Object> m_prefix;
-    ygg::Data<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>> m_lookup;
+    urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>> m_applicability_predicates;
+    urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, Groups>> m_groups;
+    urd::flat_vector<urd::index<formalism::Object>> m_prefix;
+    urd::data<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>> m_lookup;
 };
 
 }

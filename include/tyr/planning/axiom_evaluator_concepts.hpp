@@ -23,14 +23,14 @@
 
 #include <concepts>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
 {
 
 template<typename T, typename Kind>
-concept AxiomEvaluatorConcept = requires(T& r, const T& const_r, ygg::Builder<State<Kind>>& state_builder, ygg::ExecutionContextPtr execution_context) {
+concept AxiomEvaluatorConcept = requires(T& r, const T& const_r, urd::builder<State<Kind>>& state_builder, ygg::ExecutionContextPtr execution_context) {
     requires TaskKind<Kind>;
     { r.compute_extended_state(state_builder) } -> std::same_as<void>;
     { const_r.make_worker(execution_context) } -> std::same_as<AxiomEvaluatorPtr<Kind>>;

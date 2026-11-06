@@ -75,7 +75,7 @@ public:
         m_domain(std::move(domain)),
         m_path(std::move(path))
     {
-        if (&m_task.get_context() != m_repository.get())
+        if (&m_task.context() != m_repository.get())
             throw std::invalid_argument("Task context does not match the given Repository.");
     }
 

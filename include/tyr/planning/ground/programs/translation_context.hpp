@@ -24,9 +24,12 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/programs/translation_context.hpp"
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::planning
 {
@@ -34,17 +37,15 @@ namespace tyr::planning
 template<>
 struct D2PTranslationContext<GroundTag>
 {
-    ygg::UnorderedMap<formalism::datalog::AtomView<GroundTag, formalism::StaticTag>, formalism::planning::AtomView<GroundTag, formalism::StaticTag>>
+    urd::Store<urd::map<formalism::datalog::AtomView<GroundTag, formalism::StaticTag>, formalism::planning::AtomView<GroundTag, formalism::StaticTag>>>
         static_to_static_atom;
-    ygg::UnorderedMap<formalism::datalog::PredicateBindingView<formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
+    urd::Store<urd::map<formalism::datalog::PredicateBindingView<formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>
         fluent_to_fluent_atom;
-    ygg::UnorderedMap<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>
+    urd::Store<urd::map<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>
         fluent_to_derived_atom;
-    ygg::UnorderedMap<formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag>,
-                      formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>
+    urd::Store<urd::map<formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag>, formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>>
         static_to_static_fterm;
-    ygg::UnorderedMap<formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>,
-                      formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>
+    urd::Store<urd::map<formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>, formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>>
         fluent_to_fluent_fterm;
 };
 
@@ -52,17 +53,15 @@ template<>
 struct P2DTranslationContext<GroundTag>
 {
     using FluentToFluentAtomMapping =
-        ygg::UnorderedMap<formalism::planning::AtomView<GroundTag, formalism::FluentTag>, formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>;
-    using FluentToFluentFunctionTermMapping = ygg::UnorderedMap<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>,
-                                                                formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>>;
+        urd::Store<urd::map<formalism::planning::AtomView<GroundTag, formalism::FluentTag>, formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>>;
+    using FluentToFluentFunctionTermMapping = urd::Store<urd::map<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>, formalism::datalog::FunctionTermView<GroundTag, formalism::FluentTag>>>;
 
-    ygg::UnorderedMap<formalism::planning::AtomView<GroundTag, formalism::StaticTag>, formalism::datalog::AtomView<GroundTag, formalism::StaticTag>>
+    urd::Store<urd::map<formalism::planning::AtomView<GroundTag, formalism::StaticTag>, formalism::datalog::AtomView<GroundTag, formalism::StaticTag>>>
         static_to_static_atom;
     FluentToFluentAtomMapping fluent_to_fluent_atom;
-    ygg::UnorderedMap<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>, formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>
+    urd::Store<urd::map<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>, formalism::datalog::AtomView<GroundTag, formalism::FluentTag>>>
         derived_to_fluent_atom;
-    ygg::UnorderedMap<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>,
-                      formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag>>
+    urd::Store<urd::map<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>, formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag>>>
         static_to_static_fterm;
     FluentToFluentFunctionTermMapping fluent_to_fluent_fterm;
 };

@@ -292,7 +292,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conditional
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.get_index());
+            fmt::print(os, "{}{}\n", "element = ", value.element.index());
             os << ygg::print_indent;
             fmt::print(os, "{}\n", value.payload.condition_domain);
             os << ygg::print_indent;
@@ -316,7 +316,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Action<::ty
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.get_index());
+            fmt::print(os, "{}{}\n", "element = ", value.element.index());
             os << ygg::print_indent;
             fmt::print(os, "{}\n", value.payload.precondition_domain);
 
@@ -343,7 +343,7 @@ struct formatter<tyr::analysis::ScopedView<Element, Payload, C>, char>
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.get_index());
+            fmt::print(os, "{}{}\n", "element = ", value.element.index());
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
@@ -364,7 +364,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conjunctive
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.get_index());
+            fmt::print(os, "{}{}\n", "element = ", value.element.index());
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
@@ -385,7 +385,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conjunctive
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.get_index());
+            fmt::print(os, "{}{}\n", "element = ", value.element.index());
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
@@ -406,7 +406,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom<::tyr
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.get_index());
+            fmt::print(os, "{}{}\n", "element = ", value.element.index());
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }
@@ -427,7 +427,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<::tyr::
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.get_index());
+            fmt::print(os, "{}{}\n", "element = ", value.element.index());
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "payload = ", value.payload);
         }

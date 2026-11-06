@@ -19,8 +19,9 @@
 
 #include "tyr/planning/ground/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/ground/task.hpp"
+#include "../../../tree_bitset.hpp"
 
-#include <yggdrasil/core/bit.hpp>
+#include <urd/repr/containers/bit.hpp>
 
 namespace tyr::planning
 {
@@ -40,11 +41,11 @@ typename FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::Packed FactStora
     for (ygg::uint_t i = 0; i < m_infos->size(); ++i)
     {
         const auto& info = (*m_infos)[i];
-        ygg::bit::write_int(std::span(m_blocks).subspan(info.begin), static_cast<tree_bitset::Block>(unpacked.values[i]), info.offset, info.length);
+        urd::repr::bit::write_int(std::span(m_blocks).subspan(info.begin), static_cast<tree_bitset::Block>(unpacked.values[i]), info.offset, info.length);
     }
 
-    ygg::trim_trailing_zero_blocks(m_blocks);
-    return Packed { m_bitsets->insert(m_blocks) };
+    trim_trailing_zero_blocks(m_blocks);
+    return Packed { m_bitsets->insert_blocks(m_blocks) };
 }
 
 template<bool ThreadSafe>
@@ -55,30 +56,30 @@ FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     m_flips.clear();
     for (const auto& change : changes)
     {
-        const auto& info = (*m_infos)[static_cast<ygg::uint_t>(change.variable)];
-        ygg::append_int_flips(info.begin,
+        const auto& info = (*m_infos)[static_cast<ygg::uint_t>(change.variable.value)];
+        append_int_flips(info.begin,
                               info.offset,
                               info.length,
-                              static_cast<tree_bitset::Block>(static_cast<ygg::uint_t>(change.from) ^ static_cast<ygg::uint_t>(change.to)),
+                              static_cast<tree_bitset::Block>(change.from.value ^ change.to.value),
                               m_flips);
     }
-    ygg::normalize_flips(m_flips);
+    normalize_flips(m_flips);
 
-    return Packed { m_bitsets->insert(parent.index, m_flips) };
+    return Packed { m_bitsets->insert_flips(parent.index, m_flips) };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     m_blocks.assign(m_num_blocks, tree_bitset::Block { 0 });
-    m_bitsets->read(packed.index, std::span(m_blocks).first(packed.index.size));
+    m_bitsets->read_blocks(packed.index, std::span(m_blocks).first(packed.index.size));
 
     auto& values = unpacked.values;
     values.resize(m_infos->size());
     for (ygg::uint_t i = 0; i < m_infos->size(); ++i)
     {
         const auto& info = (*m_infos)[i];
-        values[i] = ygg::uint_t(ygg::bit::read_int<tree_bitset::Block>(std::span(m_blocks).subspan(info.begin), info.offset, info.length));
+        values[i] = ygg::uint_t(urd::repr::bit::read_int<tree_bitset::Block>(std::span(m_blocks).subspan(info.begin), info.offset, info.length));
     }
 }
 

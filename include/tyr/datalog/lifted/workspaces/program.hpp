@@ -19,6 +19,8 @@
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
@@ -38,9 +40,9 @@
 #include <cassert>
 #include <concepts>
 #include <optional>
+#include <urd/repr/core/dependent_false.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/dependent_false.hpp>
 
 namespace tyr::datalog
 {
@@ -67,8 +69,8 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     CostBuckets cost_buckets;
     PendingPredicateAchievers pending_achievers;
 
-    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
-    std::vector<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;
+    urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>>> predicate_rules;
+    urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>>> function_rules;
 
     template<formalism::RelationKind R>
     auto& get_rules() noexcept
@@ -78,7 +80,7 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 
     template<formalism::RelationKind R>
@@ -89,15 +91,15 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 
     formalism::planning::Builder planning_builder;
     formalism::datalog::Builder datalog_builder;
 
-    ygg::IndexList<formalism::Object> binding;
+    urd::flat_vector<urd::index<formalism::Object>> binding;
 
-    std::vector<Scheduler<LiftedTag>> schedulers;
+    urd::Store<urd::sequence<Scheduler<LiftedTag>>> schedulers;
 
     ProgramStatistics statistics;
 
@@ -122,8 +124,8 @@ struct ConstProgramWorkspace<LiftedTag>
 {
     ConstFactsWorkspace<LiftedTag> facts;
 
-    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>>> predicate_rules;
-    std::vector<std::optional<ConstRuleWorkspace<LiftedTag, formalism::FunctionTag>>> function_rules;
+    urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>>>> predicate_rules;
+    urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, formalism::FunctionTag>>>> function_rules;
 
     template<formalism::RelationKind R>
     auto& get_rules() noexcept
@@ -133,7 +135,7 @@ struct ConstProgramWorkspace<LiftedTag>
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 
     template<formalism::RelationKind R>
@@ -144,7 +146,7 @@ struct ConstProgramWorkspace<LiftedTag>
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rules;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 
     explicit ConstProgramWorkspace(Program<LiftedTag>& program);

@@ -34,7 +34,7 @@ namespace tyr::datalog
 template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    if (get_states<R>()[ygg::uint_t(rule.get_index())].unsatisfied_count != 0)
+    if (get_states<R>()[ygg::uint_t(rule.index().value)].unsatisfied_count != 0)
         return;
 
     auto instance = RuleInstance<GroundTag, R>(rule);
@@ -50,9 +50,9 @@ template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolic
 void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule,
                                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    const auto rule_index = rule.get_index();
+    const auto rule_index = rule.index();
     auto& states = get_states<R>();
-    auto& satisfied = states[ygg::uint_t(rule_index)].numeric_constraint_satisfied;
+    auto& satisfied = states[ygg::uint_t(rule_index.value)].numeric_constraint_satisfied;
     const auto numeric_constraints = rule.get_body().get_numeric_constraints();
     if (satisfied.size() != numeric_constraints.size())
         satisfied.assign(numeric_constraints.size(), false);
@@ -64,7 +64,7 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::dat
             continue;
 
         satisfied[i] = true;
-        auto& unsatisfied_count = states[ygg::uint_t(rule_index)].unsatisfied_count;
+        auto& unsatisfied_count = states[ygg::uint_t(rule_index.value)].unsatisfied_count;
         assert(unsatisfied_count > 0);
         --unsatisfied_count;
     }
@@ -80,7 +80,7 @@ void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::Pr
 
     for (const auto dependent_rule : *dependent_rules)
     {
-        auto& unsatisfied_count = get_states<R>()[ygg::uint_t(dependent_rule.get_index())].unsatisfied_count;
+        auto& unsatisfied_count = get_states<R>()[ygg::uint_t(dependent_rule.index().value)].unsatisfied_count;
         if (unsatisfied_count == 0)
             continue;
 
@@ -100,7 +100,7 @@ void Scheduler<GroundTag>::notify_numeric_changed_for(formalism::datalog::Functi
     for (const auto dependent_rule : *dependent_rules)
     {
         update_numeric_constraint_satisfaction(dependent_rule, ctx);
-        if (get_states<R>()[ygg::uint_t(dependent_rule.get_index())].unsatisfied_count == 0)
+        if (get_states<R>()[ygg::uint_t(dependent_rule.index().value)].unsatisfied_count == 0)
             schedule(dependent_rule, ctx);
     }
 }

@@ -25,35 +25,29 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
-#include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<typename V>
+struct view_mixin<::tyr::formalism::planning::Domain, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Domain> C>
-class View<ygg::Index<::tyr::formalism::planning::Domain>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Domain, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::planning::Domain> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::Domain, C>(handle, context)
-    {
-    }
-
-    const auto& get_name() const noexcept { return this->get_data().name; }
+    const auto& get_name() const noexcept { return self().data().name; }
     template<::tyr::formalism::FactKind T>
     auto get_predicates() const noexcept
-    { return ygg::make_view(this->get_data().template get_predicates<T>(), this->get_context()); }
+    { return urd::resolve(self().data().template get_predicates<T>(), self().context()); }
     template<::tyr::formalism::FactKind T>
     auto get_functions() const noexcept
-    { return ygg::make_view(this->get_data().template get_functions<T>(), this->get_context()); }
-    auto get_auxiliary_function() const noexcept { return ygg::make_view(this->get_data().auxiliary_function, this->get_context()); }
-    auto get_constants() const noexcept { return ygg::make_view(this->get_data().constants, this->get_context()); }
-    auto get_actions() const noexcept { return ygg::make_view(this->get_data().actions, this->get_context()); }
-    auto get_axioms() const noexcept { return ygg::make_view(this->get_data().axioms, this->get_context()); }
+    { return urd::resolve(self().data().template get_functions<T>(), self().context()); }
+    auto get_auxiliary_function() const noexcept { return self().template get<&urd::record_of<V>::auxiliary_function>(); }
+    auto get_constants() const noexcept { return self().template get<&urd::record_of<V>::constants>(); }
+    auto get_actions() const noexcept { return self().template get<&urd::record_of<V>::actions>(); }
+    auto get_axioms() const noexcept { return self().template get<&urd::record_of<V>::axioms>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

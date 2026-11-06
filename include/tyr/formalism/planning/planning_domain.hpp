@@ -40,7 +40,7 @@ public:
         m_domain(domain),
         m_path(std::move(path))
     {
-        if (&m_domain.get_context() != m_repository.get())
+        if (&m_domain.context() != m_repository.get())
             throw std::invalid_argument("Domain context does not match the given Repository.");
     }
 

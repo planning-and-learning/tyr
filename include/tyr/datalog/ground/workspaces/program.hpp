@@ -19,6 +19,8 @@
 #define TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
@@ -34,7 +36,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
 
 namespace tyr::datalog
 {
@@ -43,7 +44,7 @@ template<formalism::RelationKind R>
 struct GroundRuleDependencies
 {
 private:
-    using Rules = std::vector<formalism::datalog::RuleView<GroundTag, R>>;
+    using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag, R>>>;
 
 public:
     DenseRelationMap<formalism::PredicateTag, Rules> fluent_precondition_to_rules;
@@ -91,7 +92,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
               cws.program.template get_functions<formalism::FluentTag>(),
               cws.program.template get_atoms<formalism::FluentTag>(),
               cws.program.template get_fterm_values<formalism::FluentTag>(),
-              cws.program.get_context()),
+              cws.program.context()),
         annotation_policy(std::move(annotation_policy_)),
         annotations(cws.program.template get_predicates<formalism::FluentTag>().size()),
         numeric_annotations(cws.program.template get_functions<formalism::FluentTag>().size()),

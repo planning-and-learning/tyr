@@ -23,34 +23,28 @@
 #include <string>
 #include <tuple>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<>
-struct Data<::tyr::formalism::Variable>
+struct data<::tyr::formalism::Variable>
 {
-    ygg::Index<::tyr::formalism::Variable> index;
+    urd::index<::tyr::formalism::Variable> index;
     ::cista::offset::string name;
 
-    Data() = default;
-    Data(::cista::offset::string name_) : index(), name(std::move(name_)) {}
-    // Python constructor
-    Data(const std::string& name_) : index(), name(name_) {}
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) noexcept = default;
-    Data& operator=(Data&& other) noexcept = default;
-    ~Data() = default;
+    data() = default;
+    data(::cista::offset::string name_) : index(), name(std::move(name_)) {}
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) noexcept = default;
+    data& operator=(data&& other) noexcept = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::name> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Variable>);
 }
 
 #endif

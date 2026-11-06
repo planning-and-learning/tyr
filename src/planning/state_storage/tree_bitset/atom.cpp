@@ -23,6 +23,7 @@
 #include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/lifted/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "../../tree_bitset.hpp"
 
 namespace tyr::planning
 {
@@ -47,17 +48,17 @@ AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::AtomStorageBackend(Context& ct
 
 template<TaskKind Kind, bool ThreadSafe>
 typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
-{ return Packed { ygg::insert_bitset(m_context->bitsets, unpacked.indices, m_blocks) }; }
+{ return Packed { insert_bitset(m_context->bitsets, unpacked.indices, m_blocks) }; }
 
 template<TaskKind Kind, bool ThreadSafe>
 typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed
 AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
-{ return Packed { ygg::insert_bitset(m_context->bitsets, parent.index, parent_unpacked.indices, unpacked.indices, m_blocks, m_flips) }; }
+{ return Packed { insert_bitset(m_context->bitsets, parent.index, parent_unpacked.indices, unpacked.indices, m_blocks, m_flips) }; }
 
 template<TaskKind Kind, bool ThreadSafe>
 void AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    ygg::read_bitset(m_context->bitsets, packed.index, unpacked.indices, m_blocks);
+    read_bitset(m_context->bitsets, packed.index, unpacked.indices, m_blocks);
     restore_unpacked_size(unpacked, *m_context);
 }
 

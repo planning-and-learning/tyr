@@ -19,15 +19,18 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_MATCH_TREE_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/queues/queue.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 
 #include <memory>
 #include <optional>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -36,19 +39,19 @@ template<typename Tag>
 class MatchTree
 {
 private:
-    using NodeView = ygg::View<ygg::Data<Node<Tag>>, Repository<Tag>>;
+    using NodeView = urd::resolved_t<Node<Tag>, Repository<Tag>>;
 
     struct Definition
     {
         explicit Definition(const formalism::planning::Repository& context) : repository(static_cast<ygg::uint_t>(0), context) {}
 
-        Repository<Tag> repository;                // Constant index 0 is sufficient because match-tree node views are never compared.
-        std::optional<ygg::Data<Node<Tag>>> root;  // Owned: node views borrow non-trivial node records.
+        Repository<Tag> repository;  // Constant index 0 is sufficient because match-tree node views are never compared.
+        std::optional<Node<Tag>> root;
     };
 
     struct Evaluator
     {
-        std::vector<NodeView> stack;
+        urd::Store<urd::queue<NodeView>, urd::lifo> stack;
     };
 
     explicit MatchTree(std::shared_ptr<const Definition> definition);
@@ -57,10 +60,10 @@ private:
     Evaluator m_evaluator;
 
 public:
-    MatchTree(std::vector<ygg::View<ygg::Index<Tag>, formalism::planning::Repository>> elements, const formalism::planning::Repository& context);
+    MatchTree(urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>> elements, const formalism::planning::Repository& context);
     ~MatchTree();
 
-    static MatchTreePtr<Tag> create(std::vector<ygg::View<ygg::Index<Tag>, formalism::planning::Repository>> elements,
+    static MatchTreePtr<Tag> create(urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>> elements,
                                     const formalism::planning::Repository& context);
 
     [[nodiscard]] MatchTreePtr<Tag> make_worker() const;
@@ -70,7 +73,7 @@ public:
     MatchTree(MatchTree&& other) = delete;
     MatchTree& operator=(MatchTree&& other) = delete;
 
-    void generate(const StateContext<GroundTag>& state, std::vector<ygg::View<ygg::Index<Tag>, formalism::planning::Repository>>& out_applicable_elements);
+    void generate(const StateContext<GroundTag>& state, urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>>& out_applicable_elements);
 };
 
 }

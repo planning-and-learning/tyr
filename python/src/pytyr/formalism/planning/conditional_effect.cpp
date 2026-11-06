@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism::planning
@@ -28,33 +29,33 @@ void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository,
 {
     using namespace nb::literals;
     using Tag = ConditionalEffect<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<const VariableViewList&, ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "variables"_a, "condition"_a, "effect"_a);
-            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, ygg::Index<ConjunctiveEffect<LiftedTag>>>(),
+            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "variables"_a, "condition"_a, "effect"_a);
+            cls.def(nb::init<urd::flat_vector<urd::index<Variable>>, urd::index<ConjunctiveCondition<LiftedTag>>, urd::index<ConjunctiveEffect<LiftedTag>>>(),
                     "variables"_a,
                     "condition"_a,
                     "effect"_a);
         }
         else
         {
-            cls.def(nb::init<ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "condition"_a, "effect"_a);
-            cls.def(nb::init<ygg::Index<ConjunctiveCondition<GroundTag>>, ygg::Index<ConjunctiveEffect<GroundTag>>>(), "condition"_a, "effect"_a);
+            cls.def(urd::python::init_from_views<ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "condition"_a, "effect"_a);
+            cls.def(nb::init<urd::index<ConjunctiveCondition<GroundTag>>, urd::index<ConjunctiveEffect<GroundTag>>>(), "condition"_a, "effect"_a);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = ConditionalEffectView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_variables", &V::get_variables);
@@ -63,8 +64,8 @@ void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository,
         cls.def("get_condition", &V::get_condition, nb::keep_alive<0, 1>());
         cls.def("get_effect", &V::get_effect, nb::keep_alive<0, 1>());
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

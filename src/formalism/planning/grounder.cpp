@@ -49,9 +49,6 @@ template std::pair<LiteralView<GroundTag, DerivedTag>, bool> ground(LiteralView<
 template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element, GrounderContext& context);
 template std::pair<NumericEffectView<GroundTag, AuxiliaryTag>, bool> ground(NumericEffectView<LiftedTag, AuxiliaryTag> element, GrounderContext& context);
 
-template NumericEffectOperatorView<GroundTag, FluentTag> ground(NumericEffectOperatorView<LiftedTag, FluentTag> element, GrounderContext& context);
-template NumericEffectOperatorView<GroundTag, AuxiliaryTag> ground(NumericEffectOperatorView<LiftedTag, AuxiliaryTag> element, GrounderContext& context);
-
 template std::optional<FunctionTermView<GroundTag, StaticTag>> try_ground(FunctionTermView<LiftedTag, StaticTag> element, GrounderContext& context);
 template std::optional<FunctionTermView<GroundTag, FluentTag>> try_ground(FunctionTermView<LiftedTag, FluentTag> element, GrounderContext& context);
 template std::optional<FunctionTermView<GroundTag, AuxiliaryTag>> try_ground(FunctionTermView<LiftedTag, AuxiliaryTag> element, GrounderContext& context);

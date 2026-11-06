@@ -22,24 +22,20 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, typename V>
+struct view_mixin<::tyr::formalism::datalog::Literal<T, F>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::Literal<T, F>> C>
-class View<ygg::Index<::tyr::formalism::datalog::Literal<T, F>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::Literal<T, F>, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::datalog::Literal<T, F>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::datalog::Literal<T, F>, C>(handle, context)
-    {
-    }
-
-    auto get_atom() const noexcept { return ygg::make_view(this->get_data().atom, this->get_context()); }
-    auto get_polarity() const noexcept { return this->get_data().polarity; }
+    auto get_atom() const noexcept { return self().template get<&urd::record_of<V>::atom>(); }
+    auto get_polarity() const noexcept { return self().data().polarity; }
 };
-
-}
+}  // namespace urd
 
 #endif

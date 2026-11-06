@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
@@ -32,30 +33,30 @@ void bind_function_term_kind(nb::module_& m, RepositoryBinding& repository, cons
 {
     using namespace nb::literals;
     using Tag = FunctionTerm<T, F>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<FunctionView<F>, const TermViewList&>(), "function"_a, "terms"_a);
-            cls.def(nb::init<ygg::Index<Function<F>>, ygg::DataList<Term>>(), "function"_a, "terms"_a);
+            cls.def(urd::python::init_from_views<FunctionView<F>, const TermViewList&>(), "function"_a, "terms"_a);
+            cls.def(nb::init<urd::index<Function<F>>, TermList>(), "function"_a, "terms"_a);
         }
         else
         {
-            cls.def(nb::init<FunctionBindingView<F>>(), "binding"_a);
-            cls.def(nb::init<ygg::Index<RelationBinding<Function<F>>>>(), "binding"_a);
+            cls.def(urd::python::init_from_views<FunctionBindingView<F>>(), "binding"_a);
+            cls.def(nb::init<ygg::formalism::RelationBindingIndex<Function<F>, ::tyr::formalism::ObjectTag>>(), "binding"_a);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = FunctionTermView<T, F>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         cls.def("get_function", &V::get_function, nb::keep_alive<0, 1>());
         if constexpr (std::same_as<T, LiftedTag>)
         {
@@ -67,8 +68,8 @@ void bind_function_term_kind(nb::module_& m, RepositoryBinding& repository, cons
             cls.def("get_objects", &V::get_objects);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

@@ -19,6 +19,8 @@
 #define TYR_PLANNING_ALGORITHMS_STATISTICS_HPP_
 
 #include <algorithm>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -197,7 +199,7 @@ public:
     [[nodiscard]] const auto& get_snapshots() const { return m_snapshots; }
 
 private:
-    std::vector<Snapshot> m_snapshots;
+    urd::Store<urd::sequence<Snapshot>> m_snapshots;
 };
 
 }

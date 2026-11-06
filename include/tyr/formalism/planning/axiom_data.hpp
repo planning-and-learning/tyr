@@ -19,107 +19,69 @@
 #define TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<>
-struct Data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
+struct data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
 {
-    ygg::Index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> index;
-    ygg::IndexList<::tyr::formalism::Variable> variables;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> body;
-    ygg::Index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head;
+    urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> index;
+    urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> body;
+    urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head;
 
-    Data() = default;
-    Data(ygg::IndexList<::tyr::formalism::Variable> variables_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> body_,
-         ygg::Index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head_) :
+    data() = default;
+    data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
+         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> body_,
+         urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head_) :
         index(),
         variables(std::move(variables_)),
         body(body_),
         head(head_)
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> body_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>, C> head_) :
-        index(),
-        variables(),
-        body(),
-        head()
-    {
-        set(variables_, variables);
-        set(body_, body);
-        set(head_, head);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::body, &Data::head> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::body, &Data::head> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::head> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::head> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>);
-
 template<>
-struct Data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
+struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
 {
-    ygg::Index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>> index;
-    ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> binding;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body;
-    ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
+    urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>> index;
+    ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body;
+    urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> binding_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body_,
-         ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
+    data() = default;
+    data(ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding_,
+         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body_,
+         urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
         index(),
         binding(binding_),
         body(body_),
         head(head_)
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>>, C> binding_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> body_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> head_) :
-        index(),
-        binding(),
-        body(),
-        head()
-    {
-        set(binding_, binding);
-        set(body_, body);
-        set(head_, head);
-    }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding, &Data::body, &Data::head> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::binding, &data::body, &data::head> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::binding> {}; }
 };
 
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>);
 }
 
 #endif

@@ -39,7 +39,7 @@ void validate_rules(formalism::datalog::ProgramView<GroundTag> program, const Fa
             if (!literal.get_polarity())
             {
                 const auto kind = std::is_same_v<R, formalism::PredicateTag> ? "predicate" : "function";
-                throw std::invalid_argument("Ground Datalog " + std::string(kind) + " rule " + std::to_string(ygg::uint_t(rule.get_index()))
+                throw std::invalid_argument("Ground Datalog " + std::string(kind) + " rule " + std::to_string(ygg::uint_t(rule.index().value))
                                             + " contains a negative fluent literal; only positive fluent rule bodies are supported");
             }
     }
@@ -59,10 +59,10 @@ void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program,
         const auto body = rule.get_body();
         for (const auto literal : body.template get_literals<formalism::FluentTag>())
             if (literal.get_polarity())
-                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row().get_index(), [&](auto& rules, bool) { rules.push_back(rule); });
+                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row().index(), [&](auto& rules, bool) { rules.push_back(rule); });
 
         for (const auto term : formalism::datalog::collect_fluent_reads(rule))
-            dependencies.fluent_function_term_to_rules.update(term.get_row().get_index(), [&](auto& rules, bool) { rules.push_back(rule); });
+            dependencies.fluent_function_term_to_rules.update(term.get_row().index(), [&](auto& rules, bool) { rules.push_back(rule); });
     }
 }
 }
@@ -73,7 +73,7 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::datalog::Prog
           program.template get_functions<formalism::StaticTag>(),
           program.template get_atoms<formalism::StaticTag>(),
           program.template get_fterm_values<formalism::StaticTag>(),
-          program.get_context()),
+          program.context()),
     predicate_rules(program.template get_predicates<formalism::FluentTag>().size(), program.template get_functions<formalism::FluentTag>().size()),
     function_rules(program.template get_predicates<formalism::FluentTag>().size(), program.template get_functions<formalism::FluentTag>().size())
 {
@@ -81,7 +81,7 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::datalog::Prog
                                                                        program.template get_functions<formalism::FluentTag>(),
                                                                        program.template get_atoms<formalism::FluentTag>(),
                                                                        program.template get_fterm_values<formalism::FluentTag>(),
-                                                                       program.get_context());
+                                                                       program.context());
     validate_program(program, FactSets { facts.fact_sets, fluent_fact_sets });
     initialize_dependencies(program, predicate_rules);
     initialize_dependencies(program, function_rules);

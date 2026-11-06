@@ -30,7 +30,7 @@ struct MatchState
     SubstitutionFunction<T> counted;
 };
 
-using TermMatchState = MatchState<ygg::Data<Term>>;
+using TermMatchState = MatchState<Term>;
 
 }
 

@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -32,28 +33,28 @@ template<FactKind T>
 void bind_predicate_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<Predicate<T>>;
+    using V = urd::data<Predicate<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
     cls.def(nb::init<::cista::offset::string, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<FactKind T>
 void bind_predicate_view(nb::module_& m, const char* name)
 {
     using V = PredicateView<T>;
-    auto cls = nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
+    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_predicate(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<Predicate<DerivedTag>>>(m, "DerivedPredicateIndex");
+    urd::python::bind_index<urd::index<Predicate<DerivedTag>>>(m, "DerivedPredicateIndex");
     bind_predicate_data<DerivedTag>(m, "DerivedPredicateData");
 
     bind_predicate_view<StaticTag>(m, "StaticPredicate");

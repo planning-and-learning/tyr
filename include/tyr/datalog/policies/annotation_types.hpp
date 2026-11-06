@@ -27,26 +27,30 @@
 #include <concepts>
 #include <cstdint>
 #include <limits>
-#include <map>
 #include <mutex>
 #include <optional>
 #include <span>
 #include <tuple>
 #include <type_traits>
+#include <urd/repr/maps/index_map.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/wrappers/recycling.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/segmented_vector.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/spin_mutex.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::datalog
 {
 
-struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
+struct NumericSupport : urd::compared_by_identity<NumericSupport>
 {
     formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
@@ -64,14 +68,14 @@ struct NumericSupport : ygg::comparison::Mixin<NumericSupport>
     [[nodiscard]] auto get_interval() const noexcept { return interval; }
     [[nodiscard]] auto get_cost() const noexcept { return cost; }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericSupport::key, &NumericSupport::interval, &NumericSupport::cost> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&NumericSupport::key, &NumericSupport::interval, &NumericSupport::cost> {}; }
 };
 
 template<formalism::RelationKind R = formalism::PredicateTag>
-struct WitnessAnnotation : ygg::comparison::Mixin<WitnessAnnotation<R>>
+struct WitnessAnnotation : urd::compared_by_identity<WitnessAnnotation<R>>
 {
 private:
-    using NumericSupports = std::vector<NumericSupport>;
+    using NumericSupports = urd::Store<urd::sequence<NumericSupport>>;
 
 public:
     WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost);
@@ -83,7 +87,7 @@ public:
     [[nodiscard]] const auto& get_numeric_supports() const noexcept { return numeric_supports; }
 
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost, &WitnessAnnotation::numeric_supports> {}; }
+    { return urd::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost, &WitnessAnnotation::numeric_supports> {}; }
 
 private:
     formalism::datalog::RuleBindingIndex<R> rule_key;
@@ -99,7 +103,7 @@ struct PredicateAchiever
     WitnessAnnotation<formalism::PredicateTag> witness;
 };
 
-struct PredicateAchieverKey : ygg::comparison::Mixin<PredicateAchieverKey>
+struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey>
 {
     PredicateRuleBinding rule_key;
     formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
@@ -111,38 +115,25 @@ struct PredicateAchieverKey : ygg::comparison::Mixin<PredicateAchieverKey>
     {
     }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
 };
 
-using PendingPredicateAchieverBuckets = std::map<Cost, std::vector<PredicateAchieverKey>>;
+/// The achievers by cost, least first; erased buckets keep their vectors for the next costs (retains).
+using PendingPredicateAchieverBuckets = urd::Store<urd::map<Cost, urd::Store<urd::sequence<PredicateAchieverKey>>>, urd::sorted, urd::retains, urd::stable_refs>;
 
 /// Owned by the program workspace and reused across solves: clear() keeps the capacity of by_key and of the bucket vectors.
 struct PendingPredicateAchievers
 {
     PendingPredicateAchieverBuckets buckets;
-    ygg::UnorderedMap<PredicateAchieverKey, PredicateAchiever> by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
-    std::vector<PendingPredicateAchieverBuckets::node_type> free_buckets;
+    urd::Store<urd::map<PredicateAchieverKey, PredicateAchiever>> by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
 
-    std::vector<PredicateAchieverKey>& bucket(Cost cost)
-    {
-        if (const auto it = buckets.find(cost); it != buckets.end())
-            return it->second;
-        if (free_buckets.empty())
-            return buckets.try_emplace(cost).first->second;
-        auto node = std::move(free_buckets.back());
-        free_buckets.pop_back();
-        node.key() = cost;
-        return buckets.insert(std::move(node)).position->second;
-    }
+    urd::Store<urd::sequence<PredicateAchieverKey>>& bucket(Cost cost) { return buckets[cost]; }
 
-    void erase_buckets(PendingPredicateAchieverBuckets::iterator end)
+    /// Erases the buckets before `end`, cheapest first.
+    void erase_buckets(PendingPredicateAchieverBuckets::const_iterator end)
     {
         while (buckets.begin() != end)
-        {
-            auto node = buckets.extract(buckets.begin());
-            node.mapped().clear();
-            free_buckets.push_back(std::move(node));
-        }
+            buckets.erase(buckets.begin());
     }
 
     void clear()
@@ -171,7 +162,7 @@ inline void insert_pending_achiever(PendingPredicateAchievers& pending, Predicat
 }
 
 template<typename AnnotationPolicy>
-void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchieverBuckets::iterator end, AnnotationPolicy& annotation_policy)
+void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchieverBuckets::const_iterator end, AnnotationPolicy& annotation_policy)
 {
     if constexpr (AnnotationPolicy::records_propositional_achievers)
         for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
@@ -188,7 +179,7 @@ void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredic
     pending.erase_buckets(end);
 }
 
-struct BaseAnnotation : ygg::comparison::Mixin<BaseAnnotation>
+struct BaseAnnotation : urd::compared_by_identity<BaseAnnotation>
 {
 public:
     BaseAnnotation() : m_cost(static_cast<Cost>(0)) {}
@@ -196,7 +187,7 @@ public:
 
     [[nodiscard]] auto get_cost() const noexcept { return m_cost; }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&BaseAnnotation::m_cost> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&BaseAnnotation::m_cost> {}; }
 
 private:
     Cost m_cost;
@@ -212,7 +203,7 @@ inline Cost get_cost(const Annotation<R>& annotation) noexcept
     if (const auto* base = std::get_if<BaseAnnotation>(&annotation))
         return base->get_cost();
     const auto* witness = std::get_if<WitnessAnnotation<R>>(&annotation);
-    YGG_ASSUME(witness != nullptr);
+    URD_ASSUME(witness != nullptr);
     return witness->get_cost();
 }
 
@@ -232,6 +223,7 @@ struct CostUpdate
     [[nodiscard]] bool is_strict_improvement() const noexcept { return new_cost < old_cost.value_or(std::numeric_limits<Cost>::max()); }
 };
 
+/// One urd generation map per relation (clear starts a new generation; slots keep their storage for reuse).
 /// ThreadSafe permits concurrent read(), update(), and row growth after relation lanes
 /// are initialized. initialize(), clear(), find(), moves, and destruction require quiescence.
 template<formalism::RelationKind R, std::default_initializable Value, bool ThreadSafe = false>
@@ -263,18 +255,19 @@ public:
     DenseRelationMap& operator=(DenseRelationMap&&) noexcept = default;
     ~DenseRelationMap() = default;
 
-    void initialize(size_t num_relations) { m_lanes = std::vector<Lane>(num_relations); }
+    void initialize(size_t num_relations) { m_lanes = urd::Store<urd::sequence<Lane>>(num_relations); }
 
-    void clear() noexcept { ++m_generation; }
+    void clear() noexcept
+    {
+        for (auto& lane : m_lanes)
+            lane.clear();
+    }
 
     template<std::invocable<const Value&> Read>
     std::invoke_result_t<Read, const Value&> read(Key key, Read&& read, std::invoke_result_t<Read, const Value&> missing) const
     {
-        const auto* slot = find_slot(key.relation, key.row);
-        if (!slot)
-            return missing;
-
-        return with_slot_lock(*slot, [&] { return slot->generation == m_generation ? std::forward<Read>(read)(slot->value) : missing; });
+        const auto relation = ygg::uint_t(key.relation.value);
+        return relation < m_lanes.size() ? m_lanes[relation].read(key.row, std::forward<Read>(read), missing) : missing;
     }
 
     template<std::invocable<Value&, bool> Update>
@@ -284,14 +277,12 @@ public:
     template<std::invocable<Value&, bool> Update>
     decltype(auto) update(Relation relation, Row row, Update&& update)
     {
-        auto& slot = get_or_create_slot(relation, row);
-        return with_slot_lock(slot,
-                              [&]() -> decltype(auto)
-                              {
-                                  const auto initialized = slot.generation == m_generation;
-                                  slot.generation = m_generation;
-                                  return std::forward<Update>(update)(slot.value, initialized);
-                              });
+        const auto index = ygg::uint_t(relation.value);
+        if constexpr (ThreadSafe)
+            assert(index < m_lanes.size());
+        else if (index >= m_lanes.size())
+            m_lanes.resize(index + 1);
+        return m_lanes[index].update(row, std::forward<Update>(update));
     }
 
     [[nodiscard]] const Value* find(Key key) const noexcept { return find(key.relation, key.row); }
@@ -302,8 +293,8 @@ public:
 
     [[nodiscard]] const Value* find(Relation relation, Row row) const noexcept
     {
-        const auto* slot = find_slot(relation, row);
-        return slot && slot->generation == m_generation ? &slot->value : nullptr;
+        const auto index = ygg::uint_t(relation.value);
+        return index < m_lanes.size() ? m_lanes[index].read(row, [](const Value& value) { return &value; }, static_cast<const Value*>(nullptr)) : nullptr;
     }
 
     Value* find(Relation relation, Row row) noexcept
@@ -311,70 +302,9 @@ public:
     { return const_cast<Value*>(std::as_const(*this).find(relation, row)); }
 
 private:
-    struct NoMutex
-    {
-    };
+    using Lane = urd::Store<urd::map<Row, Value>, urd::dense, urd::constant_clear, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
-    using Mutex = std::conditional_t<ThreadSafe, ygg::SpinMutex, NoMutex>;
-
-    struct Slot
-    {
-        [[no_unique_address]] mutable Mutex mutex;
-        uint64_t generation { 0 };
-        Value value {};
-    };
-
-    static constexpr size_t first_lane_segment_size = 32;
-
-    using Lane = std::conditional_t<ThreadSafe, ygg::SegmentedVector<Slot, first_lane_segment_size, true>, std::vector<Slot>>;
-
-    template<typename SlotT, typename Callback>
-    static decltype(auto) with_slot_lock(SlotT& slot, Callback&& callback)
-    {
-        if constexpr (ThreadSafe)
-        {
-            const auto lock = std::lock_guard(slot.mutex);
-            return std::forward<Callback>(callback)();
-        }
-        else
-        {
-            return std::forward<Callback>(callback)();
-        }
-    }
-
-    Slot& get_or_create_slot(Relation relation, Row row)
-    {
-        const auto relation_index = ygg::uint_t(relation);
-        if constexpr (ThreadSafe)
-            assert(relation_index < m_lanes.size());
-        else if (relation_index >= m_lanes.size())
-            m_lanes.resize(relation_index + 1);
-
-        auto& lane = m_lanes[relation_index];
-        const auto row_index = ygg::uint_t(row);
-        if constexpr (ThreadSafe)
-        {
-            while (lane.size() <= row_index)
-                lane.emplace_back();
-        }
-        else if (row_index >= lane.size())
-            lane.resize(row_index + 1);
-        return lane[row_index];
-    }
-
-    [[nodiscard]] const Slot* find_slot(Relation relation, Row row) const noexcept
-    {
-        const auto relation_index = ygg::uint_t(relation);
-        const auto row_index = ygg::uint_t(row);
-        if (relation_index >= m_lanes.size())
-            return nullptr;
-
-        const auto& lane = m_lanes[relation_index];
-        return row_index < lane.size() ? &lane[row_index] : nullptr;
-    }
-
-    std::vector<Lane> m_lanes;
-    uint64_t m_generation { 1 };
+    urd::Store<urd::sequence<Lane>> m_lanes;
 };
 
 /// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
@@ -450,11 +380,11 @@ struct NumericIntervalAnnotation
 
 inline bool numeric_interval_key_less(const NumericIntervalAnnotation& lhs, const NumericIntervalAnnotation& rhs) noexcept
 {
-    return ygg::Less<> {}(std::tuple(get_cost(lhs.annotation), lower(lhs.interval), upper(lhs.interval)),
+    return urd::Less<> {}(std::tuple(get_cost(lhs.annotation), lower(lhs.interval), upper(lhs.interval)),
                           std::tuple(get_cost(rhs.annotation), lower(rhs.interval), upper(rhs.interval)));
 }
 
-inline const Annotation<formalism::FunctionTag>* find_numeric_interval_annotation(const std::vector<NumericIntervalAnnotation>& entries,
+inline const Annotation<formalism::FunctionTag>* find_numeric_interval_annotation(const urd::Store<urd::sequence<NumericIntervalAnnotation>>& entries,
                                                                                   ygg::ClosedInterval<ygg::float_t> interval) noexcept
 {
     const auto it = std::find_if(entries.begin(), entries.end(), [&](const auto& entry) { return entry.interval == interval; });
@@ -462,7 +392,7 @@ inline const Annotation<formalism::FunctionTag>* find_numeric_interval_annotatio
 }
 
 /// Retains the first cheapest witness for each exact interval.
-inline bool insert_first_best_numeric_interval_annotation(std::vector<NumericIntervalAnnotation>& entries, NumericIntervalAnnotation entry)
+inline bool insert_first_best_numeric_interval_annotation(urd::Store<urd::sequence<NumericIntervalAnnotation>>& entries, NumericIntervalAnnotation entry)
 {
     const auto incumbent = std::find_if(entries.begin(), entries.end(), [&](const auto& candidate) { return candidate.interval == entry.interval; });
     if (incumbent != entries.end())
@@ -494,7 +424,7 @@ private:
     using Entry = NumericIntervalAnnotation;
 
 public:
-    using Entries = std::vector<Entry>;
+    using Entries = urd::Store<urd::sequence<Entry>>;
 
 private:
     using Storage = DenseRelationMap<formalism::FunctionTag, Entries, ThreadSafe>;
@@ -647,7 +577,7 @@ public:
     }
 
 private:
-    std::vector<std::pair<Key, Annotation<>>> m_entries;
+    urd::Store<urd::sequence<std::pair<Key, Annotation<>>>> m_entries;
 };
 
 /// The function annotation staged by one ground rule firing (one head interval).

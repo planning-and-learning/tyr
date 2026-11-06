@@ -22,7 +22,10 @@
 #include "tyr/planning/declarations.hpp"
 
 #include <cstddef>
-#include <yggdrasil/containers/associative_containers.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -52,13 +55,13 @@ public:
     virtual void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) = 0;
 
     ygg::float_t evaluate(const StateView<Kind>& state);
-    virtual ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state) = 0;
+    virtual ygg::float_t evaluate(const urd::data<State<Kind>>& state) = 0;
 
     [[nodiscard]] virtual HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const = 0;
 
     /// The relaxed plan of the last evaluation, or nullptr if this heuristic does not compute one. An empty plan (e.g. in a goal state or a dead end) is
     /// not nullptr. Searches decide which actions to prefer from it.
-    [[nodiscard]] virtual const ygg::UnorderedSet<formalism::planning::ActionBindingView>* get_relaxed_plan() const { return nullptr; }
+    [[nodiscard]] virtual const urd::Store<urd::set<formalism::planning::ActionBindingView>>* get_relaxed_plan() const { return nullptr; }
 
     virtual void print_summary([[maybe_unused]] size_t verbosity) const {}
 

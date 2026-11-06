@@ -23,8 +23,8 @@
 #include <concepts>
 #include <variant>
 #include <vector>
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/type_list.hpp>
+#include <urd/config.hpp>
+#include <boost/mp11.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -57,15 +57,15 @@ struct ElementGeneratorNode
 {
 };
 
-template<typename Tag>
-struct Node
-{
-};
-
 /// The node kinds of a match tree, in the order of the Node variant.
 template<typename Tag>
-using NodeTypes = ygg::
-    TypeList<AtomSelectorNode<Tag>, NumericConstraintSelectorNode<Tag>, VariableSelectorNode<Tag>, NegativeFactSelectorNode<Tag>, ElementGeneratorNode<Tag>>;
+using NodeTypes =
+    boost::mp11::mp_list<AtomSelectorNode<Tag>, NumericConstraintSelectorNode<Tag>, VariableSelectorNode<Tag>, NegativeFactSelectorNode<Tag>, ElementGeneratorNode<Tag>>;
+
+/// A match-tree node: one of the node kinds (NodeTypes, in that order). Stored as it is, not interned; read through a
+/// Repository<Tag> (urd::resolve) as the std::variant of the kinds' views.
+template<typename Tag>
+using Node = urd::index_variant<NodeTypes<Tag>>;
 
 template<typename Tag>
 using RepositoryTypes = NodeTypes<Tag>;
@@ -89,7 +89,7 @@ template<typename Tag>
 using RepositoryPtr = std::unique_ptr<Repository<Tag>>;
 
 template<typename Repo, typename... Tags>
-constexpr bool match_tree_repository_access_for_types(ygg::TypeList<Tags...>) noexcept
+constexpr bool match_tree_repository_access_for_types(boost::mp11::mp_list<Tags...>) noexcept
 { return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...); }
 
 template<typename T>
@@ -104,7 +104,7 @@ concept RepositoryConcept = HasFormalismRepository<T> && match_tree_repository_a
 /// @param context
 /// @return
 template<typename Tag>
-inline const Repository<Tag>& get_repository(const Repository<Tag>& context YGG_LIFETIMEBOUND) noexcept
+inline const Repository<Tag>& get_repository(const Repository<Tag>& context URD_LIFETIMEBOUND) noexcept
 { return context; }
 
 template<typename T, typename Tag>

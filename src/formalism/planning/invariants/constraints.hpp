@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 
 #include "tyr/formalism/planning/mutable/atom.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/mutable/literal.hpp"
@@ -27,76 +29,75 @@
 #include <optional>
 #include <variant>
 #include <vector>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
 
-struct InvariantParameter : ygg::comparison::Mixin<InvariantParameter>
+struct InvariantParameter : urd::compared_by_identity<InvariantParameter>
 {
     size_t index;
 
     InvariantParameter() = default;
     explicit InvariantParameter(size_t index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&InvariantParameter::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&InvariantParameter::index> {}; }
 };
 
-struct VariableTerm : ygg::comparison::Mixin<VariableTerm>
+struct VariableTerm : urd::compared_by_identity<VariableTerm>
 {
     ParameterIndex index;
 
     VariableTerm() = default;
     explicit VariableTerm(ParameterIndex index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&VariableTerm::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&VariableTerm::index> {}; }
 };
 
-struct ObjectTerm : ygg::comparison::Mixin<ObjectTerm>
+struct ObjectTerm : urd::compared_by_identity<ObjectTerm>
 {
-    ygg::Index<Object> index;
+    urd::index<Object> index;
 
     ObjectTerm() = default;
-    explicit ObjectTerm(ygg::Index<Object> index_) : index(index_) {}
+    explicit ObjectTerm(urd::index<Object> index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&ObjectTerm::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&ObjectTerm::index> {}; }
 };
 
 using ConstraintTerm = std::variant<InvariantParameter, VariableTerm, ObjectTerm>;
 
 struct InequalityDisjunction
 {
-    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
+    urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts;
 
-    explicit InequalityDisjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts_);
+    explicit InequalityDisjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts_);
 };
 
 class EqualityConjunction
 {
 public:
-    explicit EqualityConjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities_);
+    explicit EqualityConjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> equalities_);
 
-    const std::vector<std::pair<ConstraintTerm, ConstraintTerm>>& get_equalities() const noexcept { return m_equalities; }
+    const urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>>& get_equalities() const noexcept { return m_equalities; }
     bool is_consistent() const;
-    const ygg::Map<ConstraintTerm, ConstraintTerm>& get_representative() const;
+    const urd::Store<urd::map<ConstraintTerm, ConstraintTerm>, urd::sorted>& get_representative() const;
 
 private:
-    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> m_equalities;
+    urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> m_equalities;
     mutable bool m_computed = false;
     mutable bool m_consistent = true;
-    mutable ygg::Map<ConstraintTerm, ConstraintTerm> m_representative;
+    mutable urd::Store<urd::map<ConstraintTerm, ConstraintTerm>, urd::sorted> m_representative;
 
     void compute() const;
 };
 
 struct ConstraintSystem
 {
-    std::vector<std::vector<EqualityConjunction>> equality_DNFs;
-    std::vector<InequalityDisjunction> inequality_disjunctions;
-    std::vector<ConstraintTerm> not_constant;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<EqualityConjunction>>>> equality_DNFs;
+    urd::Store<urd::sequence<InequalityDisjunction>> inequality_disjunctions;
+    urd::Store<urd::sequence<ConstraintTerm>> not_constant;
 
     void add_equality_conjunction(const EqualityConjunction& eq);
-    void add_equality_DNF(std::vector<EqualityConjunction> dnf);
+    void add_equality_DNF(urd::Store<urd::sequence<EqualityConjunction>> dnf);
     void add_inequality_disjunction(const InequalityDisjunction& disj);
     void add_not_constant(ConstraintTerm term);
     void extend(const ConstraintSystem& other);
@@ -104,12 +105,12 @@ struct ConstraintSystem
     [[nodiscard]] bool is_solvable() const;
 
 private:
-    static EqualityConjunction combine_equality_conjunctions(const std::vector<EqualityConjunction>& conjunctions);
+    static EqualityConjunction combine_equality_conjunctions(const urd::Store<urd::sequence<EqualityConjunction>>& conjunctions);
 };
 
 ConstraintTerm make_constraint_term(ParameterIndex parameter);
-ConstraintTerm make_constraint_term(ygg::Index<Object> object);
-ConstraintTerm make_constraint_term(const ygg::Data<Term>& term);
+ConstraintTerm make_constraint_term(urd::index<Object> object);
+ConstraintTerm make_constraint_term(const Term& term);
 ConstraintTerm make_invariant_parameter_term(size_t index);
 EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv);
 

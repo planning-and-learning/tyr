@@ -19,6 +19,9 @@
 #define TYR_PLANNING_SUCCESSOR_GENERATOR_CONCEPTS_HPP_
 
 #include "tyr/declarations.hpp"
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
@@ -26,13 +29,13 @@
 
 #include <concepts>
 #include <cstdint>
-#include <deque>
 #include <functional>
 #include <type_traits>
 #include <vector>
-#include <yggdrasil/containers/shared_object_pool.hpp>
+#include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
@@ -55,17 +58,17 @@ using BorrowedActionBindingView =
 
 /// Indexed outputs live in a repository; borrowed single/callback outputs use caller-owned scratch.
 template<TaskKind Kind, StateViewConcept<Kind> S>
-using SuccessorStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, ygg::Builder<State<Kind>>>;
+using SuccessorStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, urd::builder<State<Kind>>>;
 
 /// Borrowed lists append distinct builders without invalidating previous outputs or the source.
 /// Callers keep those builders alive and unchanged for as long as their views are used.
 template<TaskKind Kind, StateViewConcept<Kind> S>
-using SuccessorListStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, std::deque<ygg::Builder<State<Kind>>>>;
+using SuccessorListStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, urd::Store<urd::sequence<urd::builder<State<Kind>>>, urd::stable_refs>>;
 
 template<typename T, typename Kind, typename S = StateView<Kind>>
 concept SuccessorGeneratorConcept = requires(T& r,
                                              const T& const_r,
-                                             ygg::Index<State<Kind>> state_index,
+                                             urd::index<State<Kind>> state_index,
                                              const Node<Kind, S>& node,
                                              NodeList<Kind, S>& successor_nodes,
                                              LabeledNodeList<Kind, S>& labeled_successor_nodes,
@@ -74,37 +77,36 @@ concept SuccessorGeneratorConcept = requires(T& r,
                                              const std::function<bool(Node<Kind, S>)>& node_callback,
                                              const std::function<bool(LabeledNode<Kind, S>)>& labeled_node_callback,
                                              const std::function<bool(formalism::planning::ActionBindingView)>& binding_callback,
-                                             std::vector<formalism::planning::ActionBindingView>& action_bindings,
+                                             urd::Store<urd::sequence<formalism::planning::ActionBindingView>>& action_bindings,
                                              formalism::planning::ActionBindingView binding,
                                              formalism::planning::ActionBindingDataView binding_data,
                                              BorrowedActionBindingView<Kind> borrowed_binding,
                                              const std::function<bool(BorrowedActionBindingView<Kind>)>& borrowed_binding_callback,
                                              formalism::planning::ActionView<LiftedTag> action,
-                                             formalism::planning::ObjectSpanView objects,
                                              StateRepository<Kind>& state_repository,
                                              SuccessorStorage<Kind, S>& successor_storage,
                                              SuccessorListStorage<Kind, S>& successor_list_storage,
                                              AxiomEvaluator<Kind>& axiom_evaluator,
-                                             ygg::Builder<State<Kind>>& state_builder,
-                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder_ptr,
+                                             urd::builder<State<Kind>>& state_builder,
+                                             std::shared_ptr<urd::builder<State<Kind>>> state_builder_ptr,
                                              ygg::float_t auxiliary_value,
                                              StateDelta& state_delta,
                                              const StateView<Kind>& parent_state,
                                              ygg::ExecutionContextPtr execution_context) {
     requires TaskKind<Kind>;
     requires StateViewConcept<S, Kind>;
-    { r.check_action_binding(node, action, objects) } -> std::same_as<ActionBindingStatus>;
     { r.check_action_binding(node, binding) } -> std::same_as<ActionBindingStatus>;
     { r.check_action_binding(node, binding_data) } -> std::same_as<ActionBindingStatus>;
     { r.materialize_action_binding(borrowed_binding) } -> std::same_as<formalism::planning::ActionBindingView>;
     { r.get_successor_node(node, borrowed_binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<Kind, S>>;
-    { r.try_get_applicable_action_binding(node, action, objects) } -> std::same_as<ActionBindingResult>;
+    { r.try_get_applicable_action_binding(node, binding) } -> std::same_as<ActionBindingResult>;
+    { r.try_get_applicable_action_binding(node, binding_data) } -> std::same_as<ActionBindingResult>;
     { r.get_initial_node(state_repository, axiom_evaluator) } -> std::same_as<Node<Kind>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<NodeList<Kind, S>>;
     { r.get_successor_nodes(node, successor_list_storage, axiom_evaluator, successor_nodes) } -> std::same_as<void>;
     { r.get_labeled_successor_nodes(node, successor_list_storage, axiom_evaluator) } -> std::same_as<LabeledNodeList<Kind, S>>;
     { r.get_labeled_successor_nodes(node, successor_list_storage, axiom_evaluator, labeled_successor_nodes) } -> std::same_as<void>;
-    { r.get_applicable_action_bindings(node) } -> std::same_as<std::vector<formalism::planning::ActionBindingView>>;
+    { r.get_applicable_action_bindings(node) } -> std::same_as<urd::Store<urd::sequence<formalism::planning::ActionBindingView>>>;
     { r.get_applicable_action_bindings(node, action_bindings) } -> std::same_as<void>;
     { r.get_successor_node(node, binding, successor_storage, axiom_evaluator) } -> std::same_as<Node<Kind, S>>;
     { r.generate_successor_state(node, binding, state_builder, state_delta) } -> std::same_as<ygg::float_t>;

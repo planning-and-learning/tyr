@@ -24,9 +24,12 @@
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 #include "tyr/planning/programs/action.hpp"
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::planning
 {
@@ -35,7 +38,7 @@ template<>
 class ApplicableActionProgram<LiftedTag>
 {
 public:
-    using AppPredicateToActionMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
+    using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>>;
 
     struct SchemaProgram
     {
@@ -48,14 +51,13 @@ public:
     };
 
     /// A program per action schema with its action rule and the rules of its conditional effects.
-    using SchemaPrograms = ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, SchemaProgram>;
+    using SchemaPrograms = urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, SchemaProgram>>;
 
     /// The predicate of each conditional effect with variables or a condition, whose atoms are the applicable bindings of its action
     /// followed by the objects of the effect's variables for which the effect fires.
     /// Keyed by the action too, since actions can share an interned conditional effect.
     using ConditionalEffectToPredicateMapping =
-        ygg::UnorderedMap<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>,
-                          formalism::datalog::PredicateView<formalism::FluentTag>>;
+        urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
 
     explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 

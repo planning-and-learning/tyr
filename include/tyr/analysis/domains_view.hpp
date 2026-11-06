@@ -24,7 +24,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
-#include <yggdrasil/core/dependent_false.hpp>
+#include <urd/repr/core/dependent_false.hpp>
 
 namespace tyr::analysis
 {
@@ -48,7 +48,7 @@ struct ProgramVariableDomainsView
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rule_domains;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 };
 

@@ -16,6 +16,8 @@
  */
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "planning/parser.hpp"
 #include "tyr/datalog/lifted/consistency_graph.hpp"
@@ -157,7 +159,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     update(tyr::datalog::AssignmentSets(static_assignments, initial_assignments));
     ASSERT_EQ(kckp.get_iteration(), 2);
 
-    auto authoritative_edges = std::vector<tyr::kckp::Edge> {};
+    auto authoritative_edges = urd::Store<urd::sequence<tyr::kckp::Edge>> {};
     kckp.get_delta_graph().matrix.for_each_edge([&](auto&& edge) { authoritative_edges.push_back(edge); });
     ASSERT_FALSE(authoritative_edges.empty());
     const auto& delta_edges = kckp.materialize_delta_edges();
@@ -172,7 +174,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
                                         return !static_graph.get_variable_dependeny_graph().binary().has_dependency(pi, pj);
                                     }));
 
-    using Clique = std::vector<ygg::uint_t>;
+    using Clique = urd::Store<urd::sequence<ygg::uint_t>>;
     const auto collect = [](auto& output)
     {
         return [&output](const auto& clique)
@@ -185,11 +187,11 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
         };
     };
 
-    auto sequential_cliques = std::vector<Clique> {};
+    auto sequential_cliques = urd::Store<urd::sequence<Clique>> {};
     auto sequential_workspace = tyr::kckp::Workspace(layout);
     kckp.for_each_delta_clique(collect(sequential_cliques), sequential_workspace);
 
-    auto striped_cliques = std::vector<Clique> {};
+    auto striped_cliques = urd::Store<urd::sequence<Clique>> {};
     auto even_workspace = tyr::kckp::Workspace(layout);
     auto odd_workspace = tyr::kckp::Workspace(layout);
     for (size_t stripe = 0; stripe < 2; ++stripe)
@@ -261,7 +263,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     using Binding = std::array<std::string, 2>;
     const auto collect_edges = [&](const auto& graph)
     {
-        auto result = std::vector<Binding> {};
+        auto result = urd::Store<urd::sequence<Binding>> {};
         graph.matrix.for_each_edge(
             [&](const tyr::kckp::Edge edge)
             {
@@ -269,8 +271,8 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
                 const auto insert = [&](const tyr::kckp::Vertex vertex)
                 {
                     const auto parameter = layout.vertex_to_partition[vertex.index];
-                    const auto object = ygg::Index<tyr::formalism::Object>(layout.vertex_labels[vertex.index]);
-                    binding[parameter] = ygg::make_view(object, program.get_program_repository()).get_name().str();
+                    const auto object = urd::index<tyr::formalism::Object>(layout.vertex_labels[vertex.index]);
+                    binding[parameter] = urd::resolve(object, program.get_program_repository()).get_name().str();
                 };
                 insert(edge.src);
                 insert(edge.dst);
@@ -279,7 +281,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
         std::ranges::sort(result);
         return result;
     };
-    const auto expected = std::vector<Binding> {
+    const auto expected = urd::Store<urd::sequence<Binding>> {
         { "loc-x0-y1", "loc-x0-y0" },
         { "loc-x0-y1", "loc-x0-y2" },
     };
@@ -312,17 +314,17 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     {
         if (atom.get_predicate().get_name() != "at-robot")
             continue;
-        auto binding = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
-        binding.relation = atom.get_predicate().get_index();
+        auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+        binding.relation = atom.get_predicate().index();
         for (const auto object : program_view.get_objects())
             if (object.get_name() == "loc-x0-y0")
-                binding.objects.push_back(object.get_index());
+                binding.objects.push_back(object.index());
         ASSERT_EQ(binding.objects.size(), 1);
         assignments.predicate.insert(tyr::formalism::datalog::insert(*additional.workspace_repository, binding).first);
         break;
     }
     update();
-    const auto added = std::vector<Binding> {
+    const auto added = urd::Store<urd::sequence<Binding>> {
         { "loc-x0-y0", "loc-x0-y1" },
         { "loc-x0-y0", "loc-x1-y0" },
     };
@@ -409,15 +411,15 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     auto kckp = tyr::kckp::DeltaKCKP(static_graph.get_graph(), adjacency_layout);
     const auto collect_cliques = [&](bool delta)
     {
-        auto result = std::vector<Binding> {};
+        auto result = urd::Store<urd::sequence<Binding>> {};
         auto workspace = tyr::kckp::Workspace(layout);
         const auto collect = [&](const auto& clique)
         {
             auto binding = Binding {};
             for (ygg::uint_t p = 0; p < clique.size(); ++p)
             {
-                const auto object = ygg::Index<tyr::formalism::Object>(layout.vertex_labels[clique[p].index]);
-                binding[p] = ygg::make_view(object, program.get_program_repository()).get_name().str();
+                const auto object = urd::index<tyr::formalism::Object>(layout.vertex_labels[clique[p].index]);
+                binding[p] = urd::resolve(object, program.get_program_repository()).get_name().str();
             }
             result.push_back(std::move(binding));
         };
@@ -441,7 +443,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
         return result;
     };
 
-    const auto first_expected = std::vector<Binding> {
+    const auto first_expected = urd::Store<urd::sequence<Binding>> {
         { "truck-1", "city-loc-3", "city-loc-1" },
         { "truck-1", "city-loc-3", "city-loc-2" },
     };
@@ -468,7 +470,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     EXPECT_EQ(count_edges(kckp.get_full_graph()), 11);
     EXPECT_EQ(count_edges(kckp.get_delta_graph()), 5);
     EXPECT_EQ(collect_cliques(false), second_expected);
-    EXPECT_EQ(collect_cliques(true), (std::vector<Binding> { { "truck-2", "city-loc-1", "city-loc-3" } }));
+    EXPECT_EQ(collect_cliques(true), (urd::Store<urd::sequence<Binding>> { { "truck-2", "city-loc-1", "city-loc-3" } }));
 
     update(tyr::datalog::AssignmentSets(static_assignments, second_assignments));
     EXPECT_EQ(count_vertices(kckp.get_full_graph()), 7);
@@ -512,7 +514,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     {
         workspace.tp.set_goals(program.get_goal());
         workspace.facts.reset();
-        tyr::planning::insert_unextended_state(initial_state.get_state_builder(), *task->get_repository(), program.get_translation_context().p2d, workspace);
+        tyr::planning::insert_unextended_state(initial_state.data(), *task->get_repository(), program.get_translation_context().p2d, workspace);
 
         auto context = tyr::datalog::ProgramExecutionContext(workspace);
         tyr::datalog::execute_model(context, *execution_context);
@@ -520,20 +522,20 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     solve(sequential, sequential_context);
     solve(parallel, parallel_context);
 
-    using NormalizedFact = std::tuple<ygg::uint_t, std::vector<ygg::uint_t>, std::optional<tyr::datalog::Cost>>;
+    using NormalizedFact = std::tuple<ygg::uint_t, urd::Store<urd::sequence<ygg::uint_t>>, std::optional<tyr::datalog::Cost>>;
     const auto normalize = [](const Workspace& workspace)
     {
-        auto result = std::vector<NormalizedFact> {};
+        auto result = urd::Store<urd::sequence<NormalizedFact>> {};
         for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
         {
             for (const auto binding : set.get_bindings())
             {
-                auto objects = std::vector<ygg::uint_t> {};
+                auto objects = urd::Store<urd::sequence<ygg::uint_t>> {};
                 for (const auto object : binding.get_objects())
-                    objects.push_back(ygg::uint_t(object.get_index()));
+                    objects.push_back(ygg::uint_t(object.index()));
 
                 const auto* annotation = workspace.annotations.find(binding);
-                result.emplace_back(ygg::uint_t(binding.get_relation().get_index()),
+                result.emplace_back(ygg::uint_t(binding.get_relation().index()),
                                     std::move(objects),
                                     annotation ? std::optional<tyr::datalog::Cost>(tyr::datalog::get_cost(*annotation)) : std::nullopt);
             }

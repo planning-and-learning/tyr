@@ -111,10 +111,10 @@ public:
     struct QueueEntry
     {
         using KeyType = std::tuple<ygg::float_t, SearchNodeStatus, ygg::uint_t>;
-        using ItemType = std::tuple<ygg::float_t, ygg::Index<State<Kind>>>;
+        using ItemType = std::tuple<ygg::float_t, urd::index<State<Kind>>>;
 
         ygg::float_t f_value;
-        ygg::Index<State<Kind>> state;
+        urd::index<State<Kind>> state;
         SearchNodeStatus status;
         ygg::uint_t step;
 
@@ -125,12 +125,12 @@ public:
     struct PoppedEntry
     {
         ygg::float_t f_value;
-        ygg::Index<State<Kind>> state;
+        urd::index<State<Kind>> state;
     };
 
     EagerAStarPolicy(Heuristic<Kind>&, const Options&) {}
 
-    SearchNode& initialize_start(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
+    SearchNode& initialize_start(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
     {
         m_f_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(g_value + h_value);
         if (std::isnan(m_f_value))
@@ -144,7 +144,7 @@ public:
 
     [[nodiscard]] ygg::float_t get_start_priority() const noexcept { return m_f_value; }
 
-    void open_start(ygg::Index<State<Kind>> state, const SearchNode& search_node)
+    void open_start(urd::index<State<Kind>> state, const SearchNode& search_node)
     { m_openlist.insert(QueueEntry { m_f_value, state, search_node.status, m_step++ }); }
 
     [[nodiscard]] bool empty() const { return m_openlist.empty(); }
@@ -164,7 +164,7 @@ public:
     [[nodiscard]] bool should_discard(const PoppedEntry& entry, ygg::float_t incumbent_cost) const noexcept
     { return ModePolicy::should_discard(entry.f_value, incumbent_cost); }
 
-    SearchNode& get_search_node(ygg::Index<State<Kind>> state)
+    SearchNode& get_search_node(urd::index<State<Kind>> state)
     {
         static const auto default_node =
             SearchNode { std::numeric_limits<ygg::float_t>::infinity(), std::numeric_limits<ygg::float_t>::quiet_NaN(), no_parent(), SearchNodeStatus::NEW };
@@ -193,12 +193,12 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    [[nodiscard]] SuccessorMetadata make_successor_metadata(ygg::Index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView) const
-    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().get_index() }, node.get_metric() }; }
+    [[nodiscard]] SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView) const
+    { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric() }; }
 
     static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
-    void open_successor(ygg::Index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus status, bool)
+    void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus status, bool)
     {
         const auto f_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(g_value + h_value);
         if (std::isnan(f_value))
@@ -239,7 +239,7 @@ public:
                 return *result;
 
             successor_search_node.status = SearchNodeStatus::GOAL;
-            open_successor(successor_state.get_index(), g_value, 0, successor_search_node.status, false);
+            open_successor(successor_state.index(), g_value, 0, successor_search_node.status, false);
             emit_transition(TransitionOutcome::GOAL);
             return AcceptanceResult::QUEUED;
         }
@@ -274,7 +274,7 @@ public:
         if (!engine.m_execution.running())
             return AcceptanceResult::TERMINAL;
 
-        auto& accepted_search_node = worker.get_search_node(successor_state.get_index());
+        auto& accepted_search_node = worker.get_search_node(successor_state.index());
         accepted_search_node.h_value = h_value;
         if (h_value == std::numeric_limits<ygg::float_t>::infinity())
         {
@@ -286,7 +286,7 @@ public:
         }
 
         accepted_search_node.status = SearchNodeStatus::OPEN;
-        open_successor(successor_state.get_index(), accepted_search_node.g_value, h_value, accepted_search_node.status, false);
+        open_successor(successor_state.index(), accepted_search_node.g_value, h_value, accepted_search_node.status, false);
 
         emit_transition(is_new ? TransitionOutcome::OPENED : TransitionOutcome::RELAXED);
         return AcceptanceResult::QUEUED;
@@ -294,7 +294,7 @@ public:
 
     static bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
 
-    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, ygg::Index<Worker> index)
+    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, urd::index<Worker> index)
     { return event_handler ? event_handler->make_worker(index) : nullptr; }
 
     template<typename Handler>
@@ -305,14 +305,14 @@ public:
     static void on_finish_priority_layer(Handler& handler, ygg::float_t priority, const Statistics& statistics)
     { handler.on_finish_f_layer(priority, statistics); }
 
-    [[nodiscard]] const ygg::SegmentedVector<SearchNode>& get_search_nodes() const noexcept { return m_search_nodes; }
+    [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& get_search_nodes() const noexcept { return m_search_nodes; }
 
 private:
     static constexpr ParentState no_parent() noexcept { return ParentPolicy::no_parent(); }
 
     ygg::uint_t m_step { 0 };
     ygg::float_t m_f_value { 0 };
-    ygg::SegmentedVector<SearchNode> m_search_nodes;
+    urd::Store<urd::sequence<SearchNode>, urd::stable_refs> m_search_nodes;
     PriorityQueue<QueueEntry> m_openlist;
 };
 

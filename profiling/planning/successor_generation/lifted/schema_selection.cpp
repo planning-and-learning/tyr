@@ -16,6 +16,8 @@
  */
 
 #include "../../common.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/factory.hpp"
@@ -120,7 +122,7 @@ try
     std::erase_if(expected_bindings, reject_binding);
     state.counters["num_selected_bindings"] = static_cast<double>(expected_bindings.size());
 
-    auto bindings = std::vector<tyr::formalism::planning::ActionBindingView> {};
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>> {};
     auto successors = tyr::planning::LabeledNodeList<LiftedTag> {};
     const auto generate = [&]
     {

@@ -9,20 +9,19 @@
 #include <concepts>
 #include <gtest/gtest.h>
 
-using ObjectData = ygg::Data<tyr::formalism::Object>;
-using ObjectIndex = ygg::Index<tyr::formalism::Object>;
-using ObjectView = ygg::View<ygg::Index<tyr::formalism::Object>, tyr::formalism::planning::Repository>;
-using DatalogObjectView = ygg::View<ygg::Index<tyr::formalism::Object>, tyr::formalism::datalog::Repository>;
+using ObjectData = urd::data<tyr::formalism::Object>;
+using ObjectIndex = urd::index<tyr::formalism::Object>;
+using ObjectView = urd::view<tyr::formalism::Object, tyr::formalism::planning::Repository>;
+using DatalogObjectView = urd::view<tyr::formalism::Object, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<ObjectIndex, ygg::uint_t>);
 static_assert(requires(ObjectData& data) {
     data.index;
     data.name;
-    data.clear();
 });
 template<typename View>
 concept ObjectViewContract = std::totally_ordered<View> && requires(const View& view) {
-    view.get_index();
+    view.index();
     view.get_name();
 };
 
@@ -54,7 +53,6 @@ struct ObjectContext
 static_assert(ygg::formalism::SymbolRepositoryFor<tyr::formalism::planning::Repository, tyr::formalism::Object>);
 static_assert(ygg::formalism::SymbolContextFor<ObjectContext, tyr::formalism::Object>);
 static_assert(!ygg::formalism::SymbolContextFor<int, tyr::formalism::Object>);
-static_assert(ygg::ViewConcept<ObjectIndex, ObjectContext>);
 }
 
 TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
@@ -62,10 +60,9 @@ TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
     auto data = ObjectData(std::string("truck"));
     const auto object = tyr::formalism::planning::insert(repository, data).first;
-    const auto context = ObjectContext { &repository };
-    const auto view = ygg::make_view(object.get_index(), context);
-    EXPECT_EQ(&view.get_data(), &object.get_data());
-    EXPECT_EQ(&view.get_context(), &context);
+    const auto view = repository.view(object.index());
+    EXPECT_EQ(&view.data(), &object.data());
+    EXPECT_EQ(&view.context(), &repository);
     EXPECT_EQ(view.get_name(), "truck");
     EXPECT_EQ(view, view);
 }

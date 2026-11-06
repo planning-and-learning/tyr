@@ -19,6 +19,8 @@
 #define TYR_TESTS_PLANNING_ALGORITHMS_SEARCH_STATISTICS_HPP_
 
 #include "planning/parser.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/formatter.hpp"
 
 #include <boost/json.hpp>
@@ -50,7 +52,7 @@ struct PlanStatistics
 {
     ygg::float_t cost;
     uint64_t length;
-    std::vector<std::string> actions;
+    urd::Store<urd::sequence<std::string>> actions;
 };
 
 /// Expected outcome of one search configuration: event-handler counters plus an optional plan.
@@ -87,7 +89,7 @@ inline std::optional<PlanStatistics> parse_optional_plan(const boost::json::obje
         return std::nullopt;
 
     const auto& plan = value->as_object();
-    auto actions = std::vector<std::string> {};
+    auto actions = urd::Store<urd::sequence<std::string>> {};
     for (const auto& action : ygg::common::as_array(plan, "actions", "plan"))
         actions.push_back(boost::json::value_to<std::string>(action));
 
@@ -104,9 +106,9 @@ inline std::optional<SearchStatistics> parse_optional_statistics(const boost::js
 }
 
 template<TaskKind Kind>
-std::vector<std::string> plan_actions(const planning::Plan<Kind>& plan)
+urd::Store<urd::sequence<std::string>> plan_actions(const planning::Plan<Kind>& plan)
 {
-    auto result = std::vector<std::string> {};
+    auto result = urd::Store<urd::sequence<std::string>> {};
     for (const auto& labeled_node : plan.get_labeled_succ_nodes())
         result.push_back(fmt::format("{}", std::make_pair(labeled_node.label, formalism::planning::PlanFormatting())));
     return result;
@@ -162,7 +164,7 @@ struct SearchCase
     std::string name;
     std::filesystem::path domain_file;
     std::filesystem::path task_file;
-    std::vector<std::pair<std::string, SearchStatistics>> configs;
+    urd::Store<urd::sequence<std::pair<std::string, SearchStatistics>>> configs;
 };
 
 inline void PrintTo(const SearchCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
@@ -179,11 +181,11 @@ inline SearchCase parse_search_case(const boost::json::object& object)
     return result;
 }
 
-inline std::vector<SearchCase> load_search_cases(const std::filesystem::path& fixture)
+inline urd::Store<urd::sequence<SearchCase>> load_search_cases(const std::filesystem::path& fixture)
 {
     const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");
-    auto result = std::vector<SearchCase> {};
+    auto result = urd::Store<urd::sequence<SearchCase>> {};
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
         result.push_back(parse_search_case(ygg::common::as_object(case_value, "case")));
     return result;

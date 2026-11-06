@@ -1,4 +1,6 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "analysis/static_literal_compatibility.hpp"
 
@@ -13,35 +15,31 @@ namespace tyr::tests
 {
 namespace
 {
-using Object = ygg::Index<tyr::formalism::Object>;
-using Extension = std::vector<ygg::uint_t>;
-using Extensions = std::vector<Extension>;
+using Object = urd::index<tyr::formalism::Object>;
+using Extension = urd::Store<urd::sequence<ygg::uint_t>>;
+using Extensions = urd::Store<urd::sequence<Extension>>;
 
 struct FakeObjectView
 {
-    Object index;
+    Object value;
 
-    [[nodiscard]] Object get_index() const noexcept { return index; }
+    [[nodiscard]] Object index() const noexcept { return value; }
 };
 
 struct FakePredicateView
 {
-    ygg::uint_t index;
+    ygg::uint_t value;
 
-    [[nodiscard]] ygg::uint_t get_index() const noexcept { return index; }
+    [[nodiscard]] ygg::uint_t index() const noexcept { return value; }
 };
 
-struct FakeTermView
-{
-    std::variant<FakeObjectView, ygg::uint_t> variant;
-
-    [[nodiscard]] const auto& get_variant() const noexcept { return variant; }
-};
+// A term read through a repository is the variant of an object's view and a parameter, as tyr's TermView.
+using FakeTermView = std::variant<FakeObjectView, ygg::uint_t>;
 
 struct FakeAtomView
 {
     FakePredicateView predicate;
-    std::vector<FakeTermView> terms;
+    urd::Store<urd::sequence<FakeTermView>> terms;
 
     [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
     [[nodiscard]] const auto& get_terms() const noexcept { return terms; }
@@ -59,14 +57,14 @@ struct FakeLiteralView
 struct FakeGroundAtomView
 {
     FakePredicateView predicate;
-    std::vector<FakeObjectView> objects;
+    urd::Store<urd::sequence<FakeObjectView>> objects;
 
     [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
     [[nodiscard]] const auto& get_objects() const noexcept { return objects; }
 };
 
-FakeTermView parameter(ygg::uint_t index) { return FakeTermView { index }; }
-FakeTermView constant(ygg::uint_t index) { return FakeTermView { FakeObjectView { Object(index) } }; }
+FakeTermView parameter(ygg::uint_t index) { return FakeTermView(index); }
+FakeTermView constant(ygg::uint_t index) { return FakeTermView(FakeObjectView { Object(index) }); }
 
 FakeLiteralView literal(bool polarity, ygg::uint_t predicate, std::initializer_list<FakeTermView> terms)
 { return FakeLiteralView { polarity, FakeAtomView { FakePredicateView { predicate }, terms } }; }
@@ -133,14 +131,14 @@ private:
 template<typename BinaryCompatible>
 LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfiable, BinaryCompatible binary_compatible)
 {
-    auto partition_sizes = std::vector<size_t> {};
-    auto vertex_labels = std::vector<ygg::uint_t> {};
+    auto partition_sizes = urd::Store<urd::sequence<size_t>> {};
+    auto vertex_labels = urd::Store<urd::sequence<ygg::uint_t>> {};
     partition_sizes.reserve(domains.size());
     for (const auto& variable_domain : domains)
     {
         partition_sizes.push_back(variable_domain.objects.size());
         for (const auto object : variable_domain.objects)
-            vertex_labels.push_back(static_cast<ygg::uint_t>(object));
+            vertex_labels.push_back(static_cast<ygg::uint_t>(object.value));
     }
 
     const auto layout = tyr::kckp::create_graph_layout(partition_sizes, vertex_labels);
@@ -183,7 +181,7 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
 
 Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_t> prefix_values, tyr::kckp::Workspace& workspace)
 {
-    auto prefix = std::vector<tyr::kckp::Vertex> {};
+    auto prefix = urd::Store<urd::sequence<tyr::kckp::Vertex>> {};
     auto partition = ygg::uint_t { 0 };
     for (const auto value : prefix_values)
         prefix.push_back(graph.find_vertex(partition++, Object(value)));
@@ -196,7 +194,7 @@ Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_
                                        {
                                            auto values = Extension {};
                                            for (const auto vertex : extension)
-                                               values.push_back(static_cast<ygg::uint_t>(graph.get_object(vertex)));
+                                               values.push_back(static_cast<ygg::uint_t>(graph.get_object(vertex).value));
                                            result.push_back(std::move(values));
                                        });
     return result;
@@ -211,7 +209,7 @@ Extensions enumerate_cliques(const LabeledGraph& graph, tyr::kckp::Workspace& wo
             {
                 auto values = Extension {};
                 for (const auto vertex : clique)
-                    values.push_back(static_cast<ygg::uint_t>(graph.get_object(vertex)));
+                    values.push_back(static_cast<ygg::uint_t>(graph.get_object(vertex).value));
                 result.push_back(std::move(values));
             },
             workspace);
@@ -221,9 +219,9 @@ Extensions enumerate_cliques(const LabeledGraph& graph, tyr::kckp::Workspace& wo
 
 TEST(TyrKCKPGraphLayout, UsesVertexIndicesAsDefaultLabels)
 {
-    const auto layout = tyr::kckp::create_graph_layout(std::vector<size_t> { 2, 1 });
+    const auto layout = tyr::kckp::create_graph_layout(urd::Store<urd::sequence<size_t>> { 2, 1 });
 
-    EXPECT_EQ(layout.vertex_labels, (std::vector<ygg::uint_t> { 0, 1, 2 }));
+    EXPECT_EQ(layout.vertex_labels, (urd::Store<urd::sequence<ygg::uint_t>> { 0, 1, 2 }));
 }
 
 TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactlyWhenArityAllows)
@@ -325,7 +323,7 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
 
     {
         const auto compatibility =
-            Compatibility(std::vector<FakeLiteralView> {}, std::vector<FakeGroundAtomView> {}, tyr::analysis::VariableDomainList { domain({}) }, 0);
+            Compatibility(urd::Store<urd::sequence<FakeLiteralView>> {}, urd::Store<urd::sequence<FakeGroundAtomView>> {}, tyr::analysis::VariableDomainList { domain({}) }, 0);
         EXPECT_TRUE(compatibility.is_satisfiable());
         EXPECT_FALSE(compatibility.unary_compatible(0, Object(0)));
     }
@@ -336,7 +334,7 @@ TEST(TyrKCKP, PlainCliqueEnumerationReturnsFullAssignments)
     const auto graph =
         make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
                    true,
-                   [](auto, Object first, auto, Object second) { return static_cast<ygg::uint_t>(second) == static_cast<ygg::uint_t>(first) + 2; });
+                   [](auto, Object first, auto, Object second) { return static_cast<ygg::uint_t>(second.value) == static_cast<ygg::uint_t>(first.value) + 2; });
 
     auto workspace = tyr::kckp::Workspace {};
     EXPECT_EQ(enumerate_cliques(graph, workspace), (Extensions { { 0, 2 }, { 1, 3 } }));
@@ -347,7 +345,7 @@ TEST(TyrKCKP, ValidatesVertexPrefixes)
     const auto graph =
         make_graph(tyr::analysis::VariableDomainList { domain({ 0, 1 }), domain({ 2, 3 }) },
                    true,
-                   [](auto, Object first, auto, Object second) { return static_cast<ygg::uint_t>(second) == static_cast<ygg::uint_t>(first) + 2; });
+                   [](auto, Object first, auto, Object second) { return static_cast<ygg::uint_t>(second.value) == static_cast<ygg::uint_t>(first.value) + 2; });
     const auto& raw_graph = graph.get_graph();
     auto workspace = tyr::kckp::Workspace {};
     const auto count_extensions = [&](std::initializer_list<tyr::kckp::Vertex> prefix)
@@ -371,8 +369,8 @@ TEST(TyrKCKPGraph, ArcConsistencyAndSeededEnumerationCoverDegenerateCases)
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
-                                      const auto lhs = static_cast<ygg::uint_t>(first);
-                                      const auto rhs = static_cast<ygg::uint_t>(second);
+                                      const auto lhs = static_cast<ygg::uint_t>(first.value);
+                                      const auto rhs = static_cast<ygg::uint_t>(second.value);
                                       if (first_partition == 0 && second_partition == 1)
                                           return (lhs == 0 && (rhs == 3 || rhs == 4)) || (lhs == 1 && rhs == 4) || (lhs == 2 && rhs == 5);
                                       if (first_partition == 1 && second_partition == 2)
@@ -381,9 +379,9 @@ TEST(TyrKCKPGraph, ArcConsistencyAndSeededEnumerationCoverDegenerateCases)
                                   });
 
     ASSERT_TRUE(graph.is_satisfiable());
-    EXPECT_EQ(graph.get_domains()[0].objects, (std::vector<Object> { Object(0), Object(1) }));
-    EXPECT_EQ(graph.get_domains()[1].objects, (std::vector<Object> { Object(3), Object(4) }));
-    EXPECT_EQ(graph.get_domains()[2].objects, (std::vector<Object> { Object(6), Object(7) }));
+    EXPECT_EQ(graph.get_domains()[0].objects, (urd::Store<urd::sequence<Object>> { Object(0), Object(1) }));
+    EXPECT_EQ(graph.get_domains()[1].objects, (urd::Store<urd::sequence<Object>> { Object(3), Object(4) }));
+    EXPECT_EQ(graph.get_domains()[2].objects, (urd::Store<urd::sequence<Object>> { Object(6), Object(7) }));
 
     auto workspace = tyr::kckp::Workspace {};
     const auto all = Extensions { { 0, 3, 6 }, { 0, 4, 6 }, { 0, 4, 7 }, { 1, 4, 6 }, { 1, 4, 7 } };
@@ -414,8 +412,8 @@ TEST(TyrKCKPGraph, IncrementalSupportsPropagateAsymmetricCascadeAndPreserveCompa
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
-                                      const auto lhs = static_cast<ygg::uint_t>(first);
-                                      const auto rhs = static_cast<ygg::uint_t>(second);
+                                      const auto lhs = static_cast<ygg::uint_t>(first.value);
+                                      const auto rhs = static_cast<ygg::uint_t>(second.value);
                                       if (first_partition == 0 && second_partition == 1)
                                           return (rhs == 10 && (lhs == 1 || lhs == 0)) || (rhs == 11 && (lhs == 3 || lhs == 2));
                                       if (first_partition == 1 && second_partition == 2)
@@ -426,10 +424,10 @@ TEST(TyrKCKPGraph, IncrementalSupportsPropagateAsymmetricCascadeAndPreserveCompa
                                   });
 
     ASSERT_TRUE(graph.is_satisfiable());
-    EXPECT_EQ(graph.get_domains()[0].objects, (std::vector<Object> { Object(1), Object(0) }));
-    EXPECT_EQ(graph.get_domains()[1].objects, (std::vector<Object> { Object(10) }));
-    EXPECT_EQ(graph.get_domains()[2].objects, (std::vector<Object> { Object(20) }));
-    EXPECT_EQ(graph.get_domains()[3].objects, (std::vector<Object> { Object(30) }));
+    EXPECT_EQ(graph.get_domains()[0].objects, (urd::Store<urd::sequence<Object>> { Object(1), Object(0) }));
+    EXPECT_EQ(graph.get_domains()[1].objects, (urd::Store<urd::sequence<Object>> { Object(10) }));
+    EXPECT_EQ(graph.get_domains()[2].objects, (urd::Store<urd::sequence<Object>> { Object(20) }));
+    EXPECT_EQ(graph.get_domains()[3].objects, (urd::Store<urd::sequence<Object>> { Object(30) }));
 
     auto workspace = tyr::kckp::Workspace {};
     EXPECT_EQ(enumerate(graph, {}, workspace), (Extensions { { 1, 10, 20, 30 }, { 0, 10, 20, 30 } }));
@@ -454,8 +452,8 @@ TEST(TyrKCKPGraph, ArcConsistencyDoesNotImplyClique)
                                   true,
                                   [](ygg::uint_t first_partition, Object first, ygg::uint_t second_partition, Object second)
                                   {
-                                      const auto lhs = static_cast<ygg::uint_t>(first);
-                                      const auto rhs = static_cast<ygg::uint_t>(second);
+                                      const auto lhs = static_cast<ygg::uint_t>(first.value);
+                                      const auto rhs = static_cast<ygg::uint_t>(second.value);
                                       if (first_partition == 0 && second_partition == 1)
                                           return (lhs == 0 && rhs == 2) || (lhs == 1 && rhs == 3);
                                       if (first_partition == 1 && second_partition == 2)
@@ -464,9 +462,9 @@ TEST(TyrKCKPGraph, ArcConsistencyDoesNotImplyClique)
                                   });
 
     ASSERT_TRUE(graph.is_satisfiable());
-    EXPECT_EQ(graph.get_domains()[0].objects, (std::vector<Object> { Object(0), Object(1) }));
-    EXPECT_EQ(graph.get_domains()[1].objects, (std::vector<Object> { Object(2), Object(3) }));
-    EXPECT_EQ(graph.get_domains()[2].objects, (std::vector<Object> { Object(4), Object(5) }));
+    EXPECT_EQ(graph.get_domains()[0].objects, (urd::Store<urd::sequence<Object>> { Object(0), Object(1) }));
+    EXPECT_EQ(graph.get_domains()[1].objects, (urd::Store<urd::sequence<Object>> { Object(2), Object(3) }));
+    EXPECT_EQ(graph.get_domains()[2].objects, (urd::Store<urd::sequence<Object>> { Object(4), Object(5) }));
 
     auto workspace = tyr::kckp::Workspace {};
     EXPECT_TRUE(enumerate(graph, {}, workspace).empty());
@@ -481,11 +479,11 @@ TEST(TyrKCKPGraph, SupportAcrossBitsetBlockBoundaryIsPreserved)
     auto domains = tyr::analysis::VariableDomainList {};
     domains.push_back(domain({ 0 }));
     domains.push_back(std::move(target_domain));
-    const auto graph = make_graph(std::move(domains), true, [](auto, auto, auto, Object target) { return static_cast<ygg::uint_t>(target) == 65; });
+    const auto graph = make_graph(std::move(domains), true, [](auto, auto, auto, Object target) { return static_cast<ygg::uint_t>(target.value) == 65; });
 
     ASSERT_TRUE(graph.is_satisfiable());
-    EXPECT_EQ(graph.get_domains()[0].objects, (std::vector<Object> { Object(0) }));
-    EXPECT_EQ(graph.get_domains()[1].objects, (std::vector<Object> { Object(65) }));
+    EXPECT_EQ(graph.get_domains()[0].objects, (urd::Store<urd::sequence<Object>> { Object(0) }));
+    EXPECT_EQ(graph.get_domains()[1].objects, (urd::Store<urd::sequence<Object>> { Object(65) }));
 
     auto workspace = tyr::kckp::Workspace {};
     EXPECT_EQ(enumerate(graph, {}, workspace), (Extensions { { 0, 65 } }));

@@ -19,53 +19,43 @@
 #define TYR_FORMALISM_DATALOG_MULTI_OPERATOR_DATA_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/function_expression_data.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <stdexcept>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
-template<::tyr::TaskKind T>
-struct Data<::tyr::formalism::datalog::MultiOperator<T>>
+template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
+struct data<::tyr::formalism::datalog::MultiOperator<T, O>>
 {
-    using Operand = ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>>;
-    using OperatorType = ::tyr::formalism::ArithmeticOperatorKind;
+    static_assert(std::same_as<O, ::tyr::formalism::ArithmeticOperatorKind>);
+    using Operand = ::tyr::formalism::datalog::FunctionExpression<T>;
+    using OperatorType = O;
 
-    ygg::Index<::tyr::formalism::datalog::MultiOperator<T>> index;
+    urd::index<::tyr::formalism::datalog::MultiOperator<T, O>> index;
     OperatorType operator_kind = OperatorType::Add;
     ::cista::offset::vector<Operand> args;
 
-    Data() = default;
-    Data(OperatorType operator_kind_, ::cista::offset::vector<Operand> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
+    data() = default;
+    data(OperatorType operator_kind_, ::cista::offset::vector<Operand> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
     {
         if (!is_multi(operator_kind))
             throw std::invalid_argument("multi operator must be Add or Mul");
     }
-    template<typename C>
-    Data(OperatorType operator_kind_, const std::vector<::ygg::View<Operand, C>>& args_) : index(), operator_kind(operator_kind_), args()
-    {
-        if (!is_multi(operator_kind))
-            throw std::invalid_argument("multi operator must be Add or Mul");
-        set(args_, args);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::args> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::args> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::args> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::args> {}; }
 };
-
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::MultiOperator<::tyr::LiftedTag>>);
 
 }
 

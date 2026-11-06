@@ -52,12 +52,17 @@
 #include <oneapi/tbb/parallel_for_each.h>
 #include <optional>
 #include <span>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::datalog
 {
@@ -121,8 +126,8 @@ private:
             m_goal_atoms.clear();
             m_goal_positions.clear();
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-                if (m_goal_positions.emplace(literal.get_atom().get_row().get_index(), m_goal_atoms.size()).second)
-                    m_goal_atoms.push_back(literal.get_atom().get_row().get_index());
+                if (m_goal_positions.emplace(literal.get_atom().get_row().index(), m_goal_atoms.size()).second)
+                    m_goal_atoms.push_back(literal.get_atom().get_row().index());
             m_goal_final.assign(m_goal_atoms.size(), false);
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? static_cast<Cost>(0) : min_edge_cost;
             m_goal_cutoff_enabled = !m_goal_atoms.empty();
@@ -136,7 +141,7 @@ private:
         const auto& program_out = ctx.out().program();
         for (const auto& set : program_out.facts().delta_fact_sets.predicate.get_sets())
             for (const auto atom : set.get_bindings())
-                if (const auto* annotation = program_out.annotations().find(atom.get_index()))
+                if (const auto* annotation = program_out.annotations().find(atom.index()))
                     return get_cost(*annotation);
         return static_cast<Cost>(0);
     }
@@ -184,10 +189,10 @@ private:
 
     [[nodiscard]] bool goal_cutoff_stopped() const noexcept { return m_goal_cutoff_stopped; }
 
-    static void create_nullary_binding(ygg::IndexList<formalism::Object>& binding) { binding.clear(); }
+    static void create_nullary_binding(urd::flat_vector<urd::index<formalism::Object>>& binding) { binding.clear(); }
 
     static void
-    create_general_binding(std::span<const kckp::Vertex> clique, const StaticConsistencyGraph& consistency_graph, ygg::IndexList<formalism::Object>& binding)
+    create_general_binding(std::span<const kckp::Vertex> clique, const StaticConsistencyGraph& consistency_graph, urd::flat_vector<urd::index<formalism::Object>>& binding)
     {
         const auto k = clique.size();
         const auto& layout = consistency_graph.get_graph_layout();
@@ -198,7 +203,7 @@ private:
         {
             const auto vertex = clique[p].index;
             assert(layout.vertex_to_partition[vertex] == p);
-            binding[p] = ygg::Index<formalism::Object>(layout.vertex_labels[vertex]);
+            binding[p] = urd::index<formalism::Object>(layout.vertex_labels[vertex]);
         }
     }
 
@@ -210,7 +215,7 @@ private:
         auto& heads = out.head_bindings();
         heads.clear();
         for (const auto head_atom : ctx.in().cws_rule().get_rule().get_heads())
-            heads.push_back(formalism::datalog::ground_binding(head_atom, out.ground_context()).first.get_index());
+            heads.push_back(formalism::datalog::ground_binding(head_atom, out.ground_context()).first.index());
         insert_propositional_update(std::span(std::as_const(heads)), input, out.head_updates(), out.delta_annotations());
     }
 
@@ -267,8 +272,8 @@ private:
             ++out.statistics().num_rejected_rules;
     }
 
-    [[maybe_unused]] static bool ensure_novel_binding(const ygg::IndexList<formalism::Object>& binding,
-                                                      ygg::UnorderedSet<ygg::IndexList<formalism::Object>>& set)
+    [[maybe_unused]] static bool ensure_novel_binding(const urd::flat_vector<urd::index<formalism::Object>>& binding,
+                                                      urd::Store<urd::set<urd::flat_vector<urd::index<formalism::Object>>>>& set)
     { return set.insert(binding).second; }
 
     template<typename Callback>
@@ -366,7 +371,7 @@ private:
         for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
             auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder());
-            binding->relation = head_atom.get_predicate().get_index();
+            binding->relation = head_atom.get_predicate().index();
             formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
             formalism::canonicalize(*binding);
             const auto head =
@@ -378,7 +383,7 @@ private:
             }
             if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
                 continue;
-            heads.push_back(head->get_index());
+            heads.push_back(head->index());
         }
         return missing;
     }
@@ -539,7 +544,7 @@ private:
 
         for (size_t i = 0; i < literals.size(); ++i)
         {
-            for (const auto atom : delta_fact_sets.predicate.get_sets()[ygg::uint_t(infos[i].predicate)].get_bindings())
+            for (const auto atom : delta_fact_sets.predicate.get_sets()[ygg::uint_t(infos[i].predicate.value)].get_bindings())
             {
                 if (!match_anchor(graph.get_graph_layout(), infos[i], atom.get_objects(), out.anchor_vertices()))
                     continue;
@@ -566,10 +571,10 @@ private:
     static bool match_anchor(const kckp::GraphLayout& layout,
                              const details::RuleToLiteralInfo<formalism::FluentTag>& info,
                              const auto& objects,
-                             std::vector<kckp::Vertex>& vertices)
+                             urd::Store<urd::sequence<kckp::Vertex>>& vertices)
     {
         for (const auto& [position, object] : info.position_mappings.constant_positions)
-            if (objects[position].get_index() != object)
+            if (objects[position].index() != object)
                 return false;
 
         vertices.clear();
@@ -579,10 +584,10 @@ private:
             const auto& positions = parameter_to_positions[parameter];
             if (positions.empty())
                 continue;
-            const auto object = objects[positions.front()].get_index();
-            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position].get_index() == object; }))
+            const auto object = objects[positions.front()].index();
+            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position].index() == object; }))
                 return false;
-            const auto vertex = layout.find_vertex(parameter, ygg::uint_t(object));
+            const auto vertex = layout.find_vertex(parameter, ygg::uint_t(object.value));
             if (!vertex)
                 return false;
             vertices.push_back(*vertex);
@@ -678,7 +683,7 @@ private:
 
         for (const auto rule_index : ctx.out().scheduler().template get<R>().get_active_rules())
         {
-            const auto i = ygg::uint_t(rule_index);
+            const auto i = ygg::uint_t(rule_index.value);
             const auto& ws_rule = program_out.template get_rules<R>()[i];
 
             for (auto& worker : ws_rule->worker)
@@ -718,8 +723,8 @@ private:
     bool m_goal_cutoff_stopped = false;
     Cost m_min_edge_cost = static_cast<Cost>(0);
     Cost m_goal_cutoff_bound = static_cast<Cost>(0);
-    std::vector<GoalAtom> m_goal_atoms;
-    ygg::UnorderedMap<GoalAtom, size_t> m_goal_positions;
+    urd::Store<urd::sequence<GoalAtom>> m_goal_atoms;
+    urd::Store<urd::map<GoalAtom, size_t>> m_goal_positions;
     std::vector<bool> m_goal_final;
     size_t m_num_final_goals = 0;
 };

@@ -27,7 +27,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <iterator>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -39,7 +40,7 @@ template<class Tag>
 class FDRFactIterator<LiftedTag, Tag>
 {
 public:
-    using value_type = ygg::Data<formalism::planning::FDRFact<Tag>>;
+    using value_type = urd::data<formalism::planning::FDRFact<Tag>>;
     using reference = value_type;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::input_iterator_tag;
@@ -57,7 +58,7 @@ public:
     {
         assert(m_storage);
         assert(m_storage->indices.test(m_i));
-        return ygg::Data<formalism::planning::FDRFact<Tag>> { ygg::Index<formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
+        return urd::data<formalism::planning::FDRFact<Tag>> { urd::index<formalism::planning::FDRVariable<Tag>> { static_cast<ygg::uint_t>(m_i) },
                                                               formalism::planning::FDRValue { 1 } };
     }
 

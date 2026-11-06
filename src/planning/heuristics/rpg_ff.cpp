@@ -27,12 +27,18 @@
 
 #include <cassert>
 #include <tuple>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <boost/dynamic_bitset.hpp>
+#include "tyr/containers.hpp"
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -47,14 +53,14 @@ struct FFRPGHeuristic<Kind>::Impl :
     using FunctionHead = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace;
 
-    struct NumericCertificate : ygg::comparison::Mixin<NumericCertificate>
+    struct NumericCertificate : urd::compared_by_identity<NumericCertificate>
     {
         FunctionHead head;
         ygg::ClosedInterval<ygg::float_t> interval;
 
         NumericCertificate(FunctionHead head_, ygg::ClosedInterval<ygg::float_t> interval_) : head(head_), interval(std::move(interval_)) {}
 
-        static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericCertificate::head, &NumericCertificate::interval> {}; }
+        static constexpr auto identifying_members() noexcept { return urd::Members<&NumericCertificate::head, &NumericCertificate::interval> {}; }
     };
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
@@ -75,7 +81,7 @@ struct FFRPGHeuristic<Kind>::Impl :
         m_relaxed_plan.clear();
     }
 
-    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state)
+    ygg::float_t evaluate(const urd::data<State<Kind>>& state)
     {
         m_numeric_support_workspace.clear();
         m_numeric_markings.clear();
@@ -83,7 +89,7 @@ struct FFRPGHeuristic<Kind>::Impl :
         return Base::evaluate(state);
     }
 
-    ygg::float_t compute_result(const ygg::Builder<State<Kind>>&)
+    ygg::float_t compute_result(const urd::data<State<Kind>>&)
     {
         for (auto& bits : m_predicate_markings)
             bits.reset();
@@ -108,10 +114,10 @@ struct FFRPGHeuristic<Kind>::Impl :
 private:
     void extract_relaxed_plan(PredicateHead head)
     {
-        if (mark(m_predicate_markings, head.get_index().relation, head.get_index().row))
+        if (mark(m_predicate_markings, head.index().relation, head.index().row))
             return;
 
-        const auto* annotation = this->workspace().annotations.find(head.get_index());
+        const auto* annotation = this->workspace().annotations.find(head.index());
         if (!annotation)
             return;
 
@@ -155,21 +161,21 @@ private:
     }
 
     template<typename Relation, typename Row>
-    static bool mark(std::vector<boost::dynamic_bitset<>>& markings, Relation relation, Row row)
+    static bool mark(urd::Store<urd::sequence<boost::dynamic_bitset<>>>& markings, Relation relation, Row row)
     {
-        const auto relation_index = static_cast<ygg::uint_t>(relation);
-        const auto row_index = static_cast<ygg::uint_t>(row);
+        const auto relation_index = static_cast<ygg::uint_t>(relation.value);
+        const auto row_index = static_cast<ygg::uint_t>(row.value);
         assert(relation_index < markings.size());
-        if (ygg::test(row_index, markings[relation_index]))
+        if (tyr::test(row_index, markings[relation_index]))
             return true;
-        ygg::set(row_index, true, markings[relation_index]);
+        tyr::set(row_index, true, markings[relation_index]);
         return false;
     }
 
-    std::vector<boost::dynamic_bitset<>> m_predicate_markings;
-    ygg::UnorderedSet<NumericCertificate> m_numeric_markings;
+    urd::Store<urd::sequence<boost::dynamic_bitset<>>> m_predicate_markings;
+    urd::Store<urd::set<NumericCertificate>> m_numeric_markings;
     NumericSupportWorkspace m_numeric_support_workspace;
-    ygg::UnorderedSet<formalism::planning::ActionBindingView> m_relaxed_plan;
+    urd::Store<urd::set<formalism::planning::ActionBindingView>> m_relaxed_plan;
 };
 
 template<TaskKind Kind>
@@ -201,7 +207,7 @@ void FFRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionVie
 { m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
-ygg::float_t FFRPGHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
+ygg::float_t FFRPGHeuristic<Kind>::evaluate(const urd::data<State<Kind>>& state)
 { return m_impl->evaluate(state); }
 
 template<TaskKind Kind>
@@ -209,7 +215,7 @@ HeuristicPtr<Kind> FFRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr ex
 { return HeuristicPtr<Kind>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
 template<TaskKind Kind>
-const ygg::UnorderedSet<formalism::planning::ActionBindingView>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
+const urd::Store<urd::set<formalism::planning::ActionBindingView>>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
 { return &m_impl->get_relaxed_plan(); }
 
 template<TaskKind Kind>

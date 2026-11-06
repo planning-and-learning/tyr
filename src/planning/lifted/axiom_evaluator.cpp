@@ -16,6 +16,8 @@
  */
 
 #include "tyr/planning/lifted/axiom_evaluator.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
@@ -39,14 +41,15 @@
 #include <gtl/phmap.hpp>
 #include <iostream>
 #include <memory>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/elements/less.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/vector.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::planning
 {
@@ -77,7 +80,7 @@ struct AxiomEvaluator<LiftedTag>::Impl
 
         ygg::ExecutionContextPtr execution_context;
         std::unique_ptr<datalog::ProgramWorkspace<LiftedTag>> workspace;
-        std::vector<formalism::datalog::PredicateBindingView<formalism::FluentTag>> derived_bindings;
+        urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>> derived_bindings;
     };
 
     Impl(ygg::uint_t index_, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
@@ -125,7 +128,7 @@ AxiomEvaluatorPtr<LiftedTag> AxiomEvaluator<LiftedTag>::make_worker(ygg::Executi
                                                                                              m_impl->next_index)));
 }
 
-void AxiomEvaluator<LiftedTag>::compute_extended_state(ygg::Builder<State<LiftedTag>>& state_builder)
+void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>>& state_builder)
 {
     auto& evaluator = m_impl->evaluator;
     if (!evaluator.workspace)
@@ -156,11 +159,11 @@ void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
     const auto& workspace = *m_impl->evaluator.workspace;
     std::cout << "[Axiom evaluator] Summary" << '\n';
     fmt::print(std::cout, "{}\n", workspace.statistics);
-    auto axiom_evaluator_rule_statistics = std::vector<datalog::RuleStatistics> {};
+    auto axiom_evaluator_rule_statistics = urd::Store<urd::sequence<datalog::RuleStatistics>> {};
     for (const auto& ws_rule : workspace.template get_rules<formalism::PredicateTag>())
         axiom_evaluator_rule_statistics.push_back(ws_rule->common.statistics);
     fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(axiom_evaluator_rule_statistics));
-    auto axiom_evaluator_rule_worker_statistics = std::vector<datalog::RuleWorkerStatistics> {};
+    auto axiom_evaluator_rule_worker_statistics = urd::Store<urd::sequence<datalog::RuleWorkerStatistics>> {};
     for (const auto& ws_rule : workspace.template get_rules<formalism::PredicateTag>())
         for (const auto& worker : ws_rule->worker)
             axiom_evaluator_rule_worker_statistics.push_back(worker.solve.statistics);

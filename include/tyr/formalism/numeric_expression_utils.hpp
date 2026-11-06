@@ -25,12 +25,10 @@
 
 #include <concepts>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
 #include <utility>
-#include <yggdrasil/containers/variant.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
-#include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
 
 namespace tyr::formalism
 {
@@ -47,9 +45,9 @@ auto evaluate(const Expression& expression, ResolveTerm& resolve_term)
     {
         return ygg::ClosedInterval<ygg::float_t>(expression, expression);
     }
-    else if constexpr (requires { expression.get_variant(); })
+    else if constexpr (urd::variant_value<Type>)
     {
-        return ygg::visit([&](const auto& child) { return evaluate(child, resolve_term); }, expression.get_variant());
+        return std::visit([&](const auto& child) { return evaluate(child, resolve_term); }, expression);
     }
     else if constexpr (requires {
                            expression.get_operator();
@@ -60,7 +58,7 @@ auto evaluate(const Expression& expression, ResolveTerm& resolve_term)
         const auto rhs = evaluate(expression.get_rhs(), resolve_term);
         const auto lhs = evaluate(expression.get_lhs(), resolve_term);
         if constexpr (requires {
-                          { expression.get_operator() } -> ygg::SameAsIgnoringCvref<BooleanOperatorKind>;
+                          requires std::same_as<std::remove_cvref_t<decltype(expression.get_operator())>, BooleanOperatorKind>;
                       })
             return apply_existential(expression.get_operator(), lhs, rhs);
         else

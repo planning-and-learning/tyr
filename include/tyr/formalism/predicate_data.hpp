@@ -23,35 +23,30 @@
 #include <string>
 #include <tuple>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<::tyr::formalism::FactKind T>
-struct Data<::tyr::formalism::Predicate<T>>
+struct data<::tyr::formalism::Predicate<T>>
 {
-    ygg::Index<::tyr::formalism::Predicate<T>> index;
+    urd::index<::tyr::formalism::Predicate<T>> index;
     ::cista::offset::string name;
     ygg::uint_t arity = 0;
 
-    Data() = default;
-    Data(::cista::offset::string name_, ygg::uint_t arity_) : index(), name(std::move(name_)), arity(arity_) {}
-    // Python constructor
-    Data(const std::string& name_, ygg::uint_t arity_) : index(), name(name_), arity(arity_) {}
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(::cista::offset::string name_, ygg::uint_t arity_) : index(), name(std::move(name_)), arity(arity_) {}
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::name, &Data::arity> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::name, &Data::arity> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name, &data::arity> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::name, &data::arity> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>);
 }
 
 #endif

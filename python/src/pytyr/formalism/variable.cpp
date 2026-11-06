@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism
@@ -24,18 +25,18 @@ namespace tyr::formalism
 void bind_variable(nb::module_& m)
 {
     using namespace nb::literals;
-    ygg::bind_index<ygg::Index<Variable>>(m, "VariableIndex");
+    urd::python::bind_index<urd::index<Variable>>(m, "VariableIndex");
 
     {
-        using V = ygg::Data<Variable>;
+        using V = urd::data<Variable>;
 
         auto cls = nb::class_<V>(m, "VariableData")  //
                        .def(nb::init<const std::string&>(), "name"_a)
                        .def_rw("name", &V::name);
         cls.def(nb::init<::cista::offset::string>(), "name"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 }
 

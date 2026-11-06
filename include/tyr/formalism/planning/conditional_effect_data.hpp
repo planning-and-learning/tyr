@@ -19,100 +19,65 @@
 #define TYR_FORMALISM_PLANNING_CONDITIONAL_EFFECT_DATA_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<>
-struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
+struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
 {
-    ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> index;
-    ygg::IndexList<::tyr::formalism::Variable> variables;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect;
+    urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> index;
+    urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition;
+    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect;
 
-    Data() = default;
-    Data(ygg::IndexList<::tyr::formalism::Variable> variables_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect_) :
+    data() = default;
+    data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
+         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
+         urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect_) :
         index(),
         variables(std::move(variables_)),
         condition(condition_),
         effect(effect_)
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>, C> effect_) :
-        index(),
-        variables(),
-        condition(),
-        effect()
-    {
-        set(variables_, variables);
-        set(condition_, condition);
-        set(effect_, effect);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::variables, &Data::condition, &Data::effect> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::variables, &Data::condition, &Data::effect> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::condition, &data::effect> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::condition, &data::effect> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>);
-
 template<>
-struct Data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
+struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
 {
-    ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> index;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect;
+    urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> index;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition;
+    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect_) :
+    data() = default;
+    data(urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
+         urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect_) :
         index(),
         condition(condition_),
         effect(effect_)
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> condition_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>, C> effect_) :
-        index(),
-        condition(),
-        effect()
-    {
-        set(condition_, condition);
-        set(effect_, effect);
-    }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::condition, &Data::effect> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::condition, &Data::effect> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::condition, &data::effect> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::condition, &data::effect> {}; }
 };
 
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>);
 }
 
 #endif

@@ -16,21 +16,17 @@ struct GroundFunctionTermValuePublicView<tyr::formalism::datalog::FunctionTermVa
 
 template<typename Entity>
 concept GroundFunctionTermValueContract =
-    std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>> && std::totally_ordered<ygg::Data<Entity>>
-    && std::totally_ordered<ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>>
-    && std::same_as<ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>, typename GroundFunctionTermValuePublicView<Entity>::type>
-    && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, tyr::formalism::datalog::Repository>& view) {
+    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
+    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
+    && std::same_as<urd::view<Entity, tyr::formalism::datalog::Repository>, typename GroundFunctionTermValuePublicView<Entity>::type>
+    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            data.fterm;
            data.value;
-           data.clear();
-           view.get_index();
+           view.index();
            view.get_fterm();
            view.get_value();
        };
 
-static_assert([]<typename... Entities>(ygg::TypeList<Entities...>)
+static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (GroundFunctionTermValueContract<Entities> && ...); }(tyr::formalism::datalog::FunctionTermValueTypes<::tyr::GroundTag> {}));
-static_assert(std::constructible_from<ygg::Data<tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>>,
-                                      tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, tyr::formalism::StaticTag>,
-                                      ygg::float_t>);

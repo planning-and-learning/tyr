@@ -16,6 +16,8 @@
  */
 
 #include "tyr/formalism/planning/invariants/matcher.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "matching.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
@@ -29,6 +31,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <yggdrasil/core/config.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -45,7 +48,7 @@ MutableInvariant to_mutable(InvariantView invariant)
 }
 }
 
-InvariantMatchData::InvariantMatchData(InvariantView invariant, std::vector<unification::SubstitutionFunction<ygg::Index<Object>>> rigid_variable_bindings) :
+InvariantMatchData::InvariantMatchData(InvariantView invariant, urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> rigid_variable_bindings) :
     m_invariant(invariant),
     m_inv(to_mutable(invariant)),
     m_rigid_variable_bindings(std::move(rigid_variable_bindings)),
@@ -75,7 +78,7 @@ void InvariantMatchData::build_postings()
                 continue;
 
             const auto& bound = binding[parameter];
-            YGG_ASSUME(bound.has_value());
+            URD_ASSUME(bound.has_value());
             const auto object = *bound;
 
             auto& bitset = m_postings[p][object];
@@ -106,7 +109,7 @@ bool intersect_matching_bindings(const InvariantMatchData& data, const Invariant
             continue;
 
         const auto& bound = sigma[parameter];
-        YGG_ASSUME(bound.has_value());
+        URD_ASSUME(bound.has_value());
         const auto& value = *bound;
         const auto object = unification::get_object(value);
 

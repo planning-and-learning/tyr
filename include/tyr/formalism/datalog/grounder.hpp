@@ -29,8 +29,6 @@
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/declarations.hpp"
 
-#include <yggdrasil/containers/tuple.hpp>
-#include <yggdrasil/core/itertools.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -47,16 +45,12 @@ std::pair<FunctionTermView<GroundTag, F>, bool> ground(FunctionTermView<LiftedTa
 
 FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context);
 
-std::pair<UnaryOperatorView<GroundTag>, bool> ground(UnaryOperatorView<LiftedTag> element, GrounderContext& context);
+std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> element, GrounderContext& context);
 
-template<BinaryOperatorKind O>
+template<OperatorKind O>
 std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, GrounderContext& context);
 
-std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<LiftedTag> element, GrounderContext& context);
-
-BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context);
-
-ArithmeticOperatorView<GroundTag> ground(ArithmeticOperatorView<LiftedTag> element, GrounderContext& context);
+std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element, GrounderContext& context);
 
 template<FactKind F>
 std::pair<PredicateBindingView<F>, bool> ground(TermListView terms, PredicateView<F> predicate, GrounderContext& context);
@@ -69,9 +63,6 @@ std::pair<LiteralView<GroundTag, F>, bool> ground(LiteralView<LiftedTag, F> elem
 
 template<FactKind F>
 std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<LiftedTag, F> element, GrounderContext& context);
-
-template<FactKind F>
-NumericEffectOperatorView<GroundTag, F> ground(NumericEffectOperatorView<LiftedTag, F> element, GrounderContext& context);
 
 std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, GrounderContext& context);
 
@@ -107,7 +98,7 @@ std::optional<PredicateBindingView<F>> try_ground_binding(AtomView<LiftedTag, F>
  */
 
 /// Substitute terms into retained object storage without interning a binding.
-inline void ground(TermListView terms, const GrounderContext& context, ygg::IndexList<Object>& objects)
+inline void ground(TermListView terms, const GrounderContext& context, urd::flat_vector<urd::index<Object>>& objects)
 {
     objects.clear();
     for (const auto term : terms)
@@ -115,13 +106,13 @@ inline void ground(TermListView terms, const GrounderContext& context, ygg::Inde
             [&]<typename Alternative>(Alternative arg)
             {
                 if constexpr (std::same_as<Alternative, ParameterIndex>)
-                    objects.push_back(context.binding()[ygg::uint_t(arg)]);
+                    objects.push_back(context.binding()[arg.value]);
                 else if constexpr (std::same_as<Alternative, ObjectView>)
-                    objects.push_back(arg.get_index());
+                    objects.push_back(arg.index());
                 else
-                    static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+                    static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
-            term.get_variant());
+            term);
 }
 
 template<FactKind F>
@@ -129,7 +120,7 @@ std::pair<FunctionBindingView<F>, bool> ground(TermListView terms, FunctionView<
 {
     auto binding = datalog::checkout<RelationBinding<Function<F>>>(context.builder());
 
-    binding->relation = function.get_index();
+    binding->relation = function.index();
     ground(terms, context, binding->objects);
 
     // Canonicalize and Serialize
@@ -143,7 +134,7 @@ std::pair<FunctionTermView<GroundTag, F>, bool> ground(FunctionTermView<LiftedTa
     auto fterm = datalog::checkout<FunctionTerm<GroundTag, F>>(context.builder());
 
     // Fill data
-    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.get_index();
+    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.index();
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *fterm);
@@ -151,34 +142,31 @@ std::pair<FunctionTermView<GroundTag, F>, bool> ground(FunctionTermView<LiftedTa
 
 inline FunctionExpressionView<GroundTag> ground(FunctionExpressionView<LiftedTag> element, GrounderContext& context)
 {
-    const auto data = visit(
-        [&]<typename Alternative>(const Alternative& arg)
+    return std::visit(
+        [&]<typename Alternative>(const Alternative& arg) -> FunctionExpressionView<GroundTag>
         {
             if constexpr (std::is_same_v<Alternative, ygg::float_t>)
-                return ygg::Data<FunctionExpression<GroundTag>>(arg);
-            else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<LiftedTag>>)
-                return ygg::Data<FunctionExpression<GroundTag>>(ground(arg, context).get_data());
+                return arg;
             else
-                return ygg::Data<FunctionExpression<GroundTag>>(ground(arg, context).first.get_index());
+                return ground(arg, context).first;
         },
-        element.get_variant());
-    return ygg::make_view(data, context.destination());
+        element);
 }
 
-inline std::pair<UnaryOperatorView<GroundTag>, bool> ground(UnaryOperatorView<LiftedTag> element, GrounderContext& context)
+inline std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto unary = datalog::checkout<UnaryOperator<GroundTag>>(context.builder());
+    auto unary = datalog::checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
     unary->operator_kind = element.get_operator();
-    unary->arg = ground(element.get_arg(), context).get_data();
+    unary->arg = urd::to_stored(ground(element.get_arg(), context));
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *unary);
 }
 
-template<BinaryOperatorKind O>
+template<OperatorKind O>
 std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<LiftedTag, O> element, GrounderContext& context)
 {
     // Fetch and clear
@@ -186,38 +174,25 @@ std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<Lift
 
     // Fill data
     binary->operator_kind = element.get_operator();
-    binary->lhs = ground(element.get_lhs(), context).get_data();
-    binary->rhs = ground(element.get_rhs(), context).get_data();
+    binary->lhs = urd::to_stored(ground(element.get_lhs(), context));
+    binary->rhs = urd::to_stored(ground(element.get_rhs(), context));
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *binary);
 }
 
-inline std::pair<MultiOperatorView<GroundTag>, bool> ground(MultiOperatorView<LiftedTag> element, GrounderContext& context)
+inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element, GrounderContext& context)
 {
     // Fetch and clear
-    auto multi = datalog::checkout<MultiOperator<GroundTag>>(context.builder());
+    auto multi = datalog::checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
     multi->operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
-        multi->args.push_back(ground(arg, context).get_data());
+        multi->args.push_back(urd::to_stored(ground(arg, context)));
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *multi);
-}
-
-inline BooleanOperatorView<GroundTag> ground(BooleanOperatorView<LiftedTag> element, GrounderContext& context)
-{
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<GroundTag>>(ground(arg, context).first.get_index()); }, element.get_variant());
-    return ygg::make_view(data, context.destination());
-}
-
-inline ArithmeticOperatorView<GroundTag> ground(ArithmeticOperatorView<LiftedTag> element, GrounderContext& context)
-{
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<GroundTag>>(ground(arg, context).first.get_index()); }, element.get_variant());
-    return ygg::make_view(data, context.destination());
 }
 
 template<FactKind F>
@@ -225,7 +200,7 @@ std::pair<PredicateBindingView<F>, bool> ground(TermListView terms, PredicateVie
 {
     auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder());
 
-    binding->relation = predicate.get_index();
+    binding->relation = predicate.index();
     ground(terms, context, binding->objects);
 
     // Canonicalize and Serialize
@@ -239,7 +214,7 @@ std::pair<AtomView<GroundTag, F>, bool> ground(AtomView<LiftedTag, F> element, G
     auto atom = datalog::checkout<Atom<GroundTag, F>>(context.builder());
 
     // Fill data
-    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.get_index();
+    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.index();
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *atom);
@@ -253,7 +228,7 @@ std::pair<LiteralView<GroundTag, F>, bool> ground(LiteralView<LiftedTag, F> elem
 
     // Fill data
     ground_literal->polarity = element.get_polarity();
-    ground_literal->atom = ground(element.get_atom(), context).first.get_index();
+    ground_literal->atom = ground(element.get_atom(), context).first.index();
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *ground_literal);
@@ -265,19 +240,10 @@ std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<Lifted
     auto numeric_effect = datalog::checkout<NumericEffect<GroundTag, F>>(context.builder());
 
     numeric_effect->operator_kind = element.get_operator();
-    numeric_effect->fterm = ground(element.get_fterm(), context).first.get_index();
-    numeric_effect->fexpr = ground(element.get_fexpr(), context).get_data();
+    numeric_effect->fterm = ground(element.get_fterm(), context).first.index();
+    numeric_effect->fexpr = urd::to_stored(ground(element.get_fexpr(), context));
 
     return datalog::insert(context.destination(), *numeric_effect);
-}
-
-template<FactKind F>
-NumericEffectOperatorView<GroundTag, F> ground(NumericEffectOperatorView<LiftedTag, F> element, GrounderContext& context)
-{
-    const auto data =
-        visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<GroundTag, F>>(arg.get_operator(), ground(arg, context).first.get_index()); },
-              element.get_variant());
-    return ygg::make_view(data, context.destination());
 }
 
 inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, GrounderContext& context)
@@ -287,11 +253,11 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
 
     // Fill data
     for (const auto literal : element.template get_literals<StaticTag>())
-        conj_cond->static_literals.push_back(ground(literal, context).first.get_index());
+        conj_cond->static_literals.push_back(ground(literal, context).first.index());
     for (const auto literal : element.template get_literals<FluentTag>())
-        conj_cond->fluent_literals.push_back(ground(literal, context).first.get_index());
+        conj_cond->fluent_literals.push_back(ground(literal, context).first.index());
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).get_data());
+        conj_cond->numeric_constraints.push_back(ground(numeric_constraint, context).first.index());
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *conj_cond);
@@ -304,13 +270,13 @@ std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, G
     auto rule = datalog::checkout<Rule<GroundTag, R>>(context.builder());
 
     // Fill data
-    rule->binding = ground_binding(element, context).first.get_index();
-    rule->body = ground(element.get_body(), context).first.get_index();
+    rule->binding = ground_binding(element, context).first.index();
+    rule->body = ground(element.get_body(), context).first.index();
     if constexpr (std::same_as<R, PredicateTag>)
         for (const auto head : element.get_heads())
-            rule->heads.push_back(ground(head, context).first.get_index());
+            rule->heads.push_back(ground(head, context).first.index());
     else
-        rule->head = ground(element.get_head(), context).get_data();
+        rule->head = ground(element.get_head(), context).first.index();
     rule->cost = element.get_cost();
 
     // Canonicalize and Serialize
@@ -326,7 +292,7 @@ std::pair<PredicateBindingView<F>, bool> ground_binding(AtomView<LiftedTag, F> e
 {
     auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder());
 
-    binding->relation = element.get_predicate().get_index();
+    binding->relation = element.get_predicate().index();
     ground(element.get_terms(), context, binding->objects);
 
     // Canonicalize and Serialize
@@ -342,7 +308,7 @@ std::pair<RuleBindingView<R>, bool> ground_binding(RuleView<LiftedTag, R> elemen
 {
     auto binding = datalog::checkout<RelationBinding<Rule<LiftedTag, R>>>(context.builder());
 
-    binding->relation = element.get_index();
+    binding->relation = element.index();
     for (const auto object : context.binding())
         binding->objects.push_back(object);
 
@@ -358,7 +324,7 @@ std::optional<FunctionBindingView<F>> try_ground_binding(FunctionTermView<Lifted
 {
     auto binding = datalog::checkout<RelationBinding<Function<F>>>(context.builder());
 
-    binding->relation = element.get_function().get_index();
+    binding->relation = element.get_function().index();
     ground(element.get_terms(), context, binding->objects);
 
     canonicalize(*binding);
@@ -370,7 +336,7 @@ std::optional<PredicateBindingView<F>> try_ground_binding(AtomView<LiftedTag, F>
 {
     auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder());
 
-    binding->relation = element.get_predicate().get_index();
+    binding->relation = element.get_predicate().index();
     ground(element.get_terms(), context, binding->objects);
 
     canonicalize(*binding);
@@ -403,7 +369,6 @@ extern template std::pair<LiteralView<GroundTag, StaticTag>, bool> ground(Litera
 extern template std::pair<LiteralView<GroundTag, FluentTag>, bool> ground(LiteralView<LiftedTag, FluentTag> element, GrounderContext& context);
 
 extern template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element, GrounderContext& context);
-extern template NumericEffectOperatorView<GroundTag, FluentTag> ground(NumericEffectOperatorView<LiftedTag, FluentTag> element, GrounderContext& context);
 
 extern template std::pair<PredicateBindingView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, GrounderContext& context);
 extern template std::pair<PredicateBindingView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element, GrounderContext& context);

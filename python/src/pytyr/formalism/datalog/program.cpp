@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism::datalog
@@ -28,12 +29,12 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
 {
     using namespace nb::literals;
     using Tag = Program<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        cls.def(nb::init<const PredicateViewList<StaticTag>&,
+        cls.def(urd::python::init_from_views<const PredicateViewList<StaticTag>&,
                          const PredicateViewList<FluentTag>&,
                          const FunctionViewList<StaticTag>&,
                          const FunctionViewList<FluentTag>&,
@@ -57,18 +58,18 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                 "goal"_a,
                 nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"),
                 nb::arg(std::same_as<T, GroundTag> ? "ground_function_rules" : "function_rules"));
-        cls.def(nb::init<ygg::IndexList<Predicate<StaticTag>>,
-                         ygg::IndexList<Predicate<FluentTag>>,
-                         ygg::IndexList<Function<StaticTag>>,
-                         ygg::IndexList<Function<FluentTag>>,
-                         ygg::IndexList<Object>,
-                         ygg::IndexList<Atom<GroundTag, StaticTag>>,
-                         ygg::IndexList<Atom<GroundTag, FluentTag>>,
-                         ygg::IndexList<FunctionTermValue<GroundTag, StaticTag>>,
-                         ygg::IndexList<FunctionTermValue<GroundTag, FluentTag>>,
-                         ::cista::optional<ygg::Index<ConjunctiveCondition<GroundTag>>>,
-                         ygg::IndexList<Rule<T, PredicateTag>>,
-                         ygg::IndexList<Rule<T, FunctionTag>>>(),
+        cls.def(nb::init<urd::flat_vector<urd::index<Predicate<StaticTag>>>,
+                         urd::flat_vector<urd::index<Predicate<FluentTag>>>,
+                         urd::flat_vector<urd::index<Function<StaticTag>>>,
+                         urd::flat_vector<urd::index<Function<FluentTag>>>,
+                         urd::flat_vector<urd::index<Object>>,
+                         urd::flat_vector<urd::index<Atom<GroundTag, StaticTag>>>,
+                         urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
+                         urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
+                         urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
+                         ::cista::optional<urd::index<ConjunctiveCondition<GroundTag>>>,
+                         urd::flat_vector<urd::index<Rule<T, PredicateTag>>>,
+                         urd::flat_vector<urd::index<Rule<T, FunctionTag>>>>(),
                 "static_predicates"_a,
                 "fluent_predicates"_a,
                 "static_functions"_a,
@@ -82,14 +83,14 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                 nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"),
                 nb::arg(std::same_as<T, GroundTag> ? "ground_function_rules" : "function_rules"));
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = ProgramView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         cls.def("get_static_predicates", &V::template get_predicates<StaticTag>);
         cls.def("get_fluent_predicates", &V::template get_predicates<FluentTag>);
         cls.def("get_static_functions", &V::template get_functions<StaticTag>);
@@ -103,8 +104,8 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
         cls.def("get_rules", &V::template get_rules<PredicateTag>);
         cls.def("get_function_rules", &V::template get_rules<FunctionTag>);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

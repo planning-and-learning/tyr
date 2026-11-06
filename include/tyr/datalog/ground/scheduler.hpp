@@ -19,6 +19,8 @@
 #define TYR_DATALOG_GROUND_SCHEDULER_HPP_
 
 #include "tyr/datalog/applicability.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/workspaces/rule.hpp"
@@ -35,14 +37,14 @@
 #include <optional>
 #include <tuple>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
 
 template<formalism::RelationKind R>
-struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
+struct GroundQueueEntry : urd::compared_by_identity<GroundQueueEntry<R>>
 {
     Cost cost;
     formalism::datalog::RuleView<GroundTag, R> rule;
@@ -50,7 +52,7 @@ struct GroundQueueEntry : ygg::comparison::Mixin<GroundQueueEntry<R>>
     GroundQueueEntry() = delete;
     GroundQueueEntry(Cost cost_, formalism::datalog::RuleView<GroundTag, R> rule_) : cost(cost_), rule(rule_) {}
 
-    [[nodiscard]] auto identifying_members() const noexcept { return std::make_tuple(cost, rule); }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&GroundQueueEntry::cost, &GroundQueueEntry::rule> {}; }
 };
 
 struct GroundQueueStatistics
@@ -69,10 +71,10 @@ struct GroundSchedulerScratch
     PredicateHeadUpdates predicate_updates;
     FunctionHeadUpdates function_updates;
     StagedPredicateAnnotation delta_annotations;
-    std::vector<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> head_bindings;
+    urd::Store<urd::sequence<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>>> head_bindings;
     StagedFunctionAnnotation delta_numeric_annotations;
-    std::vector<CostBuckets::PredicateKey> changed_facts;
-    std::vector<CostBuckets::FunctionKey> changed_terms;
+    urd::Store<urd::sequence<CostBuckets::PredicateKey>> changed_facts;
+    urd::Store<urd::sequence<CostBuckets::FunctionKey>> changed_terms;
 
     void clear_updates() noexcept
     {
@@ -119,7 +121,7 @@ public:
     template<formalism::RelationKind R>
     void enqueue(formalism::datalog::RuleView<GroundTag, R> rule, Cost queue_label)
     {
-        auto& state = get_states<R>()[ygg::uint_t(rule.get_index())];
+        auto& state = get_states<R>()[ygg::uint_t(rule.index().value)];
         if (state.unsatisfied_count != 0)
             return;
 
@@ -152,7 +154,7 @@ public:
     template<formalism::RelationKind R>
     bool claim(const GroundQueueEntry<R>& entry)
     {
-        auto& queued_cost = get_states<R>()[ygg::uint_t(entry.rule.get_index())].queued_cost;
+        auto& queued_cost = get_states<R>()[ygg::uint_t(entry.rule.index().value)].queued_cost;
         if (!queued_cost || *queued_cost != entry.cost)
         {
             ++m_statistics.num_stale_queue_pops;
@@ -262,8 +264,8 @@ private:
     formalism::datalog::ProgramView<GroundTag> m_program;
     RuleWorkspace<GroundTag, formalism::PredicateTag> m_predicate_rules;
     RuleWorkspace<GroundTag, formalism::FunctionTag> m_function_rules;
-    std::vector<GroundQueueEntry<formalism::PredicateTag>> m_predicate_queue;
-    std::vector<GroundQueueEntry<formalism::FunctionTag>> m_function_queue;
+    urd::Store<urd::sequence<GroundQueueEntry<formalism::PredicateTag>>> m_predicate_queue;
+    urd::Store<urd::sequence<GroundQueueEntry<formalism::FunctionTag>>> m_function_queue;
     GroundQueueStatistics m_statistics;
     GroundSchedulerScratch m_scratch;
 };

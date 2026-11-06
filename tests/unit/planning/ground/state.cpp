@@ -20,10 +20,10 @@
 #include <yggdrasil/execution/onetbb.hpp>
 
 using Entity = tyr::planning::State<tyr::GroundTag>;
-using Index = ygg::Index<Entity>;
-using Data = ygg::Data<Entity>;
-using Builder = ygg::Builder<Entity>;
-using View = ygg::View<Index, std::shared_ptr<tyr::planning::StateRepository<tyr::GroundTag>>>;
+using Index = urd::index<Entity>;
+using Data = urd::data<Entity>;
+using Builder = urd::builder<Entity>;
+using View = tyr::planning::StateView<tyr::GroundTag>;
 
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
@@ -43,7 +43,7 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     builder.template get_atoms_view<tyr::formalism::FluentTag>(repository);
     builder.template get_atoms_view<tyr::formalism::DerivedTag>(repository);
     builder.template get_fterm_values_view<tyr::formalism::FluentTag>(repository);
-    view.get_index();
+    view.index();
     view.template get_atoms<::tyr::formalism::StaticTag>();
     view.get_fluent_facts();
     view.template get_atoms<tyr::formalism::FluentTag>();
@@ -57,12 +57,12 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     view.template get_fterm_values_view<tyr::formalism::FluentTag>();
     view.get_formalism_repository();
     view.get_state_repository();
-    view.get_state_builder();
+    view.data();
 });
 
 TEST(TyrPlanningGroundStateTest, ClearResetsRegistrationWithoutReallocatingVectorStorage)
 {
-    auto builder = ygg::Builder<Entity> {};
+    auto builder = urd::builder<Entity> {};
     builder.set(Index(7));
     builder.resize_fluent_facts(64);
     builder.get_numeric_variables().values.resize(64);
@@ -71,7 +71,7 @@ TEST(TyrPlanningGroundStateTest, ClearResetsRegistrationWithoutReallocatingVecto
 
     builder.clear();
 
-    EXPECT_TRUE(builder.get_index().is_max());
+    EXPECT_TRUE(builder.get_index().is_none());
     EXPECT_EQ(builder.get_atom_storage<tyr::formalism::FluentTag>().values.capacity(), fact_capacity);
     EXPECT_EQ(builder.get_numeric_variables().values.capacity(), numeric_capacity);
 }
@@ -107,22 +107,22 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     const auto initial = source_repository->get_initial_state(*axioms);
     const auto derived = initial.template get_atoms<::tyr::formalism::DerivedTag>();
     ASSERT_FALSE(derived.begin() == derived.end());
-    auto source = initial.get_state_builder();
+    auto source = urd::builder<tyr::planning::State<tyr::GroundTag>> { initial.data() };
     source.set(Index {});
-    const auto borrowed = ygg::make_view(source, *task);
+    const auto borrowed = urd::resolve(source, *source_repository);
     auto target = tyr::planning::StateRepositoryFactory<tyr::GroundTag>().create(task);
     auto warm = target->get_state_builder();
     warm->get_numeric_variables().values.reserve(64);
     const auto slot = warm.get();
-    const auto buffer = warm->get_numeric_variables().values.data();
+    const auto buffer = std::ranges::data(warm->get_numeric_variables().values);
     const auto capacity = warm->get_numeric_variables().values.capacity();
     warm = {};
 
     const auto retained = target->register_extended_state(borrowed);
-    EXPECT_EQ(&retained.get_state_builder(), slot);
-    EXPECT_EQ(retained.get_state_builder().get_numeric_variables().values.data(), buffer);
-    EXPECT_EQ(retained.get_state_builder().get_numeric_variables().values.capacity(), capacity);
-    EXPECT_TRUE(source.get_index().is_max());
+    EXPECT_EQ(&retained.data(), slot);
+    EXPECT_EQ(std::ranges::data(retained.data().get_numeric_variables().values), buffer);
+    EXPECT_EQ(retained.data().get_numeric_variables().values.capacity(), capacity);
+    EXPECT_TRUE(source.get_index().is_none());
     EXPECT_TRUE(std::ranges::equal(source.get_fluent_facts(), initial.get_fluent_facts()));
     EXPECT_TRUE(std::ranges::equal(source.template get_atoms<tyr::formalism::DerivedTag>(*task->get_repository()),
                                    initial.template get_atoms<tyr::formalism::DerivedTag>()));
@@ -135,7 +135,6 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     EXPECT_EQ(foreign->num_states(), 0);
 
     source.clear();
-    target.reset();
     EXPECT_TRUE(std::ranges::equal(retained.get_fluent_facts(), initial.get_fluent_facts()));
     EXPECT_TRUE(std::ranges::equal(retained.template get_atoms<::tyr::formalism::DerivedTag>(), initial.template get_atoms<::tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(
@@ -184,7 +183,8 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
     EXPECT_FALSE(initial.test(target_atom));
     EXPECT_FALSE(target.test(source_atom));
     EXPECT_TRUE(target.test(target_atom));
-    const auto borrowed = ygg::make_view(target.get_state_builder(), *task);
+    const auto target_builder = urd::builder<tyr::planning::State<tyr::GroundTag>> { target.data() };
+    const auto borrowed = urd::resolve(target_builder, target.get_state_repository());
     EXPECT_FALSE(borrowed.test(source_atom));
     EXPECT_TRUE(borrowed.test(target_atom));
 }

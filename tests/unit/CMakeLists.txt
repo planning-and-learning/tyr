@@ -25,19 +25,15 @@ add_gtest(
 
 add_gtest(
     formalism_datalog_types
-    "formalism/datalog/arithmetic_operator.cpp"
     "formalism/datalog/atom.cpp"
     "formalism/datalog/binary_operator.cpp"
-    "formalism/datalog/boolean_operator.cpp"
     "formalism/datalog/conditional_effect.cpp"
     "formalism/datalog/conjunctive_condition.cpp"
     "formalism/datalog/conjunctive_effect.cpp"
-    "formalism/datalog/function_expression.cpp"
     "formalism/datalog/function_term.cpp"
     "formalism/datalog/function_term_value.cpp"
     "formalism/datalog/literal.cpp"
     "formalism/datalog/numeric_effect.cpp"
-    "formalism/datalog/numeric_effect_operator.cpp"
     "formalism/datalog/program.cpp"
     "formalism/datalog/rule.cpp"
     "formalism/datalog/multi_operator.cpp"
@@ -47,23 +43,19 @@ add_gtest(
 add_gtest(
     formalism_planning_types
     "formalism/planning/action.cpp"
-    "formalism/planning/arithmetic_operator.cpp"
     "formalism/planning/atom.cpp"
     "formalism/planning/axiom.cpp"
     "formalism/planning/binary_operator.cpp"
-    "formalism/planning/boolean_operator.cpp"
     "formalism/planning/conditional_effect.cpp"
     "formalism/planning/conjunctive_condition.cpp"
     "formalism/planning/conjunctive_effect.cpp"
     "formalism/planning/domain.cpp"
     "formalism/planning/fdr_fact.cpp"
     "formalism/planning/fdr_variable.cpp"
-    "formalism/planning/function_expression.cpp"
     "formalism/planning/function_term.cpp"
     "formalism/planning/function_term_value.cpp"
     "formalism/planning/literal.cpp"
     "formalism/planning/numeric_effect.cpp"
-    "formalism/planning/numeric_effect_operator.cpp"
     "formalism/planning/metric.cpp"
     "formalism/planning/multi_operator.cpp"
     "formalism/planning/task.cpp"
@@ -76,7 +68,6 @@ add_gtest(
     "planning/ground/match_tree/nodes/constraint.cpp"
     "planning/ground/match_tree/nodes/generator.cpp"
     "planning/ground/match_tree/nodes/negative_fact.cpp"
-    "planning/ground/match_tree/nodes/node.cpp"
     "planning/ground/match_tree/nodes/variable.cpp"
 )
 

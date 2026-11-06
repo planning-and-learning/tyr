@@ -24,22 +24,23 @@
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
-#include <yggdrasil/containers/tree_vector_set.hpp>
+#include <urd/repr/pools/tree_vector.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct AtomPackedStorage<LiftedTag, TreeVector> : ygg::comparison::Mixin<AtomPackedStorage<LiftedTag, TreeVector>>
+struct AtomPackedStorage<LiftedTag, TreeVector> : urd::compared_by_identity<AtomPackedStorage<LiftedTag, TreeVector>>
 {
-    ygg::TreeVectorIndex<ygg::uint_t> index;
+    urd::repr::TreeHandle index;
 
     AtomPackedStorage() = default;
-    explicit AtomPackedStorage(ygg::TreeVectorIndex<ygg::uint_t> index_) : index(index_) {}
+    explicit AtomPackedStorage(urd::repr::TreeHandle index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&AtomPackedStorage::index> {}; }
 };
 
 template<bool ThreadSafe>
@@ -59,7 +60,7 @@ public:
 private:
     UintVectorSetT<Context>* m_uint_vectors;
 
-    std::vector<ygg::uint_t> m_buffer;
+    urd::Store<urd::sequence<ygg::uint_t>> m_buffer;
 };
 
 }

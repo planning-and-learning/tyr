@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -31,20 +32,20 @@ template<FactKind T>
 void bind_function_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<Function<T>>;
+    using V = urd::data<Function<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
     cls.def(nb::init<::cista::offset::string, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_function(nb::module_& m)
 {
-    ygg::bind_index<ygg::Index<Function<StaticTag>>>(m, "StaticFunctionIndex");
-    ygg::bind_index<ygg::Index<Function<FluentTag>>>(m, "FluentFunctionIndex");
-    ygg::bind_index<ygg::Index<Function<AuxiliaryTag>>>(m, "AuxiliaryFunctionIndex");
+    urd::python::bind_index<urd::index<Function<StaticTag>>>(m, "StaticFunctionIndex");
+    urd::python::bind_index<urd::index<Function<FluentTag>>>(m, "FluentFunctionIndex");
+    urd::python::bind_index<urd::index<Function<AuxiliaryTag>>>(m, "AuxiliaryFunctionIndex");
 
     bind_function_data<StaticTag>(m, "StaticFunctionData");
     bind_function_data<FluentTag>(m, "FluentFunctionData");

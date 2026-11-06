@@ -16,8 +16,11 @@
  */
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <stdexcept>
+#include <urd/repr/containers/bitset_span.hpp>
 
 namespace tyr::kckp
 {
@@ -89,7 +92,7 @@ void DeltaKCKP::reset()
     m_iteration = 0;
 }
 
-const std::vector<Edge>& DeltaKCKP::materialize_delta_edges()
+const urd::Store<urd::sequence<Edge>>& DeltaKCKP::materialize_delta_edges()
 {
     m_delta_edges.clear();
     m_delta_graph.matrix.for_each_edge([&](Edge edge) { m_delta_edges.push_back(edge); });
@@ -108,7 +111,7 @@ void DeltaKCKP::seed_without_anchor(Workspace& workspace) const
     for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
         const auto& info = m_layout->info.infos[partition];
-        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        auto compatible = urd::repr::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         compatible.copy_from(m_full_graph.matrix.affected_partitions().get_bitset(info));
     }
 }
@@ -127,7 +130,7 @@ bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partitio
 
         const auto& info = m_layout->info.infos[partition];
         auto row =
-            ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+            urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         m_full_graph.matrix.copy_adjacency_to(source.index, partition, row);
         if (partition < target_partition)
             m_delta_graph.matrix.subtract_adjacency_from(source.index, partition, row);
@@ -159,9 +162,9 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
             continue;
 
         const auto& info = m_layout->info.infos[partition];
-        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        auto compatible = urd::repr::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         compatible.copy_from(
-            ygg::BitsetSpan<const uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(),
+            urd::repr::BitsetSpan<const uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(),
                                             info.num_bits));
         m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, partition, compatible);
         if (partition < source_partition)
@@ -210,7 +213,7 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
             continue;
 
         const auto& info = m_layout->info.infos[partition];
-        auto compatible = ygg::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        auto compatible = urd::repr::BitsetSpan<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         m_full_graph.matrix.copy_adjacency_to(vertices.front().index, partition, compatible);
         for (const auto vertex : vertices.subspan(1))
             m_full_graph.matrix.intersect_adjacency_with(vertex.index, partition, compatible);
@@ -234,7 +237,7 @@ ygg::uint_t DeltaKCKP::choose_best_partition(size_t depth, const Workspace& work
             continue;
 
         const auto& info = m_layout->info.infos[partition];
-        const auto current = ygg::BitsetSpan<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        const auto current = urd::repr::BitsetSpan<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         const auto num_set_bits = current.count();
         if (num_set_bits < best_set_bits)
         {

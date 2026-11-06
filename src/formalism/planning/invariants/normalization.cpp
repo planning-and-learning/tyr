@@ -16,6 +16,8 @@
  */
 
 #include "normalization.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "matching.hpp"
 
@@ -23,19 +25,19 @@ namespace tyr::formalism::planning::invariant
 {
 namespace
 {
-bool uses_parameter(const ygg::Data<Term>& term, ParameterIndex parameter)
+bool uses_parameter(const Term& term, ParameterIndex parameter)
 {
     return std::visit(
         [&]<typename T>(const T& arg) -> bool
         {
             if constexpr (std::is_same_v<T, ParameterIndex>)
                 return arg == parameter;
-            else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
+            else if constexpr (std::is_same_v<T, urd::index<Object>>)
                 return false;
             else
-                static_assert(ygg::dependent_false<T>::value, "Missing case");
+                static_assert(urd::repr::dependent_false<T>::value, "Missing case");
         },
-        term.variant);
+        term);
 }
 
 bool uses_parameter(const MutableAtom<FluentTag>& atom, ParameterIndex parameter)
@@ -86,7 +88,7 @@ void remove_unused_parameters(MutableInvariant& inv)
     for (size_t p = 0; p < total; ++p)
         used[p] = uses_parameter(inv, ParameterIndex(p));
 
-    std::vector<std::optional<ParameterIndex>> remap(total, std::nullopt);
+    urd::Store<urd::sequence<std::optional<ParameterIndex>>> remap(total, std::nullopt);
     size_t next = 0;
     size_t new_num_rigid = 0;
 
@@ -106,16 +108,16 @@ void remove_unused_parameters(MutableInvariant& inv)
         for (auto& term : atom.terms)
         {
             term = std::visit(
-                [&]<typename T>(const T& arg) -> ygg::Data<Term>
+                [&]<typename T>(const T& arg) -> Term
                 {
                     if constexpr (std::is_same_v<T, ParameterIndex>)
-                        return ygg::Data<Term>(*remap[static_cast<ygg::uint_t>(arg)]);
-                    else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
-                        return ygg::Data<Term>(arg);
+                        return Term(*remap[arg.value]);
+                    else if constexpr (std::is_same_v<T, urd::index<Object>>)
+                        return Term(arg);
                     else
-                        static_assert(ygg::dependent_false<T>::value, "Missing case");
+                        static_assert(urd::repr::dependent_false<T>::value, "Missing case");
                 },
-                term.variant);
+                term);
         }
     }
 

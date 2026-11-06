@@ -19,14 +19,16 @@
 #define TYR_FORMALISM_DECLARATIONS_HPP_
 
 #include "tyr/formalism/enums.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 
-#include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/containers/vector.hpp>
+#include <cista/containers/variant.h>
+#include <cista/containers/vector.h>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <yggdrasil/formatting/cista_formatters.hpp>
+
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/type_list.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <boost/mp11.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
 
 namespace ygg::formalism
@@ -43,9 +45,9 @@ class RelationRepository;
 template<typename ObjectTag, typename... Ts>
 class ConcurrentRelationRepository;
 
-struct BlockArraySetStorage;
+struct RowPoolStorage;
 
-struct BitPackedArraySetStorage;
+struct BitRowPoolStorage;
 
 template<typename ObjectTag>
 struct RelationRepositoryTraits;
@@ -88,10 +90,10 @@ struct AuxiliaryTag
 template<typename T>
 concept FactKind = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || std::same_as<T, DerivedTag> || std::same_as<T, AuxiliaryTag>;
 
-using StaticFluentTags = ygg::TypeList<StaticTag, FluentTag>;
-using StaticFluentDerivedTags = ygg::TypeList<StaticTag, FluentTag, DerivedTag>;
-using StaticFluentAuxiliaryTags = ygg::TypeList<StaticTag, FluentTag, AuxiliaryTag>;
-using FluentDerivedTags = ygg::TypeList<FluentTag, DerivedTag>;
+using StaticFluentTags = boost::mp11::mp_list<StaticTag, FluentTag>;
+using StaticFluentDerivedTags = boost::mp11::mp_list<StaticTag, FluentTag, DerivedTag>;
+using StaticFluentAuxiliaryTags = boost::mp11::mp_list<StaticTag, FluentTag, AuxiliaryTag>;
+using FluentDerivedTags = boost::mp11::mp_list<FluentTag, DerivedTag>;
 
 /**
  * Tags to dispatch on the relation a rule derives: a predicate binding or a function binding. Keeping
@@ -111,10 +113,10 @@ struct FunctionTag
 template<typename T>
 concept RelationKind = std::same_as<T, PredicateTag> || std::same_as<T, FunctionTag>;
 
-using PredicateFunctionTags = ygg::TypeList<PredicateTag, FunctionTag>;
+using PredicateFunctionTags = boost::mp11::mp_list<PredicateTag, FunctionTag>;
 
 template<typename T>
-concept BinaryOperatorKind = std::same_as<T, BooleanOperatorKind> || std::same_as<T, ArithmeticOperatorKind>;
+concept OperatorKind = std::same_as<T, BooleanOperatorKind> || std::same_as<T, ArithmeticOperatorKind>;
 
 /**
  * Formalism tag
@@ -131,6 +133,12 @@ struct ObjectTag
 using Object = ::ygg::formalism::Object<ObjectTag>;
 using Row = ::ygg::formalism::Row;
 
+/// A term: an object, or a parameter of the enclosing rule or action. Stored as it is, not interned; read through a
+/// repository (urd::resolve) as std::variant<ObjectView, ParameterIndex>; printed as the alternative it
+/// holds (yggdrasil/formatting/cista_formatters.hpp).
+using Term = ::cista::offset::variant<urd::index<Object>, ParameterIndex>;
+using TermList = ::cista::offset::vector<Term>;
+
 template<typename T>
 using RelationBinding = ::ygg::formalism::RelationBinding<T, ObjectTag>;
 
@@ -145,10 +153,6 @@ concept RelationBindingConcept = ::ygg::formalism::RelationBindingConcept<T>;
 
 template<typename T>
 concept NonRelationBindingConcept = ::ygg::formalism::NonRelationBindingConcept<T>;
-
-struct Term
-{
-};
 
 template<FactKind T>
 struct Predicate
@@ -206,9 +210,9 @@ template<>
 struct RelationRepositoryTraits<::tyr::formalism::ObjectTag>
 {
 #if defined(TYR_RELATION_STORAGE_WORD)
-    using storage_type = BlockArraySetStorage;
+    using storage_type = RowPoolStorage;
 #else
-    using storage_type = BitPackedArraySetStorage;
+    using storage_type = BitRowPoolStorage;
 #endif
 };
 

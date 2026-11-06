@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism::planning
@@ -24,29 +25,29 @@ namespace tyr::formalism::planning
 void bind_metric(nb::module_& m, RepositoryBinding& repository)
 {
     using namespace nb::literals;
-    ygg::bind_index<ygg::Index<Metric>>(m, "MetricIndex");
+    urd::python::bind_index<urd::index<Metric>>(m, "MetricIndex");
 
     {
-        using V = ygg::Data<Metric>;
+        using V = urd::data<Metric>;
 
         auto cls = nb::class_<V>(m, "MetricData")  //
-                       .def(nb::init<OptimizationDirection, FunctionExpressionView<GroundTag>>(), "optimization_direction"_a, "fexpr"_a);
-        cls.def(nb::init<OptimizationDirection, ygg::Data<FunctionExpression<GroundTag>>>(), "optimization_direction"_a, "fexpr"_a);
+                       .def(urd::python::init_from_views<OptimizationDirection, FunctionExpressionView<GroundTag>>(), "optimization_direction"_a, "fexpr"_a);
+        cls.def(nb::init<OptimizationDirection, FunctionExpression<GroundTag>>(), "optimization_direction"_a, "fexpr"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = MetricView;
 
         auto cls = nb::class_<V>(m, "Metric")  //
-                       .def("get_index", &V::get_index)
+                       .def("get_index", &V::index)
                        .def("get_optimization_direction", &V::get_optimization_direction)
                        .def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Metric>(repository);

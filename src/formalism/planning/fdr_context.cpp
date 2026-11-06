@@ -16,6 +16,8 @@
  */
 
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
@@ -31,7 +33,8 @@
 #include <cassert>
 #include <mutex>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -42,21 +45,18 @@ std::pair<FDRVariableView<FluentTag>, bool> copy(FDRVariableView<FluentTag> elem
     auto variable = planning::checkout<FDRVariable<FluentTag>>(context.builder());
 
     for (const auto atom : element.get_atoms())
-        variable->atoms.push_back(copy(atom, context).first.get_index());
+        variable->atoms.push_back(copy(atom, context).first.index());
 
     return planning::insert(context.destination(), *variable);
 }
 
-FDRFactView<FluentTag> copy(FDRFactView<FluentTag> element, CopyContext& context)
-{
-    const auto variable = copy(element.get_variable(), context).first;
-    return ygg::make_view(ygg::Data<FDRFact<FluentTag>>(variable.get_index(), element.get_value()), context.destination());
-}
+urd::data<FDRFact<FluentTag>> copy(FDRFactView<FluentTag> element, CopyContext& context)
+{ return urd::data<FDRFact<FluentTag>>(copy(element.get_variable(), context).first.index(), element.get_value()); }
 }
 
 FDRContext::FDRContext(RepositoryPtr context) : m_context(std::move(context)), m_facts(), m_registration_mutex(), m_builder(), m_variables() {}
 
-FDRContext::FDRContext(const std::vector<AtomViewList<GroundTag, FluentTag>>& mutexes, RepositoryPtr context) :
+FDRContext::FDRContext(const urd::Store<urd::sequence<AtomViewList<GroundTag, FluentTag>>>& mutexes, RepositoryPtr context) :
     m_context(std::move(context)),
     m_facts(),
     m_registration_mutex(),
@@ -67,12 +67,12 @@ FDRContext::FDRContext(const std::vector<AtomViewList<GroundTag, FluentTag>>& mu
     {
         auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
         for (const auto& atom : group)
-            variable->atoms.push_back(atom.get_index());
+            variable->atoms.push_back(atom.index());
         const auto variable_view = planning::insert(*m_context, *variable).first;
         m_variables.push_back(variable_view);
         for (ygg::uint_t i = 0; i < group.size(); ++i)
         {
-            [[maybe_unused]] const auto inserted = publish_fact(group[i], ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { i + 1 }));
+            [[maybe_unused]] const auto inserted = publish_fact(group[i], urd::data<FDRFact<FluentTag>>(variable_view.index(), FDRValue { i + 1 }));
             assert(inserted && "Assumes non overlapping mutex groups");
         }
     }
@@ -88,10 +88,10 @@ FDRContext::FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, Repo
     for (const auto& atom : all_atoms)
     {
         auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
-        variable->atoms.push_back(atom.get_index());
+        variable->atoms.push_back(atom.index());
         const auto variable_view = planning::insert(*m_context, *variable).first;
         m_variables.push_back(variable_view);
-        [[maybe_unused]] const auto inserted = publish_fact(atom, ygg::Data<FDRFact<FluentTag>>(variable_view.get_index(), FDRValue { 1 }));
+        [[maybe_unused]] const auto inserted = publish_fact(atom, urd::data<FDRFact<FluentTag>>(variable_view.index(), FDRValue { 1 }));
         assert(inserted);
     }
 }
@@ -110,12 +110,12 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
 
     for (size_t i = 0; i < other.m_facts.size(); ++i)
     {
-        const auto atom = ygg::make_view(ygg::Index<Atom<GroundTag, FluentTag>>(i), *other.m_context);
+        const auto atom = other.m_context->view(urd::index<Atom<GroundTag, FluentTag>>(i));
         const auto fact = other.find_fact(atom);
         if (!fact)
             continue;
 
-        [[maybe_unused]] const auto inserted = publish_fact(copy(atom, merge_context).first, copy(*fact, merge_context).get_data());
+        [[maybe_unused]] const auto inserted = publish_fact(copy(atom, merge_context).first, copy(*fact, merge_context));
         assert(inserted);
     }
 }
@@ -131,25 +131,24 @@ FDRFactView<FluentTag> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom)
 
     // Construct a new binary FDR variable
     auto variable_data = planning::checkout<FDRVariable<FluentTag>>(m_builder);
-    variable_data->atoms.push_back(atom.get_index());
+    variable_data->atoms.push_back(atom.index());
     const auto variable = planning::insert(*m_context, *variable_data).first;
 
     // Grow before changing the variable list so allocation failure leaves this registration retryable.
     ensure_fact_slot(atom);
     m_variables.push_back(variable);
-    const auto fact = ygg::Data<FDRFact<FluentTag>>(variable.get_index(), FDRValue { 1 });
-    [[maybe_unused]] const auto inserted = publish_fact(atom, fact);
+    [[maybe_unused]] const auto inserted = publish_fact(atom, urd::data<FDRFact<FluentTag>>(variable.index(), FDRValue { 1 }));
     assert(inserted);
 
-    return ygg::make_view(fact, *m_context);
+    return *find_fact(atom);
 }
 
 std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom) const { return find_fact(atom); }
 
 std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(AtomView<GroundTag, FluentTag> atom) const
 {
-    assert(&m_context->get_canonical_context(atom.get_index()) == &atom.get_context());
-    const auto index = static_cast<ygg::uint_t>(atom.get_index());
+    assert(&m_context->get_canonical_context(atom.index()) == &atom.context());
+    const auto index = static_cast<ygg::uint_t>(atom.index().value);
     if (index >= m_facts.size())
         return std::nullopt;
 
@@ -157,20 +156,20 @@ std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(AtomView<GroundTag, 
     if (!slot.ready.load(std::memory_order_acquire))
         return std::nullopt;
 
-    return ygg::make_view(slot.fact, *m_context);
+    return urd::resolve(slot.fact, *m_context);
 }
 
 void FDRContext::ensure_fact_slot(AtomView<GroundTag, FluentTag> atom)
 {
-    const auto index = static_cast<ygg::uint_t>(atom.get_index());
+    const auto index = static_cast<ygg::uint_t>(atom.index().value);
     while (m_facts.size() <= index)
         m_facts.emplace_back();
 }
 
-bool FDRContext::publish_fact(AtomView<GroundTag, FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact)
+bool FDRContext::publish_fact(AtomView<GroundTag, FluentTag> atom, urd::data<FDRFact<FluentTag>> fact)
 {
     ensure_fact_slot(atom);
-    const auto index = static_cast<ygg::uint_t>(atom.get_index());
+    const auto index = static_cast<ygg::uint_t>(atom.index().value);
     auto& slot = m_facts[index];
     if (slot.ready.load(std::memory_order_relaxed))
         return false;

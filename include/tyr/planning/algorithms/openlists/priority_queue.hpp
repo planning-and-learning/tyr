@@ -21,7 +21,8 @@
 #include "tyr/planning/algorithms/openlists/interface.hpp"
 
 #include <cassert>
-#include <queue>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::planning
 {
@@ -37,9 +38,10 @@ template<IsPriorityQueueEntry E>
 class PriorityQueue
 {
 private:
-    struct EntryComparator
+    /// Orders entries by key; the queue gives the least first.
+    struct KeyLess
     {
-        bool operator()(const E& l, const E& r) { return l.get_key() > r.get_key(); }
+        bool operator()(const E& l, const E& r) const { return l.get_key() < r.get_key(); }
     };
 
 public:
@@ -66,18 +68,14 @@ public:
         m_priority_queue.pop();
     }
 
-    void clear()
-    {
-        auto tmp = std::priority_queue<E, std::vector<E>, EntryComparator> {};
-        std::swap(m_priority_queue, tmp);
-    }
+    void clear() { m_priority_queue.clear(); }
 
     [[nodiscard]] bool empty() const { return m_priority_queue.empty(); }
 
     [[nodiscard]] std::size_t size() const { return m_priority_queue.size(); }
 
 private:
-    std::priority_queue<E, std::vector<E>, EntryComparator> m_priority_queue;
+    urd::Store<urd::queue<E>, urd::by_priority, urd::order_by<KeyLess>> m_priority_queue;
 };
 
 }

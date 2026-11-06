@@ -20,14 +20,16 @@
 
 #include <cstddef>
 #include <limits>
-#include <yggdrasil/containers/tree_bitset_set.hpp>
+#include <urd/repr/pools/tree_bitset.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::tree_bitset
 {
 /// Blocks have the width of a tree child slot, so TreeBitsetSet stores them inline without a leaf table.
 using Block = ygg::uint_t;
-using Flip = ygg::TreeBitsetFlip<Block>;
+using Flip = urd::repr::BlockFlip;
 
 inline constexpr size_t bits_per_block = std::numeric_limits<Block>::digits;
 }

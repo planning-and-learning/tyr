@@ -23,15 +23,17 @@
 
 #include <algorithm>
 #include <cassert>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/segmented_vector.hpp>
 
 namespace tyr::planning
 {
 
-template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
-NodeList<Kind> extract_node_trajectory(const ygg::SegmentedVector<SearchNode>& search_nodes,
+template<TaskKind Kind, SearchNodeConcept<urd::index<State<Kind>>> SearchNode>
+NodeList<Kind> extract_node_trajectory(const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
                                        const SearchNode& final_search_node,
                                        const Node<Kind>& final_node,
                                        StateRepository<Kind>& state_repository)
@@ -40,11 +42,11 @@ NodeList<Kind> extract_node_trajectory(const ygg::SegmentedVector<SearchNode>& s
     trajectory.push_back(final_node);
 
     auto cur_search_node = &final_search_node;
-    while (cur_search_node->parent_state != ygg::Index<State<Kind>>::max())
+    while (cur_search_node->parent_state != urd::index<State<Kind>>())
     {
         const auto parent_state_index = cur_search_node->parent_state;
 
-        cur_search_node = &search_nodes.at(ygg::uint_t(cur_search_node->parent_state));
+        cur_search_node = &search_nodes.at(ygg::uint_t(cur_search_node->parent_state.value));
 
         trajectory.push_back(Node<Kind>(state_repository.get_registered_state(parent_state_index), cur_search_node->g_value));
     }
@@ -65,7 +67,7 @@ LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node
 
     auto labeled_node_trajectory = LabeledNodeList<Kind> {};
     auto cur_node = node_trajectory.front();
-    auto applicable_actions = std::vector<formalism::planning::ActionBindingView> {};
+    auto applicable_actions = urd::Store<urd::sequence<formalism::planning::ActionBindingView>> {};
 
     for (size_t i = 1; i < node_trajectory.size(); ++i)
     {
@@ -92,10 +94,10 @@ LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node
     return labeled_node_trajectory;
 }
 
-template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
+template<TaskKind Kind, SearchNodeConcept<urd::index<State<Kind>>> SearchNode>
 inline Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                              const Node<Kind>& final_node,
-                                             const ygg::SegmentedVector<SearchNode>& search_nodes,
+                                             const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
                                              StateRepository<Kind>& state_repository,
                                              AxiomEvaluator<Kind>& axiom_evaluator,
                                              SuccessorGenerator<Kind>& successor_generator,
@@ -111,10 +113,10 @@ inline Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node
 template<>
 struct PlanReconstructionPolicy<SequentialSearch>
 {
-    template<TaskKind Kind, SearchNodeConcept<ygg::Index<State<Kind>>> SearchNode>
+    template<TaskKind Kind, SearchNodeConcept<urd::index<State<Kind>>> SearchNode>
     static Plan<Kind> extract_total_ordered_plan(const SearchNode& final_search_node,
                                                  const Node<Kind>& final_node,
-                                                 const ygg::SegmentedVector<SearchNode>& search_nodes,
+                                                 const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
                                                  StateRepository<Kind>& state_repository,
                                                  AxiomEvaluator<Kind>& axiom_evaluator,
                                                  SuccessorGenerator<Kind>& successor_generator,

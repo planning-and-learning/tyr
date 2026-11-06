@@ -29,7 +29,7 @@
 #include <type_traits>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {
@@ -39,16 +39,16 @@ namespace tyr::planning
 
 template<class R, class Tag>
 concept AtomRangeConcept =
-    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ygg::Index<formalism::planning::Atom<GroundTag, Tag>>>;
+    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, urd::index<formalism::planning::Atom<GroundTag, Tag>>>;
 
 template<class R, class Tag>
 concept FactRangeConcept =
-    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, ygg::Data<formalism::planning::FDRFact<Tag>>>;
+    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, urd::data<formalism::planning::FDRFact<Tag>>>;
 
 template<class R, class Tag>
 concept FunctionTermValueRangeConcept =
     std::ranges::input_range<R>
-    && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>>;
+    && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>>;
 
 template<typename T>
 concept IterableStateConcept = requires(const std::remove_reference_t<T>& cs) {
@@ -68,9 +68,10 @@ template<class R, class Tag>
 concept AtomViewRangeConcept =
     std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, formalism::planning::AtomView<GroundTag, Tag>>;
 
+/// Views of facts, however they hold them (a state's facts are computed on the fly: each view owns its fact).
 template<class R, class Tag>
 concept FactViewRangeConcept =
-    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, formalism::planning::FDRFactView<Tag>>;
+    std::ranges::input_range<R> && std::same_as<typename std::remove_cvref_t<std::ranges::range_value_t<R>>::value_type, formalism::planning::FDRFact<Tag>>;
 
 template<class R, class Tag>
 concept FunctionTermViewValueRangeConcept =
@@ -91,11 +92,11 @@ concept IterableViewStateConcept = requires(const std::remove_reference_t<T>& cs
 template<typename T, typename Kind>
 concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && IterableViewStateConcept<T>
                            && requires(const std::remove_reference_t<T>& state,
-                                       ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
-                                       ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
-                                       ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
-                                       ygg::Index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> static_atom,
-                                       ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> derived_atom,
+                                       urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
+                                       urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
+                                       urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
+                                       urd::index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> static_atom,
+                                       urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> derived_atom,
                                        formalism::planning::FDRVariableView<formalism::FluentTag> variable_view,
                                        formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> static_fterm_view,
                                        formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,
@@ -107,14 +108,14 @@ concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && Iterable
                                        formalism::planning::PredicateView<formalism::DerivedTag> derived_predicate) {
                                   { state.get_task() } -> std::same_as<const Task<Kind>&>;
                                   { state.get_formalism_repository() } -> std::same_as<const formalism::planning::RepositoryPtr&>;
-                                  { state.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
-                                  { state.get(static_fterm) } -> std::same_as<ygg::float_t>;
-                                  { state.get(fluent_fterm) } -> std::same_as<ygg::float_t>;
+                                  { state.value(variable) } -> std::same_as<formalism::planning::FDRValue>;
+                                  { state.value(static_fterm) } -> std::same_as<ygg::float_t>;
+                                  { state.value(fluent_fterm) } -> std::same_as<ygg::float_t>;
                                   { state.test(static_atom) } -> std::same_as<bool>;
                                   { state.test(derived_atom) } -> std::same_as<bool>;
-                                  { state.get(variable_view) } -> std::same_as<formalism::planning::FDRValue>;
-                                  { state.get(static_fterm_view) } -> std::same_as<ygg::float_t>;
-                                  { state.get(fluent_fterm_view) } -> std::same_as<ygg::float_t>;
+                                  { state.value(variable_view) } -> std::same_as<formalism::planning::FDRValue>;
+                                  { state.value(static_fterm_view) } -> std::same_as<ygg::float_t>;
+                                  { state.value(fluent_fterm_view) } -> std::same_as<ygg::float_t>;
                                   { state.test(static_atom_view) } -> std::same_as<bool>;
                                   { state.test(fluent_atom_view) } -> std::same_as<bool>;
                                   { state.test(derived_atom_view) } -> std::same_as<bool>;

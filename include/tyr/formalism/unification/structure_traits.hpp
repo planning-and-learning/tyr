@@ -18,7 +18,8 @@
 #ifndef TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_HPP_
 #define TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_HPP_
 
-#include "tyr/formalism/term_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+
 
 #include <concepts>
 #include <utility>
@@ -31,14 +32,14 @@ struct structure_traits;
 
 /// @brief Base case for unification: structures that are directly represented by terms.
 template<>
-struct structure_traits<ygg::Data<Term>>
+struct structure_traits<Term>
 {
     template<typename F>
-    static bool zip_terms(const ygg::Data<Term>& lhs, const ygg::Data<Term>& rhs, F f)
+    static bool zip_terms(const Term& lhs, const Term& rhs, F f)
     { return f(lhs, rhs); }
 
     template<typename F>
-    static ygg::Data<Term> transform_terms(const ygg::Data<Term>& value, F f)
+    static Term transform_terms(const Term& value, F f)
     { return f(value); }
 };
 
@@ -54,12 +55,12 @@ namespace detail
 {
 struct ZipProbe
 {
-    bool operator()(const ygg::Data<Term>&, const ygg::Data<Term>&) const { return true; }
+    bool operator()(const Term&, const Term&) const { return true; }
 };
 
 struct TransformProbe
 {
-    ygg::Data<Term> operator()(const ygg::Data<Term>& term) const { return term; }
+    Term operator()(const Term& term) const { return term; }
 };
 }  // namespace detail
 

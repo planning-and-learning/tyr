@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -31,10 +32,10 @@ template<FactKind T>
 void bind_predicate_view(nb::module_& m, const char* name)
 {
     using V = PredicateView<T>;
-    auto cls = nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
+    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 

@@ -32,7 +32,6 @@ from pytyr._pytyr.formalism import (
     StaticPredicateBindingIndex as StaticPredicateBindingIndex,
     StaticPredicateData as StaticPredicateData,
     StaticPredicateIndex as StaticPredicateIndex,
-    TermData as TermData,
     VariableData as VariableData,
     VariableIndex as VariableIndex,
 )

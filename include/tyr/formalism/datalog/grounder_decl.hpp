@@ -27,7 +27,7 @@ namespace tyr::formalism::datalog
 class GrounderContext
 {
 public:
-    GrounderContext(Builder& builder, Repository& destination, ygg::IndexList<Object>& binding) noexcept :
+    GrounderContext(Builder& builder, Repository& destination, urd::flat_vector<urd::index<Object>>& binding) noexcept :
         m_builder(&builder),
         m_destination(&destination),
         m_binding(&binding)
@@ -36,12 +36,12 @@ public:
 
     [[nodiscard]] Builder& builder() const noexcept { return *m_builder; }
     [[nodiscard]] Repository& destination() const noexcept { return *m_destination; }
-    [[nodiscard]] ygg::IndexList<Object>& binding() const noexcept { return *m_binding; }
+    [[nodiscard]] urd::flat_vector<urd::index<Object>>& binding() const noexcept { return *m_binding; }
 
 private:
     Builder* m_builder;
     Repository* m_destination;
-    ygg::IndexList<Object>* m_binding;
+    urd::flat_vector<urd::index<Object>>* m_binding;
 };
 
 }

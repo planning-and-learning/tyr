@@ -8,9 +8,9 @@
 namespace lifted_tests
 {
 
-using ConditionalEffectIndex = ygg::Index<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
-using ConditionalEffectData = ygg::Data<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
-using ConditionalEffectView = ygg::View<ConditionalEffectIndex, tyr::formalism::planning::Repository>;
+using ConditionalEffectIndex = urd::index<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
+using ConditionalEffectData = urd::data<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
+using ConditionalEffectView = urd::view<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ConditionalEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConditionalEffectIndex>);
@@ -22,11 +22,10 @@ static_assert(requires(ConditionalEffectData& data) {
     data.variables;
     data.condition;
     data.effect;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const ConditionalEffectView& view) {
-    view.get_index();
+    view.index();
     view.get_arity();
     view.get_variables();
     view.get_condition();
@@ -40,9 +39,9 @@ static_assert(requires(const ConditionalEffectView& view) {
 namespace ground_tests
 {
 
-using GroundConditionalEffectIndex = ygg::Index<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
-using GroundConditionalEffectData = ygg::Data<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
-using GroundConditionalEffectView = ygg::View<GroundConditionalEffectIndex, tyr::formalism::planning::Repository>;
+using GroundConditionalEffectIndex = urd::index<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
+using GroundConditionalEffectData = urd::data<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
+using GroundConditionalEffectView = urd::view<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundConditionalEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConditionalEffectIndex>);
@@ -53,11 +52,10 @@ static_assert(requires(GroundConditionalEffectData& data) {
     data.index;
     data.condition;
     data.effect;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const GroundConditionalEffectView& view) {
-    view.get_index();
+    view.index();
     view.get_condition();
     view.get_effect();
     { view == view } -> std::same_as<bool>;

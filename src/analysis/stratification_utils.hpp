@@ -22,14 +22,16 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/topological_sort.hpp>
-#include <gtl/phmap.hpp>
 #include <limits>
 #include <stdexcept>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::analysis::stratification
 {
@@ -57,9 +59,9 @@ using DagV = boost::graph_traits<Dag>::vertex_descriptor;
 using DagE = boost::graph_traits<Dag>::edge_descriptor;
 
 // Run SCCs, check stratifiability, return component id per vertex and #components
-inline std::pair<std::vector<ygg::uint_t>, ygg::uint_t> compute_scc_and_check(const DepGraph& g)
+inline std::pair<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t> compute_scc_and_check(const DepGraph& g)
 {
-    auto comp = std::vector<ygg::uint_t>(boost::num_vertices(g), std::numeric_limits<ygg::uint_t>::max());
+    auto comp = urd::Store<urd::sequence<ygg::uint_t>>(boost::num_vertices(g), std::numeric_limits<ygg::uint_t>::max());
     const auto num = boost::strong_components(g, boost::make_iterator_property_map(comp.begin(), boost::get(boost::vertex_index, g)));
 
     // Stratifiable iff no STRICT edge stays within the same SCC
@@ -79,14 +81,11 @@ inline std::pair<std::vector<ygg::uint_t>, ygg::uint_t> compute_scc_and_check(co
 }
 
 // Build condensed DAG of SCCs, with edge weight inc=1 if any strict edge exists between SCCs
-inline Dag build_condensation_dag(const DepGraph& g, const std::vector<ygg::uint_t>& comp, ygg::uint_t num_comps)
+inline Dag build_condensation_dag(const DepGraph& g, const urd::Store<urd::sequence<ygg::uint_t>>& comp, ygg::uint_t num_comps)
 {
     Dag dag(num_comps);
 
-    using EdgeMap = gtl::flat_hash_map<std::pair<ygg::uint_t, ygg::uint_t>,
-                                       EdgeKind,
-                                       ygg::Hash<std::pair<ygg::uint_t, ygg::uint_t>>,
-                                       ygg::EqualTo<std::pair<ygg::uint_t, ygg::uint_t>>>;
+    using EdgeMap = urd::Store<urd::map<std::pair<ygg::uint_t, ygg::uint_t>, EdgeKind>>;
     auto best = EdgeMap {};
     best.reserve(boost::num_edges(g));
 
@@ -120,15 +119,15 @@ inline Dag build_condensation_dag(const DepGraph& g, const std::vector<ygg::uint
 }
 
 // Compute minimal strata on SCC DAG: s[dst] = max(s[dst], s[src] + inc)
-inline std::vector<ygg::uint_t> compute_component_strata(const Dag& dag)
+inline urd::Store<urd::sequence<ygg::uint_t>> compute_component_strata(const Dag& dag)
 {
-    auto topo = std::vector<DagV> {};
+    auto topo = urd::Store<urd::sequence<DagV>> {};
     topo.reserve(boost::num_vertices(dag));
     boost::topological_sort(dag, std::back_inserter(topo));  // reverse topological order
 
     std::reverse(topo.begin(), topo.end());
 
-    auto s = std::vector<ygg::uint_t>(boost::num_vertices(dag), 0);
+    auto s = urd::Store<urd::sequence<ygg::uint_t>>(boost::num_vertices(dag), 0);
 
     for (const auto u : topo)
     {

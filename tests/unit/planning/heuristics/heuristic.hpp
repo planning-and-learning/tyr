@@ -19,6 +19,8 @@
 #define TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 
 #include "planning/parser.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -57,7 +59,7 @@ struct HeuristicCase
     std::string name;
     std::filesystem::path domain_file;
     std::filesystem::path task_file;
-    std::vector<std::pair<std::string, HeuristicExpectation>> configs;
+    urd::Store<urd::sequence<std::pair<std::string, HeuristicExpectation>>> configs;
 };
 
 inline void PrintTo(const HeuristicCase& test_case, std::ostream* os) { *os << test_case.name << " (" << test_case.task_file << ")"; }
@@ -94,11 +96,11 @@ inline HeuristicCase parse_case(const boost::json::object& object)
     return result;
 }
 
-inline std::vector<HeuristicCase> load_cases(const std::filesystem::path& fixture)
+inline urd::Store<urd::sequence<HeuristicCase>> load_cases(const std::filesystem::path& fixture)
 {
     const auto suite = ygg::common::load_json_file(ygg::common::root_path() / fixture);
     const auto& suite_object = ygg::common::as_object(suite, "suite");
-    auto result = std::vector<HeuristicCase> {};
+    auto result = urd::Store<urd::sequence<HeuristicCase>> {};
     for (const auto& case_value : ygg::common::as_array(suite_object, "cases", "suite"))
         result.push_back(parse_case(ygg::common::as_object(case_value, "case")));
     return result;

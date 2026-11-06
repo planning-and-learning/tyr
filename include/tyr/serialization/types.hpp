@@ -4,35 +4,29 @@
 #include "tyr/serialization/serialization.hpp"
 
 #include <type_traits>
-#include <yggdrasil/core/concepts.hpp>
-#include <yggdrasil/core/type_list.hpp>
+#include <boost/mp11.hpp>
 
 namespace tyr::serialization
 {
 
 template<typename T>
-using FormalismIndexView = ygg::View<ygg::Index<T>, formalism::planning::Repository>;
+using FormalismIndexView = urd::view<T, formalism::planning::Repository>;
+template<typename R>
+using FormalismBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<R, formalism::ObjectTag>, formalism::planning::Repository>;
 
-using FormalismValueViews = ygg::TypeList<formalism::planning::TermView,
-                                          formalism::planning::FunctionExpressionView<LiftedTag>,
-                                          formalism::planning::FunctionExpressionView<GroundTag>,
-                                          formalism::planning::ArithmeticOperatorView<LiftedTag>,
-                                          formalism::planning::ArithmeticOperatorView<GroundTag>,
-                                          formalism::planning::BooleanOperatorView<LiftedTag>,
-                                          formalism::planning::BooleanOperatorView<GroundTag>,
-                                          formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::FluentTag>,
-                                          formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::AuxiliaryTag>,
-                                          formalism::planning::NumericEffectOperatorView<GroundTag, formalism::FluentTag>,
-                                          formalism::planning::NumericEffectOperatorView<GroundTag, formalism::AuxiliaryTag>,
-                                          formalism::planning::FDRFactView<formalism::FluentTag>>;
+// Terms and function expressions are not among them: std::variants (of views and values), serialized where their
+// holders hold them.
+using FormalismValueViews = boost::mp11::mp_list<formalism::planning::FDRFactView<formalism::FluentTag>>;
 
-using FormalismViews = ygg::ConcatTypeListsT<ygg::MapTypeListT<FormalismIndexView, formalism::planning::BuilderTypes>, FormalismValueViews>;
+using FormalismViews = boost::mp11::mp_append<boost::mp11::mp_transform<FormalismIndexView, formalism::planning::SymbolRepositoryTypes>,
+                                             boost::mp11::mp_transform<FormalismBindingView, formalism::planning::RelationRepositoryTypes>,
+                                             FormalismValueViews>;
 
 using FormalismOwners =
-    ygg::TypeList<formalism::planning::PlanningDomain, formalism::planning::PlanningTask<LiftedTag>, formalism::planning::PlanningTask<GroundTag>>;
+    boost::mp11::mp_list<formalism::planning::PlanningDomain, formalism::planning::PlanningTask<LiftedTag>, formalism::planning::PlanningTask<GroundTag>>;
 
-using RuntimeStates = ygg::TypeList<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
-using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
+using RuntimeStates = boost::mp11::mp_list<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
+using RuntimeOwners = boost::mp11::mp_list<planning::Task<GroundTag>,
                                     planning::Task<LiftedTag>,
                                     planning::Node<GroundTag>,
                                     planning::Node<LiftedTag>,
@@ -40,16 +34,16 @@ using RuntimeOwners = ygg::TypeList<planning::Task<GroundTag>,
                                     planning::LabeledNode<LiftedTag>,
                                     planning::Plan<GroundTag>,
                                     planning::Plan<LiftedTag>>;
-using SerializedTypes = ygg::ConcatTypeListsT<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;
+using SerializedTypes = boost::mp11::mp_append<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;
 
 template<typename T>
-using HashableTypeList = std::conditional_t<ygg::Hashable<T>, ygg::TypeList<T>, ygg::TypeList<>>;
+using HashableTypeList = std::conditional_t<urd::Hashable<T>, boost::mp11::mp_list<T>, boost::mp11::mp_list<>>;
 
-using RegisteredTypes = ygg::ApplyTypeListT<ygg::ConcatTypeListsT, ygg::MapTypeListT<HashableTypeList, SerializedTypes>>;
+using RegisteredTypes = boost::mp11::mp_apply<boost::mp11::mp_append, boost::mp11::mp_transform<HashableTypeList, SerializedTypes>>;
 
-using ProjectionTypes = ygg::ConcatTypeListsT<
+using ProjectionTypes = boost::mp11::mp_append<
     SerializedTypes,
-    ygg::TypeList<formalism::BooleanOperatorKind, formalism::ArithmeticOperatorKind, formalism::NumericEffectOperatorKind, formalism::OptimizationDirection>>;
+    boost::mp11::mp_list<formalism::BooleanOperatorKind, formalism::ArithmeticOperatorKind, formalism::NumericEffectOperatorKind, formalism::OptimizationDirection>>;
 
 }
 

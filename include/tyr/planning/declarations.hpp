@@ -22,7 +22,7 @@
 
 #include <concepts>
 #include <memory>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
@@ -61,7 +61,7 @@ class StaticState;
 template<TaskKind Kind>
 class State;
 template<TaskKind Kind>
-class PackedState;
+struct PackedState;
 
 template<TaskKind Kind>
 class StateContext;
@@ -80,12 +80,16 @@ class StateRepository;
 template<TaskKind Kind>
 using StateRepositoryPtr = std::shared_ptr<StateRepository<Kind>>;
 
+/// A registered state, unpacked: the view of its data<State<Kind>>, shared from its repository's pool, through the
+/// repository that registered it; it is identified by its index and that repository.
 template<TaskKind Kind>
-using StateView = ygg::View<ygg::Index<State<Kind>>, StateRepositoryPtr<Kind>>;
+using StateView = urd::shared_view<State<Kind>, StateRepository<Kind>>;
+/// A state builder, borrowed, read through a state repository of its task.
 template<TaskKind Kind>
-using BuilderStateView = ygg::View<ygg::Builder<State<Kind>>, Task<Kind>>;
+using BuilderStateView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>>>;
+/// A registered state, packed: its index, through its repository (unpack() gives its StateView).
 template<TaskKind Kind>
-using PackedStateView = ygg::View<ygg::Index<PackedState<Kind>>, StateRepositoryPtr<Kind>>;
+using PackedStateView = urd::index_view<State<Kind>, StateRepository<Kind>>;
 template<TaskKind Kind>
 class StateRepositoryFactory;
 

@@ -23,7 +23,6 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/task.hpp"
 
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {

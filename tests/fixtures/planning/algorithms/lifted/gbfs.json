@@ -4919,8 +4919,8 @@
             "domain_file": "numeric/tests/mprime/domain.pddl",
             "task_file": "numeric/tests/mprime/test-1.pddl",
             "blind_unit": {
-                "num_generated_successors": 2913,
-                "num_expanded": 890,
+                "num_generated_successors": 4098,
+                "num_expanded": 1073,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4935,8 +4935,8 @@
                 }
             },
             "blind_general": {
-                "num_generated_successors": 2913,
-                "num_expanded": 890,
+                "num_generated_successors": 4098,
+                "num_expanded": 1073,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4951,8 +4951,8 @@
                 }
             },
             "hmax_unit": {
-                "num_generated_successors": 881,
-                "num_expanded": 103,
+                "num_generated_successors": 1007,
+                "num_expanded": 102,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4967,8 +4967,8 @@
                 }
             },
             "hadd_unit": {
-                "num_generated_successors": 454,
-                "num_expanded": 41,
+                "num_generated_successors": 499,
+                "num_expanded": 43,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4983,7 +4983,7 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 128,
+                "num_generated_successors": 127,
                 "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
@@ -5000,8 +5000,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 881,
-                "num_expanded": 103,
+                "num_generated_successors": 1007,
+                "num_expanded": 102,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

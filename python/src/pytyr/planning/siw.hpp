@@ -72,7 +72,7 @@ void bind_options(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())
         .def(nb::init<>())
-        .def_rw("start_node", &T::start_node)
+        .def_rw("start_node", &T::start_node, nb::for_setter(nb::keep_alive<1, 2>()))
         .def_rw("event_handler", &T::event_handler)
         .def_rw("subgoal_strategy", &T::subgoal_strategy)
         .def_rw("goal_strategy", &T::goal_strategy)
@@ -88,7 +88,7 @@ void bind_solver(nb::module_& m, const std::string& name)
         .def(nb::init<>())
         .def_rw("iw_solver", &T::iw_solver)
         .def_rw("options", &T::options)
-        .def("solve", &T::solve, nb::call_guard<nb::gil_scoped_release>());
+        .def("solve", &T::solve, nb::call_guard<nb::gil_scoped_release>(), nb::keep_alive<0, 1>());
 }
 
 template<TaskKind Kind>
@@ -99,6 +99,7 @@ void bind_find_solution(nb::module_& m, const std::string& py_name)
         py_name.c_str(),
         [](iw::Solver<Kind>& iw_solver, const Options<Kind>& options) { return find_solution(iw_solver, options); },
         nb::call_guard<nb::gil_scoped_release>(),
+        nb::keep_alive<0, 1>(),
         "iw_solver"_a,
         "options"_a);
 }

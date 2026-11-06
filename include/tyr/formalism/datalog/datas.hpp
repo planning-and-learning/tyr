@@ -18,20 +18,16 @@
 #ifndef TYR_FORMALISM_DATALOG_DATAS_HPP_
 #define TYR_FORMALISM_DATALOG_DATAS_HPP_
 
-#include "tyr/formalism/datalog/arithmetic_operator_data.hpp"
 #include "tyr/formalism/datalog/atom_data.hpp"
 #include "tyr/formalism/datalog/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/boolean_operator_data.hpp"
 #include "tyr/formalism/datalog/conditional_effect_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
-#include "tyr/formalism/datalog/function_expression_data.hpp"
 #include "tyr/formalism/datalog/function_term_data.hpp"
 #include "tyr/formalism/datalog/function_term_value_data.hpp"
 #include "tyr/formalism/datalog/literal_data.hpp"
 #include "tyr/formalism/datalog/multi_operator_data.hpp"
 #include "tyr/formalism/datalog/numeric_effect_data.hpp"
-#include "tyr/formalism/datalog/numeric_effect_operator_data.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/datalog/unary_operator_data.hpp"

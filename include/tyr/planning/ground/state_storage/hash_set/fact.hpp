@@ -19,6 +19,8 @@
 #define TYR_PLANNING_GROUND_STATE_STORAGE_HASH_SET_FACT_HPP_
 
 #include "tyr/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/ground/state_storage.hpp"
 #include "tyr/planning/ground/state_storage/hash_set/context.hpp"
 #include "tyr/planning/state_storage.hpp"
@@ -27,20 +29,19 @@
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<GroundTag, HashSet> : ygg::comparison::Mixin<FactPackedStorage<GroundTag, HashSet>>
+struct FactPackedStorage<GroundTag, HashSet> : urd::compared_by_identity<FactPackedStorage<GroundTag, HashSet>>
 {
     ygg::uint_t index = 0;
 
     FactPackedStorage() = default;
     explicit FactPackedStorage(ygg::uint_t index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&FactPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&FactPackedStorage::index> {}; }
 };
 
 template<bool ThreadSafe>
@@ -60,9 +61,9 @@ public:
 
 private:
     ArraySetT<Context>* m_array_set;
-    const std::vector<VariableInfo>* m_infos;
+    const urd::Store<urd::sequence<VariableInfo>>* m_infos;
 
-    std::vector<ygg::uint_t> m_buffer;
+    urd::Store<urd::sequence<ygg::uint_t>> m_buffer;
 };
 
 }

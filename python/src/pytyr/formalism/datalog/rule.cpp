@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
@@ -32,19 +33,19 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
 {
     using namespace nb::literals;
     using Tag = Rule<T, R>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<const VariableViewList&, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
+            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
                     "variables"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
                     "cost"_a = static_cast<ygg::float_t>(0));
-            cls.def(nb::init<ygg::IndexList<Variable>, ygg::Index<ConjunctiveCondition<LiftedTag>>, RuleHeadT<LiftedTag, R>, ygg::float_t>(),
+            cls.def(nb::init<urd::flat_vector<urd::index<Variable>>, urd::index<ConjunctiveCondition<LiftedTag>>, RuleHeadT<LiftedTag, R>, ygg::float_t>(),
                     "variables"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
@@ -52,27 +53,27 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         }
         else
         {
-            cls.def(nb::init<RuleBindingView<R>, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
+            cls.def(urd::python::init_from_views<RuleBindingView<R>, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
                     "binding"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
                     "cost"_a = static_cast<ygg::float_t>(0));
             cls.def(
-                nb::init<ygg::Index<RelationBinding<Rule<LiftedTag, R>>>, ygg::Index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::float_t>(),
+                nb::init<ygg::formalism::RelationBindingIndex<Rule<LiftedTag, R>, ::tyr::formalism::ObjectTag>, urd::index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::float_t>(),
                 "binding"_a,
                 "body"_a,
                 std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
                 "cost"_a = static_cast<ygg::float_t>(0));
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = RuleView<T, R>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_arity", &V::get_arity);
@@ -91,8 +92,8 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
             cls.def("get_head", &V::get_head, nb::keep_alive<0, 1>());
         cls.def("get_cost", &V::get_cost);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

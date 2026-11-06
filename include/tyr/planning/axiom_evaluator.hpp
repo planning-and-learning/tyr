@@ -23,7 +23,6 @@
 #include "tyr/planning/state_builder.hpp"
 
 #include <concepts>
-#include <yggdrasil/core/concepts.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning

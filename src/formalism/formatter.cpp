@@ -31,47 +31,47 @@ namespace
 {
 
 template<FactKind T>
-std::string to_string_impl(const ygg::Data<Predicate<T>>& value)
+std::string to_string_impl(const urd::data<Predicate<T>>& value)
 { return fmt::format("{}/{}", value.name, value.arity); }
 
 template<FactKind T>
-std::string to_string_impl(const ygg::Data<Function<T>>& value)
+std::string to_string_impl(const urd::data<Function<T>>& value)
 { return fmt::format("{}/{}", value.name, value.arity); }
 
 template<typename T>
-std::string to_string_impl(const ygg::Data<RelationBinding<T>>& value)
+std::string to_string_impl(const urd::data<RelationBinding<T>>& value)
 { return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
 
 }  // namespace
 
-std::string to_string(const ygg::Data<Variable>& value) { return fmt::format("{}", value.name); }
+std::string to_string(const urd::data<Variable>& value) { return fmt::format("{}", value.name); }
 
-std::string to_string(const ygg::Data<Object>& value) { return fmt::format("{}", value.name); }
+std::string to_string(const urd::data<Object>& value) { return fmt::format("{}", value.name); }
 
-std::string to_string(const ygg::Data<Term>& value) { return fmt::format("{}", value.variant); }
+std::string to_string(const Term& value) { return fmt::format("{}", value); }
 
-std::string to_string(const ygg::Data<Predicate<StaticTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<Predicate<StaticTag>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<Predicate<FluentTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<Predicate<FluentTag>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<Predicate<DerivedTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<Predicate<DerivedTag>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<Function<StaticTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<Function<StaticTag>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<Function<FluentTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<Function<FluentTag>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<Function<AuxiliaryTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<Function<AuxiliaryTag>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<RelationBinding<Predicate<StaticTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<RelationBinding<Predicate<StaticTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<RelationBinding<Predicate<FluentTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<RelationBinding<Predicate<FluentTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<RelationBinding<Predicate<DerivedTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<RelationBinding<Predicate<DerivedTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<RelationBinding<Function<StaticTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<RelationBinding<Function<StaticTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<RelationBinding<Function<FluentTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<RelationBinding<Function<FluentTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const ygg::Data<RelationBinding<Function<AuxiliaryTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<RelationBinding<Function<AuxiliaryTag>>>& value) { return to_string_impl(value); }
 
 }  // namespace tyr::formalism

@@ -16,6 +16,8 @@
  */
 
 #include "tyr/datalog/lifted/scheduler.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -32,19 +34,19 @@ namespace tyr::datalog
 namespace
 {
 template<typename Relation>
-void activate_relation(boost::dynamic_bitset<>& bitset, ygg::Index<Relation> relation)
+void activate_relation(boost::dynamic_bitset<>& bitset, urd::index<Relation> relation)
 {
-    assert(ygg::uint_t(relation) < bitset.size());
-    bitset.set(ygg::uint_t(relation));
+    assert(ygg::uint_t(relation.value) < bitset.size());
+    bitset.set(ygg::uint_t(relation.value));
 }
 
 template<typename Relation, formalism::RelationKind R>
 void collect_active_rules(const boost::dynamic_bitset<>& bitset,
-                          const ygg::UnorderedMap<ygg::Index<Relation>, analysis::RuleIndexSet<R>>& listeners,
-                          ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>& active_rules)
+                          const urd::Store<urd::map<urd::index<Relation>, analysis::RuleIndexSet<R>>>& listeners,
+                          urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>>& active_rules)
 {
     for (auto i = bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = bitset.find_next(i))
-        if (const auto it = listeners.find(ygg::Index<Relation>(i)); it != listeners.end())
+        if (const auto it = listeners.find(urd::index<Relation>(i)); it != listeners.end())
             active_rules.insert(it->second.begin(), it->second.end());
 }
 }
@@ -90,11 +92,11 @@ void TypedRuleSchedulerStratum<R>::on_start_iteration() noexcept
 }
 
 template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate)
+void TypedRuleSchedulerStratum<R>::on_generate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate)
 { activate_relation(m_active_predicates, predicate); }
 
 template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_generate(ygg::Index<formalism::Function<formalism::FluentTag>> function)
+void TypedRuleSchedulerStratum<R>::on_generate(urd::index<formalism::Function<formalism::FluentTag>> function)
 { activate_relation(m_active_functions, function); }
 
 template<formalism::RelationKind R>
@@ -130,13 +132,13 @@ void Scheduler<LiftedTag>::on_start_iteration() noexcept
     function_rules.on_start_iteration();
 }
 
-void Scheduler<LiftedTag>::activate(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate)
+void Scheduler<LiftedTag>::activate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate)
 {
     predicate_rules.on_generate(predicate);
     function_rules.on_generate(predicate);
 }
 
-void Scheduler<LiftedTag>::activate(ygg::Index<formalism::Function<formalism::FluentTag>> function)
+void Scheduler<LiftedTag>::activate(urd::index<formalism::Function<formalism::FluentTag>> function)
 {
     predicate_rules.on_generate(function);
     function_rules.on_generate(function);
@@ -148,7 +150,7 @@ void Scheduler<LiftedTag>::on_finish_iteration()
     function_rules.on_finish_iteration();
 }
 
-std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& rules,
+urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
                                                     const analysis::ListenerStrata& listeners,
                                                     const formalism::datalog::Repository& context,
                                                     size_t num_fluent_predicates,
@@ -156,7 +158,7 @@ std::vector<Scheduler<LiftedTag>> create_schedulers(const analysis::RuleStrata& 
 {
     assert(rules.data.size() == listeners.data.size());
 
-    auto result = std::vector<Scheduler<LiftedTag>> {};
+    auto result = urd::Store<urd::sequence<Scheduler<LiftedTag>>> {};
     for (ygg::uint_t i = 0; i < rules.data.size(); ++i)
         result.emplace_back(rules.data[i], listeners.data[i], context, num_fluent_predicates, num_fluent_functions);
 

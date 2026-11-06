@@ -25,7 +25,6 @@
 #include <tyr/planning/algorithms/siw.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
 #include <tyr/planning/heuristics/blind.hpp>
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::tests
 {

@@ -32,7 +32,7 @@ auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageCo
     using VariableInfo = Context::VariableInfo;
     using LayoutData = Context::LayoutData;
 
-    constexpr ygg::uint_t bits_per_block = static_cast<ygg::uint_t>(ygg::bit::bits_per_block_v<Block>);
+    constexpr ygg::uint_t bits_per_block = static_cast<ygg::uint_t>(urd::repr::bit::bits_per_block_v<Block>);
 
     auto layout = LayoutData {};
 
@@ -41,7 +41,7 @@ auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageCo
     for (const auto variable : task.get_formalism_task().get_task().get_fluent_variables())
     {
         const auto domain_size = static_cast<ygg::uint_t>(variable.get_atoms().size() + 1);
-        const auto length = static_cast<ygg::uint_t>(ygg::bit::bits_needed(domain_size));
+        const auto length = static_cast<ygg::uint_t>(urd::repr::bit::bits_needed(domain_size));
 
         layout.fluent_infos.push_back(VariableInfo {
             .begin = current_bit / bits_per_block,
@@ -52,9 +52,9 @@ auto compute_layout_data(const Task<GroundTag>& task) -> typename StateStorageCo
         current_bit += length;
     }
 
-    layout.fluent_array_size = ygg::bit::ceil_div(current_bit, bits_per_block);
+    layout.fluent_array_size = urd::repr::bit::ceil_div(current_bit, bits_per_block);
     layout.derived_num_bits = static_cast<ygg::uint_t>(task.get_formalism_task().get_task().get_atoms<formalism::DerivedTag>().size());
-    layout.derived_array_size = ygg::bit::ceil_div(layout.derived_num_bits, bits_per_block);
+    layout.derived_array_size = urd::repr::bit::ceil_div(layout.derived_num_bits, bits_per_block);
 
     return layout;
 }
@@ -69,8 +69,8 @@ StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(cons
 
 template<bool ThreadSafe>
 StateStorageContext<GroundTag, TreeVector, ThreadSafe>::StateStorageContext(LayoutData layout_data) :
-    fluent_array_set(layout_data.fluent_array_size),
-    derived_array_set(layout_data.derived_array_size),
+    fluent_array_size(layout_data.fluent_array_size),
+    derived_array_size(layout_data.derived_array_size),
     fluent_infos(std::move(layout_data.fluent_infos)),
     derived_num_bits(layout_data.derived_num_bits)
 {

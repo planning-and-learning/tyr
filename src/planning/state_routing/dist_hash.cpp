@@ -37,26 +37,26 @@ void DistHash<Kind, LMCutDistHashTag>::initialize(const StateView<Kind>& start_s
     if (m_initialized)
         throw std::logic_error("LMCutDistHash::initialize(...): distribution features are already initialized.");
 
-    const auto& task = start_state.get_state_repository()->get_task();
+    const auto& task = start_state.get_state_repository().get_task();
     auto heuristic = LMCutHeuristic<Kind>(task, ygg::ExecutionContext::create(1), CostMode::UNIT);
-    auto atoms = heuristic.compute_cut_frontier_atoms(start_state.get_state_builder());
+    auto atoms = heuristic.compute_cut_frontier_atoms(start_state.data());
 
     for (const auto fact : task->get_task().get_goal().template get_facts<formalism::PositiveTag>())
         if (const auto atom = fact.get_atom())
             atoms.push_back(*atom);
 
-    std::ranges::sort(atoms, {}, [](const auto atom) { return atom.get_index(); });
-    atoms.erase(std::ranges::unique(atoms, {}, [](const auto atom) { return atom.get_index(); }).begin(), atoms.end());
+    std::ranges::sort(atoms, {}, [](const auto atom) { return atom.index(); });
+    atoms.erase(std::ranges::unique(atoms, {}, [](const auto atom) { return atom.index(); }).begin(), atoms.end());
 
     m_features.reserve(atoms.size());
     for (const auto atom : atoms)
-        m_features.push_back(Feature { atom.get_index(), task->get_fdr_context()->get_fact(atom).get_data() });
+        m_features.push_back(Feature { atom.index(), task->get_fdr_context()->get_fact(atom).data() });
 
     m_initialized = true;
 }
 
 template<TaskKind Kind>
-ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const ygg::Builder<State<Kind>>& state) const noexcept
+ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const urd::data<State<Kind>>& state) const noexcept
 {
     assert(m_initialized);
     if (m_features.empty())
@@ -66,7 +66,7 @@ ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const ygg::Builder<State<Kind
     auto result = static_cast<ygg::hash_t>(m_seed);
     for (const auto& feature : m_features)
         if (state.get(feature.fact.variable) == feature.fact.value)
-            ygg::hash_combine(result, feature.atom);
+            urd::hash_combine(result, feature.atom);
     return result;
 }
 

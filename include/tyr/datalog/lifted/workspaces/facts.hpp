@@ -48,7 +48,7 @@ struct FactsWorkspace<LiftedTag>
     {
         if (!fact_sets.predicate.insert(binding))
             return false;
-        assignment_sets.predicate.insert(ygg::make_view(binding, *repository));
+        assignment_sets.predicate.insert(urd::resolve(binding, *repository));
         delta_fact_sets.predicate.insert(binding);
         return true;
     }
@@ -57,7 +57,7 @@ struct FactsWorkspace<LiftedTag>
     {
         if (!fact_sets.function.insert(binding, interval))
             return false;
-        assignment_sets.function.insert(ygg::make_view(binding, *repository), interval);
+        assignment_sets.function.insert(urd::resolve(binding, *repository), interval);
         return true;
     }
 

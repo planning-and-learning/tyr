@@ -20,17 +20,15 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/ids/uint_mixins.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/unsigned_integer.hpp>
 
 namespace tyr::formalism::planning
 {
-struct FDRValue : ygg::FixedUintMixin<FDRValue>
+/// A variable's value: a nonnegative integer of its own type. Value 0, none(), is the variable's none value.
+struct FDRValue : ygg::UnsignedInteger<FDRValue>
 {
-    using Base = ygg::FixedUintMixin<FDRValue>;
-    using Base::Base;
-
-    [[nodiscard]] bool is_none() const noexcept { return *this == none(); }
+    using UnsignedInteger::UnsignedInteger;
 
     static constexpr FDRValue none() noexcept { return FDRValue { 0 }; }
 };

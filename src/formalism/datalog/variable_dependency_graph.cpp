@@ -16,6 +16,8 @@
  */
 
 #include "tyr/formalism/datalog/variable_dependency_graph.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -27,24 +29,24 @@
 namespace tyr::formalism::datalog
 {
 template<FactKind F, PolarityKind P>
-static void insert_literal_dependencies(const std::vector<ParameterIndex>& parameters, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
+static void insert_literal_dependencies(const urd::Store<urd::sequence<ParameterIndex>>& parameters, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
 {
     auto& unary_dep = details::select_literal_dependency<F, P>(unary);
     auto& binary_dep = details::select_literal_dependency<F, P>(binary);
 
     for (const auto parameter : parameters)
     {
-        const auto pi = static_cast<ygg::uint_t>(parameter);
+        const auto pi = parameter.value;
         unary_dep.set(pi);
     }
 
     for (ygg::uint_t i = 0; i < parameters.size(); ++i)
     {
-        const auto pi = static_cast<ygg::uint_t>(parameters[i]);
+        const auto pi = parameters[i].value;
 
         for (ygg::uint_t j = i + 1; j < parameters.size(); ++j)
         {
-            const auto pj = static_cast<ygg::uint_t>(parameters[j]);
+            const auto pj = parameters[j].value;
 
             binary_dep.set(binary.get_index(pi, pj));
             binary_dep.set(binary.get_index(pj, pi));
@@ -56,7 +58,7 @@ template<FactKind F>
 static void insert_literal(LiteralView<LiftedTag, F> literal, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
 {
     const auto parameters_set = collect_parameters(literal);
-    auto parameters = std::vector<ParameterIndex>(parameters_set.begin(), parameters_set.end());
+    auto parameters = urd::Store<urd::sequence<ParameterIndex>>(parameters_set.begin(), parameters_set.end());
     std::sort(parameters.begin(), parameters.end());
 
     if (literal.get_polarity())
@@ -68,7 +70,7 @@ static void insert_literal(LiteralView<LiftedTag, F> literal, details::UnaryDepe
 static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_constraint, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
 {
     const auto parameters_set = collect_parameters(std::move(numeric_constraint));
-    auto parameters = std::vector<ParameterIndex>(parameters_set.begin(), parameters_set.end());
+    auto parameters = urd::Store<urd::sequence<ParameterIndex>>(parameters_set.begin(), parameters_set.end());
     std::sort(parameters.begin(), parameters.end());
 
     auto& unary_dep = details::select_numeric_dependency(unary);
@@ -76,17 +78,17 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
 
     for (const auto parameter : parameters)
     {
-        const auto pi = static_cast<ygg::uint_t>(parameter);
+        const auto pi = parameter.value;
         unary_dep.set(pi);
     }
 
     for (ygg::uint_t i = 0; i < parameters.size(); ++i)
     {
-        const auto pi = static_cast<ygg::uint_t>(parameters[i]);
+        const auto pi = parameters[i].value;
 
         for (ygg::uint_t j = i + 1; j < parameters.size(); ++j)
         {
-            const auto pj = static_cast<ygg::uint_t>(parameters[j]);
+            const auto pj = parameters[j].value;
 
             binary_dep.set(binary.get_index(pi, pj));
             binary_dep.set(binary.get_index(pj, pi));

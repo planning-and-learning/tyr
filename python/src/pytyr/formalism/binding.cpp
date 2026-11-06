@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 #include <tyr/formalism/binding_data.hpp>
@@ -31,56 +32,56 @@ template<typename Relation>
 void bind_binding_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<RelationBinding<Relation>>;
+    using V = urd::data<RelationBinding<Relation>>;
     auto cls = nb::class_<V>(m, name)
-                   .def(nb::init<ygg::View<ygg::Index<Relation>, planning::Repository>, const planning::ObjectViewList&>(), "relation"_a, "objects"_a)
-                   .def(nb::init<ygg::View<ygg::Index<Relation>, datalog::Repository>, const datalog::ObjectViewList&>(), "relation"_a, "objects"_a);
+                   .def(urd::python::init_from_views<urd::view<Relation, planning::Repository>, const planning::ObjectViewList&>(), "relation"_a, "objects"_a)
+                   .def(urd::python::init_from_views<urd::view<Relation, datalog::Repository>, const datalog::ObjectViewList&>(), "relation"_a, "objects"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_binding(nb::module_& m)
 {
     {
-        using V = ygg::Index<RelationBinding<Predicate<StaticTag>>>;
+        using V = ygg::formalism::RelationBindingIndex<Predicate<StaticTag>, ::tyr::formalism::ObjectTag>;
         auto cls = nb::class_<V>(m, "StaticPredicateBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
-        using V = ygg::Index<RelationBinding<Predicate<FluentTag>>>;
+        using V = ygg::formalism::RelationBindingIndex<Predicate<FluentTag>, ::tyr::formalism::ObjectTag>;
         auto cls = nb::class_<V>(m, "FluentPredicateBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
-        using V = ygg::Index<RelationBinding<Function<StaticTag>>>;
+        using V = ygg::formalism::RelationBindingIndex<Function<StaticTag>, ::tyr::formalism::ObjectTag>;
         auto cls = nb::class_<V>(m, "StaticFunctionBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
-        using V = ygg::Index<RelationBinding<Function<FluentTag>>>;
+        using V = ygg::formalism::RelationBindingIndex<Function<FluentTag>, ::tyr::formalism::ObjectTag>;
         auto cls = nb::class_<V>(m, "FluentFunctionBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
-        using V = ygg::Index<RelationBinding<Function<AuxiliaryTag>>>;
+        using V = ygg::formalism::RelationBindingIndex<Function<AuxiliaryTag>, ::tyr::formalism::ObjectTag>;
         auto cls = nb::class_<V>(m, "AuxiliaryFunctionBindingIndex").def_ro("relation_index", &V::relation).def_ro("row_index", &V::row);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_binding_data<Predicate<StaticTag>>(m, "StaticPredicateBindingData");

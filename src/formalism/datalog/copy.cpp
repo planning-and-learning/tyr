@@ -54,8 +54,8 @@ template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> copy(FunctionTe
 template std::pair<FunctionTermValueView<GroundTag, StaticTag>, bool> copy(FunctionTermValueView<GroundTag, StaticTag> element, CopyContext& context);
 template std::pair<FunctionTermValueView<GroundTag, FluentTag>, bool> copy(FunctionTermValueView<GroundTag, FluentTag> element, CopyContext& context);
 
-template std::pair<UnaryOperatorView<LiftedTag>, bool> copy(UnaryOperatorView<LiftedTag> element, CopyContext& context);
-template std::pair<UnaryOperatorView<GroundTag>, bool> copy(UnaryOperatorView<GroundTag> element, CopyContext& context);
+template std::pair<UnaryOperatorView<LiftedTag, ArithmeticOperatorKind>, bool> copy(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> element, CopyContext& context);
+template std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> copy(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> element, CopyContext& context);
 
 template std::pair<BinaryOperatorView<LiftedTag, BooleanOperatorKind>, bool> copy(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
                                                                                   CopyContext& context);
@@ -66,17 +66,13 @@ template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> cop
 template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> copy(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> element,
                                                                                      CopyContext& context);
 
-template std::pair<MultiOperatorView<LiftedTag>, bool> copy(MultiOperatorView<LiftedTag> element, CopyContext& context);
-template std::pair<MultiOperatorView<GroundTag>, bool> copy(MultiOperatorView<GroundTag> element, CopyContext& context);
+template std::pair<MultiOperatorView<LiftedTag, ArithmeticOperatorKind>, bool> copy(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element, CopyContext& context);
+template std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> copy(MultiOperatorView<GroundTag, ArithmeticOperatorKind> element, CopyContext& context);
 
-template ArithmeticOperatorView<LiftedTag> copy(ArithmeticOperatorView<LiftedTag> element, CopyContext& context);
-template ArithmeticOperatorView<GroundTag> copy(ArithmeticOperatorView<GroundTag> element, CopyContext& context);
 
 template std::pair<NumericEffectView<LiftedTag, FluentTag>, bool> copy(NumericEffectView<LiftedTag, FluentTag> element, CopyContext& context);
-template NumericEffectOperatorView<LiftedTag, FluentTag> copy(NumericEffectOperatorView<LiftedTag, FluentTag> element, CopyContext& context);
 
 template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> copy(NumericEffectView<GroundTag, FluentTag> element, CopyContext& context);
-template NumericEffectOperatorView<GroundTag, FluentTag> copy(NumericEffectOperatorView<GroundTag, FluentTag> element, CopyContext& context);
 
 template std::pair<RuleView<LiftedTag, PredicateTag>, bool> copy(RuleView<LiftedTag, PredicateTag> element, CopyContext& context);
 template std::pair<RuleView<LiftedTag, FunctionTag>, bool> copy(RuleView<LiftedTag, FunctionTag> element, CopyContext& context);
@@ -87,8 +83,8 @@ template std::pair<RuleBindingView<FunctionTag>, bool> copy(RuleBindingView<Func
 template std::pair<RuleView<GroundTag, PredicateTag>, bool> copy(RuleView<GroundTag, PredicateTag> element, CopyContext& context);
 template std::pair<RuleView<GroundTag, FunctionTag>, bool> copy(RuleView<GroundTag, FunctionTag> element, CopyContext& context);
 
-template void copy_except_rules(ProgramView<LiftedTag> element, ygg::Data<Program<LiftedTag>>& result, CopyContext& context);
-template void copy_except_rules(ProgramView<GroundTag> element, ygg::Data<Program<GroundTag>>& result, CopyContext& context);
+template void copy_except_rules(ProgramView<LiftedTag> element, urd::data<Program<LiftedTag>>& result, CopyContext& context);
+template void copy_except_rules(ProgramView<GroundTag> element, urd::data<Program<GroundTag>>& result, CopyContext& context);
 }
 
 #endif

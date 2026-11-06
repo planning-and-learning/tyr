@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism::datalog
@@ -28,26 +29,26 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
 {
     using namespace nb::literals;
     using Tag = ConjunctiveEffect<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        cls.def(nb::init<const NumericEffectOperatorViewList<T, FluentTag>&>(), "numeric_effects"_a);
-        cls.def(nb::init<ygg::DataList<NumericEffectOperator<T, FluentTag>>>(), "numeric_effects"_a);
+        cls.def(urd::python::init_from_views<const NumericEffectOperatorViewList<T, FluentTag>&>(), "numeric_effects"_a);
+        cls.def(nb::init<urd::flat_vector<urd::index<NumericEffect<T, FluentTag>>>>(), "numeric_effects"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = ConjunctiveEffectView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         cls.def("get_numeric_effects", &V::get_numeric_effects);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

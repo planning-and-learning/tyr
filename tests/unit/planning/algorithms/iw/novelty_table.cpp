@@ -16,6 +16,8 @@
  */
 
 #include <array>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <atomic>
 #include <gtest/gtest.h>
 #include <stdexcept>
@@ -67,36 +69,34 @@ TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableGrowsWithoutRemapping)
     const auto tuple_0_1_2 = std::array<ygg::uint_t, 3> { 0, 1, 2 };
     const auto tuple_10_20_30 = std::array<ygg::uint_t, 3> { 10, 20, 30 };
 
-    EXPECT_EQ(table.get_num_bits(1), 0);
-    EXPECT_EQ(table.get_num_bits(2), 0);
-    EXPECT_EQ(table.get_num_bits(3), 0);
 
+    EXPECT_FALSE(table.test(atom_0));
     EXPECT_TRUE(table.insert(atom_0));
-    EXPECT_EQ(table.get_num_bits(1), planning::iw::rank_tuple<3>(atom_0) + 1);
+    EXPECT_TRUE(table.test(atom_0));
     EXPECT_FALSE(table.insert(atom_0));
     EXPECT_TRUE(table.test(atom_0));
 
     EXPECT_TRUE(table.insert(tuple_0_1));
-    EXPECT_EQ(table.get_num_bits(2), planning::iw::rank_tuple<3>(tuple_0_1) + 1);
+    EXPECT_TRUE(table.test(tuple_0_1));
     EXPECT_FALSE(table.insert(tuple_0_1));
 
     EXPECT_TRUE(table.insert(tuple_1_2));
-    EXPECT_EQ(table.get_num_bits(2), planning::iw::rank_tuple<3>(tuple_1_2) + 1);
+    EXPECT_TRUE(table.test(tuple_1_2));
     EXPECT_FALSE(table.insert(tuple_1_2));
 
     EXPECT_TRUE(table.insert(tuple_0_1_2));
-    EXPECT_EQ(table.get_num_bits(3), planning::iw::rank_tuple<3>(tuple_0_1_2) + 1);
+    EXPECT_TRUE(table.test(tuple_0_1_2));
     EXPECT_FALSE(table.insert(tuple_0_1_2));
 
     EXPECT_TRUE(table.insert(atom_100));
-    EXPECT_EQ(table.get_num_bits(1), planning::iw::rank_tuple<3>(atom_100) + 1);
+    EXPECT_TRUE(table.test(atom_100));
     EXPECT_FALSE(table.insert(atom_0));
     EXPECT_FALSE(table.insert(tuple_0_1));
     EXPECT_FALSE(table.insert(tuple_1_2));
     EXPECT_FALSE(table.insert(tuple_0_1_2));
 
     EXPECT_TRUE(table.insert(tuple_10_20_30));
-    EXPECT_EQ(table.get_num_bits(3), planning::iw::rank_tuple<3>(tuple_10_20_30) + 1);
+    EXPECT_TRUE(table.test(tuple_10_20_30));
     EXPECT_FALSE(table.insert(tuple_10_20_30));
     EXPECT_FALSE(table.insert(tuple_0_1_2));
 }
@@ -137,7 +137,7 @@ TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableClaimsTupleOnceConcurrently)
     auto table = planning::iw::DynamicNoveltyTable<2>();
     const auto tuple = std::array<ygg::uint_t, 2> { 1, 3 };
     auto num_novel = std::atomic<size_t> { 0 };
-    auto threads = std::vector<std::thread> {};
+    auto threads = urd::Store<urd::sequence<std::thread>> {};
     for (auto i = size_t { 0 }; i < 8; ++i)
     {
         threads.emplace_back([worker = table.make_worker(), tuple, &num_novel]() mutable
@@ -153,11 +153,11 @@ TEST(TyrTests, TyrPlanningIwForEachTupleGeneratesCanonicalTuplesUpToArity)
 {
     const auto atoms = planning::iw::AtomIndexList { 1, 3, 5 };
     auto tuple = std::array<ygg::uint_t, 2> {};
-    auto generated = std::vector<planning::iw::AtomIndexList> {};
+    auto generated = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {};
 
     planning::iw::for_each_tuple<2>(atoms, tuple, [&](std::span<const ygg::uint_t> item) { generated.emplace_back(item.begin(), item.end()); });
 
-    const auto expected = std::vector<planning::iw::AtomIndexList> {
+    const auto expected = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {
         { 1 }, { 3 }, { 5 }, { 1, 3 }, { 1, 5 }, { 3, 5 },
     };
 
@@ -168,11 +168,11 @@ TEST(TyrTests, TyrPlanningIwForEachTupleRespectsRuntimeArity)
 {
     const auto atoms = planning::iw::AtomIndexList { 1, 3, 5 };
     auto tuple = std::array<ygg::uint_t, 3> {};
-    auto generated = std::vector<planning::iw::AtomIndexList> {};
+    auto generated = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {};
 
     planning::iw::for_each_tuple<3>(atoms, 2, tuple, [&](std::span<const ygg::uint_t> item) { generated.emplace_back(item.begin(), item.end()); });
 
-    const auto expected = std::vector<planning::iw::AtomIndexList> {
+    const auto expected = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {
         { 1 }, { 3 }, { 5 }, { 1, 3 }, { 1, 5 }, { 3, 5 },
     };
 
@@ -186,7 +186,7 @@ TEST(TyrTests, TyrPlanningIwForEachTupleWithAddedAtomsGeneratesOnlyTuplesContain
     auto added_tuple = std::array<ygg::uint_t, 2> {};
     auto kept_tuple = std::array<ygg::uint_t, 2> {};
     auto tuple = std::array<ygg::uint_t, 2> {};
-    auto generated = std::vector<planning::iw::AtomIndexList> {};
+    auto generated = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {};
 
     planning::iw::for_each_tuple_with_added_atoms<2>(added,
                                                      kept,
@@ -195,7 +195,7 @@ TEST(TyrTests, TyrPlanningIwForEachTupleWithAddedAtomsGeneratesOnlyTuplesContain
                                                      tuple,
                                                      [&](std::span<const ygg::uint_t> item) { generated.emplace_back(item.begin(), item.end()); });
 
-    const auto expected = std::vector<planning::iw::AtomIndexList> {
+    const auto expected = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {
         { 2 }, { 5 }, { 1, 2 }, { 2, 4 }, { 1, 5 }, { 4, 5 }, { 2, 5 },
     };
 
@@ -209,7 +209,7 @@ TEST(TyrTests, TyrPlanningIwForEachTupleWithAddedAtomsRespectsRuntimeArity)
     auto added_tuple = std::array<ygg::uint_t, 3> {};
     auto kept_tuple = std::array<ygg::uint_t, 3> {};
     auto tuple = std::array<ygg::uint_t, 3> {};
-    auto generated = std::vector<planning::iw::AtomIndexList> {};
+    auto generated = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {};
 
     planning::iw::for_each_tuple_with_added_atoms<3>(added,
                                                      kept,
@@ -219,7 +219,7 @@ TEST(TyrTests, TyrPlanningIwForEachTupleWithAddedAtomsRespectsRuntimeArity)
                                                      tuple,
                                                      [&](std::span<const ygg::uint_t> item) { generated.emplace_back(item.begin(), item.end()); });
 
-    const auto expected = std::vector<planning::iw::AtomIndexList> {
+    const auto expected = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {
         { 2 }, { 5 }, { 1, 2 }, { 2, 4 }, { 1, 5 }, { 4, 5 }, { 2, 5 },
     };
 

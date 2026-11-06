@@ -49,57 +49,49 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
 namespace tyr::formalism::datalog
 {
 
-std::string to_string(const ygg::Data<UnaryOperator<LiftedTag>>& value);
-std::string to_string(const ygg::Data<UnaryOperator<GroundTag>>& value);
-std::string to_string(const ygg::Data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const ygg::Data<BinaryOperator<LiftedTag, BooleanOperatorKind>>& value);
-std::string to_string(const ygg::Data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const ygg::Data<BinaryOperator<GroundTag, BooleanOperatorKind>>& value);
-std::string to_string(const ygg::Data<MultiOperator<LiftedTag>>& value);
-std::string to_string(const ygg::Data<MultiOperator<GroundTag>>& value);
-std::string to_string(const ygg::Data<ArithmeticOperator<LiftedTag>>& value);
-std::string to_string(const ygg::Data<ArithmeticOperator<GroundTag>>& value);
-std::string to_string(const ygg::Data<BooleanOperator<LiftedTag>>& value);
-std::string to_string(const ygg::Data<BooleanOperator<GroundTag>>& value);
+std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
+std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
+std::string to_string(const urd::data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
+std::string to_string(const urd::data<BinaryOperator<LiftedTag, BooleanOperatorKind>>& value);
+std::string to_string(const urd::data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
+std::string to_string(const urd::data<BinaryOperator<GroundTag, BooleanOperatorKind>>& value);
+std::string to_string(const urd::data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>& value);
+std::string to_string(const urd::data<MultiOperator<GroundTag, ArithmeticOperatorKind>>& value);
 
-std::string to_string(const ygg::Data<Atom<LiftedTag, StaticTag>>& value);
-std::string to_string(const ygg::Data<Atom<LiftedTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<Literal<LiftedTag, StaticTag>>& value);
-std::string to_string(const ygg::Data<Literal<LiftedTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<Atom<GroundTag, StaticTag>>& value);
-std::string to_string(const ygg::Data<Atom<GroundTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<Literal<GroundTag, StaticTag>>& value);
-std::string to_string(const ygg::Data<Literal<GroundTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<FunctionTerm<LiftedTag, StaticTag>>& value);
-std::string to_string(const ygg::Data<FunctionTerm<LiftedTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<FunctionTerm<LiftedTag, AuxiliaryTag>>& value);
-std::string to_string(const ygg::Data<FunctionTerm<GroundTag, StaticTag>>& value);
-std::string to_string(const ygg::Data<FunctionTerm<GroundTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<FunctionTerm<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const ygg::Data<FunctionTermValue<GroundTag, StaticTag>>& value);
-std::string to_string(const ygg::Data<FunctionTermValue<GroundTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<FunctionTermValue<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const ygg::Data<NumericEffect<LiftedTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<NumericEffectOperator<LiftedTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<NumericEffect<GroundTag, FluentTag>>& value);
-std::string to_string(const ygg::Data<NumericEffectOperator<GroundTag, FluentTag>>& value);
+std::string to_string(const urd::data<Atom<LiftedTag, StaticTag>>& value);
+std::string to_string(const urd::data<Atom<LiftedTag, FluentTag>>& value);
+std::string to_string(const urd::data<Literal<LiftedTag, StaticTag>>& value);
+std::string to_string(const urd::data<Literal<LiftedTag, FluentTag>>& value);
+std::string to_string(const urd::data<Atom<GroundTag, StaticTag>>& value);
+std::string to_string(const urd::data<Atom<GroundTag, FluentTag>>& value);
+std::string to_string(const urd::data<Literal<GroundTag, StaticTag>>& value);
+std::string to_string(const urd::data<Literal<GroundTag, FluentTag>>& value);
+std::string to_string(const urd::data<FunctionTerm<LiftedTag, StaticTag>>& value);
+std::string to_string(const urd::data<FunctionTerm<LiftedTag, FluentTag>>& value);
+std::string to_string(const urd::data<FunctionTerm<LiftedTag, AuxiliaryTag>>& value);
+std::string to_string(const urd::data<FunctionTerm<GroundTag, StaticTag>>& value);
+std::string to_string(const urd::data<FunctionTerm<GroundTag, FluentTag>>& value);
+std::string to_string(const urd::data<FunctionTerm<GroundTag, AuxiliaryTag>>& value);
+std::string to_string(const urd::data<FunctionTermValue<GroundTag, StaticTag>>& value);
+std::string to_string(const urd::data<FunctionTermValue<GroundTag, FluentTag>>& value);
+std::string to_string(const urd::data<FunctionTermValue<GroundTag, AuxiliaryTag>>& value);
+std::string to_string(const urd::data<NumericEffect<LiftedTag, FluentTag>>& value);
+std::string to_string(const urd::data<NumericEffect<GroundTag, FluentTag>>& value);
 
-std::string to_string(const ygg::Data<FunctionExpression<LiftedTag>>& value);
-std::string to_string(const ygg::Data<FunctionExpression<GroundTag>>& value);
-std::string to_string(const ygg::Data<ConjunctiveCondition<LiftedTag>>& value);
-std::string to_string(const ygg::Data<ConjunctiveEffect<LiftedTag>>& value);
-std::string to_string(const ygg::Data<ConditionalEffect<LiftedTag>>& value);
-std::string to_string(const ygg::Data<Rule<LiftedTag, PredicateTag>>& value);
-std::string to_string(const ygg::Data<Rule<LiftedTag, FunctionTag>>& value);
-std::string to_string(const ygg::Data<ConjunctiveCondition<GroundTag>>& value);
-std::string to_string(const ygg::Data<ConjunctiveEffect<GroundTag>>& value);
-std::string to_string(const ygg::Data<ConditionalEffect<GroundTag>>& value);
-std::string to_string(const ygg::Data<Rule<GroundTag, PredicateTag>>& value);
-std::string to_string(const ygg::Data<Rule<GroundTag, FunctionTag>>& value);
-std::string to_string(const ygg::Data<Program<LiftedTag>>& value);
-std::string to_string(const ygg::Data<Program<GroundTag>>& value);
-std::string to_string(const ygg::Data<RelationBinding<Rule<LiftedTag, PredicateTag>>>& value);
-std::string to_string(const ygg::Data<RelationBinding<Rule<LiftedTag, FunctionTag>>>& value);
+std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value);
+std::string to_string(const urd::data<ConjunctiveEffect<LiftedTag>>& value);
+std::string to_string(const urd::data<ConditionalEffect<LiftedTag>>& value);
+std::string to_string(const urd::data<Rule<LiftedTag, PredicateTag>>& value);
+std::string to_string(const urd::data<Rule<LiftedTag, FunctionTag>>& value);
+std::string to_string(const urd::data<ConjunctiveCondition<GroundTag>>& value);
+std::string to_string(const urd::data<ConjunctiveEffect<GroundTag>>& value);
+std::string to_string(const urd::data<ConditionalEffect<GroundTag>>& value);
+std::string to_string(const urd::data<Rule<GroundTag, PredicateTag>>& value);
+std::string to_string(const urd::data<Rule<GroundTag, FunctionTag>>& value);
+std::string to_string(const urd::data<Program<LiftedTag>>& value);
+std::string to_string(const urd::data<Program<GroundTag>>& value);
+std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, PredicateTag>>>& value);
+std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, FunctionTag>>>& value);
 
 std::string to_string(VariableView value);
 std::string to_string(ObjectView value);
@@ -117,18 +109,14 @@ std::string to_string(FunctionBindingView<AuxiliaryTag> value);
 std::string to_string(RuleBindingView<PredicateTag> value);
 std::string to_string(RuleBindingView<FunctionTag> value);
 
-std::string to_string(UnaryOperatorView<LiftedTag> value);
-std::string to_string(UnaryOperatorView<GroundTag> value);
+std::string to_string(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value);
+std::string to_string(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value);
 std::string to_string(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value);
 std::string to_string(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value);
 std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value);
 std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value);
-std::string to_string(MultiOperatorView<LiftedTag> value);
-std::string to_string(MultiOperatorView<GroundTag> value);
-std::string to_string(ArithmeticOperatorView<LiftedTag> value);
-std::string to_string(ArithmeticOperatorView<GroundTag> value);
-std::string to_string(BooleanOperatorView<LiftedTag> value);
-std::string to_string(BooleanOperatorView<GroundTag> value);
+std::string to_string(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value);
+std::string to_string(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value);
 
 std::string to_string(AtomView<LiftedTag, StaticTag> value);
 std::string to_string(AtomView<LiftedTag, FluentTag> value);
@@ -148,12 +136,8 @@ std::string to_string(FunctionTermValueView<GroundTag, StaticTag> value);
 std::string to_string(FunctionTermValueView<GroundTag, FluentTag> value);
 std::string to_string(FunctionTermValueView<GroundTag, AuxiliaryTag> value);
 std::string to_string(NumericEffectView<LiftedTag, FluentTag> value);
-std::string to_string(NumericEffectOperatorView<LiftedTag, FluentTag> value);
 std::string to_string(NumericEffectView<GroundTag, FluentTag> value);
-std::string to_string(NumericEffectOperatorView<GroundTag, FluentTag> value);
 
-std::string to_string(FunctionExpressionView<LiftedTag> value);
-std::string to_string(FunctionExpressionView<GroundTag> value);
 std::string to_string(ConjunctiveConditionView<LiftedTag> value);
 std::string to_string(ConjunctiveEffectView<LiftedTag> value);
 std::string to_string(ConditionalEffectView<LiftedTag> value);
@@ -172,22 +156,12 @@ std::string to_string(ProgramView<GroundTag> value);
 namespace fmt
 {
 
-template<typename T>
-struct formatter<ygg::View<ygg::Index<T>, tyr::formalism::datalog::Repository>, char>
+/// Every view through the repository prints as its to_string: urd's (of an index or a held record), and binding views.
+template<template<typename, typename, typename...> typename V, typename H, typename... Rest>
+    requires requires(const V<H, tyr::formalism::datalog::Repository, Rest...>& value) { tyr::formalism::datalog::to_string(value); }
+struct formatter<V<H, tyr::formalism::datalog::Repository, Rest...>, char>
 {
-    using View = ygg::View<ygg::Index<T>, tyr::formalism::datalog::Repository>;
-
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const View& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
-};
-
-template<typename T>
-struct formatter<ygg::View<ygg::Data<T>, tyr::formalism::datalog::Repository>, char>
-{
-    using View = ygg::View<ygg::Data<T>, tyr::formalism::datalog::Repository>;
+    using View = V<H, tyr::formalism::datalog::Repository, Rest...>;
 
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 

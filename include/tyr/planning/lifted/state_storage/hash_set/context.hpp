@@ -19,12 +19,14 @@
 #define TYR_PLANNING_LIFTED_STATE_STORAGE_HASH_SET_CONTEXT_HPP_
 
 #include "tyr/planning/declarations.hpp"
+#include <urd/repr/pools/pools.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <concepts>
 #include <vector>
-#include <yggdrasil/containers/raw_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -37,8 +39,8 @@ namespace tyr::planning
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, HashSet, ThreadSafe>
 {
-    using UintVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::uint_t, hash_set::first_segment_bytes, ThreadSafe>;
-    using FloatVectorSet = ygg::RawVectorSet<ygg::uint_t, ygg::float_t, hash_set::first_segment_bytes, ThreadSafe>;
+    using UintVectorSet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::uint_t>, urd::frozen>>, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using FloatVectorSet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
     UintVectorSet uint_vec_set;
     FloatVectorSet float_vec_set;
@@ -46,8 +48,8 @@ struct StateStorageContext<LiftedTag, HashSet, ThreadSafe>
     [[nodiscard]] size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
-        bytes += uint_vec_set.memory_usage();
-        bytes += float_vec_set.memory_usage();
+        bytes += urd::memory_usage(uint_vec_set);
+        bytes += urd::memory_usage(float_vec_set);
         return bytes;
     }
 };

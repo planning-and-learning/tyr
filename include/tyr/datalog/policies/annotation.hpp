@@ -23,9 +23,13 @@
 
 #include <concepts>
 #include <optional>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 
 namespace tyr::datalog
 {
@@ -138,7 +142,7 @@ class MinCostAnnotationWithAchieversPolicy : public MinCostAnnotationPolicy<Aggr
     using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
 
 public:
-    using Achievers = std::vector<PredicateWitness>;
+    using Achievers = urd::Store<urd::sequence<PredicateWitness>>;
 
     static constexpr bool records_propositional_achievers = true;
 
@@ -156,7 +160,7 @@ private:
     struct IndexedAchievers
     {
         Achievers achievers;
-        ygg::UnorderedMap<RuleBinding, size_t> indices;
+        urd::Store<urd::map<RuleBinding, size_t>> indices;
     };
 
     DenseRelationMap<formalism::PredicateTag, IndexedAchievers> m_achievers;

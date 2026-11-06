@@ -16,6 +16,7 @@
  */
 
 #include "module.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include "../planning.hpp"
 #include "astar_eager/module.hpp"
@@ -51,10 +52,10 @@ void bind_ground_module_definitions(nb::module_& m)
                     .def("get_fdr_context", &Task<GroundTag>::get_fdr_context, nb::rv_policy::reference_internal);
     ygg::add_print(task);
 
-    bind_index<ygg::Index<State<GroundTag>>>(m, "StateIndex");
+    bind_index<urd::index<State<GroundTag>>>(m, "StateIndex");
     bind_packed_state<GroundTag>(m, "PackedState");
     bind_state<GroundTag>(m, "State");
-    bind_state_builder<GroundTag>(m, "StateBuilder");
+    bind_state_data<GroundTag>(m, "StateBuilder");
     bind_node<GroundTag>(m, "Node");
     bind_packed_node<GroundTag>(m, "PackedNode");
     bind_labeled_node<GroundTag>(m, "LabeledNode");

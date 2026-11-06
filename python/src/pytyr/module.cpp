@@ -16,6 +16,7 @@
  */
 
 #include "module.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include "datalog/module.hpp"
 #include "formalism/module.hpp"

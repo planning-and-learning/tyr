@@ -16,6 +16,7 @@
  */
 
 #include "pytyr/module.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include <nanobind/nanobind.h>
 

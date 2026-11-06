@@ -22,7 +22,6 @@
 #include "tyr/analysis/analysis.hpp"
 
 // Cista
-#include <yggdrasil/buffer/buffer.hpp>
 
 // Formalism
 #include "tyr/formalism/formalism.hpp"

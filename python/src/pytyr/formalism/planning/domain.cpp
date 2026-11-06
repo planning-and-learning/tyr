@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism::planning
@@ -24,13 +25,13 @@ namespace tyr::formalism::planning
 void bind_domain(nb::module_& m, RepositoryBinding& repository)
 {
     using namespace nb::literals;
-    ygg::bind_index<ygg::Index<Domain>>(m, "DomainIndex");
+    urd::python::bind_index<urd::index<Domain>>(m, "DomainIndex");
 
     {
-        using V = ygg::Data<Domain>;
+        using V = urd::data<Domain>;
 
         auto cls = nb::class_<V>(m, "DomainData")  //
-                       .def(nb::init<const std::string&,
+                       .def(urd::python::init_from_views<const std::string&,
                                      const PredicateViewList<StaticTag>&,
                                      const PredicateViewList<FluentTag>&,
                                      const PredicateViewList<DerivedTag>&,
@@ -51,15 +52,15 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
                             "actions"_a,
                             "axioms"_a);
         cls.def(nb::init<::cista::offset::string,
-                         ygg::IndexList<Predicate<StaticTag>>,
-                         ygg::IndexList<Predicate<FluentTag>>,
-                         ygg::IndexList<Predicate<DerivedTag>>,
-                         ygg::IndexList<Function<StaticTag>>,
-                         ygg::IndexList<Function<FluentTag>>,
-                         ::cista::optional<ygg::Index<Function<AuxiliaryTag>>>,
-                         ygg::IndexList<Object>,
-                         ygg::IndexList<Action<LiftedTag>>,
-                         ygg::IndexList<Axiom<LiftedTag>>>(),
+                         urd::flat_vector<urd::index<Predicate<StaticTag>>>,
+                         urd::flat_vector<urd::index<Predicate<FluentTag>>>,
+                         urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
+                         urd::flat_vector<urd::index<Function<StaticTag>>>,
+                         urd::flat_vector<urd::index<Function<FluentTag>>>,
+                         ::cista::optional<urd::index<Function<AuxiliaryTag>>>,
+                         urd::flat_vector<urd::index<Object>>,
+                         urd::flat_vector<urd::index<Action<LiftedTag>>>,
+                         urd::flat_vector<urd::index<Axiom<LiftedTag>>>>(),
                 "name"_a,
                 "static_predicates"_a,
                 "fluent_predicates"_a,
@@ -71,15 +72,15 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
                 "actions"_a,
                 "axioms"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = DomainView;
 
         auto cls = nb::class_<V>(m, "Domain")  //
-                       .def("get_index", &V::get_index)
+                       .def("get_index", &V::index)
                        .def("get_name", &V::get_name)
                        .def("get_static_predicates", &V::get_predicates<StaticTag>)
                        .def("get_fluent_predicates", &V::get_predicates<FluentTag>)
@@ -91,8 +92,8 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
                        .def("get_actions", &V::get_actions)
                        .def("get_axioms", &V::get_axioms);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Domain>(repository);

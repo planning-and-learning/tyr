@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pypddl
 import pytest
+import pyurd
 import pyyggdrasil
 
 import pytyr
@@ -26,11 +27,13 @@ def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(t
     pytyr_prefix = Path(pytyr.native_prefix())
     pypddl_prefix = Path(pypddl.native_prefix())
     pyyggdrasil_prefix = Path(pyyggdrasil.native_prefix())
+    pyurd_prefix = Path(pyurd.native_prefix())
     tyr_library_dir = pytyr_prefix / "lib"
     dependency_library_dirs = [
         tyr_library_dir,
         pypddl_prefix / "lib",
         pyyggdrasil_prefix / "lib",
+        pyurd_prefix / "lib",
     ]
     tyr_core_libraries = list(tyr_library_dir.glob("libtyr_core.*"))
     if not tyr_core_libraries:
@@ -50,7 +53,7 @@ def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(t
     env = os.environ.copy()
     env["CMAKE_ARGS"] = " ".join(
         [
-            f"-DCMAKE_PREFIX_PATH={pytyr_prefix};{pypddl_prefix};{pyyggdrasil_prefix}",
+            f"-DCMAKE_PREFIX_PATH={pytyr_prefix};{pypddl_prefix};{pyyggdrasil_prefix};{pyurd_prefix}",
             f"-Dtyr_DIR={tyr_cmake_dir}",
             f"-DPython_EXECUTABLE={sys.executable}",
             f"-DDOWNSTREAM_RUNTIME_LIBRARY_DIRS={';'.join(str(path) for path in dependency_library_dirs)}",
@@ -66,7 +69,7 @@ def test_downstream_python_binding_imports_public_pytyr_api_and_links_tyr_core(t
             str(project_dir),
             "-B",
             str(build_dir),
-            f"-DCMAKE_PREFIX_PATH={pytyr_prefix};{pypddl_prefix};{pyyggdrasil_prefix}",
+            f"-DCMAKE_PREFIX_PATH={pytyr_prefix};{pypddl_prefix};{pyyggdrasil_prefix};{pyurd_prefix}",
             f"-Dtyr_DIR={tyr_cmake_dir}",
             f"-DPython_EXECUTABLE={sys.executable}",
             f"-DDOWNSTREAM_RUNTIME_LIBRARY_DIRS={';'.join(str(path) for path in dependency_library_dirs)}",

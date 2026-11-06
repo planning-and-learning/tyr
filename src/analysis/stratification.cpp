@@ -16,6 +16,8 @@
  */
 
 #include "tyr/analysis/stratification.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "stratification_utils.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
@@ -35,9 +37,9 @@ struct RelationVertexMap
     size_t num_predicates;
     size_t num_functions;
 
-    [[nodiscard]] ygg::uint_t get_vertex(ygg::Index<formalism::Predicate<formalism::FluentTag>> predicate) const { return static_cast<ygg::uint_t>(predicate); }
-    [[nodiscard]] ygg::uint_t get_vertex(ygg::Index<formalism::Function<formalism::FluentTag>> function) const
-    { return static_cast<ygg::uint_t>(num_predicates + static_cast<ygg::uint_t>(function)); }
+    [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) const { return static_cast<ygg::uint_t>(predicate.value); }
+    [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Function<formalism::FluentTag>> function) const
+    { return static_cast<ygg::uint_t>(num_predicates + static_cast<ygg::uint_t>(function.value)); }
     [[nodiscard]] size_t size() const { return num_predicates + num_functions; }
 };
 
@@ -49,7 +51,7 @@ void add_body_dependencies(formalism::datalog::RuleView<LiftedTag, R> rule,
 {
     for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
     {
-        const auto body_vertex = vertices.get_vertex(literal.get_atom().get_predicate().get_index());
+        const auto body_vertex = vertices.get_vertex(literal.get_atom().get_predicate().index());
 
         stratification::EdgeProps ep;
         ep.kind = literal.get_polarity() ? stratification::EdgeKind::NonStrict : stratification::EdgeKind::Strict;
@@ -60,16 +62,16 @@ void add_body_dependencies(formalism::datalog::RuleView<LiftedTag, R> rule,
     {
         auto ep = stratification::EdgeProps {};
         ep.kind = stratification::EdgeKind::NonStrict;
-        boost::add_edge(vertices.get_vertex(term.get_function().get_index()), head_vertex, ep, graph);
+        boost::add_edge(vertices.get_vertex(term.get_function().index()), head_vertex, ep, graph);
     }
 }
 
 ygg::uint_t get_head_vertex(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
-{ return vertices.get_vertex(head.get_predicate().get_index()); }
+{ return vertices.get_vertex(head.get_predicate().index()); }
 
 ygg::uint_t get_head_vertex(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
 {
-    return visit([&](auto&& effect) { return vertices.get_vertex(effect.get_fterm().get_function().get_index()); }, head.get_variant());
+    return vertices.get_vertex(head.get_fterm().get_function().index());
 }
 
 template<formalism::RelationKind R>
@@ -82,8 +84,8 @@ void add_rule_dependencies(formalism::datalog::ProgramView<LiftedTag> program, c
 template<formalism::RelationKind R>
 void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
                              const RelationVertexMap& vertices,
-                             const std::vector<ygg::uint_t>& relation_stratum,
-                             std::vector<RuleStratum>& buckets)
+                             const urd::Store<urd::sequence<ygg::uint_t>>& relation_stratum,
+                             urd::Store<urd::sequence<RuleStratum>>& buckets)
 {
     for (const auto rule : program.get_rules<R>())
     {
@@ -97,7 +99,7 @@ void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
                                               stratum = head_stratum;
                                           });
         assert(stratum);
-        buckets[*stratum].template get<R>().push_back(rule.get_index());
+        buckets[*stratum].template get<R>().push_back(rule.index());
     }
 }
 
@@ -134,7 +136,7 @@ RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag
     const auto comp_stratum = stratification::compute_component_strata(dag);
 
     // 5) Assign each fluent predicate/function relation to a stratum.
-    auto relation_stratum = std::vector<ygg::uint_t>(vertices.size(), 0);
+    auto relation_stratum = urd::Store<urd::sequence<ygg::uint_t>>(vertices.size(), 0);
     for (ygg::uint_t i = 0; i < vertices.size(); ++i)
         relation_stratum[i] = comp_stratum[comp[i]];
 
@@ -143,7 +145,7 @@ RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag
     for (auto s : comp_stratum)
         max_s = std::max(max_s, s);
 
-    auto buckets = std::vector<RuleStratum>(max_s + 1);
+    auto buckets = urd::Store<urd::sequence<RuleStratum>>(max_s + 1);
     bucket_rules_by_stratum<formalism::PredicateTag>(program, vertices, relation_stratum, buckets);
     bucket_rules_by_stratum<formalism::FunctionTag>(program, vertices, relation_stratum, buckets);
 

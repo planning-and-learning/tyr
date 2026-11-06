@@ -21,122 +21,78 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/boolean_operator_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/constraint_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/generator_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp"
-#include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
 #include <utility>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
-template<typename Tag, ::tyr::planning::match_tree::Context<Tag> C>
-class View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C> : public ygg::DataViewBase<::tyr::planning::match_tree::Node<Tag>, C>
+template<typename Tag, typename V>
+struct view_mixin<::tyr::planning::match_tree::AtomSelectorNode<Tag>, V>
 {
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(const ygg::Data<::tyr::planning::match_tree::Node<Tag>>& handle, const C& context) noexcept :
-        ygg::DataViewBase<::tyr::planning::match_tree::Node<Tag>, C>(handle, context)
-    {
-    }
-
-    auto get_variant() const noexcept { return ygg::make_view(this->get_data().variant, this->get_context()); }
+    auto get_atom() const noexcept { return urd::resolve(self().data().atom, self().context().get_formalism_repository()); }
+    auto get_true_child() const noexcept { return self().template get<&urd::record_of<V>::true_child>(); }
+    auto get_false_child() const noexcept { return self().template get<&urd::record_of<V>::false_child>(); }
+    auto get_dontcare_child() const noexcept { return self().template get<&urd::record_of<V>::dontcare_child>(); }
 };
-}
 
-namespace ygg
+template<typename Tag, typename V>
+struct view_mixin<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, V>
 {
-template<typename Tag, ygg::formalism::SymbolContextFor<::tyr::planning::match_tree::AtomSelectorNode<Tag>> C>
-class View<ygg::Index<::tyr::planning::match_tree::AtomSelectorNode<Tag>>, C> : public ygg::IndexViewBase<::tyr::planning::match_tree::AtomSelectorNode<Tag>, C>
-{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::planning::match_tree::AtomSelectorNode<Tag>, C>(handle, context)
-    {
-    }
-
-    auto get_atom() const noexcept { return ygg::make_view(this->get_data().atom, this->get_context().get_formalism_repository()); }
-    auto get_true_child() const noexcept { return ygg::make_view(this->get_data().true_child, this->get_context()); }
-    auto get_false_child() const noexcept { return ygg::make_view(this->get_data().false_child, this->get_context()); }
-    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, this->get_context()); }
+    auto get_constraint() const noexcept { return urd::resolve(self().data().constraint, self().context().get_formalism_repository()); }
+    auto get_true_child() const noexcept { return self().template get<&urd::record_of<V>::true_child>(); }
+    auto get_dontcare_child() const noexcept { return self().template get<&urd::record_of<V>::dontcare_child>(); }
 };
-}
 
-namespace ygg
+template<typename Tag, typename V>
+struct view_mixin<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, V>
 {
-template<typename Tag, ygg::formalism::SymbolContextFor<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> C>
-class View<ygg::Index<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>, C> :
-    public ygg::IndexViewBase<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, C>
-{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, C>(handle, context)
-    {
-    }
-
-    auto get_constraint() const noexcept { return ygg::make_view(this->get_data().constraint, this->get_context().get_formalism_repository()); }
-    auto get_true_child() const noexcept { return ygg::make_view(this->get_data().true_child, this->get_context()); }
-    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, this->get_context()); }
+    auto get_elements() const noexcept { return urd::resolve(self().data().elements, self().context().get_formalism_repository()); }
 };
-}
 
-namespace ygg
+template<typename Tag, typename V>
+struct view_mixin<::tyr::planning::match_tree::VariableSelectorNode<Tag>, V>
 {
-template<typename Tag, ygg::formalism::SymbolContextFor<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> C>
-class View<ygg::Index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>, C> :
-    public ygg::IndexViewBase<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>
-{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::planning::match_tree::ElementGeneratorNode<Tag>, C>(handle, context)
-    {
-    }
-
-    auto get_elements() const noexcept { return ygg::make_view(this->get_data().elements, this->get_context().get_formalism_repository()); }
+    auto get_variable() const noexcept { return urd::resolve(self().data().variable, self().context().get_formalism_repository()); }
+    auto get_domain_children() const noexcept { return self().template get<&urd::record_of<V>::domain_children>(); }
+    auto get_dontcare_child() const noexcept { return self().template get<&urd::record_of<V>::dontcare_child>(); }
 };
-}
 
-namespace ygg
+template<typename Tag, typename V>
+struct view_mixin<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>, V>
 {
-template<typename Tag, ygg::formalism::SymbolContextFor<::tyr::planning::match_tree::VariableSelectorNode<Tag>> C>
-class View<ygg::Index<::tyr::planning::match_tree::VariableSelectorNode<Tag>>, C> :
-    public ygg::IndexViewBase<::tyr::planning::match_tree::VariableSelectorNode<Tag>, C>
-{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::planning::match_tree::VariableSelectorNode<Tag>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::planning::match_tree::VariableSelectorNode<Tag>, C>(handle, context)
-    {
-    }
-
-    auto get_variable() const noexcept { return ygg::make_view(this->get_data().variable, this->get_context().get_formalism_repository()); }
-    auto get_domain_children() const noexcept { return ygg::make_view(this->get_data().domain_children, this->get_context()); }
-    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, this->get_context()); }
+    auto get_fact() const noexcept { return urd::resolve(self().data().fact, self().context().get_formalism_repository()); }
+    auto get_true_child() const noexcept { return self().template get<&urd::record_of<V>::true_child>(); }
+    auto get_dontcare_child() const noexcept { return self().template get<&urd::record_of<V>::dontcare_child>(); }
 };
-}
-
-namespace ygg
-{
-template<typename Tag, ygg::formalism::SymbolContextFor<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>> C>
-class View<ygg::Index<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>, C> :
-    public ygg::IndexViewBase<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>, C>
-{
-public:
-    View(ygg::Index<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>, C>(handle, context)
-    {
-    }
-
-    auto get_fact() const noexcept { return ygg::make_view(this->get_data().fact, this->get_context().get_formalism_repository()); }
-    auto get_true_child() const noexcept { return ygg::make_view(this->get_data().true_child, this->get_context()); }
-    auto get_dontcare_child() const noexcept { return ygg::make_view(this->get_data().dontcare_child, this->get_context()); }
-};
-}
+}  // namespace urd
 
 #endif

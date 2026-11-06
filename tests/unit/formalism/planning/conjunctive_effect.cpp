@@ -8,9 +8,9 @@
 namespace lifted_tests
 {
 
-using ConjunctiveEffectIndex = ygg::Index<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
-using ConjunctiveEffectData = ygg::Data<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
-using ConjunctiveEffectView = ygg::View<ConjunctiveEffectIndex, tyr::formalism::planning::Repository>;
+using ConjunctiveEffectIndex = urd::index<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
+using ConjunctiveEffectData = urd::data<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
+using ConjunctiveEffectView = urd::view<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ConjunctiveEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConjunctiveEffectIndex>);
@@ -22,11 +22,10 @@ static_assert(requires(ConjunctiveEffectData& data) {
     data.literals;
     data.numeric_effects;
     data.auxiliary_numeric_effect;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const ConjunctiveEffectView& view) {
-    view.get_index();
+    view.index();
     view.get_literals();
     view.get_numeric_effects();
     view.get_auxiliary_numeric_effect();
@@ -39,9 +38,9 @@ static_assert(requires(const ConjunctiveEffectView& view) {
 namespace ground_tests
 {
 
-using GroundConjunctiveEffectIndex = ygg::Index<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>;
-using GroundConjunctiveEffectData = ygg::Data<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>;
-using GroundConjunctiveEffectView = ygg::View<GroundConjunctiveEffectIndex, tyr::formalism::planning::Repository>;
+using GroundConjunctiveEffectIndex = urd::index<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>;
+using GroundConjunctiveEffectData = urd::data<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>;
+using GroundConjunctiveEffectView = urd::view<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundConjunctiveEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConjunctiveEffectIndex>);
@@ -54,11 +53,10 @@ static_assert(requires(GroundConjunctiveEffectData& data) {
     data.del_facts;
     data.numeric_effects;
     data.auxiliary_numeric_effect;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const GroundConjunctiveEffectView& view) {
-    view.get_index();
+    view.index();
     view.template get_facts<tyr::formalism::PositiveTag>();
     view.template get_facts<tyr::formalism::NegativeTag>();
     view.get_numeric_effects();

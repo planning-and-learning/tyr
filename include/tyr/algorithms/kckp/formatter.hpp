@@ -11,11 +11,14 @@
 #define TYR_ALGORITHMS_KCKP_FORMATTER_HPP_
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <span>
 #include <sstream>
+#include <urd/repr/containers/bitset_span.hpp>
 #include <vector>
 #include <yggdrasil/formatting/dynamic_bitset_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
@@ -124,7 +127,7 @@ struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
             }
             os << "]\n";
             os << ygg::print_indent << "adjacency lists = [\n";
-            auto adjacency_data = std::vector<uint64_t>(value.layout().info.num_blocks);
+            auto adjacency_data = urd::Store<urd::sequence<uint64_t>>(value.layout().info.num_blocks);
             for (ygg::uint_t vertex = 0; vertex < value.layout().num_vertices; ++vertex)
             {
                 ygg::IndentScope row_scope(os);
@@ -134,7 +137,7 @@ struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
                 {
                     const auto& info = value.layout().info.infos[partition];
                     auto adjacency =
-                        ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(adjacency_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+                        urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(adjacency_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
                     value.copy_adjacency_to(vertex, partition, adjacency);
                     fmt::print(os, "{}, ", adjacency);
                 }

@@ -8,9 +8,9 @@
 namespace lifted_tests
 {
 
-using AxiomIndex = ygg::Index<tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
-using AxiomData = ygg::Data<tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
-using AxiomView = ygg::View<AxiomIndex, tyr::formalism::planning::Repository>;
+using AxiomIndex = urd::index<tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
+using AxiomData = urd::data<tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
+using AxiomView = urd::view<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<AxiomIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<AxiomIndex>);
@@ -22,11 +22,10 @@ static_assert(requires(AxiomData& data) {
     data.variables;
     data.body;
     data.head;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const AxiomView& view) {
-    view.get_index();
+    view.index();
     view.get_arity();
     view.get_body();
     view.get_variables();
@@ -40,9 +39,9 @@ static_assert(requires(const AxiomView& view) {
 namespace ground_tests
 {
 
-using GroundAxiomIndex = ygg::Index<tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
-using GroundAxiomData = ygg::Data<tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
-using GroundAxiomView = ygg::View<GroundAxiomIndex, tyr::formalism::planning::Repository>;
+using GroundAxiomIndex = urd::index<tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+using GroundAxiomData = urd::data<tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+using GroundAxiomView = urd::view<tyr::formalism::planning::Axiom<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundAxiomIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundAxiomIndex>);
@@ -54,11 +53,10 @@ static_assert(requires(GroundAxiomData& data) {
     data.binding;
     data.body;
     data.head;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const GroundAxiomView& view) {
-    view.get_index();
+    view.index();
     view.get_axiom();
     view.get_row();
     view.get_objects();

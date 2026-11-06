@@ -35,7 +35,7 @@ namespace tyr
 
 // Numeric effect index views
 
-// ygg::Data views
+// urd::data views
 
 // Pair views
 

@@ -16,6 +16,10 @@
  */
 
 #include "module.hpp"
+#include <yggdrasil/python/type_casters.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <urd/python/sequences/sequence.hpp>
 
 #include "../planning.hpp"
 #include "astar_eager/module.hpp"
@@ -28,7 +32,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
-#include <yggdrasil/python/owner.hpp>
+#include <urd/python/owner.hpp>
 
 namespace tyr::planning
 {
@@ -106,7 +110,7 @@ should not be used further.
             [](const ApplicableProgram& self)
             {
                 using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, const formalism::planning::ActionView<LiftedTag>*>;
-                auto result = std::vector<Entry> {};
+                auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
                 return result;
@@ -125,15 +129,14 @@ should not be used further.
         .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_goal", &RelaxedProgram::get_goal, nb::keep_alive<0, 1>())
         .def("get_rule_to_action_mapping",
-             [retain_owner = ygg::python::make_owner_retainer()](nb::typed<nb::handle, RelaxedProgram> owner)
+             [](const RelaxedProgram& self)
              {
-                 const auto& self = nb::cast<const RelaxedProgram&>(owner);
                  const auto& repository = self.get_datalog_program().get_program_repository();
                  using Entry = std::pair<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>, formalism::planning::ActionView<LiftedTag>>;
-                 auto result = std::vector<Entry> {};
+                 auto result = urd::Store<urd::sequence<Entry>> {};
                  for (const auto& [rule, action] : self.get_rule_to_action_mapping<formalism::PredicateTag>())
-                     result.emplace_back(ygg::make_view(rule, repository), action);
-                 return ygg::python::cast_with_owner(std::move(result), owner, retain_owner);
+                     result.emplace_back(urd::resolve(rule, repository), action);
+                 return result;
              });
 
     nb::class_<GroundTaskProgram>(m, "GroundTaskProgram")
@@ -145,7 +148,7 @@ should not be used further.
             [](const GroundTaskProgram& self)
             {
                 using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, const formalism::planning::ActionView<LiftedTag>*>;
-                auto result = std::vector<Entry> {};
+                auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [predicate, action] : self.get_predicate_to_action_mapping())
                     result.emplace_back(&predicate, &action);
                 return result;
@@ -155,9 +158,9 @@ should not be used further.
             "get_predicate_to_axiom_mapping",
             [](const GroundTaskProgram& self)
             {
-                using Axioms = std::vector<const formalism::planning::AxiomView<LiftedTag>*>;
+                using Axioms = urd::Store<urd::sequence<const formalism::planning::AxiomView<LiftedTag>*>>;
                 using Entry = std::pair<const formalism::datalog::PredicateView<formalism::FluentTag>*, Axioms>;
-                auto result = std::vector<Entry> {};
+                auto result = urd::Store<urd::sequence<Entry>> {};
                 for (const auto& [predicate, axioms] : self.get_predicate_to_axiom_mapping())
                 {
                     auto views = Axioms {};
@@ -169,10 +172,10 @@ should not be used further.
             },
             nb::rv_policy::reference_internal);
 
-    bind_index<ygg::Index<State<LiftedTag>>>(m, "StateIndex");
+    bind_index<urd::index<State<LiftedTag>>>(m, "StateIndex");
     bind_packed_state<LiftedTag>(m, "PackedState");
     bind_state<LiftedTag>(m, "State");
-    bind_state_builder<LiftedTag>(m, "StateBuilder");
+    bind_state_data<LiftedTag>(m, "StateBuilder");
     bind_node<LiftedTag>(m, "Node");
     bind_packed_node<LiftedTag>(m, "PackedNode");
     bind_labeled_node<LiftedTag>(m, "LabeledNode");

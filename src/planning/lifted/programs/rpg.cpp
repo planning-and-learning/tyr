@@ -39,9 +39,9 @@ namespace
 {
 void append_variable(formalism::planning::VariableView variable,
                      formalism::planning::MergeDatalogContext& context,
-                     ygg::Data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
+                     urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
 {
-    const auto index = merge_p2d(variable, context).first.get_index();
+    const auto index = merge_p2d(variable, context).first.index();
     if (std::ranges::find(conj_cond.variables, index) == conj_cond.variables.end())
         conj_cond.variables.push_back(index);
 }
@@ -50,28 +50,28 @@ void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> actio
                                 formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
                                 TranslationContext<LiftedTag>& translation_context,
                                 formalism::planning::MergeDatalogContext& context,
-                                ygg::Data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
+                                urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
 {
     // Action parameter may get deleted.
     for (const auto& variable : action.get_variables())
         append_variable(variable, context, conj_cond);
     for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
     for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
     for (const auto numeric_constraint : action.get_condition().get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context).first.index());
 
     for (const auto variable : cond_eff.get_variables())
         append_variable(variable, context, conj_cond);
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
     for (const auto numeric_constraint : cond_eff.get_condition().get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context).first.index());
 }
 
 auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal,
@@ -82,10 +82,10 @@ auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<Groun
 
     for (const auto fact : goal.get_facts<formalism::PositiveTag>())
         if (const auto literal = merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_predicate, context))
-            conj_cond->fluent_literals.push_back(literal->get_index());
+            conj_cond->fluent_literals.push_back(literal->index());
 
     for (const auto numeric_constraint : goal.get_numeric_constraints())
-        conj_cond->numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+        conj_cond->numeric_constraints.push_back(merge_p2d(numeric_constraint, context).first.index());
 
     return formalism::datalog::insert(context.destination(), *conj_cond);
 }
@@ -103,11 +103,12 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
 
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
-    ygg::extend(new_conj_cond.get_variables(), rule->variables);
-    rule->body = new_conj_cond.get_index();
+    for (const auto variable : new_conj_cond.get_variables())
+        rule->variables.push_back(urd::to_stored(variable));
+    rule->body = new_conj_cond.index();
     for (const auto literal : cond_eff.get_effect().get_literals())
         if (literal.get_polarity())  /// ignore delete effects
-            rule->heads.push_back(merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+            rule->heads.push_back(merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
     rule->cost = 1;
 
     return formalism::datalog::insert(context.destination(), *rule);
@@ -127,16 +128,17 @@ auto create_cond_numeric_effect_rule(formalism::planning::ActionView<LiftedTag> 
 
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
-    ygg::extend(new_conj_cond.get_variables(), rule->variables);
-    rule->body = new_conj_cond.get_index();
-    rule->head = merge_p2d(std::move(effect), context);
+    for (const auto variable : new_conj_cond.get_variables())
+        rule->variables.push_back(urd::to_stored(variable));
+    rule->body = new_conj_cond.index();
+    rule->head = merge_p2d(std::move(effect), context).first.index();
     rule->cost = 1;
 
     return formalism::datalog::insert(context.destination(), *rule);
 }
 
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<LiftedTag> action,
-                                           ygg::Data<formalism::datalog::Program<LiftedTag>>& program,
+                                           urd::data<formalism::datalog::Program<LiftedTag>>& program,
                                            TranslationContext<LiftedTag>& translation_context,
                                            formalism::planning::MergeDatalogContext& context,
                                            RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
@@ -147,16 +149,16 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
         {
             const auto rule = create_cond_effect_rule(action, cond_eff, translation_context, context).first;
 
-            program.predicate_rules.push_back(rule.get_index());
-            rule_to_action.predicate.emplace(rule.get_index(), action);
+            program.predicate_rules.push_back(rule.index());
+            rule_to_action.predicate.emplace(rule.index(), action);
         }
 
         for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
         {
             const auto rule = create_cond_numeric_effect_rule(action, cond_eff, numeric_effect, translation_context, context).first;
 
-            program.function_rules.push_back(rule.get_index());
-            rule_to_action.function.emplace(rule.get_index(), action);
+            program.function_rules.push_back(rule.index());
+            rule_to_action.function.emplace(rule.index(), action);
         }
     }
 }
@@ -175,41 +177,41 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
         translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
-        program->static_predicates.push_back(new_predicate.get_index());
+        program->static_predicates.push_back(new_predicate.index());
     }
     for (const auto predicate : task.get_domain().get_predicates<formalism::FluentTag>())
     {
         const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
         translation_context.d2p.fluent_to_fluent_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.fluent_to_fluent_predicate.emplace(predicate, new_predicate);
-        program->fluent_predicates.push_back(new_predicate.get_index());
+        program->fluent_predicates.push_back(new_predicate.index());
     }
 
     for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
-        program->static_functions.push_back(formalism::planning::merge_p2d(function, context).first.get_index());
+        program->static_functions.push_back(formalism::planning::merge_p2d(function, context).first.index());
     for (const auto function : task.get_domain().get_functions<formalism::FluentTag>())
     {
         const auto new_function = formalism::planning::merge_p2d(function, context).first;
         translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
-        program->fluent_functions.push_back(new_function.get_index());
+        program->fluent_functions.push_back(new_function.index());
     }
 
     for (const auto object : task.get_domain().get_constants())
-        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.index());
     for (const auto object : task.get_objects())
-        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.index());
 
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
-        program->static_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+        program->static_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.index());
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
-        program->fluent_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+        program->fluent_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
 
     for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
-        program->static_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.get_index());
+        program->static_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.index());
     for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
-        program->fluent_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.get_index());
+        program->fluent_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.index());
 
-    program->goal = create_delete_free_goal(task.get_goal(), translation_context, context).first.get_index();
+    program->goal = create_delete_free_goal(task.get_goal(), translation_context, context).first.index();
 
     for (const auto action : task.get_domain().get_actions())
         translate_action_to_delete_free_rules(action, *program, translation_context, context, rule_to_action);

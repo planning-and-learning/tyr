@@ -19,26 +19,27 @@
 #define TYR_PLANNING_LIFTED_STATE_STORAGE_HASH_SET_FACT_HPP_
 
 #include "tyr/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/lifted/state_storage/hash_set/context.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<LiftedTag, HashSet> : ygg::comparison::Mixin<FactPackedStorage<LiftedTag, HashSet>>
+struct FactPackedStorage<LiftedTag, HashSet> : urd::compared_by_identity<FactPackedStorage<LiftedTag, HashSet>>
 {
     ygg::uint_t index = 0;
 
     FactPackedStorage() = default;
     explicit FactPackedStorage(ygg::uint_t index) : index(index) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&FactPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&FactPackedStorage::index> {}; }
 };
 
 template<bool ThreadSafe>
@@ -58,7 +59,7 @@ public:
 private:
     UintVectorSetT<Context>* m_uint_vec_set;
 
-    std::vector<ygg::uint_t> m_buffer;
+    urd::Store<urd::sequence<ygg::uint_t>> m_buffer;
 };
 
 }

@@ -30,7 +30,7 @@ VariableDomainView<C> to_variable_domain_view(const VariableDomain& domain, cons
     result.objects.reserve(domain.objects.size());
 
     for (const auto object : domain.objects)
-        result.objects.push_back(ygg::make_view(object, context));
+        result.objects.push_back(urd::resolve(object, context));
 
     return result;
 }
@@ -54,7 +54,7 @@ SimpleScopedDomainViewMap<Element, C> to_simple_scoped_domain_view_map(const Sim
     result.reserve(domains.size());
 
     for (const auto& [element, payload] : domains)
-        result.emplace(ygg::make_view(element, context), to_variable_domain_view_list(payload, context));
+        result.emplace(urd::resolve(element, context), to_variable_domain_view_list(payload, context));
 
     return result;
 }
@@ -67,9 +67,9 @@ ScopedDomainViewMap<Element, C> to_scoped_domain_view_map(const ScopedDomainMap<
 
     for (const auto& [element, domain] : domains)
     {
-        result.emplace(ygg::make_view(element, context),
+        result.emplace(urd::resolve(element, context),
                        SimpleScopedDomainView<Element, C> {
-                           ygg::make_view(domain.element, context),
+                           urd::resolve(domain.element, context),
                            to_variable_domain_view_list(domain.payload, context),
                        });
     }
@@ -81,7 +81,7 @@ template<typename C>
 ConjunctiveConditionDomainView<C> to_conjunctive_condition_domain_view(const ConjunctiveConditionDomain& domain, const C& context)
 {
     return ConjunctiveConditionDomainView<C> {
-        ygg::make_view(domain.element, context),
+        urd::resolve(domain.element, context),
         to_variable_domain_view_list(domain.payload, context),
     };
 }
@@ -90,7 +90,7 @@ template<typename C>
 ConjunctiveEffectDomainView<C> to_conjunctive_effect_domain_view(const ConjunctiveEffectDomain& domain, const C& context)
 {
     return ConjunctiveEffectDomainView<C> {
-        ygg::make_view(domain.element, context),
+        urd::resolve(domain.element, context),
         to_variable_domain_view_list(domain.payload, context),
     };
 }
@@ -99,7 +99,7 @@ template<typename C>
 ConditionalEffectDomainView<C> to_conditional_effect_domain_view(const ConditionalEffectDomain& domain, const C& context)
 {
     return ConditionalEffectDomainView<C> {
-        ygg::make_view(domain.element, context),
+        urd::resolve(domain.element, context),
         ConditionalEffectDomainViewData<C> {
             to_conjunctive_condition_domain_view(domain.payload.condition_domain, context),
             to_conjunctive_effect_domain_view(domain.payload.effect_domain, context),
@@ -114,7 +114,7 @@ ConditionalEffectDomainViewMap<C> to_conditional_effect_domain_view_map(const Co
     result.reserve(domains.size());
 
     for (const auto& [element, domain] : domains)
-        result.emplace(ygg::make_view(element, context), to_conditional_effect_domain_view(domain, context));
+        result.emplace(urd::resolve(element, context), to_conditional_effect_domain_view(domain, context));
 
     return result;
 }
@@ -127,9 +127,9 @@ ActionDomainViewMap<C> to_action_domain_view_map(const ActionDomainMap& domains,
 
     for (const auto& [element, domain] : domains)
     {
-        result.emplace(ygg::make_view(element, context),
+        result.emplace(urd::resolve(element, context),
                        ActionDomainView<C> {
-                           ygg::make_view(domain.element, context),
+                           urd::resolve(domain.element, context),
                            ActionDomainViewData<C> {
                                to_conjunctive_condition_domain_view(domain.payload.precondition_domain, context),
                                to_conditional_effect_domain_view_map(domain.payload.effect_domains, context),

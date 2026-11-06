@@ -28,9 +28,8 @@
 #include "tyr/formalism/indices.hpp"
 #include "tyr/formalism/views.hpp"
 
-#include <yggdrasil/containers/tuple.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -41,7 +40,10 @@ std::pair<VariableView, bool> copy(VariableView element, CopyContext& context);
 
 std::pair<ObjectView, bool> copy(ObjectView element, CopyContext& context);
 
-TermView copy(TermView element, CopyContext& context);
+/// A variant readout (a term, a function expression) copied alternative by alternative; a value it holds (a
+/// parameter, a number) as it is.
+template<typename... Vs>
+std::variant<Vs...> copy(const std::variant<Vs...>& element, CopyContext& context);
 
 // Propositional
 
@@ -78,28 +80,16 @@ template<FactKind F>
 std::pair<FunctionTermValueView<GroundTag, F>, bool> copy(FunctionTermValueView<GroundTag, F> element, CopyContext& context);
 
 template<TaskKind T>
-FunctionExpressionView<T> copy(FunctionExpressionView<T> element, CopyContext& context);
+std::pair<UnaryOperatorView<T, ArithmeticOperatorKind>, bool> copy(UnaryOperatorView<T, ArithmeticOperatorKind> element, CopyContext& context);
 
-template<TaskKind T>
-std::pair<UnaryOperatorView<T>, bool> copy(UnaryOperatorView<T> element, CopyContext& context);
-
-template<TaskKind T, BinaryOperatorKind O>
+template<TaskKind T, OperatorKind O>
 std::pair<BinaryOperatorView<T, O>, bool> copy(BinaryOperatorView<T, O> element, CopyContext& context);
 
 template<TaskKind T>
-std::pair<MultiOperatorView<T>, bool> copy(MultiOperatorView<T> element, CopyContext& context);
-
-template<TaskKind T>
-ArithmeticOperatorView<T> copy(ArithmeticOperatorView<T> element, CopyContext& context);
-
-template<TaskKind T>
-BooleanOperatorView<T> copy(BooleanOperatorView<T> element, CopyContext& context);
+std::pair<MultiOperatorView<T, ArithmeticOperatorKind>, bool> copy(MultiOperatorView<T, ArithmeticOperatorKind> element, CopyContext& context);
 
 template<TaskKind T, FactKind F>
 std::pair<NumericEffectView<T, F>, bool> copy(NumericEffectView<T, F> element, CopyContext& context);
-
-template<TaskKind T, FactKind F>
-NumericEffectOperatorView<T, F> copy(NumericEffectOperatorView<T, F> element, CopyContext& context);
 
 std::pair<ConjunctiveConditionView<LiftedTag>, bool> copy(ConjunctiveConditionView<LiftedTag> element, CopyContext& context);
 
@@ -116,7 +106,7 @@ std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, Cop
 
 /// Copies everything of the program but its rules into the program data.
 template<TaskKind T>
-void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, CopyContext& context);
+void copy_except_rules(ProgramView<T> element, urd::data<Program<T>>& result, CopyContext& context);
 
 // Common
 
@@ -138,20 +128,18 @@ inline std::pair<ObjectView, bool> copy(ObjectView element, CopyContext& context
     return datalog::insert(context.destination(), *object);
 }
 
-inline TermView copy(TermView element, CopyContext& context)
+template<typename... Vs>
+std::variant<Vs...> copy(const std::variant<Vs...>& element, CopyContext& context)
 {
-    const auto data = visit(
-        [&]<typename Alternative>(const Alternative& arg)
+    return std::visit(
+        [&]<typename Alternative>(const Alternative& arg) -> std::variant<Vs...>
         {
-            if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                return ygg::Data<Term>(arg);
-            else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                return ygg::Data<Term>(copy(arg, context).first.get_index());
+            if constexpr (std::is_same_v<Alternative, ParameterIndex> || std::is_same_v<Alternative, ygg::float_t>)
+                return arg;
             else
-                static_assert(ygg::dependent_false<Alternative>::value, "Missing case");
+                return copy(arg, context).first;
         },
-        element.get_variant());
-    return ygg::make_view(data, context.destination());
+        element);
 }
 
 // Propositional
@@ -172,9 +160,9 @@ std::pair<AtomView<LiftedTag, F>, bool> copy(AtomView<LiftedTag, F> element, Cop
 {
     auto atom = datalog::checkout<Atom<LiftedTag, F>>(context.builder());
 
-    atom->predicate = copy(element.get_predicate(), context).first.get_index();
+    atom->predicate = copy(element.get_predicate(), context).first.index();
     for (const auto term : element.get_terms())
-        atom->terms.push_back(copy(term, context).get_data());
+        atom->terms.push_back(urd::to_stored(copy(term, context)));
 
     return datalog::insert(context.destination(), *atom);
 }
@@ -184,9 +172,9 @@ std::pair<PredicateBindingView<F>, bool> copy(PredicateBindingView<F> element, C
 {
     auto binding = datalog::checkout<RelationBinding<Predicate<F>>>(context.builder());
 
-    binding->relation = copy(element.get_relation(), context).first.get_index();
+    binding->relation = copy(element.get_relation(), context).first.index();
     for (const auto object : element.get_objects())
-        binding->objects.push_back(copy(object, context).first.get_index());
+        binding->objects.push_back(copy(object, context).first.index());
 
     return datalog::insert(context.destination(), *binding);
 }
@@ -196,7 +184,7 @@ std::pair<AtomView<GroundTag, F>, bool> copy(AtomView<GroundTag, F> element, Cop
 {
     auto atom = datalog::checkout<Atom<GroundTag, F>>(context.builder());
 
-    atom->binding = copy(element.get_row(), context).first.get_index();
+    atom->binding = copy(element.get_row(), context).first.index();
 
     return datalog::insert(context.destination(), *atom);
 }
@@ -207,7 +195,7 @@ std::pair<LiteralView<T, F>, bool> copy(LiteralView<T, F> element, CopyContext& 
     auto literal = datalog::checkout<Literal<T, F>>(context.builder());
 
     literal->polarity = element.get_polarity();
-    literal->atom = copy(element.get_atom(), context).first.get_index();
+    literal->atom = copy(element.get_atom(), context).first.index();
 
     return datalog::insert(context.destination(), *literal);
 }
@@ -230,9 +218,9 @@ std::pair<FunctionTermView<LiftedTag, F>, bool> copy(FunctionTermView<LiftedTag,
 {
     auto fterm = datalog::checkout<FunctionTerm<LiftedTag, F>>(context.builder());
 
-    fterm->function = copy(element.get_function(), context).first.get_index();
+    fterm->function = copy(element.get_function(), context).first.index();
     for (const auto term : element.get_terms())
-        fterm->terms.push_back(copy(term, context).get_data());
+        fterm->terms.push_back(urd::to_stored(copy(term, context)));
 
     return datalog::insert(context.destination(), *fterm);
 }
@@ -242,9 +230,9 @@ std::pair<FunctionBindingView<F>, bool> copy(FunctionBindingView<F> element, Cop
 {
     auto binding = datalog::checkout<RelationBinding<Function<F>>>(context.builder());
 
-    binding->relation = copy(element.get_relation(), context).first.get_index();
+    binding->relation = copy(element.get_relation(), context).first.index();
     for (const auto object : element.get_objects())
-        binding->objects.push_back(copy(object, context).first.get_index());
+        binding->objects.push_back(copy(object, context).first.index());
 
     return datalog::insert(context.destination(), *binding);
 }
@@ -254,7 +242,7 @@ std::pair<FunctionTermView<GroundTag, F>, bool> copy(FunctionTermView<GroundTag,
 {
     auto fterm = datalog::checkout<FunctionTerm<GroundTag, F>>(context.builder());
 
-    fterm->binding = copy(element.get_row(), context).first.get_index();
+    fterm->binding = copy(element.get_row(), context).first.index();
 
     return datalog::insert(context.destination(), *fterm);
 }
@@ -264,76 +252,45 @@ std::pair<FunctionTermValueView<GroundTag, F>, bool> copy(FunctionTermValueView<
 {
     auto fterm_value = datalog::checkout<FunctionTermValue<GroundTag, F>>(context.builder());
 
-    fterm_value->fterm = copy(element.get_fterm(), context).first.get_index();
+    fterm_value->fterm = copy(element.get_fterm(), context).first.index();
     fterm_value->value = element.get_value();
 
     return datalog::insert(context.destination(), *fterm_value);
 }
 
 template<TaskKind T>
-FunctionExpressionView<T> copy(FunctionExpressionView<T> element, CopyContext& context)
+std::pair<UnaryOperatorView<T, ArithmeticOperatorKind>, bool> copy(UnaryOperatorView<T, ArithmeticOperatorKind> element, CopyContext& context)
 {
-    const auto data = visit(
-        [&]<typename Alternative>(const Alternative& arg)
-        {
-            if constexpr (std::is_same_v<Alternative, ygg::float_t>)
-                return ygg::Data<FunctionExpression<T>>(arg);
-            else if constexpr (std::is_same_v<Alternative, ArithmeticOperatorView<T>>)
-                return ygg::Data<FunctionExpression<T>>(copy(arg, context).get_data());
-            else
-                return ygg::Data<FunctionExpression<T>>(copy(arg, context).first.get_index());
-        },
-        element.get_variant());
-    return ygg::make_view(data, context.destination());
-}
-
-template<TaskKind T>
-std::pair<UnaryOperatorView<T>, bool> copy(UnaryOperatorView<T> element, CopyContext& context)
-{
-    auto unary = datalog::checkout<UnaryOperator<T>>(context.builder());
+    auto unary = datalog::checkout<UnaryOperator<T, ArithmeticOperatorKind>>(context.builder());
 
     unary->operator_kind = element.get_operator();
-    unary->arg = copy(element.get_arg(), context).get_data();
+    unary->arg = urd::to_stored(copy(element.get_arg(), context));
 
     return datalog::insert(context.destination(), *unary);
 }
 
-template<TaskKind T, BinaryOperatorKind O>
+template<TaskKind T, OperatorKind O>
 std::pair<BinaryOperatorView<T, O>, bool> copy(BinaryOperatorView<T, O> element, CopyContext& context)
 {
     auto binary = datalog::checkout<BinaryOperator<T, O>>(context.builder());
 
     binary->operator_kind = element.get_operator();
-    binary->lhs = copy(element.get_lhs(), context).get_data();
-    binary->rhs = copy(element.get_rhs(), context).get_data();
+    binary->lhs = urd::to_stored(copy(element.get_lhs(), context));
+    binary->rhs = urd::to_stored(copy(element.get_rhs(), context));
 
     return datalog::insert(context.destination(), *binary);
 }
 
 template<TaskKind T>
-std::pair<MultiOperatorView<T>, bool> copy(MultiOperatorView<T> element, CopyContext& context)
+std::pair<MultiOperatorView<T, ArithmeticOperatorKind>, bool> copy(MultiOperatorView<T, ArithmeticOperatorKind> element, CopyContext& context)
 {
-    auto multi = datalog::checkout<MultiOperator<T>>(context.builder());
+    auto multi = datalog::checkout<MultiOperator<T, ArithmeticOperatorKind>>(context.builder());
 
     multi->operator_kind = element.get_operator();
     for (const auto arg : element.get_args())
-        multi->args.push_back(copy(arg, context).get_data());
+        multi->args.push_back(urd::to_stored(copy(arg, context)));
 
     return datalog::insert(context.destination(), *multi);
-}
-
-template<TaskKind T>
-ArithmeticOperatorView<T> copy(ArithmeticOperatorView<T> element, CopyContext& context)
-{
-    const auto data = visit([&](auto&& arg) { return ygg::Data<ArithmeticOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
-    return ygg::make_view(data, context.destination());
-}
-
-template<TaskKind T>
-BooleanOperatorView<T> copy(BooleanOperatorView<T> element, CopyContext& context)
-{
-    const auto data = visit([&](auto&& arg) { return ygg::Data<BooleanOperator<T>>(copy(arg, context).first.get_index()); }, element.get_variant());
-    return ygg::make_view(data, context.destination());
 }
 
 template<TaskKind T, FactKind F>
@@ -342,18 +299,10 @@ std::pair<NumericEffectView<T, F>, bool> copy(NumericEffectView<T, F> element, C
     auto numeric_effect = datalog::checkout<NumericEffect<T, F>>(context.builder());
 
     numeric_effect->operator_kind = element.get_operator();
-    numeric_effect->fterm = copy(element.get_fterm(), context).first.get_index();
-    numeric_effect->fexpr = copy(element.get_fexpr(), context).get_data();
+    numeric_effect->fterm = copy(element.get_fterm(), context).first.index();
+    numeric_effect->fexpr = urd::to_stored(copy(element.get_fexpr(), context));
 
     return datalog::insert(context.destination(), *numeric_effect);
-}
-
-template<TaskKind T, FactKind F>
-NumericEffectOperatorView<T, F> copy(NumericEffectOperatorView<T, F> element, CopyContext& context)
-{
-    const auto data = visit([&](auto&& arg) { return ygg::Data<NumericEffectOperator<T, F>>(arg.get_operator(), copy(arg, context).first.get_index()); },
-                            element.get_variant());
-    return ygg::make_view(data, context.destination());
 }
 
 inline std::pair<ConjunctiveConditionView<LiftedTag>, bool> copy(ConjunctiveConditionView<LiftedTag> element, CopyContext& context)
@@ -361,13 +310,13 @@ inline std::pair<ConjunctiveConditionView<LiftedTag>, bool> copy(ConjunctiveCond
     auto conj_cond = datalog::checkout<ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : element.get_variables())
-        conj_cond->variables.push_back(copy(variable, context).first.get_index());
+        conj_cond->variables.push_back(copy(variable, context).first.index());
     for (const auto literal : element.template get_literals<StaticTag>())
-        conj_cond->static_literals.push_back(copy(literal, context).first.get_index());
+        conj_cond->static_literals.push_back(copy(literal, context).first.index());
     for (const auto literal : element.template get_literals<FluentTag>())
-        conj_cond->fluent_literals.push_back(copy(literal, context).first.get_index());
+        conj_cond->fluent_literals.push_back(copy(literal, context).first.index());
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).get_data());
+        conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).first.index());
 
     return datalog::insert(context.destination(), *conj_cond);
 }
@@ -377,23 +326,23 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> copy(ConjunctiveCond
     auto conj_cond = datalog::checkout<ConjunctiveCondition<GroundTag>>(context.builder());
 
     for (const auto literal : element.template get_literals<StaticTag>())
-        conj_cond->static_literals.push_back(copy(literal, context).first.get_index());
+        conj_cond->static_literals.push_back(copy(literal, context).first.index());
     for (const auto literal : element.template get_literals<FluentTag>())
-        conj_cond->fluent_literals.push_back(copy(literal, context).first.get_index());
+        conj_cond->fluent_literals.push_back(copy(literal, context).first.index());
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).get_data());
+        conj_cond->numeric_constraints.push_back(copy(numeric_constraint, context).first.index());
 
     return datalog::insert(context.destination(), *conj_cond);
 }
 
 template<TaskKind T, RelationKind R, typename C>
-void copy_rule_heads(ygg::View<ygg::Index<Rule<T, R>>, C> element, ygg::Data<Rule<T, R>>& rule, CopyContext& context)
+void copy_rule_heads(urd::view<Rule<T, R>, C> element, urd::data<Rule<T, R>>& rule, CopyContext& context)
 {
     if constexpr (std::same_as<R, PredicateTag>)
         for (const auto head : element.get_heads())
-            rule.heads.push_back(copy(head, context).first.get_index());
+            rule.heads.push_back(copy(head, context).first.index());
     else
-        rule.head = copy(element.get_head(), context).get_data();
+        rule.head = copy(element.get_head(), context).first.index();
 }
 
 template<RelationKind R>
@@ -402,8 +351,8 @@ std::pair<RuleView<LiftedTag, R>, bool> copy(RuleView<LiftedTag, R> element, Cop
     auto rule = datalog::checkout<Rule<LiftedTag, R>>(context.builder());
 
     for (const auto variable : element.get_variables())
-        rule->variables.push_back(copy(variable, context).first.get_index());
-    rule->body = copy(element.get_body(), context).first.get_index();
+        rule->variables.push_back(copy(variable, context).first.index());
+    rule->body = copy(element.get_body(), context).first.index();
     copy_rule_heads(element, *rule, context);
     rule->cost = element.get_cost();
 
@@ -415,9 +364,9 @@ std::pair<RuleBindingView<R>, bool> copy(RuleBindingView<R> element, CopyContext
 {
     auto binding = datalog::checkout<RelationBinding<Rule<LiftedTag, R>>>(context.builder());
 
-    binding->relation = copy(element.get_relation(), context).first.get_index();
+    binding->relation = copy(element.get_relation(), context).first.index();
     for (const auto object : element.get_objects())
-        binding->objects.push_back(copy(object, context).first.get_index());
+        binding->objects.push_back(copy(object, context).first.index());
 
     return datalog::insert(context.destination(), *binding);
 }
@@ -427,8 +376,8 @@ std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, Cop
 {
     auto rule = datalog::checkout<Rule<GroundTag, R>>(context.builder());
 
-    rule->binding = copy(element.get_row(), context).first.get_index();
-    rule->body = copy(element.get_body(), context).first.get_index();
+    rule->binding = copy(element.get_row(), context).first.index();
+    rule->body = copy(element.get_body(), context).first.index();
     copy_rule_heads(element, *rule, context);
     rule->cost = element.get_cost();
 
@@ -440,12 +389,12 @@ std::pair<RuleView<GroundTag, R>, bool> copy(RuleView<GroundTag, R> element, Cop
 namespace tyr::formalism::datalog
 {
 template<TaskKind T>
-void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, CopyContext& context)
+void copy_except_rules(ProgramView<T> element, urd::data<Program<T>>& result, CopyContext& context)
 {
     const auto copy_all = [&](const auto elements, auto& destination)
     {
         for (const auto e : elements)
-            destination.push_back(copy(e, context).first.get_index());
+            destination.push_back(copy(e, context).first.index());
     };
 
     copy_all(element.template get_predicates<StaticTag>(), result.static_predicates);
@@ -459,7 +408,7 @@ void copy_except_rules(ProgramView<T> element, ygg::Data<Program<T>>& result, Co
     copy_all(element.template get_fterm_values<FluentTag>(), result.fluent_fterm_values);
 
     if (const auto goal = element.get_goal())
-        result.goal = copy(*goal, context).first.get_index();
+        result.goal = copy(*goal, context).first.index();
 }
 
 #ifndef TYR_HEADER_INSTANTIATION
@@ -497,8 +446,8 @@ extern template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> copy(Fun
 extern template std::pair<FunctionTermValueView<GroundTag, StaticTag>, bool> copy(FunctionTermValueView<GroundTag, StaticTag> element, CopyContext& context);
 extern template std::pair<FunctionTermValueView<GroundTag, FluentTag>, bool> copy(FunctionTermValueView<GroundTag, FluentTag> element, CopyContext& context);
 
-extern template std::pair<UnaryOperatorView<LiftedTag>, bool> copy(UnaryOperatorView<LiftedTag> element, CopyContext& context);
-extern template std::pair<UnaryOperatorView<GroundTag>, bool> copy(UnaryOperatorView<GroundTag> element, CopyContext& context);
+extern template std::pair<UnaryOperatorView<LiftedTag, ArithmeticOperatorKind>, bool> copy(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> element, CopyContext& context);
+extern template std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> copy(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> element, CopyContext& context);
 
 extern template std::pair<BinaryOperatorView<LiftedTag, BooleanOperatorKind>, bool> copy(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
                                                                                          CopyContext& context);
@@ -509,17 +458,13 @@ extern template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bo
 extern template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> copy(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> element,
                                                                                             CopyContext& context);
 
-extern template std::pair<MultiOperatorView<LiftedTag>, bool> copy(MultiOperatorView<LiftedTag> element, CopyContext& context);
-extern template std::pair<MultiOperatorView<GroundTag>, bool> copy(MultiOperatorView<GroundTag> element, CopyContext& context);
+extern template std::pair<MultiOperatorView<LiftedTag, ArithmeticOperatorKind>, bool> copy(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element, CopyContext& context);
+extern template std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> copy(MultiOperatorView<GroundTag, ArithmeticOperatorKind> element, CopyContext& context);
 
-extern template ArithmeticOperatorView<LiftedTag> copy(ArithmeticOperatorView<LiftedTag> element, CopyContext& context);
-extern template ArithmeticOperatorView<GroundTag> copy(ArithmeticOperatorView<GroundTag> element, CopyContext& context);
 
 extern template std::pair<NumericEffectView<LiftedTag, FluentTag>, bool> copy(NumericEffectView<LiftedTag, FluentTag> element, CopyContext& context);
-extern template NumericEffectOperatorView<LiftedTag, FluentTag> copy(NumericEffectOperatorView<LiftedTag, FluentTag> element, CopyContext& context);
 
 extern template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> copy(NumericEffectView<GroundTag, FluentTag> element, CopyContext& context);
-extern template NumericEffectOperatorView<GroundTag, FluentTag> copy(NumericEffectOperatorView<GroundTag, FluentTag> element, CopyContext& context);
 
 extern template std::pair<RuleView<LiftedTag, PredicateTag>, bool> copy(RuleView<LiftedTag, PredicateTag> element, CopyContext& context);
 extern template std::pair<RuleView<LiftedTag, FunctionTag>, bool> copy(RuleView<LiftedTag, FunctionTag> element, CopyContext& context);
@@ -530,8 +475,8 @@ extern template std::pair<RuleBindingView<FunctionTag>, bool> copy(RuleBindingVi
 extern template std::pair<RuleView<GroundTag, PredicateTag>, bool> copy(RuleView<GroundTag, PredicateTag> element, CopyContext& context);
 extern template std::pair<RuleView<GroundTag, FunctionTag>, bool> copy(RuleView<GroundTag, FunctionTag> element, CopyContext& context);
 
-extern template void copy_except_rules(ProgramView<LiftedTag> element, ygg::Data<Program<LiftedTag>>& result, CopyContext& context);
-extern template void copy_except_rules(ProgramView<GroundTag> element, ygg::Data<Program<GroundTag>>& result, CopyContext& context);
+extern template void copy_except_rules(ProgramView<LiftedTag> element, urd::data<Program<LiftedTag>>& result, CopyContext& context);
+extern template void copy_except_rules(ProgramView<GroundTag> element, urd::data<Program<GroundTag>>& result, CopyContext& context);
 
 #endif
 }

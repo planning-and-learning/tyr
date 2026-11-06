@@ -65,11 +65,11 @@ public:
     static size_t num_workers(const Options&) noexcept
     { return 1; }
 
-    static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker>, size_t) noexcept { return state; }
+    static urd::index<State<Kind>> search_node_index(urd::index<State<Kind>> state, urd::index<Worker>, size_t) noexcept { return state; }
 
     template<typename Engine>
-    static std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state(Engine&, const StateView<Kind>& start_state)
-    { return { ygg::Index<Worker>(0), start_state }; }
+    static std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine&, const StateView<Kind>& start_state)
+    { return { urd::index<Worker>(0), start_state }; }
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value = value; }
 
@@ -85,7 +85,7 @@ public:
 
     template<typename Engine>
     static void invoke(Engine& engine)
-    { engine.worker_loop(engine.get_worker(ygg::Index<Worker>(0))); }
+    { engine.worker_loop(engine.get_worker(urd::index<Worker>(0))); }
 
     template<typename Engine, typename WorkerData>
     bool begin_iteration(Engine&, WorkerData& worker)
@@ -154,7 +154,7 @@ public:
     AcceptanceResult route(Engine& engine,
                            WorkerData& worker,
                            const Node<Kind>& source,
-                           ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> target,
+                           std::shared_ptr<urd::builder<State<Kind>>> target,
                            const StateDelta& delta,
                            ygg::float_t auxiliary_value,
                            formalism::planning::ActionBindingView action,
@@ -188,7 +188,7 @@ public:
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
     {
-        auto& worker = engine.get_worker(ygg::Index<Worker>(0));
+        auto& worker = engine.get_worker(urd::index<Worker>(0));
         detail::snapshot_state_repository_statistics(*worker.state_repository, worker.statistics);
     }
 
@@ -224,7 +224,7 @@ public:
                  Heuristic<Kind>& heuristic,
                  const OptionsT<SearchPolicy>& options,
                  const EventHandlerPtrT<SearchPolicy>& event_handler) :
-        m_worker(ygg::Index<Worker>(0),
+        m_worker(urd::index<Worker>(0),
                  state_repository,
                  axiom_evaluator,
                  successor_generator,
@@ -233,15 +233,15 @@ public:
                  options,
                  options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create(),
                  options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task),
-                 SearchPolicy::make_worker_event_handler(event_handler, ygg::Index<Worker>(0)))
+                 SearchPolicy::make_worker_event_handler(event_handler, urd::index<Worker>(0)))
     {
     }
 
     [[nodiscard]] size_t size() const noexcept { return 1; }
 
-    WorkerData& get([[maybe_unused]] ygg::Index<Worker> index) noexcept
+    WorkerData& get([[maybe_unused]] urd::index<Worker> index) noexcept
     {
-        assert(index == ygg::Index<Worker>(0));
+        assert(index == urd::index<Worker>(0));
         return m_worker;
     }
 

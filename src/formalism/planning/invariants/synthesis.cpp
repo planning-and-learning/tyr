@@ -16,6 +16,7 @@
  */
 
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
+#include <urd/repr/queues/queue.hpp>
 
 #include "normalization.hpp"
 #include "refinement.hpp"
@@ -29,16 +30,16 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <algorithm>
-#include <deque>
-#include <gtl/phmap.hpp>
 #include <map>
 #include <optional>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/elements/less.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <variant>
 #include <vector>
-#include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -60,7 +61,7 @@ MutableAction without_overridden_deletes(MutableAction action)
         for (const auto& literal : literals)
             if (literal.polarity)
                 added.push_back(literal.atom);
-        std::erase_if(literals,
+        erase_if(literals,
                       [&](const MutableLiteral<FluentTag>& literal) { return !literal.polarity && std::ranges::find(added, literal.atom) != added.end(); });
     }
     return action;
@@ -74,10 +75,10 @@ InvariantView intern(const MutableInvariant& invariant, Builder& builder, Reposi
     for (const auto& atom : invariant.atoms)
     {
         auto atom_data = checkout<Atom<LiftedTag, FluentTag>>(builder);
-        atom_data->predicate = atom.predicate.get_index();
+        atom_data->predicate = atom.predicate.index();
         for (const auto& term : atom.terms)
             atom_data->terms.push_back(term);
-        data->atoms.push_back(insert(repository, *atom_data).first.get_index());
+        data->atoms.push_back(insert(repository, *atom_data).first.index());
     }
     return insert(repository, *data).first;
 }
@@ -90,8 +91,8 @@ MutableInvariantList synthesize_mutable_invariants(DomainView domain)
 
     // Breadth-first search with a closed list (Helmert 2009, Section 5). A candidate is refined on the first unbalanced
     // add effect in domain order, so its successors depend only on the candidate, and the result is deterministic.
-    auto queue = std::deque<MutableInvariant> {};
-    auto seen = gtl::flat_hash_set<MutableInvariant, ygg::Hash<MutableInvariant>, ygg::EqualTo<MutableInvariant>> {};
+    auto queue = urd::Store<urd::queue<MutableInvariant>, urd::fifo> {};
+    auto seen = urd::Store<urd::set<MutableInvariant>> {};
 
     const auto enqueue = [&](MutableInvariant candidate)
     {
@@ -100,7 +101,7 @@ MutableInvariantList synthesize_mutable_invariants(DomainView domain)
         if (seen.size() >= max_candidates)
             return;
         if (seen.insert(candidate).second)
-            queue.push_back(std::move(candidate));
+            queue.push(std::move(candidate));
     };
 
     for (auto& candidate : make_initial_candidates(domain.get_predicates<FluentTag>()))
@@ -111,7 +112,7 @@ MutableInvariantList synthesize_mutable_invariants(DomainView domain)
     while (!queue.empty())
     {
         auto candidate = std::move(queue.front());
-        queue.pop_front();
+        queue.pop();
 
         auto result = prove_invariant(candidate, ops);
 
@@ -122,7 +123,7 @@ MutableInvariantList synthesize_mutable_invariants(DomainView domain)
         else if (result.status == ProofStatus::UnbalancedAddEffect)
         {
             // prove_invariant names the threatening add effect of an unbalanced candidate.
-            YGG_ASSUME(result.threat.has_value());
+            URD_ASSUME(result.threat.has_value());
             for (auto& refined : refine_candidate(candidate, *result.threat, ops, domain.get_predicates<FluentTag>()))
                 enqueue(std::move(refined));
         }

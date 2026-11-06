@@ -23,28 +23,28 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/core/dependent_false.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/dependent_false.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::analysis
 {
 
 /**
- * ygg::Index based internal representation of variable domains.
+ * urd::index based internal representation of variable domains.
  */
 
 template<typename Element, typename Payload>
 struct Scoped
 {
-    ygg::Index<Element> element;
+    urd::index<Element> element;
     Payload payload;
 };
 
@@ -52,10 +52,10 @@ template<typename Element>
 using SimpleScopedDomain = Scoped<Element, VariableDomainList>;
 
 template<typename Element>
-using SimpleScopedDomainMap = ygg::UnorderedMap<ygg::Index<Element>, VariableDomainList>;
+using SimpleScopedDomainMap = urd::Store<urd::map<urd::index<Element>, VariableDomainList>>;
 
 template<typename Element>
-using ScopedDomainMap = ygg::UnorderedMap<ygg::Index<Element>, SimpleScopedDomain<Element>>;
+using ScopedDomainMap = urd::Store<urd::map<urd::index<Element>, SimpleScopedDomain<Element>>>;
 
 template<formalism::FactKind T>
 using PredicateDomainMap = SimpleScopedDomainMap<formalism::Predicate<T>>;
@@ -80,7 +80,7 @@ struct ConditionalEffectDomainData
 
 using ConditionalEffectDomain = Scoped<formalism::planning::ConditionalEffect<LiftedTag>, ConditionalEffectDomainData>;
 
-using ConditionalEffectDomainMap = ygg::UnorderedMap<ygg::Index<formalism::planning::ConditionalEffect<LiftedTag>>, ConditionalEffectDomain>;
+using ConditionalEffectDomainMap = urd::Store<urd::map<urd::index<formalism::planning::ConditionalEffect<LiftedTag>>, ConditionalEffectDomain>>;
 
 struct ActionDomainData
 {
@@ -90,7 +90,7 @@ struct ActionDomainData
 
 using ActionDomain = Scoped<formalism::planning::Action<LiftedTag>, ActionDomainData>;
 
-using ActionDomainMap = ygg::UnorderedMap<ygg::Index<formalism::planning::Action<LiftedTag>>, ActionDomain>;
+using ActionDomainMap = urd::Store<urd::map<urd::index<formalism::planning::Action<LiftedTag>>, ActionDomain>>;
 
 struct ProgramVariableDomains
 {
@@ -109,7 +109,7 @@ struct ProgramVariableDomains
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rule_domains;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 
     template<formalism::RelationKind R>
@@ -120,7 +120,7 @@ struct ProgramVariableDomains
         else if constexpr (std::same_as<R, formalism::FunctionTag>)
             return function_rule_domains;
         else
-            static_assert(ygg::dependent_false<R>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
     }
 };
 
@@ -136,20 +136,20 @@ struct TaskVariableDomains
 };
 
 /**
- * ygg::View based external representation of variable domains.
+ * View based external representation of variable domains.
  */
 
 template<typename Element, typename Payload, typename C>
 struct ScopedView
 {
-    ygg::View<ygg::Index<Element>, C> element;
+    urd::view<Element, C> element;
     Payload payload;
 };
 
 template<typename C>
 struct VariableDomainView
 {
-    std::vector<ygg::View<ygg::Index<formalism::Object>, C>> objects;
+    urd::Store<urd::sequence<urd::view<formalism::Object, C>>> objects;
 
     auto begin() noexcept { return objects.begin(); }
     auto end() noexcept { return objects.end(); }
@@ -164,16 +164,16 @@ struct VariableDomainView
 };
 
 template<typename C>
-using VariableDomainViewList = std::vector<VariableDomainView<C>>;
+using VariableDomainViewList = urd::Store<urd::sequence<VariableDomainView<C>>>;
 
 template<typename Element, typename C>
 using SimpleScopedDomainView = ScopedView<Element, VariableDomainViewList<C>, C>;
 
 template<typename Element, typename C>
-using SimpleScopedDomainViewMap = ygg::UnorderedMap<ygg::View<ygg::Index<Element>, C>, VariableDomainViewList<C>>;
+using SimpleScopedDomainViewMap = urd::Store<urd::map<urd::view<Element, C>, VariableDomainViewList<C>>>;
 
 template<typename Element, typename C>
-using ScopedDomainViewMap = ygg::UnorderedMap<ygg::View<ygg::Index<Element>, C>, SimpleScopedDomainView<Element, C>>;
+using ScopedDomainViewMap = urd::Store<urd::map<urd::view<Element, C>, SimpleScopedDomainView<Element, C>>>;
 
 template<formalism::FactKind T, typename C>
 using PredicateDomainViewMap = SimpleScopedDomainViewMap<formalism::Predicate<T>, C>;
@@ -205,7 +205,7 @@ using ConditionalEffectDomainView = ScopedView<formalism::planning::ConditionalE
 
 template<typename C>
 using ConditionalEffectDomainViewMap =
-    ygg::UnorderedMap<ygg::View<ygg::Index<formalism::planning::ConditionalEffect<LiftedTag>>, C>, ConditionalEffectDomainView<C>>;
+    urd::Store<urd::map<urd::view<formalism::planning::ConditionalEffect<LiftedTag>, C>, ConditionalEffectDomainView<C>>>;
 
 template<typename C>
 struct ActionDomainViewData
@@ -218,7 +218,7 @@ template<typename C>
 using ActionDomainView = ScopedView<formalism::planning::Action<LiftedTag>, ActionDomainViewData<C>, C>;
 
 template<typename C>
-using ActionDomainViewMap = ygg::UnorderedMap<ygg::View<ygg::Index<formalism::planning::Action<LiftedTag>>, C>, ActionDomainView<C>>;
+using ActionDomainViewMap = urd::Store<urd::map<urd::view<formalism::planning::Action<LiftedTag>, C>, ActionDomainView<C>>>;
 
 /**
  * Stratification

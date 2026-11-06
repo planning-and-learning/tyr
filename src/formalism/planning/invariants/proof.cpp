@@ -16,6 +16,8 @@
  */
 
 #include "proof.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "constraints.hpp"
 #include "tyr/formalism/planning/mutable/action.hpp"
@@ -40,15 +42,15 @@ namespace tyr::formalism::planning::invariant
 
 namespace
 {
-unification::SubstitutionFunction<ygg::Data<Term>> make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
+unification::SubstitutionFunction<Term> make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
 {
-    auto sigma = unification::SubstitutionFunction<ygg::Data<Term>>::from_range(ParameterIndex { static_cast<ygg::uint_t>(effect.num_parent_variables) },
+    auto sigma = unification::SubstitutionFunction<Term>::from_range(ParameterIndex { static_cast<ygg::uint_t>(effect.num_parent_variables) },
                                                                                 effect.num_variables);
 
     for (size_t i = 0; i < effect.num_variables; ++i)
     {
         [[maybe_unused]] const auto inserted = sigma.assign(ParameterIndex { static_cast<ygg::uint_t>(effect.num_parent_variables + i) },
-                                                            ygg::Data<Term>(ParameterIndex { static_cast<ygg::uint_t>(fresh_base + i) }));
+                                                            Term(ParameterIndex { static_cast<ygg::uint_t>(fresh_base + i) }));
         assert(inserted);
     }
 
@@ -61,9 +63,9 @@ struct EffectAtomRef
     const MutableAtom<FluentTag>* atom;
 };
 
-std::vector<EffectAtomRef> collect_relevant_effect_atoms(const MutableAction& op, const MutableInvariant& inv, bool polarity)
+urd::Store<urd::sequence<EffectAtomRef>> collect_relevant_effect_atoms(const MutableAction& op, const MutableInvariant& inv, bool polarity)
 {
-    std::vector<EffectAtomRef> result;
+    urd::Store<urd::sequence<EffectAtomRef>> result;
 
     for (const auto& eff : op.effects)
     {
@@ -107,14 +109,14 @@ bool add_entailment(ConstraintSystem& system, const MutableLiteralList<T>& requi
 {
     for (const auto& lit : required)
     {
-        std::vector<EqualityConjunction> possibilities;
+        urd::Store<urd::sequence<EqualityConjunction>> possibilities;
 
         for (const auto& match : produced)
         {
             if (match.polarity != lit.polarity || match.atom.predicate != lit.atom.predicate)
                 continue;
 
-            std::vector<std::pair<ConstraintTerm, ConstraintTerm>> eqs;
+            urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> eqs;
             eqs.reserve(lit.atom.terms.size());
 
             for (size_t i = 0; i < lit.atom.terms.size(); ++i)
@@ -143,7 +145,7 @@ ConstraintSystem make_param_system(const MutableAction& op, const MutableConditi
         return (it != representative.end()) ? it->second : term;
     };
 
-    std::vector<ParameterIndex> params;
+    urd::Store<urd::sequence<ParameterIndex>> params;
     params.reserve(op.num_variables + add_effect.num_variables);
 
     for (size_t i = 0; i < op.num_variables; ++i)

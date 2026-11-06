@@ -66,7 +66,7 @@ Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&,
     auto total = AggregationFunction::identity();
     for (const auto literal : goals->template get_literals<formalism::FluentTag>())
     {
-        const auto* annotation = annotations.find(literal.get_atom().get_row().get_index());
+        const auto* annotation = annotations.find(literal.get_atom().get_row().index());
         assert(annotation);
         if (!annotation)
             return std::numeric_limits<Cost>::max();

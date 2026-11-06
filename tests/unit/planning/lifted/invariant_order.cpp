@@ -16,6 +16,8 @@
  */
 
 #include "planning/parser.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
@@ -72,10 +74,10 @@ std::multiset<std::string> variable_texts(const planning::GroundTaskInstantiatio
     auto texts = std::multiset<std::string> {};
     for (const auto variable : result.task->get_fdr_context()->get_variables())
     {
-        auto names = std::vector<std::string> {};
+        auto names = urd::Store<urd::sequence<std::string>> {};
         for (const auto atom : variable.get_atoms())
         {
-            auto objects = std::vector<std::string> {};
+            auto objects = urd::Store<urd::sequence<std::string>> {};
             for (const auto object : atom.get_objects())
                 objects.push_back(fmt::format("{}", object.get_name()));
             names.push_back(fmt::format("{}({})", atom.get_predicate().get_name(), fmt::join(objects, ",")));

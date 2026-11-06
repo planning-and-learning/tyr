@@ -19,6 +19,8 @@
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_PARALLEL_HPP_
 
 #include "../repository_statistics.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "concepts.hpp"
 #include "engine.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
@@ -57,24 +59,24 @@ namespace tyr::planning::detail
 template<TaskKind Kind, DistHashKind HashKind>
 class HashDistributedStatePolicy
 {
-    using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
+    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>>>;
 
 public:
     static constexpr bool uses_owner_repositories = true;
 
     struct PreparedTarget
     {
-        ygg::Index<Worker> owner;
+        urd::index<Worker> owner;
         Node<Kind> node;
     };
 
     explicit HashDistributedStatePolicy(uint64_t seed) : m_dist_hash(seed) {}
 
     template<typename Engine>
-    std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
+    std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
     {
         m_dist_hash.initialize(start_state);
-        const auto owner = m_dist_hash.owner(start_state.get_state_builder(), engine.num_workers());
+        const auto owner = m_dist_hash.owner(start_state.data(), engine.num_workers());
         auto& worker = engine.get_worker(owner);
         return { owner, materialize_state(start_state, *worker.state_repository, *worker.axiom_evaluator) };
     }
@@ -89,7 +91,7 @@ public:
                                   size_t num_workers)
     {
         const auto owner = m_dist_hash.owner(*target, num_workers);
-        const auto owner_index = static_cast<size_t>(static_cast<ygg::uint_t>(owner));
+        const auto owner_index = static_cast<size_t>(static_cast<ygg::uint_t>(owner.value));
         assert(owner_index < sender.registration_repositories.size());
         auto& repository = *sender.registration_repositories[owner_index];
         if (owner != sender.index)
@@ -107,14 +109,14 @@ public:
 
     static size_t search_node_divisor(size_t) noexcept { return 1; }
 
-    static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker>, size_t) noexcept { return state; }
+    static urd::index<State<Kind>> search_node_index(urd::index<State<Kind>> state, urd::index<Worker>, size_t) noexcept { return state; }
 
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
     {
         for (size_t i = 0; i < engine.num_workers(); ++i)
         {
-            auto& worker = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i)));
+            auto& worker = engine.get_worker(urd::index<Worker>(static_cast<ygg::uint_t>(i)));
             detail::snapshot_state_repository_statistics(*worker.state_repository, worker.statistics);
         }
     }
@@ -126,30 +128,30 @@ private:
 template<TaskKind Kind>
 class SharedStatePolicy
 {
-    using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
+    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>>>;
 
 public:
     static constexpr bool uses_owner_repositories = false;
 
     struct PreparedTarget
     {
-        ygg::Index<Worker> owner;
+        urd::index<Worker> owner;
         Node<Kind> node;
     };
 
     explicit SharedStatePolicy(uint64_t) noexcept {}
 
     template<typename Engine>
-    static std::pair<ygg::Index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
+    static std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
     {
-        const auto start_owner = SharedStatePolicy::owner(start_state.get_index(), engine.num_workers());
+        const auto start_owner = SharedStatePolicy::owner(start_state.index(), engine.num_workers());
         return { start_owner, start_state };
     }
 
-    static ygg::Index<Worker> owner(ygg::Index<State<Kind>> state, size_t num_workers) noexcept
+    static urd::index<Worker> owner(urd::index<State<Kind>> state, size_t num_workers) noexcept
     {
         assert(num_workers > 0);
-        return ygg::Index<Worker>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state) % num_workers));
+        return urd::index<Worker>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state.value) % num_workers));
     }
 
     template<typename Engine, typename WorkerData>
@@ -162,20 +164,20 @@ public:
                                          size_t num_workers)
     {
         auto node = Node<Kind>(worker.state_repository->register_state(*worker.axiom_evaluator, std::move(target), parent, delta), metric);
-        return PreparedTarget { owner(node.get_state().get_index(), num_workers), std::move(node) };
+        return PreparedTarget { owner(node.get_state().index(), num_workers), std::move(node) };
     }
 
     static size_t search_node_divisor(size_t num_workers) noexcept { return num_workers; }
 
-    static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, [[maybe_unused]] ygg::Index<Worker> worker, size_t num_workers) noexcept
+    static urd::index<State<Kind>> search_node_index(urd::index<State<Kind>> state, [[maybe_unused]] urd::index<Worker> worker, size_t num_workers) noexcept
     {
         assert(owner(state, num_workers) == worker);
-        return ygg::Index<State<Kind>>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state) / num_workers));
+        return urd::index<State<Kind>>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state.value) / num_workers));
     }
 
-    static uint64_t owned_state_count(uint64_t num_states, ygg::Index<Worker> worker, size_t num_workers) noexcept
+    static uint64_t owned_state_count(uint64_t num_states, urd::index<Worker> worker, size_t num_workers) noexcept
     {
-        const auto worker_index = static_cast<uint64_t>(static_cast<ygg::uint_t>(worker));
+        const auto worker_index = static_cast<uint64_t>(static_cast<ygg::uint_t>(worker.value));
         const auto worker_count = static_cast<uint64_t>(num_workers);
         return num_states <= worker_index ? uint64_t { 0 } : 1 + (num_states - 1 - worker_index) / worker_count;
     }
@@ -183,12 +185,12 @@ public:
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
     {
-        const auto& repository = *engine.get_worker(ygg::Index<Worker>(0)).state_repository;
+        const auto& repository = *engine.get_worker(urd::index<Worker>(0)).state_repository;
         const auto num_states = repository.num_states();
         const auto memory_usage = repository.memory_usage();
         for (size_t i = 0; i < engine.num_workers(); ++i)
         {
-            auto& worker = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i)));
+            auto& worker = engine.get_worker(urd::index<Worker>(static_cast<ygg::uint_t>(i)));
             worker.statistics.set_num_registered_states(owned_state_count(num_states, worker.index, engine.num_workers()));
             worker.statistics.set_state_storage_memory_usage(i == 0 ? memory_usage : 0);
         }
@@ -257,7 +259,7 @@ private:
         auto layer_statistics = std::optional<Statistics> {};
         auto next_active_priority = std::optional<ygg::float_t> {};
         auto release_workers = false;
-        const auto worker_index = static_cast<size_t>(static_cast<ygg::uint_t>(worker.index));
+        const auto worker_index = static_cast<size_t>(static_cast<ygg::uint_t>(worker.index.value));
         {
             auto lock = std::unique_lock(m_layer_mutex);
             if (!execution.running())
@@ -279,7 +281,7 @@ private:
                 auto num_open_entries = size_t { 0 };
                 for (size_t i = 0; i < engine.num_workers(); ++i)
                 {
-                    const auto& search = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).search;
+                    const auto& search = engine.get_worker(urd::index<Worker>(static_cast<ygg::uint_t>(i))).search;
                     next_priority = std::min(next_priority, search.get_min_priority());
                     num_open_entries += search.get_num_open_entries();
                 }
@@ -360,7 +362,7 @@ private:
     std::mutex m_layer_mutex;
     std::atomic<ygg::float_t> m_active_priority { std::numeric_limits<ygg::float_t>::infinity() };
     std::atomic<size_t> m_layer_generation { 0 };
-    std::vector<uint8_t> m_waiting_workers;
+    urd::Store<urd::sequence<uint8_t>> m_waiting_workers;
     size_t m_num_waiting_workers { 0 };
     bool m_synchronize_priority_layers { false };
 };
@@ -369,7 +371,7 @@ template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, StateRoutingPoli
     requires std::same_as<SearchTagT<SearchPolicy>, ParallelSearch>
 class ParallelExecutionPolicy
 {
-    using BuilderPtr = ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>;
+    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>>>;
     using CoordinationPolicy = ParallelLayerCoordinationPolicy<SearchPolicy>;
     using Metadata = SuccessorMetadataT<SearchPolicy>;
 
@@ -406,7 +408,7 @@ public:
     static size_t search_node_divisor(const Options& options) noexcept
     { return StatePolicy::search_node_divisor(num_workers(options)); }
 
-    static ygg::Index<State<Kind>> search_node_index(ygg::Index<State<Kind>> state, ygg::Index<Worker> worker, size_t num_workers) noexcept
+    static urd::index<State<Kind>> search_node_index(urd::index<State<Kind>> state, urd::index<Worker> worker, size_t num_workers) noexcept
     { return StatePolicy::search_node_index(state, worker, num_workers); }
 
     template<typename Engine>
@@ -443,7 +445,7 @@ public:
     template<typename Engine>
     void invoke(Engine& engine)
     {
-        auto threads = std::vector<std::jthread> {};
+        auto threads = urd::Store<urd::sequence<std::jthread>> {};
         try
         {
             threads.reserve(engine.num_workers());
@@ -454,7 +456,7 @@ public:
                     {
                         try
                         {
-                            engine.worker_loop(engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))));
+                            engine.worker_loop(engine.get_worker(urd::index<Worker>(static_cast<ygg::uint_t>(i))));
                         }
                         catch (...)
                         {
@@ -606,7 +608,7 @@ public:
             return std::nullopt;
 
         search_node.status = SearchNodeStatus::GOAL;
-        static_cast<void>(consider_goal(WorkerStateIndex<Kind> { worker.index, state.get_index() }, g_value, SearchPolicy::terminate_on_goal));
+        static_cast<void>(consider_goal(WorkerStateIndex<Kind> { worker.index, state.index() }, g_value, SearchPolicy::terminate_on_goal));
         std::forward<EmitTransition>(emit_transition)(TransitionOutcome::GOAL);
         return running() ? AcceptanceResult::DISCARDED : AcceptanceResult::TERMINAL;
     }
@@ -700,7 +702,7 @@ private:
     {
         for (size_t i = 0; i < engine.num_workers(); ++i)
         {
-            auto& execution = engine.get_worker(ygg::Index<Worker>(static_cast<ygg::uint_t>(i))).execution;
+            auto& execution = engine.get_worker(urd::index<Worker>(static_cast<ygg::uint_t>(i))).execution;
             const auto lock = std::lock_guard(execution.mutex);
             execution.condition.notify_all();
         }
@@ -755,7 +757,7 @@ public:
         auto goal_strategy = options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task);
         const auto num_datalog_threads = axiom_evaluator.get_execution_context()->get_num_threads();
         auto& root_state_repository = uses_owner_repositories ? *m_owner_state_repositories.front() : state_repository;
-        m_workers.push_back(std::make_unique<WorkerData>(ygg::Index<Worker>(0),
+        m_workers.push_back(std::make_unique<WorkerData>(urd::index<Worker>(0),
                                                          root_state_repository,
                                                          axiom_evaluator,
                                                          successor_generator,
@@ -764,11 +766,11 @@ public:
                                                          options,
                                                          pruning_strategy,
                                                          goal_strategy,
-                                                         SearchPolicy::make_worker_event_handler(event_handler, ygg::Index<Worker>(0))));
+                                                         SearchPolicy::make_worker_event_handler(event_handler, urd::index<Worker>(0))));
 
         for (size_t i = 1; i < num_workers; ++i)
         {
-            const auto index = ygg::Index<Worker>(static_cast<ygg::uint_t>(i));
+            const auto index = urd::index<Worker>(static_cast<ygg::uint_t>(i));
             auto execution_context = ygg::ExecutionContext::create(num_datalog_threads);
             auto worker_state_repository = uses_owner_repositories ? m_owner_state_repositories[i] : state_repository.make_worker();
             auto worker_axiom_evaluator = axiom_evaluator.make_worker(execution_context);
@@ -821,9 +823,9 @@ public:
 
     [[nodiscard]] size_t size() const noexcept { return m_workers.size(); }
 
-    WorkerData& get(ygg::Index<Worker> index) noexcept
+    WorkerData& get(urd::index<Worker> index) noexcept
     {
-        const auto value = static_cast<size_t>(static_cast<ygg::uint_t>(index));
+        const auto value = static_cast<size_t>(static_cast<ygg::uint_t>(index.value));
         assert(value < m_workers.size());
         return *m_workers[value];
     }
@@ -837,7 +839,7 @@ public:
 
     std::pair<Plan<Kind>, Node<Kind>> reconstruct_solution(WorkerStateIndex<Kind> goal, const OptionsT<SearchPolicy>& options)
     {
-        auto views = std::vector<WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>> {};
+        auto views = urd::Store<urd::sequence<WorkerSearchSpaceView<Kind, SearchNodeT<SearchPolicy>>>> {};
         views.reserve(size());
         const auto state_index_divisor = ExecutionPolicy::search_node_divisor(options);
         for_each(
@@ -865,8 +867,8 @@ public:
 private:
     StateRepository<Kind>* m_caller_state_repository;
     AxiomEvaluator<Kind>* m_caller_axiom_evaluator;
-    std::vector<StateRepositoryPtr<Kind>> m_owner_state_repositories;
-    std::vector<std::unique_ptr<WorkerData>> m_workers;
+    urd::Store<urd::sequence<StateRepositoryPtr<Kind>>> m_owner_state_repositories;
+    urd::Store<urd::sequence<std::unique_ptr<WorkerData>>> m_workers;
 };
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy>

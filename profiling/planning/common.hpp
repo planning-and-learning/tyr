@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <filesystem>
 #include <span>
 #include <stdexcept>
@@ -49,12 +51,12 @@ inline std::filesystem::path extract_suite_path(int& argc, char** argv)
     return suite;
 }
 
-inline std::vector<BenchmarkCase> load_suite(const std::filesystem::path& suite)
+inline urd::Store<urd::sequence<BenchmarkCase>> load_suite(const std::filesystem::path& suite)
 {
     const auto document = ygg::common::load_json_file(suite);
     const auto& root = ygg::common::as_object(document, "suite");
     const auto prefix = root.contains("prefix") ? ygg::common::suite_prefix_path(root) : std::filesystem::path(BENCHMARKS_DIR);
-    auto cases = std::vector<BenchmarkCase> {};
+    auto cases = urd::Store<urd::sequence<BenchmarkCase>> {};
     for (const auto& [domain_name, domain_value] : ygg::common::as_object(root, "domains", "suite"))
     {
         const auto& domain = ygg::common::as_object(domain_value, "domain");

@@ -7,21 +7,20 @@
 
 template<typename Tag>
 concept VariableSelectorContract =
-    std::constructible_from<ygg::Index<tyr::planning::match_tree::VariableSelectorNode<Tag>>, ygg::uint_t>
-    && std::totally_ordered<ygg::Index<tyr::planning::match_tree::VariableSelectorNode<Tag>>>
-    && std::totally_ordered<ygg::Data<tyr::planning::match_tree::VariableSelectorNode<Tag>>>
-    && std::totally_ordered<ygg::View<ygg::Index<tyr::planning::match_tree::VariableSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>>
-    && requires(ygg::Data<tyr::planning::match_tree::VariableSelectorNode<Tag>>& data,
-                const ygg::View<ygg::Index<tyr::planning::match_tree::VariableSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>& view) {
+    std::constructible_from<urd::index<tyr::planning::match_tree::VariableSelectorNode<Tag>>, ygg::uint_t>
+    && std::totally_ordered<urd::index<tyr::planning::match_tree::VariableSelectorNode<Tag>>>
+    && std::totally_ordered<urd::data<tyr::planning::match_tree::VariableSelectorNode<Tag>>>
+    && std::totally_ordered<urd::view<tyr::planning::match_tree::VariableSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
+    && requires(urd::data<tyr::planning::match_tree::VariableSelectorNode<Tag>>& data,
+                const urd::view<tyr::planning::match_tree::VariableSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.variable;
            data.domain_children;
            data.dontcare_child;
-           data.clear();
            view.get_variable();
            view.get_domain_children();
            view.get_dontcare_child();
        };
 
-using MatchTreeTags = ygg::TypeList<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
-static_assert([]<typename... Tags>(ygg::TypeList<Tags...>) { return (VariableSelectorContract<Tags> && ...); }(MatchTreeTags {}));
+using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+static_assert([]<typename... Tags>(boost::mp11::mp_list<Tags...>) { return (VariableSelectorContract<Tags> && ...); }(MatchTreeTags {}));

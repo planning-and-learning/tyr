@@ -31,8 +31,12 @@
 #include <limits>
 #include <optional>
 #include <tuple>
+#include <urd/repr/containers/bitset_span.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/dynamic_bitset.hpp>
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -43,9 +47,9 @@ struct PerfectAssignmentHash
 {
     size_t m_num_assignments = 1;
     size_t m_num_objects;
-    std::vector<ygg::uint_t> m_remapping;
-    std::vector<size_t> m_vertex_offsets;
-    std::vector<size_t> m_pair_offsets;
+    urd::Store<urd::sequence<ygg::uint_t>> m_remapping;
+    urd::Store<urd::sequence<size_t>> m_vertex_offsets;
+    urd::Store<urd::sequence<size_t>> m_pair_offsets;
 
     PerfectAssignmentHash(const analysis::VariableDomainList& parameter_domains, size_t num_objects);
 
@@ -61,12 +65,12 @@ template<formalism::FactKind T>
 class PredicateAssignmentSet
 {
 private:
-    ygg::Index<formalism::Predicate<T>> m_predicate_index;
+    urd::index<formalism::Predicate<T>> m_predicate_index;
 
     PerfectAssignmentHash m_hash;
-    std::vector<uint64_t> m_blocks;
-    std::vector<size_t> m_touched_blocks;
-    std::vector<ygg::uint_t> m_remapped_objects;
+    /// The ranks of the assignments held: a bitset that clears only the words it set.
+    urd::Store<urd::set<size_t>, urd::dense, urd::proportional_clear> m_ranks;
+    urd::Store<urd::sequence<ygg::uint_t>> m_remapped_objects;
 
 public:
     PredicateAssignmentSet(formalism::datalog::PredicateView<T> predicate, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
@@ -82,14 +86,14 @@ public:
 
     [[nodiscard]] size_t size() const noexcept;
     [[nodiscard]] const PerfectAssignmentHash& get_hash() const noexcept;
-    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_set() const noexcept;
+    [[nodiscard]] const urd::Store<urd::set<size_t>, urd::dense, urd::proportional_clear>& get_set() const noexcept;
 };
 
 template<formalism::FactKind T>
 class PredicateAssignmentSets
 {
 private:
-    std::vector<PredicateAssignmentSet<T>> m_sets;
+    urd::Store<urd::sequence<PredicateAssignmentSet<T>>> m_sets;
 
 public:
     PredicateAssignmentSets();
@@ -101,22 +105,22 @@ public:
     void insert(formalism::datalog::PredicateBindingView<T> binding);
     void insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
 
-    [[nodiscard]] const PredicateAssignmentSet<T>& get_set(ygg::Index<formalism::Predicate<T>> index) const noexcept;
+    [[nodiscard]] const PredicateAssignmentSet<T>& get_set(urd::index<formalism::Predicate<T>> index) const noexcept;
 
     [[nodiscard]] size_t size() const noexcept;
 
-    [[nodiscard]] const std::vector<PredicateAssignmentSet<T>>& get_sets() const noexcept;
+    [[nodiscard]] const urd::Store<urd::sequence<PredicateAssignmentSet<T>>>& get_sets() const noexcept;
 };
 
 template<formalism::FactKind T>
 class FunctionAssignmentSet
 {
 private:
-    ygg::Index<formalism::Function<T>> m_function_index;
+    urd::index<formalism::Function<T>> m_function_index;
 
     PerfectAssignmentHash m_hash;
-    std::vector<ygg::ClosedInterval<ygg::float_t>> m_set;
-    std::vector<ygg::uint_t> m_remapped_objects;
+    urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>> m_set;
+    urd::Store<urd::sequence<ygg::uint_t>> m_remapped_objects;
 
 public:
     FunctionAssignmentSet(formalism::datalog::FunctionView<T> function, const analysis::VariableDomainList& parameter_domains, size_t num_objects);
@@ -145,7 +149,7 @@ template<formalism::FactKind T>
 class FunctionAssignmentSets
 {
 private:
-    std::vector<FunctionAssignmentSet<T>> m_sets;
+    urd::Store<urd::sequence<FunctionAssignmentSet<T>>> m_sets;
 
 public:
     FunctionAssignmentSets();
@@ -156,14 +160,14 @@ public:
     bool insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval);
-    void insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const std::vector<ygg::float_t>& values);
+    void insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values);
     void insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
 
-    [[nodiscard]] const FunctionAssignmentSet<T>& get_set(ygg::Index<formalism::Function<T>> index) const noexcept;
+    [[nodiscard]] const FunctionAssignmentSet<T>& get_set(urd::index<formalism::Function<T>> index) const noexcept;
     ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const;
     [[nodiscard]] ygg::ClosedInterval<ygg::float_t> at(formalism::datalog::FunctionBindingView<T> binding) const;
-    std::vector<FunctionAssignmentSet<T>>& get_sets() noexcept;
-    [[nodiscard]] const std::vector<FunctionAssignmentSet<T>>& get_sets() const noexcept;
+    urd::Store<urd::sequence<FunctionAssignmentSet<T>>>& get_sets() noexcept;
+    [[nodiscard]] const urd::Store<urd::sequence<FunctionAssignmentSet<T>>>& get_sets() const noexcept;
 
     [[nodiscard]] size_t size() const noexcept;
 };

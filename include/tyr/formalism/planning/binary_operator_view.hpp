@@ -19,27 +19,22 @@
 #define TYR_FORMALISM_PLANNING_BINARY_OPERATOR_VIEW_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_expression_view.hpp"
 
-#include <yggdrasil/containers/variant.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
-template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::BinaryOperator<T, O>> C>
-class View<ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::BinaryOperator<T, O>, C>
+template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O, typename V>
+struct view_mixin<::tyr::formalism::planning::BinaryOperator<T, O>, V>
 {
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::BinaryOperator<T, O>, C>(handle, context)
-    {
-    }
-
-    auto get_operator() const noexcept { return this->get_data().operator_kind; }
-    auto get_lhs() const noexcept { return ygg::make_view(this->get_data().lhs, this->get_context()); }
-    auto get_rhs() const noexcept { return ygg::make_view(this->get_data().rhs, this->get_context()); }
+    auto get_operator() const noexcept { return self().data().operator_kind; }
+    auto get_lhs() const noexcept { return self().template get<&urd::record_of<V>::lhs>(); }
+    auto get_rhs() const noexcept { return self().template get<&urd::record_of<V>::rhs>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

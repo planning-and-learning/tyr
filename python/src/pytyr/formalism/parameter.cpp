@@ -16,11 +16,12 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism
 {
 
-void bind_parameter(nb::module_& m) { ygg::bind_fixed_uint<ParameterIndex>(m, "ParameterIndex"); }
+void bind_parameter(nb::module_& m) { ygg::bind_unsigned_integer<ParameterIndex>(m, "ParameterIndex"); }
 
 }  // namespace tyr::formalism

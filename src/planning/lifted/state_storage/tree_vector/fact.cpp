@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/lifted/state_storage/tree_vector/fact.hpp"
+#include "tyr/containers.hpp"
 
 #include "tyr/planning/lifted/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/lifted/task.hpp"
@@ -36,7 +37,7 @@ typename FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::Packed FactStora
     for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         m_buffer.push_back(i);
 
-    return Packed { m_uint_vectors->insert(m_buffer) };
+    return Packed { m_uint_vectors->insert(m_buffer).first };
 }
 
 template<bool ThreadSafe>
@@ -50,7 +51,7 @@ void FactStorageBackend<LiftedTag, TreeVector, ThreadSafe>::unpack(const Packed&
     m_uint_vectors->read(packed.index, m_buffer);
 
     for (const auto i : m_buffer)
-        ygg::set(i, true, indices);
+        tyr::set(i, true, indices);
 }
 
 template class FactStorageBackend<LiftedTag, TreeVector, false>;

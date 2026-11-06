@@ -33,12 +33,11 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 template<TaskKind Kind, StateViewConcept<Kind> State>
-class Node : public ygg::comparison::Mixin<Node<Kind, State>>
+class Node : public urd::compared_by_identity<Node<Kind, State>>
 {
 public:
     using StateType = State;
@@ -54,9 +53,9 @@ public:
         }
     { return PackedNode<Kind>(m_state.pack(), m_metric); }
 
-    [[nodiscard]] auto identifying_members() const noexcept
-        requires ygg::Identifiable<State>
-    { return std::tie(m_state, m_metric); }
+    static constexpr auto identifying_members() noexcept
+        requires urd::Identifiable<State>
+    { return urd::Members<&Node::m_state, &Node::m_metric> {}; }
 
 private:
     State m_state;
@@ -64,7 +63,7 @@ private:
 };
 
 template<TaskKind Kind>
-class PackedNode : public ygg::comparison::Mixin<PackedNode<Kind>>
+class PackedNode : public urd::compared_by_identity<PackedNode<Kind>>
 {
 public:
     PackedNode(PackedStateView<Kind> state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
@@ -74,7 +73,7 @@ public:
 
     [[nodiscard]] Node<Kind> unpack() const { return Node<Kind>(m_state.unpack(), m_metric); }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&PackedNode::m_state, &PackedNode::m_metric> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&PackedNode::m_state, &PackedNode::m_metric> {}; }
 
 private:
     PackedStateView<Kind> m_state;
@@ -91,6 +90,7 @@ struct LabeledNode
     Binding label;
     Node<Kind, State> node;
 
+
     [[nodiscard]] auto pack() const noexcept(noexcept(node.pack()))
         requires std::same_as<Binding, formalism::planning::ActionBindingView> && requires(const Node<Kind, State>& value) { value.pack(); }
     { return PackedLabeledNode<Kind> { label, node.pack() }; }
@@ -101,6 +101,7 @@ struct PackedLabeledNode
 {
     formalism::planning::ActionBindingView label;
     PackedNode<Kind> node;
+
 
     [[nodiscard]] LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
 };

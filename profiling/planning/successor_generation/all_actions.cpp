@@ -16,6 +16,8 @@
  */
 
 #include "../common.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/factory.hpp"
@@ -65,7 +67,7 @@ try
     auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
     auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto successors = std::vector<tyr::planning::LabeledNode<Kind>>();
+    auto successors = urd::Store<urd::sequence<tyr::planning::LabeledNode<Kind>>>();
 
     for ([[maybe_unused]] auto _ : state)
     {
@@ -90,7 +92,7 @@ try
     auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
     auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto bindings = std::vector<tyr::formalism::planning::ActionBindingView>();
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>>();
 
     for ([[maybe_unused]] auto _ : state)
     {

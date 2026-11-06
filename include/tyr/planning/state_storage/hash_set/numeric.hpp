@@ -22,21 +22,19 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <limits>
-#include <yggdrasil/containers/raw_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 template<TaskKind Kind>
-struct NumericPackedStorage<Kind, HashSet> : ygg::comparison::Mixin<NumericPackedStorage<Kind, HashSet>>
+struct NumericPackedStorage<Kind, HashSet> : urd::compared_by_identity<NumericPackedStorage<Kind, HashSet>>
 {
     ygg::uint_t index = 0;
 
     NumericPackedStorage() = default;
     explicit NumericPackedStorage(ygg::uint_t index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&NumericPackedStorage::index> {}; }
 };
 
 template<TaskKind Kind, bool ThreadSafe>

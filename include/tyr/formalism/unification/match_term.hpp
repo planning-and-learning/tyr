@@ -18,17 +18,17 @@
 #ifndef TYR_FORMALISM_UNIFICATION_MATCH_TERM_HPP_
 #define TYR_FORMALISM_UNIFICATION_MATCH_TERM_HPP_
 
-#include "tyr/formalism/term_data.hpp"
 #include "tyr/formalism/unification/match_policy.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
 
-#include <yggdrasil/semantics/comparators.hpp>
+#include <urd/elements/less.hpp>
+
 
 namespace tyr::formalism::unification
 {
 
 template<typename Policy = DefaultMatchPolicy>
-bool match_term(const ygg::Data<Term>& pattern, const ygg::Data<Term>& element, TermMatchState& state, const Policy& policy = {})
+bool match_term(const Term& pattern, const Term& element, TermMatchState& state, const Policy& policy = {})
 {
     return std::visit(
         [&]<typename Lhs>(const Lhs& lhs) -> bool
@@ -42,38 +42,38 @@ bool match_term(const ygg::Data<Term>& pattern, const ygg::Data<Term>& element, 
                         {
                             return policy.match_parameter_parameter(lhs, rhs, state);
                         }
-                        else if constexpr (std::is_same_v<Rhs, ygg::Index<Object>>)
+                        else if constexpr (std::is_same_v<Rhs, urd::index<Object>>)
                         {
-                            return policy.match_parameter_object(lhs, ygg::Data<Term>(rhs), state);
+                            return policy.match_parameter_object(lhs, Term(rhs), state);
                         }
                         else
                         {
-                            static_assert(ygg::dependent_false<Rhs>::value, "Missing case");
+                            static_assert(urd::repr::dependent_false<Rhs>::value, "Missing case");
                         }
                     }
-                    else if constexpr (std::is_same_v<Lhs, ygg::Index<Object>>)
+                    else if constexpr (std::is_same_v<Lhs, urd::index<Object>>)
                     {
                         if constexpr (std::is_same_v<Rhs, ParameterIndex>)
                         {
-                            return policy.match_object_parameter(ygg::Data<Term>(lhs), rhs, state);
+                            return policy.match_object_parameter(Term(lhs), rhs, state);
                         }
-                        else if constexpr (std::is_same_v<Rhs, ygg::Index<Object>>)
+                        else if constexpr (std::is_same_v<Rhs, urd::index<Object>>)
                         {
                             return lhs == rhs;
                         }
                         else
                         {
-                            static_assert(ygg::dependent_false<Rhs>::value, "Missing case");
+                            static_assert(urd::repr::dependent_false<Rhs>::value, "Missing case");
                         }
                     }
                     else
                     {
-                        static_assert(ygg::dependent_false<Lhs>::value, "Missing case");
+                        static_assert(urd::repr::dependent_false<Lhs>::value, "Missing case");
                     }
                 },
-                element.variant);
+                element);
         },
-        pattern.variant);
+        pattern);
 }
 
 }  // namespace tyr::formalism::unification

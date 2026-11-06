@@ -21,16 +21,18 @@
 #include "tyr/datalog/rule_mapping.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::datalog
 {
 
 struct StaticLiteralDecomposition
 {
-    using Rule = ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
+    using Rule = urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
 
     /// Rewritten rules keep the variables of their source rules.
     RuleMapping rules;

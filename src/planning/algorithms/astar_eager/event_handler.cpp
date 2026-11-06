@@ -36,13 +36,13 @@ template<TaskKind Kind>
 class DefaultWorkerEventHandler final : public WorkerEventHandler<Kind>
 {
 public:
-    explicit DefaultWorkerEventHandler(ygg::Index<Worker> index) : m_index(index) {}
+    explicit DefaultWorkerEventHandler(urd::index<Worker> index) : m_index(index) {}
 
     void on_expand_node(const Node<Kind>& node) override
     {
         fmt::print("[ASTAR][Worker {}] ----------------------------------------\n[ASTAR][Worker {}] Expanding node: {}\n\n",
-                   static_cast<ygg::uint_t>(m_index),
-                   static_cast<ygg::uint_t>(m_index),
+                   static_cast<ygg::uint_t>(m_index.value),
+                   static_cast<ygg::uint_t>(m_index.value),
                    node);
     }
 
@@ -52,14 +52,14 @@ public:
             && outcome != TransitionOutcome::GOAL)
             return;
         fmt::print("[ASTAR][Worker {}] Action: {}\n[ASTAR][Worker {}] Successor node: {}\n\n",
-                   static_cast<ygg::uint_t>(m_index),
+                   static_cast<ygg::uint_t>(m_index.value),
                    labeled_succ_node.label,
-                   static_cast<ygg::uint_t>(m_index),
+                   static_cast<ygg::uint_t>(m_index.value),
                    labeled_succ_node.node);
     }
 
 private:
-    ygg::Index<Worker> m_index;
+    urd::index<Worker> m_index;
 };
 
 }
@@ -104,7 +104,7 @@ void DefaultEventHandler<Kind>::on_solved(const Plan<Kind>& plan)
 }
 
 template<TaskKind Kind>
-WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(ygg::Index<Worker> index)
+WorkerEventHandlerPtr<Kind> DefaultEventHandler<Kind>::make_worker(urd::index<Worker> index)
 {
     if (m_verbosity < 2)
         return nullptr;

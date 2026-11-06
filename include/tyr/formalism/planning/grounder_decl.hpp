@@ -20,9 +20,12 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -30,7 +33,7 @@ namespace tyr::formalism::planning
 class GrounderContext
 {
 public:
-    GrounderContext(Builder& builder, Repository& destination, ygg::IndexList<Object>& binding) noexcept :
+    GrounderContext(Builder& builder, Repository& destination, urd::flat_vector<urd::index<Object>>& binding) noexcept :
         m_builder(&builder),
         m_destination(&destination),
         m_binding(&binding)
@@ -39,12 +42,12 @@ public:
 
     [[nodiscard]] Builder& builder() const noexcept { return *m_builder; }
     [[nodiscard]] Repository& destination() const noexcept { return *m_destination; }
-    [[nodiscard]] ygg::IndexList<Object>& binding() const noexcept { return *m_binding; }
+    [[nodiscard]] urd::flat_vector<urd::index<Object>>& binding() const noexcept { return *m_binding; }
 
 private:
     Builder* m_builder;
     Repository* m_destination;
-    ygg::IndexList<Object>* m_binding;
+    urd::flat_vector<urd::index<Object>>* m_binding;
 };
 template<typename T>
 struct GrounderCacheEntry;
@@ -52,7 +55,7 @@ struct GrounderCacheEntry;
 template<>
 struct GrounderCacheEntry<Axiom<LiftedTag>>
 {
-    ygg::UnorderedMap<ygg::Index<RelationBinding<Axiom<LiftedTag>>>, ygg::Index<Axiom<GroundTag>>> container;
+    urd::Store<urd::map<ygg::formalism::RelationBindingIndex<Axiom<LiftedTag>, ::tyr::formalism::ObjectTag>, urd::index<Axiom<GroundTag>>>> container;
 };
 
 }

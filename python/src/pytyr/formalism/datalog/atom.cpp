@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
@@ -32,30 +33,30 @@ void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::st
 {
     using namespace nb::literals;
     using Tag = Atom<T, F>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<PredicateView<F>, const TermViewList&>(), "predicate"_a, "terms"_a);
-            cls.def(nb::init<ygg::Index<Predicate<F>>, ygg::DataList<Term>>(), "predicate"_a, "terms"_a);
+            cls.def(urd::python::init_from_views<PredicateView<F>, const TermViewList&>(), "predicate"_a, "terms"_a);
+            cls.def(nb::init<urd::index<Predicate<F>>, TermList>(), "predicate"_a, "terms"_a);
         }
         else
         {
-            cls.def(nb::init<PredicateBindingView<F>>(), "binding"_a);
-            cls.def(nb::init<ygg::Index<RelationBinding<Predicate<F>>>>(), "binding"_a);
+            cls.def(urd::python::init_from_views<PredicateBindingView<F>>(), "binding"_a);
+            cls.def(nb::init<ygg::formalism::RelationBindingIndex<Predicate<F>, ::tyr::formalism::ObjectTag>>(), "binding"_a);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = AtomView<T, F>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         cls.def("get_predicate", &V::get_predicate, nb::keep_alive<0, 1>());
         if constexpr (std::same_as<T, LiftedTag>)
         {
@@ -67,8 +68,8 @@ void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::st
             cls.def("get_objects", &V::get_objects);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

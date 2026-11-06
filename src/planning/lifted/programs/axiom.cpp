@@ -37,23 +37,23 @@ namespace
 void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag> axiom_body,
                         const TranslationContext<LiftedTag>& translation_context,
                         formalism::planning::MergeDatalogContext& context,
-                        ygg::Data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
+                        urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
 {
     for (const auto literal : axiom_body.get_literals<formalism::StaticTag>())
         conj_cond.static_literals.push_back(
-            formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+            formalism::planning::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
 
     for (const auto literal : axiom_body.get_literals<formalism::FluentTag>())
         conj_cond.fluent_literals.push_back(
-            formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+            formalism::planning::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
 
     for (const auto literal : axiom_body.get_literals<formalism::DerivedTag>())
         conj_cond.fluent_literals.push_back(
             formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context)
-                .first.get_index());
+                .first.index());
 
     for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, context));
+        conj_cond.numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, context).first.index());
 }
 
 auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
@@ -65,18 +65,18 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
-        conj_cond->variables.push_back(formalism::planning::merge_p2d(variable, context).first.get_index());
+        conj_cond->variables.push_back(formalism::planning::merge_p2d(variable, context).first.index());
 
     process_axiom_body(axiom.get_body(), translation_context, context, *conj_cond);
 
-    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first.get_index();
+    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first.index();
 
     rule->body = new_conj_cond;
 
     const auto new_head = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(axiom.get_head(),
                                                                                                       translation_context.p2d.derived_to_fluent_predicate,
                                                                                                       context)
-                              .first.get_index();
+                              .first.index();
 
     rule->heads.push_back(new_head);
 
@@ -96,58 +96,58 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
         translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
-        program->static_predicates.push_back(new_predicate.get_index());
+        program->static_predicates.push_back(new_predicate.index());
     }
     for (const auto predicate : task.get_domain().get_predicates<formalism::FluentTag>())
     {
         const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
         translation_context.d2p.fluent_to_fluent_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.fluent_to_fluent_predicate.emplace(predicate, new_predicate);
-        program->fluent_predicates.push_back(new_predicate.get_index());
+        program->fluent_predicates.push_back(new_predicate.index());
     }
     for (const auto predicate : task.get_domain().get_predicates<formalism::DerivedTag>())
     {
         const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
         translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-        program->fluent_predicates.push_back(new_predicate.get_index());
+        program->fluent_predicates.push_back(new_predicate.index());
     }
     for (const auto predicate : task.get_derived_predicates())
     {
         const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
         translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
         translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-        program->fluent_predicates.push_back(new_predicate.get_index());
+        program->fluent_predicates.push_back(new_predicate.index());
     }
 
     for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
-        program->static_functions.push_back(formalism::planning::merge_p2d(function, context).first.get_index());
+        program->static_functions.push_back(formalism::planning::merge_p2d(function, context).first.index());
     for (const auto function : task.get_domain().get_functions<formalism::FluentTag>())
     {
         const auto new_function = formalism::planning::merge_p2d(function, context).first;
         translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
-        program->fluent_functions.push_back(new_function.get_index());
+        program->fluent_functions.push_back(new_function.index());
     }
 
     for (const auto object : task.get_domain().get_constants())
-        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.index());
     for (const auto object : task.get_objects())
-        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.get_index());
+        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.index());
 
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
-        program->static_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
+        program->static_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.index());
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
-        program->fluent_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
+        program->fluent_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
 
     for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
-        program->static_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.get_index());
+        program->static_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.index());
     for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
-        program->fluent_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.get_index());
+        program->fluent_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.index());
 
     for (const auto axiom : task.get_domain().get_axioms())
-        program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
+        program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
     for (const auto axiom : task.get_axioms())
-        program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
+        program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
 
     return formalism::datalog::insert(repository, *program).first;
 }

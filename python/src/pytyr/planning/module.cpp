@@ -16,6 +16,7 @@
  */
 
 #include "module.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include "ground/module.hpp"
 #include "lifted/module.hpp"
@@ -43,7 +44,7 @@ namespace tyr::planning
 void bind_module_definitions(nb::module_& m)
 {
     using namespace nb::literals;
-    ygg::bind_index<ygg::Index<Worker>>(m, "WorkerIndex");
+    urd::python::bind_index<urd::index<Worker>>(m, "WorkerIndex");
 
     nb::class_<SearchBudget>(m, "SearchBudget")
         .def(nb::init<std::optional<ygg::uint_t>, std::optional<std::chrono::steady_clock::duration>>(),

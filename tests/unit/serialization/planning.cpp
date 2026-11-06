@@ -1,4 +1,6 @@
 #include "planning_fixtures.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
@@ -31,20 +33,19 @@ namespace
 TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
 {
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>(),
-              (std::vector<std::string> { "relation", "objects" }));
+              (urd::Store<urd::sequence<std::string>> { "relation", "objects" }));
     EXPECT_EQ((ygg::serialization::fields<tyr::formalism::planning::AtomView<LiftedTag, tyr::formalism::FluentTag>>()),
-              (std::vector<std::string> { "predicate", "terms" }));
+              (urd::Store<urd::sequence<std::string>> { "predicate", "terms" }));
     EXPECT_EQ((ygg::serialization::fields<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>()),
-              (std::vector<std::string> { "binding" }));
-    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::FunctionExpressionView<LiftedTag>>(), (std::vector<std::string> { "variant" }));
+              (urd::Store<urd::sequence<std::string>> { "binding" }));
 
     auto dictionaries = ygg::serialization::Dictionaries {};
-    const auto selected_fields = std::optional<std::vector<std::string>>(std::in_place);
+    const auto selected_fields = std::optional<urd::Store<urd::sequence<std::string>>>(std::in_place);
     auto archive = ygg::serialization::Dictionaries::Archive(dictionaries, selected_fields);
     const auto dummy = 0;
     auto writer = ygg::serialization::FieldWriter { &archive, &dummy };
     EXPECT_NO_THROW(writer.field("unused", [](int) -> int { throw std::runtime_error("excluded getter ran"); }));
-    EXPECT_NO_THROW(writer.variant([](int) -> decltype(std::declval<tyr::formalism::planning::TermView>().get_variant())
+    EXPECT_NO_THROW(writer.variant([](int) -> decltype(std::declval<tyr::formalism::planning::TermView>())
                                    { throw std::runtime_error("excluded variant getter ran"); }));
     EXPECT_TRUE(std::move(archive).take_fields().empty());
 }
@@ -52,7 +53,7 @@ TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
 TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
 {
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::TaskView<LiftedTag>>(),
-              (std::vector<std::string> { "name",
+              (urd::Store<urd::sequence<std::string>> { "name",
                                           "domain",
                                           "derived_predicates",
                                           "objects",
@@ -65,7 +66,7 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
                                           "metric",
                                           "axioms" }));
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::TaskView<GroundTag>>(),
-              (std::vector<std::string> { "name",
+              (urd::Store<urd::sequence<std::string>> { "name",
                                           "domain",
                                           "derived_predicates",
                                           "objects",
@@ -82,8 +83,8 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
                                           "fdr_facts",
                                           "ground_actions",
                                           "ground_axioms" }));
-    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<LiftedTag>>(), (std::vector<std::string> { "task", "domain", "path" }));
-    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<GroundTag>>(), (std::vector<std::string> { "task", "domain", "path" }));
+    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<LiftedTag>>(), (urd::Store<urd::sequence<std::string>> { "task", "domain", "path" }));
+    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<GroundTag>>(), (urd::Store<urd::sequence<std::string>> { "task", "domain", "path" }));
 }
 
 TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndependent)
@@ -104,7 +105,7 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     const auto binding = dictionaries.table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>()[0].as_object();
     EXPECT_EQ(binding.at("relation").as_string(), "p0");
     EXPECT_EQ(binding.at("objects").as_array()[0].as_string(), "o0");
-    auto binding_fields = std::vector<std::string> {};
+    auto binding_fields = urd::Store<urd::sequence<std::string>> {};
     for (const auto& field : binding)
         binding_fields.emplace_back(field.key().data(), field.key().size());
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>(), binding_fields);
@@ -123,7 +124,7 @@ TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
 {
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
     const auto binding = make_atom(repository, "truck").get_row();
-    for (const auto& fields : { std::vector<std::string> { "objects" }, std::vector<std::string> {} })
+    for (const auto& fields : { urd::Store<urd::sequence<std::string>> { "objects" }, urd::Store<urd::sequence<std::string>> {} })
     {
         auto dictionaries = ygg::serialization::Dictionaries {};
         dictionaries.register_table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>("bindings", "b", fields);
@@ -180,8 +181,8 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
     auto second_repository = factory.create();
     const auto first = make_atom(first_repository, "truck");
     const auto second = make_atom(second_repository, "truck");
-    ASSERT_EQ(first.get_index(), second.get_index());
-    ASSERT_NE(first.get_context().get_index(), second.get_context().get_index());
+    ASSERT_EQ(first.index(), second.index());
+    ASSERT_NE(first.context().get_index(), second.context().get_index());
     for (const bool nested : { false, true })
     {
         auto incomplete = ygg::serialization::Dictionaries {};
@@ -203,7 +204,7 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
     }
 
     auto dictionaries = ygg::serialization::Dictionaries {};
-    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", std::vector<std::string> {});
+    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", urd::Store<urd::sequence<std::string>> {});
     EXPECT_EQ(dictionaries.serialize(first).as_string(), "a0");
     EXPECT_EQ(dictionaries.serialize(second).as_string(), "a1");
     EXPECT_EQ((dictionaries.table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>().size()), 2);
@@ -213,18 +214,17 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
 {
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
     const auto atom = make_atom(repository, "truck");
-    auto variable_data = ygg::Data<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>> {};
-    variable_data.atoms.push_back(atom.get_index());
+    auto variable_data = urd::data<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>> {};
+    variable_data.atoms.push_back(atom.index());
     canonicalize(variable_data);
     const auto variable = repository.insert(variable_data).first;
-    const auto fact = ygg::make_view(
-        ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(variable.get_index(), tyr::formalism::planning::FDRValue::none()),
-        repository);
+    const auto fact_data = urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(variable.index(), tyr::formalism::planning::FDRValue::none());
+    const auto fact = urd::resolve(fact_data, repository);
     ASSERT_FALSE(fact.get_atom().has_value());
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>>("facts", "f");
     dictionaries.register_table<tyr::formalism::planning::FDRVariableView<tyr::formalism::FluentTag>>("variables", "v");
-    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", std::vector<std::string> {});
+    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", urd::Store<urd::sequence<std::string>> {});
     EXPECT_EQ(dictionaries.serialize(fact).as_string(), "f0");
     const auto row = dictionaries.table<tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>>()[0].as_object();
     EXPECT_EQ(row.at("fdr_variable").as_string(), "v0");
@@ -232,45 +232,24 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     EXPECT_EQ(dictionaries.table<tyr::formalism::planning::FDRVariableView<tyr::formalism::FluentTag>>().size(), 1);
 }
 
-TEST(TyrSerialization, RecursiveExpressionsReferenceSharedDescendantsAndKeepConstantsInline)
+TEST(TyrSerialization, ExpressionsKeepConstantsInline)
 {
-    using Expression = ygg::Data<tyr::formalism::planning::FunctionExpression<LiftedTag>>;
-    using Arithmetic = ygg::Data<tyr::formalism::planning::ArithmeticOperator<LiftedTag>>;
     using Binary = tyr::formalism::planning::BinaryOperator<LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
-    using BinaryView = ygg::View<ygg::Index<Binary>, tyr::formalism::planning::Repository>;
+    using BinaryView = urd::view<Binary, tyr::formalism::planning::Repository>;
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
-    const auto constant = Expression(Expression::Variant(static_cast<ygg::float_t>(3)));
-    auto binary_data = ygg::Data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
+    const auto constant = tyr::formalism::planning::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3));
+    auto binary_data = urd::data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
     canonicalize(binary_data);
     const auto binary = repository.insert(binary_data).first;
-    const auto expression = ygg::make_view(Expression(Expression::Variant(Arithmetic(Arithmetic::Variant(binary.get_index())))), repository);
     auto dictionaries = ygg::serialization::Dictionaries {};
-    dictionaries.register_table<tyr::formalism::planning::FunctionExpressionView<LiftedTag>>("expressions", "e");
-    dictionaries.register_table<tyr::formalism::planning::ArithmeticOperatorView<LiftedTag>>("arithmetic", "a");
     dictionaries.register_table<BinaryView>("binary_operators", "b");
 
-    EXPECT_EQ(dictionaries.serialize(expression).as_string(), "e0");
-    const auto expressions = dictionaries.table<tyr::formalism::planning::FunctionExpressionView<LiftedTag>>();
-    ASSERT_EQ(expressions.size(), 2);
-    const auto& root = expressions[0].as_object();
-    EXPECT_EQ(root, (boost::json::object { { "variant", "a0" } }));
-    EXPECT_EQ(dictionaries.table<tyr::formalism::planning::ArithmeticOperatorView<LiftedTag>>()[0].as_object().at("variant").as_string(), "b0");
+    EXPECT_EQ(dictionaries.serialize(binary).as_string(), "b0");
     const auto operators = dictionaries.table<BinaryView>();
     ASSERT_EQ(operators.size(), 1);
-    EXPECT_EQ(operators[0].as_object().at("lhs").as_string(), "e1");
-    EXPECT_EQ(operators[0].as_object().at("rhs").as_string(), "e1");
-    EXPECT_EQ(expressions[1].as_object(), (boost::json::object { { "variant", 3.0 } }));
+    EXPECT_EQ(operators[0].as_object().at("lhs"), 3.0);
+    EXPECT_EQ(operators[0].as_object().at("rhs"), 3.0);
     EXPECT_EQ(operators[0].as_object().at("operator").as_string(), "-");
-    const auto snapshot = dictionaries.tables();
-    EXPECT_EQ(dictionaries.serialize(expression).as_string(), "e0");
-    EXPECT_EQ(dictionaries.tables(), snapshot);
-
-    auto payload_omitted = ygg::serialization::Dictionaries {};
-    payload_omitted.register_table<tyr::formalism::planning::FunctionExpressionView<LiftedTag>>("expressions", "e", std::vector<std::string> {});
-    payload_omitted.register_table<tyr::formalism::planning::ArithmeticOperatorView<LiftedTag>>("arithmetic", "a");
-    EXPECT_EQ(payload_omitted.serialize(expression).as_string(), "e0");
-    EXPECT_TRUE(payload_omitted.table<tyr::formalism::planning::FunctionExpressionView<LiftedTag>>()[0].as_object().empty());
-    EXPECT_TRUE(payload_omitted.table<tyr::formalism::planning::ArithmeticOperatorView<LiftedTag>>().empty());
 }
 
 TEST(TyrSerialization, EnumsUseNativeText)

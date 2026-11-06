@@ -16,9 +16,9 @@
 namespace lifted_tests
 {
 
-using ActionIndex = ygg::Index<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
-using ActionData = ygg::Data<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
-using ActionView = ygg::View<ActionIndex, tyr::formalism::planning::Repository>;
+using ActionIndex = urd::index<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
+using ActionData = urd::data<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
+using ActionView = urd::view<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ActionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ActionIndex>);
@@ -33,11 +33,10 @@ static_assert(requires(ActionData& data) {
     data.original_arity;
     data.condition;
     data.effects;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const ActionView& view) {
-    view.get_index();
+    view.index();
     view.get_name();
     view.get_original_name();
     view.get_original_arity();
@@ -70,7 +69,7 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
 {
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
 
-    auto variable_data = ygg::Data<tyr::formalism::Variable>(std::string("?internal"));
+    auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?internal"));
     canonicalize(variable_data);
     const auto [variable, variable_created] = repository.insert(variable_data);
     ASSERT_TRUE(variable_created);
@@ -78,20 +77,20 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     auto action_data = ActionData {};
     action_data.name = "move-internal";
     action_data.original_name = "move";
-    action_data.variables.push_back(variable.get_index());
+    action_data.variables.push_back(variable.index());
     action_data.original_arity = 0;
     canonicalize(action_data);
     const auto [action, action_created] = repository.insert(action_data);
     ASSERT_TRUE(action_created);
 
-    auto object_data = ygg::Data<tyr::formalism::Object>(std::string("truck"));
+    auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
     canonicalize(object_data);
     const auto [object, object_created] = repository.insert(object_data);
     ASSERT_TRUE(object_created);
 
-    auto binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::planning::Action<::tyr::LiftedTag>>> {};
-    binding_data.relation = action.get_index();
-    binding_data.objects.push_back(object.get_index());
+    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::planning::Action<::tyr::LiftedTag>>> {};
+    binding_data.relation = action.index();
+    binding_data.objects.push_back(object.index());
     canonicalize(binding_data);
     const auto [binding, binding_created] = repository.insert(binding_data);
     ASSERT_TRUE(binding_created);
@@ -116,21 +115,21 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     const auto domain = parser.get_domain();
     const auto source_action = domain.get_domain().get_actions().front();
     auto factory = tyr::formalism::planning::RepositoryFactory {};
-    auto source = factory.create(&source_action.get_context());
+    auto source = factory.create(&source_action.context());
     auto destination = factory.create();
-    auto object_data = ygg::Data<tyr::formalism::Object>(std::string("truck"));
+    auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
     const auto source_object = tyr::formalism::planning::insert(source, object_data).first;
     object_data.name = "padding";
     (void) tyr::formalism::planning::insert(destination, object_data);
-    auto function_data = ygg::Data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("padding"), 1);
+    auto function_data = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("padding"), 1);
     (void) tyr::formalism::planning::insert(destination, function_data);
-    auto predicate_data = ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("padding"), 1);
+    auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("padding"), 1);
     (void) tyr::formalism::planning::insert(destination, predicate_data);
-    auto variable_data = ygg::Data<tyr::formalism::Variable>(std::string("?padding"));
+    auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?padding"));
     (void) tyr::formalism::planning::insert(destination, variable_data);
-    auto binding_data = ygg::Data<tyr::formalism::RelationBinding<tyr::formalism::planning::Action<tyr::LiftedTag>>> {};
-    binding_data.relation = source_action.get_index();
-    binding_data.objects.push_back(source_object.get_index());
+    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::planning::Action<tyr::LiftedTag>>> {};
+    binding_data.relation = source_action.index();
+    binding_data.objects.push_back(source_object.index());
     const auto binding = tyr::formalism::planning::insert(source, binding_data).first;
 
     auto builder = tyr::formalism::planning::Builder {};
@@ -138,14 +137,14 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     const auto [copied_binding, inserted] = tyr::formalism::planning::copy(binding, context);
     ASSERT_TRUE(inserted);
     const auto copied = copied_binding.get_relation();
-    EXPECT_EQ(&copied.get_context(), &destination);
+    EXPECT_EQ(&copied.context(), &destination);
     EXPECT_EQ(copied.get_original_name(), source_action.get_original_name());
     EXPECT_EQ(copied.get_original_arity(), source_action.get_original_arity());
     EXPECT_EQ(tyr::formalism::planning::to_string(copied), tyr::formalism::planning::to_string(source_action));
-    EXPECT_NE(copied.get_variables().front().get_index(), source_action.get_variables().front().get_index());
+    EXPECT_NE(copied.get_variables().front().index(), source_action.get_variables().front().index());
     ASSERT_EQ(copied_binding.get_objects().size(), 1);
     EXPECT_EQ(copied_binding.get_objects()[0].get_name(), "truck");
-    EXPECT_NE(copied_binding.get_objects()[0].get_index(), source_object.get_index());
+    EXPECT_NE(copied_binding.get_objects()[0].index(), source_object.index());
     EXPECT_FALSE(tyr::formalism::planning::copy(binding, context).second);
 }
 
@@ -154,9 +153,9 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
 namespace ground_tests
 {
 
-using GroundActionIndex = ygg::Index<tyr::formalism::planning::Action<::tyr::GroundTag>>;
-using GroundActionData = ygg::Data<tyr::formalism::planning::Action<::tyr::GroundTag>>;
-using GroundActionView = ygg::View<GroundActionIndex, tyr::formalism::planning::Repository>;
+using GroundActionIndex = urd::index<tyr::formalism::planning::Action<::tyr::GroundTag>>;
+using GroundActionData = urd::data<tyr::formalism::planning::Action<::tyr::GroundTag>>;
+using GroundActionView = urd::view<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundActionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundActionIndex>);
@@ -168,11 +167,10 @@ static_assert(requires(GroundActionData& data) {
     data.binding;
     data.condition;
     data.effects;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const GroundActionView& view) {
-    view.get_index();
+    view.index();
     view.get_action();
     view.get_row();
     view.get_objects();

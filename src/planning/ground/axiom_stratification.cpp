@@ -16,6 +16,8 @@
  */
 
 #include "tyr/planning/ground/axiom_stratification.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "../../analysis/stratification_utils.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -31,11 +33,11 @@ static analysis::stratification::DepGraph build_dependency_graph(formalism::plan
 
     for (const auto axiom : task.get_ground_axioms())
     {
-        const auto h_atom = axiom.get_head().get_index();
+        const auto h_atom = axiom.get_head().index();
 
         for (const auto literal : axiom.get_body().get_literals<formalism::DerivedTag>())
         {
-            const auto b_atom = literal.get_atom().get_index();
+            const auto b_atom = literal.get_atom().index();
 
             analysis::stratification::EdgeProps ep;
             ep.kind = literal.get_polarity() ? analysis::stratification::EdgeKind::NonStrict : analysis::stratification::EdgeKind::Strict;
@@ -63,7 +65,7 @@ GroundAxiomStrata compute_ground_axiom_stratification(formalism::planning::TaskV
     const auto comp_stratum = analysis::stratification::compute_component_strata(dag);
 
     // 5) Assign each derived atom a stratum
-    auto atom_stratum = std::vector<ygg::uint_t>(num_atoms, 0);
+    auto atom_stratum = urd::Store<urd::sequence<ygg::uint_t>>(num_atoms, 0);
     for (ygg::uint_t i = 0; i < num_atoms; ++i)
         atom_stratum[i] = comp_stratum[comp[i]];
 
@@ -72,9 +74,9 @@ GroundAxiomStrata compute_ground_axiom_stratification(formalism::planning::TaskV
     for (auto s : comp_stratum)
         max_s = std::max(max_s, s);
 
-    auto buckets = std::vector<GroundAxiomStratum>(max_s + 1);
+    auto buckets = urd::Store<urd::sequence<GroundAxiomStratum>>(max_s + 1);
     for (const auto axiom : task.get_ground_axioms())
-        buckets[atom_stratum[static_cast<ygg::uint_t>(axiom.get_head().get_index())]].push_back(axiom);
+        buckets[atom_stratum[static_cast<ygg::uint_t>(axiom.get_head().index().value)]].push_back(axiom);
 
     auto out = GroundAxiomStrata {};
     out.data.reserve(buckets.size());

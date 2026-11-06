@@ -28,12 +28,12 @@ namespace tyr::planning
 template<TaskKind Kind>
 struct WorkerStateIndex
 {
-    ygg::Index<Worker> worker;
-    ygg::Index<State<Kind>> state;
+    urd::index<Worker> worker;
+    urd::index<State<Kind>> state;
 
-    [[nodiscard]] bool is_max() const noexcept { return worker.is_max() && state.is_max(); }
+    [[nodiscard]] bool is_max() const noexcept { return worker.is_none() && state.is_none(); }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&WorkerStateIndex::worker, &WorkerStateIndex::state> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&WorkerStateIndex::worker, &WorkerStateIndex::state> {}; }
 };
 
 }

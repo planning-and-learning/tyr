@@ -22,10 +22,9 @@
 #include "tyr/planning/algorithms/openlists/priority_queue.hpp"
 
 #include <array>
+#include <boost/mp11/algorithm.hpp>
 #include <cassert>
-#include <optional>
-#include <yggdrasil/containers/tuple.hpp>
-#include <yggdrasil/core/config.hpp>
+#include <tuple>
 
 namespace tyr::planning
 {
@@ -44,20 +43,14 @@ private:
     {
         assert(m_pos < N);
 
-        auto result = bool();
-        ygg::visit_at(m_queues, m_pos, [&result](auto&& queue) { result = queue.get().empty(); });
-
-        return result;
+        return boost::mp11::mp_with_index<N>(m_pos, [&](auto i) { return std::get<i>(m_queues).get().empty(); });
     }
 
     size_t cur_size()
     {
         assert(m_pos < N);
 
-        auto result = size();
-        ygg::visit_at(m_queues, m_pos, [&result](auto&& queue) { result = queue.get().size(); });
-
-        return result;
+        return boost::mp11::mp_with_index<N>(m_pos, [&](auto i) { return std::get<i>(m_queues).get().size(); });
     }
 
     [[nodiscard]] size_t cur_weight() const
@@ -96,17 +89,14 @@ public:
             find_next_nonempty_queue();
         }
 
-        std::optional<ItemType> result;
-        ygg::visit_at(m_queues, m_pos, [&result](auto&& queue) { result.emplace(queue.get().top()); });
-        YGG_ASSUME(result.has_value());
-        return std::move(*result);
+        return boost::mp11::mp_with_index<N>(m_pos, [&](auto i) -> ItemType { return std::get<i>(m_queues).get().top(); });
     }
 
     void pop()
     {
         assert(!cur_empty());
 
-        ygg::visit_at(m_queues, m_pos, [](auto&& queue) { queue.get().pop(); });
+        boost::mp11::mp_with_index<N>(m_pos, [&](auto i) { std::get<i>(m_queues).get().pop(); });
 
         ++m_count;
     }

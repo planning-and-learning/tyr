@@ -33,25 +33,25 @@
 namespace tyr::formalism
 {
 
-std::string to_string(const ygg::Data<Variable>& value);
-std::string to_string(const ygg::Data<Object>& value);
-std::string to_string(const ygg::Data<Term>& value);
+std::string to_string(const urd::data<Variable>& value);
+std::string to_string(const urd::data<Object>& value);
+std::string to_string(const Term& value);
 
-std::string to_string(const ygg::Data<Predicate<StaticTag>>& value);
-std::string to_string(const ygg::Data<Predicate<FluentTag>>& value);
-std::string to_string(const ygg::Data<Predicate<DerivedTag>>& value);
+std::string to_string(const urd::data<Predicate<StaticTag>>& value);
+std::string to_string(const urd::data<Predicate<FluentTag>>& value);
+std::string to_string(const urd::data<Predicate<DerivedTag>>& value);
 
-std::string to_string(const ygg::Data<Function<StaticTag>>& value);
-std::string to_string(const ygg::Data<Function<FluentTag>>& value);
-std::string to_string(const ygg::Data<Function<AuxiliaryTag>>& value);
+std::string to_string(const urd::data<Function<StaticTag>>& value);
+std::string to_string(const urd::data<Function<FluentTag>>& value);
+std::string to_string(const urd::data<Function<AuxiliaryTag>>& value);
 
-std::string to_string(const ygg::Data<RelationBinding<Predicate<StaticTag>>>& value);
-std::string to_string(const ygg::Data<RelationBinding<Predicate<FluentTag>>>& value);
-std::string to_string(const ygg::Data<RelationBinding<Predicate<DerivedTag>>>& value);
+std::string to_string(const urd::data<RelationBinding<Predicate<StaticTag>>>& value);
+std::string to_string(const urd::data<RelationBinding<Predicate<FluentTag>>>& value);
+std::string to_string(const urd::data<RelationBinding<Predicate<DerivedTag>>>& value);
 
-std::string to_string(const ygg::Data<RelationBinding<Function<StaticTag>>>& value);
-std::string to_string(const ygg::Data<RelationBinding<Function<FluentTag>>>& value);
-std::string to_string(const ygg::Data<RelationBinding<Function<AuxiliaryTag>>>& value);
+std::string to_string(const urd::data<RelationBinding<Function<StaticTag>>>& value);
+std::string to_string(const urd::data<RelationBinding<Function<FluentTag>>>& value);
+std::string to_string(const urd::data<RelationBinding<Function<AuxiliaryTag>>>& value);
 
 }  // namespace tyr::formalism
 
@@ -65,7 +65,7 @@ struct formatter<tyr::formalism::ParameterIndex, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::ParameterIndex& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "V{}", static_cast<ygg::uint_t>(value)); }
+    { return fmt::format_to(ctx.out(), "V{}", value.value); }
 };
 
 template<>
@@ -96,22 +96,22 @@ struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
 };
 
 template<typename T>
-struct formatter<ygg::Data<T>, char>
+struct formatter<urd::data<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template<typename FormatContext>
-    auto format(const ygg::Data<T>& value, FormatContext& ctx) const
+    auto format(const urd::data<T>& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", to_string(value)); }
 };
 
 template<typename Tag>
-struct formatter<ygg::Index<tyr::formalism::RelationBinding<Tag>>, char>
+struct formatter<ygg::formalism::RelationBindingIndex<Tag, tyr::formalism::ObjectTag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template<typename FormatContext>
-    auto format(const ygg::Index<tyr::formalism::RelationBinding<Tag>>& value, FormatContext& ctx) const
+    auto format(const ygg::formalism::RelationBindingIndex<Tag, tyr::formalism::ObjectTag>& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "<{},{}>", value.relation, value.row); }
 };
 

@@ -159,7 +159,7 @@ Install Tyr's native dependency providers into the active Python environment,
 then configure CMake with their native prefixes:
 
 ```console
-python -m pip install 'pyyggdrasil>=0.6.0,<0.7' 'pypddl>=1.7.0,<1.8' 'pypddl-datasets>=0.0.17,<0.1'
+python -m pip install 'pyyggdrasil>=0.6.0,<0.7' 'pybrokkr>=0.1,<0.2' 'pypddl>=1.7.0,<1.8' 'pypddl-datasets>=0.0.17,<0.1'
 
 cmake -S . -B build \
   -DPython_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')"
@@ -167,10 +167,11 @@ cmake -S . -B build \
 cmake --build build -j4
 ```
 
-CMake discovers the installed provider packages automatically through
-`cmake/bootstrap_pyyggdrasil.cmake` (which locates `pyyggdrasil` and adds its
-native prefix to `CMAKE_PREFIX_PATH`; `find_package(yggdrasil)` then resolves
-the rest of the chain) and links against the `yggdrasil::yggdrasil` and
+CMake discovers the installed provider packages automatically: it finds the
+build helpers of [brokkr](https://github.com/verdog-ai/brokkr) (`pybrokkr`,
+installed with the package), whose `brokkr_find_python_native_prefix` adds
+`pyyggdrasil`'s native prefix to `CMAKE_PREFIX_PATH`; `find_package(yggdrasil)`
+then resolves the rest of the chain and links against the `yggdrasil::yggdrasil` and
 `loki::parsers` targets. To point at different prefixes explicitly:
 
 ```console

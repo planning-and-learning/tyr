@@ -20,58 +20,41 @@
 
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
 #include <optional>
 #include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 template<typename Tag>
-struct Data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
+struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
 {
-    ygg::Index<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>> index;
-    ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact;
-    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child;
-    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child;
+    urd::index<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>> index;
+    urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact;
+    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child;
+    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
-    Data() = default;
-    Data(ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact_,
-         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child_,
-         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child_) :
+    data() = default;
+    data(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact_,
+         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
+         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),
         fact(fact_),
         true_child(std::move(true_child_)),
         dontcare_child(std::move(dontcare_child_))
     {
     }
-    template<typename C>
-    Data(::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C> fact_,
-         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& true_child_,
-         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
-        index(),
-        fact(),
-        true_child(),
-        dontcare_child()
-    {
-        set(fact_, fact);
-        set(true_child_, true_child);
-        set(dontcare_child_, dontcare_child);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fact, &Data::true_child, &Data::dontcare_child> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fact, &Data::true_child, &Data::dontcare_child> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact, &data::true_child, &data::dontcare_child> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact, &data::true_child, &data::dontcare_child> {}; }
 };
 }
 

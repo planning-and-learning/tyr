@@ -21,11 +21,12 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
-#include "tyr/planning/state_storage/tree_vector/arity.hpp"
 
 #include <concepts>
+#include <urd/memory.hpp>
+#include <urd/repr/pools/tree_vector.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -38,8 +39,8 @@ namespace tyr::planning
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, TreeVector, ThreadSafe>
 {
-    using UintVectorSet = ygg::TreeVectorSet<ygg::uint_t, tree_vector::first_segment_size, ThreadSafe, tree_vector::arity>;
-    using FloatVectorSet = ygg::TreeVectorSet<ygg::float_t, tree_vector::first_segment_size, ThreadSafe, tree_vector::arity>;
+    using UintVectorSet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::uint_t>, urd::frozen>>, urd::structural_sharing, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using FloatVectorSet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, urd::structural_sharing, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
     UintVectorSet uint_vectors;
     FloatVectorSet float_vectors;
@@ -47,8 +48,8 @@ struct StateStorageContext<LiftedTag, TreeVector, ThreadSafe>
     [[nodiscard]] size_t memory_usage() const noexcept
     {
         size_t bytes = 0;
-        bytes += uint_vectors.memory_usage();
-        bytes += float_vectors.memory_usage();
+        bytes += urd::memory_usage(uint_vectors);
+        bytes += urd::memory_usage(float_vectors);
         return bytes;
     }
 };

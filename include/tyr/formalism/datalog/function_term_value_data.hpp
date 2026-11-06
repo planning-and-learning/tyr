@@ -19,40 +19,29 @@
 #define TYR_FORMALISM_DATALOG_FUNCTION_TERM_VALUE_DATA_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/term_data.hpp"
 
 #include <tuple>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<::tyr::formalism::FactKind F>
-struct Data<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>>
+struct data<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>>
 {
-    ygg::Index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>> index;
-    ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>> fterm;
+    urd::index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, F>> index;
+    urd::index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>> fterm;
     ygg::float_t value = 0.0;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>> fterm_, ygg::float_t value_) : index(), fterm(fterm_), value(value_) {}
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>>, C> fterm_, ygg::float_t value_) : index(), fterm(), value(value_)
-    { set(fterm_, fterm); }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(urd::index<::tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, F>> fterm_, ygg::float_t value_) : index(), fterm(fterm_), value(value_) {}
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::fterm, &Data::value> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::fterm, &Data::value> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fterm, &data::value> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::fterm, &data::value> {}; }
 };
 
-static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>);
 }
 
 #endif

@@ -16,6 +16,8 @@
  */
 
 #include "tyr/planning/algorithms/iw.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/planning/algorithms/brfs.hpp"
 #include "tyr/planning/algorithms/brfs/event_handler.hpp"
@@ -51,7 +53,7 @@ public:
     bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ) override
     { return m_lhs->should_prune_successor_state(state, succ_state, is_new_succ) || m_rhs->should_prune_successor_state(state, succ_state, is_new_succ); }
 
-    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(ygg::Index<Worker> index) const override
+    [[nodiscard]] PruningStrategyPtr<Kind> make_worker(urd::index<Worker> index) const override
     {
         auto lhs = m_lhs->make_worker(index);
         auto rhs = m_rhs->make_worker(index);
@@ -94,7 +96,7 @@ SearchResult<Kind> find_solution(brfs::Solver<Kind>& brfs_solver, ygg::uint_t ma
     const auto event_handler = options.event_handler ? options.event_handler : DefaultEventHandler<Kind>::create();
 
     auto statistics = tyr::planning::Statistics {};
-    auto worker_statistics = std::vector<tyr::planning::Statistics> {};
+    auto worker_statistics = urd::Store<urd::sequence<tyr::planning::Statistics>> {};
     auto result = SearchResult<Kind> {};
     result.status = SearchStatus::EXHAUSTED;
     const auto search_start = std::chrono::steady_clock::now();

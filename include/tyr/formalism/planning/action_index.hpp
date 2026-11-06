@@ -20,12 +20,12 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::formalism::planning
 {
 template<TaskKind T>
-using ActionIndex = ygg::Index<Action<T>>;
+using ActionIndex = urd::index<Action<T>>;
 }
 
 #endif

@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 namespace tyr::formalism::planning
@@ -28,29 +29,29 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
 {
     using namespace nb::literals;
     using Tag = ConjunctiveEffect<T>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<const LiteralViewList<T, FluentTag>&,
+            cls.def(urd::python::init_from_views<const LiteralViewList<T, FluentTag>&,
                              const NumericEffectOperatorViewList<T, FluentTag>&,
                              const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
                     "fluent_literals"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
-            cls.def(nb::init<ygg::IndexList<Literal<LiftedTag, FluentTag>>,
-                             ygg::DataList<NumericEffectOperator<LiftedTag, FluentTag>>,
-                             ::cista::optional<ygg::Data<NumericEffectOperator<LiftedTag, AuxiliaryTag>>>>(),
+            cls.def(nb::init<urd::flat_vector<urd::index<Literal<LiftedTag, FluentTag>>>,
+                             urd::flat_vector<urd::index<NumericEffect<LiftedTag, FluentTag>>>,
+                             ::cista::optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>(),
                     "fluent_literals"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
         }
         else
         {
-            cls.def(nb::init<const FDRFactViewList<FluentTag>&,
+            cls.def(urd::python::init_from_views<const FDRFactViewList<FluentTag>&,
                              const FDRFactViewList<FluentTag>&,
                              const NumericEffectOperatorViewList<T, FluentTag>&,
                              const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
@@ -58,24 +59,24 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
                     "del_facts"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
-            cls.def(nb::init<ygg::DataList<FDRFact<FluentTag>>,
-                             ygg::DataList<FDRFact<FluentTag>>,
-                             ygg::DataList<NumericEffectOperator<GroundTag, FluentTag>>,
-                             ::cista::optional<ygg::Data<NumericEffectOperator<GroundTag, AuxiliaryTag>>>>(),
+            cls.def(nb::init<urd::flat_vector<urd::data<FDRFact<FluentTag>>>,
+                             urd::flat_vector<urd::data<FDRFact<FluentTag>>>,
+                             urd::flat_vector<urd::index<NumericEffect<GroundTag, FluentTag>>>,
+                             ::cista::optional<urd::index<NumericEffect<GroundTag, AuxiliaryTag>>>>(),
                     "add_facts"_a,
                     "del_facts"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = ConjunctiveEffectView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_literals", &V::get_literals);
@@ -88,8 +89,8 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
         cls.def("get_numeric_effects", &V::get_numeric_effects);
         cls.def("get_auxiliary_numeric_effect", &V::get_auxiliary_numeric_effect);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

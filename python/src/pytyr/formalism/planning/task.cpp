@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 #include <concepts>
@@ -29,15 +30,15 @@ template<TaskKind T>
 void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* index_name, const char* data_name, const char* view_name)
 {
     using namespace nb::literals;
-    ygg::bind_index<ygg::Index<Task<T>>>(m, index_name);
+    urd::python::bind_index<urd::index<Task<T>>>(m, index_name);
 
     {
-        using V = ygg::Data<Task<T>>;
+        using V = urd::data<Task<T>>;
 
         auto cls = nb::class_<V>(m, data_name);
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(nb::init<const std::string&,
+            cls.def(urd::python::init_from_views<const std::string&,
                              DomainView,
                              const PredicateViewList<DerivedTag>&,
                              const ObjectViewList&,
@@ -62,17 +63,17 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                     "metric"_a,
                     "axioms"_a);
             cls.def(nb::init<::cista::offset::string,
-                             ygg::Index<Domain>,
-                             ygg::IndexList<Predicate<DerivedTag>>,
-                             ygg::IndexList<Object>,
-                             ygg::IndexList<Atom<GroundTag, StaticTag>>,
-                             ygg::IndexList<Atom<GroundTag, FluentTag>>,
-                             ygg::IndexList<FunctionTermValue<GroundTag, StaticTag>>,
-                             ygg::IndexList<FunctionTermValue<GroundTag, FluentTag>>,
-                             ::cista::optional<ygg::Index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
-                             ygg::Index<ConjunctiveCondition<GroundTag>>,
-                             ::cista::optional<ygg::Index<Metric>>,
-                             ygg::IndexList<Axiom<LiftedTag>>>(),
+                             urd::index<Domain>,
+                             urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
+                             urd::flat_vector<urd::index<Object>>,
+                             urd::flat_vector<urd::index<Atom<GroundTag, StaticTag>>>,
+                             urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
+                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
+                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
+                             ::cista::optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
+                             urd::index<ConjunctiveCondition<GroundTag>>,
+                             ::cista::optional<urd::index<Metric>>,
+                             urd::flat_vector<urd::index<Axiom<LiftedTag>>>>(),
                     "name"_a,
                     "domain"_a,
                     "derived_predicates"_a,
@@ -88,7 +89,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
         }
         else
         {
-            cls.def(nb::init<const std::string&,
+            cls.def(urd::python::init_from_views<const std::string&,
                              DomainView,
                              const PredicateViewList<DerivedTag>&,
                              const ObjectViewList&,
@@ -123,22 +124,22 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                     "ground_actions"_a,
                     "ground_axioms"_a);
             cls.def(nb::init<::cista::offset::string,
-                             ygg::Index<Domain>,
-                             ygg::IndexList<Predicate<DerivedTag>>,
-                             ygg::IndexList<Object>,
-                             ygg::IndexList<Atom<GroundTag, StaticTag>>,
-                             ygg::IndexList<Atom<GroundTag, FluentTag>>,
-                             ygg::IndexList<Atom<GroundTag, DerivedTag>>,
-                             ygg::IndexList<FunctionTermValue<GroundTag, StaticTag>>,
-                             ygg::IndexList<FunctionTermValue<GroundTag, FluentTag>>,
-                             ::cista::optional<ygg::Index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
-                             ::cista::optional<ygg::Index<Metric>>,
-                             ygg::IndexList<Axiom<LiftedTag>>,
-                             ygg::IndexList<FDRVariable<FluentTag>>,
-                             ygg::DataList<FDRFact<FluentTag>>,
-                             ygg::Index<ConjunctiveCondition<GroundTag>>,
-                             ygg::IndexList<Action<GroundTag>>,
-                             ygg::IndexList<Axiom<GroundTag>>>(),
+                             urd::index<Domain>,
+                             urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
+                             urd::flat_vector<urd::index<Object>>,
+                             urd::flat_vector<urd::index<Atom<GroundTag, StaticTag>>>,
+                             urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
+                             urd::flat_vector<urd::index<Atom<GroundTag, DerivedTag>>>,
+                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
+                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
+                             ::cista::optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
+                             ::cista::optional<urd::index<Metric>>,
+                             urd::flat_vector<urd::index<Axiom<LiftedTag>>>,
+                             urd::flat_vector<urd::index<FDRVariable<FluentTag>>>,
+                             urd::flat_vector<urd::data<FDRFact<FluentTag>>>,
+                             urd::index<ConjunctiveCondition<GroundTag>>,
+                             urd::flat_vector<urd::index<Action<GroundTag>>>,
+                             urd::flat_vector<urd::index<Axiom<GroundTag>>>>(),
                     "name"_a,
                     "domain"_a,
                     "derived_predicates"_a,
@@ -158,15 +159,15 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                     "ground_axioms"_a);
         }
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = TaskView<T>;
 
         auto cls = nb::class_<V>(m, view_name)  //
-                       .def("get_index", &V::get_index)
+                       .def("get_index", &V::index)
                        .def("get_name", &V::get_name)
                        .def("get_domain", &V::get_domain, nb::keep_alive<0, 1>())
                        .def("get_derived_predicates", &V::get_derived_predicates)
@@ -187,8 +188,8 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                 .def("get_ground_actions", &V::get_ground_actions)
                 .def("get_ground_axioms", &V::get_ground_axioms);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Task<T>>(repository);

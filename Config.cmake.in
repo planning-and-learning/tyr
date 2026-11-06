@@ -4,13 +4,16 @@ include(CMakeFindDependencyMacro)
 
 # Dependencies
 
-include("${CMAKE_CURRENT_LIST_DIR}/cmake/bootstrap_pyyggdrasil.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/brokkrLocate.cmake")
+brokkr_find_python_native_prefix(pyurd URD_NATIVE_PREFIX)
+brokkr_find_python_native_prefix(pyyggdrasil YGGDRASIL_NATIVE_PREFIX)
 
 find_dependency(yggdrasil @TYR_YGGDRASIL_REQUIRED_VERSION@ CONFIG PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 
-yggdrasil_find_python_native_prefix(pypddl LOKI_NATIVE_PREFIX)
-yggdrasil_register_native_dependency_prefix("${YGGDRASIL_NATIVE_PREFIX}")
-yggdrasil_register_native_dependency_prefix("${LOKI_NATIVE_PREFIX}")
+brokkr_find_python_native_prefix(pypddl LOKI_NATIVE_PREFIX)
+brokkr_register_native_dependency_prefix("${YGGDRASIL_NATIVE_PREFIX}")
+brokkr_register_native_dependency_prefix("${URD_NATIVE_PREFIX}")
+brokkr_register_native_dependency_prefix("${LOKI_NATIVE_PREFIX}")
 
 find_dependency(loki @TYR_LOKI_REQUIRED_VERSION@ CONFIG COMPONENTS parsers PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 find_dependency(Boost 1.74.0 REQUIRED COMPONENTS json PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)

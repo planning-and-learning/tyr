@@ -18,46 +18,48 @@
 #ifndef TYR_FORMALISM_UNIFICATION_SUBSTITUTION_HPP_
 #define TYR_FORMALISM_UNIFICATION_SUBSTITUTION_HPP_
 
-#include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/term_data.hpp"
+#include "tyr/formalism/declarations.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <optional>
 #include <type_traits>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::unification
 {
 
 template<typename T>
-class SubstitutionFunction : public ygg::comparison::Mixin<SubstitutionFunction<T>>
+class SubstitutionFunction : public urd::compared_by_identity<SubstitutionFunction<T>>
 {
 public:
     using value_type = T;
 
     SubstitutionFunction() = default;
 
-    explicit SubstitutionFunction(std::vector<ParameterIndex> parameters) : m_parameters(std::move(parameters)), m_data(m_parameters.size())
+    explicit SubstitutionFunction(urd::Store<urd::sequence<ParameterIndex>> parameters) : m_parameters(std::move(parameters)), m_data(m_parameters.size())
     { rebuild_positions(); }
 
     static SubstitutionFunction from_range(ParameterIndex offset, size_t size)
     {
-        auto parameters = std::vector<ParameterIndex> {};
+        auto parameters = urd::Store<urd::sequence<ParameterIndex>> {};
         parameters.reserve(size);
 
         for (size_t i = 0; i < size; ++i)
-            parameters.emplace_back(static_cast<ygg::uint_t>(offset) + i);
+            parameters.emplace_back(offset.value + i);
 
         return SubstitutionFunction(std::move(parameters));
     }
 
     [[nodiscard]] size_t size() const noexcept { return m_data.size(); }
 
-    [[nodiscard]] const std::vector<ParameterIndex>& parameters() const noexcept { return m_parameters; }
+    [[nodiscard]] const urd::Store<urd::sequence<ParameterIndex>>& parameters() const noexcept { return m_parameters; }
 
     [[nodiscard]] bool contains_parameter(ParameterIndex p) const noexcept { return m_positions.find(p) != m_positions.end(); }
 
@@ -118,7 +120,7 @@ public:
             slot = value;
             return true;
         }
-        return ygg::EqualTo<T> {}(*slot, value);
+        return urd::EqualTo<T> {}(*slot, value);
     }
 
     /// Returns true iff no parameter in the domain currently has a bound value.
@@ -139,7 +141,7 @@ public:
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), std::nullopt); }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&SubstitutionFunction::m_parameters, &SubstitutionFunction::m_data> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&SubstitutionFunction::m_parameters, &SubstitutionFunction::m_data> {}; }
 
 private:
     void rebuild_positions()
@@ -152,9 +154,9 @@ private:
         }
     }
 
-    std::vector<ParameterIndex> m_parameters;
-    std::vector<std::optional<T>> m_data;
-    ygg::UnorderedMap<ParameterIndex, size_t> m_positions;
+    urd::Store<urd::sequence<ParameterIndex>> m_parameters;
+    urd::Store<urd::sequence<std::optional<T>>> m_data;
+    urd::Store<urd::map<ParameterIndex, size_t>> m_positions;
 };
 
 template<typename S, typename V>
@@ -168,10 +170,10 @@ concept SubstitutionFor = requires(std::remove_reference_t<S>& s, const std::rem
 };
 
 template<typename S>
-concept ObjectSubstitution = SubstitutionFor<S, ygg::Index<Object>>;
+concept ObjectSubstitution = SubstitutionFor<S, urd::index<Object>>;
 
 template<typename S>
-concept TermSubstitution = SubstitutionFor<S, ygg::Data<Term>>;
+concept TermSubstitution = SubstitutionFor<S, Term>;
 
 }
 #endif

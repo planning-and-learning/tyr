@@ -29,10 +29,16 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::datalog
 {
@@ -44,11 +50,11 @@ namespace
 class Splitter
 {
 public:
-    using StaticLiteral = ygg::Index<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>;
-    using FluentLiteral = ygg::Index<formalism::datalog::Literal<LiftedTag, formalism::FluentTag>>;
-    using FluentAtom = ygg::Index<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>;
+    using StaticLiteral = urd::index<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>;
+    using FluentLiteral = urd::index<formalism::datalog::Literal<LiftedTag, formalism::FluentTag>>;
+    using FluentAtom = urd::index<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>;
 
-    Splitter(ygg::Data<formalism::datalog::Program<LiftedTag>>& program,
+    Splitter(urd::data<formalism::datalog::Program<LiftedTag>>& program,
              RuleSplitting& splitting,
              formalism::datalog::CopyContext& context,
              const PredicateFactSets<formalism::StaticTag>& static_facts) :
@@ -62,26 +68,26 @@ public:
     /// The main rule of the rule with the given parts in the destination repository, or nullopt if nothing can be projected.
     /// The projection rules are added to the program.
     std::optional<RuleSplitting::Rule>
-    split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, const std::vector<FluentAtom>& heads, ygg::float_t cost)
+    split(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, const urd::Store<urd::sequence<FluentAtom>>& heads, ygg::float_t cost)
     {
         if (!condition.get_numeric_constraints().empty())
             return std::nullopt;
 
         // Copies, since emitting rules inserts into the repository that holds the condition.
-        auto variables = ygg::IndexList<formalism::Variable> {};
+        auto variables = urd::flat_vector<urd::index<formalism::Variable>> {};
         for (const auto variable : condition.get_variables())
-            variables.push_back(variable.get_index());
+            variables.push_back(variable.index());
         auto body = Body {};
         for (const auto literal : condition.get_literals<formalism::StaticTag>())
-            body.static_literals.push_back(literal.get_index());
+            body.static_literals.push_back(literal.index());
         for (const auto literal : condition.get_literals<formalism::FluentTag>())
-            body.fluent_literals.push_back(literal.get_index());
+            body.fluent_literals.push_back(literal.index());
 
         auto head_parameters = Parameters {};
         for (const auto head : heads)
-            formalism::datalog::collect_parameters(ygg::make_view(head, m_context->destination()), head_parameters);
+            formalism::datalog::collect_parameters(urd::resolve(head, m_context->destination()), head_parameters);
 
-        auto projections = std::vector<std::pair<Body, FluentLiteral>> {};
+        auto projections = urd::Store<urd::sequence<std::pair<Body, FluentLiteral>>> {};
         while (auto projection = choose_projection(body, head_parameters, variables.size()))
         {
             restrict_kept_variables(projection->rest, projection->kept, projection->projected);
@@ -96,10 +102,10 @@ public:
         for (const auto& [projected, atom] : projections)
         {
             const auto [projection_rule, positions] =
-                emit_rule(variables, projected, { ygg::make_view(atom, m_context->destination()).get_atom().get_index() }, static_cast<ygg::float_t>(0));
+                emit_rule(variables, projected, { urd::resolve(atom, m_context->destination()).get_atom().index() }, static_cast<ygg::float_t>(0));
             m_program->predicate_rules.push_back(projection_rule);
             m_splitting->origins.emplace(projection_rule, RuleSplitting::Origin { variables.size(), positions });
-            m_splitting->projection_rules.emplace(ygg::make_view(atom, m_context->destination()).get_atom().get_predicate().get_index(), projection_rule);
+            m_splitting->projection_rules.emplace(urd::resolve(atom, m_context->destination()).get_atom().get_predicate().index(), projection_rule);
         }
         const auto [main_rule, positions] = emit_rule(variables, body, heads, cost);
         m_splitting->origins.emplace(main_rule, RuleSplitting::Origin { variables.size(), positions });
@@ -107,36 +113,36 @@ public:
     }
 
 private:
-    using Parameters = ygg::UnorderedSet<formalism::ParameterIndex>;
-    using Substitution = formalism::unification::SubstitutionFunction<ygg::Data<formalism::Term>>;
+    using Parameters = urd::Store<urd::set<formalism::ParameterIndex>>;
+    using Substitution = formalism::unification::SubstitutionFunction<formalism::Term>;
 
     struct Body
     {
-        std::vector<StaticLiteral> static_literals;
-        std::vector<FluentLiteral> fluent_literals;
+        urd::Store<urd::sequence<StaticLiteral>> static_literals;
+        urd::Store<urd::sequence<FluentLiteral>> fluent_literals;
     };
 
     struct Projection
     {
         Body projected;
         Body rest;
-        std::vector<formalism::ParameterIndex> kept;
+        urd::Store<urd::sequence<formalism::ParameterIndex>> kept;
     };
 
     /// At most this many variables are kept by a projection: wider projections can derive far more atoms than they save.
     static constexpr size_t max_kept_variables = 2;
 
     template<formalism::FactKind F>
-    [[nodiscard]] Parameters parameters_of(ygg::Index<formalism::datalog::Literal<LiftedTag, F>> literal) const
-    { return formalism::datalog::collect_parameters(ygg::make_view(literal, m_context->destination())); }
+    [[nodiscard]] Parameters parameters_of(urd::index<formalism::datalog::Literal<LiftedTag, F>> literal) const
+    { return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination())); }
 
     [[nodiscard]] Parameters parameters_of(const Body& body) const
     {
         auto result = Parameters {};
         for (const auto literal : body.static_literals)
-            formalism::datalog::collect_parameters(ygg::make_view(literal, m_context->destination()), result);
+            formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
         for (const auto literal : body.fluent_literals)
-            formalism::datalog::collect_parameters(ygg::make_view(literal, m_context->destination()), result);
+            formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()), result);
         return result;
     }
 
@@ -165,7 +171,7 @@ private:
                 continue;
 
             const auto covered = parameters_of(candidate.projected);
-            std::erase_if(candidate.rest.static_literals,
+            erase_if(candidate.rest.static_literals,
                           [&](const auto literal)
                           {
                               const auto parameters = parameters_of(literal);
@@ -197,45 +203,45 @@ private:
     /// Restricts each kept variable of a projection by the static literals of the rest of the rule: the objects that such a
     /// literal admits at the variable form a static unary predicate, which the projection rule gets in addition. The rest keeps
     /// its literals, so this only adds constraints that every binding of the rule satisfies.
-    void restrict_kept_variables(const Body& rest, const std::vector<formalism::ParameterIndex>& kept, Body& projected)
+    void restrict_kept_variables(const Body& rest, const urd::Store<urd::sequence<formalism::ParameterIndex>>& kept, Body& projected)
     {
         for (const auto variable : kept)
             for (const auto literal : rest.static_literals)
                 if (const auto parameters = parameters_of(literal);
-                    ygg::make_view(literal, m_context->destination()).get_polarity() && parameters.contains(variable) && parameters.size() > 1)
+                    urd::resolve(literal, m_context->destination()).get_polarity() && parameters.contains(variable) && parameters.size() > 1)
                     projected.static_literals.push_back(get_or_create_domain_literal(literal, variable));
     }
 
     /// A literal over the variable alone that admits the objects that the static literal admits at the variable.
     StaticLiteral get_or_create_domain_literal(StaticLiteral literal, formalism::ParameterIndex variable)
     {
-        const auto atom = ygg::make_view(literal, m_context->destination()).get_atom();
-        const auto key = std::pair(atom.get_index(), variable);
+        const auto atom = urd::resolve(literal, m_context->destination()).get_atom();
+        const auto key = std::pair(atom.index(), variable);
         if (const auto it = m_domain_literals.find(key); it != m_domain_literals.end())
             return it->second;
 
         auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::StaticTag>>(m_context->builder());
         predicate->name = "__tyr_domain_" + std::to_string(m_domain_literals.size());
         predicate->arity = 1;
-        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.get_index();
+        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.index();
         m_program->static_predicates.push_back(new_predicate);
 
-        auto pattern = std::vector<ygg::Data<formalism::Term>> {};
+        auto pattern = urd::Store<urd::sequence<formalism::Term>> {};
         for (const auto term : atom.get_terms())
-            pattern.push_back(term.get_data());
+            pattern.push_back(urd::to_stored(term));
         const auto atom_parameters = formalism::datalog::collect_parameters(atom);
-        const auto sigma = Substitution(std::vector<formalism::ParameterIndex>(atom_parameters.begin(), atom_parameters.end()));
+        const auto sigma = Substitution(urd::Store<urd::sequence<formalism::ParameterIndex>>(atom_parameters.begin(), atom_parameters.end()));
 
-        auto objects = ygg::UnorderedSet<ygg::Index<formalism::Object>> {};
-        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(atom.get_predicate().get_index())].get_bindings())
+        auto objects = urd::Store<urd::set<urd::index<formalism::Object>>> {};
+        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(atom.get_predicate().index().value)].get_bindings())
         {
-            auto element = std::vector<ygg::Data<formalism::Term>> {};
+            auto element = urd::Store<urd::sequence<formalism::Term>> {};
             for (const auto object : binding.get_objects())
-                element.emplace_back(object.get_index());
+                element.emplace_back(object.index());
             if (const auto match = formalism::unification::match(pattern, element, sigma))
             {
                 const auto& value = (*match)[variable];
-                YGG_ASSUME(value.has_value());  ///< The variable occurs in the matched atom.
+                URD_ASSUME(value.has_value());  ///< The variable occurs in the matched atom.
                 const auto object = formalism::unification::get_object(*value);
                 if (objects.insert(object).second)
                 {
@@ -244,8 +250,8 @@ private:
                     domain_binding->relation = new_predicate;
                     domain_binding->objects.push_back(object);
                     auto ground_atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-                    ground_atom->binding = formalism::datalog::insert(m_context->destination(), *domain_binding).first.get_index();
-                    m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *ground_atom).first.get_index());
+                    ground_atom->binding = formalism::datalog::insert(m_context->destination(), *domain_binding).first.index();
+                    m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *ground_atom).first.index());
                 }
             }
         }
@@ -255,66 +261,66 @@ private:
         return result;
     }
 
-    FluentLiteral create_projection_atom(const std::vector<formalism::ParameterIndex>& kept)
+    FluentLiteral create_projection_atom(const urd::Store<urd::sequence<formalism::ParameterIndex>>& kept)
     {
         auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(m_context->builder());
         predicate->name = "__tyr_projection_" + std::to_string(m_num_projections++);
         predicate->arity = kept.size();
-        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.get_index();
+        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.index();
         m_program->fluent_predicates.push_back(new_predicate);
         return create_literal<formalism::FluentTag>(new_predicate, kept);
     }
 
     template<formalism::FactKind F>
-    ygg::Index<formalism::datalog::Literal<LiftedTag, F>> create_literal(ygg::Index<formalism::Predicate<F>> predicate,
-                                                                         const std::vector<formalism::ParameterIndex>& parameters)
+    urd::index<formalism::datalog::Literal<LiftedTag, F>> create_literal(urd::index<formalism::Predicate<F>> predicate,
+                                                                         const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
     {
         auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, F>>(m_context->builder());
         atom->predicate = predicate;
         for (const auto parameter : parameters)
-            atom->terms.push_back(ygg::Data<formalism::Term>(parameter));
+            atom->terms.push_back(formalism::Term(parameter));
         auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, F>>(m_context->builder());
-        literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.get_index();
+        literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.index();
         literal->polarity = true;
-        return formalism::datalog::insert(m_context->destination(), *literal).first.get_index();
+        return formalism::datalog::insert(m_context->destination(), *literal).first.index();
     }
 
     /// The atom with each parameter renumbered to its position among the emitted rule's variables.
     template<formalism::FactKind F>
-    ygg::Index<formalism::datalog::Atom<LiftedTag, F>> renumber(formalism::datalog::AtomView<LiftedTag, F> atom,
-                                                                const ygg::UnorderedMap<formalism::ParameterIndex, formalism::ParameterIndex>& local)
+    urd::index<formalism::datalog::Atom<LiftedTag, F>> renumber(formalism::datalog::AtomView<LiftedTag, F> atom,
+                                                                const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
     {
         auto data = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, F>>(m_context->builder());
-        data->predicate = atom.get_predicate().get_index();
+        data->predicate = atom.get_predicate().index();
         for (const auto term : atom.get_terms())
         {
-            const auto& value = term.get_data();
+            const auto& value = urd::to_stored(term);
             data->terms.push_back(
-                formalism::unification::is_parameter(value) ? ygg::Data<formalism::Term>(local.at(formalism::unification::get_parameter(value))) : value);
+                formalism::unification::is_parameter(value) ? formalism::Term(local.at(formalism::unification::get_parameter(value))) : value);
         }
-        return formalism::datalog::insert(m_context->destination(), *data).first.get_index();
+        return formalism::datalog::insert(m_context->destination(), *data).first.index();
     }
 
     template<formalism::FactKind F>
-    ygg::Index<formalism::datalog::Literal<LiftedTag, F>> renumber(ygg::Index<formalism::datalog::Literal<LiftedTag, F>> literal,
-                                                                   const ygg::UnorderedMap<formalism::ParameterIndex, formalism::ParameterIndex>& local)
+    urd::index<formalism::datalog::Literal<LiftedTag, F>> renumber(urd::index<formalism::datalog::Literal<LiftedTag, F>> literal,
+                                                                   const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
     {
-        const auto view = ygg::make_view(literal, m_context->destination());
+        const auto view = urd::resolve(literal, m_context->destination());
         auto data = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, F>>(m_context->builder());
         data->atom = renumber(view.get_atom(), local);
         data->polarity = view.get_polarity();
-        return formalism::datalog::insert(m_context->destination(), *data).first.get_index();
+        return formalism::datalog::insert(m_context->destination(), *data).first.index();
     }
 
     /// The rule over the variables that its body uses, in action rule order, and the action rule position of each of them.
-    std::pair<ygg::Index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>, std::vector<ygg::uint_t>>
-    emit_rule(const ygg::IndexList<formalism::Variable>& variables, const Body& body, const std::vector<FluentAtom>& heads, ygg::float_t cost)
+    std::pair<urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>, urd::Store<urd::sequence<ygg::uint_t>>>
+    emit_rule(const urd::flat_vector<urd::index<formalism::Variable>>& variables, const Body& body, const urd::Store<urd::sequence<FluentAtom>>& heads, ygg::float_t cost)
     {
-        auto positions = std::vector<ygg::uint_t> {};
+        auto positions = urd::Store<urd::sequence<ygg::uint_t>> {};
         for (const auto parameter : parameters_of(body))
-            positions.push_back(static_cast<ygg::uint_t>(parameter));
+            positions.push_back(parameter.value);
         std::ranges::sort(positions);
-        auto local = ygg::UnorderedMap<formalism::ParameterIndex, formalism::ParameterIndex> {};
+        auto local = urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>> {};
         for (size_t i = 0; i < positions.size(); ++i)
             local.emplace(formalism::ParameterIndex(positions[i]), formalism::ParameterIndex(static_cast<ygg::uint_t>(i)));
 
@@ -328,20 +334,21 @@ private:
         const auto new_condition = formalism::datalog::insert(m_context->destination(), *condition).first;
 
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(m_context->builder());
-        ygg::extend(new_condition.get_variables(), rule->variables);
-        rule->body = new_condition.get_index();
+        for (const auto variable : new_condition.get_variables())
+            rule->variables.push_back(urd::to_stored(variable));
+        rule->body = new_condition.index();
         for (const auto head : heads)
-            rule->heads.push_back(renumber(ygg::make_view(head, m_context->destination()), local));
+            rule->heads.push_back(renumber(urd::resolve(head, m_context->destination()), local));
         rule->cost = cost;
-        return { formalism::datalog::insert(m_context->destination(), *rule).first.get_index(), std::move(positions) };
+        return { formalism::datalog::insert(m_context->destination(), *rule).first.index(), std::move(positions) };
     }
 
-    ygg::Data<formalism::datalog::Program<LiftedTag>>* m_program;
+    urd::data<formalism::datalog::Program<LiftedTag>>* m_program;
     RuleSplitting* m_splitting;
     formalism::datalog::CopyContext* m_context;
     const PredicateFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_projections = 0;
-    ygg::UnorderedMap<std::pair<ygg::Index<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>
+    urd::Store<urd::map<std::pair<urd::index<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>>
         m_domain_literals;
 };
 
@@ -356,32 +363,32 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
     formalism::datalog::copy_except_rules(program, *result, context);
     for (const auto rule : program.get_rules<formalism::FunctionTag>())
     {
-        const auto copy = formalism::datalog::copy(rule, context).first.get_index();
+        const auto copy = formalism::datalog::copy(rule, context).first.index();
         result->function_rules.push_back(copy);
-        splitting.rules.function.emplace(rule.get_index(), copy);
+        splitting.rules.function.emplace(rule.index(), copy);
     }
 
     // The static predicates come first in the repository, as the fact sets require.
-    auto static_facts = PredicateFactSets<formalism::StaticTag>(ygg::make_view(result->static_predicates, repository), repository);
+    auto static_facts = PredicateFactSets<formalism::StaticTag>(urd::resolve(result->static_predicates, repository), repository);
     for (const auto atom : result->static_atoms)
-        static_facts.insert(ygg::make_view(atom, repository));
+        static_facts.insert(urd::resolve(atom, repository));
     auto splitter = Splitter(*result, splitting, context, static_facts);
     // Only rules of the program are inserted: rule workspaces are indexed by rule.
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
     {
-        auto heads = std::vector<Splitter::FluentAtom> {};
+        auto heads = urd::Store<urd::sequence<Splitter::FluentAtom>> {};
         for (const auto head : rule.get_heads())
-            heads.push_back(formalism::datalog::copy(head, context).first.get_index());
+            heads.push_back(formalism::datalog::copy(head, context).first.index());
         if (const auto main_rule = splitter.split(formalism::datalog::copy(rule.get_body(), context).first, heads, rule.get_cost()))
         {
             result->predicate_rules.push_back(*main_rule);
-            splitting.rules.predicate.emplace(rule.get_index(), *main_rule);
+            splitting.rules.predicate.emplace(rule.index(), *main_rule);
         }
         else
         {
-            const auto copy = formalism::datalog::copy(rule, context).first.get_index();
+            const auto copy = formalism::datalog::copy(rule, context).first.index();
             result->predicate_rules.push_back(copy);
-            splitting.rules.predicate.emplace(rule.get_index(), copy);
+            splitting.rules.predicate.emplace(rule.index(), copy);
         }
     }
 

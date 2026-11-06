@@ -19,6 +19,8 @@
 #define TYR_ALGORITHMS_KCKP_DELTA_KCKP_HPP_
 
 #include "tyr/algorithms/kckp/kckp.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <bit>
 #include <boost/dynamic_bitset.hpp>
@@ -30,6 +32,7 @@
 #include <limits>
 #include <span>
 #include <type_traits>
+#include <urd/repr/containers/bitset_span.hpp>
 #include <utility>
 #include <vector>
 
@@ -88,8 +91,8 @@ private:
     [[nodiscard]] ygg::uint_t get_pair_offset(ygg::uint_t source_partition, ygg::uint_t target_partition) const noexcept;
 
     size_t m_num_partitions { 0 };
-    std::vector<ygg::uint_t> m_row_offsets;
-    std::vector<ygg::uint_t> m_pair_offsets;
+    urd::Store<urd::sequence<ygg::uint_t>> m_row_offsets;
+    urd::Store<urd::sequence<ygg::uint_t>> m_pair_offsets;
     size_t m_num_blocks { 0 };
 };
 
@@ -111,22 +114,22 @@ public:
     {
     }
 
-    ygg::BitsetSpan<uint64_t> get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept;
-    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
+    urd::repr::BitsetSpan<uint64_t> get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept;
+    [[nodiscard]] urd::repr::BitsetSpan<const uint64_t> get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
 
-    void copy_adjacency_to(ygg::uint_t vertex, ygg::uint_t partition, ygg::BitsetSpan<uint64_t> destination) const
+    void copy_adjacency_to(ygg::uint_t vertex, ygg::uint_t partition, urd::repr::BitsetSpan<uint64_t> destination) const
     {
         assert(destination.size() == m_layout->info.infos[partition].num_bits);
         for_each_adjacency_block(vertex, partition, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] = adjacency; });
     }
 
-    void intersect_adjacency_with(ygg::uint_t vertex, ygg::uint_t partition, ygg::BitsetSpan<uint64_t> destination) const
+    void intersect_adjacency_with(ygg::uint_t vertex, ygg::uint_t partition, urd::repr::BitsetSpan<uint64_t> destination) const
     {
         assert(destination.size() == m_layout->info.infos[partition].num_bits);
         for_each_adjacency_block(vertex, partition, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] &= adjacency; });
     }
 
-    void subtract_adjacency_from(ygg::uint_t vertex, ygg::uint_t partition, ygg::BitsetSpan<uint64_t> destination) const
+    void subtract_adjacency_from(ygg::uint_t vertex, ygg::uint_t partition, urd::repr::BitsetSpan<uint64_t> destination) const
     {
         assert(destination.size() == m_layout->info.infos[partition].num_bits);
         for_each_adjacency_block(vertex, partition, [&](size_t block, uint64_t adjacency) { destination.blocks()[block] &= ~adjacency; });
@@ -137,8 +140,8 @@ public:
         const auto source_partition = m_layout->vertex_to_partition[vertex];
         const auto target_partition = m_layout->vertex_to_partition[target];
         const auto target_bit = m_layout->vertex_to_bit[target];
-        const auto block = target_bit / ygg::BitsetSpan<const uint64_t>::Digits;
-        const auto mask = static_cast<uint64_t>(1) << (target_bit % ygg::BitsetSpan<const uint64_t>::Digits);
+        const auto block = target_bit / urd::repr::BitsetSpan<const uint64_t>::Digits;
+        const auto mask = static_cast<uint64_t>(1) << (target_bit % urd::repr::BitsetSpan<const uint64_t>::Digits);
         const auto offset = m_adjacency_layout->get_offset(vertex, source_partition, target_partition);
 
         if (offset < PartitionedAdjacencyLayout::STATIC_ONLY)
@@ -157,7 +160,7 @@ public:
         {
             const auto& info = m_layout->info.infos[partition];
             const auto vertices = m_affected_partitions->get_bitset(info);
-            for (const auto bit : ygg::set_bit_indices(vertices))
+            for (const auto bit : urd::repr::set_bit_indices(vertices))
                 callback(Vertex(info.bit_offset + static_cast<ygg::uint_t>(bit)));
         }
     }
@@ -177,7 +180,7 @@ public:
             const auto& source_info = m_layout->info.infos[source_partition];
             const auto source_bits = m_affected_partitions->get_bitset(source_info);
 
-            for (const auto source_bit : ygg::set_bit_indices(source_bits))
+            for (const auto source_bit : urd::repr::set_bit_indices(source_bits))
             {
                 const auto source_vertex = source_info.bit_offset + static_cast<ygg::uint_t>(source_bit);
                 for (ygg::uint_t target_partition = source_partition + 1; target_partition < m_layout->num_partitions; ++target_partition)
@@ -214,7 +217,7 @@ public:
     [[nodiscard]] const auto& bitset_data() const noexcept { return m_bitset_data; }
 
 private:
-    [[nodiscard]] ygg::BitsetSpan<const uint64_t> get_contextual_partition(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
+    [[nodiscard]] urd::repr::BitsetSpan<const uint64_t> get_contextual_partition(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
 
     template<typename Callback>
     void for_each_adjacency_block(ygg::uint_t vertex, ygg::uint_t partition, Callback callback) const
@@ -259,7 +262,7 @@ private:
                                      while (word)
                                      {
                                          const auto bit = static_cast<size_t>(std::countr_zero(word));
-                                         const auto index = block * ygg::BitsetSpan<const uint64_t>::Digits + bit;
+                                         const auto index = block * urd::repr::BitsetSpan<const uint64_t>::Digits + bit;
                                          if (index < num_bits)
                                              callback(index);
                                          word &= word - 1;
@@ -273,7 +276,7 @@ private:
     const VertexPartitions* m_affected_partitions;
     const VertexPartitions* m_delta_partitions;
     boost::dynamic_bitset<> m_touched_partitions;
-    std::vector<uint64_t> m_bitset_data;
+    urd::Store<urd::sequence<uint64_t>> m_bitset_data;
 };
 
 struct FullGraph
@@ -448,7 +451,7 @@ public:
             complete_from_seed<Hyperedge>(std::move(callback), 0, workspace);
     }
 
-    const std::vector<Edge>& materialize_delta_edges();
+    const urd::Store<urd::sequence<Edge>>& materialize_delta_edges();
     void seed_without_anchor(Workspace& workspace) const;
     bool seed_from_anchor(const Edge& edge, Workspace& workspace) const;
     /// Computes the rows of the anchor source shared by its edges into the target partition: in every other partition, the
@@ -491,8 +494,8 @@ private:
                 continue;
 
             const auto& info = m_layout->info.infos[partition];
-            const auto current = ygg::BitsetSpan<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-            auto next = ygg::BitsetSpan<uint64_t>(next_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+            const auto current = urd::repr::BitsetSpan<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+            auto next = urd::repr::BitsetSpan<uint64_t>(next_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
             next.copy_from(current);
             m_full_graph.matrix.intersect_adjacency_with(source.index, partition, next);
             if (!next.any())
@@ -521,7 +524,7 @@ private:
     size_t m_iteration { 0 };
     DeltaGraph m_delta_graph;
     FullGraph m_full_graph;
-    std::vector<Edge> m_delta_edges;
+    urd::Store<urd::sequence<Edge>> m_delta_edges;
 };
 
 inline ygg::uint_t PartitionedAdjacencyLayout::get_offset(ygg::uint_t vertex, ygg::uint_t source_partition, ygg::uint_t target_partition) const noexcept
@@ -541,24 +544,24 @@ inline ygg::uint_t PartitionedAdjacencyLayout::get_pair_offset(ygg::uint_t sourc
     return m_pair_offsets[source_partition * m_num_partitions + target_partition];
 }
 
-inline ygg::BitsetSpan<uint64_t> PartitionedAdjacencyMatrix::get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept
+inline urd::repr::BitsetSpan<uint64_t> PartitionedAdjacencyMatrix::get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept
 {
     const auto offset = m_adjacency_layout->get_offset(vertex, m_layout->vertex_to_partition[vertex], partition);
     assert(offset < PartitionedAdjacencyLayout::STATIC_ONLY && "Only runtime-dependent adjacency is mutable");
     const auto& info = m_layout->info.infos[partition];
-    return ygg::BitsetSpan<uint64_t>(std::span<uint64_t>(m_bitset_data).subspan(offset, info.num_blocks).data(), info.num_bits);
+    return urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(m_bitset_data).subspan(offset, info.num_blocks).data(), info.num_bits);
 }
 
-inline ygg::BitsetSpan<const uint64_t> PartitionedAdjacencyMatrix::get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
+inline urd::repr::BitsetSpan<const uint64_t> PartitionedAdjacencyMatrix::get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
 {
     const auto& info = m_layout->info.infos[partition];
     const auto source_partition = m_layout->vertex_to_partition[vertex];
     const auto offset = m_adjacency_layout->get_offset(vertex, source_partition, partition);
     assert(offset < PartitionedAdjacencyLayout::STATIC_ONLY && "Only runtime-dependent adjacency is stored");
-    return ygg::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset, info.num_blocks).data(), info.num_bits);
+    return urd::repr::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset, info.num_blocks).data(), info.num_bits);
 }
 
-inline ygg::BitsetSpan<const uint64_t> PartitionedAdjacencyMatrix::get_contextual_partition(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
+inline urd::repr::BitsetSpan<const uint64_t> PartitionedAdjacencyMatrix::get_contextual_partition(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
 {
     const auto source_partition = m_layout->vertex_to_partition[vertex];
     const auto source_bit = m_layout->vertex_to_bit[vertex];

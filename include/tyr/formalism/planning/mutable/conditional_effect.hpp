@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_CONDITIONAL_EFFECT_HPP_
 
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/conjunctive_effect.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
@@ -26,14 +28,13 @@
 
 #include <cstddef>
 #include <tuple>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
-struct MutableConditionalEffect : ygg::comparison::Mixin<MutableConditionalEffect>
+struct MutableConditionalEffect : urd::compared_by_identity<MutableConditionalEffect>
 {
     size_t num_parent_variables = 0;
     size_t num_variables = 0;
@@ -58,14 +59,14 @@ struct MutableConditionalEffect : ygg::comparison::Mixin<MutableConditionalEffec
 
     static constexpr auto identifying_members() noexcept
     {
-        return ygg::Members<&MutableConditionalEffect::num_parent_variables,
+        return urd::Members<&MutableConditionalEffect::num_parent_variables,
                             &MutableConditionalEffect::num_variables,
                             &MutableConditionalEffect::condition,
                             &MutableConditionalEffect::effect> {};
     }
 };
 
-using MutableConditionalEffectList = std::vector<MutableConditionalEffect>;
+using MutableConditionalEffectList = urd::Store<urd::sequence<MutableConditionalEffect>>;
 }
 
 namespace tyr::formalism::unification

@@ -25,39 +25,34 @@
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
 
 #include <optional>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+/// A fact: its variable and value.
+template<::tyr::formalism::FactKind T, typename V>
+struct urd::view_mixin<::tyr::formalism::planning::FDRFact<T>, V>
 {
-template<::tyr::formalism::FactKind T, ::tyr::formalism::planning::Context C>
-class View<ygg::Data<::tyr::formalism::planning::FDRFact<T>>, C> : public ygg::DataViewBase<::tyr::formalism::planning::FDRFact<T>, C>
-{
-    // FDRContext::get_fact returns views of facts computed on the fly.
-    static_assert(ygg::uses_trivial_storage_v<::tyr::formalism::planning::FDRFact<T>>);
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    View(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& handle, const C& context) noexcept :
-        ygg::DataViewBase<::tyr::formalism::planning::FDRFact<T>, C>(handle, context)
-    {
-    }
-
-    auto get_variable() const noexcept { return ygg::make_view(this->get_data().variable, this->get_context()); }
-    auto get_value() const noexcept { return this->get_data().value; }
+    auto get_variable() const noexcept { return self().template get<&urd::record_of<V>::variable>(); }
+    auto get_value() const noexcept { return self().data().value; }
     auto has_value() const noexcept { return get_value() != ::tyr::formalism::planning::FDRValue::none(); }
     auto get_atom_index() const noexcept
-    { return has_value() ? std::make_optional(this->get_repository()[this->get_data().variable].atoms[ygg::uint_t(get_value() - 1)]) : std::nullopt; }
-    auto get_atom() const noexcept
-    {
-        const auto atom = get_atom_index();
-        return atom ? std::make_optional(ygg::make_view(*atom, this->get_context())) : std::nullopt;
-    }
+    { return has_value() ? std::make_optional(self().context()[self().data().variable].atoms[get_value().value - 1]) : std::nullopt; }
+    auto get_atom() const noexcept { return urd::resolve(get_atom_index(), self().context()); }
 };
 
-/// Canonical context depends on variable.
-template<::tyr::formalism::FactKind T, typename C>
-const C& get_canonical_context(const ygg::Data<::tyr::formalism::planning::FDRFact<T>>& element, const C& context)
-{ return ygg::make_view(element.variable, context).get_context(); }
-
-}
+/// A fact read through a context: its view through the context that owns its variable, which borrows it (never a
+/// temporary: a fact computed on the fly is viewed as an urd::owned_view).
+template<::tyr::formalism::FactKind T>
+struct urd::resolution<urd::data<::tyr::formalism::planning::FDRFact<T>>>
+{
+    template<typename M, typename C>
+        requires std::constructible_from<urd::borrowed<urd::data<::tyr::formalism::planning::FDRFact<T>>>, M>
+    static urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, C> of(M&& fact, const C& context)
+    { return { std::forward<M>(fact), context.view(fact.variable).context() }; }
+};
+static_assert(std::is_trivially_copyable_v<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>);
 
 #endif

@@ -19,10 +19,12 @@
 #define TYR_PLANNING_ALGORITHMS_SERIALIZED_STATISTICS_HPP_
 
 #include "tyr/planning/algorithms/utils.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <concepts>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::serialized
 {
@@ -34,8 +36,8 @@ class Statistics
     using SolverStatistics = Stats;
 
 private:
-    std::vector<SearchStatistics> m_search_statistics;
-    std::vector<SolverStatistics> m_solver_statistics;
+    urd::Store<urd::sequence<SearchStatistics>> m_search_statistics;
+    urd::Store<urd::sequence<SolverStatistics>> m_solver_statistics;
 
 public:
     void clear()
@@ -48,8 +50,8 @@ public:
     void add_solver_statistics(const SolverStatistics& statistics) { m_solver_statistics.push_back(statistics); }
 
     [[nodiscard]] ygg::uint_t get_num_subsearches() const { return static_cast<ygg::uint_t>(m_search_statistics.size()); }
-    [[nodiscard]] const std::vector<SearchStatistics>& get_search_statistics() const { return m_search_statistics; }
-    [[nodiscard]] const std::vector<SolverStatistics>& get_solver_statistics() const { return m_solver_statistics; }
+    [[nodiscard]] const urd::Store<urd::sequence<SearchStatistics>>& get_search_statistics() const { return m_search_statistics; }
+    [[nodiscard]] const urd::Store<urd::sequence<SolverStatistics>>& get_solver_statistics() const { return m_solver_statistics; }
 };
 
 }  // namespace tyr::planning::serialized

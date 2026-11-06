@@ -19,12 +19,14 @@
 #define TYR_DATALOG_GROUND_WORKSPACES_RULE_HPP_
 
 #include "tyr/datalog/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <optional>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
@@ -39,7 +41,7 @@ struct RuleState
 template<formalism::RelationKind R>
 struct RuleWorkspace<GroundTag, R>
 {
-    std::vector<RuleState> states;
+    urd::Store<urd::sequence<RuleState>> states;
 
     explicit RuleWorkspace(formalism::datalog::ProgramView<GroundTag>) {}
 

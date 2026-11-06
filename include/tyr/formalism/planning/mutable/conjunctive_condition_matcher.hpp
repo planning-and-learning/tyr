@@ -24,11 +24,15 @@
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/elements/less.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/comparators.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -38,13 +42,13 @@ struct TaggedMutableAtomMatchData
 {
     struct PredicateData
     {
-        std::vector<MutableAtom<T>> atoms;
+        urd::Store<urd::sequence<MutableAtom<T>>> atoms;
 
         // postings[pos][obj] = bitset of atom indices with obj at argument position pos
-        std::vector<ygg::UnorderedMap<ygg::Index<Object>, boost::dynamic_bitset<>>> postings;
+        urd::Store<urd::sequence<urd::Store<urd::map<urd::index<Object>, boost::dynamic_bitset<>>>>> postings;
     };
 
-    ygg::UnorderedMap<ygg::Index<Predicate<T>>, PredicateData> data;
+    urd::Store<urd::map<urd::index<Predicate<T>>, PredicateData>> data;
 };
 
 struct MutableAtomMatchData

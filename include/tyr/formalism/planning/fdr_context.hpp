@@ -21,6 +21,7 @@
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 
@@ -28,9 +29,11 @@
 #include <cstddef>
 #include <mutex>
 #include <optional>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/segmented_vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -42,7 +45,7 @@ public:
     explicit FDRContext(RepositoryPtr context);
 
     // Construct with ground mutexes.
-    FDRContext(const std::vector<AtomViewList<GroundTag, FluentTag>>& mutexes, RepositoryPtr context);
+    FDRContext(const urd::Store<urd::sequence<AtomViewList<GroundTag, FluentTag>>>& mutexes, RepositoryPtr context);
 
     // Construct with binary ground mutexes.
     FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, RepositoryPtr context);
@@ -60,19 +63,18 @@ public:
 private:
     struct FactSlot
     {
-        ygg::Data<FDRFact<FluentTag>> fact;
+        urd::data<FDRFact<FluentTag>> fact;
         std::atomic_bool ready { false };
     };
 
-    static constexpr std::size_t first_fact_segment_size = 32;
 
     std::optional<FDRFactView<FluentTag>> find_fact(AtomView<GroundTag, FluentTag> atom) const;
     void ensure_fact_slot(AtomView<GroundTag, FluentTag> atom);
-    bool publish_fact(AtomView<GroundTag, FluentTag> atom, ygg::Data<FDRFact<FluentTag>> fact);
+    bool publish_fact(AtomView<GroundTag, FluentTag> atom, urd::data<FDRFact<FluentTag>> fact);
 
     RepositoryPtr m_context;
     // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.
-    ygg::SegmentedVector<FactSlot, first_fact_segment_size, true> m_facts;
+    urd::Store<urd::sequence<FactSlot>, urd::stable_refs, urd::concurrent> m_facts;
     std::mutex m_registration_mutex;
     Builder m_builder;
     FDRVariableViewList<FluentTag> m_variables;

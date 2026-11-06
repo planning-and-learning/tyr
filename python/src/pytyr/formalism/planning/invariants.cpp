@@ -16,6 +16,9 @@
  */
 
 #include "tyr/formalism/planning/invariants/invariants.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <urd/python/sequences/sequence.hpp>
 
 #include "bindings.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
@@ -40,7 +43,7 @@ void bind_substitution_function(nb::module_& m, const std::string& name)
 
     auto cls = nb::class_<V>(m, name.c_str())
                    .def(nb::init<>())
-                   .def(nb::init<std::vector<ParameterIndex>>(), "parameters"_a)
+                   .def(nb::init<urd::Store<urd::sequence<ParameterIndex>>>(), "parameters"_a)
                    .def_static("from_range", &V::from_range, "offset"_a, "size"_a)
                    .def("size", &V::size)
                    .def_prop_ro("parameters", &V::parameters)
@@ -103,14 +106,14 @@ void bind_substitution_function(nb::module_& m, const std::string& name)
                    .def("items",
                         [](const V& self)
                         {
-                            std::vector<std::pair<ParameterIndex, T>> result;
+                            urd::Store<urd::sequence<std::pair<ParameterIndex, T>>> result;
                             self.for_each_binding([&](ParameterIndex p, const T& value) { result.emplace_back(p, value); });
                             return result;
                         })
                    .def("__contains__", [](const V& self, ParameterIndex p) { return self.contains_parameter(p); }, "parameter"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 void bind_mutex_group(nb::module_& m, const std::string& name)
@@ -124,10 +127,10 @@ void bind_invariant_match_data(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
     using V = InvariantMatchData;
-    using ObjectSubstitution = unification::SubstitutionFunction<ygg::Index<Object>>;
+    using ObjectSubstitution = unification::SubstitutionFunction<urd::index<Object>>;
 
     nb::class_<V>(m, name.c_str())
-        .def(nb::init<InvariantView, std::vector<ObjectSubstitution>>(), "invariant"_a, "rigid_variable_bindings"_a)
+        .def(nb::init<InvariantView, urd::Store<urd::sequence<ObjectSubstitution>>>(), "invariant"_a, "rigid_variable_bindings"_a)
         .def_prop_ro("invariant", &V::invariant)
         .def_prop_ro("rigid_variable_bindings", &V::rigid_variable_bindings);
 }
@@ -189,8 +192,8 @@ void bind_invariants(nb::module_& m)
 {
     using namespace nb::literals;
     bind_mutex_group(m, "MutexGroup");
-    bind_substitution_function<ygg::Index<Object>>(m, "ObjectSubstitution");
-    bind_substitution_function<ygg::Data<Term>>(m, "TermSubstitution");
+    bind_substitution_function<urd::index<Object>>(m, "ObjectSubstitution");
+    bind_substitution_function<Term>(m, "TermSubstitution");
     bind_invariant_match_data(m, "InvariantMatchData");
     bind_query_workspace(m, "InvariantQueryWorkspace");
     bind_query_result_match(m, "InvariantQueryResultMatch");
@@ -212,7 +215,7 @@ void bind_invariants(nb::module_& m)
         .def(nb::init<>())
         .def(
             "__init__",
-            [](invariant::InvariantOrderOptions* self, std::vector<invariant::InvariantOrderCriterion> criteria, std::uint64_t random_seed)
+            [](invariant::InvariantOrderOptions* self, urd::Store<urd::sequence<invariant::InvariantOrderCriterion>> criteria, std::uint64_t random_seed)
             { new (self) invariant::InvariantOrderOptions { std::move(criteria), random_seed }; },
             "criteria"_a,
             "random_seed"_a = 0)

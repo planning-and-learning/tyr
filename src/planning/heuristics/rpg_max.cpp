@@ -68,7 +68,7 @@ void MaxRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionVi
 { m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
-ygg::float_t MaxRPGHeuristic<Kind>::evaluate(const ygg::Builder<State<Kind>>& state)
+ygg::float_t MaxRPGHeuristic<Kind>::evaluate(const urd::data<State<Kind>>& state)
 { return m_impl->evaluate(state); }
 
 template<TaskKind Kind>

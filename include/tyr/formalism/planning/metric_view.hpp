@@ -19,27 +19,22 @@
 #define TYR_FORMALISM_PLANNING_METRIC_VIEW_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_expression_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<typename V>
+struct view_mixin<::tyr::formalism::planning::Metric, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Metric> C>
-class View<ygg::Index<::tyr::formalism::planning::Metric>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Metric, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::planning::Metric> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::Metric, C>(handle, context)
-    {
-    }
-
-    auto get_optimization_direction() const noexcept { return this->get_data().optimization_direction; }
-    auto get_fexpr() const noexcept { return ygg::make_view(this->get_data().fexpr, this->get_context()); }
+    auto get_optimization_direction() const noexcept { return self().data().optimization_direction; }
+    auto get_fexpr() const noexcept { return self().template get<&urd::record_of<V>::fexpr>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

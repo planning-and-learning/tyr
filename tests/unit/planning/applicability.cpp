@@ -1,4 +1,6 @@
 #include "tyr/planning/applicability.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "applicability_schema.hpp"
 #include "planning/parser.hpp"
@@ -40,7 +42,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/unique_object_pool.hpp>
+#include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 template<typename Kind, typename State>
@@ -48,7 +51,6 @@ concept HasBindingQuery = requires(tyr::planning::SuccessorGenerator<Kind>& gene
     generator.get_applicable_action_bindings(node);
 };
 
-static_assert(ygg::InputRangeOf<tyr::formalism::planning::ObjectSpanView, tyr::formalism::planning::ObjectView>);
 static_assert(std::same_as<tyr::planning::BorrowedActionBindingView<tyr::GroundTag>, tyr::formalism::planning::ActionBindingView>);
 static_assert(std::same_as<tyr::planning::BorrowedActionBindingView<tyr::LiftedTag>, tyr::formalism::planning::ActionBindingDataView>);
 static_assert(!HasBindingQuery<tyr::GroundTag, tyr::planning::BuilderStateView<tyr::LiftedTag>>);
@@ -76,7 +78,7 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
     {
         auto result = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            result += task->get_repository()->size(action.get_index());
+            result += task->get_repository()->size(action.index());
         return result;
     };
     const auto num_action_bindings = count_action_bindings();
@@ -90,12 +92,12 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
     for (size_t i = 0; i < successors.size(); ++i)
         EXPECT_EQ(successor_nodes[i], successors[i].node);
 
-    auto action_names = std::vector<std::string> {};
+    auto action_names = urd::Store<urd::sequence<std::string>> {};
     for (const auto& successor : successors)
         action_names.push_back(successor.label.get_relation().get_name().str());
 
     std::ranges::sort(action_names);
-    EXPECT_EQ(action_names, (std::vector<std::string> { "quantified", "valid" }));
+    EXPECT_EQ(action_names, (urd::Store<urd::sequence<std::string>> { "quantified", "valid" }));
 }
 
 template<TaskKind Kind>
@@ -157,7 +159,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto rule_of = [&](auto predicate)
     { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_heads().front().get_predicate() == predicate; }); };
     auto expected_rules =
-        ygg::UnorderedMap<formalism::planning::ActionView<LiftedTag>, std::vector<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>> {};
+        urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, urd::Store<urd::sequence<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>>>> {};
     auto num_rules = static_cast<size_t>(0);
     for (const auto& [predicate, action] : action_mapping)
     {
@@ -174,9 +176,9 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     {
         SCOPED_TRACE(action.get_name().str());
         const auto& schema = schemas.at(action);
-        const auto& data = schema.program.get_data();
-        const auto& global_data = global_program.get_data();
-        EXPECT_EQ(&schema.program.get_context(), &global_program.get_context());
+        const auto& data = schema.program.data();
+        const auto& global_data = global_program.data();
+        EXPECT_EQ(&schema.program.context(), &global_program.context());
         EXPECT_TRUE(std::ranges::equal(data.static_predicates, global_data.static_predicates));
         EXPECT_TRUE(std::ranges::equal(data.fluent_predicates, global_data.fluent_predicates));
         EXPECT_TRUE(std::ranges::equal(data.static_functions, global_data.static_functions));
@@ -187,7 +189,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
         for (size_t i = 0; i < rules.size(); ++i)
         {
             EXPECT_EQ(schema_rules[i], rules[i]);
-            EXPECT_EQ(&schema_rules[i].get_data(), &rules[i].get_data());
+            EXPECT_EQ(&schema_rules[i].data(), &rules[i].data());
         }
         EXPECT_TRUE(schema.program.get_rules<formalism::FunctionTag>().empty());
         ASSERT_EQ(schema.strata.data.size(), 1);
@@ -290,8 +292,8 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
     for (const auto binding : bindings)
     {
         EXPECT_EQ(binding.get_relation().get_name().str(), "drive");
-        ASSERT_EQ(binding.get_data().size(), 3);
-        EXPECT_NE(binding.get_data()[1], binding.get_data()[2]);
+        ASSERT_EQ(binding.data().objects.size(), 3);
+        EXPECT_NE(binding.data().objects[1], binding.data().objects[2]);
     }
 }
 
@@ -322,11 +324,11 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
     // Reverse insertion order so source and destination atom indices differ.
     const auto absent = tyr::formalism::planning::copy(source_absent, context).first;
     const auto present = tyr::formalism::planning::copy(source_present, context).first;
-    ASSERT_NE(present.get_index(), source_present.get_index());
-    auto atoms = ygg::IndexList<tyr::formalism::planning::Atom<GroundTag, formalism::StaticTag>> { present.get_index() };
-    auto fterm_values = ygg::IndexList<tyr::formalism::planning::FunctionTermValue<GroundTag, formalism::StaticTag>> {};
-    const auto static_state = tyr::planning::StaticState(ygg::make_view(atoms, *destination), ygg::make_view(fterm_values, *destination));
-    auto literal = ygg::Data<tyr::formalism::planning::Literal<GroundTag, formalism::StaticTag>>(present, true);
+    ASSERT_NE(present.index(), source_present.index());
+    auto atoms = urd::flat_vector<urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::StaticTag>>> { present.index() };
+    auto fterm_values = urd::flat_vector<urd::index<tyr::formalism::planning::FunctionTermValue<GroundTag, formalism::StaticTag>>> {};
+    const auto static_state = tyr::planning::StaticState(urd::resolve(atoms, *destination), urd::resolve(fterm_values, *destination));
+    auto literal = urd::data<tyr::formalism::planning::Literal<GroundTag, formalism::StaticTag>>(present.index(), true);
 
     EXPECT_TRUE(tyr::planning::is_statically_applicable(tyr::formalism::planning::insert(*destination, literal).first, static_state));
     EXPECT_TRUE(tyr::planning::is_statically_applicable(absent, static_state));

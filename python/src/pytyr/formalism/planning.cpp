@@ -16,6 +16,9 @@
  */
 
 #include "planning/bindings.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <urd/python/sequences/sequence.hpp>
 #include "planning/module.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -32,7 +35,7 @@
 
 namespace tyr::formalism::planning
 {
-using ygg::bind_fixed_uint;
+using urd::python::bind_index;
 
 /**
  * bind_module_definitions
@@ -51,7 +54,7 @@ void bind_module_definitions(nb::module_& m)
      * Common
      */
 
-    bind_fixed_uint<FDRValue>(m, "FDRValue");
+    ygg::bind_unsigned_integer<FDRValue>(m, "FDRValue");
 
     /**
      * Invariants
@@ -89,7 +92,7 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<FDRContext>(m, "FDRContext")  //
         .def(nb::new_([](RepositoryPtr repository) { return std::make_shared<FDRContext>(std::move(repository)); }), "repository"_a)
-        .def(nb::new_([](const std::vector<std::vector<AtomView<GroundTag, FluentTag>>>& ground_mutex_groups, RepositoryPtr repository)
+        .def(nb::new_([](const urd::Store<urd::sequence<urd::Store<urd::sequence<AtomView<GroundTag, FluentTag>>>>>& ground_mutex_groups, RepositoryPtr repository)
                       { return std::make_shared<FDRContext>(ground_mutex_groups, std::move(repository)); }),
              "ground_mutex_groups"_a,
              "repository"_a)

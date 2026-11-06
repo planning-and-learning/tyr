@@ -37,7 +37,7 @@ decltype(auto) select_literal_dependency(Dep&& dep) noexcept
         else if constexpr (std::is_same_v<P, NegativeTag>)
             return (std::forward<Dep>(dep).static_negative_literal);
         else
-            static_assert(ygg::dependent_false<P>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<P>::value, "Missing case");
     }
     else if constexpr (std::is_same_v<F, FluentTag>)
     {
@@ -46,11 +46,11 @@ decltype(auto) select_literal_dependency(Dep&& dep) noexcept
         else if constexpr (std::is_same_v<P, NegativeTag>)
             return (std::forward<Dep>(dep).fluent_negative_literal);
         else
-            static_assert(ygg::dependent_false<P>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<P>::value, "Missing case");
     }
     else
     {
-        static_assert(ygg::dependent_false<F>::value, "Missing case");
+        static_assert(urd::repr::dependent_false<F>::value, "Missing case");
     }
 }
 

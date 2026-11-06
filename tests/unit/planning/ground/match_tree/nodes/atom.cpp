@@ -7,23 +7,22 @@
 
 template<typename Tag>
 concept AtomSelectorContract =
-    std::constructible_from<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>, ygg::uint_t>
-    && std::totally_ordered<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>>
-    && std::totally_ordered<ygg::Data<tyr::planning::match_tree::AtomSelectorNode<Tag>>>
-    && std::totally_ordered<ygg::View<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>>
-    && requires(ygg::Data<tyr::planning::match_tree::AtomSelectorNode<Tag>>& data,
-                const ygg::View<ygg::Index<tyr::planning::match_tree::AtomSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>& view) {
+    std::constructible_from<urd::index<tyr::planning::match_tree::AtomSelectorNode<Tag>>, ygg::uint_t>
+    && std::totally_ordered<urd::index<tyr::planning::match_tree::AtomSelectorNode<Tag>>>
+    && std::totally_ordered<urd::data<tyr::planning::match_tree::AtomSelectorNode<Tag>>>
+    && std::totally_ordered<urd::view<tyr::planning::match_tree::AtomSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
+    && requires(urd::data<tyr::planning::match_tree::AtomSelectorNode<Tag>>& data,
+                const urd::view<tyr::planning::match_tree::AtomSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.atom;
            data.true_child;
            data.false_child;
            data.dontcare_child;
-           data.clear();
            view.get_atom();
            view.get_true_child();
            view.get_false_child();
            view.get_dontcare_child();
        };
 
-using MatchTreeTags = ygg::TypeList<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
-static_assert([]<typename... Tags>(ygg::TypeList<Tags...>) { return (AtomSelectorContract<Tags> && ...); }(MatchTreeTags {}));
+using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+static_assert([]<typename... Tags>(boost::mp11::mp_list<Tags...>) { return (AtomSelectorContract<Tags> && ...); }(MatchTreeTags {}));

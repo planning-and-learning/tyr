@@ -27,7 +27,7 @@
 #include <concepts>
 #include <type_traits>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {
@@ -35,19 +35,19 @@ namespace tyr::planning
 template<typename T, typename Kind>
 concept StateBuilderConcept = requires(std::remove_reference_t<T>& s,
                                        const std::remove_reference_t<T>& cs,
-                                       ygg::Index<State<Kind>> index,
-                                       ygg::Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
-                                       ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
-                                       ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fterm,
+                                       urd::index<State<Kind>> index,
+                                       urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
+                                       urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
+                                       urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fterm,
                                        ygg::float_t value,
-                                       ygg::Index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom) {
+                                       urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom) {
     requires TaskKind<Kind>;
     { s.clear() };
     { s.clear_unextended_part() };
     { s.clear_extended_part() };
     { s.assign_unextended_part(cs) };
     { s.swap(s) } noexcept;
-    { cs.get_index() } -> std::same_as<ygg::Index<State<Kind>>>;
+    { cs.get_index() } -> std::same_as<urd::index<State<Kind>>>;
     { s.set(index) };
     { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
     { s.set(fact) };

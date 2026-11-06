@@ -19,40 +19,34 @@
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<::tyr::formalism::FactKind T>
-struct Data<::tyr::formalism::planning::FDRVariable<T>>
+struct data<::tyr::formalism::planning::FDRVariable<T>>
 {
-    ygg::Index<::tyr::formalism::planning::FDRVariable<T>> index;
-    ygg::IndexList<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>> atoms;
+    urd::index<::tyr::formalism::planning::FDRVariable<T>> index;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>>> atoms;
 
-    Data() = default;
-    Data(ygg::IndexList<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>> atoms_) : index(), atoms(std::move(atoms_)) {}
-    // Python constructor
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>>, C>>& atoms_) : index(), atoms()
-    { set(atoms_, atoms); }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>>> atoms_) : index(), atoms(std::move(atoms_)) {}
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::atoms> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atoms> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atoms> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::atoms> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::FDRVariable<::tyr::formalism::StaticTag>>);
 }
 
 #endif

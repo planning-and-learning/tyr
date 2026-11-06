@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
@@ -32,27 +33,27 @@ void bind_literal_kind(nb::module_& m, RepositoryBinding& repository, const std:
 {
     using namespace nb::literals;
     using Tag = Literal<T, F>;
-    ygg::bind_index<ygg::Index<Tag>>(m, name + "Index");
+    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
-        using V = ygg::Data<Tag>;
+        using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        cls.def(nb::init<AtomView<T, F>, bool>(), "atom"_a, "polarity"_a);
-        cls.def(nb::init<ygg::Index<Atom<T, F>>, bool>(), "atom"_a, "polarity"_a);
+        cls.def(urd::python::init_from_views<AtomView<T, F>, bool>(), "atom"_a, "polarity"_a);
+        cls.def(nb::init<urd::index<Atom<T, F>>, bool>(), "atom"_a, "polarity"_a);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     {
         using V = LiteralView<T, F>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::get_index);
+        cls.def("get_index", &V::index);
         cls.def("get_atom", &V::get_atom, nb::keep_alive<0, 1>());
         cls.def("get_polarity", &V::get_polarity);
         ygg::add_print(cls);
-        ygg::add_comparison(cls);
-        ygg::add_hash(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
     }
 
     bind_insert<Tag>(repository);

@@ -20,7 +20,7 @@
 
 #include <chrono>
 #include <optional>
-#include <yggdrasil/core/types.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {

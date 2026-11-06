@@ -20,32 +20,30 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
 #include <optional>
 #include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 template<typename Tag>
-struct Data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
+struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
 {
-    ygg::Index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
-    ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
-    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child;
-    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> false_child;
-    ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child;
+    urd::index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
+    urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
+    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child;
+    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> false_child;
+    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
-         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> true_child_,
-         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> false_child_,
-         ::cista::optional<ygg::Data<::tyr::planning::match_tree::Node<Tag>>> dontcare_child_) :
+    data() = default;
+    data(urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
+         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
+         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> false_child_,
+         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),
         atom(atom_),
         true_child(std::move(true_child_)),
@@ -53,32 +51,14 @@ struct Data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
         dontcare_child(std::move(dontcare_child_))
     {
     }
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C> atom_,
-         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& true_child_,
-         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& false_child_,
-         const std::optional<::ygg::View<ygg::Data<::tyr::planning::match_tree::Node<Tag>>, C>>& dontcare_child_) :
-        index(),
-        atom(),
-        true_child(),
-        false_child(),
-        dontcare_child()
-    {
-        set(atom_, atom);
-        set(true_child_, true_child);
-        set(false_child_, false_child);
-        set(dontcare_child_, dontcare_child);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
     static constexpr auto cista_members() noexcept
-    { return ygg::Members<&Data::index, &Data::atom, &Data::true_child, &Data::false_child, &Data::dontcare_child> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::atom, &Data::true_child, &Data::false_child, &Data::dontcare_child> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    { return urd::Members<&data::index, &data::atom, &data::true_child, &data::false_child, &data::dontcare_child> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::true_child, &data::false_child, &data::dontcare_child> {}; }
 };
 }
 

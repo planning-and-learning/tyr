@@ -18,59 +18,48 @@
 #define TYR_FORMALISM_PLANNING_INVARIANT_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
-namespace ygg
+namespace urd
 {
 
 /// A synthesized invariant (Helmert 2009): at most one atom of the instance that binds the rigid variables
 /// [0, num_rigid_variables) is true, where the counted variable num_rigid_variables ranges over all objects.
 template<>
-struct Data<::tyr::formalism::planning::Invariant>
+struct data<::tyr::formalism::planning::Invariant>
 {
-    ygg::Index<::tyr::formalism::planning::Invariant> index;
+    urd::index<::tyr::formalism::planning::Invariant> index;
     ygg::uint_t num_rigid_variables = 0;
     ygg::uint_t num_counted_variables = 0;
-    ygg::IndexList<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> atoms;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms;
 
-    Data() = default;
-    Data(ygg::uint_t num_rigid_variables_,
+    data() = default;
+    data(ygg::uint_t num_rigid_variables_,
          ygg::uint_t num_counted_variables_,
-         ygg::IndexList<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> atoms_) :
+         urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms_) :
         index(),
         num_rigid_variables(num_rigid_variables_),
         num_counted_variables(num_counted_variables_),
         atoms(std::move(atoms_))
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(ygg::uint_t num_rigid_variables_,
-         ygg::uint_t num_counted_variables_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>& atoms_) :
-        index(),
-        num_rigid_variables(num_rigid_variables_),
-        num_counted_variables(num_counted_variables_),
-        atoms()
-    { set(atoms_, atoms); }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
     static constexpr auto cista_members() noexcept
-    { return ygg::Members<&Data::index, &Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::num_rigid_variables, &Data::num_counted_variables, &Data::atoms> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    { return urd::Members<&data::index, &data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Invariant>);
 }
 
 #endif

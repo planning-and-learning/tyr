@@ -19,6 +19,8 @@
 #define TYR_PLANNING_STATE_REPOSITORY_CONCEPTS_HPP_
 
 #include "tyr/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -26,9 +28,10 @@
 #include <concepts>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/shared_object_pool.hpp>
+#include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {
@@ -37,22 +40,22 @@ template<typename T, typename Kind>
 concept StateRepositoryConcept =
     requires(T& r,
              const T& const_r,
-             ygg::Index<State<Kind>> index,
-             ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true> state_builder,
+             urd::index<State<Kind>> index,
+             std::shared_ptr<urd::builder<State<Kind>>> state_builder,
              const BuilderStateView<Kind>& borrowed_state,
              const StateView<Kind>& parent_state,
              const StateDelta& state_delta,
-             const std::vector<ygg::Data<formalism::planning::FDRFact<formalism::FluentTag>>>& fluent_facts,
-             const std::vector<std::pair<ygg::Index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>& fterm_values,
-             const std::vector<formalism::planning::FDRFactView<formalism::FluentTag>>& fluent_fact_views,
-             const std::vector<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>& fterm_value_views,
+             const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>& fluent_facts,
+             const urd::Store<urd::sequence<std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values,
+             const urd::Store<urd::sequence<formalism::planning::FDRFactView<formalism::FluentTag>>>& fluent_fact_views,
+             const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_value_views,
              AxiomEvaluator<Kind>& axiom_evaluator) {
         requires TaskKind<Kind>;
         { r.get_initial_state(axiom_evaluator) } -> std::same_as<StateView<Kind>>;
         { r.get_registered_state(index) } -> std::same_as<StateView<Kind>>;
         { r.create_state(axiom_evaluator, fluent_facts, fterm_values) } -> std::same_as<StateView<Kind>>;
         { r.create_state(axiom_evaluator, fluent_fact_views, fterm_value_views) } -> std::same_as<StateView<Kind>>;
-        { r.get_state_builder() } -> std::same_as<ygg::SharedObjectPoolPtr<ygg::Builder<State<Kind>>, true>>;
+        { r.get_state_builder() } -> std::same_as<std::shared_ptr<urd::builder<State<Kind>>>>;
         { r.register_state(axiom_evaluator, state_builder) } -> std::same_as<StateView<Kind>>;
         { r.register_state(axiom_evaluator, state_builder, parent_state, state_delta) } -> std::same_as<StateView<Kind>>;
         { r.register_extended_state(state_builder) } -> std::same_as<StateView<Kind>>;

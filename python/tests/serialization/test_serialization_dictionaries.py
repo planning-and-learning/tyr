@@ -65,11 +65,8 @@ def test_default_fields_need_no_live_entity() -> None:
     assert list(fp.ActionBinding.Fields.__members__) == ["relation", "objects"]
     assert list(fp.FluentAtom.Fields.__members__) == ["predicate", "terms"]
     assert list(fp.FluentGroundAtom.Fields.__members__) == ["binding"]
-    assert list(fp.FunctionExpression.Fields.__members__) == ["variant"]
     assert fp.Object.Fields.name.name == "name"
     assert fp.Object.Fields.name.value == "name"
-    assert fp.FunctionExpression.Fields.variant.name == "variant"
-    assert fp.FunctionExpression.Fields.variant.value == "variant"
     assert fp.FluentFDRFact.Fields.value.name == "value"
     assert fp.FluentFDRFact.Fields.value.value == "value"
 
@@ -211,21 +208,6 @@ def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nes
         dictionaries.tables()
 
 
-def test_registered_variant_preserves_numeric_constant() -> None:
-    parser = fp.Parser(DOMAIN, None, ParserOptions())
-    repository = parser.get_domain().get_repository()
-    expression = repository.create(fp.FunctionExpressionData(variant=3.5))
-    dictionaries = Dictionaries()
-    register_table(dictionaries, fp.FunctionExpression, "expressions", "e", fields=None)
-    assert serialize(dictionaries, expression) == "e0"
-    expected = [{"variant": 3.5}]
-    assert table(dictionaries, fp.FunctionExpression) == expected
-    snapshot = dictionaries.tables()
-    snapshot["expressions"]["rows"][0]["variant"] = 8
-    assert serialize(dictionaries, expression) == "e0"
-    assert table(dictionaries, fp.FunctionExpression) == expected
-
-
 @pytest.mark.parametrize("fields", [[], ["static_ground_atoms", "name"]])
 def test_task_field_selection_limits_collected_descendants(fields: list[str]) -> None:
     parser = fp.Parser(DOMAIN, None, ParserOptions())
@@ -250,20 +232,6 @@ def test_task_field_selection_limits_collected_descendants(fields: list[str]) ->
         assert [predicate["name"] for predicate in _rows(table(dictionaries, fp.StaticPredicate))] == ["ready"]
         assert list(row) == ["name", "static_ground_atoms"]
         assert table(dictionaries, fp.FluentGroundAtom) == []
-
-
-def test_registered_variant_does_not_collect_omitted_payload() -> None:
-    parser = fp.Parser(DOMAIN, None, ParserOptions())
-    task = parser.parse_task(PROBLEM, None, ParserOptions())
-    term = next(iter(task.get_task().get_static_fterm_values())).get_fterm()
-    expression = task.get_repository().create(fp.GroundFunctionExpressionData(variant=term))
-    dictionaries = Dictionaries()
-    register_table(dictionaries, fp.GroundFunctionExpression, "expressions", "e", fields=())
-    register_table(dictionaries, fp.StaticGroundFunctionTerm, "terms", "t")
-
-    assert serialize(dictionaries, expression) == "e0"
-    assert table(dictionaries, fp.GroundFunctionExpression) == [{}]
-    assert table(dictionaries, fp.StaticGroundFunctionTerm) == []
 
 
 @pytest.mark.parametrize("fields", [None, ["name"]])
@@ -317,14 +285,14 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
 
 
 def test_invalid_projection_invalidates_registry() -> None:
-    parser = fp.Parser(DOMAIN, None, ParserOptions())
-    expression = parser.get_domain().get_repository().create(fp.FunctionExpressionData(3.5))
+    repository = fp.RepositoryFactory().create_repository()
+    expression = repository.insert(fp.VariableData("e"))[0]
     dictionaries = Dictionaries()
 
-    def project(_value: fp.FunctionExpression) -> dict[str, object]:
+    def project(_value: fp.Variable) -> dict[str, object]:
         return {"unknown": object()}
 
-    register_table(dictionaries, fp.FunctionExpression, "expressions", "e", project=project)
+    register_table(dictionaries, fp.Variable, "expressions", "e", project=project)
     with pytest.raises(TypeError):
         serialize(dictionaries, expression)
     with pytest.raises(RuntimeError):
@@ -365,18 +333,18 @@ def test_cyclic_projection_invalidates_registry_and_unwinds(kind: Literal["list"
     ],
 )
 def test_projection_uses_native_enum_text(value: object, expected: str) -> None:
-    parser = fp.Parser(DOMAIN, None, ParserOptions())
-    expression = parser.get_domain().get_repository().create(fp.FunctionExpressionData(3.5))
+    repository = fp.RepositoryFactory().create_repository()
+    expression = repository.insert(fp.VariableData("e"))[0]
     dictionaries = Dictionaries()
     register_table(
         dictionaries,
-        fp.FunctionExpression,
+        fp.Variable,
         "expressions",
         "e",
         project=lambda _expression: {"operator": value},
     )
     assert serialize(dictionaries, expression) == "e0"
-    assert table(dictionaries, fp.FunctionExpression) == [{"operator": expected}]
+    assert table(dictionaries, fp.Variable) == [{"operator": expected}]
 
 
 def test_projection_retains_native_values_from_exhausted_generator() -> None:
@@ -387,12 +355,12 @@ def test_projection_retains_native_values_from_exhausted_generator() -> None:
         gc.collect()
         assert sys.getrefcount(repository) > 2  # Generator local + getrefcount argument + retained object.
 
-    parser = fp.Parser(DOMAIN, None, ParserOptions())
-    expression = parser.get_domain().get_repository().create(fp.FunctionExpressionData(3.5))
+    repository = fp.RepositoryFactory().create_repository()
+    expression = repository.insert(fp.VariableData("e"))[0]
     dictionaries = Dictionaries()
     register_table(
         dictionaries,
-        fp.FunctionExpression,
+        fp.Variable,
         "expressions",
         "e",
         project=lambda _expression: {"objects": objects()},
@@ -400,5 +368,5 @@ def test_projection_retains_native_values_from_exhausted_generator() -> None:
     register_table(dictionaries, fp.Object, "objects", "o")
     assert serialize(dictionaries, expression) == "e0"
     gc.collect()
-    assert table(dictionaries, fp.FunctionExpression) == [{"objects": ["o0", None]}]
+    assert table(dictionaries, fp.Variable) == [{"objects": ["o0", None]}]
     assert table(dictionaries, fp.Object) == [{"name": "generated"}]

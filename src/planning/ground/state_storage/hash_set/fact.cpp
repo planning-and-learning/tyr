@@ -20,7 +20,7 @@
 #include "tyr/planning/ground/state_storage/hash_set/context.hpp"
 #include "tyr/planning/ground/task.hpp"
 
-#include <yggdrasil/core/bit.hpp>
+#include <urd/repr/containers/bit.hpp>
 
 namespace tyr::planning
 {
@@ -29,7 +29,7 @@ template<bool ThreadSafe>
 FactStorageBackend<GroundTag, HashSet, ThreadSafe>::FactStorageBackend(Context& ctx) :
     m_array_set(&ctx.fluent_array_set),
     m_infos(&ctx.fluent_infos),
-    m_buffer(m_array_set->array_size())
+    m_buffer(ctx.fluent_array_size)
 {
 }
 
@@ -43,16 +43,16 @@ typename FactStorageBackend<GroundTag, HashSet, ThreadSafe>::Packed FactStorageB
     {
         const auto& info = (*m_infos)[i];
 
-        ygg::bit::int_reference(std::span(m_buffer).subspan(info.begin), info.offset, info.length) = values[i];
+        urd::repr::bit::int_reference(std::span(m_buffer).subspan(info.begin), info.offset, info.length) = values[i];
     }
 
-    return Packed { m_array_set->insert(m_buffer) };
+    return Packed { m_array_set->insert(m_buffer).first.value };
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<GroundTag, HashSet, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    const auto data = (*m_array_set)[packed.index];
+    const auto data = m_array_set->view(typename ArraySetT<Context>::handle_type(packed.index));
     auto& values = unpacked.values;
 
     if (values.size() != m_infos->size())
@@ -62,7 +62,7 @@ void FactStorageBackend<GroundTag, HashSet, ThreadSafe>::unpack(const Packed& pa
     {
         const auto& info = (*m_infos)[i];
 
-        values[i] = ygg::bit::read_int<ygg::uint_t>(std::span(data.data(), data.size()).subspan(info.begin), info.offset, info.length);
+        values[i] = urd::repr::bit::read_int<ygg::uint_t>(std::span(data.data(), data.size()).subspan(info.begin), info.offset, info.length);
     }
 }
 

@@ -24,23 +24,24 @@
 
 #include <limits>
 #include <span>
+#include <urd/repr/pools/tree_vector.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/tree_vector_set.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind, TreeCompressionTag Tag>
-struct NumericPackedStorage<Kind, Tag> : ygg::comparison::Mixin<NumericPackedStorage<Kind, Tag>>
+struct NumericPackedStorage<Kind, Tag> : urd::compared_by_identity<NumericPackedStorage<Kind, Tag>>
 {
-    ygg::TreeVectorIndex<ygg::float_t> index;
+    urd::repr::TreeHandle index;
 
     NumericPackedStorage() = default;
-    explicit NumericPackedStorage(ygg::TreeVectorIndex<ygg::float_t> index_) : index(index_) {}
+    explicit NumericPackedStorage(urd::repr::TreeHandle index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&NumericPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&NumericPackedStorage::index> {}; }
 };
 
 template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
@@ -63,7 +64,7 @@ public:
 private:
     typename Context::FloatVectorSet* m_float_vectors;
 
-    std::vector<ygg::TreeVectorWrite<ygg::float_t>> m_writes;
+    urd::Store<urd::sequence<urd::Write<ygg::float_t>>> m_writes;
 };
 
 }

@@ -22,9 +22,13 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -33,34 +37,25 @@ namespace tyr::formalism::datalog
  */
 
 template<TaskKind T, FactKind F>
-void collect_fterms(ygg::float_t element, ygg::UnorderedSet<FunctionTermView<T, F>>& result);
+void collect_fterms(ygg::float_t element, urd::Store<urd::set<FunctionTermView<T, F>>>& result);
 
 template<TaskKind T, FactKind F1, FactKind F2>
-void collect_fterms(FunctionTermView<T, F1> element, ygg::UnorderedSet<FunctionTermView<T, F2>>& result);
+void collect_fterms(FunctionTermView<T, F1> element, urd::Store<urd::set<FunctionTermView<T, F2>>>& result);
+
+template<TaskKind T, FactKind F, typename... Vs>
+void collect_fterms(const std::variant<Vs...>& element, urd::Store<urd::set<FunctionTermView<T, F>>>& result);
 
 template<TaskKind T, FactKind F>
-void collect_fterms(FunctionExpressionView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result);
+void collect_fterms(UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result);
+
+template<TaskKind T, FactKind F, OperatorKind O>
+void collect_fterms(BinaryOperatorView<T, O> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result);
 
 template<TaskKind T, FactKind F>
-void collect_fterms(UnaryOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result);
-
-template<TaskKind T, FactKind F, BinaryOperatorKind O>
-void collect_fterms(BinaryOperatorView<T, O> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result);
-
-template<TaskKind T, FactKind F>
-void collect_fterms(MultiOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result);
-
-template<TaskKind T, FactKind F>
-void collect_fterms(ArithmeticOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result);
-
-template<TaskKind T, FactKind F>
-void collect_fterms(BooleanOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result);
+void collect_fterms(MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result);
 
 template<TaskKind T, FactKind F1, FactKind F2>
-void collect_fterms(NumericEffectView<T, F1> element, ygg::UnorderedSet<FunctionTermView<T, F2>>& result);
-
-template<TaskKind T, FactKind F1, FactKind F2>
-void collect_fterms(NumericEffectOperatorView<T, F1> element, ygg::UnorderedSet<FunctionTermView<T, F2>>& result);
+void collect_fterms(NumericEffectView<T, F1> element, urd::Store<urd::set<FunctionTermView<T, F2>>>& result);
 
 template<TaskKind T, RelationKind R>
 auto collect_fluent_reads(RuleView<T, R> rule);
@@ -70,64 +65,46 @@ auto collect_fluent_reads(RuleView<T, R> rule);
  */
 
 template<TaskKind T, FactKind F>
-inline void collect_fterms(ygg::float_t, ygg::UnorderedSet<FunctionTermView<T, F>>&)
+inline void collect_fterms(ygg::float_t, urd::Store<urd::set<FunctionTermView<T, F>>>&)
 {
 }
 
 template<TaskKind T, FactKind F1, FactKind F2>
-inline void collect_fterms(FunctionTermView<T, F1> element, ygg::UnorderedSet<FunctionTermView<T, F2>>& result)
+inline void collect_fterms(FunctionTermView<T, F1> element, urd::Store<urd::set<FunctionTermView<T, F2>>>& result)
 {
     if constexpr (std::same_as<F1, F2>)
         result.insert(element);
 }
 
-template<TaskKind T, FactKind F>
-inline void collect_fterms(FunctionExpressionView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)
+template<TaskKind T, FactKind F, typename... Vs>
+inline void collect_fterms(const std::variant<Vs...>& element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
 {
-    visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
+    visit([&](auto&& arg) { collect_fterms(arg, result); }, element);
 }
 
 template<TaskKind T, FactKind F>
-inline void collect_fterms(UnaryOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)
+inline void collect_fterms(UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
 { collect_fterms(element.get_arg(), result); }
 
-template<TaskKind T, FactKind F, BinaryOperatorKind O>
-inline void collect_fterms(BinaryOperatorView<T, O> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)
+template<TaskKind T, FactKind F, OperatorKind O>
+inline void collect_fterms(BinaryOperatorView<T, O> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
 {
     collect_fterms(element.get_lhs(), result);
     collect_fterms(element.get_rhs(), result);
 }
 
 template<TaskKind T, FactKind F>
-inline void collect_fterms(MultiOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)
+inline void collect_fterms(MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
 {
     for (const auto& arg : element.get_args())
         collect_fterms(arg, result);
 }
 
-template<TaskKind T, FactKind F>
-inline void collect_fterms(ArithmeticOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)
-{
-    visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
-}
-
-template<TaskKind T, FactKind F>
-inline void collect_fterms(BooleanOperatorView<T> element, ygg::UnorderedSet<FunctionTermView<T, F>>& result)
-{
-    visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
-}
-
 template<TaskKind T, FactKind F1, FactKind F2>
-inline void collect_fterms(NumericEffectView<T, F1> element, ygg::UnorderedSet<FunctionTermView<T, F2>>& result)
+inline void collect_fterms(NumericEffectView<T, F1> element, urd::Store<urd::set<FunctionTermView<T, F2>>>& result)
 {
     collect_fterms(element.get_fterm(), result);
     collect_fterms(element.get_fexpr(), result);
-}
-
-template<TaskKind T, FactKind F1, FactKind F2>
-inline void collect_fterms(NumericEffectOperatorView<T, F1> element, ygg::UnorderedSet<FunctionTermView<T, F2>>& result)
-{
-    visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
 }
 
 namespace detail
@@ -143,7 +120,7 @@ void collect_effect_reads(Effect effect, bool reads_target, Result& result)
 template<TaskKind T, typename Result>
 void collect_semantic_head_reads(NumericEffectOperatorView<T, FluentTag> head, Result& result)
 {
-    visit([&](auto effect) { collect_effect_reads(effect, effect.get_operator() != NumericEffectOperatorKind::Assign, result); }, head.get_variant());
+    collect_effect_reads(head, head.get_operator() != NumericEffectOperatorKind::Assign, result);
 }
 
 template<typename Rule, typename Result>
@@ -160,7 +137,7 @@ void collect_rule_fluent_reads(Rule rule, Result& result)
 template<TaskKind T, RelationKind R>
 inline auto collect_fluent_reads(RuleView<T, R> rule)
 {
-    auto result = ygg::UnorderedSet<FunctionTermView<T, FluentTag>> {};
+    auto result = urd::Store<urd::set<FunctionTermView<T, FluentTag>>> {};
     detail::collect_rule_fluent_reads(rule, result);
     return result;
 }
@@ -168,9 +145,9 @@ inline auto collect_fluent_reads(RuleView<T, R> rule)
 template<TaskKind T, FactKind F>
 inline auto collect_fterms(BooleanOperatorView<T> element)
 {
-    auto result = ygg::UnorderedSet<FunctionTermView<T, F>> {};
-    visit([&](auto&& arg) { collect_fterms(arg, result); }, element.get_variant());
-    auto result_vec = std::vector<FunctionTermView<T, F>>(result.begin(), result.end());
+    auto result = urd::Store<urd::set<FunctionTermView<T, F>>> {};
+    collect_fterms(element, result);
+    auto result_vec = urd::Store<urd::sequence<FunctionTermView<T, F>>>(result.begin(), result.end());
     std::sort(result_vec.begin(), result_vec.end());
     return result_vec;
 }

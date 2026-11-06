@@ -20,9 +20,12 @@
 
 #include "tyr/formalism/datalog/declarations.hpp"
 
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::datalog
 {
@@ -32,10 +35,10 @@ namespace tyr::datalog
 struct RuleMapping
 {
     template<formalism::RelationKind R>
-    using Rule = ygg::Index<formalism::datalog::Rule<LiftedTag, R>>;
+    using Rule = urd::index<formalism::datalog::Rule<LiftedTag, R>>;
 
-    ygg::UnorderedMap<Rule<formalism::PredicateTag>, Rule<formalism::PredicateTag>> predicate;
-    ygg::UnorderedMap<Rule<formalism::FunctionTag>, Rule<formalism::FunctionTag>> function;
+    urd::Store<urd::map<Rule<formalism::PredicateTag>, Rule<formalism::PredicateTag>>> predicate;
+    urd::Store<urd::map<Rule<formalism::FunctionTag>, Rule<formalism::FunctionTag>>> function;
 
     template<formalism::RelationKind R>
     [[nodiscard]] const auto& get() const noexcept

@@ -16,6 +16,8 @@
  */
 
 #include "tyr/datalog/static_literal_decomposition.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
@@ -32,6 +34,7 @@
 #include <string>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::datalog
 {
@@ -41,9 +44,9 @@ class Decomposer
 {
 public:
     using StaticLiteral = formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag>;
-    using StaticLiteralIndex = ygg::Index<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>;
+    using StaticLiteralIndex = urd::index<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>;
 
-    Decomposer(ygg::Data<formalism::datalog::Program<LiftedTag>>& program,
+    Decomposer(urd::data<formalism::datalog::Program<LiftedTag>>& program,
                formalism::datalog::CopyContext& context,
                const PredicateFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
@@ -53,17 +56,17 @@ public:
     }
 
     /// The literals over the pairs of the literal's variables that replace it, or nullopt if it is not their join.
-    const std::optional<std::vector<StaticLiteralIndex>>& decompose(StaticLiteral literal)
+    const std::optional<urd::Store<urd::sequence<StaticLiteralIndex>>>& decompose(StaticLiteral literal)
     {
-        auto [it, inserted] = m_decompositions.try_emplace(literal.get_index());
+        auto [it, inserted] = m_decompositions.try_emplace(literal.index());
         if (inserted)
             it->second = compute(literal);
         return it->second;
     }
 
 private:
-    using Substitution = formalism::unification::SubstitutionFunction<ygg::Data<formalism::Term>>;
-    using Tuple = std::vector<ygg::uint_t>;
+    using Substitution = formalism::unification::SubstitutionFunction<formalism::Term>;
+    using Tuple = urd::Store<urd::sequence<ygg::uint_t>>;
 
     /// A join check visiting more assignments gives up and keeps the literal.
     static constexpr size_t max_join_steps = 10'000'000;
@@ -74,12 +77,12 @@ private:
 
     static std::uint64_t pair_key(ygg::uint_t first, ygg::uint_t second) noexcept { return (static_cast<std::uint64_t>(first) << pair_key_shift) | second; }
 
-    std::optional<std::vector<StaticLiteralIndex>> compute(StaticLiteral literal)
+    std::optional<urd::Store<urd::sequence<StaticLiteralIndex>>> compute(StaticLiteral literal)
     {
         if (!literal.get_polarity())
             return std::nullopt;
         const auto parameter_set = formalism::datalog::collect_parameters(literal);
-        auto parameters = std::vector<formalism::ParameterIndex>(parameter_set.begin(), parameter_set.end());
+        auto parameters = urd::Store<urd::sequence<formalism::ParameterIndex>>(parameter_set.begin(), parameter_set.end());
         std::ranges::sort(parameters);
         const auto arity = parameters.size();
         // Over at most two variables, a literal is exact in the consistency graph unless its atom has constants or repeated
@@ -89,24 +92,24 @@ private:
             return std::nullopt;
 
         // The literal's relation over its variables.
-        auto pattern = std::vector<ygg::Data<formalism::Term>> {};
+        auto pattern = urd::Store<urd::sequence<formalism::Term>> {};
         for (const auto term : literal.get_atom().get_terms())
-            pattern.push_back(term.get_data());
-        auto relation = ygg::UnorderedSet<Tuple> {};
-        auto element = std::vector<ygg::Data<formalism::Term>> {};
-        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(literal.get_atom().get_predicate().get_index())].get_bindings())
+            pattern.push_back(urd::to_stored(term));
+        auto relation = urd::Store<urd::set<Tuple>> {};
+        auto element = urd::Store<urd::sequence<formalism::Term>> {};
+        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(literal.get_atom().get_predicate().index().value)].get_bindings())
         {
             element.clear();
             for (const auto object : binding.get_objects())
-                element.emplace_back(object.get_index());
+                element.emplace_back(object.index());
             if (const auto sigma = formalism::unification::match(pattern, element, Substitution(parameters)))
             {
                 auto tuple = Tuple {};
                 for (const auto p : parameters)
                 {
                     const auto& value = (*sigma)[p];
-                    YGG_ASSUME(value.has_value());  ///< A match binds every parameter of the pattern.
-                    tuple.push_back(static_cast<ygg::uint_t>(formalism::unification::get_object(*value)));
+                    URD_ASSUME(value.has_value());  ///< A match binds every parameter of the pattern.
+                    tuple.push_back(static_cast<ygg::uint_t>((formalism::unification::get_object(*value)).value));
                 }
                 relation.insert(std::move(tuple));
             }
@@ -114,12 +117,12 @@ private:
         if (relation.empty())
             return std::nullopt;
         if (arity < 3)
-            return std::vector<StaticLiteralIndex> { create_projection_literal(relation, parameters) };
+            return urd::Store<urd::sequence<StaticLiteralIndex>> { create_projection_literal(relation, parameters) };
 
         // The pairwise projections, and for the first variable its partners in every other.
-        auto pairs = std::vector<ygg::UnorderedSet<std::uint64_t>>(arity * arity);
-        auto first_values = ygg::UnorderedSet<ygg::uint_t> {};
-        auto partners = std::vector<ygg::UnorderedMap<ygg::uint_t, std::vector<ygg::uint_t>>>(arity);
+        auto pairs = urd::Store<urd::sequence<urd::Store<urd::set<std::uint64_t>>>>(arity * arity);
+        auto first_values = urd::Store<urd::set<ygg::uint_t>> {};
+        auto partners = urd::Store<urd::sequence<urd::Store<urd::map<ygg::uint_t, urd::Store<urd::sequence<ygg::uint_t>>>>>>(arity);
         for (const auto& tuple : relation)
         {
             first_values.insert(tuple[0]);
@@ -167,7 +170,7 @@ private:
         if (exceeded())
             return std::nullopt;
 
-        auto result = std::vector<StaticLiteralIndex> {};
+        auto result = urd::Store<urd::sequence<StaticLiteralIndex>> {};
         for (size_t i = 0; i < arity; ++i)
             for (size_t j = i + 1; j < arity; ++j)
                 result.push_back(create_pair_literal(pairs[i * arity + j], parameters[i], parameters[j]));
@@ -175,73 +178,73 @@ private:
     }
 
     /// A literal over the parameters (in order) whose atoms are the tuples.
-    StaticLiteralIndex create_projection_literal(const ygg::UnorderedSet<Tuple>& tuples, const std::vector<formalism::ParameterIndex>& parameters)
+    StaticLiteralIndex create_projection_literal(const urd::Store<urd::set<Tuple>>& tuples, const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
     {
         auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::StaticTag>>(m_context->builder());
         predicate->name = "__tyr_projection_" + std::to_string(m_num_predicates++);
         predicate->arity = parameters.size();
-        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.get_index();
+        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.index();
         m_program->static_predicates.push_back(new_predicate);
 
-        auto sorted = std::vector<Tuple>(tuples.begin(), tuples.end());
+        auto sorted = urd::Store<urd::sequence<Tuple>>(tuples.begin(), tuples.end());
         std::ranges::sort(sorted);
         for (const auto& tuple : sorted)
         {
             auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
             binding->relation = new_predicate;
             for (const auto object : tuple)
-                binding->objects.push_back(ygg::Index<formalism::Object>(object));
+                binding->objects.push_back(urd::index<formalism::Object>(object));
             auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.get_index();
-            m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.get_index());
+            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.index();
+            m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
         auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
         atom->predicate = new_predicate;
         for (const auto parameter : parameters)
-            atom->terms.push_back(ygg::Data<formalism::Term>(parameter));
+            atom->terms.push_back(formalism::Term(parameter));
         auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>(m_context->builder());
-        literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.get_index();
+        literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.index();
         literal->polarity = true;
-        return formalism::datalog::insert(m_context->destination(), *literal).first.get_index();
+        return formalism::datalog::insert(m_context->destination(), *literal).first.index();
     }
 
-    StaticLiteralIndex create_pair_literal(const ygg::UnorderedSet<std::uint64_t>& pairs, formalism::ParameterIndex first, formalism::ParameterIndex second)
+    StaticLiteralIndex create_pair_literal(const urd::Store<urd::set<std::uint64_t>>& pairs, formalism::ParameterIndex first, formalism::ParameterIndex second)
     {
         auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::StaticTag>>(m_context->builder());
         predicate->name = "__tyr_pair_projection_" + std::to_string(m_num_predicates++);
         predicate->arity = 2;
-        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.get_index();
+        const auto new_predicate = formalism::datalog::insert(m_context->destination(), *predicate).first.index();
         m_program->static_predicates.push_back(new_predicate);
 
-        auto sorted = std::vector<std::uint64_t>(pairs.begin(), pairs.end());
+        auto sorted = urd::Store<urd::sequence<std::uint64_t>>(pairs.begin(), pairs.end());
         std::ranges::sort(sorted);
         for (const auto key : sorted)
         {
             auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
             binding->relation = new_predicate;
-            binding->objects.push_back(ygg::Index<formalism::Object>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
-            binding->objects.push_back(ygg::Index<formalism::Object>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
+            binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
+            binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
             auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.get_index();
-            m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.get_index());
+            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.index();
+            m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
         auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
         atom->predicate = new_predicate;
-        atom->terms.push_back(ygg::Data<formalism::Term>(first));
-        atom->terms.push_back(ygg::Data<formalism::Term>(second));
+        atom->terms.push_back(formalism::Term(first));
+        atom->terms.push_back(formalism::Term(second));
         auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>(m_context->builder());
-        literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.get_index();
+        literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.index();
         literal->polarity = true;
-        return formalism::datalog::insert(m_context->destination(), *literal).first.get_index();
+        return formalism::datalog::insert(m_context->destination(), *literal).first.index();
     }
 
-    ygg::Data<formalism::datalog::Program<LiftedTag>>* m_program;
+    urd::data<formalism::datalog::Program<LiftedTag>>* m_program;
     formalism::datalog::CopyContext* m_context;
     const PredicateFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_predicates = 0;
-    ygg::UnorderedMap<StaticLiteralIndex, std::optional<std::vector<StaticLiteralIndex>>> m_decompositions;
+    urd::Store<urd::map<StaticLiteralIndex, std::optional<urd::Store<urd::sequence<StaticLiteralIndex>>>>> m_decompositions;
 };
 
 }
@@ -255,15 +258,15 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     formalism::datalog::copy_except_rules(program, *output, context);
     for (const auto rule : program.get_rules<formalism::FunctionTag>())
     {
-        const auto copy = formalism::datalog::copy(rule, context).first.get_index();
+        const auto copy = formalism::datalog::copy(rule, context).first.index();
         output->function_rules.push_back(copy);
-        result.rules.function.emplace(rule.get_index(), copy);
+        result.rules.function.emplace(rule.index(), copy);
     }
 
     // The static predicates come first in the repository, as the fact sets require.
-    auto static_facts = PredicateFactSets<formalism::StaticTag>(ygg::make_view(output->static_predicates, repository), repository);
+    auto static_facts = PredicateFactSets<formalism::StaticTag>(urd::resolve(output->static_predicates, repository), repository);
     for (const auto atom : output->static_atoms)
-        static_facts.insert(ygg::make_view(atom, repository));
+        static_facts.insert(urd::resolve(atom, repository));
     auto decomposer = Decomposer(*output, context, static_facts);
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
     {
@@ -279,33 +282,34 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
                 decomposed = true;
             }
             else
-                condition->static_literals.push_back(literal.get_index());
+                condition->static_literals.push_back(literal.index());
         }
         if (!decomposed)
         {
-            const auto copy = formalism::datalog::copy(rule, context).first.get_index();
+            const auto copy = formalism::datalog::copy(rule, context).first.index();
             output->predicate_rules.push_back(copy);
-            result.rules.predicate.emplace(rule.get_index(), copy);
+            result.rules.predicate.emplace(rule.index(), copy);
             continue;
         }
 
         for (const auto variable : body.get_variables())
-            condition->variables.push_back(variable.get_index());
+            condition->variables.push_back(variable.index());
         for (const auto literal : body.get_literals<formalism::FluentTag>())
-            condition->fluent_literals.push_back(literal.get_index());
+            condition->fluent_literals.push_back(literal.index());
         for (const auto numeric_constraint : body.get_numeric_constraints())
-            condition->numeric_constraints.push_back(numeric_constraint.get_data());
+            condition->numeric_constraints.push_back(numeric_constraint.index());
         const auto new_body = formalism::datalog::insert(repository, *condition).first;
 
         auto new_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(builder);
-        ygg::extend(new_body.get_variables(), new_rule->variables);
-        new_rule->body = new_body.get_index();
+        for (const auto variable : new_body.get_variables())
+            new_rule->variables.push_back(urd::to_stored(variable));
+        new_rule->body = new_body.index();
         for (const auto head : rule.get_heads())
-            new_rule->heads.push_back(formalism::datalog::copy(head, context).first.get_index());
+            new_rule->heads.push_back(formalism::datalog::copy(head, context).first.index());
         new_rule->cost = rule.get_cost();
-        const auto rewritten = formalism::datalog::insert(repository, *new_rule).first.get_index();
+        const auto rewritten = formalism::datalog::insert(repository, *new_rule).first.index();
         output->predicate_rules.push_back(rewritten);
-        result.rules.predicate.emplace(rule.get_index(), rewritten);
+        result.rules.predicate.emplace(rule.index(), rewritten);
     }
 
     return formalism::datalog::insert(repository, *output).first;

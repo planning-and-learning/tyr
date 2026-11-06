@@ -27,17 +27,15 @@
 
 #include <cmath>
 #include <stdexcept>
-#include <yggdrasil/containers/optional.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {
 
 template<TaskKind Kind>
-ygg::float_t evaluate_metric(ygg::View<::cista::optional<ygg::Index<formalism::planning::Metric>>, formalism::planning::Repository> metric,
-                             ygg::View<::cista::optional<ygg::Index<formalism::planning::FunctionTermValue<GroundTag, formalism::AuxiliaryTag>>>,
-                                       formalism::planning::Repository> auxiliary_fterm_value,
+ygg::float_t evaluate_metric(std::optional<formalism::planning::MetricView> metric,
+                             std::optional<urd::view<formalism::planning::FunctionTermValue<GroundTag, formalism::AuxiliaryTag>, formalism::planning::Repository>> auxiliary_fterm_value,
                              const StateContext<Kind>& state_context)
 {
     if (auxiliary_fterm_value)
@@ -49,7 +47,7 @@ ygg::float_t evaluate_metric(ygg::View<::cista::optional<ygg::Index<formalism::p
 }
 
 template<TaskKind Kind>
-ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const ygg::Builder<State<Kind>>& state, ygg::float_t auxiliary_value)
+ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value)
 {
     auto context = StateContext<Kind> { task, state, auxiliary_value };
     if (const auto metric = task.get_task().get_metric())

@@ -19,48 +19,31 @@
 #define TYR_FORMALISM_PLANNING_BINARY_OPERATOR_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_expression_data.hpp"
 
 #include <tuple>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::BinaryOperatorKind O>
-struct Data<::tyr::formalism::planning::BinaryOperator<T, O>>
+template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
+struct data<::tyr::formalism::planning::BinaryOperator<T, O>>
 {
-    using Operand = ygg::Data<::tyr::formalism::planning::FunctionExpression<T>>;
+    using Operand = ::tyr::formalism::planning::FunctionExpression<T>;
     using OperatorType = O;
 
-    ygg::Index<::tyr::formalism::planning::BinaryOperator<T, O>> index;
+    urd::index<::tyr::formalism::planning::BinaryOperator<T, O>> index;
     OperatorType operator_kind {};
     Operand lhs;
     Operand rhs;
 
-    Data() = default;
-    Data(OperatorType operator_kind_, Operand lhs_, Operand rhs_) : index(), operator_kind(operator_kind_), lhs(lhs_), rhs(rhs_) {}
-    // Python constructor
-    template<typename C>
-    Data(OperatorType operator_kind_, ::ygg::View<Operand, C> lhs_, ::ygg::View<Operand, C> rhs_) : index(), operator_kind(operator_kind_), lhs(), rhs()
-    {
-        set(lhs_, lhs);
-        set(rhs_, rhs);
-    }
-    Data(const Data& other) = default;
-    Data& operator=(const Data& other) = default;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(OperatorType operator_kind_, Operand lhs_, Operand rhs_) : index(), operator_kind(operator_kind_), lhs(lhs_), rhs(rhs_) {}
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::lhs, &Data::rhs> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::lhs, &Data::rhs> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::lhs, &data::rhs> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::lhs, &data::rhs> {}; }
 };
-
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::ArithmeticOperatorKind>>);
 
 }
 

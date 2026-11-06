@@ -29,21 +29,21 @@ template<TaskKind Kind>
 class StateContext
 {
 public:
-    StateContext(const Task<Kind>& task, const ygg::Builder<State<Kind>>& state_builder, ygg::float_t auxiliary_value) :
+    StateContext(const Task<Kind>& task, const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value) :
         m_task(&task),
-        m_state_builder(&state_builder),
+        m_state(&state),
         m_auxiliary_value(auxiliary_value)
     {
     }
 
     [[nodiscard]] const Task<Kind>& task() const noexcept { return *m_task; }
-    [[nodiscard]] const ygg::Builder<State<Kind>>& state_builder() const noexcept { return *m_state_builder; }
+    [[nodiscard]] const urd::data<State<Kind>>& state_data() const noexcept { return *m_state; }
     [[nodiscard]] ygg::float_t auxiliary_value() const noexcept { return m_auxiliary_value; }
     [[nodiscard]] ygg::float_t& auxiliary_value() noexcept { return m_auxiliary_value; }
 
 private:
     const Task<Kind>* m_task;
-    const ygg::Builder<State<Kind>>* m_state_builder;
+    const urd::data<State<Kind>>* m_state;
     ygg::float_t m_auxiliary_value;
 };
 

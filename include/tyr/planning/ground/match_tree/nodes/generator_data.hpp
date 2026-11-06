@@ -19,40 +19,35 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_GENERATOR_DATA_HPP_
 
 #include "tyr/formalism/planning/action_index.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
-#include "tyr/planning/ground/match_tree/nodes/node_data.hpp"
 
 #include <optional>
 #include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 template<typename Tag>
-struct Data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
+struct data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
 {
-    ygg::Index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
-    ygg::IndexList<Tag> elements;
+    urd::index<::tyr::planning::match_tree::ElementGeneratorNode<Tag>> index;
+    urd::flat_vector<urd::index<Tag>> elements;
 
-    Data() = default;
-    Data(ygg::IndexList<Tag> elements_) : index(), elements(std::move(elements_)) {}
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<Tag>, C>>& elements_) : index(), elements()
-    { set(elements_, elements); }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data() = default;
+    data(urd::flat_vector<urd::index<Tag>> elements_) : index(), elements(std::move(elements_)) {}
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::elements> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::elements> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::elements> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::elements> {}; }
 };
 }
 

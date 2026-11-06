@@ -39,10 +39,10 @@ jobs:
           path: dist/*.tar.gz
 
   build_wheels_linux:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.architecture == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     strategy:
       matrix:
-        architecture: ["x86_64"]
+        architecture: ["x86_64", "aarch64"]
         python-version: ["cp311"]
 
     steps:
@@ -76,9 +76,10 @@ jobs:
           path: wheelhouse/*.whl
 
   build_wheels_macos:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.architecture == 'x86_64' && 'macos-15-intel' || 'macos-latest' }}
     strategy:
       matrix:
+        architecture: ["arm64", "x86_64"]
         python-version: ["cp311"]
 
     steps:
@@ -100,14 +101,14 @@ jobs:
         env:
           CIBW_PLATFORM: macos
           CIBW_BUILD: "${{ matrix.python-version }}-*"
-          CIBW_ARCHS: arm64
+          CIBW_ARCHS: "${{ matrix.architecture }}"
           CIBW_BUILD_VERBOSITY: "1"
           CIBW_ENVIRONMENT: "CMAKE_BUILD_PARALLEL_LEVEL=2 TYR_JOBS=2 LOKI_JOBS=2 YGGDRASIL_JOBS=2 TYR_HEADER_INSTANTIATION=OFF TYR_ENABLE_LTO=OFF PIP_NO_CACHE_DIR=1"
 
       - name: Upload macOS wheels artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-macos-${{ matrix.python-version }}-arm64
+          name: wheels-macos-${{ matrix.python-version }}-${{ matrix.architecture }}
           path: wheelhouse/*.whl
 
   publish:

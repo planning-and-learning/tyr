@@ -19,36 +19,38 @@
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/boolean_operator_data.hpp"
+#include "tyr/formalism/planning/binary_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/core/dependent_false.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<>
-struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
+struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
 {
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> index;
-    ygg::IndexList<::tyr::formalism::Variable> variables;
-    ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>> static_literals;
-    ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> fluent_literals;
-    ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> derived_literals;
-    ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::LiftedTag>> numeric_constraints;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> index;
+    urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
-    Data() = default;
-    Data(ygg::IndexList<::tyr::formalism::Variable> variables_,
-         ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>> static_literals_,
-         ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> fluent_literals_,
-         ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> derived_literals_,
-         ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::LiftedTag>> numeric_constraints_) :
+    data() = default;
+    data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>> derived_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
         index(),
         variables(std::move(variables_)),
         static_literals(std::move(static_literals_)),
@@ -57,31 +59,10 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
         numeric_constraints(std::move(numeric_constraints_))
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>, C>>& static_literals_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>& fluent_literals_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>>, C>>& derived_literals_,
-         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::LiftedTag>>, C>>& numeric_constraints_) :
-        index(),
-        variables(),
-        static_literals(),
-        fluent_literals(),
-        derived_literals(),
-        numeric_constraints()
-    {
-        set(variables_, variables);
-        set(static_literals_, static_literals);
-        set(fluent_literals_, fluent_literals);
-        set(derived_literals_, derived_literals);
-        set(numeric_constraints_, numeric_constraints);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const
@@ -93,37 +74,34 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
         else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
             return derived_literals;
         else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
     }
 
     static constexpr auto cista_members() noexcept
     {
-        return ygg::
-            Members<&Data::index, &Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::derived_literals, &Data::numeric_constraints> {};
+        return urd::
+            Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {};
     }
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&Data::variables, &Data::static_literals, &Data::fluent_literals, &Data::derived_literals, &Data::numeric_constraints> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>);
-
 template<>
-struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
+struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
 {
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> index;
-    ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_literals;
-    ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> derived_literals;
-    ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> positive_facts;
-    ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> negative_facts;
-    ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> numeric_constraints;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> index;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals;
+    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> positive_facts;
+    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> negative_facts;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
-    Data() = default;
-    Data(ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>> static_literals_,
-         ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> derived_literals_,
-         ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> positive_facts_,
-         ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> negative_facts_,
-         ygg::DataList<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>> numeric_constraints_) :
+    data() = default;
+    data(urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_literals_,
+         urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> positive_facts_,
+         urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> negative_facts_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
         index(),
         static_literals(std::move(static_literals_)),
         derived_literals(std::move(derived_literals_)),
@@ -132,31 +110,10 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
         numeric_constraints(std::move(numeric_constraints_))
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>, C>>& static_literals_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>, C>>& derived_literals_,
-         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C>>& positive_facts_,
-         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C>>& negative_facts_,
-         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::BooleanOperator<::tyr::GroundTag>>, C>>& numeric_constraints_) :
-        index(),
-        static_literals(),
-        derived_literals(),
-        positive_facts(),
-        negative_facts(),
-        numeric_constraints()
-    {
-        set(static_literals_, static_literals);
-        set(derived_literals_, derived_literals);
-        set(positive_facts_, positive_facts);
-        set(negative_facts_, negative_facts);
-        set(numeric_constraints_, numeric_constraints);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const
@@ -166,7 +123,7 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
         else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
             return derived_literals;
         else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
     }
 
     template<::tyr::formalism::PolarityKind T>
@@ -177,20 +134,18 @@ struct Data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
         else if constexpr (std::same_as<T, ::tyr::formalism::NegativeTag>)
             return negative_facts;
         else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
     }
 
     static constexpr auto cista_members() noexcept
     {
-        return ygg::
-            Members<&Data::index, &Data::positive_facts, &Data::negative_facts, &Data::static_literals, &Data::derived_literals, &Data::numeric_constraints> {};
+        return urd::
+            Members<&data::index, &data::positive_facts, &data::negative_facts, &data::static_literals, &data::derived_literals, &data::numeric_constraints> {};
     }
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&Data::positive_facts, &Data::negative_facts, &Data::static_literals, &Data::derived_literals, &Data::numeric_constraints> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    { return urd::Members<&data::positive_facts, &data::negative_facts, &data::static_literals, &data::derived_literals, &data::numeric_constraints> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>);
 }
 
 #endif

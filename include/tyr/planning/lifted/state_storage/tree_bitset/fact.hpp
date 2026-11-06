@@ -26,25 +26,28 @@
 #include "tyr/planning/state_storage/tags.hpp"
 
 #include <span>
+#include <urd/repr/pools/tree_bitset.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/tree_bitset_set.hpp>
+#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<LiftedTag, TreeBitset> : ygg::comparison::Mixin<FactPackedStorage<LiftedTag, TreeBitset>>
+struct FactPackedStorage<LiftedTag, TreeBitset> : urd::compared_by_identity<FactPackedStorage<LiftedTag, TreeBitset>>
 {
-    using Index = ygg::TreeBitsetIndex<tree_bitset::Block>;
+    using Index = urd::repr::TreeHandle;
 
     Index index;
 
     FactPackedStorage() = default;
     explicit FactPackedStorage(Index index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&FactPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&FactPackedStorage::index> {}; }
 };
 
 template<bool ThreadSafe>
@@ -67,8 +70,8 @@ public:
 private:
     typename Context::BitsetSet* m_bitsets;
 
-    std::vector<tree_bitset::Block> m_blocks;
-    std::vector<tree_bitset::Flip> m_flips;
+    urd::Store<urd::sequence<tree_bitset::Block>> m_blocks;
+    urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;
 };
 
 }

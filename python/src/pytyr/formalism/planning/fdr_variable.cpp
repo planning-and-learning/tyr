@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
@@ -31,28 +32,28 @@ template<FactKind T>
 void bind_fdr_variable_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<FDRVariable<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<const AtomViewList<GroundTag, T>>(), "atoms"_a);
-    cls.def(nb::init<ygg::IndexList<Atom<GroundTag, T>>>(), "atoms"_a);
+    using V = urd::data<FDRVariable<T>>;
+    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<const AtomViewList<GroundTag, T>>(), "atoms"_a);
+    cls.def(nb::init<urd::flat_vector<urd::index<Atom<GroundTag, T>>>>(), "atoms"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<FactKind T>
 void bind_fdr_variable_view(nb::module_& m, const char* name)
 {
     using V = FDRVariableView<T>;
-    auto cls = nb::class_<V>(m, name).def("get_index", &V::get_index).def("get_domain_size", &V::get_domain_size).def("get_atoms", &V::get_atoms);
+    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_domain_size", &V::get_domain_size).def("get_atoms", &V::get_atoms);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<FDRVariable<FluentTag>>>(m, "FluentFDRVariableIndex");
+    urd::python::bind_index<urd::index<FDRVariable<FluentTag>>>(m, "FluentFDRVariableIndex");
 
     bind_fdr_variable_data<FluentTag>(m, "FluentFDRVariableData");
 

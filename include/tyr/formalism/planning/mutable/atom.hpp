@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_ATOM_HPP_
 
 #include "tyr/formalism/planning/repository.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
@@ -27,43 +29,42 @@
 #include <map>
 #include <optional>
 #include <tuple>
+#include <urd/elements/hash.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <yggdrasil/semantics/comparison.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::formalism::planning
 {
 template<FactKind T>
-struct MutableAtom : ygg::comparison::Mixin<MutableAtom<T>>
+struct MutableAtom : urd::compared_by_identity<MutableAtom<T>>
 {
     PredicateView<T> predicate;
-    std::vector<ygg::Data<Term>> terms;
+    urd::Store<urd::sequence<Term>> terms;
 
     MutableAtom() = default;
-    MutableAtom(PredicateView<T> predicate_, std::vector<ygg::Data<Term>> terms_) : predicate(predicate_), terms(std::move(terms_)) {}
+    MutableAtom(PredicateView<T> predicate_, urd::Store<urd::sequence<Term>> terms_) : predicate(predicate_), terms(std::move(terms_)) {}
     MutableAtom(PredicateView<T> predicate_, const TermViewList& terms_) : predicate(predicate_), terms()
     {
         for (const auto& term : terms_)
-            terms.push_back(term.get_data());
+            terms.push_back(urd::to_stored(term));
     }
     MutableAtom(AtomView<LiftedTag, T> element_) : predicate(element_.get_predicate()), terms()
     {
         for (const auto& term : element_.get_terms())
-            terms.push_back(term.get_data());
+            terms.push_back(urd::to_stored(term));
     }
     MutableAtom(AtomView<GroundTag, T> element) : predicate(element.get_predicate()), terms()
     {
         for (const auto& object : element.get_objects())
-            terms.push_back(ygg::Data<Term>(object.get_index()));
+            terms.push_back(Term(object.index()));
     }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&MutableAtom::predicate, &MutableAtom::terms> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&MutableAtom::predicate, &MutableAtom::terms> {}; }
 };
 
 template<FactKind T>
-using MutableAtomList = std::vector<MutableAtom<T>>;
+using MutableAtomList = urd::Store<urd::sequence<MutableAtom<T>>>;
 }
 
 namespace tyr::formalism::unification

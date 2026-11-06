@@ -49,9 +49,9 @@ def as_fixture(invariant: Invariant) -> dict[str, Any]:
     for atom in invariant.get_atoms():
         parameters: list[int] = []
         for term in atom.get_terms():
-            match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(term.get_variant()))
+            match = re.fullmatch(r"ParameterIndex\((\d+)\)", str(term))
             if match is None:
-                msg = f"invariant with a constant is not expressible in the fixture: {term.get_variant()}"
+                msg = f"invariant with a constant is not expressible in the fixture: {term}"
                 raise ValueError(msg)
             parameters.append(int(match[1]))
         atoms.append({"predicate": str(atom.get_predicate().get_name()), "parameters": parameters})

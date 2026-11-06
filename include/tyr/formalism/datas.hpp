@@ -23,7 +23,6 @@
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
-#include "tyr/formalism/term_data.hpp"
 #include "tyr/formalism/variable_data.hpp"
 
 #endif

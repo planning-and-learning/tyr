@@ -8,8 +8,8 @@
 #include <gtest/gtest.h>
 
 using Predicate = tyr::formalism::Predicate<tyr::formalism::StaticTag>;
-using PredicateData = ygg::Data<Predicate>;
-using PredicateView = ygg::View<ygg::Index<Predicate>, tyr::formalism::planning::Repository>;
+using PredicateData = urd::data<Predicate>;
+using PredicateView = urd::view<Predicate, tyr::formalism::planning::Repository>;
 
 template<typename Entity, typename Repository>
 struct PredicatePublicView;
@@ -27,21 +27,20 @@ struct PredicatePublicView<tyr::formalism::Predicate<T>, tyr::formalism::plannin
 };
 
 template<typename Entity, typename Repository>
-concept PredicateContract = std::constructible_from<ygg::Index<Entity>, ygg::uint_t> && std::totally_ordered<ygg::Index<Entity>>
-                            && std::totally_ordered<ygg::Data<Entity>> && std::totally_ordered<ygg::View<ygg::Index<Entity>, Repository>>
-                            && std::same_as<ygg::View<ygg::Index<Entity>, Repository>, typename PredicatePublicView<Entity, Repository>::type>
-                            && requires(ygg::Data<Entity>& data, const ygg::View<ygg::Index<Entity>, Repository>& view) {
+concept PredicateContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                            && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::view<Entity, Repository>>
+                            && std::same_as<urd::view<Entity, Repository>, typename PredicatePublicView<Entity, Repository>::type>
+                            && requires(urd::data<Entity>& data, const urd::view<Entity, Repository>& view) {
                                    data.index;
                                    data.name;
                                    data.arity;
-                                   data.clear();
-                                   view.get_index();
+                                   view.index();
                                    view.get_name();
                                    view.get_arity();
                                };
 
 template<typename Repository, typename... Entities>
-consteval bool predicate_contracts(ygg::TypeList<Entities...>)
+consteval bool predicate_contracts(boost::mp11::mp_list<Entities...>)
 { return (PredicateContract<Entities, Repository> && ...); }
 
 static_assert(predicate_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::PredicateTypes {}));

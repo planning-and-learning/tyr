@@ -16,6 +16,7 @@
  */
 
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 
 #include <tyr/formalism/planning/fdr_fact_data.hpp>
@@ -30,33 +31,34 @@ template<FactKind T>
 void bind_fdr_fact_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<FDRFact<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<FDRVariableView<T>, FDRValue>(), "variable"_a, "value"_a);
-    cls.def(nb::init<ygg::Index<FDRVariable<T>>, FDRValue>(), "variable"_a, "value"_a);
+    using V = urd::data<FDRFact<T>>;
+    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<FDRVariableView<T>, FDRValue>(), "variable"_a, "value"_a);
+    cls.def(nb::init<urd::index<FDRVariable<T>>, FDRValue>(), "variable"_a, "value"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
-template<FactKind T>
+/// A fact's view: borrowed (a stored fact) or owned (a state's, computed on the fly).
+template<typename V>
 void bind_fdr_fact_view(nb::module_& m, const char* name)
 {
-    using V = FDRFactView<T>;
     auto cls = nb::class_<V>(m, name)
                    .def("get_variable", &V::get_variable, nb::keep_alive<0, 1>())
                    .def("get_value", &V::get_value)
                    .def("has_value", &V::has_value)
                    .def("get_atom", &V::get_atom, nb::keep_alive<0, 1>());
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_fdr_fact(nb::module_& m, RepositoryBinding&)
 {
     bind_fdr_fact_data<FluentTag>(m, "FluentFDRFactData");
-    bind_fdr_fact_view<FluentTag>(m, "FluentFDRFact");
+    bind_fdr_fact_view<FDRFactView<FluentTag>>(m, "FluentFDRFact");
+    bind_fdr_fact_view<urd::owned_view<FDRFact<FluentTag>, Repository>>(m, "OwnedFluentFDRFact");
 }
 
 }  // namespace tyr::formalism::planning

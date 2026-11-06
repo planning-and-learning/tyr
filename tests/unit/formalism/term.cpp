@@ -1,60 +1,42 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/term_data.hpp"
-#include "tyr/formalism/term_view.hpp"
 
 #include <concepts>
 #include <gtest/gtest.h>
 
-using TermData = ygg::Data<tyr::formalism::Term>;
-using TermView = ygg::View<TermData, tyr::formalism::planning::Repository>;
+using Term = tyr::formalism::Term;
 
-template<typename Repository>
-concept TermContract = std::totally_ordered<TermData> && std::totally_ordered<ygg::View<TermData, Repository>>
-                       && requires(TermData& data, const ygg::View<TermData, Repository>& view) {
-                              data.variant;
-                              data.clear();
-                              view.get_variant();
-                          };
-
-static_assert(TermContract<tyr::formalism::datalog::Repository>);
-static_assert(TermContract<tyr::formalism::planning::Repository>);
-static_assert(std::same_as<ygg::View<TermData, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::TermView>);
-static_assert(std::same_as<TermView, tyr::formalism::planning::TermView>);
+// A term is the variant itself, stored as it is; read through a repository it is the variant of the object's view and
+// the parameter.
+static_assert(std::totally_ordered<Term>);
+static_assert(std::same_as<tyr::formalism::planning::TermView,
+                           std::variant<tyr::formalism::planning::ObjectView, tyr::formalism::ParameterIndex>>);
+static_assert(std::same_as<tyr::formalism::datalog::TermView,
+                           std::variant<tyr::formalism::datalog::ObjectView, tyr::formalism::ParameterIndex>>);
 
 TEST(TyrFormalismTerm, PreservesParameterAlternative)
 {
-    auto data = TermData(tyr::formalism::ParameterIndex(3));
-    auto is_parameter = false;
-    data.variant.apply(
-        [&](const auto& value)
-        {
-            using Value = std::decay_t<decltype(value)>;
-            if constexpr (std::same_as<Value, tyr::formalism::ParameterIndex>)
-                is_parameter = value == tyr::formalism::ParameterIndex(3);
-        });
-    EXPECT_TRUE(is_parameter);
+    const auto term = Term(tyr::formalism::ParameterIndex(3));
+    ASSERT_TRUE(holds_alternative<tyr::formalism::ParameterIndex>(term));
+    EXPECT_EQ(get<tyr::formalism::ParameterIndex>(term), tyr::formalism::ParameterIndex(3));
 }
 
-TEST(TyrFormalismTerm, CanonicalContextFollowsReferencedObjectsAndRootValues)
+TEST(TyrFormalismTerm, ReadoutFollowsReferencedObjectsToTheirLayer)
 {
     auto factory = tyr::formalism::planning::RepositoryFactory {};
     auto parent = factory.create();
-    auto object_data = ygg::Data<tyr::formalism::Object>(std::string("parent"));
+    auto object_data = urd::data<tyr::formalism::Object>(std::string("parent"));
     const auto object = tyr::formalism::planning::insert(parent, object_data).first;
     auto child = factory.create(&parent);
     object_data.name = "child";
     const auto child_object = tyr::formalism::planning::insert(child, object_data).first;
 
-    const auto inherited = ygg::make_view(object.get_index(), child);
-    EXPECT_EQ(inherited, object);
-    EXPECT_EQ(&inherited.get_context(), &parent);
-    const auto parent_term = ygg::make_view(TermData(object.get_index()), child);
-    const auto child_term = ygg::make_view(TermData(child_object.get_index()), child);
-    const auto parameter = ygg::make_view(TermData(tyr::formalism::ParameterIndex(0)), child);
-    EXPECT_EQ(&parent_term.get_context(), &parent);
-    EXPECT_EQ(&child_term.get_context(), &child);
-    EXPECT_EQ(&parameter.get_context(), &parent);
-    EXPECT_EQ(child_term.get_data(), TermData(child_object.get_index()));
+    const auto parent_term = urd::resolve(Term(object.index()), child);
+    const auto child_term = urd::resolve(Term(child_object.index()), child);
+    const auto parameter = urd::resolve(Term(tyr::formalism::ParameterIndex(0)), child);
+    EXPECT_EQ(&std::get<tyr::formalism::planning::ObjectView>(parent_term).context(), &parent);
+    EXPECT_EQ(&std::get<tyr::formalism::planning::ObjectView>(child_term).context(), &child);
+    EXPECT_EQ(std::get<tyr::formalism::ParameterIndex>(parameter), tyr::formalism::ParameterIndex(0));
+    EXPECT_EQ(urd::to_stored(child_term), Term(child_object.index()));
 }

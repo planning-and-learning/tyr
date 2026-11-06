@@ -48,7 +48,7 @@ void bind_options(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())
         .def(nb::init<>())
-        .def_rw("start_node", &T::start_node)
+        .def_rw("start_node", &T::start_node, nb::for_setter(nb::keep_alive<1, 2>()))
         .def_rw("event_handler", &T::event_handler)
         .def_rw("pruning_strategy", &T::pruning_strategy)
         .def_rw("goal_strategy", &T::goal_strategy)
@@ -76,7 +76,7 @@ void bind_solver(nb::module_& m, const std::string& name)
         .def_rw("successor_generator", &T::successor_generator)
         .def_rw("heuristic", &T::heuristic)
         .def_rw("options", &T::options)
-        .def("solve", &T::solve, nb::call_guard<nb::gil_scoped_release>());
+        .def("solve", &T::solve, nb::call_guard<nb::gil_scoped_release>(), nb::keep_alive<0, 1>());
 }
 
 template<TaskKind Kind>
@@ -92,6 +92,7 @@ void bind_find_solution(nb::module_& m, const std::string& py_name)
            Heuristic<Kind>& heuristic,
            const Options<Kind>& options) { return find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options); },
         nb::call_guard<nb::gil_scoped_release>(),
+        nb::keep_alive<0, 2>(),
         "task"_a,
         "state_repository"_a,
         "axiom_evaluator"_a,

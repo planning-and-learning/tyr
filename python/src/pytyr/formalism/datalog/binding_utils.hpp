@@ -30,30 +30,22 @@
 #include <tyr/formalism/datalog/interning.hpp>
 #include <tyr/formalism/datalog/repository.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include <yggdrasil/python/owner.hpp>
+#include <urd/python/owner.hpp>
 #include <yggdrasil/python/type_casters.hpp>
 
 namespace tyr::formalism::datalog
 {
 
-template<typename T>
-using Data = ygg::Data<T>;
 
 template<typename T>
 void bind_insert(RepositoryBinding& repository)
 {
-    using View = ygg::View<ygg::Index<T>, Repository>;
-    const auto retain_owner = ygg::python::make_owner_retainer();
-    repository.def(
-        "insert",
-        [retain_owner](nb::typed<nb::handle, Repository> owner, Data<T>& data) -> nb::typed<nb::tuple, View, bool>
-        { return nb::borrow<nb::typed<nb::tuple, View, bool>>(ygg::python::cast_with_owner(insert(nb::cast<Repository&>(owner), data), owner, retain_owner)); },
-        nb::arg("data"));
+    repository.def("insert", [](Repository& self, urd::data<T>& data) { return insert(self, data); }, nb::arg("data"));
 }
 
 template<typename T>
-ygg::View<ygg::Data<T>, Repository> create_data(Repository& repository, const Data<T>& data)
-{ return make_view(data, repository); }
+urd::borrowed_view<T, Repository> create_data(Repository& repository, const urd::data<T>& data)
+{ return urd::resolve(data, repository); }
 
 }  // namespace tyr::formalism::datalog
 

@@ -26,11 +26,15 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
 
 namespace tyr::planning
 {
@@ -38,15 +42,14 @@ namespace tyr::planning
 class GroundTaskProgram
 {
 public:
-    using AppPredicateToActionMapping = ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>;
+    using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>>;
     using AppPredicateToAxiomMapping =
-        ygg::UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, std::vector<formalism::planning::AxiomView<LiftedTag>>>;
+        urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::Store<urd::sequence<formalism::planning::AxiomView<LiftedTag>>>>>;
     /// The predicate of each conditional effect with variables or a condition, whose atoms are the relaxed reachable bindings of its
     /// action followed by the objects of the effect's variables for which the effect fires.
     /// Keyed by the action too, since actions can share an interned conditional effect.
     using ConditionalEffectToPredicateMapping =
-        ygg::UnorderedMap<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>,
-                          formalism::datalog::PredicateView<formalism::FluentTag>>;
+        urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
 
     explicit GroundTaskProgram(formalism::planning::TaskView<LiftedTag> task);
 

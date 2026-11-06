@@ -7,7 +7,7 @@ find_package(
 find_package(nanobind CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 message(STATUS "Found nanobind: ${nanobind_DIR} (found version ${nanobind_VERSION})")
 
-yggdrasil_python_package_init(PYTYR pytyr)
+brokkr_python_package_init(PYTYR pytyr)
 
 file(
     GLOB_RECURSE PYTYR_FORMALISM_SOURCES
@@ -44,7 +44,7 @@ nanobind_add_module(
 target_link_libraries(_pytyr PRIVATE tyr::core TBB::tbb)
 target_include_directories(_pytyr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-yggdrasil_python_module_rpaths(PYTYR _pytyr)
+brokkr_python_module_rpaths(PYTYR _pytyr)
 
 install(TARGETS _pytyr DESTINATION "pytyr" COMPONENT pytyr)
 
@@ -52,7 +52,7 @@ set_property(
     TARGET core PROPERTY INTERFACE_INCLUDE_DIRECTORIES
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
 )
-yggdrasil_install_native_export(
+brokkr_install_native_export(
     PKG_UPPER PYTYR
     PACKAGE pytyr
     CONFIG_NAME tyr
@@ -63,10 +63,9 @@ yggdrasil_install_native_export(
     HEADER_DIRS "${CMAKE_SOURCE_DIR}/include/tyr"
     CONFIG_TEMPLATE "${CMAKE_SOURCE_DIR}/Config.cmake.in"
     VERSION_FILE "${CMAKE_BINARY_DIR}/tyrConfigVersion.cmake"
-    CMAKE_SOURCE_DIRECTORY "${CMAKE_SOURCE_DIR}/cmake"
 )
 
-yggdrasil_install_runtime_path_fixup(PYTYR pytyr)
+brokkr_install_runtime_path_fixup(PYTYR pytyr)
 
 set(PYTYR_GENERATED_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/pytyr/_version.py")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pytyr")
@@ -77,7 +76,7 @@ install(
     COMPONENT pytyr
 )
 
-yggdrasil_install_python_files(
+brokkr_install_python_files(
     pytyr "${CMAKE_CURRENT_SOURCE_DIR}"
     FILES
         pytyr/py.typed
@@ -106,12 +105,12 @@ yggdrasil_install_python_files(
         pytyr/planning/lifted/siw/__init__.py
 )
 
-yggdrasil_install_provider_env(
+brokkr_install_provider_env(
     PYTYR pytyr
-    PREFIXES "${LOKI_NATIVE_PREFIX}" "${YGGDRASIL_NATIVE_PREFIX}"
+    PREFIXES "${LOKI_NATIVE_PREFIX}" "${YGGDRASIL_NATIVE_PREFIX}" "${URD_NATIVE_PREFIX}"
 )
 
-yggdrasil_install_python_stubs(
+brokkr_install_python_stubs(
     PYTYR pytyr
     MODULE pytyr._pytyr
     PRIVATE_MODULE _pytyr

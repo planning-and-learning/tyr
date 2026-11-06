@@ -16,6 +16,7 @@
  */
 
 #include "tyr/formalism/planning/parser.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 
 #include "bindings.hpp"
 

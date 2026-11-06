@@ -18,38 +18,33 @@
 #ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
-#include "tyr/formalism/datalog/boolean_operator_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<::tyr::TaskKind T, typename V>
+struct view_mixin<::tyr::formalism::datalog::ConjunctiveCondition<T>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<::tyr::TaskKind T, ygg::formalism::SymbolContextFor<::tyr::formalism::datalog::ConjunctiveCondition<T>> C>
-class View<ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<T>>, C> : public ygg::IndexViewBase<::tyr::formalism::datalog::ConjunctiveCondition<T>, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::datalog::ConjunctiveCondition<T>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::datalog::ConjunctiveCondition<T>, C>(handle, context)
-    {
-    }
-
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return ygg::make_view(this->get_data().variables, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::variables>(); }
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    { return ygg::make_view(this->get_data().template get_literals<F>(), this->get_context()); }
-    auto get_numeric_constraints() const noexcept { return ygg::make_view(this->get_data().numeric_constraints, this->get_context()); }
+    { return urd::resolve(self().data().template get_literals<F>(), self().context()); }
+    auto get_numeric_constraints() const noexcept { return self().template get<&urd::record_of<V>::numeric_constraints>(); }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return this->get_data().variables.size(); }
+    { return self().data().variables.size(); }
 };
-
-}
+}  // namespace urd
 
 #endif

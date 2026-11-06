@@ -19,24 +19,21 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
-template<ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Invariant> C>
-class View<ygg::Index<::tyr::formalism::planning::Invariant>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Invariant, C>
+template<typename V>
+struct view_mixin<::tyr::formalism::planning::Invariant, V>
 {
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
+
 public:
-    View(ygg::Index<::tyr::formalism::planning::Invariant> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::Invariant, C>(handle, context)
-    {
-    }
-
-    auto get_num_rigid_variables() const noexcept { return this->get_data().num_rigid_variables; }
-    auto get_num_counted_variables() const noexcept { return this->get_data().num_counted_variables; }
-    auto get_atoms() const noexcept { return ygg::make_view(this->get_data().atoms, this->get_context()); }
+    auto get_num_rigid_variables() const noexcept { return self().data().num_rigid_variables; }
+    auto get_num_counted_variables() const noexcept { return self().data().num_counted_variables; }
+    auto get_atoms() const noexcept { return self().template get<&urd::record_of<V>::atoms>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

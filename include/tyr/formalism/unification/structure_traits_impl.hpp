@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_IMPL_HPP_
 
 #include "tyr/formalism/unification/structure_traits.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <vector>
 
@@ -26,10 +28,10 @@ namespace tyr::formalism::unification
 {
 
 template<typename T>
-struct structure_traits<std::vector<T>>
+struct structure_traits<urd::Store<urd::sequence<T>>>
 {
     template<typename F>
-    static bool zip_terms(const std::vector<T>& lhs, const std::vector<T>& rhs, F f)
+    static bool zip_terms(const urd::Store<urd::sequence<T>>& lhs, const urd::Store<urd::sequence<T>>& rhs, F f)
     {
         if (lhs.size() != rhs.size())
             return false;
@@ -44,9 +46,9 @@ struct structure_traits<std::vector<T>>
     }
 
     template<typename F>
-    static std::vector<T> transform_terms(const std::vector<T>& values, F f)
+    static urd::Store<urd::sequence<T>> transform_terms(const urd::Store<urd::sequence<T>>& values, F f)
     {
-        std::vector<T> result;
+        urd::Store<urd::sequence<T>> result;
         result.reserve(values.size());
 
         for (const auto& value : values)

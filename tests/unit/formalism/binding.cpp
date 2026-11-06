@@ -1,4 +1,6 @@
 #include "tyr/formalism/binding_data.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
@@ -61,56 +63,39 @@ struct BindingPublicView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, tyr:
 
 template<typename Relation, typename Repository>
 concept BindingContract =
-    ygg::ViewConcept<ygg::Index<tyr::formalism::RelationBinding<Relation>>, Repository>
+    requires(const Repository& repository, ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag> index) { repository.view(index); }
     && tyr::formalism::RelationBindingConcept<tyr::formalism::RelationBinding<Relation>>
-    && std::totally_ordered<ygg::Index<tyr::formalism::RelationBinding<Relation>>> && std::totally_ordered<ygg::Data<tyr::formalism::RelationBinding<Relation>>>
-    && std::totally_ordered<ygg::View<ygg::Index<tyr::formalism::RelationBinding<Relation>>, Repository>>
-    && std::same_as<ygg::View<ygg::Index<tyr::formalism::RelationBinding<Relation>>, Repository>, typename BindingPublicView<Relation, Repository>::type>
-    && requires(ygg::Index<tyr::formalism::RelationBinding<Relation>>& index,
-                ygg::Data<tyr::formalism::RelationBinding<Relation>>& data,
-                const ygg::View<ygg::Index<tyr::formalism::RelationBinding<Relation>>, Repository>& view) {
+    && std::totally_ordered<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>> && std::totally_ordered<urd::data<tyr::formalism::RelationBinding<Relation>>>
+    && std::totally_ordered<::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>>
+    && std::same_as<::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>, typename BindingPublicView<Relation, Repository>::type>
+    && requires(ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>& index,
+                urd::data<tyr::formalism::RelationBinding<Relation>>& data,
+                const ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>& view) {
            index.relation;
            index.row;
            data.relation;
            data.objects;
-           data.clear();
-           view.get_index();
+           view.index();
            view.get_relation();
            view.get_objects();
            view.get_key();
        };
 
 template<typename Repository, typename... Relations>
-consteval bool binding_contracts(ygg::TypeList<Relations...>)
+consteval bool binding_contracts(boost::mp11::mp_list<Relations...>)
 { return (BindingContract<Relations, Repository> && ...); }
 
 static_assert(binding_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::RelationRepositoryTypes {}));
 static_assert(binding_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::RelationRepositoryTypes {}));
 
-template<typename Range>
-concept ForwardBindingRange = requires { typename tyr::formalism::RelationBindingsForwardRange<tyr::formalism::Predicate<tyr::formalism::StaticTag>, Range>; };
-
-template<typename Range>
-concept RandomAccessBindingRange =
-    requires { typename tyr::formalism::RelationBindingsRandomAccessRange<tyr::formalism::Predicate<tyr::formalism::StaticTag>, Range>; };
-
-static_assert(ForwardBindingRange<std::vector<ygg::Index<tyr::formalism::Row>>>);
-static_assert(RandomAccessBindingRange<std::vector<ygg::Index<tyr::formalism::Row>>>);
-static_assert(ForwardBindingRange<std::forward_list<ygg::Index<tyr::formalism::Row>>>);
-static_assert(!RandomAccessBindingRange<std::forward_list<ygg::Index<tyr::formalism::Row>>>);
-static_assert(!ForwardBindingRange<std::vector<int>>);
-static_assert(!RandomAccessBindingRange<std::vector<int>>);
-static_assert(!ForwardBindingRange<int>);
-static_assert(!RandomAccessBindingRange<int>);
-
 using Binding = tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::StaticTag>>;
 static_assert(std::same_as<Binding, ygg::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::StaticTag>, tyr::formalism::ObjectTag>>);
 
 #if defined(TYR_RELATION_STORAGE_WORD)
-static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::storage_type, ygg::formalism::BlockArraySetStorage>);
+static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::storage_type, ygg::formalism::RowPoolStorage>);
 #else
 static_assert(
-    std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::storage_type, ygg::formalism::BitPackedArraySetStorage>);
+    std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::storage_type, ygg::formalism::BitRowPoolStorage>);
 #endif
 
 namespace
@@ -121,38 +106,38 @@ void check_binding_copy()
     auto source = Factory().create();
     auto destination = Factory().create();
 
-    const auto intern = []<typename T>(auto& repository, ygg::Data<T> data) { return ygg::formalism::insert(repository, data).first; };
+    const auto intern = []<typename T>(auto& repository, urd::data<T> data) { return ygg::formalism::insert(repository, data).first; };
 
-    const auto source_a = intern(source, ygg::Data<tyr::formalism::Object>(std::string("a")));
-    (void) intern(source, ygg::Data<tyr::formalism::Object>(std::string("b")));
-    (void) intern(destination, ygg::Data<tyr::formalism::Object>(std::string("b")));
-    const auto destination_a = intern(destination, ygg::Data<tyr::formalism::Object>(std::string("a")));
+    const auto source_a = intern(source, urd::data<tyr::formalism::Object>(std::string("a")));
+    (void) intern(source, urd::data<tyr::formalism::Object>(std::string("b")));
+    (void) intern(destination, urd::data<tyr::formalism::Object>(std::string("b")));
+    const auto destination_a = intern(destination, urd::data<tyr::formalism::Object>(std::string("a")));
 
     using Predicate = tyr::formalism::Predicate<tyr::formalism::FluentTag>;
-    const auto source_predicate = intern(source, ygg::Data<Predicate>(std::string("p"), 1));
-    (void) intern(source, ygg::Data<Predicate>(std::string("q"), 1));
-    (void) intern(destination, ygg::Data<Predicate>(std::string("q"), 1));
-    const auto destination_predicate = intern(destination, ygg::Data<Predicate>(std::string("p"), 1));
+    const auto source_predicate = intern(source, urd::data<Predicate>(std::string("p"), 1));
+    (void) intern(source, urd::data<Predicate>(std::string("q"), 1));
+    (void) intern(destination, urd::data<Predicate>(std::string("q"), 1));
+    const auto destination_predicate = intern(destination, urd::data<Predicate>(std::string("p"), 1));
 
-    auto predicate_binding_data = ygg::Data<tyr::formalism::RelationBinding<Predicate>> {};
-    predicate_binding_data.relation = source_predicate.get_index();
-    predicate_binding_data.objects.push_back(source_a.get_index());
+    auto predicate_binding_data = urd::data<tyr::formalism::RelationBinding<Predicate>> {};
+    predicate_binding_data.relation = source_predicate.index();
+    predicate_binding_data.objects.push_back(source_a.index());
     const auto source_predicate_binding = intern(source, std::move(predicate_binding_data));
 
     using Function = tyr::formalism::Function<tyr::formalism::FluentTag>;
-    const auto source_function = intern(source, ygg::Data<Function>(std::string("f"), 1));
-    (void) intern(source, ygg::Data<Function>(std::string("g"), 1));
-    (void) intern(destination, ygg::Data<Function>(std::string("g"), 1));
-    const auto destination_function = intern(destination, ygg::Data<Function>(std::string("f"), 1));
+    const auto source_function = intern(source, urd::data<Function>(std::string("f"), 1));
+    (void) intern(source, urd::data<Function>(std::string("g"), 1));
+    (void) intern(destination, urd::data<Function>(std::string("g"), 1));
+    const auto destination_function = intern(destination, urd::data<Function>(std::string("f"), 1));
 
-    auto function_binding_data = ygg::Data<tyr::formalism::RelationBinding<Function>> {};
-    function_binding_data.relation = source_function.get_index();
-    function_binding_data.objects.push_back(source_a.get_index());
+    auto function_binding_data = urd::data<tyr::formalism::RelationBinding<Function>> {};
+    function_binding_data.relation = source_function.index();
+    function_binding_data.objects.push_back(source_a.index());
     const auto source_function_binding = intern(source, std::move(function_binding_data));
 
-    ASSERT_NE(source_a.get_index(), destination_a.get_index());
-    ASSERT_NE(source_predicate.get_index(), destination_predicate.get_index());
-    ASSERT_NE(source_function.get_index(), destination_function.get_index());
+    ASSERT_NE(source_a.index(), destination_a.index());
+    ASSERT_NE(source_predicate.index(), destination_predicate.index());
+    ASSERT_NE(source_function.index(), destination_function.index());
 
     auto builder = Builder {};
     auto context = Context { builder, destination };
@@ -180,18 +165,18 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
 {
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
     auto builder = tyr::formalism::planning::Builder {};
-    auto a_data = ygg::Data<tyr::formalism::Object>(std::string("a"));
-    auto b_data = ygg::Data<tyr::formalism::Object>(std::string("b"));
+    auto a_data = urd::data<tyr::formalism::Object>(std::string("a"));
+    auto b_data = urd::data<tyr::formalism::Object>(std::string("b"));
     const auto a = tyr::formalism::planning::insert(repository, a_data).first;
     const auto b = tyr::formalism::planning::insert(repository, b_data).first;
     using Predicate = tyr::formalism::Predicate<tyr::formalism::StaticTag>;
-    auto predicate_data = ygg::Data<Predicate>(std::string("p"), 2);
+    auto predicate_data = urd::data<Predicate>(std::string("p"), 2);
     const auto predicate = tyr::formalism::planning::insert(repository, predicate_data).first;
 
     auto data = tyr::formalism::planning::checkout<tyr::formalism::RelationBinding<Predicate>>(builder);
-    data->relation = predicate.get_index();
-    data->objects.push_back(b.get_index());
-    data->objects.push_back(a.get_index());
+    data->relation = predicate.index();
+    data->objects.push_back(b.index());
+    data->objects.push_back(a.index());
     const auto [binding, inserted] = tyr::formalism::planning::insert(repository, *data);
     ASSERT_TRUE(inserted);
     EXPECT_EQ(binding.get_relation(), predicate);

@@ -23,21 +23,24 @@
 
 #include <algorithm>
 #include <yggdrasil/semantics/canonicalization.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::datalog
 {
+// yggdrasil's overloads for lists of indices: found by ordinary lookup, as the standard's two-step `using std::swap`
+// (ADL does not find them for urd::index, whose namespace is urd's).
+using ygg::canonicalize;
+using ygg::is_canonical;
 
 /**
  * Datalog
  */
 
 template<TaskKind T>
-bool is_canonical(const ygg::Data<UnaryOperator<T>>&)
+bool is_canonical(const urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
 { return true; }
 
-template<TaskKind T, BinaryOperatorKind O>
-bool is_canonical(const ygg::Data<BinaryOperator<T, O>>& data)
+template<TaskKind T, OperatorKind O>
+bool is_canonical(const urd::data<BinaryOperator<T, O>>& data)
 {
     if constexpr (std::same_as<O, ArithmeticOperatorKind>)
         return (data.operator_kind != ArithmeticOperatorKind::Add && data.operator_kind != ArithmeticOperatorKind::Mul) || data.lhs <= data.rhs;
@@ -45,55 +48,43 @@ bool is_canonical(const ygg::Data<BinaryOperator<T, O>>& data)
 }
 
 template<TaskKind T>
-bool is_canonical(const ygg::Data<MultiOperator<T>>& data)
+bool is_canonical(const urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
 { return std::is_sorted(data.args.begin(), data.args.end()); }
 
-template<TaskKind T>
-bool is_canonical(const ygg::Data<BooleanOperator<T>>&)
-{ return true; }
-
-template<TaskKind T>
-bool is_canonical(const ygg::Data<ArithmeticOperator<T>>&)
+template<TaskKind T, FactKind F>
+bool is_canonical(const urd::data<Atom<T, F>>&)
 { return true; }
 
 template<TaskKind T, FactKind F>
-bool is_canonical(const ygg::Data<Atom<T, F>>&)
+bool is_canonical(const urd::data<Literal<T, F>>&)
 { return true; }
 
 template<TaskKind T, FactKind F>
-bool is_canonical(const ygg::Data<Literal<T, F>>&)
-{ return true; }
-
-template<TaskKind T, FactKind F>
-bool is_canonical(const ygg::Data<FunctionTerm<T, F>>&)
-{ return true; }
-
-template<TaskKind T>
-bool is_canonical(const ygg::Data<FunctionExpression<T>>&)
+bool is_canonical(const urd::data<FunctionTerm<T, F>>&)
 { return true; }
 
 template<FactKind F>
-bool is_canonical(const ygg::Data<FunctionTermValue<GroundTag, F>>&)
+bool is_canonical(const urd::data<FunctionTermValue<GroundTag, F>>&)
 { return true; }
 
 template<TaskKind T, FactKind F>
-bool is_canonical(const ygg::Data<NumericEffect<T, F>>&)
+bool is_canonical(const urd::data<NumericEffect<T, F>>&)
 { return true; }
 
 template<TaskKind T>
-bool is_canonical(const ygg::Data<ConjunctiveCondition<T>>& data)
+bool is_canonical(const urd::data<ConjunctiveCondition<T>>& data)
 { return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.numeric_constraints); }
 
 template<TaskKind T>
-bool is_canonical(const ygg::Data<ConjunctiveEffect<T>>& data)
+bool is_canonical(const urd::data<ConjunctiveEffect<T>>& data)
 { return is_canonical(data.numeric_effects); }
 
 template<TaskKind T>
-bool is_canonical(const ygg::Data<ConditionalEffect<T>>&)
+bool is_canonical(const urd::data<ConditionalEffect<T>>&)
 { return true; }
 
 template<TaskKind T, RelationKind R>
-bool is_canonical(const ygg::Data<Rule<T, R>>& data)
+bool is_canonical(const urd::data<Rule<T, R>>& data)
 {
     if constexpr (std::same_as<R, PredicateTag>)
         return is_canonical(data.heads);
@@ -102,7 +93,7 @@ bool is_canonical(const ygg::Data<Rule<T, R>>& data)
 }
 
 template<TaskKind T>
-bool is_canonical(const ygg::Data<Program<T>>& data)
+bool is_canonical(const urd::data<Program<T>>& data)
 {
     return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.static_functions)
            && is_canonical(data.fluent_functions) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
@@ -115,13 +106,13 @@ bool is_canonical(const ygg::Data<Program<T>>& data)
  */
 
 template<TaskKind T>
-void canonicalize(ygg::Data<UnaryOperator<T>>&)
+void canonicalize(urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
 {
     // Trivially canonical
 }
 
-template<TaskKind T, BinaryOperatorKind O>
-void canonicalize(ygg::Data<BinaryOperator<T, O>>& data)
+template<TaskKind T, OperatorKind O>
+void canonicalize(urd::data<BinaryOperator<T, O>>& data)
 {
     if constexpr (std::same_as<O, ArithmeticOperatorKind>)
     {
@@ -131,62 +122,44 @@ void canonicalize(ygg::Data<BinaryOperator<T, O>>& data)
 }
 
 template<TaskKind T>
-void canonicalize(ygg::Data<MultiOperator<T>>& data)
+void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
 {
     if (!is_canonical(data))
         std::sort(data.args.begin(), data.args.end());
 }
 
-template<TaskKind T>
-void canonicalize(ygg::Data<BooleanOperator<T>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T>
-void canonicalize(ygg::Data<ArithmeticOperator<T>>&)
+template<TaskKind T, FactKind F>
+void canonicalize(urd::data<Atom<T, F>>&)
 {
     // Trivially canonical
 }
 
 template<TaskKind T, FactKind F>
-void canonicalize(ygg::Data<Atom<T, F>>&)
+void canonicalize(urd::data<Literal<T, F>>&)
 {
     // Trivially canonical
 }
 
 template<TaskKind T, FactKind F>
-void canonicalize(ygg::Data<Literal<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, FactKind F>
-void canonicalize(ygg::Data<FunctionTerm<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T>
-void canonicalize(ygg::Data<FunctionExpression<T>>&)
+void canonicalize(urd::data<FunctionTerm<T, F>>&)
 {
     // Trivially canonical
 }
 
 template<FactKind F>
-void canonicalize(ygg::Data<FunctionTermValue<GroundTag, F>>&)
+void canonicalize(urd::data<FunctionTermValue<GroundTag, F>>&)
 {
     // Trivially canonical
 }
 
 template<TaskKind T, FactKind F>
-void canonicalize(ygg::Data<NumericEffect<T, F>>&)
+void canonicalize(urd::data<NumericEffect<T, F>>&)
 {
     // Trivially canonical
 }
 
 template<TaskKind T>
-void canonicalize(ygg::Data<ConjunctiveCondition<T>>& data)
+void canonicalize(urd::data<ConjunctiveCondition<T>>& data)
 {
     canonicalize(data.static_literals);
     canonicalize(data.fluent_literals);
@@ -194,23 +167,23 @@ void canonicalize(ygg::Data<ConjunctiveCondition<T>>& data)
 }
 
 template<TaskKind T>
-void canonicalize(ygg::Data<ConjunctiveEffect<T>>& data)
+void canonicalize(urd::data<ConjunctiveEffect<T>>& data)
 { canonicalize(data.numeric_effects); }
 
 template<TaskKind T>
-void canonicalize(ygg::Data<ConditionalEffect<T>>&)
+void canonicalize(urd::data<ConditionalEffect<T>>&)
 {
 }
 
 template<TaskKind T, RelationKind R>
-void canonicalize(ygg::Data<Rule<T, R>>& data)
+void canonicalize(urd::data<Rule<T, R>>& data)
 {
     if constexpr (std::same_as<R, PredicateTag>)
         canonicalize(data.heads);
 }
 
 template<TaskKind T>
-void canonicalize(ygg::Data<Program<T>>& data)
+void canonicalize(urd::data<Program<T>>& data)
 {
     canonicalize(data.static_predicates);
     canonicalize(data.fluent_predicates);

@@ -19,6 +19,8 @@
 #define TYR_PLANNING_GROUND_SUCCESSOR_GENERATOR_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
@@ -60,10 +62,6 @@ public:
     /// Checks full applicability without interning the offered binding. The borrowed object row must resolve to this task's canonical owners.
     /// Foreign states, schemas or objects and wrong arity throw invalid_argument. May be called from a binding callback.
     /// Ground tuples absent from the compiled action set are INAPPLICABLE; lifted domain failures are OUTSIDE_PARAMETER_DOMAIN.
-    template<StateViewConcept<GroundTag> S>
-    ActionBindingStatus
-    check_action_binding(const Node<GroundTag, S>& node, formalism::planning::ActionView<LiftedTag> action, formalism::planning::ObjectSpanView objects);
-
     /// Accepts repository-backed and data-backed action bindings without publishing them.
     template<StateViewConcept<GroundTag> S, ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
     ActionBindingStatus check_action_binding(const Node<GroundTag, S>& node, Binding binding);
@@ -73,10 +71,8 @@ public:
 
     /// Checks the same contract as check_action_binding and publishes only an applicable binding.
     /// The returned binding borrows the task repository. May be called from a binding callback.
-    template<StateViewConcept<GroundTag> S>
-    ActionBindingResult try_get_applicable_action_binding(const Node<GroundTag, S>& node,
-                                                          formalism::planning::ActionView<LiftedTag> action,
-                                                          formalism::planning::ObjectSpanView objects);
+    template<StateViewConcept<GroundTag> S, ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+    ActionBindingResult try_get_applicable_action_binding(const Node<GroundTag, S>& node, Binding binding);
 
     // Indexed inputs intern successors; builder inputs write caller-owned storage.
     // List storage appends builders and never clears them, preserving earlier returned views.
@@ -137,16 +133,16 @@ public:
     [[nodiscard]] formalism::planning::ActionView<GroundTag> ground_action(formalism::planning::ActionBindingView binding) const;
 
     template<StateViewConcept<GroundTag> S>
-    std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<GroundTag, S>& node);
+    urd::Store<urd::sequence<formalism::planning::ActionBindingView>> get_applicable_action_bindings(const Node<GroundTag, S>& node);
     template<StateViewConcept<GroundTag> S>
-    void get_applicable_action_bindings(const Node<GroundTag, S>& node, std::vector<formalism::planning::ActionBindingView>& out_bindings);
+    void get_applicable_action_bindings(const Node<GroundTag, S>& node, urd::Store<urd::sequence<formalism::planning::ActionBindingView>>& out_bindings);
     template<StateViewConcept<GroundTag> S>
-    std::vector<formalism::planning::ActionBindingView> get_applicable_action_bindings(const Node<GroundTag, S>& node,
+    urd::Store<urd::sequence<formalism::planning::ActionBindingView>> get_applicable_action_bindings(const Node<GroundTag, S>& node,
                                                                                        formalism::planning::ActionView<LiftedTag> action);
     template<StateViewConcept<GroundTag> S>
     void get_applicable_action_bindings(const Node<GroundTag, S>& node,
                                         formalism::planning::ActionView<LiftedTag> action,
-                                        std::vector<formalism::planning::ActionBindingView>& out_bindings);
+                                        urd::Store<urd::sequence<formalism::planning::ActionBindingView>>& out_bindings);
 
     /// Callbacks return true to continue, false to stop. The result is true iff enumeration was exhausted.
     /// Enumeration must not reenter this generator's enumeration APIs: they share scratch storage.
@@ -203,7 +199,7 @@ public:
 
     // Packed output retains registered state handles without retaining unpacked builders.
     PackedNode<GroundTag> get_packed_initial_node(StateRepository<GroundTag>& state_repository, AxiomEvaluator<GroundTag>& axiom_evaluator);
-    PackedNode<GroundTag> get_packed_node(StateRepository<GroundTag>& state_repository, ygg::Index<State<GroundTag>> state_index);
+    PackedNode<GroundTag> get_packed_node(StateRepository<GroundTag>& state_repository, urd::index<State<GroundTag>> state_index);
     template<StateViewConcept<GroundTag> S>
     PackedNode<GroundTag> get_packed_successor_node(const Node<GroundTag, S>& node,
                                                     formalism::planning::ActionBindingView binding,
@@ -260,22 +256,22 @@ public:
     template<StateViewConcept<GroundTag> S>
     ygg::float_t generate_successor_state(const Node<GroundTag, S>& node,
                                           formalism::planning::ActionBindingView binding,
-                                          ygg::Builder<State<GroundTag>>& out_state,
+                                          urd::builder<State<GroundTag>>& out_state,
                                           StateDelta& out_delta);
     /// Computes axiom closure and the final metric, then interns the completed state.
     Node<GroundTag> finalize_successor_state(StateRepository<GroundTag>& state_repository,
                                              AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                             std::shared_ptr<urd::builder<State<GroundTag>>> state,
                                              ygg::float_t auxiliary_value);
     /// Like finalize_successor_state(), but `state` was generated from `parent` with exact changes `delta`.
     Node<GroundTag> finalize_successor_state(StateRepository<GroundTag>& state_repository,
                                              AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                             ygg::SharedObjectPoolPtr<ygg::Builder<State<GroundTag>>, true> state,
+                                             std::shared_ptr<urd::builder<State<GroundTag>>> state,
                                              ygg::float_t auxiliary_value,
                                              const StateView<GroundTag>& parent,
                                              const StateDelta& delta);
 
-    Node<GroundTag> get_node(StateRepository<GroundTag>& state_repository, ygg::Index<State<GroundTag>> state_index);
+    Node<GroundTag> get_node(StateRepository<GroundTag>& state_repository, urd::index<State<GroundTag>> state_index);
     [[nodiscard]] SuccessorGeneratorPtr<GroundTag> make_worker(const ygg::ExecutionContextPtr& execution_context) const;
 
     [[nodiscard]] const TaskPtr<GroundTag>& get_task() const noexcept;

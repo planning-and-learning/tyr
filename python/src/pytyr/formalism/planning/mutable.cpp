@@ -40,8 +40,8 @@ void bind_atom(nb::module_& m, const std::string& name)
                    .def_rw("predicate", &V::predicate)
                    .def_rw("terms", &V::terms);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 template<FactKind T>
@@ -54,8 +54,8 @@ void bind_literal(nb::module_& m, const std::string& name)
                    .def(nb::init<MutableAtom<T>, bool>(), "atom"_a, "polarity"_a)
                    .def(nb::init<LiteralView<LiftedTag, T>>(), "literal"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 void bind_conjunctive_condition(nb::module_& m, const std::string& name)
@@ -66,8 +66,8 @@ void bind_conjunctive_condition(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<size_t, ConjunctiveConditionView<LiftedTag>>(), "num_parent_variables"_a, "condition"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 void bind_conjunctive_effect(nb::module_& m, const std::string& name)
@@ -78,8 +78,8 @@ void bind_conjunctive_effect(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<size_t, size_t, ConjunctiveEffectView<LiftedTag>>(), "num_parent_variables"_a, "num_variables"_a, "effect"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 void bind_conditional_effect(nb::module_& m, const std::string& name)
@@ -90,8 +90,8 @@ void bind_conditional_effect(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<size_t, ConditionalEffectView<LiftedTag>>(), "num_parent_variables"_a, "effect"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 void bind_action(nb::module_& m, const std::string& name)
@@ -102,8 +102,8 @@ void bind_action(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<ActionView<LiftedTag>>(), "action"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }
 

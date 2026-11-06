@@ -19,6 +19,8 @@
 #define TYR_ANALYSIS_VARIABLE_DOMAIN_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include <vector>
 
@@ -27,10 +29,10 @@ namespace tyr::analysis
 
 struct VariableDomain
 {
-    std::vector<ygg::Index<formalism::Object>> objects;
+    urd::Store<urd::sequence<urd::index<formalism::Object>>> objects;
 };
 
-using VariableDomainList = std::vector<VariableDomain>;
+using VariableDomainList = urd::Store<urd::sequence<VariableDomain>>;
 
 }
 

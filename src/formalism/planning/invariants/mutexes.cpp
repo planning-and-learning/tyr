@@ -25,10 +25,14 @@
 #include <optional>
 #include <stdexcept>
 #include <tuple>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -37,43 +41,43 @@ namespace
 
 /// The objects `atom` binds the rigid variables of `part` to, or nullopt if it does not match the part: same arity,
 /// equal constants, repeated variables bound consistently, and every rigid variable bound.
-std::optional<std::vector<ygg::Index<Object>>> extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
+std::optional<urd::Store<urd::sequence<urd::index<Object>>>> extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
 {
     const auto terms = part.get_terms();
     const auto objects = atom.get_objects();
     if (terms.size() != objects.size())
         return std::nullopt;
 
-    auto binding = std::vector<std::optional<ygg::Index<Object>>>(inv.get_num_rigid_variables() + inv.get_num_counted_variables());
+    auto binding = urd::Store<urd::sequence<std::optional<urd::index<Object>>>>(inv.get_num_rigid_variables() + inv.get_num_counted_variables());
     for (std::size_t position = 0; position < terms.size(); ++position)
     {
-        const auto object = objects[position].get_index();
+        const auto object = objects[position].index();
         const bool matches = std::visit(
             [&]<typename T>(const T& arg) -> bool
             {
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
-                    auto& bound = binding[static_cast<ygg::uint_t>(arg)];
+                    auto& bound = binding[arg.value];
                     if (bound.has_value() && *bound != object)
                         return false;
                     bound = object;
                     return true;
                 }
-                else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
+                else if constexpr (std::is_same_v<T, urd::index<Object>>)
                 {
                     return arg == object;
                 }
                 else
                 {
-                    static_assert(ygg::dependent_false<T>::value, "Unhandled case");
+                    static_assert(urd::repr::dependent_false<T>::value, "Unhandled case");
                 }
             },
-            terms[position].get_data().variant);
+            urd::to_stored(terms[position]));
         if (!matches)
             return std::nullopt;
     }
 
-    auto rigid_values = std::vector<ygg::Index<Object>> {};
+    auto rigid_values = urd::Store<urd::sequence<urd::index<Object>>> {};
     rigid_values.reserve(inv.get_num_rigid_variables());
     for (std::size_t i = 0; i < inv.get_num_rigid_variables(); ++i)
     {
@@ -86,29 +90,29 @@ std::optional<std::vector<ygg::Index<Object>>> extract_rigid_values(InvariantVie
 }
 
 /// One invariant instance: the reachable atoms whose rigid variables are bound to `rigid_values`.
-struct InstanceGroup : ygg::comparison::Mixin<InstanceGroup>
+struct InstanceGroup : urd::compared_by_identity<InstanceGroup>
 {
     size_t inv_index;
-    std::vector<ygg::Index<Object>> rigid_values;
+    urd::Store<urd::sequence<urd::index<Object>>> rigid_values;
     AtomViewList<GroundTag, FluentTag> atoms;
     size_t num_initial_atoms = 0;
 
-    InstanceGroup(size_t inv_index_, std::vector<ygg::Index<Object>> rigid_values_) : inv_index(inv_index_), rigid_values(std::move(rigid_values_)), atoms() {}
+    InstanceGroup(size_t inv_index_, urd::Store<urd::sequence<urd::index<Object>>> rigid_values_) : inv_index(inv_index_), rigid_values(std::move(rigid_values_)), atoms() {}
 
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {}; }
+    { return urd::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {}; }
 };
 
-struct GroupKey : ygg::comparison::Mixin<GroupKey>
+struct GroupKey : urd::compared_by_identity<GroupKey>
 {
     size_t invariant_index;
-    std::vector<ygg::Index<Object>> rigid_values;
+    urd::Store<urd::sequence<urd::index<Object>>> rigid_values;
 
-    GroupKey(size_t invariant_index_, std::vector<ygg::Index<Object>> rigid_values_) : invariant_index(invariant_index_), rigid_values(std::move(rigid_values_))
+    GroupKey(size_t invariant_index_, urd::Store<urd::sequence<urd::index<Object>>> rigid_values_) : invariant_index(invariant_index_), rigid_values(std::move(rigid_values_))
     {
     }
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&GroupKey::invariant_index, &GroupKey::rigid_values> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&GroupKey::invariant_index, &GroupKey::rigid_values> {}; }
 };
 
 bool structural_less(AtomView<GroundTag, FluentTag> lhs, AtomView<GroundTag, FluentTag> rhs)
@@ -116,7 +120,7 @@ bool structural_less(AtomView<GroundTag, FluentTag> lhs, AtomView<GroundTag, Flu
     const auto lhs_key = std::tuple(lhs.get_predicate(), lhs.get_objects());
     const auto rhs_key = std::tuple(rhs.get_predicate(), rhs.get_objects());
 
-    return ygg::Less<std::remove_cvref_t<decltype(lhs_key)>> {}(lhs_key, rhs_key);
+    return urd::Less<std::remove_cvref_t<decltype(lhs_key)>> {}(lhs_key, rhs_key);
 }
 
 bool structural_less(const AtomViewList<GroundTag, FluentTag>& lhs, const AtomViewList<GroundTag, FluentTag>& rhs)
@@ -135,7 +139,7 @@ AtomViewList<GroundTag, FluentTag> uncovered_atoms(const InstanceGroup& group, c
 
     for (const auto atom : group.atoms)
     {
-        const auto atom_index = static_cast<ygg::uint_t>(atom.get_index());
+        const auto atom_index = static_cast<ygg::uint_t>(atom.index().value);
         if (uncovered[atom_index])
             result.push_back(atom);
     }
@@ -166,26 +170,26 @@ bool uncovered_structural_less(const InstanceGroup& lhs, const InstanceGroup& rh
 
 /// Every instance of every invariant with at least one reachable atom, in one pass over the atoms. An atom joins the
 /// instance its rigid values determine; parts of one invariant have distinct predicates, so instances do not overlap.
-std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                               const InvariantViewList& invariants)
 {
     auto is_initial = std::vector<bool>(all_atoms.size(), false);
     for (const auto atom : initial_atoms)
     {
-        const auto i = static_cast<ygg::uint_t>(atom.get_index());
+        const auto i = static_cast<ygg::uint_t>(atom.index().value);
         if (i >= all_atoms.size())
             throw std::invalid_argument("initial_atoms must be among all_atoms");
         is_initial[i] = true;
     }
 
-    auto predicates = std::vector<ygg::UnorderedSet<PredicateView<FluentTag>>>(invariants.size());
+    auto predicates = urd::Store<urd::sequence<urd::Store<urd::set<PredicateView<FluentTag>>>>>(invariants.size());
     for (size_t inv_index = 0; inv_index < invariants.size(); ++inv_index)
         for (const auto part : invariants[inv_index].get_atoms())
             predicates[inv_index].insert(part.get_predicate());
 
-    auto groups = std::vector<InstanceGroup> {};
-    auto group_index = ygg::Map<GroupKey, size_t> {};
+    auto groups = urd::Store<urd::sequence<InstanceGroup>> {};
+    auto group_index = urd::Store<urd::map<GroupKey, size_t>, urd::sorted> {};
 
     for (const auto atom : all_atoms)
     {
@@ -213,7 +217,7 @@ std::vector<InstanceGroup> instantiate_groups(const AtomViewList<GroundTag, Flue
                     continue;  // matched another part of the same instance
 
                 group.atoms.push_back(atom);
-                if (is_initial[static_cast<ygg::uint_t>(atom.get_index())])
+                if (is_initial[static_cast<ygg::uint_t>(atom.index().value)])
                     ++group.num_initial_atoms;
             }
         }
@@ -230,14 +234,14 @@ size_t compute_uncovered_coverage(const InstanceGroup& group, const std::vector<
     size_t coverage = 0;
     for (const auto atom : group.atoms)
     {
-        const auto i = static_cast<ygg::uint_t>(atom.get_index());
+        const auto i = static_cast<ygg::uint_t>(atom.index().value);
         if (uncovered[i])
             ++coverage;
     }
     return coverage;
 }
 
-std::optional<size_t> select_best_group(const std::vector<InstanceGroup>& groups, const std::vector<bool>& uncovered)
+std::optional<size_t> select_best_group(const urd::Store<urd::sequence<InstanceGroup>>& groups, const std::vector<bool>& uncovered)
 {
     std::optional<size_t> best_group_index;
     size_t best_coverage = 0;
@@ -260,7 +264,7 @@ void mark_group_covered(const AtomViewList<GroundTag, FluentTag>& group, std::ve
 {
     for (const auto atom : group)
     {
-        const auto i = static_cast<ygg::uint_t>(atom.get_index());
+        const auto i = static_cast<ygg::uint_t>(atom.index().value);
         if (uncovered[i])
         {
             uncovered[i] = false;
@@ -277,11 +281,11 @@ MutexGroup make_group(const InvariantViewList& invariants, const InstanceGroup& 
     auto objects = ObjectViewList {};
     objects.reserve(group.rigid_values.size());
     for (const auto object : group.rigid_values)
-        objects.emplace_back(object, atoms.front().get_context());
+        objects.emplace_back(object, atoms.front().context());
     return MutexGroup { invariants[group.inv_index], std::move(objects), std::move(atoms) };
 }
 
-void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms, const std::vector<bool>& uncovered, std::vector<MutexGroup>& result)
+void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms, const std::vector<bool>& uncovered, urd::Store<urd::sequence<MutexGroup>>& result)
 {
     for (size_t pos = 0; pos < all_atoms.size(); ++pos)
     {
@@ -290,13 +294,13 @@ void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms,
     }
 }
 
-std::vector<MutexGroup>
-choose_groups_greedily(const InvariantViewList& invariants, const std::vector<InstanceGroup>& groups, const AtomViewList<GroundTag, FluentTag>& all_atoms)
+urd::Store<urd::sequence<MutexGroup>>
+choose_groups_greedily(const InvariantViewList& invariants, const urd::Store<urd::sequence<InstanceGroup>>& groups, const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     std::vector<bool> uncovered(all_atoms.size(), true);
     size_t num_uncovered = all_atoms.size();
 
-    std::vector<MutexGroup> result;
+    urd::Store<urd::sequence<MutexGroup>> result;
     result.reserve(groups.size() + all_atoms.size());
 
     while (num_uncovered > 0)
@@ -322,13 +326,13 @@ choose_groups_greedily(const InvariantViewList& invariants, const std::vector<In
 void check_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     for (ygg::uint_t i = 0; i < all_atoms.size(); ++i)
-        if (static_cast<ygg::uint_t>(all_atoms[i].get_index()) != i)
+        if (static_cast<ygg::uint_t>(all_atoms[i].index().value) != i)
             throw std::invalid_argument("all_atoms must be the fluent atoms ordered by index, without gaps");
 }
 
 }  // namespace
 
-std::vector<MutexGroup> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                              const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                              const InvariantViewList& invariants)
 {
@@ -336,13 +340,13 @@ std::vector<MutexGroup> compute_mutex_groups(const AtomViewList<GroundTag, Fluen
 
     auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
     // Candidates are the instances with exactly one true initial atom.
-    std::erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms != 1; });
+    erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms != 1; });
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 
     return choose_groups_greedily(invariants, groups, all_atoms);
 }
 
-std::vector<MutexGroup> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                       const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                       const InvariantViewList& invariant_order)
 {
@@ -352,7 +356,7 @@ std::vector<MutexGroup> compute_mutex_groups_in_order(const AtomViewList<GroundT
     // The invariant index is the position in the order, so this visits the invariants in order.
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 
-    std::vector<MutexGroup> result;
+    urd::Store<urd::sequence<MutexGroup>> result;
     result.reserve(groups.size() + all_atoms.size());
 
     std::vector<bool> uncovered(all_atoms.size(), true);
@@ -382,17 +386,17 @@ std::vector<MutexGroup> compute_mutex_groups_in_order(const AtomViewList<GroundT
 
     return result;
 }
-std::vector<MutexGroup> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
+urd::Store<urd::sequence<MutexGroup>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                  const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                  const InvariantViewList& invariants)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
     auto groups = instantiate_groups(initial_atoms, all_atoms, invariants);
-    std::erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms > 1 || group.atoms.size() < 2; });
+    erase_if(groups, [](const InstanceGroup& group) { return group.num_initial_atoms > 1 || group.atoms.size() < 2; });
     std::sort(groups.begin(), groups.end(), deterministic_group_less);
 
-    auto result = std::vector<MutexGroup> {};
+    auto result = urd::Store<urd::sequence<MutexGroup>> {};
     result.reserve(groups.size());
     for (auto& group : groups)
         result.push_back(make_group(invariants, group, std::move(group.atoms)));

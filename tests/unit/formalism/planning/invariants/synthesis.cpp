@@ -16,6 +16,8 @@
  */
 
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 #include "planning/parser.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
@@ -48,21 +50,21 @@ namespace tyr::tests
 
 namespace
 {
-std::vector<int> parse_parameters(const boost::json::object& atom_object)
+urd::Store<urd::sequence<int>> parse_parameters(const boost::json::object& atom_object)
 {
-    auto result = std::vector<int> {};
+    auto result = urd::Store<urd::sequence<int>> {};
     for (const auto& parameter : ygg::common::as_array(atom_object, "parameters", "atom"))
         result.push_back(static_cast<int>(ygg::common::as_size(parameter, "atom.parameters entry")));
     return result;
 }
 
-auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate_name, const std::vector<int>& parameters)
+auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate_name, const urd::Store<urd::sequence<int>>& parameters)
 {
     auto predicate_builder =
-        ygg::Data<tyr::formalism::Predicate<tyr::formalism::FluentTag>> { std::string(predicate_name), static_cast<ygg::uint_t>(parameters.size()) };
+        urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>> { std::string(predicate_name), static_cast<ygg::uint_t>(parameters.size()) };
     const auto predicate = repo.insert(predicate_builder).first;
 
-    auto terms = std::vector<ygg::Data<tyr::formalism::Term>> {};
+    auto terms = urd::Store<urd::sequence<tyr::formalism::Term>> {};
     for (const auto i : parameters)
         terms.emplace_back(tyr::formalism::ParameterIndex(i));
 
@@ -71,21 +73,21 @@ auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate
 
 auto intern_invariant(tyr::formalism::planning::Repository& repository, const tyr::formalism::planning::MutableInvariant& invariant)
 {
-    auto data = ygg::Data<tyr::formalism::planning::Invariant>(invariant.num_rigid_variables, invariant.num_counted_variables, {});
+    auto data = urd::data<tyr::formalism::planning::Invariant>(invariant.num_rigid_variables, invariant.num_counted_variables, {});
     for (const auto& atom : invariant.atoms)
     {
-        auto terms = ygg::DataList<tyr::formalism::Term> {};
+        auto terms = tyr::formalism::TermList {};
         for (const auto& term : atom.terms)
             terms.push_back(term);
-        auto atom_data = ygg::Data<tyr::formalism::planning::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>>(atom.predicate.get_index(), std::move(terms));
-        data.atoms.push_back(tyr::formalism::planning::insert(repository, atom_data).first.get_index());
+        auto atom_data = urd::data<tyr::formalism::planning::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>>(atom.predicate.index(), std::move(terms));
+        data.atoms.push_back(tyr::formalism::planning::insert(repository, atom_data).first.index());
     }
     return tyr::formalism::planning::insert(repository, data).first;
 }
 
 tyr::formalism::planning::MutableInvariant parse_invariant(tyr::formalism::planning::Repository& repository, const boost::json::object& invariant_object)
 {
-    auto atoms = std::vector<tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>> {};
+    auto atoms = urd::Store<urd::sequence<tyr::formalism::planning::MutableAtom<tyr::formalism::FluentTag>>> {};
     for (const auto& atom_value : ygg::common::as_array(invariant_object, "atoms", "invariant"))
     {
         const auto& atom_object = ygg::common::as_object(atom_value, "atom");
@@ -97,10 +99,10 @@ tyr::formalism::planning::MutableInvariant parse_invariant(tyr::formalism::plann
                                                       std::move(atoms));
 }
 
-std::vector<tyr::formalism::planning::MutableInvariant>
+urd::Store<urd::sequence<tyr::formalism::planning::MutableInvariant>>
 parse_invariants(tyr::formalism::planning::Repository& repository, const boost::json::object& case_object, const char* key)
 {
-    auto result = std::vector<tyr::formalism::planning::MutableInvariant> {};
+    auto result = urd::Store<urd::sequence<tyr::formalism::planning::MutableInvariant>> {};
     for (const auto& invariant_value : ygg::common::as_array(case_object, key, "case"))
         result.push_back(parse_invariant(repository, ygg::common::as_object(invariant_value, "invariant")));
     return result;
@@ -108,7 +110,7 @@ parse_invariants(tyr::formalism::planning::Repository& repository, const boost::
 
 /// The atoms in text form, sorted. Both sides live in different repositories, so atoms are compared by text rather than
 /// by index.
-std::string invariant_text(size_t num_rigid_variables, size_t num_counted_variables, std::vector<std::string> atoms)
+std::string invariant_text(size_t num_rigid_variables, size_t num_counted_variables, urd::Store<urd::sequence<std::string>> atoms)
 {
     std::ranges::sort(atoms);
     return fmt::format("{} {} {{{}}}", num_rigid_variables, num_counted_variables, fmt::join(atoms, ", "));
@@ -116,7 +118,7 @@ std::string invariant_text(size_t num_rigid_variables, size_t num_counted_variab
 
 std::string invariant_text(const tyr::formalism::planning::MutableInvariant& invariant)
 {
-    auto atoms = std::vector<std::string> {};
+    auto atoms = urd::Store<urd::sequence<std::string>> {};
     for (const auto& atom : invariant.atoms)
         atoms.push_back(fmt::format("{}", atom));
     return invariant_text(invariant.num_rigid_variables, invariant.num_counted_variables, std::move(atoms));
@@ -125,12 +127,12 @@ std::string invariant_text(const tyr::formalism::planning::MutableInvariant& inv
 /// Formats the atoms like MutableAtom's formatter, so both sides give the same text.
 std::string invariant_text(tyr::formalism::planning::InvariantView invariant)
 {
-    auto atoms = std::vector<std::string> {};
+    auto atoms = urd::Store<urd::sequence<std::string>> {};
     for (const auto atom : invariant.get_atoms())
     {
-        auto terms = std::vector<std::string> {};
+        auto terms = urd::Store<urd::sequence<std::string>> {};
         for (const auto term : atom.get_terms())
-            terms.push_back(fmt::format("{}", term.get_data()));
+            terms.push_back(fmt::format("{}", urd::to_stored(term)));
         atoms.push_back(fmt::format("({} {})", atom.get_predicate().get_name(), fmt::join(terms, " ")));
     }
     return invariant_text(invariant.get_num_rigid_variables(), invariant.get_num_counted_variables(), std::move(atoms));
@@ -151,8 +153,8 @@ void expect_invariant_sets_equal(const tyr::formalism::planning::InvariantViewLi
 {
     const auto actual_texts = invariant_texts(actual);
     const auto expected_texts = invariant_texts(expected);
-    auto only_actual = std::vector<std::string> {};
-    auto only_expected = std::vector<std::string> {};
+    auto only_actual = urd::Store<urd::sequence<std::string>> {};
+    auto only_expected = urd::Store<urd::sequence<std::string>> {};
     std::ranges::set_difference(actual_texts, expected_texts, std::back_inserter(only_actual));
     std::ranges::set_difference(expected_texts, actual_texts, std::back_inserter(only_expected));
     EXPECT_TRUE(only_actual.empty() && only_expected.empty())
@@ -190,7 +192,7 @@ void check_orders(const std::filesystem::path& fixture)
 {
     namespace invariant = tyr::formalism::planning::invariant;
     using Criterion = invariant::InvariantOrderCriterion;
-    const auto criteria = std::vector<std::pair<const char*, invariant::InvariantOrderOptions>> {
+    const auto criteria = urd::Store<urd::sequence<std::pair<const char*, invariant::InvariantOrderOptions>>> {
         { "min_stolen_predicates",
           invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates, Criterion::MaxResidualAtoms, Criterion::Lexicographic } } },
         { "lexicographic", invariant::InvariantOrderOptions { { Criterion::Lexicographic } } },
@@ -216,10 +218,10 @@ void check_orders(const std::filesystem::path& fixture)
             // The order depends on the set of invariants, not on their order.
             EXPECT_EQ(invariant::compute_invariant_order_greedy(tyr::formalism::planning::InvariantViewList(invariants.rbegin(), invariants.rend()), criterion),
                       invariant::compute_invariant_order_greedy(invariants, criterion));
-            auto actual = std::vector<std::string> {};
+            auto actual = urd::Store<urd::sequence<std::string>> {};
             for (const auto inv : invariant::compute_invariant_order_greedy(invariants, criterion))
                 actual.push_back(invariant_text(inv));
-            auto expected = std::vector<std::string> {};
+            auto expected = urd::Store<urd::sequence<std::string>> {};
             for (const auto& inv : parse_invariants(repository, orders, key))
                 expected.push_back(invariant_text(inv));
             EXPECT_EQ(actual, expected);

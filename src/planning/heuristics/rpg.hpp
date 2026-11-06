@@ -42,8 +42,10 @@
 #include <memory>
 #include <optional>
 #include <type_traits>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
-#include <yggdrasil/containers/unordered_set.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::planning::detail
@@ -98,13 +100,13 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
             continue;
 
         auto literal = formalism::datalog::checkout<formalism::datalog::Literal<GroundTag, formalism::FluentTag>>(merge_context.builder());
-        literal->atom = translate_atom(*atom).get_index();
+        literal->atom = translate_atom(*atom).index();
         literal->polarity = true;
-        condition->fluent_literals.push_back(formalism::datalog::insert(merge_context.destination(), *literal).first.get_index());
+        condition->fluent_literals.push_back(formalism::datalog::insert(merge_context.destination(), *literal).first.index());
     }
 
     for (const auto numeric_constraint : source_goal.get_numeric_constraints())
-        condition->numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, merge_context));
+        condition->numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, merge_context).first.index());
 
     workspace.tp.set_goals(formalism::datalog::insert(merge_context.destination(), *condition).first);
 }
@@ -147,7 +149,7 @@ public:
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
 
-    ygg::float_t evaluate(const ygg::Builder<State<Kind>>& state)
+    ygg::float_t evaluate(const urd::data<State<Kind>>& state)
     {
         begin_state_evaluation();
         return evaluate_current_state(state);
@@ -158,7 +160,7 @@ public:
 protected:
     void begin_state_evaluation() { Policy::begin_state_evaluation(*m_definition, m_workspace, m_source_goal); }
 
-    ygg::float_t evaluate_current_state(const ygg::Builder<State<Kind>>& state)
+    ygg::float_t evaluate_current_state(const urd::data<State<Kind>>& state)
     {
         const auto& repository = *m_definition->task->get_repository();
         const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
@@ -173,7 +175,7 @@ protected:
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
-    ygg::float_t compute_result(const ygg::Builder<State<Kind>>&) const { return get_goal_cost(); }
+    ygg::float_t compute_result(const urd::data<State<Kind>>&) const { return get_goal_cost(); }
 
     void set_action_binding_cost(formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
@@ -181,7 +183,7 @@ protected:
 
     [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateBindingView<formalism::FluentTag> head) const noexcept
     {
-        const auto* annotation = m_workspace.annotations.find(head.get_index());
+        const auto* annotation = m_workspace.annotations.find(head.index());
         return annotation ? datalog::get_cost(*annotation) : static_cast<datalog::Cost>(0);
     }
 
@@ -233,7 +235,7 @@ protected:
     void for_each_achiever(formalism::datalog::PredicateBindingView<formalism::FluentTag> head, Callback callback)
         requires AP::records_propositional_achievers
     {
-        const auto* achievers = m_workspace.annotation_policy.find_achievers(head.get_index());
+        const auto* achievers = m_workspace.annotation_policy.find_achievers(head.index());
         if (!achievers)
             return;
 

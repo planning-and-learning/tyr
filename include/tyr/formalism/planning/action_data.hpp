@@ -19,6 +19,8 @@
 #define TYR_FORMALISM_PLANNING_ACTION_DATA_HPP_
 
 #include "tyr/formalism/binding_index.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -27,29 +29,29 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<>
-struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
+struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
 {
-    ygg::Index<::tyr::formalism::planning::Action<::tyr::LiftedTag>> index;
+    urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>> index;
     ::cista::offset::string name;
     ::cista::offset::string original_name;
     ygg::uint_t original_arity = 0;
-    ygg::IndexList<::tyr::formalism::Variable> variables;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition;
-    ygg::IndexList<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> effects;
+    urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects;
 
-    Data() = default;
-    Data(::cista::offset::string name_,
+    data() = default;
+    data(::cista::offset::string name_,
          ygg::uint_t original_arity_,
-         ygg::IndexList<::tyr::formalism::Variable> variables_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
-         ygg::IndexList<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> effects_) :
+         urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
+         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects_) :
         index(),
         name(std::move(name_)),
         original_name(name),
@@ -59,12 +61,12 @@ struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
         effects(std::move(effects_))
     {
     }
-    Data(::cista::offset::string name_,
+    data(::cista::offset::string name_,
          ::cista::offset::string original_name_,
          ygg::uint_t original_arity_,
-         ygg::IndexList<::tyr::formalism::Variable> variables_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
-         ygg::IndexList<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>> effects_) :
+         urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
+         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects_) :
         index(),
         name(std::move(name_)),
         original_name(std::move(original_name_)),
@@ -74,101 +76,51 @@ struct Data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
         effects(std::move(effects_))
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(const std::string& name_,
-         ygg::uint_t original_arity_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>, C>>& effects_) :
-        Data(name_, name_, original_arity_, variables_, condition_, effects_)
-    {
-    }
-    template<typename C>
-    Data(const std::string& name_,
-         const std::string& original_name_,
-         ygg::uint_t original_arity_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::Variable>, C>>& variables_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>, C> condition_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>, C>>& effects_) :
-        index(),
-        name(name_),
-        original_name(original_name_),
-        original_arity(original_arity_),
-        variables(),
-        condition(),
-        effects()
-    {
-        set(variables_, variables);
-        set(condition_, condition);
-        set(effects_, effects);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) noexcept = default;
-    Data& operator=(Data&& other) noexcept = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) noexcept = default;
+    data& operator=(data&& other) noexcept = default;
 
     static constexpr auto cista_members() noexcept
-    { return ygg::Members<&Data::index, &Data::name, &Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {}; }
+    { return urd::Members<&data::index, &data::name, &data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&Data::original_name, &Data::variables, &Data::original_arity, &Data::condition, &Data::effects> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    { return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Action<::tyr::LiftedTag>>);
-
 template<>
-struct Data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
+struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
 {
-    ygg::Index<::tyr::formalism::planning::Action<::tyr::GroundTag>> index;
-    ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>> binding;
-    ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition;
-    ygg::IndexList<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> effects;
+    urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>> index;
+    ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects;
 
-    Data() = default;
-    Data(ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>> binding_,
-         ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
-         ygg::IndexList<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>> effects_) :
+    data() = default;
+    data(ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding_,
+         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects_) :
         index(),
         binding(binding_),
         condition(condition_),
         effects(std::move(effects_))
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(::ygg::View<ygg::Index<::tyr::formalism::RelationBinding<::tyr::formalism::planning::Action<::tyr::LiftedTag>>>, C> binding_,
-         ::ygg::View<ygg::Index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>, C> condition_,
-         const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>, C>>& effects_) :
-        index(),
-        binding(),
-        condition(),
-        effects()
-    {
-        set(binding_, binding);
-        set(condition_, condition);
-        set(effects_, effects);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::binding, &Data::condition, &Data::effects> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::binding, &data::condition, &data::effects> {}; }
     // Have to include effects because row only binds objects to non-effect quantified variables.
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::binding, &Data::condition, &Data::effects> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::binding, &data::condition, &data::effects> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::Action<::tyr::GroundTag>>);
 }
 
 namespace tyr::formalism::planning
 {
 template<TaskKind T>
-using ActionData = ygg::Data<Action<T>>;
+using ActionData = urd::data<Action<T>>;
 }
 
 #endif

@@ -72,16 +72,16 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto worker_initial = worker->get_initial_node(*worker_repository, *worker_axiom_evaluator);
     const auto dist_hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(17);
 
-    const auto expected_source_index = initial.get_state().get_index();
-    const auto expected_source_hash = dist_hash.hash(initial.get_state().get_state_builder());
+    const auto expected_source_index = initial.get_state().index();
+    const auto expected_source_hash = dist_hash.hash(initial.get_state().data());
     auto source = std::optional<tyr::planning::StateView<Kind>>(repository->get_registered_state(expected_source_index));
     auto transferred_source = source;
     source.reset();
     auto source_reader = std::jthread(
         [source = std::move(transferred_source), expected_source_index, expected_source_hash, &dist_hash]() mutable
         {
-            EXPECT_EQ(source->get_index(), expected_source_index);
-            EXPECT_EQ(dist_hash.hash(source->get_state_builder()), expected_source_hash);
+            EXPECT_EQ(source->index(), expected_source_index);
+            EXPECT_EQ(dist_hash.hash(source->data()), expected_source_hash);
             source.reset();
         });
     source_reader.join();
@@ -91,58 +91,40 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto thread_release_repository = repository->make_worker();
     auto thread_release_worker = generator->make_worker(thread_release_context);
     auto thread_released_state = thread_release_worker->get_initial_node(*thread_release_repository, *thread_release_evaluator).get_state();
-    const auto thread_release_owner = std::weak_ptr(thread_released_state.get_state_repository());
-    thread_release_worker.reset();
-    thread_release_evaluator.reset();
-    thread_release_repository.reset();
-    EXPECT_FALSE(thread_release_owner.expired());
     {
-        auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.get_index().is_max()); });
+        auto releaser = std::jthread([state = std::move(thread_released_state)] { EXPECT_FALSE(state.index().is_none()); });
     }
-    EXPECT_TRUE(thread_release_owner.expired());
 
     auto copy_assignment_context = ygg::ExecutionContext::create(1);
     auto copy_assignment_evaluator = axiom_evaluator->make_worker(copy_assignment_context);
     auto copy_assignment_repository = repository->make_worker();
     auto copy_assignment_worker = generator->make_worker(copy_assignment_context);
     auto copy_assigned_source = copy_assignment_worker->get_initial_node(*copy_assignment_repository, *copy_assignment_evaluator).get_state();
-    const auto copy_assignment_owner = std::weak_ptr(copy_assigned_source.get_state_repository());
-    copy_assignment_worker.reset();
-    copy_assignment_evaluator.reset();
-    copy_assignment_repository.reset();
-    EXPECT_FALSE(copy_assignment_owner.expired());
     copy_assigned_source = initial.get_state();
-    EXPECT_TRUE(copy_assignment_owner.expired());
-    EXPECT_EQ(copy_assigned_source.get_state_repository(), repository);
+    EXPECT_EQ(&copy_assigned_source.get_state_repository(), repository.get());
 
     auto move_assignment_context = ygg::ExecutionContext::create(1);
     auto move_assignment_evaluator = axiom_evaluator->make_worker(move_assignment_context);
     auto move_assignment_repository = repository->make_worker();
     auto move_assignment_worker = generator->make_worker(move_assignment_context);
     auto move_assigned_source = move_assignment_worker->get_initial_node(*move_assignment_repository, *move_assignment_evaluator).get_state();
-    const auto move_assignment_owner = std::weak_ptr(move_assigned_source.get_state_repository());
-    move_assignment_worker.reset();
-    move_assignment_evaluator.reset();
-    move_assignment_repository.reset();
-    EXPECT_FALSE(move_assignment_owner.expired());
     move_assigned_source = repository->get_registered_state(expected_source_index);
-    EXPECT_TRUE(move_assignment_owner.expired());
-    EXPECT_EQ(move_assigned_source.get_state_repository(), repository);
+    EXPECT_EQ(&move_assigned_source.get_state_repository(), repository.get());
 
-    EXPECT_EQ(dist_hash.hash(initial.get_state().get_state_builder()), dist_hash.hash(worker_initial.get_state().get_state_builder()));
-    EXPECT_EQ(dist_hash.owner(initial.get_state().get_state_builder(), 19), dist_hash.owner(worker_initial.get_state().get_state_builder(), 19));
-    EXPECT_EQ(dist_hash.owner(initial.get_state().get_state_builder(), 1), ygg::Index<tyr::planning::Worker>(0));
+    EXPECT_EQ(dist_hash.hash(initial.get_state().data()), dist_hash.hash(worker_initial.get_state().data()));
+    EXPECT_EQ(dist_hash.owner(initial.get_state().data(), 19), dist_hash.owner(worker_initial.get_state().data(), 19));
+    EXPECT_EQ(dist_hash.owner(initial.get_state().data(), 1), urd::index<tyr::planning::Worker>(0));
 
     auto derived_only_difference = repository->get_state_builder();
-    derived_only_difference->assign_unextended_part(initial.get_state().get_state_builder());
-    derived_only_difference->set(ygg::Index<tyr::formalism::planning::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
-    EXPECT_EQ(dist_hash.hash(*derived_only_difference), dist_hash.hash(initial.get_state().get_state_builder()));
+    derived_only_difference->assign_unextended_part(initial.get_state().data());
+    derived_only_difference->set(urd::index<tyr::formalism::planning::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
+    EXPECT_EQ(dist_hash.hash(*derived_only_difference), dist_hash.hash(initial.get_state().data()));
 
     auto first_numeric = repository->get_state_builder();
     auto second_numeric = repository->get_state_builder();
-    first_numeric->assign_unextended_part(initial.get_state().get_state_builder());
-    second_numeric->assign_unextended_part(initial.get_state().get_state_builder());
-    const auto numeric_index = ygg::Index<tyr::formalism::planning::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(0);
+    first_numeric->assign_unextended_part(initial.get_state().data());
+    second_numeric->assign_unextended_part(initial.get_state().data());
+    const auto numeric_index = urd::index<tyr::formalism::planning::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(0);
     const auto first_value = ygg::float_t { 1 };
     const auto second_value = first_value + ygg::FloatTolerance<ygg::float_t>::abs_epsilon * ygg::float_t { 0.25 };
     first_numeric->set(numeric_index, first_value);
@@ -157,15 +139,15 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     {
         auto canonical_facts = repository->get_state_builder();
         auto trailing_zero_facts = repository->get_state_builder();
-        const auto low_variable = ygg::Index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(0);
-        const auto high_variable = ygg::Index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(1000);
-        canonical_facts->set(ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::planning::FDRValue { 1 }));
+        const auto low_variable = urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(0);
+        const auto high_variable = urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(1000);
+        canonical_facts->set(urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::planning::FDRValue { 1 }));
         trailing_zero_facts->set(
-            ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::planning::FDRValue { 1 }));
+            urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(low_variable, tyr::formalism::planning::FDRValue { 1 }));
         trailing_zero_facts->set(
-            ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue { 1 }));
+            urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue { 1 }));
         trailing_zero_facts->set(
-            ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue::none()));
+            urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue::none()));
         EXPECT_EQ(trailing_zero_facts->get(low_variable), tyr::formalism::planning::FDRValue { 1 });
         EXPECT_EQ(dist_hash.hash(*canonical_facts), dist_hash.hash(*trailing_zero_facts));
 
@@ -173,15 +155,15 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         for (ygg::uint_t mask = 0; mask < 256; ++mask)
         {
             auto state = repository->get_state_builder();
-            state->set(ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(
-                ygg::Index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(44),
+            state->set(urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(
+                urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(44),
                 tyr::formalism::planning::FDRValue { 1 }));
             for (ygg::uint_t bit = 0; bit < 8; ++bit)
                 if (mask & (ygg::uint_t { 1 } << bit))
-                    state->set(ygg::Data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(
-                        ygg::Index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(6 + bit),
+                    state->set(urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(
+                        urd::index<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>(6 + bit),
                         tyr::formalism::planning::FDRValue { 1 }));
-            owners.insert(ygg::uint_t(dist_hash.owner(*state, 16)));
+            owners.insert(ygg::uint_t((dist_hash.owner(*state, 16)).value));
         }
         EXPECT_EQ(owners.size(), 16);
     }
@@ -215,7 +197,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);
-    EXPECT_EQ(dist_hash.hash(worker_repository->get_registered_state(owner_node.get_state().get_index()).get_state_builder()), remote_hash);
+    EXPECT_EQ(dist_hash.hash(worker_repository->get_registered_state(owner_node.get_state().index()).data()), remote_hash);
 }
 
 template<TaskKind Kind>
@@ -229,7 +211,7 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto& initial = initial_node.get_state();
 
     auto heuristic = tyr::planning::LMCutHeuristic<Kind>(task, ygg::ExecutionContext::create(1), CostMode::UNIT);
-    const auto frontier = heuristic.compute_cut_frontier_atoms(initial.get_state_builder());
+    const auto frontier = heuristic.compute_cut_frontier_atoms(initial.data());
     EXPECT_EQ(frontier.size(), 2);
     const auto find_frontier_atom = [&](std::string_view name)
     { return std::ranges::find_if(frontier, [&](const auto atom) { return atom.get_predicate().get_name().str() == name; }); };
@@ -253,18 +235,18 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     first_hash.initialize(initial);
     second_hash.initialize(initial);
     EXPECT_THROW(first_hash.initialize(initial), std::logic_error);
-    EXPECT_EQ(first_hash.hash(initial.get_state_builder()), second_hash.hash(initial.get_state_builder()));
-    EXPECT_EQ(first_hash.owner(initial.get_state_builder(), 1), ygg::Index<tyr::planning::Worker>(0));
+    EXPECT_EQ(first_hash.hash(initial.data()), second_hash.hash(initial.data()));
+    EXPECT_EQ(first_hash.owner(initial.data(), 1), urd::index<tyr::planning::Worker>(0));
 
     auto side_state = repository->get_state_builder();
-    side_state->assign_unextended_part(initial.get_state_builder());
-    side_state->set(task->get_fdr_context()->get_fact(side.value()).get_data());
-    EXPECT_EQ(first_hash.hash(*side_state), first_hash.hash(initial.get_state_builder()));
+    side_state->assign_unextended_part(initial.data());
+    side_state->set(task->get_fdr_context()->get_fact(side.value()).data());
+    EXPECT_EQ(first_hash.hash(*side_state), first_hash.hash(initial.data()));
 
     auto landmark_state = repository->get_state_builder();
-    landmark_state->assign_unextended_part(initial.get_state_builder());
-    landmark_state->set(task->get_fdr_context()->get_fact(*landmark_it).get_data());
-    EXPECT_NE(first_hash.hash(*landmark_state), first_hash.hash(initial.get_state_builder()));
+    landmark_state->assign_unextended_part(initial.data());
+    landmark_state->set(task->get_fdr_context()->get_fact(*landmark_it).data());
+    EXPECT_NE(first_hash.hash(*landmark_state), first_hash.hash(initial.data()));
 }
 
 }

@@ -32,52 +32,46 @@
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
-#include <yggdrasil/containers/optional.hpp>
-#include <yggdrasil/containers/vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
+template<::tyr::TaskKind Kind, typename V>
+struct view_mixin<::tyr::formalism::planning::Task<Kind>, V>
+{
+private:
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
-template<::tyr::TaskKind Kind, ygg::formalism::SymbolContextFor<::tyr::formalism::planning::Task<Kind>> C>
-class View<ygg::Index<::tyr::formalism::planning::Task<Kind>>, C> : public ygg::IndexViewBase<::tyr::formalism::planning::Task<Kind>, C>
-{
 public:
-    View(ygg::Index<::tyr::formalism::planning::Task<Kind>> handle, const C& context) noexcept :
-        ygg::IndexViewBase<::tyr::formalism::planning::Task<Kind>, C>(handle, context)
-    {
-    }
-
-    const auto& get_name() const noexcept { return this->get_data().name; }
-    auto get_domain() const noexcept { return ygg::make_view(this->get_data().domain, this->get_context()); }
-    auto get_derived_predicates() const noexcept { return ygg::make_view(this->get_data().derived_predicates, this->get_context()); }
-    auto get_objects() const noexcept { return ygg::make_view(this->get_data().objects, this->get_context()); }
+    const auto& get_name() const noexcept { return self().data().name; }
+    auto get_domain() const noexcept { return self().template get<&urd::record_of<V>::domain>(); }
+    auto get_derived_predicates() const noexcept { return self().template get<&urd::record_of<V>::derived_predicates>(); }
+    auto get_objects() const noexcept { return self().template get<&urd::record_of<V>::objects>(); }
     [[nodiscard]] size_t get_num_objects() const noexcept { return get_domain().get_constants().size() + get_objects().size(); }
     template<::tyr::formalism::FactKind T>
     auto get_atoms() const noexcept
-    { return ygg::make_view(this->get_data().template get_atoms<T>(), this->get_context()); }
+    { return urd::resolve(self().data().template get_atoms<T>(), self().context()); }
     template<::tyr::formalism::FactKind T>
     auto get_fterm_values() const noexcept
-    { return ygg::make_view(this->get_data().template get_fterm_values<T>(), this->get_context()); }
-    auto get_auxiliary_fterm_value() const noexcept { return ygg::make_view(this->get_data().auxiliary_fterm_value, this->get_context()); }
-    auto get_goal() const noexcept { return ygg::make_view(this->get_data().goal, this->get_context()); }
-    auto get_metric() const noexcept { return ygg::make_view(this->get_data().metric, this->get_context()); }
-    auto get_axioms() const noexcept { return ygg::make_view(this->get_data().axioms, this->get_context()); }
+    { return urd::resolve(self().data().template get_fterm_values<T>(), self().context()); }
+    auto get_auxiliary_fterm_value() const noexcept { return self().template get<&urd::record_of<V>::auxiliary_fterm_value>(); }
+    auto get_goal() const noexcept { return self().template get<&urd::record_of<V>::goal>(); }
+    auto get_metric() const noexcept { return self().template get<&urd::record_of<V>::metric>(); }
+    auto get_axioms() const noexcept { return self().template get<&urd::record_of<V>::axioms>(); }
 
     auto get_fluent_variables() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return ygg::make_view(this->get_data().fluent_variables, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::fluent_variables>(); }
     auto get_fluent_facts() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return ygg::make_view(this->get_data().fluent_facts, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::fluent_facts>(); }
     auto get_ground_actions() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return ygg::make_view(this->get_data().ground_actions, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::ground_actions>(); }
     auto get_ground_axioms() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return ygg::make_view(this->get_data().ground_axioms, this->get_context()); }
+    { return self().template get<&urd::record_of<V>::ground_axioms>(); }
 };
-
-}
+}  // namespace urd
 
 #endif

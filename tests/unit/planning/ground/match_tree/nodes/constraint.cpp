@@ -7,21 +7,20 @@
 
 template<typename Tag>
 concept NumericConstraintSelectorContract =
-    std::constructible_from<ygg::Index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>, ygg::uint_t>
-    && std::totally_ordered<ygg::Index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>>
-    && std::totally_ordered<ygg::Data<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>>
-    && std::totally_ordered<ygg::View<ygg::Index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>>
-    && requires(ygg::Data<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>& data,
-                const ygg::View<ygg::Index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>, tyr::planning::match_tree::Repository<Tag>>& view) {
+    std::constructible_from<urd::index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>, ygg::uint_t>
+    && std::totally_ordered<urd::index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>>
+    && std::totally_ordered<urd::data<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>>
+    && std::totally_ordered<urd::view<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
+    && requires(urd::data<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>& data,
+                const urd::view<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.constraint;
            data.true_child;
            data.dontcare_child;
-           data.clear();
            view.get_constraint();
            view.get_true_child();
            view.get_dontcare_child();
        };
 
-using MatchTreeTags = ygg::TypeList<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
-static_assert([]<typename... Tags>(ygg::TypeList<Tags...>) { return (NumericConstraintSelectorContract<Tags> && ...); }(MatchTreeTags {}));
+using MatchTreeTags = boost::mp11::mp_list<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
+static_assert([]<typename... Tags>(boost::mp11::mp_list<Tags...>) { return (NumericConstraintSelectorContract<Tags> && ...); }(MatchTreeTags {}));

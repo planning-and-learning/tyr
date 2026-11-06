@@ -19,6 +19,8 @@
 #define TYR_PLANNING_GROUND_STATE_STORAGE_TREE_VECTOR_ATOM_HPP_
 
 #include "tyr/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/planning/ground/state_storage.hpp"
 #include "tyr/planning/ground/state_storage/tree_vector/context.hpp"
 #include "tyr/planning/state_storage.hpp"
@@ -27,20 +29,19 @@
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/semantics/comparison.hpp>
 
 namespace tyr::planning
 {
 
 template<>
-struct AtomPackedStorage<GroundTag, TreeVector> : ygg::comparison::Mixin<AtomPackedStorage<GroundTag, TreeVector>>
+struct AtomPackedStorage<GroundTag, TreeVector> : urd::compared_by_identity<AtomPackedStorage<GroundTag, TreeVector>>
 {
     ygg::uint_t index = 0;
 
     AtomPackedStorage() = default;
     explicit AtomPackedStorage(ygg::uint_t index_) : index(index_) {}
 
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&AtomPackedStorage::index> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&AtomPackedStorage::index> {}; }
 };
 
 template<bool ThreadSafe>
@@ -61,7 +62,7 @@ private:
     ArraySetT<Context>* m_array_set;
     ygg::uint_t m_num_bits;
 
-    std::vector<ygg::uint_t> m_buffer;
+    urd::Store<urd::sequence<ygg::uint_t>> m_buffer;
 };
 
 }

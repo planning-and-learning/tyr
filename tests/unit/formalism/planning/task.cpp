@@ -9,9 +9,9 @@
 namespace lifted_tests
 {
 
-using TaskIndex = ygg::Index<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
-using TaskData = ygg::Data<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
-using TaskView = ygg::View<TaskIndex, tyr::formalism::planning::Repository>;
+using TaskIndex = urd::index<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
+using TaskData = urd::data<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
+using TaskView = urd::view<tyr::formalism::planning::Task<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<TaskIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<TaskIndex>);
@@ -19,7 +19,7 @@ static_assert(std::totally_ordered<TaskData>);
 static_assert(std::totally_ordered<TaskView>);
 static_assert(std::same_as<TaskView, tyr::formalism::planning::TaskView<::tyr::LiftedTag>>);
 static_assert(std::same_as<tyr::formalism::planning::TaskListView<::tyr::LiftedTag>,
-                           ygg::View<ygg::IndexList<tyr::formalism::planning::Task<::tyr::LiftedTag>>, tyr::formalism::planning::Repository>>);
+                           urd::resolved_range<urd::flat_vector<urd::index<tyr::formalism::planning::Task<::tyr::LiftedTag>>>, tyr::formalism::planning::Repository>>);
 static_assert(requires(TaskData& data) {
     data.index;
     data.name;
@@ -34,11 +34,10 @@ static_assert(requires(TaskData& data) {
     data.goal;
     data.metric;
     data.axioms;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const TaskView& view) {
-    view.get_index();
+    view.index();
     view.get_name();
     view.get_domain();
     view.get_derived_predicates();
@@ -61,9 +60,9 @@ static_assert(requires(const TaskView& view) {
 namespace ground_tests
 {
 
-using TaskIndex = ygg::Index<tyr::formalism::planning::Task<::tyr::GroundTag>>;
-using TaskData = ygg::Data<tyr::formalism::planning::Task<::tyr::GroundTag>>;
-using TaskView = ygg::View<TaskIndex, tyr::formalism::planning::Repository>;
+using TaskIndex = urd::index<tyr::formalism::planning::Task<::tyr::GroundTag>>;
+using TaskData = urd::data<tyr::formalism::planning::Task<::tyr::GroundTag>>;
+using TaskView = urd::view<tyr::formalism::planning::Task<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<TaskIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<TaskIndex>);
@@ -71,7 +70,7 @@ static_assert(std::totally_ordered<TaskData>);
 static_assert(std::totally_ordered<TaskView>);
 static_assert(std::same_as<TaskView, tyr::formalism::planning::TaskView<::tyr::GroundTag>>);
 static_assert(std::same_as<tyr::formalism::planning::TaskListView<::tyr::GroundTag>,
-                           ygg::View<ygg::IndexList<tyr::formalism::planning::Task<::tyr::GroundTag>>, tyr::formalism::planning::Repository>>);
+                           urd::resolved_range<urd::flat_vector<urd::index<tyr::formalism::planning::Task<::tyr::GroundTag>>>, tyr::formalism::planning::Repository>>);
 static_assert(requires(TaskData& data) {
     data.index;
     data.name;
@@ -91,11 +90,10 @@ static_assert(requires(TaskData& data) {
     data.goal;
     data.ground_actions;
     data.ground_axioms;
-    data.clear();
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const TaskView& view) {
-    view.get_index();
+    view.index();
     view.get_name();
     view.get_domain();
     view.get_derived_predicates();

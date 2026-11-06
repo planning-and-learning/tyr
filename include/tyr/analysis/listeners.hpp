@@ -23,23 +23,28 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/std_set.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
-#include <yggdrasil/containers/associative_containers.hpp>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/semantics/equal_to.hpp>
-#include <yggdrasil/semantics/hash.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace tyr::analysis
 {
 
 template<formalism::RelationKind R>
-using RuleIndexSet = ygg::UnorderedSet<ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>;
+using RuleIndexSet = urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>>;
 
 template<formalism::RelationKind R>
 struct TypedListenerStratum
 {
-    ygg::UnorderedMap<ygg::Index<formalism::Predicate<formalism::FluentTag>>, RuleIndexSet<R>> predicates;
-    ygg::UnorderedMap<ygg::Index<formalism::Function<formalism::FluentTag>>, RuleIndexSet<R>> functions;
+    urd::Store<urd::map<urd::index<formalism::Predicate<formalism::FluentTag>>, RuleIndexSet<R>>> predicates;
+    urd::Store<urd::map<urd::index<formalism::Function<formalism::FluentTag>>, RuleIndexSet<R>>> functions;
 };
 
 struct ListenerStratum
@@ -63,7 +68,7 @@ struct ListenerStratum
 
 struct ListenerStrata
 {
-    std::vector<ListenerStratum> data;
+    urd::Store<urd::sequence<ListenerStratum>> data;
 };
 
 ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::datalog::Repository& context);

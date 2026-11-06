@@ -19,56 +19,38 @@
 #define TYR_FORMALISM_DATALOG_NUMERIC_EFFECT_DATA_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/function_expression_data.hpp"
 
 #include <tuple>
 #include <utility>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-struct Data<::tyr::formalism::datalog::NumericEffect<T, F>>
+struct data<::tyr::formalism::datalog::NumericEffect<T, F>>
 {
     static_assert(std::same_as<F, ::tyr::formalism::FluentTag>, "Datalog numeric effects are currently only supported for fluent functions.");
 
-    ygg::Index<::tyr::formalism::datalog::NumericEffect<T, F>> index;
+    urd::index<::tyr::formalism::datalog::NumericEffect<T, F>> index;
     ::tyr::formalism::NumericEffectOperatorKind operator_kind = ::tyr::formalism::NumericEffectOperatorKind::Assign;
-    ygg::Index<::tyr::formalism::datalog::FunctionTerm<T, F>> fterm;
-    ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>> fexpr;
+    urd::index<::tyr::formalism::datalog::FunctionTerm<T, F>> fterm;
+    ::tyr::formalism::datalog::FunctionExpression<T> fexpr;
 
-    Data() = default;
-    Data(::tyr::formalism::NumericEffectOperatorKind operator_kind_,
-         ygg::Index<::tyr::formalism::datalog::FunctionTerm<T, F>> fterm_,
-         ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>> fexpr_) :
+    data() = default;
+    data(::tyr::formalism::NumericEffectOperatorKind operator_kind_,
+         urd::index<::tyr::formalism::datalog::FunctionTerm<T, F>> fterm_,
+         ::tyr::formalism::datalog::FunctionExpression<T> fexpr_) :
         index(),
         operator_kind(operator_kind_),
         fterm(fterm_),
         fexpr(fexpr_)
     {
     }
-    template<typename C>
-    Data(::tyr::formalism::NumericEffectOperatorKind operator_kind_,
-         ::ygg::View<ygg::Index<::tyr::formalism::datalog::FunctionTerm<T, F>>, C> fterm_,
-         ::ygg::View<ygg::Data<::tyr::formalism::datalog::FunctionExpression<T>>, C> fexpr_) :
-        index(),
-        operator_kind(operator_kind_),
-        fterm(),
-        fexpr()
-    {
-        set(fterm_, fterm);
-        set(fexpr_, fexpr);
-    }
 
-    static constexpr auto cista_members() noexcept { return ygg::Members<&Data::index, &Data::operator_kind, &Data::fterm, &Data::fexpr> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::operator_kind, &Data::fterm, &Data::fexpr> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::fterm, &data::fexpr> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::fterm, &data::fexpr> {}; }
 };
-
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>);
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::datalog::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>);
 
 }
 

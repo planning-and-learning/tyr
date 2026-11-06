@@ -43,7 +43,7 @@
 #include <tyr/planning/lifted/successor_generator.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/lifted/task_grounder_decl.hpp>
-#include <yggdrasil/core/config.hpp>
+#include <urd/config.hpp>
 #include <yggdrasil/core/memory.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
@@ -203,7 +203,7 @@ int run(int argc, char** argv)
                     std::cerr << "Error opening file!" << '\n';
                     return 1;
                 }
-                YGG_ASSUME(result.plan.has_value());
+                URD_ASSUME(result.plan.has_value());
                 fmt::print(plan_file, "{}", *result.plan);
                 plan_file.close();
             }
@@ -281,7 +281,7 @@ int run(int argc, char** argv)
                         std::cerr << "Error opening file!" << '\n';
                         return 1;
                     }
-                    YGG_ASSUME(result.plan.has_value());
+                    URD_ASSUME(result.plan.has_value());
                     fmt::print(plan_file, "{}", *result.plan);
                     plan_file.close();
                 }

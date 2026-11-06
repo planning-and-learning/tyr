@@ -21,8 +21,14 @@
 #include <map>
 #include <set>
 #include <type_traits>
-#include <yggdrasil/containers/associative_containers.hpp>
+#include <urd/repr/maps/std_map.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/partitions/disjoint_sets.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <urd/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -31,45 +37,11 @@ namespace
 
 bool is_object_term(const ConstraintTerm& term) { return std::holds_alternative<ObjectTerm>(term); }
 
-struct DisjointSet
-{
-    std::vector<size_t> parent;
-    std::vector<size_t> rank;
-
-    explicit DisjointSet(size_t n) : parent(n), rank(n, 0)
-    {
-        for (size_t i = 0; i < n; ++i)
-            parent[i] = i;
-    }
-
-    size_t find(size_t x)
-    {
-        if (parent[x] != x)
-            parent[x] = find(parent[x]);
-        return parent[x];
-    }
-
-    void unite(size_t a, size_t b)
-    {
-        a = find(a);
-        b = find(b);
-        if (a == b)
-            return;
-
-        if (rank[a] < rank[b])
-            std::swap(a, b);
-
-        parent[b] = a;
-        if (rank[a] == rank[b])
-            ++rank[a];
-    }
-};
-
 }  // namespace
 
-InequalityDisjunction::InequalityDisjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts_) : parts(std::move(parts_)) {}
+InequalityDisjunction::InequalityDisjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts_) : parts(std::move(parts_)) {}
 
-EqualityConjunction::EqualityConjunction(std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities_) : m_equalities(std::move(equalities_)) {}
+EqualityConjunction::EqualityConjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> equalities_) : m_equalities(std::move(equalities_)) {}
 
 void EqualityConjunction::compute() const
 {
@@ -77,8 +49,8 @@ void EqualityConjunction::compute() const
         return;
     m_computed = true;
 
-    ygg::Map<ConstraintTerm, size_t> ids;
-    std::vector<ConstraintTerm> terms;
+    urd::Store<urd::map<ConstraintTerm, size_t>, urd::sorted> ids;
+    urd::Store<urd::sequence<ConstraintTerm>> terms;
 
     auto get_id = [&](const ConstraintTerm& t) -> size_t
     {
@@ -98,12 +70,14 @@ void EqualityConjunction::compute() const
         get_id(b);
     }
 
-    DisjointSet dsu(terms.size());
+    auto dsu = urd::Store<urd::partition<size_t>>();
+    if (!terms.empty())
+        dsu.insert(terms.size() - 1);  // the terms' ids, 0 to the last, each a class of its own
 
     for (const auto& [a, b] : m_equalities)
-        dsu.unite(ids.at(a), ids.at(b));
+        dsu.merge(ids.at(a), ids.at(b));
 
-    ygg::Map<size_t, std::vector<ConstraintTerm>> classes;
+    urd::Store<urd::map<size_t, urd::Store<urd::sequence<ConstraintTerm>>>, urd::sorted> classes;
     for (size_t i = 0; i < terms.size(); ++i)
         classes[dsu.find(i)].push_back(terms[i]);
 
@@ -136,7 +110,7 @@ void EqualityConjunction::compute() const
 
         // A class without object terms has a non-object term, so one of the two is set.
         const auto& representative = object_rep.has_value() ? object_rep : fallback_rep;
-        YGG_ASSUME(representative.has_value());
+        URD_ASSUME(representative.has_value());
         for (const auto& term : eq_class)
             m_representative.emplace(term, *representative);
     }
@@ -148,7 +122,7 @@ bool EqualityConjunction::is_consistent() const
     return m_consistent;
 }
 
-const ygg::Map<ConstraintTerm, ConstraintTerm>& EqualityConjunction::get_representative() const
+const urd::Store<urd::map<ConstraintTerm, ConstraintTerm>, urd::sorted>& EqualityConjunction::get_representative() const
 {
     compute();
     return m_representative;
@@ -156,7 +130,7 @@ const ygg::Map<ConstraintTerm, ConstraintTerm>& EqualityConjunction::get_represe
 
 void ConstraintSystem::add_equality_conjunction(const EqualityConjunction& eq) { add_equality_DNF({ eq }); }
 
-void ConstraintSystem::add_equality_DNF(std::vector<EqualityConjunction> dnf) { equality_DNFs.push_back(std::move(dnf)); }
+void ConstraintSystem::add_equality_DNF(urd::Store<urd::sequence<EqualityConjunction>> dnf) { equality_DNFs.push_back(std::move(dnf)); }
 
 void ConstraintSystem::add_inequality_disjunction(const InequalityDisjunction& disj) { inequality_disjunctions.push_back(disj); }
 
@@ -169,13 +143,13 @@ void ConstraintSystem::extend(const ConstraintSystem& other)
     not_constant.insert(not_constant.end(), other.not_constant.begin(), other.not_constant.end());
 }
 
-EqualityConjunction ConstraintSystem::combine_equality_conjunctions(const std::vector<EqualityConjunction>& conjunctions)
+EqualityConjunction ConstraintSystem::combine_equality_conjunctions(const urd::Store<urd::sequence<EqualityConjunction>>& conjunctions)
 {
     size_t total = 0;
     for (const auto& c : conjunctions)
         total += c.get_equalities().size();
 
-    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> all_equalities;
+    urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> all_equalities;
     all_equalities.reserve(total);
 
     for (const auto& c : conjunctions)
@@ -185,7 +159,7 @@ EqualityConjunction ConstraintSystem::combine_equality_conjunctions(const std::v
 
 bool ConstraintSystem::is_solvable() const
 {
-    auto inequality_disjunction_ok = [](const InequalityDisjunction& disj, const ygg::Map<ConstraintTerm, ConstraintTerm>& rep) -> bool
+    auto inequality_disjunction_ok = [](const InequalityDisjunction& disj, const urd::Store<urd::map<ConstraintTerm, ConstraintTerm>, urd::sorted>& rep) -> bool
     {
         for (const auto& [a, b] : disj.parts)
         {
@@ -218,11 +192,11 @@ bool ConstraintSystem::is_solvable() const
         return true;
     }
 
-    std::vector<size_t> indices(equality_DNFs.size(), 0);
+    urd::Store<urd::sequence<size_t>> indices(equality_DNFs.size(), 0);
 
     while (true)
     {
-        std::vector<EqualityConjunction> chosen;
+        urd::Store<urd::sequence<EqualityConjunction>> chosen;
         chosen.reserve(equality_DNFs.size());
 
         for (size_t i = 0; i < equality_DNFs.size(); ++i)
@@ -281,21 +255,21 @@ bool ConstraintSystem::is_solvable() const
 
 ConstraintTerm make_constraint_term(ParameterIndex parameter) { return VariableTerm { parameter }; }
 
-ConstraintTerm make_constraint_term(ygg::Index<Object> object) { return ObjectTerm { object }; }
+ConstraintTerm make_constraint_term(urd::index<Object> object) { return ObjectTerm { object }; }
 
-ConstraintTerm make_constraint_term(const ygg::Data<Term>& term)
+ConstraintTerm make_constraint_term(const Term& term)
 {
     return std::visit(
         []<typename T>(const T& arg) -> ConstraintTerm
         {
             if constexpr (std::is_same_v<T, ParameterIndex>)
                 return VariableTerm { arg };
-            else if constexpr (std::is_same_v<T, ygg::Index<Object>>)
+            else if constexpr (std::is_same_v<T, urd::index<Object>>)
                 return ObjectTerm { arg };
             else
-                static_assert(ygg::dependent_false<T>::value, "Missing case");
+                static_assert(urd::repr::dependent_false<T>::value, "Missing case");
         },
-        term.variant);
+        term);
 }
 
 ConstraintTerm make_invariant_parameter_term(size_t index) { return InvariantParameter { index }; }
@@ -305,7 +279,7 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
     assert(pattern.predicate == atom.predicate);
     assert(pattern.terms.size() == atom.terms.size());
 
-    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities;
+    urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> equalities;
     equalities.reserve(pattern.terms.size());
 
     for (size_t pos = 0; pos < pattern.terms.size(); ++pos)
@@ -315,13 +289,13 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
             {
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
-                    if (ygg::uint_t(x) < inv.num_rigid_variables)
+                    if (x.value < inv.num_rigid_variables)
                     {
-                        equalities.emplace_back(make_invariant_parameter_term(ygg::uint_t(x)), make_constraint_term(atom.terms[pos]));
+                        equalities.emplace_back(make_invariant_parameter_term(x.value), make_constraint_term(atom.terms[pos]));
                     }
                 }
             },
-            pattern.terms[pos].variant);
+            pattern.terms[pos]);
     }
 
     return EqualityConjunction(std::move(equalities));
@@ -335,7 +309,7 @@ void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& l
     if (lhs.predicate != rhs.predicate || lhs.terms.empty())
         return;
 
-    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
+    urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts;
     parts.reserve(lhs.terms.size());
 
     for (size_t i = 0; i < lhs.terms.size(); ++i)
@@ -349,8 +323,8 @@ namespace
 template<FactKind T>
 void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& literals)
 {
-    ygg::UnorderedMap<PredicateView<T>, std::vector<const MutableLiteral<T>*>> pos;
-    ygg::UnorderedMap<PredicateView<T>, std::vector<const MutableLiteral<T>*>> neg;
+    urd::Store<urd::map<PredicateView<T>, urd::Store<urd::sequence<const MutableLiteral<T>*>>>> pos;
+    urd::Store<urd::map<PredicateView<T>, urd::Store<urd::sequence<const MutableLiteral<T>*>>>> neg;
 
     for (const auto& literal : literals)
     {
@@ -358,7 +332,7 @@ void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& 
         {
             if (literal.atom.predicate.get_name().view() == "=")
             {
-                std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
+                urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts;
                 if (literal.atom.terms.size() == 2)
                     parts.emplace_back(make_constraint_term(literal.atom.terms[0]), make_constraint_term(literal.atom.terms[1]));
 
@@ -384,7 +358,7 @@ void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& 
         {
             for (const auto* negative : neg_it->second)
             {
-                std::vector<std::pair<ConstraintTerm, ConstraintTerm>> parts;
+                urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts;
                 parts.reserve(positive->atom.terms.size());
 
                 for (size_t i = 0; i < positive->atom.terms.size(); ++i)

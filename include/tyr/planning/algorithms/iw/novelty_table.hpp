@@ -32,13 +32,15 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
-#include <yggdrasil/containers/segmented_bit_vector.hpp>
-#include <yggdrasil/core/types.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::iw
 {
 
-using AtomIndexList = std::vector<ygg::uint_t>;
+using AtomIndexList = urd::Store<urd::sequence<ygg::uint_t>>;
 using TupleIndex = uint64_t;
 
 namespace detail
@@ -50,7 +52,7 @@ struct NoveltyTableStorage
     // Justification: protects all novelty bits while one state is tested and inserted, so concurrent workers cannot both report the same tuple as novel.
     // A lock is required across every arity lane to preserve exact state-level novelty; shard only if profiling justifies a different algorithm.
     mutable std::mutex mutex;
-    std::array<ygg::SegmentedBitVector<>, Arity + 1> seen_by_arity;
+    std::array<urd::Store<urd::set<TupleIndex>, urd::dense>, Arity + 1> seen_by_arity;  ///< the ranks seen, per tuple size
 };
 
 }
@@ -248,13 +250,6 @@ public:
 
     ygg::uint_t get_arity() const noexcept { return Arity; }
 
-    size_t get_num_bits(ygg::uint_t arity) const
-    {
-        assert(arity <= Arity);
-        const auto lock = lock_if_shared();
-        return m_storage->seen_by_arity[arity].size();
-    }
-
     void clear()
     {
         const auto lock = lock_if_shared();
@@ -376,21 +371,12 @@ private:
 
     bool test_unlocked(std::span<const ygg::uint_t> tuple) const
     {
-        const auto rank = rank_tuple<Arity>(tuple);
-        const auto& seen = m_storage->seen_by_arity[tuple.size()];
-        return rank < seen.size() && seen[rank];
+        return m_storage->seen_by_arity[tuple.size()].contains(rank_tuple<Arity>(tuple));
     }
 
     bool insert_unlocked(std::span<const ygg::uint_t> tuple)
     {
-        const auto rank = rank_tuple<Arity>(tuple);
-        auto& seen = m_storage->seen_by_arity[tuple.size()];
-        if (rank >= seen.size())
-            seen.resize(rank + 1, false);
-
-        const auto novel = !seen[rank];
-        seen[rank] = true;
-        return novel;
+        return m_storage->seen_by_arity[tuple.size()].insert(rank_tuple<Arity>(tuple)).second;
     }
 
     template<TaskKind Kind>
@@ -400,7 +386,7 @@ private:
         for (const auto fact : state.get_fluent_facts_view())
         {
             if (const auto atom = fact.get_atom())
-                out.push_back(ygg::uint_t(atom->get_index()));
+                out.push_back(ygg::uint_t(atom->index().value));
         }
 
         std::ranges::sort(out);

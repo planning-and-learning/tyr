@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include "binding_utils.hpp"
+#include <yggdrasil/python/type_casters.hpp>
 #include "bindings.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
@@ -29,34 +30,34 @@ namespace
 void bind_invariant_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
-    using V = ygg::Data<Invariant>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<ygg::uint_t, ygg::uint_t, const AtomViewList<LiftedTag, FluentTag>>(),
+    using V = urd::data<Invariant>;
+    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<ygg::uint_t, ygg::uint_t, const AtomViewList<LiftedTag, FluentTag>>(),
                                           "num_rigid_variables"_a,
                                           "num_counted_variables"_a,
                                           "atoms"_a);
-    cls.def(nb::init<ygg::uint_t, ygg::uint_t, ygg::IndexList<Atom<LiftedTag, FluentTag>>>(), "num_rigid_variables"_a, "num_counted_variables"_a, "atoms"_a);
+    cls.def(nb::init<ygg::uint_t, ygg::uint_t, urd::flat_vector<urd::index<Atom<LiftedTag, FluentTag>>>>(), "num_rigid_variables"_a, "num_counted_variables"_a, "atoms"_a);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 
 void bind_invariant_view(nb::module_& m, const char* name)
 {
     using V = InvariantView;
     auto cls = nb::class_<V>(m, name)
-                   .def("get_index", &V::get_index)
+                   .def("get_index", &V::index)
                    .def("get_num_rigid_variables", &V::get_num_rigid_variables)
                    .def("get_num_counted_variables", &V::get_num_counted_variables)
                    .def("get_atoms", &V::get_atoms);
     ygg::add_print(cls);
-    ygg::add_comparison(cls);
-    ygg::add_hash(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
 }
 }  // namespace
 
 void bind_invariant(nb::module_& m, RepositoryBinding& repository)
 {
-    ygg::bind_index<ygg::Index<Invariant>>(m, "InvariantIndex");
+    urd::python::bind_index<urd::index<Invariant>>(m, "InvariantIndex");
 
     bind_invariant_data(m, "InvariantData");
 

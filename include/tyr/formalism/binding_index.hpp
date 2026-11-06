@@ -24,11 +24,13 @@
 
 namespace tyr::formalism
 {
-template<typename Tag, typename BindingRange>
-using RelationBindingsForwardRange = ::ygg::formalism::RelationBindingsForwardRange<Tag, ObjectTag, BindingRange>;
+/// The bindings of one relation (Tag), stored as Rows, read through the context C (yggdrasil's bindings_view).
+template<typename Tag, typename Rows, typename C>
+using RelationBindingsView = ::ygg::formalism::RelationBindingsView<Tag, ObjectTag, Rows, C>;
 
-template<typename Tag, typename BindingRange>
-using RelationBindingsRandomAccessRange = ::ygg::formalism::RelationBindingsRandomAccessRange<Tag, ObjectTag, BindingRange>;
+template<typename Tag, typename Rows, typename C>
+RelationBindingsView<Tag, Rows, C> bindings_view(urd::index<Tag> relation, const Rows& rows, const C& context)
+{ return ::ygg::formalism::bindings_view<ObjectTag>(relation, rows, context); }
 }
 
 #endif

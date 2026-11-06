@@ -43,7 +43,7 @@ void EffectAtomIndex::clear() noexcept
 
 std::optional<std::span<const EffectAtomIndex::AtomIndex>> EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
                                                                                       formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                                                                      std::span<const ygg::Index<formalism::Object>> binding)
+                                                                                      std::span<const urd::index<formalism::Object>> binding)
 {
     const auto effect_predicate = m_effect_to_predicate->find(std::pair(action, effect));
     if (effect_predicate == m_effect_to_predicate->end())
@@ -55,9 +55,9 @@ std::optional<std::span<const EffectAtomIndex::AtomIndex>> EffectAtomIndex::get_
         rebuild(groups, effect_predicate->second, applicability_predicate, action.get_arity());
 
     const auto row = find_row(applicability_predicate, binding);
-    if (!row || *row + 1 >= groups.offsets.size())
+    if (!row)
         return std::span<const AtomIndex> {};
-    return std::span(groups.atoms).subspan(groups.offsets[*row], groups.offsets[*row + 1] - groups.offsets[*row]);
+    return groups.atoms.values(*row);
 }
 
 void EffectAtomIndex::rebuild(Groups& groups,
@@ -65,52 +65,35 @@ void EffectAtomIndex::rebuild(Groups& groups,
                               formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
                               size_t action_arity)
 {
-    const auto atoms = m_facts->get_sets()[static_cast<ygg::uint_t>(effect_predicate.get_index())].get_bindings();
+    const auto atoms = m_facts->get_sets()[static_cast<ygg::uint_t>(effect_predicate.index().value)].get_bindings();
 
     // The applicability row of each atom's action binding, which holds since the effect rule's body contains the precondition.
-    groups.atom_rows.clear();
+    groups.rows.clear();
     for (const auto atom : atoms)
     {
         const auto objects = atom.get_objects();
         m_prefix.clear();
         for (size_t i = 0; i < action_arity; ++i)
-            m_prefix.push_back(objects[i].get_index());
-        const auto row = find_row(applicability_predicate, std::span<const ygg::Index<formalism::Object>>(m_prefix.data(), m_prefix.size()));
+            m_prefix.push_back(objects[i].index());
+        const auto row = find_row(applicability_predicate, std::span<const urd::index<formalism::Object>>(m_prefix.data(), m_prefix.size()));
         assert(row && "An effect atom's action binding is applicable.");
-        groups.atom_rows.push_back(*row);
+        groups.rows.emplace_back(*row, atom.index());
     }
-
-    // Counting sort by row: offsets[r + 1] counts the atoms of row r, then holds where they end.
-    const auto num_rows = groups.atom_rows.empty() ? static_cast<ygg::uint_t>(0) : *std::ranges::max_element(groups.atom_rows) + 1;
-    groups.offsets.assign(num_rows + 1, 0);
-    for (const auto row : groups.atom_rows)
-        ++groups.offsets[row + 1];
-    for (size_t row = 0; row < num_rows; ++row)
-        groups.offsets[row + 1] += groups.offsets[row];
-
-    groups.atoms.resize(groups.atom_rows.size());
-    auto i = static_cast<size_t>(0);
-    for (const auto atom : atoms)
-        groups.atoms[groups.offsets[groups.atom_rows[i++]]++] = atom.get_index();
-    // Filling advanced each start to the next row's start; shift them back.
-    for (auto row = num_rows; row > 0; --row)
-        groups.offsets[row] = groups.offsets[row - 1];
-    if (num_rows > 0)
-        groups.offsets[0] = 0;
+    groups.atoms.assign(groups.rows.begin(), groups.rows.end());
 
     groups.current = true;
 }
 
 std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
-                                                     std::span<const ygg::Index<formalism::Object>> binding)
+                                                     std::span<const urd::index<formalism::Object>> binding)
 {
     m_lookup.objects.clear();
     m_lookup.objects.insert(m_lookup.objects.end(), binding.begin(), binding.end());
-    m_lookup.relation = applicability_predicate.get_index();
+    m_lookup.relation = applicability_predicate.index();
     const auto atom = m_repository->find(m_lookup);
     if (!atom)
         return std::nullopt;
-    return static_cast<ygg::uint_t>(atom->get_index().row);
+    return static_cast<ygg::uint_t>(atom->index().row.value);
 }
 
 }

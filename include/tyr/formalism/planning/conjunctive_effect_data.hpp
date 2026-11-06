@@ -19,32 +19,34 @@
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/planning/numeric_effect_operator_data.hpp"
+#include "tyr/formalism/planning/numeric_effect_data.hpp"
 
 #include <optional>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <yggdrasil/core/types.hpp>
-#include <yggdrasil/core/types_utils.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/core/dependent_false.hpp>
 
-namespace ygg
+namespace urd
 {
 
 template<>
-struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
+struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
 {
-    ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
-    ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> literals;
-    ygg::DataList<::tyr::formalism::planning::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> numeric_effects;
-    ::cista::optional<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
+    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects;
+    ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
         auxiliary_numeric_effect;  // :action-cost
 
-    Data() = default;
-    Data(ygg::IndexList<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> literals_,
-         ygg::DataList<::tyr::formalism::planning::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>> numeric_effects_,
-         ::cista::optional<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
+    data() = default;
+    data(urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
+         ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
              auxiliary_numeric_effect_) :
         index(),
         literals(std::move(literals_)),
@@ -52,51 +54,31 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
         auxiliary_numeric_effect(std::move(auxiliary_numeric_effect_))
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>& literals_,
-         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>, C>>&
-             numeric_effects_,
-         const std::optional<::ygg::View<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>, C>>&
-             auxiliary_numeric_effect_) :
-        index(),
-        literals(),
-        numeric_effects(),
-        auxiliary_numeric_effect()
-    {
-        set(literals_, literals);
-        set(numeric_effects_, numeric_effects);
-        set(auxiliary_numeric_effect_, auxiliary_numeric_effect);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
     static constexpr auto cista_members() noexcept
-    { return ygg::Members<&Data::index, &Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
-    static constexpr auto identifying_members() noexcept { return ygg::Members<&Data::literals, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    { return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>);
-
 template<>
-struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
+struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
 {
-    ygg::Index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> index;
-    ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> add_facts;
-    ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> del_facts;
-    ygg::DataList<::tyr::formalism::planning::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::FluentTag>> numeric_effects;
-    ::cista::optional<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
+    urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> index;
+    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts;
+    urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts;
+    urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects;
+    ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
         auxiliary_numeric_effect;  // :action-cost
 
-    Data() = default;
-    Data(ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> add_facts_,
-         ygg::DataList<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> del_facts_,
-         ygg::DataList<::tyr::formalism::planning::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::FluentTag>> numeric_effects_,
-         ::cista::optional<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
+    data() = default;
+    data(urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts_,
+         urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts_,
+         urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
+         ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
              auxiliary_numeric_effect_) :
         index(),
         add_facts(std::move(add_facts_)),
@@ -105,30 +87,10 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
         auxiliary_numeric_effect(std::move(auxiliary_numeric_effect_))
     {
     }
-    // Python constructor
-    template<typename C>
-    Data(const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C>>& add_facts_,
-         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>, C>>& del_facts_,
-         const std::vector<::ygg::View<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::FluentTag>>, C>>&
-             numeric_effects_,
-         const std::optional<::ygg::View<ygg::Data<::tyr::formalism::planning::NumericEffectOperator<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>, C>>&
-             auxiliary_numeric_effect_) :
-        index(),
-        add_facts(),
-        del_facts(),
-        numeric_effects(),
-        auxiliary_numeric_effect()
-    {
-        set(add_facts_, add_facts);
-        set(del_facts_, del_facts);
-        set(numeric_effects_, numeric_effects);
-        set(auxiliary_numeric_effect_, auxiliary_numeric_effect);
-    }
-    Data(const Data& other) = delete;
-    Data& operator=(const Data& other) = delete;
-    Data(Data&& other) = default;
-    Data& operator=(Data&& other) = default;
-    ~Data() = default;
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
 
     template<::tyr::formalism::PolarityKind T>
     [[nodiscard]] const auto& get_facts() const
@@ -138,17 +100,15 @@ struct Data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
         else if constexpr (std::same_as<T, ::tyr::formalism::NegativeTag>)
             return del_facts;
         else
-            static_assert(ygg::dependent_false<T>::value, "Missing case");
+            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
     }
 
     static constexpr auto cista_members() noexcept
-    { return ygg::Members<&Data::index, &Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
+    { return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
     static constexpr auto identifying_members() noexcept
-    { return ygg::Members<&Data::add_facts, &Data::del_facts, &Data::numeric_effects, &Data::auxiliary_numeric_effect> {}; }
-    void clear() noexcept { ygg::clear_members(*this); }
+    { return urd::Members<&data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
 };
 
-static_assert(!ygg::uses_trivial_storage_v<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>);
 }
 
 #endif
