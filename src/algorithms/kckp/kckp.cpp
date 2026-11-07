@@ -25,7 +25,7 @@ bool KCKP::seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace
 {
     const auto& layout = m_graph->get_layout();
     workspace.prepare(layout);
-    workspace.partition_bits.reset();
+    workspace.partition_bits.clear();
     workspace.partial_solution_size = static_cast<ygg::uint_t>(prefix.size());
 
     for (ygg::uint_t partition = 0; partition < prefix.size(); ++partition)
@@ -35,7 +35,7 @@ bool KCKP::seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace
             return false;
 
         workspace.partial_solution[partition] = vertex;
-        workspace.partition_bits.set(partition);
+        workspace.partition_bits.insert(partition);
         for (ygg::uint_t previous = 0; previous < partition; ++previous)
         {
             const auto previous_vertex = workspace.partial_solution[previous];
@@ -69,7 +69,7 @@ ygg::uint_t KCKP::choose_next_partition(ygg::uint_t first_partition, const Works
 {
     const auto& layout = m_graph->get_layout();
     for (ygg::uint_t partition = first_partition; partition < layout.num_partitions; ++partition)
-        if (!workspace.partition_bits.test(partition))
+        if (!workspace.partition_bits.contains(partition))
             return partition;
     return std::numeric_limits<ygg::uint_t>::max();
 }
@@ -81,7 +81,7 @@ bool KCKP::update_candidates(ygg::uint_t first_partition, Vertex source, size_t 
     auto next_row = workspace.compatible_vertices(depth + 1);
     for (ygg::uint_t partition = first_partition; partition < layout.num_partitions; ++partition)
     {
-        if (workspace.partition_bits.test(partition))
+        if (workspace.partition_bits.contains(partition))
             continue;
 
         const auto& info = layout.info.infos[partition];

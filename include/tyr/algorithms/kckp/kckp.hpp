@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
@@ -170,7 +171,7 @@ struct Workspace
     urd::Store<urd::sequence<uint64_t>> compatible_vertices_data;
     urd::Store<urd::sequence<uint64_t>> anchor_source_data;  ///< The rows of the prepared anchor source, see DeltaKCKP::prepare_anchor_source.
     size_t compatible_row_blocks { 0 };
-    boost::dynamic_bitset<> partition_bits;
+    urd::Store<urd::set<ygg::uint_t>, urd::dense> partition_bits;
     urd::Store<urd::sequence<Vertex>> partial_solution;
     ygg::uint_t partial_solution_size { 0 };
     ygg::uint_t anchor_pi { std::numeric_limits<ygg::uint_t>::max() };
@@ -181,14 +182,13 @@ struct Workspace
 
     void prepare(const GraphLayout& layout)
     {
-        if (compatible_row_blocks == layout.info.num_blocks && partition_bits.size() == layout.num_partitions
-            && partial_solution.size() == layout.num_partitions)
+        if (compatible_row_blocks == layout.info.num_blocks && partial_solution.size() == layout.num_partitions)
             return;
 
         compatible_row_blocks = layout.info.num_blocks;
         compatible_vertices_data.resize(layout.num_partitions * compatible_row_blocks);
         anchor_source_data.resize(compatible_row_blocks);
-        partition_bits.resize(layout.num_partitions);
+        partition_bits.reserve(layout.num_partitions);
         partial_solution.resize(layout.num_partitions);
     }
 
@@ -224,10 +224,10 @@ void complete_clique(const GraphLayout& layout,
             callback(workspace.partial_solution);
         else
         {
-            workspace.partition_bits.set(partition);
+            workspace.partition_bits.insert(partition);
             if (update_candidates(vertex, depth, workspace))
                 complete_clique(layout, depth + 1, workspace, select_partition, update_candidates, callback);
-            workspace.partition_bits.reset(partition);
+            workspace.partition_bits.erase(partition);
         }
 
         --workspace.partial_solution_size;

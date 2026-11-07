@@ -25,6 +25,7 @@
 #include <cista/containers/vector.h>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
+#include <urd/tags.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 #include <yggdrasil/core/config.hpp>
@@ -44,10 +45,6 @@ class RelationRepository;
 
 template<typename ObjectTag, typename... Ts>
 class ConcurrentRelationRepository;
-
-struct RowPoolStorage;
-
-struct BitRowPoolStorage;
 
 template<typename ObjectTag>
 struct RelationRepositoryTraits;
@@ -210,9 +207,9 @@ template<>
 struct RelationRepositoryTraits<::tyr::formalism::ObjectTag>
 {
 #if defined(TYR_RELATION_STORAGE_WORD)
-    using storage_type = RowPoolStorage;
+    using width = urd::word;
 #else
-    using storage_type = BitRowPoolStorage;
+    using width = urd::bit;
 #endif
 };
 

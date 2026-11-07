@@ -35,8 +35,7 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <boost/dynamic_bitset.hpp>
-#include "tyr/containers.hpp"
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -91,8 +90,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 
     ygg::float_t compute_result(const urd::data<State<Kind>>&)
     {
-        for (auto& bits : m_predicate_markings)
-            bits.reset();
+        for (auto& markings : m_predicate_markings)
+            markings.clear();
 
         if (const auto& goal = this->workspace().tp.get_goal())
         {
@@ -114,7 +113,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 private:
     void extract_relaxed_plan(PredicateHead head)
     {
-        if (mark(m_predicate_markings, head.index().relation, head.index().row))
+        assert(static_cast<ygg::uint_t>(head.index().relation.value) < m_predicate_markings.size());
+        if (!m_predicate_markings[static_cast<ygg::uint_t>(head.index().relation.value)].insert(head.index().row).second)
             return;
 
         const auto* annotation = this->workspace().annotations.find(head.index());
@@ -160,19 +160,7 @@ private:
             extract_relaxed_plan(support.get_key(), support.get_interval());
     }
 
-    template<typename Relation, typename Row>
-    static bool mark(urd::Store<urd::sequence<boost::dynamic_bitset<>>>& markings, Relation relation, Row row)
-    {
-        const auto relation_index = static_cast<ygg::uint_t>(relation.value);
-        const auto row_index = static_cast<ygg::uint_t>(row.value);
-        assert(relation_index < markings.size());
-        if (tyr::test(row_index, markings[relation_index]))
-            return true;
-        tyr::set(row_index, true, markings[relation_index]);
-        return false;
-    }
-
-    urd::Store<urd::sequence<boost::dynamic_bitset<>>> m_predicate_markings;
+    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<formalism::Row>>, urd::dense, urd::proportional_clear>>> m_predicate_markings;
     urd::Store<urd::set<NumericCertificate>> m_numeric_markings;
     NumericSupportWorkspace m_numeric_support_workspace;
     urd::Store<urd::set<formalism::planning::ActionBindingView>> m_relaxed_plan;

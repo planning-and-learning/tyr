@@ -35,10 +35,7 @@ static void insert_literal_dependencies(const urd::Store<urd::sequence<Parameter
     auto& binary_dep = details::select_literal_dependency<F, P>(binary);
 
     for (const auto parameter : parameters)
-    {
-        const auto pi = parameter.value;
-        unary_dep.set(pi);
-    }
+        unary_dep.insert(parameter);
 
     for (ygg::uint_t i = 0; i < parameters.size(); ++i)
     {
@@ -77,10 +74,7 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
     auto& binary_dep = details::select_numeric_dependency(binary);
 
     for (const auto parameter : parameters)
-    {
-        const auto pi = parameter.value;
-        unary_dep.set(pi);
-    }
+        unary_dep.insert(parameter);
 
     for (ygg::uint_t i = 0; i < parameters.size(); ++i)
     {

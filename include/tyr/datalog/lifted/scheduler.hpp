@@ -27,7 +27,6 @@
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
-#include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cassert>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
@@ -37,7 +36,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
-#include <boost/dynamic_bitset.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
@@ -81,8 +80,8 @@ private:
     const analysis::TypedListenerStratum<R>* m_listeners;
     const formalism::datalog::Repository* m_context;
 
-    boost::dynamic_bitset<> m_active_predicates;
-    boost::dynamic_bitset<> m_active_functions;
+    urd::Store<urd::set<urd::index<formalism::Predicate<formalism::FluentTag>>>, urd::dense> m_active_predicates;
+    urd::Store<urd::set<urd::index<formalism::Function<formalism::FluentTag>>>, urd::dense> m_active_functions;
     urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>> m_active_rules;
     urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>> m_full_enumeration_rules;
     urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>> m_sorted_active_rules;

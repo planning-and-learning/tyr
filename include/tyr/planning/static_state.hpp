@@ -25,10 +25,12 @@
 #include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/planning/state_storage/iterators.hpp"
 
-#include <boost/dynamic_bitset.hpp>
+#include <functional>
 #include <limits>
+#include <ranges>
+#include <urd/repr/maps/index_map.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <vector>
-#include "tyr/containers.hpp"
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -45,20 +47,24 @@ public:
     explicit StaticState(formalism::planning::TaskView<Kind> task);
 
     [[nodiscard]] bool test(urd::index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
-    { return tyr::test(static_cast<ygg::uint_t>(index.value), m_atoms); }
+    { return m_atoms.contains(index); }
     [[nodiscard]] ygg::float_t get(urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
-    { return tyr::get(static_cast<ygg::uint_t>(index.value), m_numeric_variables, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    { return m_numeric_variables.read(index, std::identity {}, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
     [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.index()); }
     [[nodiscard]] ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept
     { return get(fterm.index()); }
 
-    [[nodiscard]] auto get_atoms() const noexcept { return AtomRange<formalism::StaticTag>(m_atoms); }
-    [[nodiscard]] auto get_fterm_values() const noexcept { return FunctionTermValueRange<formalism::StaticTag>(m_numeric_variables); }
+    /// In ascending order.
+    [[nodiscard]] auto get_atoms() const noexcept { return std::views::all(m_atoms); }
+    [[nodiscard]] auto get_fterm_values() const noexcept
+    {
+        return m_numeric_variables | std::views::transform([](const auto& entry) { return std::pair(entry.first, entry.second); });
+    }
 
 private:
-    boost::dynamic_bitset<> m_atoms;
-    urd::Store<urd::sequence<ygg::float_t>> m_numeric_variables;
+    urd::Store<urd::set<urd::index<formalism::planning::Atom<GroundTag, formalism::StaticTag>>>, urd::dense, urd::sorted> m_atoms;
+    urd::Store<urd::map<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>>, ygg::float_t>, urd::dense> m_numeric_variables;
 };
 
 }

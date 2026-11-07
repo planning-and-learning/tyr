@@ -103,7 +103,7 @@ void DeltaKCKP::seed_without_anchor(Workspace& workspace) const
 {
     workspace.prepare(*m_layout);
     workspace.partial_solution_size = 0;
-    workspace.partition_bits.reset();
+    workspace.partition_bits.clear();
     workspace.anchor_pi = std::numeric_limits<ygg::uint_t>::max();
     workspace.anchor_pj = std::numeric_limits<ygg::uint_t>::max();
 
@@ -151,9 +151,9 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
     workspace.partial_solution_size = 2;
     workspace.anchor_pi = source_partition;
     workspace.anchor_pj = target_partition;
-    workspace.partition_bits.reset();
-    workspace.partition_bits.set(source_partition);
-    workspace.partition_bits.set(target_partition);
+    workspace.partition_bits.clear();
+    workspace.partition_bits.insert(source_partition);
+    workspace.partition_bits.insert(target_partition);
 
     auto compatible_row = workspace.compatible_vertices(0);
     for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
@@ -180,7 +180,7 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
     assert(!vertices.empty());
     workspace.prepare(*m_layout);
     workspace.partial_solution_size = 0;
-    workspace.partition_bits.reset();
+    workspace.partition_bits.clear();
     workspace.anchor_pi = std::numeric_limits<ygg::uint_t>::max();
     workspace.anchor_pj = std::numeric_limits<ygg::uint_t>::max();
 
@@ -190,7 +190,7 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
         const auto partition = m_layout->vertex_to_partition[vertex];
         const auto& info = m_layout->info.infos[partition];
         const auto bit = m_layout->vertex_to_bit[vertex];
-        assert(!workspace.partition_bits.test(partition));
+        assert(!workspace.partition_bits.contains(partition));
 
         if (!m_full_graph.affected_partitions.get_bitset(info).test(bit) || m_delta_graph.delta_partitions.get_bitset(info).test(bit))
             return false;
@@ -202,14 +202,14 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
         }
 
         workspace.partial_solution[partition] = vertices[i];
-        workspace.partition_bits.set(partition);
+        workspace.partition_bits.insert(partition);
         ++workspace.partial_solution_size;
     }
 
     auto compatible_row = workspace.compatible_vertices(0);
     for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
-        if (workspace.partition_bits.test(partition))
+        if (workspace.partition_bits.contains(partition))
             continue;
 
         const auto& info = m_layout->info.infos[partition];
@@ -233,7 +233,7 @@ ygg::uint_t DeltaKCKP::choose_best_partition(size_t depth, const Workspace& work
 
     for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
     {
-        if (workspace.partition_bits.test(partition))
+        if (workspace.partition_bits.contains(partition))
             continue;
 
         const auto& info = m_layout->info.infos[partition];

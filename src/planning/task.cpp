@@ -22,7 +22,6 @@
 #include "tyr/planning/lifted/task_grounder.hpp"
 
 #include <utility>
-#include "tyr/containers.hpp"
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -31,13 +30,10 @@ StaticState::StaticState(formalism::planning::AtomListView<GroundTag, formalism:
                          formalism::planning::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values)
 {
     for (const auto atom : atoms)
-        tyr::set(static_cast<ygg::uint_t>(atom.index().value), true, m_atoms);
+        m_atoms.insert(atom.index());
 
     for (const auto fterm_value : fterm_values)
-        tyr::set(static_cast<ygg::uint_t>(fterm_value.get_fterm().index().value),
-                 fterm_value.get_value(),
-                 m_numeric_variables,
-                 std::numeric_limits<ygg::float_t>::quiet_NaN());
+        m_numeric_variables.insert_or_assign(fterm_value.get_fterm().index(), fterm_value.get_value());
 }
 
 template<TaskKind Kind>

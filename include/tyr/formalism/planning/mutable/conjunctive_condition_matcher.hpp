@@ -23,7 +23,6 @@
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
-#include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/elements/less.hpp>
@@ -43,9 +42,6 @@ struct TaggedMutableAtomMatchData
     struct PredicateData
     {
         urd::Store<urd::sequence<MutableAtom<T>>> atoms;
-
-        // postings[pos][obj] = bitset of atom indices with obj at argument position pos
-        urd::Store<urd::sequence<urd::Store<urd::map<urd::index<Object>, boost::dynamic_bitset<>>>>> postings;
     };
 
     urd::Store<urd::map<urd::index<Predicate<T>>, PredicateData>> data;

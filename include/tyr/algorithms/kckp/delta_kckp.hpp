@@ -490,7 +490,7 @@ private:
         auto next_row = workspace.compatible_vertices(depth + 1);
         for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
         {
-            if (workspace.partition_bits.test(partition))
+            if (workspace.partition_bits.contains(partition))
                 continue;
 
             const auto& info = m_layout->info.infos[partition];

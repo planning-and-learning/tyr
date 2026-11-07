@@ -21,6 +21,8 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <cstddef>
 #include <yggdrasil/core/config.hpp>
 
@@ -60,15 +62,7 @@ decltype(auto) select_numeric_dependency(Dep&& dep) noexcept
 
 struct UnaryDependencies
 {
-    explicit UnaryDependencies(ygg::uint_t k_) :
-        k(k_),
-        static_positive_literal(k_),
-        static_negative_literal(k_),
-        fluent_positive_literal(k_),
-        fluent_negative_literal(k_),
-        numeric_constraint(k_)
-    {
-    }
+    explicit UnaryDependencies(ygg::uint_t k_) : k(k_) {}
 
     /**
      * get_
@@ -88,13 +82,13 @@ struct UnaryDependencies
     [[nodiscard]] bool has_literal_dependency(ygg::uint_t p) const noexcept
     {
         assert(p < k);
-        return get_literal_dependency<F, P>().test(p);
+        return get_literal_dependency<F, P>().contains(ParameterIndex { p });
     }
 
     [[nodiscard]] bool has_numeric_dependency(ygg::uint_t p) const noexcept
     {
         assert(p < k);
-        return numeric_constraint.test(p);
+        return numeric_constraint.contains(ParameterIndex { p });
     }
 
     [[nodiscard]] bool has_dependency(ygg::uint_t p) const noexcept
@@ -105,11 +99,11 @@ struct UnaryDependencies
 
     ygg::uint_t k;
 
-    boost::dynamic_bitset<> static_positive_literal;
-    boost::dynamic_bitset<> static_negative_literal;
-    boost::dynamic_bitset<> fluent_positive_literal;
-    boost::dynamic_bitset<> fluent_negative_literal;
-    boost::dynamic_bitset<> numeric_constraint;
+    urd::Store<urd::set<ParameterIndex>, urd::dense> static_positive_literal;
+    urd::Store<urd::set<ParameterIndex>, urd::dense> static_negative_literal;
+    urd::Store<urd::set<ParameterIndex>, urd::dense> fluent_positive_literal;
+    urd::Store<urd::set<ParameterIndex>, urd::dense> fluent_negative_literal;
+    urd::Store<urd::set<ParameterIndex>, urd::dense> numeric_constraint;
 };
 
 struct BinaryDependencies

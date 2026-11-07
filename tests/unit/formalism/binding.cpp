@@ -92,10 +92,9 @@ using Binding = tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::f
 static_assert(std::same_as<Binding, ygg::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::StaticTag>, tyr::formalism::ObjectTag>>);
 
 #if defined(TYR_RELATION_STORAGE_WORD)
-static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::storage_type, ygg::formalism::RowPoolStorage>);
+static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::width, urd::word>);
 #else
-static_assert(
-    std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::storage_type, ygg::formalism::BitRowPoolStorage>);
+static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::width, urd::bit>);
 #endif
 
 namespace

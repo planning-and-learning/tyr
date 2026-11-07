@@ -21,15 +21,20 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <functional>
 #include <limits>
 #include <stdexcept>
 #include <utility>
-#include "tyr/containers.hpp"
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
+namespace
+{
+/// No position in m_remap.
+constexpr auto none = std::numeric_limits<ygg::uint_t>::max();
+}
 
 /**
  * PredicateFactSet
@@ -92,7 +97,7 @@ bool PredicateFactSet<T>::contains(formalism::datalog::PredicateBindingIndex<T> 
 template<formalism::FactKind T>
 PredicateBindingViewRange<T> PredicateFactSet<T>::get_bindings() const noexcept
 {
-    auto rows = detail::PredicateFactRowRange { detail::PredicateFactRowIterator { m_rows, true }, detail::PredicateFactRowIterator { m_rows, false } };
+    const auto rows = m_rows | std::views::transform(detail::RowOfFact {});
     return formalism::bindings_view(m_predicate_index, rows, *m_repository);
 }
 
@@ -190,22 +195,15 @@ bool FunctionFactSet<T>::insert(const FunctionFactSet& other)
 template<formalism::FactKind T>
 bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingIndex<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
-    const auto i = static_cast<ygg::uint_t>(binding.row.value);
-
-    if (i < m_remap.size())
+    if (const auto pos = m_remap.read(binding.row, std::identity {}, none); pos != none)
     {
-        const auto pos = m_remap[i];
-        if (pos != std::numeric_limits<ygg::uint_t>::max())
-        {
-            const auto old_interval = m_values[pos];
-            const auto new_interval = hull(old_interval, interval);
-            m_values[pos] = new_interval;
-            return old_interval != new_interval;
-        }
+        const auto old_interval = m_values[pos];
+        const auto new_interval = hull(old_interval, interval);
+        m_values[pos] = new_interval;
+        return old_interval != new_interval;
     }
 
-    const auto pos = static_cast<ygg::uint_t>(m_bindings.size());
-    tyr::set(i, pos, m_remap, std::numeric_limits<ygg::uint_t>::max());
+    m_remap.insert_or_assign(binding.row, static_cast<ygg::uint_t>(m_bindings.size()));
 
     m_bindings.push_back(binding.row);
     m_values.push_back(interval);
@@ -286,13 +284,8 @@ bool FunctionFactSet<T>::insert(formalism::datalog::FunctionTermValueListView<Gr
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionFactSet<T>::operator[](formalism::datalog::FunctionBindingIndex<T> binding) const noexcept
 {
-    const auto row = binding.row;
-    const auto i = static_cast<ygg::uint_t>(row.value);
-
-    if (i >= m_remap.size())
-        return {};
-
-    return tyr::get(m_remap[i], m_values, ygg::ClosedInterval<ygg::float_t>());
+    const auto pos = m_remap.read(binding.row, std::identity {}, none);
+    return pos == none ? ygg::ClosedInterval<ygg::float_t>() : m_values[pos];
 }
 
 template<formalism::FactKind T>

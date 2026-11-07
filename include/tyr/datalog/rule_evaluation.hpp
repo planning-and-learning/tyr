@@ -29,7 +29,7 @@
 #include "tyr/formalism/numeric_expression_utils.hpp"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <cassert>
 #include <cstdint>
 #include <limits>
@@ -45,7 +45,6 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include "tyr/containers.hpp"
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
@@ -115,7 +114,7 @@ private:
     using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
-    urd::Store<urd::sequence<boost::dynamic_bitset<>>> m_seen_rows;
+    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<formalism::Row>>, urd::dense, urd::proportional_clear>>> m_seen_rows;
     urd::Store<urd::sequence<Binding>> m_bindings;
     urd::Store<urd::sequence<PredicateAchiever>> m_achievers;
 
@@ -127,7 +126,7 @@ public:
     void clear() noexcept
     {
         for (const auto binding : m_bindings)
-            m_seen_rows[static_cast<ygg::uint_t>(binding.relation.value)].reset(static_cast<ygg::uint_t>(binding.row.value));
+            m_seen_rows[static_cast<ygg::uint_t>(binding.relation.value)].clear();
         m_bindings.clear();
         m_achievers.clear();
     }
@@ -135,14 +134,10 @@ public:
     void insert(Binding binding)
     {
         const auto relation = static_cast<size_t>(static_cast<ygg::uint_t>(binding.relation.value));
-        const auto row = static_cast<size_t>(static_cast<ygg::uint_t>(binding.row.value));
         if (relation >= m_seen_rows.size())
             m_seen_rows.resize(relation + 1);
-        auto& seen = m_seen_rows[relation];
-        if (tyr::test(row, seen))
-            return;
-        tyr::set(row, true, seen);
-        m_bindings.push_back(binding);
+        if (m_seen_rows[relation].insert(binding.row).second)
+            m_bindings.push_back(binding);
     }
 
     void insert_achiever(Binding head, Witness witness) { m_achievers.push_back(PredicateAchiever { head, std::move(witness) }); }

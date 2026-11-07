@@ -33,20 +33,13 @@ namespace tyr::datalog
 {
 namespace
 {
-template<typename Relation>
-void activate_relation(boost::dynamic_bitset<>& bitset, urd::index<Relation> relation)
-{
-    assert(ygg::uint_t(relation.value) < bitset.size());
-    bitset.set(ygg::uint_t(relation.value));
-}
-
 template<typename Relation, formalism::RelationKind R>
-void collect_active_rules(const boost::dynamic_bitset<>& bitset,
+void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::dense>& relations,
                           const urd::Store<urd::map<urd::index<Relation>, analysis::RuleIndexSet<R>>>& listeners,
                           urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>>& active_rules)
 {
-    for (auto i = bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = bitset.find_next(i))
-        if (const auto it = listeners.find(urd::index<Relation>(i)); it != listeners.end())
+    for (const auto relation : relations)
+        if (const auto it = listeners.find(relation); it != listeners.end())
             active_rules.insert(it->second.begin(), it->second.end());
 }
 }
@@ -60,11 +53,11 @@ TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRul
     m_rules(&rules),
     m_listeners(&listeners),
     m_context(&context),
-    m_active_predicates(num_fluent_predicates),
-    m_active_functions(num_fluent_functions),
     m_active_rules(),
     m_full_enumeration_rules()
 {
+    m_active_predicates.reserve(num_fluent_predicates);
+    m_active_functions.reserve(num_fluent_functions);
 }
 
 template<formalism::RelationKind R>
@@ -87,17 +80,17 @@ void TypedRuleSchedulerStratum<R>::rebuild_sorted_active_rules()
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_start_iteration() noexcept
 {
-    m_active_predicates.reset();
-    m_active_functions.reset();
+    m_active_predicates.clear();
+    m_active_functions.clear();
 }
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_generate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate)
-{ activate_relation(m_active_predicates, predicate); }
+{ m_active_predicates.insert(predicate); }
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_generate(urd::index<formalism::Function<formalism::FluentTag>> function)
-{ activate_relation(m_active_functions, function); }
+{ m_active_functions.insert(function); }
 
 template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::on_finish_iteration()

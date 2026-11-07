@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -41,40 +42,13 @@ namespace detail
 /// The rows of a predicate's facts: a bitset over row indices that clears only the words it set.
 using PredicateFactRows = urd::Store<urd::set<ygg::uint_t>, urd::dense, urd::proportional_clear>;
 
-class PredicateFactRowIterator
+/// A fact's row from its bit.
+struct RowOfFact
 {
-public:
-    using value_type = urd::index<formalism::Row>;
-    using reference = value_type;
-    using difference_type = std::ptrdiff_t;
-    using iterator_category = std::forward_iterator_tag;
-    using iterator_concept = std::forward_iterator_tag;
-
-    PredicateFactRowIterator() noexcept = default;
-    PredicateFactRowIterator(const PredicateFactRows& rows, bool begin) noexcept : m_row(begin ? rows.begin() : rows.end()) {}
-
-    value_type operator*() const noexcept { return value_type { *m_row }; }
-
-    PredicateFactRowIterator& operator++() noexcept
-    {
-        ++m_row;
-        return *this;
-    }
-
-    PredicateFactRowIterator operator++(int) noexcept
-    {
-        auto copy = *this;
-        ++(*this);
-        return copy;
-    }
-
-    friend bool operator==(const PredicateFactRowIterator& lhs, const PredicateFactRowIterator& rhs) noexcept { return lhs.m_row == rhs.m_row; }
-
-private:
-    PredicateFactRows::const_iterator m_row {};
+    urd::index<formalism::Row> operator()(ygg::uint_t row) const noexcept { return urd::index<formalism::Row> { row }; }
 };
 
-using PredicateFactRowRange = std::ranges::subrange<PredicateFactRowIterator>;
+using PredicateFactRowRange = std::ranges::transform_view<std::ranges::ref_view<const PredicateFactRows>, RowOfFact>;
 
 template<formalism::FactKind T>
 using PredicateBindingRangeView = formalism::RelationBindingsView<formalism::Predicate<T>, PredicateFactRowRange, formalism::datalog::Repository>;
@@ -146,7 +120,7 @@ private:
     const formalism::datalog::Repository* m_repository;
 
     urd::index<formalism::Function<T>> m_function_index;
-    urd::Store<urd::sequence<ygg::uint_t>> m_remap;
+    urd::Store<urd::map<urd::index<formalism::Row>, ygg::uint_t>, urd::dense, urd::constant_clear> m_remap;
     urd::Store<urd::sequence<urd::index<formalism::Row>>> m_bindings;
     urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>> m_values;
 
