@@ -40,13 +40,13 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals;
     urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects;
-    ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
+    urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
         auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
     data(urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
-         ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
+         urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
              auxiliary_numeric_effect_) :
         index(),
         literals(std::move(literals_)),
@@ -71,14 +71,14 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
     urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts;
     urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts;
     urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects;
-    ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
+    urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
         auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
     data(urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts_,
          urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
-         ::cista::optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
+         urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
              auxiliary_numeric_effect_) :
         index(),
         add_facts(std::move(add_facts_)),
@@ -94,14 +94,7 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
 
     template<::tyr::formalism::PolarityKind T>
     [[nodiscard]] const auto& get_facts() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::PositiveTag>)
-            return add_facts;
-        else if constexpr (std::same_as<T, ::tyr::formalism::NegativeTag>)
-            return del_facts;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::PositiveNegativeTags, T, &data::add_facts, &data::del_facts>(*this); }
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }

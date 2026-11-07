@@ -21,7 +21,13 @@
 
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -70,8 +76,8 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
     auto parameters = urd::Store<urd::sequence<ParameterIndex>>(parameters_set.begin(), parameters_set.end());
     std::sort(parameters.begin(), parameters.end());
 
-    auto& unary_dep = details::select_numeric_dependency(unary);
-    auto& binary_dep = details::select_numeric_dependency(binary);
+    auto& unary_dep = unary.numeric_constraint;
+    auto& binary_dep = binary.numeric_constraint;
 
     for (const auto parameter : parameters)
         unary_dep.insert(parameter);

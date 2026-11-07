@@ -2,7 +2,11 @@
 #ifndef TYR_SERIALIZATION_FORMALISM_PLANNING_PLANNING_HPP_
 #define TYR_SERIALIZATION_FORMALISM_PLANNING_PLANNING_HPP_
 
-#include "tyr/formalism/binding_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
@@ -25,17 +29,49 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
-#include "tyr/serialization/formalism/function_view.hpp"
-#include "tyr/serialization/formalism/object_view.hpp"
-#include "tyr/serialization/formalism/parameter_index.hpp"
-#include "tyr/serialization/formalism/predicate_view.hpp"
-#include "tyr/serialization/formalism/term_view.hpp"
-#include "tyr/serialization/formalism/variable_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
 namespace ygg::serialization
 {
+
+inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::ParameterIndex& value, Dictionaries*)
+{ result = value.value; }
+
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ObjectView>)
+{
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+}
+
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::VariableView>)
+{
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+}
+
+template<class Archive, ::tyr::formalism::FactKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PredicateView<T>>)
+{
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+    ar.field("arity", [](const auto& value) -> decltype(auto) { return (value.get_arity()); });
+}
+
+template<class Archive, ::tyr::formalism::FactKind T>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionView<T>>)
+{
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+    ar.field("arity", [](const auto& value) -> decltype(auto) { return (value.get_arity()); });
+}
+
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::TermView>)
+{
+    // A term is the variant: an object or a parameter, written as the alternative it holds.
+    ar.variant([](const auto& value) -> decltype(auto) { return (value); });
+}
 
 template<class Archive, typename T>
 void describe_fields(Archive& ar, std::type_identity<::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<T, ::tyr::formalism::ObjectTag>, ::tyr::formalism::planning::Repository>>)
@@ -44,72 +80,51 @@ void describe_fields(Archive& ar, std::type_identity<::ygg::formalism::RelationB
     ar.field("objects", [](const auto& value) -> decltype(auto) { return (value.get_objects()); });
 }
 
-}
-
-namespace ygg::serialization
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ActionView<::tyr::LiftedTag>>)
 {
-
-template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ActionView<T>>)
-{
-    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-    {
-        ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
-        ar.field("original_name", [](const auto& value) -> decltype(auto) { return (value.get_original_name()); });
-        ar.field("original_arity", [](const auto& value) -> decltype(auto) { return (value.get_original_arity()); });
-        ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
-    }
-    else
-    {
-        ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
-    }
+    ar.field("name", [](const auto& value) -> decltype(auto) { return (value.get_name()); });
+    ar.field("original_name", [](const auto& value) -> decltype(auto) { return (value.get_original_name()); });
+    ar.field("original_arity", [](const auto& value) -> decltype(auto) { return (value.get_original_arity()); });
+    ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
     ar.field("condition", [](const auto& value) -> decltype(auto) { return (value.get_condition()); });
     ar.field("effects", [](const auto& value) -> decltype(auto) { return (value.get_effects()); });
 }
 
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ActionView<::tyr::GroundTag>>)
+{
+    ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+    ar.field("condition", [](const auto& value) -> decltype(auto) { return (value.get_condition()); });
+    ar.field("effects", [](const auto& value) -> decltype(auto) { return (value.get_effects()); });
 }
 
-namespace ygg::serialization
+template<class Archive, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<::tyr::LiftedTag, F>>)
 {
-
-template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<T, F>>)
-{
-    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-    {
-        ar.field("predicate", [](const auto& value) -> decltype(auto) { return (value.get_predicate()); });
-        ar.field("terms", [](const auto& value) -> decltype(auto) { return (value.get_terms()); });
-    }
-    else
-    {
-        ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
-    }
+    ar.field("predicate", [](const auto& value) -> decltype(auto) { return (value.get_predicate()); });
+    ar.field("terms", [](const auto& value) -> decltype(auto) { return (value.get_terms()); });
 }
 
-}
+template<class Archive, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<::tyr::GroundTag, F>>)
+{ ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
 
-namespace ygg::serialization
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<::tyr::LiftedTag>>)
 {
-
-template<class Archive, ::tyr::TaskKind T>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<T>>)
-{
-    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-    {
-        ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
-    }
-    else
-    {
-        ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
-    }
+    ar.field("variables", [](const auto& value) -> decltype(auto) { return (value.get_variables()); });
     ar.field("body", [](const auto& value) -> decltype(auto) { return (value.get_body()); });
     ar.field("head", [](const auto& value) -> decltype(auto) { return (value.get_head()); });
 }
 
-}
-
-namespace ygg::serialization
+template<class Archive>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<::tyr::GroundTag>>)
 {
+    ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+    ar.field("body", [](const auto& value) -> decltype(auto) { return (value.get_body()); });
+    ar.field("head", [](const auto& value) -> decltype(auto) { return (value.get_head()); });
+}
 
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::BinaryOperatorView<T, O>>)
@@ -118,11 +133,6 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("lhs", [](const auto& value) -> decltype(auto) { return (value.get_lhs()); });
     ar.field("rhs", [](const auto& value) -> decltype(auto) { return (value.get_rhs()); });
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConditionalEffectView<T>>)
@@ -134,11 +144,6 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("condition", [](const auto& value) -> decltype(auto) { return (value.get_condition()); });
     ar.field("effect", [](const auto& value) -> decltype(auto) { return (value.get_effect()); });
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConjunctiveConditionView<T>>)
@@ -163,11 +168,6 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("numeric_constraints", [](const auto& value) -> decltype(auto) { return (value.get_numeric_constraints()); });
 }
 
-}
-
-namespace ygg::serialization
-{
-
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ConjunctiveEffectView<T>>)
 {
@@ -184,11 +184,6 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("auxiliary_numeric_effect", [](const auto& value) -> decltype(auto) { return (value.get_auxiliary_numeric_effect()); });
 }
 
-}
-
-namespace ygg::serialization
-{
-
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::DomainView>)
 {
@@ -204,11 +199,6 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("axioms", [](const auto& value) -> decltype(auto) { return (value.get_axioms()); });
 }
 
-}
-
-namespace ygg::serialization
-{
-
 template<class Archive, ::tyr::formalism::FactKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FDRFactView<T>>)
 {
@@ -216,21 +206,11 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("value", [](const auto& value) -> decltype(auto) { return value.get_value().value; });
 }
 
-}
-
-namespace ygg::serialization
-{
-
 template<class Archive, ::tyr::formalism::FactKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FDRVariableView<T>>)
 {
     ar.field("atoms", [](const auto& value) -> decltype(auto) { return (value.get_atoms()); });
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, F>>)
@@ -239,29 +219,16 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("value", [](const auto& value) -> decltype(auto) { return (value.get_value()); });
 }
 
+template<class Archive, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermView<::tyr::LiftedTag, F>>)
+{
+    ar.field("function", [](const auto& value) -> decltype(auto) { return (value.get_function()); });
+    ar.field("terms", [](const auto& value) -> decltype(auto) { return (value.get_terms()); });
 }
 
-namespace ygg::serialization
-{
-
-template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
-void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermView<T, F>>)
-{
-    if constexpr (std::same_as<T, ::tyr::LiftedTag>)
-    {
-        ar.field("function", [](const auto& value) -> decltype(auto) { return (value.get_function()); });
-        ar.field("terms", [](const auto& value) -> decltype(auto) { return (value.get_terms()); });
-    }
-    else
-    {
-        ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
-    }
-}
-
-}
-
-namespace ygg::serialization
-{
+template<class Archive, ::tyr::formalism::FactKind F>
+void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, F>>)
+{ ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::InvariantView>)
@@ -271,22 +238,12 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("atoms", [](const auto& value) -> decltype(auto) { return (value.get_atoms()); });
 }
 
-}
-
-namespace ygg::serialization
-{
-
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::LiteralView<T, F>>)
 {
     ar.field("atom", [](const auto& value) -> decltype(auto) { return (value.get_atom()); });
     ar.field("polarity", [](const auto& value) -> decltype(auto) { return (value.get_polarity()); });
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MetricView>)
@@ -295,22 +252,12 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("function_expression", [](const auto& value) -> decltype(auto) { return (value.get_fexpr()); });
 }
 
-}
-
-namespace ygg::serialization
-{
-
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)
 {
     ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
     ar.field("args", [](const auto& value) -> decltype(auto) { return (value.get_args()); });
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::NumericEffectView<T, F>>)
@@ -320,22 +267,12 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("function_expression", [](const auto& value) -> decltype(auto) { return (value.get_fexpr()); });
 }
 
-}
-
-namespace ygg::serialization
-{
-
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningDomain>)
 {
     ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
     ar.field("path", [](const auto& value) -> decltype(auto) { return (value.get_path()); });
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::PlanningTask<T>>)
@@ -344,11 +281,6 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
     ar.field("domain", [](const auto& value) -> decltype(auto) { return (value.get_domain()); });
     ar.field("path", [](const auto& value) -> decltype(auto) { return (value.get_path()); });
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::TaskView<T>>)
@@ -377,11 +309,6 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
         ar.field("ground_axioms", [](const auto& value) -> decltype(auto) { return (value.get_ground_axioms()); });
     }
 }
-
-}
-
-namespace ygg::serialization
-{
 
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)

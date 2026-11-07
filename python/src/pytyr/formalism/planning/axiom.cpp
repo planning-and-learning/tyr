@@ -67,18 +67,18 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
         }
         else
         {
-            cls.def("get_axiom", &V::get_axiom, nb::keep_alive<0, 1>());
-            cls.def("get_row", &V::get_row, nb::keep_alive<0, 1>());
+            cls.def("get_axiom", &V::get_axiom);
+            cls.def("get_row", &V::get_row);
             cls.def("get_objects", &V::get_objects);
         }
-        cls.def("get_body", &V::get_body, nb::keep_alive<0, 1>());
-        cls.def("get_head", &V::get_head, nb::keep_alive<0, 1>());
+        cls.def("get_body", &V::get_body);
+        cls.def("get_head", &V::get_head);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

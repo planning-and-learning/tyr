@@ -34,7 +34,7 @@ void bind_predicate_data(nb::module_& m, const char* name)
     using namespace nb::literals;
     using V = urd::data<Predicate<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
-    cls.def(nb::init<::cista::offset::string, ygg::uint_t>(), "name"_a, "arity"_a);
+    cls.def(nb::init<urd::flat_string, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

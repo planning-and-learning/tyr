@@ -23,7 +23,6 @@
 
 #include <functional>
 #include <limits>
-#include <stdexcept>
 #include <utility>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -74,15 +73,6 @@ bool PredicateFactSet<T>::insert(formalism::datalog::PredicateBindingIndex<T> bi
 
 template<formalism::FactKind T>
 bool PredicateFactSet<T>::insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings)
-{
-    auto changed = false;
-    for (const auto binding : bindings)
-        changed |= insert(binding);
-    return changed;
-}
-
-template<formalism::FactKind T>
-bool PredicateFactSet<T>::insert(const urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<T>>>& bindings)
 {
     auto changed = false;
     for (const auto binding : bindings)
@@ -230,40 +220,6 @@ bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingRandomAccessR
     auto changed = false;
     for (ygg::uint_t i = 0; i < bindings.size(); ++i)
         changed |= insert(bindings[i], intervals[i]);
-    return changed;
-}
-
-template<formalism::FactKind T>
-bool FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingRandomAccessRangeView<T> bindings, const urd::Store<urd::sequence<ygg::float_t>>& values)
-{
-    assert(bindings.size() == values.size());
-
-    auto changed = false;
-    for (ygg::uint_t i = 0; i < bindings.size(); ++i)
-        changed |= insert(bindings[i], values[i]);
-    return changed;
-}
-
-template<formalism::FactKind T>
-bool FunctionFactSet<T>::insert(const urd::Store<urd::sequence<formalism::datalog::FunctionBindingView<T>>>& bindings,
-                                const urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>>& intervals)
-{
-    assert(bindings.size() == intervals.size());
-
-    auto changed = false;
-    for (ygg::uint_t i = 0; i < bindings.size(); ++i)
-        changed |= insert(bindings[i], intervals[i]);
-    return changed;
-}
-
-template<formalism::FactKind T>
-bool FunctionFactSet<T>::insert(const urd::Store<urd::sequence<formalism::datalog::FunctionBindingView<T>>>& bindings, const urd::Store<urd::sequence<ygg::float_t>>& values)
-{
-    assert(bindings.size() == values.size());
-
-    auto changed = false;
-    for (ygg::uint_t i = 0; i < bindings.size(); ++i)
-        changed |= insert(bindings[i], values[i]);
     return changed;
 }
 
@@ -448,19 +404,4 @@ FactSets::FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, cons
 {
 }
 
-template<formalism::FactKind T>
-const TaggedFactSets<T>& FactSets::get() const
-{
-    if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return *m_static_sets;
-    else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-        return *m_fluent_sets;
-    else
-        throw std::logic_error("FactSets stores only static and fluent fact sets.");
-}
-
-template const TaggedFactSets<formalism::StaticTag>& FactSets::get<formalism::StaticTag>() const;
-template const TaggedFactSets<formalism::FluentTag>& FactSets::get<formalism::FluentTag>() const;
-template const TaggedFactSets<formalism::DerivedTag>& FactSets::get<formalism::DerivedTag>() const;
-template const TaggedFactSets<formalism::AuxiliaryTag>& FactSets::get<formalism::AuxiliaryTag>() const;
 }

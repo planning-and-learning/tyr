@@ -38,8 +38,6 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
 
 TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<LiftedTag> task);
 
-ProgramVariableDomainsView compute_variable_domain_views(const ProgramVariableDomains& domains, const formalism::datalog::Repository& repository);
-
 TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::planning::Repository& repository);
 }
 

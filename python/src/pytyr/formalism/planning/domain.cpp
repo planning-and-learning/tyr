@@ -51,13 +51,13 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
                             "constants"_a,
                             "actions"_a,
                             "axioms"_a);
-        cls.def(nb::init<::cista::offset::string,
+        cls.def(nb::init<urd::flat_string,
                          urd::flat_vector<urd::index<Predicate<StaticTag>>>,
                          urd::flat_vector<urd::index<Predicate<FluentTag>>>,
                          urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
                          urd::flat_vector<urd::index<Function<StaticTag>>>,
                          urd::flat_vector<urd::index<Function<FluentTag>>>,
-                         ::cista::optional<urd::index<Function<AuxiliaryTag>>>,
+                         urd::flat_optional<urd::index<Function<AuxiliaryTag>>>,
                          urd::flat_vector<urd::index<Object>>,
                          urd::flat_vector<urd::index<Action<LiftedTag>>>,
                          urd::flat_vector<urd::index<Axiom<LiftedTag>>>>(),
@@ -96,7 +96,7 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Domain>(repository);
+    ygg::bind_insert<Domain>(repository);
 }
 
 }  // namespace tyr::formalism::planning

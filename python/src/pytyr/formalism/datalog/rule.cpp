@@ -81,22 +81,22 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         }
         else
         {
-            cls.def("get_rule", &V::get_rule, nb::keep_alive<0, 1>());
+            cls.def("get_rule", &V::get_rule);
             cls.def("get_row", &V::get_row);
             cls.def("get_objects", &V::get_objects);
         }
-        cls.def("get_body", &V::get_body, nb::keep_alive<0, 1>());
+        cls.def("get_body", &V::get_body);
         if constexpr (std::same_as<R, PredicateTag>)
-            cls.def("get_heads", &V::get_heads, nb::keep_alive<0, 1>());
+            cls.def("get_heads", &V::get_heads);
         else
-            cls.def("get_head", &V::get_head, nb::keep_alive<0, 1>());
+            cls.def("get_head", &V::get_head);
         cls.def("get_cost", &V::get_cost);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

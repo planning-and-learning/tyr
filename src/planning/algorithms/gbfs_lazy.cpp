@@ -19,7 +19,6 @@
 
 #include "search_engine/gbfs_lazy.hpp"
 #include "search_engine/parallel.hpp"
-#include "search_engine/sequential.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
 
 namespace tyr::planning::gbfs_lazy
@@ -32,30 +31,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
                                  SuccessorGenerator<Kind>& successor_generator,
                                  Heuristic<Kind>& heuristic,
                                  const Options<Kind>& options)
-{
-    if (options.num_search_workers == 0)
-        throw std::invalid_argument("gbfs_lazy::find_solution(...): num_search_workers must be greater than zero.");
-    if (options.num_search_workers > 1)
-    {
-        using Search = planning::detail::LazyGBFSPolicy<Kind, ParallelSearch>;
-        return planning::detail::find_parallel_solution<Kind, Search>(task,
-                                                                      state_repository,
-                                                                      axiom_evaluator,
-                                                                      successor_generator,
-                                                                      heuristic,
-                                                                      options,
-                                                                      "gbfs_lazy::find_solution(...): unknown distribution hash mode.");
-    }
-
-    using Search = planning::detail::LazyGBFSPolicy<Kind, SequentialSearch>;
-    using Execution = planning::detail::SequentialExecutionPolicy<Kind, Search>;
-    return planning::detail::SearchEngine<Kind, Search, Execution>::find_solution(task,
-                                                                                  state_repository,
-                                                                                  axiom_evaluator,
-                                                                                  successor_generator,
-                                                                                  heuristic,
-                                                                                  options);
-}
+{ return planning::detail::find_solution<planning::detail::LazyGBFSPolicy>(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, "gbfs_lazy"); }
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,
                                                           StateRepository<LiftedTag>& state_repository,

@@ -49,14 +49,14 @@ void bind_literal_kind(nb::module_& m, RepositoryBinding& repository, const std:
         using V = LiteralView<T, F>;
         auto cls = nb::class_<V>(m, name.c_str());
         cls.def("get_index", &V::index);
-        cls.def("get_atom", &V::get_atom, nb::keep_alive<0, 1>());
+        cls.def("get_atom", &V::get_atom);
         cls.def("get_polarity", &V::get_polarity);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

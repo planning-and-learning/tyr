@@ -19,135 +19,44 @@
 #define TYR_FORMALISM_PLANNING_CANONICALIZATION_HPP_
 
 #include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/planning/datas.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
+#include "tyr/formalism/planning/action_data.hpp"
+#include "tyr/formalism/planning/atom_data.hpp"
+#include "tyr/formalism/planning/axiom_data.hpp"
+#include "tyr/formalism/planning/binary_operator_data.hpp"
+#include "tyr/formalism/planning/conditional_effect_data.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_data.hpp"
+#include "tyr/formalism/planning/domain_data.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
+#include "tyr/formalism/planning/fdr_variable_data.hpp"
+#include "tyr/formalism/planning/function_term_data.hpp"
+#include "tyr/formalism/planning/function_term_value_data.hpp"
+#include "tyr/formalism/planning/invariant_data.hpp"
+#include "tyr/formalism/planning/literal_data.hpp"
+#include "tyr/formalism/planning/metric_data.hpp"
+#include "tyr/formalism/planning/multi_operator_data.hpp"
+#include "tyr/formalism/planning/numeric_effect_data.hpp"
+#include "tyr/formalism/planning/task_data.hpp"
+#include "tyr/formalism/planning/unary_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <algorithm>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
+/// The canonical form of every planning record (prepare_for_insert canonicalizes each record it inserts): records whose
+/// members have an order to fix sort them; every other record has a no-op overload, being canonical as built.
 namespace tyr::formalism::planning
 {
 // yggdrasil's overloads for lists of indices: found by ordinary lookup, as the standard's two-step `using std::swap`
 // (ADL does not find them for urd::index, whose namespace is urd's).
 using ygg::canonicalize;
-using ygg::is_canonical;
-
-/**
- * Datalog
- */
-
-template<TaskKind T>
-bool is_canonical(const urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
-{ return true; }
-
-template<TaskKind T, OperatorKind Operator>
-bool is_canonical(const urd::data<BinaryOperator<T, Operator>>& data)
-{
-    if constexpr (std::same_as<Operator, ArithmeticOperatorKind>)
-        return (data.operator_kind != ArithmeticOperatorKind::Add && data.operator_kind != ArithmeticOperatorKind::Mul) || data.lhs <= data.rhs;
-    return true;
-}
-
-template<TaskKind T>
-bool is_canonical(const urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{ return std::is_sorted(data.args.begin(), data.args.end()); }
-
-template<FactKind T>
-bool is_canonical(const urd::data<Atom<LiftedTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<Literal<LiftedTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<Atom<GroundTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<Literal<GroundTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<FunctionTerm<LiftedTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<FunctionTerm<GroundTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<FunctionTermValue<GroundTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<NumericEffect<LiftedTag, T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<NumericEffect<GroundTag, T>>&)
-{ return true; }
-
-inline bool is_canonical(const urd::data<ConditionalEffect<LiftedTag>>&) { return true; }
-
-inline bool is_canonical(const urd::data<ConditionalEffect<GroundTag>>&) { return true; }
-
-inline bool is_canonical(const urd::data<ConjunctiveEffect<LiftedTag>>& data) { return is_canonical(data.literals) && is_canonical(data.numeric_effects); }
-
-inline bool is_canonical(const urd::data<ConjunctiveEffect<GroundTag>>& data)
-{ return is_canonical(data.add_facts) && is_canonical(data.del_facts) && is_canonical(data.numeric_effects); }
-
-inline bool is_canonical(const urd::data<Action<LiftedTag>>&) { return true; }
-
-inline bool is_canonical(const urd::data<Action<GroundTag>>&) { return true; }
-
-inline bool is_canonical(const urd::data<Axiom<LiftedTag>>&) { return true; }
-
-inline bool is_canonical(const urd::data<Axiom<GroundTag>>&) { return true; }
-
-inline bool is_canonical(const urd::data<Metric>&) { return true; }
-
-inline bool is_canonical(const urd::data<Task<LiftedTag>>& data)
-{
-    return is_canonical(data.derived_predicates) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
-           && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.axioms);
-}
-
-inline bool is_canonical(const urd::data<Domain>& data)
-{
-    return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.derived_predicates)
-           && is_canonical(data.static_functions) && is_canonical(data.fluent_functions) && is_canonical(data.constants) && is_canonical(data.actions)
-           && is_canonical(data.axioms);
-}
-
-template<FactKind T>
-bool is_canonical(const urd::data<FDRVariable<T>>&)
-{ return true; }
-
-inline bool is_canonical(const urd::data<Invariant>& data) { return is_canonical(data.atoms); }
-
-template<FactKind T>
-bool is_canonical(const urd::data<FDRFact<T>>&)
-{ return true; }
-
-inline bool is_canonical(const urd::data<ConjunctiveCondition<LiftedTag>>& data)
-{
-    return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.derived_literals)
-           && is_canonical(data.numeric_constraints);
-}
-
-inline bool is_canonical(const urd::data<ConjunctiveCondition<GroundTag>>& data)
-{
-    return is_canonical(data.static_literals) && is_canonical(data.derived_literals) && is_canonical(data.positive_facts) && is_canonical(data.negative_facts)
-           && is_canonical(data.numeric_constraints);
-}
-
-inline bool is_canonical(const urd::data<Task<GroundTag>>& data)
-{
-    return is_canonical(data.derived_predicates) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
-           && is_canonical(data.derived_atoms) && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.axioms)
-           && is_canonical(data.fluent_variables) && is_canonical(data.fluent_facts) && is_canonical(data.ground_actions) && is_canonical(data.ground_axioms);
-}
 
 /**
  * Datalog
@@ -172,8 +81,7 @@ void canonicalize(urd::data<BinaryOperator<T, Operator>>& data)
 template<TaskKind T>
 void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
 {
-    if (!is_canonical(data))
-        std::sort(data.args.begin(), data.args.end());
+    ygg::canonicalize<false>(data.args);
 }
 
 template<FactKind T>

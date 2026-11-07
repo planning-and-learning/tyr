@@ -32,7 +32,26 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cassert>
@@ -437,24 +456,36 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 }
 
 template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(ygg::float_t value, const GraphStructure&, const RuleToConstraintInfo&, const AssignmentSets&)
+{
+    return ygg::ClosedInterval<ygg::float_t>(value, value);
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{
+    return consistent_interval(constraint_info.static_infos.infos.at(element.index()), structure, assignment_sets.static_sets().function);
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{
+    return consistent_interval(constraint_info.fluent_infos.infos.at(element.index()), structure, assignment_sets.fluent_sets().function);
+}
+
+template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 {
-    return visit(
-        [&]<typename Alternative>(const Alternative& arg)
-        {
-            if constexpr (std::is_same_v<Alternative, ygg::float_t>)
-                return ygg::ClosedInterval<ygg::float_t>(arg, arg);
-            else if constexpr (std::is_same_v<Alternative, formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag>>)
-                return consistent_interval(constraint_info.static_infos.infos.at(arg.index()), structure, assignment_sets.static_sets().function);
-            else if constexpr (std::is_same_v<Alternative, formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag>>)
-                return consistent_interval(constraint_info.fluent_infos.infos.at(arg.index()), structure, assignment_sets.fluent_sets().function);
-            else
-                return consistent_interval(arg, structure, constraint_info, assignment_sets);
-        },
-        element);
+    return visit([&](const auto& arg) { return consistent_interval(arg, structure, constraint_info, assignment_sets); }, element);
 }
 
 template<typename GraphStructure>
@@ -649,16 +680,81 @@ inline bool consistent_numeric_constraints(const Edge& edge,
 }
 }
 
+template<typename Mappings>
+static void initialize_info_mappings(Mappings& mappings, size_t arity)
+{
+    mappings.parameter_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
+    mappings.parameter_pairs_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>(arity, urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity));
+    mappings.parameter_to_infos_with_constants = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
+    mappings.infos_with_constants = urd::Store<urd::sequence<ygg::uint_t>> {};
+    mappings.infos_with_constant_pairs = urd::Store<urd::sequence<ygg::uint_t>> {};
+}
+
+/// Records where info's element (a literal's atom or a function term) has parameters and constants among its terms,
+/// and files the element under `index` in mappings by the parameters it has and by whether it has constants.
+template<typename Terms, typename Parameters, typename Info, typename Mappings>
+static void index_terms(const Terms& terms, const Parameters& parameters, ygg::uint_t index, size_t arity, Info& info, Mappings& mappings)
+{
+    info.num_parameters = static_cast<ygg::uint_t>(0);
+    info.num_constants = static_cast<ygg::uint_t>(0);
+    info.position_mappings.constant_positions = urd::Store<urd::sequence<std::pair<ygg::uint_t, urd::index<formalism::Object>>>> {};
+    info.position_mappings.parameter_to_positions = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
+
+    for (ygg::uint_t position = 0; position < terms.size(); ++position)
+    {
+        visit(
+            [&]<typename Alternative>(const Alternative& arg)
+            {
+                if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
+                {
+                    info.position_mappings.parameter_to_positions[arg.value].push_back(position);
+                    ++info.num_parameters;
+                }
+                else  // formalism::datalog::ObjectView
+                {
+                    info.position_mappings.constant_positions.emplace_back(position, arg.index());
+                    ++info.num_constants;
+                }
+            },
+            terms[position]);
+    }
+
+    for (const auto param1 : parameters)
+    {
+        mappings.parameter_to_infos[param1.value].push_back(index);
+
+        for (const auto param2 : parameters)
+        {
+            if (param1 >= param2)
+                continue;
+
+            mappings.parameter_pairs_to_infos[param1.value][param2.value].push_back(index);
+        }
+    }
+
+    if (info.num_constants > 0)
+    {
+        mappings.infos_with_constants.push_back(index);
+        if (info.num_constants > 1)
+            mappings.infos_with_constant_pairs.push_back(index);
+
+        if (info.num_parameters > 0)
+        {
+            for (ygg::uint_t param = 0; param < arity; ++param)
+            {
+                if (!info.position_mappings.parameter_to_positions[param].empty())
+                    mappings.parameter_to_infos_with_constants[param].push_back(index);
+            }
+        }
+    }
+}
+
 template<formalism::FactKind T>
 static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<LiftedTag, T> literals, size_t arity)
 {
     auto result = details::TaggedRuleToLiteralInfos<T> {};
 
-    result.info_mappings.parameter_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-    result.info_mappings.parameter_pairs_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>(arity, urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity));
-    result.info_mappings.parameter_to_infos_with_constants = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-    result.info_mappings.infos_with_constants = urd::Store<urd::sequence<ygg::uint_t>> {};
-    result.info_mappings.infos_with_constant_pairs = urd::Store<urd::sequence<ygg::uint_t>> {};
+    initialize_info_mappings(result.info_mappings, arity);
 
     for (const auto literal : literals)
     {
@@ -666,67 +762,7 @@ static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<
         info.predicate = literal.get_atom().get_predicate().index();
         info.polarity = literal.get_polarity();
         info.kckp_arity = kckp_arity(literal);
-        info.num_parameters = static_cast<ygg::uint_t>(0);
-        info.num_constants = static_cast<ygg::uint_t>(0);
-        info.position_mappings.constant_positions = urd::Store<urd::sequence<std::pair<ygg::uint_t, urd::index<formalism::Object>>>> {};
-        info.position_mappings.parameter_to_positions = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-
-        const auto terms = literal.get_atom().get_terms();
-
-        for (ygg::uint_t position = 0; position < terms.size(); ++position)
-        {
-            const auto term = terms[position];
-
-            visit(
-                [&]<typename Alternative>(const Alternative& arg)
-                {
-                    if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
-                    {
-                        info.position_mappings.parameter_to_positions[arg.value].push_back(position);
-                        ++info.num_parameters;
-                    }
-                    else if constexpr (std::is_same_v<Alternative, formalism::datalog::ObjectView>)
-                    {
-                        info.position_mappings.constant_positions.emplace_back(position, arg.index());
-                        ++info.num_constants;
-                    }
-                    else
-                        static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
-                },
-                term);
-        }
-
-        auto parameters = formalism::datalog::collect_parameters(literal);
-        const auto index = result.infos.size();
-
-        for (const auto param1 : parameters)
-        {
-            result.info_mappings.parameter_to_infos[param1.value].push_back(index);
-
-            for (const auto param2 : parameters)
-            {
-                if (param1 >= param2)
-                    continue;
-
-                result.info_mappings.parameter_pairs_to_infos[param1.value][param2.value].push_back(index);
-            }
-        }
-
-        if (info.num_constants > 0)
-        {
-            result.info_mappings.infos_with_constants.push_back(index);
-            if (info.num_constants > 1)
-                result.info_mappings.infos_with_constant_pairs.push_back(index);
-
-            if (info.num_parameters > 0)
-            {
-                for (ygg::uint_t param = 0; param < arity; ++param)
-                {
-                    if (!info.position_mappings.parameter_to_positions[param].empty())
-                        result.info_mappings.parameter_to_infos_with_constants[param].push_back(index);
-                }
-            }
-        }
+        index_terms(literal.get_atom().get_terms(), formalism::datalog::collect_parameters(literal), result.infos.size(), arity, info, result.info_mappings);
 
         result.infos.push_back(std::move(info));
     }
@@ -739,78 +775,14 @@ static auto compute_tagged_indexed_fterms(const urd::Store<urd::sequence<formali
 {
     auto result = details::TaggedRuleToFunctionTermInfos<T> {};
 
-    result.info_mappings.parameter_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-    result.info_mappings.parameter_pairs_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>(arity, urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity));
-    result.info_mappings.parameter_to_infos_with_constants = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-    result.info_mappings.infos_with_constants = urd::Store<urd::sequence<ygg::uint_t>> {};
-    result.info_mappings.infos_with_constant_pairs = urd::Store<urd::sequence<ygg::uint_t>> {};
+    initialize_info_mappings(result.info_mappings, arity);
 
     for (const auto fterm : fterms)
     {
         auto info = details::RuleToFunctionTermInfo<T> {};
         info.function = fterm.get_function().index();
         info.kckp_arity = kckp_arity(fterm);
-        info.num_parameters = static_cast<ygg::uint_t>(0);
-        info.num_constants = static_cast<ygg::uint_t>(0);
-        info.position_mappings.constant_positions = urd::Store<urd::sequence<std::pair<ygg::uint_t, urd::index<formalism::Object>>>> {};
-        info.position_mappings.parameter_to_positions = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-
-        const auto terms = fterm.get_terms();
-
-        for (ygg::uint_t position = 0; position < terms.size(); ++position)
-        {
-            const auto term = terms[position];
-
-            visit(
-                [&]<typename Alternative>(const Alternative& arg)
-                {
-                    if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
-                    {
-                        info.position_mappings.parameter_to_positions[arg.value].push_back(position);
-                        ++info.num_parameters;
-                    }
-                    else if constexpr (std::is_same_v<Alternative, formalism::datalog::ObjectView>)
-                    {
-                        info.position_mappings.constant_positions.emplace_back(position, arg.index());
-                        ++info.num_constants;
-                    }
-                    else
-                        static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
-                },
-                term);
-        }
-
-        auto parameters = formalism::datalog::collect_parameters(fterm);
-        const auto index = static_cast<ygg::uint_t>(fterm.index().value);
-
-        for (const auto param1 : parameters)
-        {
-            result.info_mappings.parameter_to_infos[param1.value].push_back(index);
-
-            for (const auto param2 : parameters)
-            {
-                if (param1 >= param2)
-                    continue;
-
-                result.info_mappings.parameter_pairs_to_infos[param1.value][param2.value].push_back(index);
-            }
-        }
-
-        if (info.num_constants > 0)
-        {
-            result.info_mappings.infos_with_constants.push_back(index);
-            if (info.num_constants > 1)
-                result.info_mappings.infos_with_constant_pairs.push_back(index);
-
-            if (info.num_parameters > 0)
-            {
-                for (ygg::uint_t param = 0; param < arity; ++param)
-                {
-                    if (!info.position_mappings.parameter_to_positions[param].empty())
-                        result.info_mappings.parameter_to_infos_with_constants[param].push_back(index);
-                }
-            }
-        }
+        index_terms(fterm.get_terms(), formalism::datalog::collect_parameters(fterm), static_cast<ygg::uint_t>(fterm.index().value), arity, info, result.info_mappings);
 
         result.infos.emplace(fterm.index(), std::move(info));
     }
@@ -1174,7 +1146,7 @@ create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveCondi
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(builder);
 
     auto binding_empty = urd::flat_vector<urd::index<formalism::Object>> {};
-    auto grounder_context = formalism::datalog::GrounderContext { builder, context, binding_empty };
+    auto grounder_context = formalism::WriteContext { builder, context, binding_empty };
 
     const auto is_nullary = [](const auto& element) { return parameter_arity(element) == 0; };
 

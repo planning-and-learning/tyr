@@ -47,7 +47,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         [[nodiscard]] const auto& facts() const noexcept { return m_cws->facts; }
         template<formalism::RelationKind R>
         [[nodiscard]] const auto& get_rules() const noexcept
-        { return m_cws->template get_rules<R>(); }
+        { return m_cws->rules.template get<R>(); }
 
     private:
         const ConstProgramWorkspace<LiftedTag>* m_cws;
@@ -82,10 +82,10 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         auto& pending_achievers() noexcept { return m_ws->pending_achievers; }
         template<formalism::RelationKind R>
         auto& get_rules() noexcept
-        { return m_ws->template get_rules<R>(); }
+        { return m_ws->rules.template get<R>(); }
         template<formalism::RelationKind R>
         [[nodiscard]] const auto& get_rules() const noexcept
-        { return m_ws->template get_rules<R>(); }
+        { return m_ws->rules.template get<R>(); }
         auto& datalog_builder() noexcept { return m_ws->datalog_builder; }
         [[nodiscard]] const auto& datalog_builder() const noexcept { return m_ws->datalog_builder; }
         auto& workspace_repository() noexcept { return *m_ws->workspace_repository; }

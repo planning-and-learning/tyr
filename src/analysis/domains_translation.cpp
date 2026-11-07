@@ -142,20 +142,6 @@ ActionDomainViewMap<C> to_action_domain_view_map(const ActionDomainMap& domains,
 
 }  // namespace
 
-ProgramVariableDomainsView compute_variable_domain_views(const ProgramVariableDomains& domains, const formalism::datalog::Repository& repository)
-{
-    using C = ProgramVariableDomainsView::C;
-
-    return ProgramVariableDomainsView {
-        to_simple_scoped_domain_view_map<formalism::Predicate<formalism::StaticTag>, C>(domains.static_predicate_domains, repository),
-        to_simple_scoped_domain_view_map<formalism::Predicate<formalism::FluentTag>, C>(domains.fluent_predicate_domains, repository),
-        to_simple_scoped_domain_view_map<formalism::Function<formalism::StaticTag>, C>(domains.static_function_domains, repository),
-        to_simple_scoped_domain_view_map<formalism::Function<formalism::FluentTag>, C>(domains.fluent_function_domains, repository),
-        to_scoped_domain_view_map<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>, C>(domains.predicate_rule_domains, repository),
-        to_scoped_domain_view_map<formalism::datalog::Rule<LiftedTag, formalism::FunctionTag>, C>(domains.function_rule_domains, repository),
-    };
-}
-
 TaskVariableDomainsView compute_variable_domain_views(const TaskVariableDomains& domains, const formalism::planning::Repository& repository)
 {
     using C = TaskVariableDomainsView::C;

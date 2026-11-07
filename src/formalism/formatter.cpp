@@ -17,7 +17,13 @@
 
 #include "tyr/formalism/formatter.hpp"
 
-#include "tyr/formalism/datas.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>

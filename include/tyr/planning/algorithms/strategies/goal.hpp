@@ -20,8 +20,7 @@
 
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_repository.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
 
 #include <memory>

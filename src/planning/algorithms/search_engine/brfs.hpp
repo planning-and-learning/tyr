@@ -160,8 +160,6 @@ public:
     static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView)
     { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric() }; }
 
-    static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
-
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)
     { m_openlist.push(PoppedEntry { static_cast<ygg::uint_t>(g_value), state }); }
 
@@ -187,7 +185,7 @@ public:
         const auto g_value = successor_node.get_metric();
         successor_search_node.status = SearchNodeStatus::OPEN;
         successor_search_node.g_value = static_cast<ygg::uint_t>(g_value);
-        set_parent(successor_search_node, routed_successor.metadata.parent);
+        successor_search_node.parent_state = ParentPolicy::make_parent(routed_successor.metadata.parent);
 
         const auto is_goal = engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state);
         if (!is_goal && worker.pruning_strategy->should_prune_successor_state(source_state, successor_state, true))
@@ -213,9 +211,6 @@ public:
     }
 
     static constexpr bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
-
-    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, urd::index<Worker> index)
-    { return event_handler ? event_handler->make_worker(index) : nullptr; }
 
     template<typename Handler>
     static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t)

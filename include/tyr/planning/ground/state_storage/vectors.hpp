@@ -47,7 +47,7 @@ struct StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>
 
     explicit StateStorageContext(const Task<GroundTag>& task) : layout(task) {}
 
-    GroundStateLayout layout;
+    StateLayout<GroundTag> layout;
     ArraySet fluent_array_set;
     ArraySet derived_array_set;
     FloatVectorSet float_vectors;
@@ -75,7 +75,7 @@ public:
 
 private:
     typename Context::ArraySet* m_array_set;
-    const GroundStateLayout* m_layout;
+    const StateLayout<GroundTag>* m_layout;
 
     urd::Store<urd::sequence<ygg::uint_t>> m_buffer;
     urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;

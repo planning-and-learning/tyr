@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/atom_data.hpp"
 #include "tyr/formalism/datalog/atom_view.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -73,26 +73,22 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     auto repository = tyr::formalism::datalog::RepositoryFactory().create();
 
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
-    canonicalize(predicate_data);
-    const auto [predicate, predicate_created] = repository.insert(predicate_data);
+    const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    canonicalize(object_data);
-    const auto [object, object_created] = repository.insert(object_data);
+    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     binding_data.relation = predicate.index();
     binding_data.objects.push_back(object.index());
     binding_data.objects.push_back(object.index());
-    canonicalize(binding_data);
-    const auto [binding, binding_created] = repository.insert(binding_data);
+    const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_atom_data = urd::data<tyr::formalism::datalog::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
-    canonicalize(ground_atom_data);
-    const auto [ground_atom, ground_atom_created] = repository.insert(ground_atom_data);
+    const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(tyr::formalism::datalog::to_string(binding), "(at truck truck)");

@@ -110,7 +110,7 @@ void bind_module_definitions(nb::module_& m)
                             "repository"_a,
                             "repository_factory"_a,
                             "path"_a = nb::none())
-                       .def("get_domain", &PlanningDomain::get_domain, nb::keep_alive<0, 1>())
+                       .def("get_domain", &PlanningDomain::get_domain)
                        .def("get_repository", &PlanningDomain::get_repository)
                        .def("get_repository_factory", &PlanningDomain::get_repository_factory)
                        .def("get_path", &PlanningDomain::get_path);
@@ -131,7 +131,7 @@ void bind_module_definitions(nb::module_& m)
                             "repository"_a,
                             "planning_domain"_a,
                             "path"_a = nb::none())
-                       .def("get_task", &V::get_task, nb::keep_alive<0, 1>())
+                       .def("get_task", &V::get_task)
                        .def("get_repository", &V::get_repository)
                        .def("get_fdr_context", &V::get_fdr_context, nb::rv_policy::reference_internal)
                        .def("get_domain", &V::get_domain, nb::rv_policy::reference_internal)
@@ -143,7 +143,7 @@ void bind_module_definitions(nb::module_& m)
     {
         using V = PlanningTask<GroundTag>;
         auto cls = nb::class_<V>(m, "GroundPlanningTask")  //
-                       .def("get_task", &V::get_task, nb::keep_alive<0, 1>())
+                       .def("get_task", &V::get_task)
                        .def("get_repository", &V::get_repository)
                        .def("get_fdr_context", &V::get_fdr_context, nb::rv_policy::reference_internal)
                        .def("get_domain", &V::get_domain, nb::rv_policy::reference_internal)

@@ -20,7 +20,6 @@
 
 #include "normalization.hpp"
 #include "refinement.hpp"
-#include "tyr/formalism/planning/expression_arity.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/mutable/action.hpp"

@@ -25,7 +25,32 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <optional>
 #include <stdexcept>
@@ -35,7 +60,6 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <urd/repr/slots/slots.hpp>
-#include <urd/store.hpp>
 
 namespace tyr::planning
 {
@@ -48,7 +72,7 @@ struct GroundProgramBuildContext
     using FluentPredicateMapping =
         urd::Store<urd::map<formalism::planning::PredicateView<formalism::FluentTag>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
     formalism::datalog::Builder builder;
-    formalism::planning::MergeDatalogContext merge_context;
+    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> merge_context;
     urd::unique_slot_ptr<urd::data<formalism::datalog::Program<GroundTag>>> program;
     StaticPredicateMapping static_predicates;
     FluentPredicateMapping fluent_predicates;
@@ -361,18 +385,18 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
     return finish_program(context);
 }
 
-TranslationContext<GroundTag> remap_translation_context(const TranslationContext<GroundTag>& source, formalism::datalog::CopyContext& context)
+TranslationContext<GroundTag> remap_translation_context(const TranslationContext<GroundTag>& source, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto result = TranslationContext<GroundTag> {};
     const auto remap_keys = [&](const auto& source_mapping, auto& result_mapping)
     {
         for (const auto& [key, value] : source_mapping)
-            result_mapping.emplace(formalism::datalog::copy(key, context).first, value);
+            result_mapping.emplace(formalism::copy(key, context).first, value);
     };
     const auto remap_values = [&](const auto& source_mapping, auto& result_mapping)
     {
         for (const auto& [key, value] : source_mapping)
-            result_mapping.emplace(key, formalism::datalog::copy(value, context).first);
+            result_mapping.emplace(key, formalism::copy(value, context).first);
     };
 
     remap_keys(source.d2p.static_to_static_atom, result.d2p.static_to_static_atom);
@@ -392,7 +416,7 @@ template<formalism::RelationKind R>
 void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& source_mapping,
                           RPGProgram<GroundTag>::RuleToActionMapping<R>& result_mapping,
                           const formalism::datalog::Repository& source_repository,
-                          formalism::datalog::CopyContext& context,
+                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                           const datalog::FactSets& fact_sets)
 {
     for (const auto& [source_binding, action] : source_mapping)
@@ -403,7 +427,7 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& s
         if (!datalog::is_statically_applicable(*source_rule, fact_sets))
             continue;
 
-        const auto [result_rule, inserted] = formalism::datalog::copy(*source_rule, context);
+        const auto [result_rule, inserted] = formalism::copy(*source_rule, context);
         if (inserted)
             throw std::logic_error("Static rule filtering omitted a retained rule");
         result_mapping.emplace(result_rule.get_row().index(), action);
@@ -438,7 +462,7 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
     auto repository = factory->create_shared(num_objects);
     const auto program = datalog::remove_statically_inapplicable_rules(source_program, *repository);
     auto builder = formalism::datalog::Builder {};
-    auto merge_context = formalism::datalog::CopyContext { builder, *repository };
+    auto merge_context = formalism::WriteContext { builder, *repository };
     translation_context = remap_translation_context(source_translation_context, merge_context);
     remap_rule_to_action<formalism::PredicateTag>(source_mapping.predicate, mapping.predicate, source_program.context(), merge_context, source_fact_sets);
     remap_rule_to_action<formalism::FunctionTag>(source_mapping.function, mapping.function, source_program.context(), merge_context, source_fact_sets);

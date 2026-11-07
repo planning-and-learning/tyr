@@ -19,12 +19,6 @@
 
 #include <yggdrasil/formalism/detail/basic_symbol_repository_impl.hpp>
 
-namespace tyr::formalism::datalog
-{
-static_assert(RepositoryConcept<Repository>);
-static_assert(Context<Repository>);
-}
-
 template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Atom<tyr::LiftedTag, tyr::formalism::StaticTag>, true>;
 template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>, true>;
 template class ygg::formalism::BasicSymbolRepository<tyr::formalism::datalog::Atom<tyr::GroundTag, tyr::formalism::StaticTag>, true>;

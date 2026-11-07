@@ -43,7 +43,25 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <assert.h>
@@ -54,6 +72,7 @@
 #include <span>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
@@ -128,7 +147,7 @@ private:
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
                 if (m_goal_positions.emplace(literal.get_atom().get_row().index(), m_goal_atoms.size()).second)
                     m_goal_atoms.push_back(literal.get_atom().get_row().index());
-            m_goal_final.assign(m_goal_atoms.size(), false);
+            m_goal_final.clear();
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? static_cast<Cost>(0) : min_edge_cost;
             m_goal_cutoff_enabled = !m_goal_atoms.empty();
         }
@@ -149,10 +168,10 @@ private:
     /// Marks the goal atom at position i final if its tentative cost cannot decrease any more.
     void observe_goal_atom(size_t i, Cost tentative_cost)
     {
-        if (m_goal_final[i] || tentative_cost > m_goal_cutoff_bound)
+        if (m_goal_final.contains(i) || tentative_cost > m_goal_cutoff_bound)
             return;
-        m_goal_final[i] = true;
-        if (++m_num_final_goals == m_goal_atoms.size())
+        m_goal_final.insert(i);
+        if (m_goal_final.size() == m_goal_atoms.size())
             m_goal_cutoff_stopped = true;
     }
 
@@ -163,8 +182,7 @@ private:
             return;
 
         m_goal_cutoff_bound = get_delta_cost(ctx) + m_min_edge_cost;
-        std::fill(m_goal_final.begin(), m_goal_final.end(), false);
-        m_num_final_goals = 0;
+        m_goal_final.clear();
         const auto& program_out = ctx.out().program();
         const auto& facts = program_out.facts().fact_sets.predicate;
         for (size_t i = 0; i < m_goal_atoms.size(); ++i)
@@ -373,7 +391,6 @@ private:
             auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder());
             binding->relation = head_atom.get_predicate().index();
             formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
-            formalism::canonicalize(*binding);
             const auto head =
                 intern ? std::optional(formalism::datalog::insert(ground_context.destination(), *binding).first) : ground_context.destination().find(*binding);
             if (!head)
@@ -725,8 +742,8 @@ private:
     Cost m_goal_cutoff_bound = static_cast<Cost>(0);
     urd::Store<urd::sequence<GoalAtom>> m_goal_atoms;
     urd::Store<urd::map<GoalAtom, size_t>> m_goal_positions;
-    std::vector<bool> m_goal_final;
-    size_t m_num_final_goals = 0;
+    /// The positions in m_goal_atoms of the goal atoms whose cost is final.
+    urd::Store<urd::set<size_t>, urd::dense> m_goal_final;
 };
 
 template void compute_model(ProgramExecutionContext<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>& ctx);

@@ -62,14 +62,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
 
     template<::tyr::formalism::FactKind F>
     [[nodiscard]] const auto& get_literals() const
-    {
-        if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-            return static_literals;
-        else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return fluent_literals;
-        else
-            static_assert(urd::repr::dependent_false<F>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_literals, &data::fluent_literals>(*this); }
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
@@ -102,14 +95,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
 
     template<::tyr::formalism::FactKind F>
     [[nodiscard]] const auto& get_literals() const
-    {
-        if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-            return static_literals;
-        else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return fluent_literals;
-        else
-            static_assert(urd::repr::dependent_false<F>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_literals, &data::fluent_literals>(*this); }
 
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }

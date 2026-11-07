@@ -18,88 +18,38 @@
 #ifndef TYR_FORMALISM_DATALOG_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_DATALOG_CANONICALIZATION_HPP_
 
+#include "tyr/formalism/datalog/atom_data.hpp"
+#include "tyr/formalism/datalog/binary_operator_data.hpp"
+#include "tyr/formalism/datalog/conditional_effect_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/function_term_data.hpp"
+#include "tyr/formalism/datalog/function_term_value_data.hpp"
+#include "tyr/formalism/datalog/literal_data.hpp"
+#include "tyr/formalism/datalog/multi_operator_data.hpp"
+#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/datalog/unary_operator_data.hpp"
 #include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
 
 #include <algorithm>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
+/// The canonical form of every datalog record (prepare_for_insert canonicalizes each record it inserts): records whose
+/// members have an order to fix sort them; every other record has a no-op overload, being canonical as built.
 namespace tyr::formalism::datalog
 {
 // yggdrasil's overloads for lists of indices: found by ordinary lookup, as the standard's two-step `using std::swap`
 // (ADL does not find them for urd::index, whose namespace is urd's).
 using ygg::canonicalize;
-using ygg::is_canonical;
-
-/**
- * Datalog
- */
-
-template<TaskKind T>
-bool is_canonical(const urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
-{ return true; }
-
-template<TaskKind T, OperatorKind O>
-bool is_canonical(const urd::data<BinaryOperator<T, O>>& data)
-{
-    if constexpr (std::same_as<O, ArithmeticOperatorKind>)
-        return (data.operator_kind != ArithmeticOperatorKind::Add && data.operator_kind != ArithmeticOperatorKind::Mul) || data.lhs <= data.rhs;
-    return true;
-}
-
-template<TaskKind T>
-bool is_canonical(const urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{ return std::is_sorted(data.args.begin(), data.args.end()); }
-
-template<TaskKind T, FactKind F>
-bool is_canonical(const urd::data<Atom<T, F>>&)
-{ return true; }
-
-template<TaskKind T, FactKind F>
-bool is_canonical(const urd::data<Literal<T, F>>&)
-{ return true; }
-
-template<TaskKind T, FactKind F>
-bool is_canonical(const urd::data<FunctionTerm<T, F>>&)
-{ return true; }
-
-template<FactKind F>
-bool is_canonical(const urd::data<FunctionTermValue<GroundTag, F>>&)
-{ return true; }
-
-template<TaskKind T, FactKind F>
-bool is_canonical(const urd::data<NumericEffect<T, F>>&)
-{ return true; }
-
-template<TaskKind T>
-bool is_canonical(const urd::data<ConjunctiveCondition<T>>& data)
-{ return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.numeric_constraints); }
-
-template<TaskKind T>
-bool is_canonical(const urd::data<ConjunctiveEffect<T>>& data)
-{ return is_canonical(data.numeric_effects); }
-
-template<TaskKind T>
-bool is_canonical(const urd::data<ConditionalEffect<T>>&)
-{ return true; }
-
-template<TaskKind T, RelationKind R>
-bool is_canonical(const urd::data<Rule<T, R>>& data)
-{
-    if constexpr (std::same_as<R, PredicateTag>)
-        return is_canonical(data.heads);
-    else
-        return true;
-}
-
-template<TaskKind T>
-bool is_canonical(const urd::data<Program<T>>& data)
-{
-    return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.static_functions)
-           && is_canonical(data.fluent_functions) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
-           && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.goal) && is_canonical(data.predicate_rules)
-           && is_canonical(data.function_rules);
-}
 
 /**
  * Datalog
@@ -123,10 +73,7 @@ void canonicalize(urd::data<BinaryOperator<T, O>>& data)
 
 template<TaskKind T>
 void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{
-    if (!is_canonical(data))
-        std::sort(data.args.begin(), data.args.end());
-}
+{ ygg::canonicalize<false>(data.args); }
 
 template<TaskKind T, FactKind F>
 void canonicalize(urd::data<Atom<T, F>>&)

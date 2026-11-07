@@ -45,6 +45,8 @@ struct StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>
     using FloatVectorSet =
         urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
+    explicit StateStorageContext(const Task<LiftedTag>&) noexcept {}
+
     UintVectorSet uint_vectors;
     FloatVectorSet float_vectors;
 
@@ -66,6 +68,9 @@ public:
     /// Inserts `unpacked` as writes to the stored `parent` where it has as many true positions; else in full.
     Packed insert(const Unpacked& unpacked, const Packed& parent);
 
+    /// The positions to write are found by comparing with `parent`, so the changes (the third argument) are not needed.
+    Packed insert(const Unpacked& unpacked, const Packed& parent, const auto&) { return insert(unpacked, parent); }
+
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
@@ -80,32 +85,16 @@ template<typename... Tags, bool ThreadSafe>
 class FactStorageBackend<LiftedTag, Vectors<Tags...>, ThreadSafe> :
     public BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
-    using Base = BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>;
-
 public:
-    using typename Base::Packed;
-    using typename Base::Unpacked;
-
-    using Base::Base;
-    using Base::insert;
-
-    Packed insert(const Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::FluentChange>) { return Base::insert(unpacked, parent); }
+    using BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsBackend;
 };
 
 template<typename... Tags, bool ThreadSafe>
 class AtomStorageBackend<LiftedTag, Vectors<Tags...>, ThreadSafe> :
     public BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
-    using Base = BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>;
-
 public:
-    using typename Base::Packed;
-    using typename Base::Unpacked;
-
-    using Base::Base;
-    using Base::insert;
-
-    Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked&) { return Base::insert(unpacked, parent); }
+    using BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsBackend;
 };
 
 }

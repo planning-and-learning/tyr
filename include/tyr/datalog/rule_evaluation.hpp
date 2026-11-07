@@ -39,6 +39,7 @@
 #include <type_traits>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/indexed.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
@@ -159,23 +160,8 @@ struct FunctionHeadUpdate : urd::compared_by_identity<FunctionHeadUpdate>
     static constexpr auto identifying_members() noexcept { return urd::Members<&FunctionHeadUpdate::binding, &FunctionHeadUpdate::interval> {}; }
 };
 
-struct FunctionHeadUpdates
-{
-    urd::Store<urd::set<FunctionHeadUpdate>> seen_updates;
-    urd::Store<urd::sequence<FunctionHeadUpdate>> updates;
-
-    void clear() noexcept
-    {
-        seen_updates.clear();
-        updates.clear();
-    }
-
-    void insert(FunctionHeadUpdate update)
-    {
-        if (seen_updates.emplace(update).second)
-            updates.push_back(std::move(update));
-    }
-};
+/// The distinct updates (by binding and interval), in the order first inserted.
+using FunctionHeadUpdates = urd::Store<urd::set<FunctionHeadUpdate>, urd::insertion_ordered>;
 
 template<AnnotationPolicyConcept AP, PredicateAnnotationStore DeltaAnnotations>
 void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
@@ -259,7 +245,7 @@ bool reduce_function_head_updates(FunctionHeadUpdates& head_updates,
                                   ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
 {
     auto annotation_improved = false;
-    for (const auto& update : head_updates.updates)
+    for (const auto& update : head_updates)
     {
         if (reduce_function_head_update(update, annotation_policy, delta_numeric_annotations, numeric_annotations, cost_buckets))
         {

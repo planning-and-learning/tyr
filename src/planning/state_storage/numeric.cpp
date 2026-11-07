@@ -17,9 +17,8 @@
 
 #include "tyr/planning/state_storage/numeric.hpp"
 
-#include "tyr/planning/ground/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/ground/state_storage/vectors.hpp"
-#include "tyr/planning/lifted/state_storage/tree_bitset/context.hpp"
+#include "tyr/planning/state_storage/tree_bitset/context.hpp"
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
 
 #include <urd/elements/equal_to.hpp>

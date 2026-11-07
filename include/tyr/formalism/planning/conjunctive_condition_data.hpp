@@ -66,16 +66,7 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_literals;
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return fluent_literals;
-        else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
-            return derived_literals;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_literals, &data::fluent_literals, &data::derived_literals>(*this); }
 
     static constexpr auto cista_members() noexcept
     {
@@ -117,25 +108,11 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_literals;
-        else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
-            return derived_literals;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<boost::mp11::mp_list<::tyr::formalism::StaticTag, ::tyr::formalism::DerivedTag>, T, &data::static_literals, &data::derived_literals>(*this); }
 
     template<::tyr::formalism::PolarityKind T>
     [[nodiscard]] const auto& get_facts() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::PositiveTag>)
-            return positive_facts;
-        else if constexpr (std::same_as<T, ::tyr::formalism::NegativeTag>)
-            return negative_facts;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::PositiveNegativeTags, T, &data::positive_facts, &data::negative_facts>(*this); }
 
     static constexpr auto cista_members() noexcept
     {

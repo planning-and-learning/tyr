@@ -34,7 +34,7 @@ namespace
 template<TaskKind Kind>
 size_t num_fluent_variables(const urd::data<State<Kind>>& state)
 {
-    const auto& storage = state.template get_atom_storage<formalism::FluentTag>();
+    const auto& storage = state.fact_storage;
     if constexpr (std::same_as<Kind, LiftedTag>)
         return storage.indices.size();
     else
@@ -58,7 +58,7 @@ void compute_state_delta(const urd::data<State<Kind>>& parent, const urd::data<S
             out.fluents.push_back(StateDelta::FluentChange { variable, from, to });
     }
 
-    const auto num_fterms = std::max(parent.get_numeric_variables().values.size(), successor.get_numeric_variables().values.size());
+    const auto num_fterms = std::max(parent.numeric_storage.values.size(), successor.numeric_storage.values.size());
     for (size_t i = 0; i < num_fterms; ++i)
     {
         const auto fterm = urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>(static_cast<ygg::uint_t>(i));

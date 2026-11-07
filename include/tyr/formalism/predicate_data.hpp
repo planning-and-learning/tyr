@@ -33,11 +33,11 @@ template<::tyr::formalism::FactKind T>
 struct data<::tyr::formalism::Predicate<T>>
 {
     urd::index<::tyr::formalism::Predicate<T>> index;
-    ::cista::offset::string name;
+    urd::flat_string name;
     ygg::uint_t arity = 0;
 
     data() = default;
-    data(::cista::offset::string name_, ygg::uint_t arity_) : index(), name(std::move(name_)), arity(arity_) {}
+    data(urd::flat_string name_, ygg::uint_t arity_) : index(), name(std::move(name_)), arity(arity_) {}
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;

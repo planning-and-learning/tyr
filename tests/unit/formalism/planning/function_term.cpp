@@ -1,5 +1,4 @@
-#include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/function_term_data.hpp"
@@ -80,25 +79,21 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
 
     auto function_data = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("fuel"), 1);
-    canonicalize(function_data);
-    const auto [function, function_created] = repository.insert(function_data);
+    const auto [function, function_created] = ygg::formalism::insert(repository, function_data);
     ASSERT_TRUE(function_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    canonicalize(object_data);
-    const auto [object, object_created] = repository.insert(object_data);
+    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>> {};
     binding_data.relation = function.index();
     binding_data.objects.push_back(object.index());
-    canonicalize(binding_data);
-    const auto [binding, binding_created] = repository.insert(binding_data);
+    const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_function_term_data = urd::data<tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
-    canonicalize(ground_function_term_data);
-    const auto [ground_function_term, ground_function_term_created] = repository.insert(ground_function_term_data);
+    const auto [ground_function_term, ground_function_term_created] = ygg::formalism::insert(repository, ground_function_term_data);
     ASSERT_TRUE(ground_function_term_created);
 
     EXPECT_EQ(ground_function_term.get_function().index(), function.index());
@@ -129,10 +124,10 @@ TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
     term_data.terms.push_back(tyr::formalism::Term(tyr::formalism::ParameterIndex(0)));
     const auto term = tyr::formalism::planning::insert(source, term_data).first;
     auto builder = tyr::formalism::planning::Builder {};
-    auto context = tyr::formalism::planning::CopyContext { builder, destination };
-    const auto [copied, inserted] = tyr::formalism::planning::copy(term, context);
+    auto context = tyr::formalism::WriteContext { builder, destination };
+    const auto [copied, inserted] = tyr::formalism::copy(term, context);
     EXPECT_TRUE(inserted);
     EXPECT_EQ(copied.get_function(), target_function);
     EXPECT_EQ(urd::to_stored(copied.get_terms()[0]), urd::to_stored(term.get_terms()[0]));
-    EXPECT_FALSE(tyr::formalism::planning::copy(term, context).second);
+    EXPECT_FALSE(tyr::formalism::copy(term, context).second);
 }

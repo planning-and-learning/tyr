@@ -1,6 +1,6 @@
 #include "tyr/formalism/planning/atom_data.hpp"
 #include "tyr/formalism/planning/atom_view.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -60,21 +60,18 @@ TEST(TyrFormalismPlanningAtom, ExposesRepositoryView)
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
 
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
-    canonicalize(predicate_data);
-    const auto [predicate, predicate_created] = repository.insert(predicate_data);
+    const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    canonicalize(object_data);
-    const auto [object, object_created] = repository.insert(object_data);
+    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
     auto terms = tyr::formalism::TermList {};
     terms.emplace_back(object.index());
     terms.emplace_back(tyr::formalism::ParameterIndex(0));
     auto atom_data = urd::data<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>(predicate.index(), std::move(terms));
-    canonicalize(atom_data);
-    const auto [atom, atom_created] = repository.insert(atom_data);
+    const auto [atom, atom_created] = ygg::formalism::insert(repository, atom_data);
     ASSERT_TRUE(atom_created);
 
     EXPECT_EQ(atom.get_predicate().get_name(), "at");
@@ -144,26 +141,22 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
 
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
-    canonicalize(predicate_data);
-    const auto [predicate, predicate_created] = repository.insert(predicate_data);
+    const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
     ASSERT_TRUE(predicate_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    canonicalize(object_data);
-    const auto [object, object_created] = repository.insert(object_data);
+    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     binding_data.relation = predicate.index();
     binding_data.objects.push_back(object.index());
     binding_data.objects.push_back(object.index());
-    canonicalize(binding_data);
-    const auto [binding, binding_created] = repository.insert(binding_data);
+    const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
     auto ground_atom_data = urd::data<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
-    canonicalize(ground_atom_data);
-    const auto [ground_atom, ground_atom_created] = repository.insert(ground_atom_data);
+    const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(ground_atom.get_predicate().index(), predicate.index());

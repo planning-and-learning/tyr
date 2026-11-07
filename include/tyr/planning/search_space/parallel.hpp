@@ -162,8 +162,8 @@ private:
     {
         const auto& lhs_builder = lhs.data();
         const auto& rhs_builder = rhs.data();
-        return urd::EqualTo<> {}(lhs_builder.template get_atom_storage<formalism::FluentTag>(), rhs_builder.template get_atom_storage<formalism::FluentTag>())
-               && urd::EqualTo<> {}(lhs_builder.get_numeric_variables(), rhs_builder.get_numeric_variables());
+        return urd::EqualTo<> {}(lhs_builder.fact_storage, rhs_builder.fact_storage)
+               && urd::EqualTo<> {}(lhs_builder.numeric_storage, rhs_builder.numeric_storage);
     }
 
     template<TaskKind Kind, SearchNodeConcept<WorkerStateIndex<Kind>> SearchNode>

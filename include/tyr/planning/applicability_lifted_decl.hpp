@@ -19,7 +19,7 @@
 #define TYR_PLANNING_APPLICABILITY_LIFTED_DECL_HPP_
 
 #include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/grounder_decl.hpp"
+#include "tyr/formalism/write_context.hpp"
 #include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
@@ -28,7 +28,7 @@ namespace tyr::planning
 class ApplicabilityContext
 {
 public:
-    ApplicabilityContext(const StateContext<LiftedTag>& state, formalism::planning::GrounderContext& grounder, const formalism::planning::FDRContext& fdr) :
+    ApplicabilityContext(const StateContext<LiftedTag>& state, formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder, const formalism::planning::FDRContext& fdr) :
         m_state(&state),
         m_grounder(&grounder),
         m_fdr(&fdr)
@@ -36,12 +36,12 @@ public:
     }
 
     [[nodiscard]] const StateContext<LiftedTag>& state() const noexcept { return *m_state; }
-    [[nodiscard]] formalism::planning::GrounderContext& grounder() const noexcept { return *m_grounder; }
+    [[nodiscard]] formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder() const noexcept { return *m_grounder; }
     [[nodiscard]] const formalism::planning::FDRContext& fdr() const noexcept { return *m_fdr; }
 
 private:
     const StateContext<LiftedTag>* m_state;
-    formalism::planning::GrounderContext* m_grounder;
+    formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>* m_grounder;
     const formalism::planning::FDRContext* m_fdr;
 };
 }

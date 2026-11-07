@@ -105,7 +105,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     const auto objects = program.get_objects();
     ASSERT_EQ(objects.size(), 2);
     auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };
-    auto context = tyr::formalism::datalog::GrounderContext { builder, *fixture.repository, indices };
+    auto context = tyr::formalism::WriteContext { builder, *fixture.repository, indices };
     auto prepared = tyr::formalism::datalog::checkout<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>(builder);
     prepared->relation = atom.get_predicate().index();
     tyr::formalism::datalog::ground(atom.get_terms(), context, prepared->objects);
@@ -168,24 +168,24 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
         {
             if (config == "axiom_evaluator")
             {
-                const auto program = tyr::planning::AxiomEvaluatorProgram<LiftedTag>(task->get_task());
+                const auto program = tyr::planning::AxiomEvaluatorProgram(task->get_task());
                 return solve_program(program.get_datalog_program());
             }
 
             if (config == "applicable_action")
             {
-                const auto action_program = tyr::planning::ApplicableActionProgram<LiftedTag>(task->get_task());
+                const auto action_program = tyr::planning::ApplicableActionProgram(task->get_task());
                 auto action_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(action_program.get_datalog_program());
                 if (task->has_axioms())
                 {
-                    const auto axiom_program = tyr::planning::AxiomEvaluatorProgram<LiftedTag>(task->get_task());
+                    const auto axiom_program = tyr::planning::AxiomEvaluatorProgram(task->get_task());
                     auto axiom_workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(axiom_program.get_datalog_program());
                     solve_workspace(axiom_workspace);
 
-                    auto merge_context = tyr::formalism::datalog::CopyContext { action_workspace.datalog_builder, *action_workspace.workspace_repository };
+                    auto merge_context = tyr::formalism::WriteContext { action_workspace.datalog_builder, *action_workspace.workspace_repository };
                     for (const auto& set : axiom_workspace.facts.fact_sets.predicate.get_sets())
                         for (const auto binding : set.get_bindings())
-                            action_workspace.facts.fact_sets.predicate.insert(tyr::formalism::datalog::copy(binding, merge_context).first);
+                            action_workspace.facts.fact_sets.predicate.insert(tyr::formalism::copy(binding, merge_context).first);
                 }
 
                 solve_workspace(action_workspace);

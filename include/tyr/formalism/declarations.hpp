@@ -30,6 +30,7 @@
 
 #include <yggdrasil/core/config.hpp>
 #include <boost/mp11.hpp>
+#include <tuple>
 #include <yggdrasil/formalism/declarations.hpp>
 
 namespace ygg::formalism
@@ -54,10 +55,6 @@ class Repository;
 
 template<typename SymbolRepo, typename RelationRepo>
 class RepositoryFactory;
-}
-
-namespace tyr
-{
 }
 
 namespace tyr::formalism
@@ -90,7 +87,6 @@ concept FactKind = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || s
 using StaticFluentTags = boost::mp11::mp_list<StaticTag, FluentTag>;
 using StaticFluentDerivedTags = boost::mp11::mp_list<StaticTag, FluentTag, DerivedTag>;
 using StaticFluentAuxiliaryTags = boost::mp11::mp_list<StaticTag, FluentTag, AuxiliaryTag>;
-using FluentDerivedTags = boost::mp11::mp_list<FluentTag, DerivedTag>;
 
 /**
  * Tags to dispatch on the relation a rule derives: a predicate binding or a function binding. Keeping
@@ -133,23 +129,14 @@ using Row = ::ygg::formalism::Row;
 /// A term: an object, or a parameter of the enclosing rule or action. Stored as it is, not interned; read through a
 /// repository (urd::resolve) as std::variant<ObjectView, ParameterIndex>; printed as the alternative it
 /// holds (yggdrasil/formatting/cista_formatters.hpp).
-using Term = ::cista::offset::variant<urd::index<Object>, ParameterIndex>;
-using TermList = ::cista::offset::vector<Term>;
+using Term = urd::flat_variant<urd::index<Object>, ParameterIndex>;
+using TermList = urd::flat_vector<Term>;
 
 template<typename T>
 using RelationBinding = ::ygg::formalism::RelationBinding<T, ObjectTag>;
 
 template<typename T>
-using is_relation_binding = ::ygg::formalism::is_relation_binding<T>;
-
-template<typename T>
-inline constexpr bool is_relation_binding_v = ::ygg::formalism::is_relation_binding_v<T>;
-
-template<typename T>
 concept RelationBindingConcept = ::ygg::formalism::RelationBindingConcept<T>;
-
-template<typename T>
-concept NonRelationBindingConcept = ::ygg::formalism::NonRelationBindingConcept<T>;
 
 template<FactKind T>
 struct Predicate
@@ -161,28 +148,6 @@ struct Function
 {
 };
 
-/**
- * The relation a rule of kind R derives, for a given fact kind.
- */
-
-template<RelationKind R, FactKind T>
-struct Relation;
-
-template<FactKind T>
-struct Relation<PredicateTag, T>
-{
-    using type = Predicate<T>;
-};
-
-template<FactKind T>
-struct Relation<FunctionTag, T>
-{
-    using type = Function<T>;
-};
-
-template<RelationKind R, FactKind T>
-using RelationT = typename Relation<R, T>::type;
-
 struct PositiveTag
 {
 };
@@ -193,6 +158,16 @@ struct NegativeTag
 
 template<typename T>
 concept PolarityKind = std::same_as<T, PositiveTag> || std::same_as<T, NegativeTag>;
+
+using PositiveNegativeTags = boost::mp11::mp_list<PositiveTag, NegativeTag>;
+
+/// The member of self that Tag selects: Tag's position in Tags (a boost::mp11 list) picks one of Members.
+template<typename Tags, typename Tag, auto... Members, typename Self>
+constexpr auto& tagged_member(Self& self) noexcept
+{
+    static_assert(boost::mp11::mp_contains<Tags, Tag>::value, "Missing case");
+    return self.*std::get<boost::mp11::mp_find<Tags, Tag>::value>(std::tuple(Members...));
+}
 
 }
 

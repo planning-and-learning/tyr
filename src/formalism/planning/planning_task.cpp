@@ -26,21 +26,36 @@
 
 namespace tyr::formalism::planning
 {
-PlanningTask<LiftedTag>::PlanningTask(TaskView<LiftedTag> task,
-                                      FDRContextPtr fdr_context,
-                                      std::shared_ptr<Repository> repository,
-                                      PlanningDomain domain,
-                                      std::optional<std::filesystem::path> path) :
+namespace
+{
+std::monostate make_variable_domains(TaskView<GroundTag>, const Repository&) { return {}; }
+
+PlanningTask<LiftedTag>::VariableDomains make_variable_domains(TaskView<LiftedTag> task, const Repository& repository)
+{
+    auto domains = analysis::compute_variable_domains(task);
+    auto view = analysis::compute_variable_domain_views(domains, repository);
+    return { std::move(domains), std::move(view) };
+}
+}
+
+template<TaskKind T>
+PlanningTask<T>::PlanningTask(TaskView<T> task,
+                              FDRContextPtr fdr_context,
+                              std::shared_ptr<Repository> repository,
+                              PlanningDomain domain,
+                              std::optional<std::filesystem::path> path) :
     m_repository(std::move(repository)),
     m_task(task),
     m_fdr_context(std::move(fdr_context)),
     m_domain(std::move(domain)),
     m_path(std::move(path)),
-    m_variable_domains(analysis::compute_variable_domains(m_task)),
-    m_variable_domains_view(analysis::compute_variable_domain_views(m_variable_domains, *m_repository))
+    m_variable_domains(make_variable_domains(m_task, *m_repository))
 {
     if (&m_task.context() != m_repository.get())
         throw std::invalid_argument("Task context does not match the given Repository.");
 }
+
+template class PlanningTask<LiftedTag>;
+template class PlanningTask<GroundTag>;
 
 }

@@ -102,7 +102,7 @@ public:
         RuleExecutionContext<R, AP, TP, CP>* m_rctx;
         LiftedRuleWorkerT<R>* m_ws_worker;
 
-        formalism::datalog::GrounderContext m_ground_context;
+        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> m_ground_context;
     };
 
     RuleWorkerExecutionContext(RuleExecutionContext<R, AP, TP, CP>& rctx, LiftedRuleWorkerT<R>& ws_worker) : m_in(rctx), m_out(rctx, ws_worker) {}

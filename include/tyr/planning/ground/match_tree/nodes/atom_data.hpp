@@ -35,15 +35,15 @@ struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
 {
     urd::index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
     urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
-    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child;
-    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> false_child;
-    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
+    urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child;
+    urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> false_child;
+    urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
     data(urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
-         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
-         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> false_child_,
-         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
+         urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
+         urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> false_child_,
+         urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),
         atom(atom_),
         true_child(std::move(true_child_)),

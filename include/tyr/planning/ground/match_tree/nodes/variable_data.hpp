@@ -37,13 +37,13 @@ struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
 {
     urd::index<::tyr::planning::match_tree::VariableSelectorNode<Tag>> index;
     urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable;
-    ::cista::offset::vector<::cista::optional<::tyr::planning::match_tree::Node<Tag>>> domain_children;
-    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
+    urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>> domain_children;
+    urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
     data(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable_,
-         ::cista::offset::vector<::cista::optional<::tyr::planning::match_tree::Node<Tag>>> domain_children_,
-         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
+         urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>> domain_children_,
+         urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),
         variable(variable_),
         domain_children(std::move(domain_children_)),

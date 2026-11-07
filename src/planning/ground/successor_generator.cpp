@@ -20,18 +20,42 @@
 
 #include "../metric.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/axiom_evaluator.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
-#include "tyr/planning/ground/state_repository.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_delta.hpp"
-#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/task_utils.hpp"
 
 #include <algorithm>
@@ -1246,7 +1270,5 @@ template ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(co
                                                                               formalism::planning::ActionBindingView binding,
                                                                               urd::builder<State<GroundTag>>& out_state,
                                                                               StateDelta& out_delta);
-
-static_assert(SuccessorGeneratorConcept<SuccessorGenerator<GroundTag>, GroundTag>);
 
 }

@@ -22,6 +22,7 @@
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
+#include "tyr/planning/state_storage/tree_bitset/context.hpp"
 
 #include <urd/repr/pools/tree_bitset.hpp>
 #include <urd/repr/values/dense_set.hpp>

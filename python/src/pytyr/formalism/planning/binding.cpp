@@ -19,9 +19,10 @@
 #include "pytyr/module.hpp"
 #include "bindings.hpp"
 
-#include <tyr/formalism/binding_data.hpp>
+#include <tyr/formalism/declarations.hpp>
+#include <yggdrasil/formalism/binding_data.hpp>
 #include <tyr/formalism/binding_index.hpp>
-#include <tyr/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/binding_view.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -45,7 +46,7 @@ void bind_binding_view(nb::module_& m, const char* name)
     using V = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>;
     auto cls = nb::class_<V>(m, name)
                    .def("get_index", &V::index)
-                   .def("get_relation", &V::get_relation, nb::keep_alive<0, 1>())
+                   .def("get_relation", &V::get_relation)
                    .def("get_objects", [](const V& self) { return self.get_objects(); });
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
@@ -92,14 +93,14 @@ void bind_binding(nb::module_& m, RepositoryBinding& repository)
     bind_binding_view<Function<FluentTag>>(m, "FluentFunctionBinding");
     bind_binding_view<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBinding");
 
-    bind_insert<RelationBinding<Predicate<DerivedTag>>>(repository);
-    bind_insert<RelationBinding<Action<LiftedTag>>>(repository);
-    bind_insert<RelationBinding<Axiom<LiftedTag>>>(repository);
-    bind_insert<RelationBinding<Predicate<StaticTag>>>(repository);
-    bind_insert<RelationBinding<Predicate<FluentTag>>>(repository);
-    bind_insert<RelationBinding<Function<StaticTag>>>(repository);
-    bind_insert<RelationBinding<Function<FluentTag>>>(repository);
-    bind_insert<RelationBinding<Function<AuxiliaryTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Predicate<DerivedTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Action<LiftedTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Axiom<LiftedTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Predicate<StaticTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Predicate<FluentTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Function<StaticTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Function<FluentTag>>>(repository);
+    ygg::bind_insert<RelationBinding<Function<AuxiliaryTag>>>(repository);
 }
 
 }  // namespace tyr::formalism::planning

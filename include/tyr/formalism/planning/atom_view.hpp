@@ -18,7 +18,8 @@
 #ifndef TYR_FORMALISM_PLANNING_ATOM_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_ATOM_VIEW_HPP_
 
-#include "tyr/formalism/binding_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 

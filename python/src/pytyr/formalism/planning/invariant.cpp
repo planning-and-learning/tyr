@@ -63,7 +63,7 @@ void bind_invariant(nb::module_& m, RepositoryBinding& repository)
 
     bind_invariant_view(m, "Invariant");
 
-    bind_insert<Invariant>(repository);
+    ygg::bind_insert<Invariant>(repository);
 }
 
 }  // namespace tyr::formalism::planning

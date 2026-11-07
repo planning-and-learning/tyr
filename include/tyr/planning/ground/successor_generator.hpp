@@ -281,8 +281,6 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-static_assert(SuccessorGeneratorConcept<SuccessorGenerator<GroundTag>, GroundTag>);
-
 }
 
 #endif

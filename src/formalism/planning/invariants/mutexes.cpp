@@ -27,6 +27,7 @@
 #include <tuple>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
@@ -132,17 +133,16 @@ bool structural_less(const AtomViewList<GroundTag, FluentTag>& lhs, const AtomVi
                                         [](const auto lhs_atom, const auto rhs_atom) { return structural_less(lhs_atom, rhs_atom); });
 }
 
-AtomViewList<GroundTag, FluentTag> uncovered_atoms(const InstanceGroup& group, const std::vector<bool>& uncovered)
+using AtomSet = urd::Store<urd::set<urd::index<Atom<GroundTag, FluentTag>>>, urd::dense>;
+
+AtomViewList<GroundTag, FluentTag> uncovered_atoms(const InstanceGroup& group, const AtomSet& covered)
 {
     auto result = AtomViewList<GroundTag, FluentTag> {};
     result.reserve(group.atoms.size());
 
     for (const auto atom : group.atoms)
-    {
-        const auto atom_index = static_cast<ygg::uint_t>(atom.index().value);
-        if (uncovered[atom_index])
+        if (!covered.contains(atom.index()))
             result.push_back(atom);
-    }
 
     return result;
 }
@@ -158,10 +158,10 @@ bool deterministic_group_less(const InstanceGroup& lhs, const InstanceGroup& rhs
     return structural_less(lhs.atoms, rhs.atoms);
 }
 
-bool uncovered_structural_less(const InstanceGroup& lhs, const InstanceGroup& rhs, const std::vector<bool>& uncovered)
+bool uncovered_structural_less(const InstanceGroup& lhs, const InstanceGroup& rhs, const AtomSet& covered)
 {
-    const auto lhs_atoms = uncovered_atoms(lhs, uncovered);
-    const auto rhs_atoms = uncovered_atoms(rhs, uncovered);
+    const auto lhs_atoms = uncovered_atoms(lhs, covered);
+    const auto rhs_atoms = uncovered_atoms(rhs, covered);
     if (structural_less(lhs_atoms, rhs_atoms) || structural_less(rhs_atoms, lhs_atoms))
         return structural_less(lhs_atoms, rhs_atoms);
 
@@ -174,13 +174,12 @@ urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<G
                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                               const InvariantViewList& invariants)
 {
-    auto is_initial = std::vector<bool>(all_atoms.size(), false);
+    auto is_initial = AtomSet {};
     for (const auto atom : initial_atoms)
     {
-        const auto i = static_cast<ygg::uint_t>(atom.index().value);
-        if (i >= all_atoms.size())
+        if (static_cast<ygg::uint_t>(atom.index().value) >= all_atoms.size())
             throw std::invalid_argument("initial_atoms must be among all_atoms");
-        is_initial[i] = true;
+        is_initial.insert(atom.index());
     }
 
     auto predicates = urd::Store<urd::sequence<urd::Store<urd::set<PredicateView<FluentTag>>>>>(invariants.size());
@@ -217,7 +216,7 @@ urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<G
                     continue;  // matched another part of the same instance
 
                 group.atoms.push_back(atom);
-                if (is_initial[static_cast<ygg::uint_t>(atom.index().value)])
+                if (is_initial.contains(atom.index()))
                     ++group.num_initial_atoms;
             }
         }
@@ -229,28 +228,19 @@ urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<G
     return groups;
 }
 
-size_t compute_uncovered_coverage(const InstanceGroup& group, const std::vector<bool>& uncovered)
-{
-    size_t coverage = 0;
-    for (const auto atom : group.atoms)
-    {
-        const auto i = static_cast<ygg::uint_t>(atom.index().value);
-        if (uncovered[i])
-            ++coverage;
-    }
-    return coverage;
-}
+size_t compute_uncovered_coverage(const InstanceGroup& group, const AtomSet& covered)
+{ return std::ranges::count_if(group.atoms, [&](const auto atom) { return !covered.contains(atom.index()); }); }
 
-std::optional<size_t> select_best_group(const urd::Store<urd::sequence<InstanceGroup>>& groups, const std::vector<bool>& uncovered)
+std::optional<size_t> select_best_group(const urd::Store<urd::sequence<InstanceGroup>>& groups, const AtomSet& covered)
 {
     std::optional<size_t> best_group_index;
     size_t best_coverage = 0;
 
     for (size_t i = 0; i < groups.size(); ++i)
     {
-        const auto coverage = compute_uncovered_coverage(groups[i], uncovered);
+        const auto coverage = compute_uncovered_coverage(groups[i], covered);
         if (coverage > best_coverage
-            || (coverage == best_coverage && best_group_index.has_value() && uncovered_structural_less(groups[i], groups[*best_group_index], uncovered)))
+            || (coverage == best_coverage && best_group_index.has_value() && uncovered_structural_less(groups[i], groups[*best_group_index], covered)))
         {
             best_group_index = i;
             best_coverage = coverage;
@@ -260,17 +250,10 @@ std::optional<size_t> select_best_group(const urd::Store<urd::sequence<InstanceG
     return best_group_index;
 }
 
-void mark_group_covered(const AtomViewList<GroundTag, FluentTag>& group, std::vector<bool>& uncovered, size_t& num_uncovered)
+void mark_group_covered(const AtomViewList<GroundTag, FluentTag>& group, AtomSet& covered)
 {
     for (const auto atom : group)
-    {
-        const auto i = static_cast<ygg::uint_t>(atom.index().value);
-        if (uncovered[i])
-        {
-            uncovered[i] = false;
-            --num_uncovered;
-        }
-    }
+        covered.insert(atom.index());
 }
 
 MutexGroup make_single_atom_group(AtomView<GroundTag, FluentTag> atom) { return MutexGroup { std::nullopt, {}, { atom } }; }
@@ -285,44 +268,41 @@ MutexGroup make_group(const InvariantViewList& invariants, const InstanceGroup& 
     return MutexGroup { invariants[group.inv_index], std::move(objects), std::move(atoms) };
 }
 
-void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms, const std::vector<bool>& uncovered, urd::Store<urd::sequence<MutexGroup>>& result)
+void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms, const AtomSet& covered, urd::Store<urd::sequence<MutexGroup>>& result)
 {
-    for (size_t pos = 0; pos < all_atoms.size(); ++pos)
-    {
-        if (uncovered[pos])
-            result.push_back(make_single_atom_group(all_atoms[pos]));
-    }
+    for (const auto atom : all_atoms)
+        if (!covered.contains(atom.index()))
+            result.push_back(make_single_atom_group(atom));
 }
 
 urd::Store<urd::sequence<MutexGroup>>
 choose_groups_greedily(const InvariantViewList& invariants, const urd::Store<urd::sequence<InstanceGroup>>& groups, const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
-    std::vector<bool> uncovered(all_atoms.size(), true);
-    size_t num_uncovered = all_atoms.size();
+    auto covered = AtomSet {};
 
     urd::Store<urd::sequence<MutexGroup>> result;
     result.reserve(groups.size() + all_atoms.size());
 
-    while (num_uncovered > 0)
+    while (covered.size() < all_atoms.size())
     {
-        const auto best_idx = select_best_group(groups, uncovered);
+        const auto best_idx = select_best_group(groups, covered);
         if (!best_idx.has_value())
             break;
 
-        auto selected_group = uncovered_atoms(groups[*best_idx], uncovered);
+        auto selected_group = uncovered_atoms(groups[*best_idx], covered);
         if (selected_group.empty())
             break;
 
-        mark_group_covered(selected_group, uncovered, num_uncovered);
+        mark_group_covered(selected_group, covered);
         result.push_back(make_group(invariants, groups[*best_idx], std::move(selected_group)));
     }
 
-    add_single_atom_groups(all_atoms, uncovered, result);
+    add_single_atom_groups(all_atoms, covered, result);
 
     return result;
 }
 
-/// The covers index bit vectors by atom index, so all_atoms must hold exactly the atoms 0, 1, ... of its repository.
+/// The covered sets are keyed by atom index, so all_atoms must hold exactly the atoms 0, 1, ... of its repository.
 void check_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     for (ygg::uint_t i = 0; i < all_atoms.size(); ++i)
@@ -359,16 +339,15 @@ urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups_in_order(const AtomVi
     urd::Store<urd::sequence<MutexGroup>> result;
     result.reserve(groups.size() + all_atoms.size());
 
-    std::vector<bool> uncovered(all_atoms.size(), true);
-    size_t num_uncovered = all_atoms.size();
+    auto covered = AtomSet {};
 
     for (const auto& group : groups)
     {
-        auto atoms = uncovered_atoms(group, uncovered);
+        auto atoms = uncovered_atoms(group, covered);
         if (atoms.empty())
             continue;
 
-        mark_group_covered(atoms, uncovered, num_uncovered);
+        mark_group_covered(atoms, covered);
 
         if (group.num_initial_atoms > 1)
         {
@@ -382,7 +361,7 @@ urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups_in_order(const AtomVi
         result.push_back(make_group(invariant_order, group, std::move(atoms)));
     }
 
-    add_single_atom_groups(all_atoms, uncovered, result);
+    add_single_atom_groups(all_atoms, covered, result);
 
     return result;
 }

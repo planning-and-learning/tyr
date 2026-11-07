@@ -27,6 +27,7 @@
 #include <string>
 #include <type_traits>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
@@ -114,7 +115,7 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
 
     auto rng = std::mt19937_64(options.random_seed);
     auto taken = Predicates {};
-    auto used = std::vector<bool>(unique.size(), false);
+    auto used = urd::Store<urd::set<std::size_t>, urd::dense> {};
     auto residuals = urd::Store<urd::sequence<Residual>>(unique.size());
     auto order = InvariantViewList {};
 
@@ -123,7 +124,7 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
         auto candidates = urd::Store<urd::sequence<std::size_t>> {};
         for (std::size_t i = 0; i < unique.size(); ++i)
         {
-            if (used[i])
+            if (used.contains(i))
                 continue;
             residuals[i] = compute_residual(unique[i], taken);
             if (residuals[i].informative)
@@ -153,7 +154,7 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
         }
 
         const auto chosen = candidates.front();
-        used[chosen] = true;
+        used.insert(chosen);
         order.push_back(unique[chosen]);
         for (const auto atom : unique[chosen].get_atoms())
             taken.insert(atom.get_predicate());

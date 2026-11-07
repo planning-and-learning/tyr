@@ -69,34 +69,25 @@ TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableGrowsWithoutRemapping)
     const auto tuple_0_1_2 = std::array<ygg::uint_t, 3> { 0, 1, 2 };
     const auto tuple_10_20_30 = std::array<ygg::uint_t, 3> { 10, 20, 30 };
 
-
-    EXPECT_FALSE(table.test(atom_0));
     EXPECT_TRUE(table.insert(atom_0));
-    EXPECT_TRUE(table.test(atom_0));
     EXPECT_FALSE(table.insert(atom_0));
-    EXPECT_TRUE(table.test(atom_0));
 
     EXPECT_TRUE(table.insert(tuple_0_1));
-    EXPECT_TRUE(table.test(tuple_0_1));
     EXPECT_FALSE(table.insert(tuple_0_1));
 
     EXPECT_TRUE(table.insert(tuple_1_2));
-    EXPECT_TRUE(table.test(tuple_1_2));
     EXPECT_FALSE(table.insert(tuple_1_2));
 
     EXPECT_TRUE(table.insert(tuple_0_1_2));
-    EXPECT_TRUE(table.test(tuple_0_1_2));
     EXPECT_FALSE(table.insert(tuple_0_1_2));
 
     EXPECT_TRUE(table.insert(atom_100));
-    EXPECT_TRUE(table.test(atom_100));
     EXPECT_FALSE(table.insert(atom_0));
     EXPECT_FALSE(table.insert(tuple_0_1));
     EXPECT_FALSE(table.insert(tuple_1_2));
     EXPECT_FALSE(table.insert(tuple_0_1_2));
 
     EXPECT_TRUE(table.insert(tuple_10_20_30));
-    EXPECT_TRUE(table.test(tuple_10_20_30));
     EXPECT_FALSE(table.insert(tuple_10_20_30));
     EXPECT_FALSE(table.insert(tuple_0_1_2));
 }
@@ -114,12 +105,6 @@ TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableSeparatesArityBuckets)
     EXPECT_TRUE(table.insert(tuple_0_2));
     EXPECT_FALSE(table.insert(atom_1));
     EXPECT_FALSE(table.insert(tuple_0_2));
-}
-
-TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableReportsArity)
-{
-    auto table = planning::iw::DynamicNoveltyTable<2>();
-    EXPECT_EQ(table.get_arity(), 2);
 }
 
 TEST(TyrTests, TyrPlanningIwDynamicNoveltyTableWorkersShareSeenTuples)
@@ -155,7 +140,7 @@ TEST(TyrTests, TyrPlanningIwForEachTupleGeneratesCanonicalTuplesUpToArity)
     auto tuple = std::array<ygg::uint_t, 2> {};
     auto generated = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {};
 
-    planning::iw::for_each_tuple<2>(atoms, tuple, [&](std::span<const ygg::uint_t> item) { generated.emplace_back(item.begin(), item.end()); });
+    planning::iw::for_each_tuple<2>(atoms, 2, tuple, [&](std::span<const ygg::uint_t> item) { generated.emplace_back(item.begin(), item.end()); });
 
     const auto expected = urd::Store<urd::sequence<planning::iw::AtomIndexList>> {
         { 1 }, { 3 }, { 5 }, { 1, 3 }, { 1, 5 }, { 3, 5 },
@@ -190,6 +175,7 @@ TEST(TyrTests, TyrPlanningIwForEachTupleWithAddedAtomsGeneratesOnlyTuplesContain
 
     planning::iw::for_each_tuple_with_added_atoms<2>(added,
                                                      kept,
+                                                     2,
                                                      added_tuple,
                                                      kept_tuple,
                                                      tuple,
@@ -228,9 +214,7 @@ TEST(TyrTests, TyrPlanningIwForEachTupleWithAddedAtomsRespectsRuntimeArity)
 
 TEST(TyrTests, TyrPlanningIwNoveltyPruningStrategyChecksRuntimeArity)
 {
-    auto pruning_strategy = planning::iw::NoveltyPruningStrategy<GroundTag>(2);
-    EXPECT_EQ(pruning_strategy.get_max_arity(), 2);
-
+    EXPECT_NO_THROW((planning::iw::NoveltyPruningStrategy<GroundTag>(2)));
     EXPECT_THROW((planning::iw::NoveltyPruningStrategy<GroundTag>(planning::iw::MaxArity + 1)), std::invalid_argument);
 }
 

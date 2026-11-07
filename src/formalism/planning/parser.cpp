@@ -24,29 +24,29 @@
 namespace tyr::formalism::planning
 {
 
-Parser::Parser(const std::filesystem::path& domain_filepath, const loki::ParserOptions& options, const loki::TranslatorOptions& translator_options) :
+Parser::Parser(const std::filesystem::path& domain_filepath, const loki::semantic::ParserOptions& options, const loki::semantic::TranslatorOptions& translator_options) :
     Parser(loki::semantic::read_file(domain_filepath), domain_filepath, options, translator_options)
 {
 }
 
 struct Parser::LokiState
 {
-    loki::Parser parser;
-    loki::TranslatorOptions translator_options;
-    loki::DomainTranslationResult domain_translation_result;
+    loki::semantic::Parser parser;
+    loki::semantic::TranslatorOptions translator_options;
+    loki::semantic::DomainTranslationResult domain_translation_result;
 
-    LokiState(const std::string& domain_description, const loki::ParserOptions& options, const loki::TranslatorOptions& translator_options_) :
+    LokiState(const std::string& domain_description, const loki::semantic::ParserOptions& options, const loki::semantic::TranslatorOptions& translator_options_) :
         parser(domain_description, options),
         translator_options(translator_options_),
-        domain_translation_result(loki::translate(parser.get_domain(), translator_options))
+        domain_translation_result(loki::semantic::translate(parser.get_domain(), translator_options))
     {
     }
 };
 
 Parser::Parser(const std::string& domain_description,
                std::optional<std::filesystem::path> domain_filepath,
-               const loki::ParserOptions& options,
-               const loki::TranslatorOptions& translator_options) :
+               const loki::semantic::ParserOptions& options,
+               const loki::semantic::TranslatorOptions& translator_options) :
     m_loki(std::make_unique<LokiState>(domain_description, options, translator_options)),
     m_domain(LokiToTyrTranslator().translate(m_loki->domain_translation_result.get_translated_domain(), std::move(domain_filepath)))
 {
@@ -56,13 +56,13 @@ Parser::Parser(Parser&&) noexcept = default;
 Parser& Parser::operator=(Parser&&) noexcept = default;
 Parser::~Parser() = default;
 
-PlanningTask<LiftedTag> Parser::parse_task(const std::filesystem::path& task_filepath, const loki::ParserOptions& options)
+PlanningTask<LiftedTag> Parser::parse_task(const std::filesystem::path& task_filepath, const loki::semantic::ParserOptions& options)
 { return parse_task(loki::semantic::read_file(task_filepath), task_filepath, options); }
 
-PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<std::filesystem::path> task_filepath, const loki::ParserOptions&)
+PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<std::filesystem::path> task_filepath, const loki::semantic::ParserOptions&)
 {
     return LokiToTyrTranslator().translate(
-        loki::translate(m_loki->parser.parse_task(task_description), m_loki->domain_translation_result, m_loki->translator_options).get_translated_task(),
+        loki::semantic::translate(m_loki->parser.parse_task(task_description), m_loki->domain_translation_result, m_loki->translator_options).get_translated_task(),
         m_domain,
         std::move(task_filepath));
 }

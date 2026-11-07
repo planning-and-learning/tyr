@@ -40,10 +40,10 @@ struct data<::tyr::formalism::planning::MultiOperator<T, O>>
 
     urd::index<::tyr::formalism::planning::MultiOperator<T, O>> index;
     OperatorType operator_kind = OperatorType::Add;
-    ::cista::offset::vector<Operand> args;
+    urd::flat_vector<Operand> args;
 
     data() = default;
-    data(OperatorType operator_kind_, ::cista::offset::vector<Operand> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
+    data(OperatorType operator_kind_, urd::flat_vector<Operand> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
     {
         if (!is_multi(operator_kind))
             throw std::invalid_argument("multi operator must be Add or Mul");

@@ -88,10 +88,6 @@ public:
     { return { index, this }; }
 };
 
-static_assert(RepositoryConcept<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);
-
-static_assert(Context<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);
-
 template<typename Tag, typename T>
     requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
 void prepare_for_insert(Repository<Tag>&, urd::data<T>& data)

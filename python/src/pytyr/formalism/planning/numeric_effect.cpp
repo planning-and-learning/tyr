@@ -50,14 +50,14 @@ void bind_numeric_effect_kind(nb::module_& m, RepositoryBinding& repository, con
         auto cls = nb::class_<V>(m, name.c_str());
         cls.def("get_index", &V::index);
         cls.def("get_operator", &V::get_operator);
-        cls.def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>());
-        cls.def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
+        cls.def("get_fterm", &V::get_fterm);
+        cls.def("get_fexpr", &V::get_fexpr);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

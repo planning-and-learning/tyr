@@ -39,15 +39,15 @@ template<>
 struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
 {
     urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>> index;
-    ::cista::offset::string name;
-    ::cista::offset::string original_name;
+    urd::flat_string name;
+    urd::flat_string original_name;
     ygg::uint_t original_arity = 0;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition;
     urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects;
 
     data() = default;
-    data(::cista::offset::string name_,
+    data(urd::flat_string name_,
          ygg::uint_t original_arity_,
          urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
@@ -61,8 +61,8 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
         effects(std::move(effects_))
     {
     }
-    data(::cista::offset::string name_,
-         ::cista::offset::string original_name_,
+    data(urd::flat_string name_,
+         urd::flat_string original_name_,
          ygg::uint_t original_arity_,
          urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,

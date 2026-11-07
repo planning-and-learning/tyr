@@ -1,8 +1,7 @@
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
@@ -70,8 +69,7 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
 
     auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?internal"));
-    canonicalize(variable_data);
-    const auto [variable, variable_created] = repository.insert(variable_data);
+    const auto [variable, variable_created] = ygg::formalism::insert(repository, variable_data);
     ASSERT_TRUE(variable_created);
 
     auto action_data = ActionData {};
@@ -79,20 +77,17 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     action_data.original_name = "move";
     action_data.variables.push_back(variable.index());
     action_data.original_arity = 0;
-    canonicalize(action_data);
-    const auto [action, action_created] = repository.insert(action_data);
+    const auto [action, action_created] = ygg::formalism::insert(repository, action_data);
     ASSERT_TRUE(action_created);
 
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
-    canonicalize(object_data);
-    const auto [object, object_created] = repository.insert(object_data);
+    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
     auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::planning::Action<::tyr::LiftedTag>>> {};
     binding_data.relation = action.index();
     binding_data.objects.push_back(object.index());
-    canonicalize(binding_data);
-    const auto [binding, binding_created] = repository.insert(binding_data);
+    const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
     EXPECT_EQ(fmt::format("{}", binding), "(move-internal truck)");
@@ -133,8 +128,8 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     const auto binding = tyr::formalism::planning::insert(source, binding_data).first;
 
     auto builder = tyr::formalism::planning::Builder {};
-    auto context = tyr::formalism::planning::CopyContext { builder, destination };
-    const auto [copied_binding, inserted] = tyr::formalism::planning::copy(binding, context);
+    auto context = tyr::formalism::WriteContext { builder, destination };
+    const auto [copied_binding, inserted] = tyr::formalism::copy(binding, context);
     ASSERT_TRUE(inserted);
     const auto copied = copied_binding.get_relation();
     EXPECT_EQ(&copied.context(), &destination);
@@ -145,7 +140,7 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     ASSERT_EQ(copied_binding.get_objects().size(), 1);
     EXPECT_EQ(copied_binding.get_objects()[0].get_name(), "truck");
     EXPECT_NE(copied_binding.get_objects()[0].index(), source_object.index());
-    EXPECT_FALSE(tyr::formalism::planning::copy(binding, context).second);
+    EXPECT_FALSE(tyr::formalism::copy(binding, context).second);
 }
 
 }

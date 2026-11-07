@@ -20,21 +20,23 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/grounder_decl.hpp"
+#include "tyr/formalism/write_context.hpp"
+
+#include <memory>
 
 namespace tyr::datalog
 {
 class ApplicabilityContext
 {
 public:
-    ApplicabilityContext(const FactSets& fact_sets, formalism::datalog::GrounderContext& grounder) : m_fact_sets(&fact_sets), m_grounder(&grounder) {}
+    ApplicabilityContext(const FactSets& fact_sets, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) : m_fact_sets(&fact_sets), m_grounder(std::addressof(grounder)) {}  // no operator& lookup: the builder's records need not be complete here
 
     [[nodiscard]] const FactSets& fact_sets() const noexcept { return *m_fact_sets; }
-    [[nodiscard]] formalism::datalog::GrounderContext& grounder() const noexcept { return *m_grounder; }
+    [[nodiscard]] formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder() const noexcept { return *m_grounder; }
 
 private:
     const FactSets* m_fact_sets;
-    formalism::datalog::GrounderContext* m_grounder;
+    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_grounder;
 };
 }
 

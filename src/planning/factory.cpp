@@ -17,11 +17,10 @@
 
 #include "tyr/planning/factory.hpp"
 
-#include "tyr/planning/ground/axiom_evaluator.hpp"
-#include "tyr/planning/ground/state_repository.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 
 #include <utility>

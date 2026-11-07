@@ -33,6 +33,7 @@
 #include <urd/store.hpp>
 #include <vector>
 #include <urd/elements/flat.hpp>
+#include <urd/utils/family.hpp>
 
 namespace tyr::analysis
 {
@@ -40,31 +41,14 @@ namespace tyr::analysis
 template<formalism::RelationKind R>
 using RuleIndexSet = urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>>;
 
-template<formalism::RelationKind R>
+template<typename R>
 struct TypedListenerStratum
 {
     urd::Store<urd::map<urd::index<formalism::Predicate<formalism::FluentTag>>, RuleIndexSet<R>>> predicates;
     urd::Store<urd::map<urd::index<formalism::Function<formalism::FluentTag>>, RuleIndexSet<R>>> functions;
 };
 
-struct ListenerStratum
-{
-    TypedListenerStratum<formalism::PredicateTag> predicate_rules;
-    TypedListenerStratum<formalism::FunctionTag> function_rules;
-
-    auto& get(formalism::PredicateTag) noexcept { return predicate_rules; }
-    auto& get(formalism::FunctionTag) noexcept { return function_rules; }
-    [[nodiscard]] const auto& get(formalism::PredicateTag) const noexcept { return predicate_rules; }
-    [[nodiscard]] const auto& get(formalism::FunctionTag) const noexcept { return function_rules; }
-
-    template<formalism::RelationKind R>
-    auto& get() noexcept
-    { return get(R {}); }
-
-    template<formalism::RelationKind R>
-    [[nodiscard]] const auto& get() const noexcept
-    { return get(R {}); }
-};
+using ListenerStratum = urd::utils::Family<TypedListenerStratum, formalism::PredicateTag, formalism::FunctionTag>;
 
 struct ListenerStrata
 {

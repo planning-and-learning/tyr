@@ -47,7 +47,7 @@
 #include <tyr/planning/algorithms/utils.hpp>
 #include <tyr/planning/declarations.hpp>
 #include <tyr/planning/factory.hpp>
-#include <tyr/planning/ground/axiom_evaluator.hpp>
+#include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/lifted/task.hpp>

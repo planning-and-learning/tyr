@@ -20,14 +20,41 @@
 #include <urd/store.hpp>
 
 #include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/ground/axiom_evaluator.hpp"
-#include "tyr/planning/ground/state_data.hpp"
-#include "tyr/planning/ground/state_repository.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/ground/state_storage/vectors.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/state_data.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
-#include "tyr/planning/lifted/state_data.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
+#include "tyr/planning/lifted/state_storage/vectors.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
@@ -42,14 +69,9 @@
 #include <utility>
 #include <urd/elements/prehashed.hpp>
 #include <urd/repr/records/records.hpp>
-#include <urd/store.hpp>
 
-namespace tyr::planning::detail
+namespace tyr::planning
 {
-
-template<TaskKind Kind>
-struct StateRepositoryPolicy;
-
 namespace
 {
 
@@ -61,62 +83,32 @@ ygg::uint_t next_state_storage_identity() noexcept
     return next.fetch_add(1, std::memory_order_relaxed);
 }
 
+void insert_initial_fluent_facts(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
+{
+    for (const auto fact : task.get_task().get_fluent_facts())
+        state.set(fact.data());
 }
 
-template<>
-struct StateRepositoryPolicy<GroundTag>
+void insert_initial_fluent_facts(const Task<LiftedTag>& task, urd::builder<State<LiftedTag>>& state)
 {
-    template<bool ThreadSafe>
-    static StateStorageContext<GroundTag, StateStoragePolicyTag, ThreadSafe> make_storage_context(const Task<GroundTag>& task)
-    { return StateStorageContext<GroundTag, StateStoragePolicyTag, ThreadSafe>(task); }
-
-    static void insert_initial_fluent_facts(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
-    {
-        for (const auto fact : task.get_task().get_fluent_facts())
-            state.set(fact.data());
-    }
-
-    static void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
-    {
-        state.clear();
-        state.resize_fluent_facts(task.get_task().get_fluent_variables().size());
-        state.resize_derived_atoms(task.get_task().template get_atoms<formalism::DerivedTag>().size());
-    }
-};
-
-template<>
-struct StateRepositoryPolicy<LiftedTag>
-{
-    template<bool ThreadSafe>
-    static StateStorageContext<LiftedTag, StateStoragePolicyTag, ThreadSafe> make_storage_context(const Task<LiftedTag>&)
-    { return {}; }
-
-    static void insert_initial_fluent_facts(const Task<LiftedTag>& task, urd::builder<State<LiftedTag>>& state)
-    {
-        for (const auto atom : task.get_task().template get_atoms<formalism::FluentTag>())
-            state.set(task.get_fdr_context()->get_fact(atom).data());
-    }
-
-    static void prepare_builder(const Task<LiftedTag>&, urd::builder<State<LiftedTag>>& state) { state.clear(); }
-};
-
+    for (const auto atom : task.get_task().template get_atoms<formalism::FluentTag>())
+        state.set(task.get_fdr_context()->get_fact(atom).data());
 }
 
-namespace tyr::planning
+void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
 {
+    state.clear();
+    state.resize_fluent_facts(task.get_task().get_fluent_variables().size());
+    state.resize_derived_atoms(task.get_task().template get_atoms<formalism::DerivedTag>().size());
+}
+
+void prepare_builder(const Task<LiftedTag>&, urd::builder<State<LiftedTag>>& state) { state.clear(); }
+
+}
 
 template<TaskKind Kind>
 struct StateRepository<Kind>::Impl
 {
-    using Policy = detail::StateRepositoryPolicy<Kind>;
-
-    struct Definition
-    {
-        explicit Definition(TaskPtr<Kind> task_) : task(std::move(task_)) {}
-
-        TaskPtr<Kind> task;
-    };
-
     template<bool ThreadSafe>
     struct Storage
     {
@@ -125,9 +117,9 @@ struct StateRepository<Kind>::Impl
         using PackedStates =
             urd::Store<urd::pool<PackedState<Kind>>, urd::stable_refs, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
-        explicit Storage(const Definition& definition) :
-            identity(detail::next_state_storage_identity<Kind>()),
-            context(Policy::template make_storage_context<ThreadSafe>(*definition.task)),
+        explicit Storage(const Task<Kind>& task) :
+            identity(next_state_storage_identity<Kind>()),
+            context(task),
             packed_states(urd::layer { 0 })
         {
         }
@@ -161,8 +153,8 @@ struct StateRepository<Kind>::Impl
         /// Inserts the fluent facts of `state`, as `delta` to `parent` if given.
         auto insert_fluents(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const StateDelta* delta)
         {
-            const auto& unpacked = state.template get_atom_storage<formalism::FluentTag>();
-            return parent ? fluent_backend.insert(unpacked, parent->template get_atom_storage<formalism::FluentTag>(), std::span(delta->fluents)) :
+            const auto& unpacked = state.fact_storage;
+            return parent ? fluent_backend.insert(unpacked, parent->fact_storage, std::span(delta->fluents)) :
                             fluent_backend.insert(unpacked);
         }
 
@@ -170,18 +162,18 @@ struct StateRepository<Kind>::Impl
         /// Axioms recompute derived atoms, so their changes are not part of a StateDelta.
         auto insert_derived(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const urd::data<State<Kind>>* parent_state)
         {
-            const auto& unpacked = state.template get_atom_storage<formalism::DerivedTag>();
+            const auto& unpacked = state.atom_storage;
             return parent ? derived_backend.insert(unpacked,
-                                                   parent->template get_atom_storage<formalism::DerivedTag>(),
-                                                   parent_state->template get_atom_storage<formalism::DerivedTag>()) :
+                                                   parent->atom_storage,
+                                                   parent_state->atom_storage) :
                             derived_backend.insert(unpacked);
         }
 
         /// Inserts the numeric values of `state`, as `delta` to `parent` if given.
         auto insert_numeric(urd::builder<State<Kind>>& state, const PackedState<Kind>* parent, const StateDelta* delta)
         {
-            auto& unpacked = state.get_numeric_variables();
-            return parent ? numeric_backend.insert(unpacked, parent->get_numeric_variables(), std::span(delta->numerics)) : numeric_backend.insert(unpacked);
+            auto& unpacked = state.numeric_storage;
+            return parent ? numeric_backend.insert(unpacked, parent->numeric_storage, std::span(delta->numerics)) : numeric_backend.insert(unpacked);
         }
 
         /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
@@ -203,7 +195,7 @@ struct StateRepository<Kind>::Impl
             auto& packed_states = storage->packed_states;
             using PackedStates = typename Storage<ThreadSafe>::PackedStates;
             using Handle = typename PackedStates::handle_type;
-            const auto* parent = parent_state ? &packed_states[Handle(parent_state->get_index().value)] : nullptr;
+            const auto* parent = parent_state ? &packed_states[Handle(parent_state->index.value)] : nullptr;
             const auto fluent = insert_fluents(state, parent, delta);
             const auto numeric = insert_numeric(state, parent, delta);
             const auto key = PackedState<Kind>(fluent, {}, numeric);
@@ -231,39 +223,29 @@ struct StateRepository<Kind>::Impl
                 }
             }
 
-            derived_backend.unpack(packed_states[Handle(state_index->value)].template get_atom_storage<formalism::DerivedTag>(),
-                                   state.template get_atom_storage<formalism::DerivedTag>());
+            derived_backend.unpack(packed_states[Handle(state_index->value)].atom_storage,
+                                   state.atom_storage);
             state.set(*state_index);
         }
     };
 
-    Impl(ygg::uint_t index_, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+    Impl(ygg::uint_t index_, TaskPtr<Kind> task_, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
-        definition(std::make_shared<Definition>(std::move(task))),
-        evaluator(concurrent ? nullptr : std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition))),
-        shared_evaluator(concurrent ? std::make_unique<Evaluator<true>>(std::make_shared<Storage<true>>(*definition)) : nullptr),
+        task(std::move(task_)),
+        evaluator(concurrent ? nullptr : std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*task))),
+        shared_evaluator(concurrent ? std::make_unique<Evaluator<true>>(std::make_shared<Storage<true>>(*task)) : nullptr),
         storage_identity(concurrent ? shared_evaluator->storage->identity : evaluator->storage->identity)
     {
     }
 
-    Impl(ygg::uint_t index_, std::shared_ptr<const Definition> definition_, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
-        definition(std::move(definition_)),
-        evaluator(std::make_unique<Evaluator<false>>(std::make_unique<Storage<false>>(*definition))),
-        shared_evaluator(),
-        storage_identity(evaluator->storage->identity)
-    {
-    }
-
     Impl(ygg::uint_t index_,
-         std::shared_ptr<const Definition> definition_,
+         TaskPtr<Kind> task_,
          std::shared_ptr<Storage<true>> storage,
          std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
-        definition(std::move(definition_)),
+        task(std::move(task_)),
         evaluator(),
         shared_evaluator(std::make_unique<Evaluator<true>>(std::move(storage))),
         storage_identity(shared_evaluator->storage->identity)
@@ -288,7 +270,7 @@ struct StateRepository<Kind>::Impl
 
     ygg::uint_t index;
     std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
-    std::shared_ptr<const Definition> definition;
+    TaskPtr<Kind> task;
     std::unique_ptr<Evaluator<false>> evaluator;
     std::unique_ptr<Evaluator<true>> shared_evaluator;
     ygg::uint_t storage_identity;
@@ -313,19 +295,19 @@ StateRepositoryPtr<Kind> StateRepository<Kind>::make_worker() const
 {
     const auto index = m_impl->next_index->fetch_add(1, std::memory_order_relaxed);
     if (m_impl->evaluator)
-        return StateRepositoryPtr<Kind>(new StateRepository<Kind>(std::make_unique<Impl>(index, m_impl->definition, m_impl->next_index)));
+        return StateRepositoryPtr<Kind>(new StateRepository<Kind>(std::make_unique<Impl>(index, m_impl->task, false, m_impl->next_index)));
 
     return StateRepositoryPtr<Kind>(
-        new StateRepository<Kind>(std::make_unique<Impl>(index, m_impl->definition, m_impl->shared_evaluator->storage, m_impl->next_index)));
+        new StateRepository<Kind>(std::make_unique<Impl>(index, m_impl->task, m_impl->shared_evaluator->storage, m_impl->next_index)));
 }
 
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto state_builder = get_state_builder();
-    detail::StateRepositoryPolicy<Kind>::insert_initial_fluent_facts(*m_impl->definition->task, *state_builder);
+    insert_initial_fluent_facts(*m_impl->task, *state_builder);
 
-    for (const auto fterm_value : m_impl->definition->task->get_task().template get_fterm_values<formalism::FluentTag>())
+    for (const auto fterm_value : m_impl->task->get_task().template get_fterm_values<formalism::FluentTag>())
         state_builder->set(fterm_value.get_fterm().index(), fterm_value.get_value());
 
     return register_state(axiom_evaluator, std::move(state_builder));
@@ -341,11 +323,11 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(urd::index<State<Kin
         [&](auto& evaluator)
         {
             const auto& packed_state = packed(state_index);
-            evaluator.fluent_backend.unpack(packed_state.template get_atom_storage<formalism::FluentTag>(),
-                                            state_builder->template get_atom_storage<formalism::FluentTag>());
-            evaluator.derived_backend.unpack(packed_state.template get_atom_storage<formalism::DerivedTag>(),
-                                             state_builder->template get_atom_storage<formalism::DerivedTag>());
-            evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
+            evaluator.fluent_backend.unpack(packed_state.fact_storage,
+                                            state_builder->fact_storage);
+            evaluator.derived_backend.unpack(packed_state.atom_storage,
+                                             state_builder->atom_storage);
+            evaluator.numeric_backend.unpack(packed_state.numeric_storage, state_builder->numeric_storage);
         });
 
     return StateView<Kind>(std::move(state_builder), this);
@@ -402,14 +384,14 @@ std::shared_ptr<urd::builder<State<Kind>>> StateRepository<Kind>::get_state_buil
     // Each owner keeps the repository alive; the slot goes back to the pool with the last one.
     auto state_builder = m_impl->visit_evaluator(
         [this](auto& evaluator) { return evaluator.state_builder_pool.acquire_shared(this->shared_from_this()); });
-    detail::StateRepositoryPolicy<Kind>::prepare_builder(*m_impl->definition->task, *state_builder);
+    prepare_builder(*m_impl->task, *state_builder);
     return state_builder;
 }
 
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axiom_evaluator, std::shared_ptr<urd::builder<State<Kind>>> state)
 {
-    if (axiom_evaluator.get_task() != m_impl->definition->task)
+    if (axiom_evaluator.get_task() != m_impl->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }); });
     return StateView<Kind>(std::move(state), this);
@@ -421,7 +403,7 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
                                                       const StateView<Kind>& parent,
                                                       const StateDelta& delta)
 {
-    if (axiom_evaluator.get_task() != m_impl->definition->task)
+    if (axiom_evaluator.get_task() != m_impl->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
     // A delta insert reuses the parent's unchanged subtrees by their node indices, so the parent's trees must live in
     // this storage. A parent from separate storage would need its subtrees inserted here first, which is a full insert.
@@ -459,7 +441,7 @@ size_t StateRepository<Kind>::memory_usage() const noexcept
 
 template<TaskKind Kind>
 const TaskPtr<Kind>& StateRepository<Kind>::get_task() const noexcept
-{ return m_impl->definition->task; }
+{ return m_impl->task; }
 
 template<TaskKind Kind>
 bool StateRepository<Kind>::shares_storage_with(const StateRepository& other) const noexcept
@@ -507,8 +489,5 @@ template StateView<GroundTag>
 materialize_state(const StateView<GroundTag>& source, StateRepository<GroundTag>& target, AxiomEvaluator<GroundTag>& axiom_evaluator);
 template StateView<LiftedTag>
 materialize_state(const StateView<LiftedTag>& source, StateRepository<LiftedTag>& target, AxiomEvaluator<LiftedTag>& axiom_evaluator);
-
-static_assert(StateRepositoryConcept<StateRepository<GroundTag>, GroundTag>);
-static_assert(StateRepositoryConcept<StateRepository<LiftedTag>, LiftedTag>);
 
 }

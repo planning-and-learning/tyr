@@ -30,9 +30,6 @@
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/algorithms/iw.hpp"
 #include "tyr/planning/algorithms/iw/event_handler.hpp"
-#include "tyr/planning/algorithms/openlists/alternating.hpp"
-#include "tyr/planning/algorithms/openlists/interface.hpp"
-#include "tyr/planning/algorithms/openlists/priority_queue.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
@@ -91,67 +88,6 @@ static_assert(!tyr::planning::detail::ExecutionPolicyConcept<GroundExecutionPoli
 static_assert(!tyr::planning::detail::SearchPolicyConcept<int, GroundTag>);
 static_assert(!tyr::planning::detail::StateRoutingPolicyConcept<int, GroundTag>);
 static_assert(!tyr::planning::detail::ExecutionPolicyConcept<int, GroundTag, GroundSearchPolicy>);
-
-struct QueueEntryWithoutKeyType
-{
-    using ItemType = int;
-
-    int key;
-    int item;
-
-    [[nodiscard]] int get_key() const { return key; }
-    [[nodiscard]] int get_item() const { return item; }
-};
-
-static_assert(tyr::planning::IsPriorityQueueEntry<QueueEntryWithoutKeyType>);
-static_assert(tyr::planning::IsOpenList<tyr::planning::PriorityQueue<QueueEntryWithoutKeyType>>);
-
-/// QueueEntryWithoutKeyType, but its item is not of ItemType.
-struct QueueEntryWithWrongItem
-{
-    using ItemType = int;
-
-    int key;
-
-    [[nodiscard]] int get_key() const { return key; }
-    [[nodiscard]] std::string_view get_item() const { return {}; }
-};
-
-struct QueueEntryWithDifferentItem : QueueEntryWithWrongItem
-{
-    using ItemType = std::string_view;
-};
-
-struct NonDefaultItem
-{
-    int value;
-
-    explicit NonDefaultItem(int value_) : value(value_) {}
-    NonDefaultItem(const NonDefaultItem&) = default;
-    NonDefaultItem(NonDefaultItem&&) = default;
-    NonDefaultItem& operator=(const NonDefaultItem&) = delete;
-    NonDefaultItem& operator=(NonDefaultItem&&) = delete;
-    ~NonDefaultItem() = default;
-};
-
-struct QueueEntryWithNonDefaultItem
-{
-    using ItemType = NonDefaultItem;
-
-    int key;
-    int item;
-
-    [[nodiscard]] int get_key() const { return key; }
-    [[nodiscard]] ItemType get_item() const { return ItemType(item); }
-};
-
-template<typename... Queues>
-concept CanAlternate = requires { typename tyr::planning::AlternatingOpenList<Queues...>; };
-
-static_assert(!tyr::planning::IsPriorityQueueEntry<QueueEntryWithWrongItem>);
-static_assert(!CanAlternate<>);
-static_assert(!CanAlternate<tyr::planning::PriorityQueue<QueueEntryWithoutKeyType>, tyr::planning::PriorityQueue<QueueEntryWithDifferentItem>>);
-static_assert(CanAlternate<tyr::planning::PriorityQueue<QueueEntryWithNonDefaultItem>, tyr::planning::PriorityQueue<QueueEntryWithNonDefaultItem>>);
 
 struct TaskPair
 {
@@ -269,10 +205,10 @@ private:
 template<TaskKind Kind>
 bool is_at_location(const urd::data<tyr::planning::State<Kind>>& state, const formalism::planning::Repository& repository, std::string_view location)
 {
-    return std::ranges::any_of(state.get_fluent_facts_view(repository),
-                               [&](const auto fact)
+    return std::ranges::any_of(state.get_fluent_facts(),
+                               [&](const auto fact_data)
                                {
-                                   const auto atom = fact.get_atom();
+                                   const auto atom = formalism::planning::computed_fact_view(fact_data, repository).get_atom();
                                    return atom && atom->get_predicate().get_name().str() == "at" && atom->get_objects().size() == 2
                                           && atom->get_objects().back().get_name().str() == location;
                                });
@@ -1245,64 +1181,6 @@ void expect_parallel_astar_heuristic_exceptions_propagate(const tyr::planning::T
             tyr::planning::astar_eager::find_solution(*task, *context.repository, *context.axiom_evaluator, *context.successor_generator, heuristic, options),
             std::runtime_error);
     }
-}
-
-TEST(TyrPlanningSearchEngineTest, PriorityQueueUsesKeyGetterWithoutMetadata)
-{
-    auto queue = tyr::planning::PriorityQueue<QueueEntryWithoutKeyType> {};
-    queue.push({ 3, 30 });
-    queue.push({ 1, 10 });
-    queue.push({ 2, 20 });
-
-    for (const auto item : { 10, 20, 30 })
-    {
-        EXPECT_EQ(queue.top().get_item(), item);
-        queue.pop();
-    }
-    EXPECT_TRUE(queue.empty());
-}
-
-TEST(TyrPlanningSearchEngineTest, AlternatingOpenListConstructsSelectedItemWithoutDefaultConstructionOrAssignment)
-{
-    using Queue = tyr::planning::PriorityQueue<QueueEntryWithNonDefaultItem>;
-    auto first = Queue {};
-    auto second = Queue {};
-    auto alternating = tyr::planning::AlternatingOpenList<Queue, Queue>(first, second, std::array<std::size_t, 2> { 1, 1 });
-    first.push({ 1, 10 });
-    second.push({ 2, 20 });
-
-    EXPECT_EQ(alternating.top().value, 10);
-    alternating.pop();
-    EXPECT_EQ(alternating.top().value, 20);
-    alternating.pop();
-    EXPECT_TRUE(alternating.empty());
-}
-
-TEST(TyrPlanningSearchEngineTest, AlternatingOpenListClearsEveryQueue)
-{
-    using Queue = tyr::planning::PriorityQueue<QueueEntryWithoutKeyType>;
-    auto first = Queue {};
-    auto second = Queue {};
-    auto alternating = tyr::planning::AlternatingOpenList<Queue, Queue>(first, second, std::array<std::size_t, 2> { 1, 1 });
-    first.push({ 1, 10 });
-    first.push({ 2, 20 });
-    second.push({ 3, 30 });
-    EXPECT_EQ(alternating.size(), 3);
-
-    alternating.clear();
-    EXPECT_TRUE(first.empty());
-    EXPECT_TRUE(second.empty());
-    EXPECT_TRUE(alternating.empty());
-    EXPECT_EQ(alternating.size(), 0);
-
-    first.push({ 4, 40 });
-    second.push({ 5, 50 });
-    EXPECT_EQ(alternating.top(), 40);
-    alternating.pop();
-    EXPECT_EQ(alternating.top(), 50);
-    alternating.clear();
-    EXPECT_TRUE(second.empty());
-    EXPECT_EQ(alternating.size(), 0);
 }
 
 TEST(TyrPlanningSearchEngineTest, ChecksGoalsBeforeHeuristics)

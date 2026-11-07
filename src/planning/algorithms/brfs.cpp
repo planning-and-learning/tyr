@@ -19,11 +19,8 @@
 
 #include "search_engine/brfs.hpp"
 #include "search_engine/parallel.hpp"
-#include "search_engine/sequential.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
-
-#include <stdexcept>
 
 namespace tyr::planning::brfs
 {
@@ -36,25 +33,8 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
 {
     static_assert(Options<Kind>::cost_mode == CostMode::UNIT);
 
-    if (options.num_search_workers == 0)
-        throw std::invalid_argument("brfs::find_solution(...): num_search_workers must be greater than zero.");
-
     auto heuristic = BlindHeuristic<Kind> {};
-    if (options.num_search_workers > 1)
-    {
-        using Search = detail::BreadthFirstPolicy<Kind, ParallelSearch>;
-        return detail::find_parallel_solution<Kind, Search>(task,
-                                                            state_repository,
-                                                            axiom_evaluator,
-                                                            successor_generator,
-                                                            heuristic,
-                                                            options,
-                                                            "brfs::find_solution(...): unknown distribution hash mode.");
-    }
-
-    using Search = detail::BreadthFirstPolicy<Kind, SequentialSearch>;
-    using Execution = detail::SequentialExecutionPolicy<Kind, Search>;
-    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
+    return detail::find_solution<detail::BreadthFirstPolicy>(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, "brfs");
 }
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,

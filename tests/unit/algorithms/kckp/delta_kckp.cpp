@@ -72,12 +72,12 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/gripper/domain.pddl").parse_task(root / "classical/tests/gripper/test-1.pddl");
-    auto action_program = tyr::planning::ApplicableActionProgram<LiftedTag>(task.get_task());
+    auto action_program = tyr::planning::ApplicableActionProgram(task.get_task());
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* pick_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().get_rules<tyr::formalism::PredicateTag>();
+    const auto& rules = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>();
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto is_pick = action_program.get_predicate_to_action_mapping()
@@ -214,12 +214,12 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/visitall/domain.pddl").parse_task(root / "classical/tests/visitall/test-1.pddl");
-    auto action_program = tyr::planning::ApplicableActionProgram<LiftedTag>(task.get_task());
+    auto action_program = tyr::planning::ApplicableActionProgram(task.get_task());
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* move_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().get_rules<tyr::formalism::PredicateTag>();
+    const auto& rules = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>();
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];
@@ -341,12 +341,12 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 {
     const auto root = std::filesystem::path(BENCHMARKS_DIR);
     auto task = make_test_parser(root / "classical/tests/transport/domain.pddl").parse_task(root / "classical/tests/transport/test-1.pddl");
-    auto action_program = tyr::planning::ApplicableActionProgram<LiftedTag>(task.get_task());
+    auto action_program = tyr::planning::ApplicableActionProgram(task.get_task());
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* drive_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().get_rules<tyr::formalism::PredicateTag>();
+    const auto& rules = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>();
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];

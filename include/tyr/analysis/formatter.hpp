@@ -223,7 +223,7 @@ struct formatter<tyr::analysis::ProgramVariableDomains, char>
 
             const auto format_rules = [&]<tyr::formalism::RelationKind RK>()
             {
-                for (const auto& [rule, domain] : value.template get_rule_domains<RK>())
+                for (const auto& [rule, domain] : value.rule_domains.template get<RK>())
                 {
                     os << ygg::print_indent;
                     fmt::print(os, "rule {} domain = {}\n", rule, domain);
@@ -415,27 +415,6 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom<::tyr
     }
 };
 
-template<tyr::formalism::RelationKind R, typename Payload, typename C>
-struct formatter<tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload, C>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::analysis::ScopedView<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload, C>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "RuleDomain(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "element = ", value.element.index());
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "payload = ", value.payload);
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
-};
-
 template<typename C>
 struct formatter<tyr::analysis::VariableDomainView<C>, char>
 {
@@ -443,42 +422,6 @@ struct formatter<tyr::analysis::VariableDomainView<C>, char>
     template<typename FormatContext>
     auto format(const tyr::analysis::VariableDomainView<C>& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", value.objects); }
-};
-
-template<>
-struct formatter<tyr::analysis::ProgramVariableDomainsView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::analysis::ProgramVariableDomainsView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ProgramVariableDomains(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static predicate domains = ", value.static_predicate_domains);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent predicate domains = ", value.fluent_predicate_domains);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "static function domains = ", value.static_function_domains);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "fluent function domains = ", value.fluent_function_domains);
-
-            const auto format_rules = [&]<tyr::formalism::RelationKind RK>()
-            {
-                for (const auto& [rule, domain] : value.template get_rule_domains<RK>())
-                {
-                    os << ygg::print_indent;
-                    fmt::print(os, "{}\n", domain);
-                }
-            };
-            format_rules.template operator()<tyr::formalism::PredicateTag>();
-            format_rules.template operator()<tyr::formalism::FunctionTag>();
-        }
-        os << ygg::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
 };
 
 template<>

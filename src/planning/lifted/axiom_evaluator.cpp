@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
+#include "../axiom_evaluator_impl.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -28,7 +28,32 @@
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "yggdrasil/formalism/binding_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_builder.hpp"
@@ -53,81 +78,38 @@
 
 namespace tyr::planning
 {
-struct AxiomEvaluator<LiftedTag>::Impl
+namespace detail
 {
-    using Program = AxiomEvaluatorProgram<LiftedTag>;
-
-    struct Definition
+template<>
+struct AxiomDefinition<LiftedTag>
+{
+    explicit AxiomDefinition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), program()
     {
-        explicit Definition(TaskPtr<LiftedTag> task_) : task(std::move(task_)), program()
-        {
-            if (task->has_axioms())
-                program = std::make_unique<Program>(task->get_task());
-        }
-
-        TaskPtr<LiftedTag> task;
-        std::unique_ptr<Program> program;
-    };
-
-    struct Evaluator
-    {
-        Evaluator(const Definition& definition, ygg::ExecutionContextPtr execution_context_) :
-            execution_context(std::move(execution_context_)),
-            workspace(definition.program ? std::make_unique<datalog::ProgramWorkspace<LiftedTag>>(definition.program->get_datalog_program()) : nullptr),
-            derived_bindings()
-        {
-        }
-
-        ygg::ExecutionContextPtr execution_context;
-        std::unique_ptr<datalog::ProgramWorkspace<LiftedTag>> workspace;
-        urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>> derived_bindings;
-    };
-
-    Impl(ygg::uint_t index_, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
-        definition(std::make_shared<Definition>(std::move(task))),
-        evaluator(*definition, std::move(execution_context))
-    {
+        if (task->has_axioms())
+            program = std::make_unique<AxiomEvaluatorProgram>(task->get_task());
     }
 
-    Impl(ygg::uint_t index_,
-         std::shared_ptr<const Definition> definition_,
-         ygg::ExecutionContextPtr execution_context,
-         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
-        definition(std::move(definition_)),
-        evaluator(*definition, std::move(execution_context))
-    {
-    }
-
-    ygg::uint_t index;
-    std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
-    std::shared_ptr<const Definition> definition;
-    Evaluator evaluator;
+    TaskPtr<LiftedTag> task;
+    std::unique_ptr<AxiomEvaluatorProgram> program;
 };
 
-AxiomEvaluator<LiftedTag>::~AxiomEvaluator() = default;
-
-AxiomEvaluator<LiftedTag>::AxiomEvaluator(ygg::uint_t index,
-                                          TaskPtr<LiftedTag> task,
-                                          ygg::ExecutionContextPtr execution_context,
-                                          std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(execution_context), std::move(next_index)))
+template<>
+struct AxiomWorkspace<LiftedTag>
 {
+    AxiomWorkspace(const AxiomDefinition<LiftedTag>& definition, ygg::ExecutionContextPtr execution_context_) :
+        execution_context(std::move(execution_context_)),
+        workspace(definition.program ? std::make_unique<datalog::ProgramWorkspace<LiftedTag>>(definition.program->get_datalog_program()) : nullptr),
+        derived_bindings()
+    {
+    }
+
+    ygg::ExecutionContextPtr execution_context;
+    std::unique_ptr<datalog::ProgramWorkspace<LiftedTag>> workspace;
+    urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>> derived_bindings;
+};
 }
 
-AxiomEvaluator<LiftedTag>::AxiomEvaluator(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
-
-AxiomEvaluatorPtr<LiftedTag> AxiomEvaluator<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{
-    return AxiomEvaluatorPtr<LiftedTag>(new AxiomEvaluator<LiftedTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
-                                                                                             m_impl->definition,
-                                                                                             std::move(execution_context),
-                                                                                             m_impl->next_index)));
-}
-
+template<>
 void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>>& state_builder)
 {
     auto& evaluator = m_impl->evaluator;
@@ -151,6 +133,7 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<Lifted
                                      evaluator.derived_bindings);
 }
 
+template<>
 void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
 {
     if (verbosity < 1 || !m_impl->evaluator.workspace)
@@ -159,23 +142,9 @@ void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
     const auto& workspace = *m_impl->evaluator.workspace;
     std::cout << "[Axiom evaluator] Summary" << '\n';
     fmt::print(std::cout, "{}\n", workspace.statistics);
-    auto axiom_evaluator_rule_statistics = urd::Store<urd::sequence<datalog::RuleStatistics>> {};
-    for (const auto& ws_rule : workspace.template get_rules<formalism::PredicateTag>())
-        axiom_evaluator_rule_statistics.push_back(ws_rule->common.statistics);
-    fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(axiom_evaluator_rule_statistics));
-    auto axiom_evaluator_rule_worker_statistics = urd::Store<urd::sequence<datalog::RuleWorkerStatistics>> {};
-    for (const auto& ws_rule : workspace.template get_rules<formalism::PredicateTag>())
-        for (const auto& worker : ws_rule->worker)
-            axiom_evaluator_rule_worker_statistics.push_back(worker.solve.statistics);
-    fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(axiom_evaluator_rule_worker_statistics));
+    datalog::print_rule_statistics(workspace.rules);
 }
 
-const TaskPtr<LiftedTag>& AxiomEvaluator<LiftedTag>::get_task() const noexcept { return m_impl->definition->task; }
-
-const ygg::ExecutionContextPtr& AxiomEvaluator<LiftedTag>::get_execution_context() const noexcept { return m_impl->evaluator.execution_context; }
-
-ygg::uint_t AxiomEvaluator<LiftedTag>::get_index() const noexcept { return m_impl->index; }
-
-static_assert(AxiomEvaluatorConcept<AxiomEvaluator<LiftedTag>, LiftedTag>);
+template class AxiomEvaluator<LiftedTag>;
 
 }

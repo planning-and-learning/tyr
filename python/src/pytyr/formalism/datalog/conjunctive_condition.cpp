@@ -88,7 +88,7 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

@@ -31,7 +31,23 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-#include <tyr/datalog/datalog.hpp>
+#include <tyr/algorithms/kckp/kckp.hpp>
+#include <tyr/datalog/applicability.hpp>
+#include <tyr/datalog/applicability_lifted.hpp>
+#include <tyr/datalog/declarations.hpp>
+#include <tyr/datalog/fact_sets.hpp>
+#include <tyr/datalog/formatter.hpp>
+#include <tyr/datalog/ground/program.hpp>
+#include <tyr/datalog/lifted/assignment.hpp>
+#include <tyr/datalog/lifted/assignment_sets.hpp>
+#include <tyr/datalog/lifted/consistency_graph.hpp>
+#include <tyr/datalog/lifted/program.hpp>
+#include <tyr/datalog/lifted/workspaces/facts.hpp>
+#include <tyr/datalog/lifted/workspaces/rule.hpp>
+#include <tyr/datalog/solver.hpp>
+#include <tyr/datalog/static_rule_filter.hpp>
+#include <tyr/datalog/statistics/program.hpp>
+#include <tyr/datalog/statistics/rule.hpp>
 #include <tyr/datalog/policies/annotation.hpp>
 #include <tyr/datalog/policies/cost.hpp>
 #include <tyr/datalog/policies/termination.hpp>
@@ -56,7 +72,7 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
     using Set = PredicateFactSet<T>;
 
     nb::class_<Set>(m, name)
-        .def("get_predicate", &Set::get_predicate, nb::keep_alive<0, 1>())
+        .def("get_predicate", &Set::get_predicate)
         .def(
             "get_bindings",
             [](const Set& self)
@@ -85,7 +101,7 @@ void bind_function_fact_set(nb::module_& m, const char* name)
     using Binding = formalism::datalog::FunctionBindingView<T>;
 
     nb::class_<Set>(m, name)
-        .def("get_function", &Set::get_function, nb::keep_alive<0, 1>())
+        .def("get_function", &Set::get_function)
         .def(
             "get_binding_values",
             [](const Set& self)
@@ -454,24 +470,24 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "insert_fluent_atom",
                 [](Workspace& self, Atom atom)
                 {
-                    auto context = formalism::datalog::CopyContext { self.datalog_builder, *self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(formalism::datalog::copy(atom, context).first);
+                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(formalism::copy(atom, context).first);
                 },
                 "atom"_a)
             .def(
                 "insert_fluent_binding",
                 [](Workspace& self, PredicateBinding binding)
                 {
-                    auto context = formalism::datalog::CopyContext { self.datalog_builder, *self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(formalism::datalog::copy(binding, context).first);
+                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
+                    return self.facts.fact_sets.predicate.insert(formalism::copy(binding, context).first);
                 },
                 "binding"_a)
             .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
-                    auto context = formalism::datalog::CopyContext { self.datalog_builder, *self.workspace_repository };
-                    return self.facts.fact_sets.function.insert(formalism::datalog::copy(binding, context).first, interval);
+                    auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
+                    return self.facts.fact_sets.function.insert(formalism::copy(binding, context).first, interval);
                 },
                 "binding"_a,
                 "interval"_a)

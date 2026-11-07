@@ -1,5 +1,5 @@
 #include "tyr/datalog/static_rule_filter.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
@@ -125,8 +125,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         auto source = factory.create();
         const auto intern = [&](auto data)
         {
-            canonicalize(data);
-            return source.insert(data).first;
+            return ygg::formalism::insert(source, data).first;
         };
         const auto predicate = [&]<tyr::formalism::FactKind T>(const char* name)
         { return intern(urd::data<tyr::formalism::Predicate<T>> { std::string(name), 0 }); };

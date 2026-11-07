@@ -95,12 +95,12 @@ should not be used further.
                 "formalism_task"_a)
             .def("get_formalism_task", &Task<LiftedTag>::get_formalism_task, nb::rv_policy::reference_internal)
             .def("get_repository", &Task<LiftedTag>::get_repository)
-            .def("get_task", &Task<LiftedTag>::get_task, nb::keep_alive<0, 1>())
+            .def("get_task", &Task<LiftedTag>::get_task)
             .def("get_fdr_context", nb::overload_cast<>(&Task<LiftedTag>::get_fdr_context, nb::const_), nb::rv_policy::reference_internal)
             .def("instantiate_ground_task", &Task<LiftedTag>::instantiate_ground_task, "execution_context"_a, "options"_a = GroundTaskInstantiationOptions());
     ygg::add_print(task);
 
-    using ApplicableProgram = ApplicableActionProgram<LiftedTag>;
+    using ApplicableProgram = ApplicableActionProgram;
     nb::class_<ApplicableProgram>(m, "ApplicableActionProgram")
         .def(nb::init<formalism::planning::TaskView<LiftedTag>>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&ApplicableProgram::get_datalog_program), nb::rv_policy::reference_internal)
@@ -117,7 +117,7 @@ should not be used further.
             },
             nb::rv_policy::reference_internal);
 
-    using AxiomProgram = AxiomEvaluatorProgram<LiftedTag>;
+    using AxiomProgram = AxiomEvaluatorProgram;
     nb::class_<AxiomProgram>(m, "AxiomEvaluatorProgram")
         .def(nb::init<formalism::planning::TaskView<LiftedTag>>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&AxiomProgram::get_datalog_program), nb::rv_policy::reference_internal)
@@ -127,7 +127,7 @@ should not be used further.
     nb::class_<RelaxedProgram>(m, "RPGProgram")
         .def(nb::init<formalism::planning::TaskView<LiftedTag>, CostMode>(), "task"_a, "cost_mode"_a = CostMode::UNIT, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&RelaxedProgram::get_datalog_program), nb::rv_policy::reference_internal)
-        .def("get_goal", &RelaxedProgram::get_goal, nb::keep_alive<0, 1>())
+        .def("get_goal", &RelaxedProgram::get_goal)
         .def("get_rule_to_action_mapping",
              [](const RelaxedProgram& self)
              {
@@ -172,34 +172,7 @@ should not be used further.
             },
             nb::rv_policy::reference_internal);
 
-    bind_index<urd::index<State<LiftedTag>>>(m, "StateIndex");
-    bind_packed_state<LiftedTag>(m, "PackedState");
-    bind_state<LiftedTag>(m, "State");
-    bind_state_data<LiftedTag>(m, "StateBuilder");
-    bind_node<LiftedTag>(m, "Node");
-    bind_packed_node<LiftedTag>(m, "PackedNode");
-    bind_labeled_node<LiftedTag>(m, "LabeledNode");
-    bind_packed_labeled_node<LiftedTag>(m, "PackedLabeledNode");
-    bind_plan<LiftedTag>(m, "Plan");
-    bind_packed_plan<LiftedTag>(m, "PackedPlan");
-    bind_axiom_evaluator<LiftedTag>(m, "AxiomEvaluator");
-    bind_axiom_evaluator_factory<LiftedTag>(m, "AxiomEvaluatorFactory");
-    bind_state_repository<LiftedTag>(m, "StateRepository");
-    bind_state_repository_factory<LiftedTag>(m, "StateRepositoryFactory");
-    bind_successor_generator<LiftedTag>(m, "SuccessorGenerator");
-    bind_successor_generator_factory<LiftedTag>(m, "SuccessorGeneratorFactory");
-    bind_search_result<LiftedTag>(m, "SearchResult");
-    bind_goal_strategy<LiftedTag>(m, "GoalStrategy");
-    bind_conjunctive_goal_strategy<LiftedTag>(m, "ConjunctiveGoalStrategy");
-    bind_exhaustive_goal_strategy<LiftedTag>(m, "ExhaustiveGoalStrategy");
-    bind_pruning_strategy<LiftedTag>(m, "PruningStrategy");
-    bind_heuristic<LiftedTag>(m, "Heuristic");
-    bind_blind_heuristic<LiftedTag>(m, "BlindHeuristic");
-    bind_rpg_max_heuristic<LiftedTag>(m, "MaxRPGHeuristic");
-    bind_rpg_add_heuristic<LiftedTag>(m, "AddRPGHeuristic");
-    bind_rpg_ff_heuristic<LiftedTag>(m, "FFRPGHeuristic");
-    bind_lmcut_heuristic<LiftedTag>(m, "LMCutHeuristic");
-    bind_goal_count_heuristic<LiftedTag>(m, "GoalCountHeuristic");
+    bind_kind_definitions<LiftedTag>(m);
 }
 
 }  // namespace tyr::planning

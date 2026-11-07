@@ -30,8 +30,20 @@
 namespace tyr::formalism
 {
 
-template<std::floating_point T>
+/// Exact comparisons; floating-point types compare within ygg::FloatTolerance (the specialization below).
+template<typename T>
 struct FloatCmp
+{
+    static bool eq(T a, T b) noexcept { return a == b; }
+    static bool ne(T a, T b) noexcept { return a != b; }
+    static bool le(T a, T b) noexcept { return a <= b; }
+    static bool lt(T a, T b) noexcept { return a < b; }
+    static bool ge(T a, T b) noexcept { return a >= b; }
+    static bool gt(T a, T b) noexcept { return a > b; }
+};
+
+template<std::floating_point T>
+struct FloatCmp<T>
 {
     static T tol(T a, T b) noexcept { return ygg::FloatTolerance<T>::tolerance(a, b); }
 
@@ -52,63 +64,6 @@ struct FloatCmp
     static bool gt(T a, T b) noexcept { return exact(a, b) ? a > b : a > b + tol(a, b); }
 };
 
-namespace detail
-{
-template<typename T>
-bool eq_scalar(T lhs, T rhs) noexcept
-{
-    if constexpr (std::is_floating_point_v<T>)
-        return FloatCmp<T>::eq(lhs, rhs);
-    else
-        return lhs == rhs;
-}
-
-template<typename T>
-bool ne_scalar(T lhs, T rhs) noexcept
-{
-    if constexpr (std::is_floating_point_v<T>)
-        return FloatCmp<T>::ne(lhs, rhs);
-    else
-        return lhs != rhs;
-}
-
-template<typename T>
-bool ge_scalar(T lhs, T rhs) noexcept
-{
-    if constexpr (std::is_floating_point_v<T>)
-        return FloatCmp<T>::ge(lhs, rhs);
-    else
-        return lhs >= rhs;
-}
-
-template<typename T>
-bool gt_scalar(T lhs, T rhs) noexcept
-{
-    if constexpr (std::is_floating_point_v<T>)
-        return FloatCmp<T>::gt(lhs, rhs);
-    else
-        return lhs > rhs;
-}
-
-template<typename T>
-bool le_scalar(T lhs, T rhs) noexcept
-{
-    if constexpr (std::is_floating_point_v<T>)
-        return FloatCmp<T>::le(lhs, rhs);
-    else
-        return lhs <= rhs;
-}
-
-template<typename T>
-bool lt_scalar(T lhs, T rhs) noexcept
-{
-    if constexpr (std::is_floating_point_v<T>)
-        return FloatCmp<T>::lt(lhs, rhs);
-    else
-        return lhs < rhs;
-}
-}
-
 /**
  * Scalar comparisons
  */
@@ -119,17 +74,17 @@ bool apply(BooleanOperatorKind op, T lhs, T rhs)
     switch (op)
     {
         case BooleanOperatorKind::Eq:
-            return detail::eq_scalar(lhs, rhs);
+            return FloatCmp<T>::eq(lhs, rhs);
         case BooleanOperatorKind::Ne:
-            return detail::ne_scalar(lhs, rhs);
+            return FloatCmp<T>::ne(lhs, rhs);
         case BooleanOperatorKind::Le:
-            return detail::le_scalar(lhs, rhs);
+            return FloatCmp<T>::le(lhs, rhs);
         case BooleanOperatorKind::Lt:
-            return detail::lt_scalar(lhs, rhs);
+            return FloatCmp<T>::lt(lhs, rhs);
         case BooleanOperatorKind::Ge:
-            return detail::ge_scalar(lhs, rhs);
+            return FloatCmp<T>::ge(lhs, rhs);
         case BooleanOperatorKind::Gt:
-            return detail::gt_scalar(lhs, rhs);
+            return FloatCmp<T>::gt(lhs, rhs);
     }
     throw std::invalid_argument("invalid BooleanOperatorKind");
 }
@@ -147,21 +102,21 @@ bool apply_existential(BooleanOperatorKind op, const ygg::ClosedInterval<A>& lhs
     switch (op)
     {
         case BooleanOperatorKind::Eq:
-            return detail::le_scalar(lower(lhs), upper(rhs)) && detail::ge_scalar(upper(lhs), lower(rhs));
+            return FloatCmp<A>::le(lower(lhs), upper(rhs)) && FloatCmp<A>::ge(upper(lhs), lower(rhs));
         case BooleanOperatorKind::Ne:
         {
-            const bool lhs_is_point = detail::eq_scalar(lower(lhs), upper(lhs));
-            const bool rhs_is_point = detail::eq_scalar(lower(rhs), upper(rhs));
-            return !lhs_is_point || !rhs_is_point || detail::ne_scalar(lower(lhs), lower(rhs));
+            const bool lhs_is_point = FloatCmp<A>::eq(lower(lhs), upper(lhs));
+            const bool rhs_is_point = FloatCmp<A>::eq(lower(rhs), upper(rhs));
+            return !lhs_is_point || !rhs_is_point || FloatCmp<A>::ne(lower(lhs), lower(rhs));
         }
         case BooleanOperatorKind::Le:
-            return detail::le_scalar(lower(lhs), upper(rhs));
+            return FloatCmp<A>::le(lower(lhs), upper(rhs));
         case BooleanOperatorKind::Lt:
-            return detail::lt_scalar(lower(lhs), upper(rhs));
+            return FloatCmp<A>::lt(lower(lhs), upper(rhs));
         case BooleanOperatorKind::Ge:
-            return detail::ge_scalar(upper(lhs), lower(rhs));
+            return FloatCmp<A>::ge(upper(lhs), lower(rhs));
         case BooleanOperatorKind::Gt:
-            return detail::gt_scalar(upper(lhs), lower(rhs));
+            return FloatCmp<A>::gt(upper(lhs), lower(rhs));
     }
     throw std::invalid_argument("invalid BooleanOperatorKind");
 }

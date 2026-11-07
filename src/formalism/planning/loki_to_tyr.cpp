@@ -23,7 +23,32 @@
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -41,6 +66,15 @@
 
 namespace tyr::formalism::planning
 {
+namespace
+{
+/// A visitor made of one lambda per alternative.
+template<typename... Fs>
+struct Overloaded : Fs...
+{
+    using Fs::operator()...;
+};
+}
 
 /**
  * Prepare common
@@ -298,42 +332,23 @@ auto to_binding(urd::index_view<T, Repository> element, const Range& terms, Buil
  */
 Term LokiToTyrTranslator::translate_lifted(loki::formalism::TermView element, Builder& builder, Repository& context)
 {
-    return std::visit(
-        [&]<typename T>(const T& arg) -> Term
-        {
-            if constexpr (std::is_same_v<T, loki::formalism::ObjectView>)
-                return Term(translate_common(arg, builder, context));
-            else if constexpr (std::is_same_v<T, loki::formalism::VariableView>)
-                return Term(m_param_map.lookup_parameter_index(translate_common(arg, builder, context)));
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-        },
-        element);
+    return std::visit(Overloaded { [&](loki::formalism::ObjectView object) { return Term(translate_common(object, builder, context)); },
+                                   [&](loki::formalism::VariableView variable)
+                                   { return Term(m_param_map.lookup_parameter_index(translate_common(variable, builder, context))); } },
+                      element);
 }
 
 AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView element, Builder& builder, Repository& context)
 {
     auto predicate_view_variant = translate_common(element.get_predicate(), builder, context);
 
-    auto build_atom = [&]<typename Tag>(Tag, auto predicate) -> AtomViewVariant
-    {
-        auto atom = planning::checkout<Atom<LiftedTag, Tag>>(builder);
-        atom->predicate = predicate.index();
-        this->translate_lifted(element.get_terms(), builder, context, atom->terms);
-        return planning::insert(context, *atom).first;
-    };
-
     return std::visit(
-        [&]<typename T>(const T& arg) -> AtomViewVariant
+        [&]<FactKind Tag>(PredicateView<Tag> predicate) -> AtomViewVariant
         {
-            if constexpr (std::is_same_v<T, PredicateView<StaticTag>>)
-                return build_atom(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, PredicateView<FluentTag>>)
-                return build_atom(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, PredicateView<DerivedTag>>)
-                return build_atom(DerivedTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
+            auto atom = planning::checkout<Atom<LiftedTag, Tag>>(builder);
+            atom->predicate = predicate.index();
+            this->translate_lifted(element.get_terms(), builder, context, atom->terms);
+            return planning::insert(context, *atom).first;
         },
         predicate_view_variant);
 }
@@ -342,25 +357,13 @@ LiteralViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::Litera
 {
     auto atom_view_variant = translate_lifted(element.get_atom(), builder, context);
 
-    auto build_literal = [&]<typename Tag>(Tag, auto atom) -> LiteralViewVariant
-    {
-        auto literal = planning::checkout<Literal<LiftedTag, Tag>>(builder);
-        literal->atom = atom.index();
-        literal->polarity = element.get_polarity();
-        return planning::insert(context, *literal).first;
-    };
-
     return std::visit(
-        [&]<typename T>(const T& arg) -> LiteralViewVariant
+        [&]<FactKind Tag>(AtomView<LiftedTag, Tag> atom) -> LiteralViewVariant
         {
-            if constexpr (std::is_same_v<T, AtomView<LiftedTag, StaticTag>>)
-                return build_literal(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<LiftedTag, FluentTag>>)
-                return build_literal(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<LiftedTag, DerivedTag>>)
-                return build_literal(DerivedTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
+            auto literal = planning::checkout<Literal<LiftedTag, Tag>>(builder);
+            literal->atom = atom.index();
+            literal->polarity = element.get_polarity();
+            return planning::insert(context, *literal).first;
         },
         atom_view_variant);
 }
@@ -444,15 +447,10 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView el
             if constexpr (std::is_same_v<T, loki::formalism::FunctionTermView>)
             {
                 const auto fterm_view_variant = translate_lifted(arg, builder, context);
-                return std::visit(
-                    []<typename FunctionTermT>(const FunctionTermT& fterm) -> FunctionExpression<LiftedTag>
-                    {
-                        if constexpr (std::is_same_v<FunctionTermT, FunctionTermView<LiftedTag, AuxiliaryTag>>)
-                            throw std::runtime_error("Cannot create FunctionExpression over auxiliary function term.");
-                        else
-                            return FunctionExpression<LiftedTag>(fterm.index());
-                    },
-                    fterm_view_variant);
+                return std::visit(Overloaded { [](FunctionTermView<LiftedTag, AuxiliaryTag>) -> FunctionExpression<LiftedTag>
+                                               { throw std::runtime_error("Cannot create FunctionExpression over auxiliary function term."); },
+                                               []<FactKind F>(FunctionTermView<LiftedTag, F> fterm) { return FunctionExpression<LiftedTag>(fterm.index()); } },
+                                  fterm_view_variant);
             }
             else
             {
@@ -466,25 +464,13 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
 {
     auto function_view_variant = translate_common(element.get_function(), builder, context);
 
-    auto build_function_term = [&]<typename Tag>(Tag, auto function) -> FunctionTermViewVariant
-    {
-        auto fterm = planning::checkout<FunctionTerm<LiftedTag, Tag>>(builder);
-        fterm->function = function.index();
-        this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
-        return planning::insert(context, *fterm).first;
-    };
-
     return std::visit(
-        [&]<typename T>(const T& arg) -> FunctionTermViewVariant
+        [&]<FactKind Tag>(FunctionView<Tag> function) -> FunctionTermViewVariant
         {
-            if constexpr (std::is_same_v<T, FunctionView<StaticTag>>)
-                return build_function_term(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionView<FluentTag>>)
-                return build_function_term(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionView<AuxiliaryTag>>)
-                return build_function_term(AuxiliaryTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
+            auto fterm = planning::checkout<FunctionTerm<LiftedTag, Tag>>(builder);
+            fterm->function = function.index();
+            this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
+            return planning::insert(context, *fterm).first;
         },
         function_view_variant);
 }
@@ -529,24 +515,12 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
 
     conj_condition->variables.insert(conj_condition->variables.end(), parameters.begin(), parameters.end());
 
-    const auto func_insert_literal = [](LiteralViewVariant literal_view_variant,
-                                        urd::flat_vector<urd::index<Literal<LiftedTag, StaticTag>>>& static_literals,
-                                        urd::flat_vector<urd::index<Literal<LiftedTag, FluentTag>>>& fluent_literals,
-                                        urd::flat_vector<urd::index<Literal<LiftedTag, DerivedTag>>>& derived_literals)
+    const auto insert_literal = [&](LiteralViewVariant literal_view_variant)
     {
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, LiteralView<LiftedTag, StaticTag>>)
-                    static_literals.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, LiteralView<LiftedTag, FluentTag>>)
-                    fluent_literals.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, LiteralView<LiftedTag, DerivedTag>>)
-                    derived_literals.push_back(arg.index());
-                else
-                    static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-            },
-            literal_view_variant);
+        std::visit(Overloaded { [&](LiteralView<LiftedTag, StaticTag> literal) { conj_condition->static_literals.push_back(literal.index()); },
+                                [&](LiteralView<LiftedTag, FluentTag> literal) { conj_condition->fluent_literals.push_back(literal.index()); },
+                                [&](LiteralView<LiftedTag, DerivedTag> literal) { conj_condition->derived_literals.push_back(literal.index()); } },
+                   literal_view_variant);
     };
 
     return std::visit(
@@ -563,10 +537,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
                             {
                                 const auto literal_view_variant = translate_lifted(subcondition.get_literal(), builder, context);
 
-                                func_insert_literal(literal_view_variant,
-                                                    conj_condition->static_literals,
-                                                    conj_condition->fluent_literals,
-                                                    conj_condition->derived_literals);
+                                insert_literal(literal_view_variant);
                             }
                             else if constexpr (std::is_same_v<SubConditionT,
                                                               loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
@@ -590,7 +561,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, co
             {
                 const auto literal_view_variant = translate_lifted(condition.get_literal(), builder, context);
 
-                func_insert_literal(literal_view_variant, conj_condition->static_literals, conj_condition->fluent_literals, conj_condition->derived_literals);
+                insert_literal(literal_view_variant);
 
                 return planning::insert(context, *conj_condition).first.index();
             }
@@ -617,9 +588,9 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
 {
     auto fterm_view_variant = translate_lifted(element.get_function(), builder, context);
 
-    auto build_numeric_effect_term_helper = [&]<typename Tag>(Tag, NumericEffectOperatorKind operator_kind, auto fterm) -> NumericEffectViewVariant
+    auto build = [&]<FactKind F>(FunctionTermView<LiftedTag, F> fterm, NumericEffectOperatorKind operator_kind) -> NumericEffectViewVariant
     {
-        auto numeric_effect = planning::checkout<NumericEffect<LiftedTag, Tag>>(builder);
+        auto numeric_effect = planning::checkout<NumericEffect<LiftedTag, F>>(builder);
 
         numeric_effect->operator_kind = operator_kind;
         numeric_effect->fterm = fterm.index();
@@ -627,48 +598,35 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
         return planning::insert(context, *numeric_effect).first;
     };
 
-    auto build_numeric_effect_term = [&]<typename Tag>(Tag, auto fterm) -> NumericEffectViewVariant
+    const auto operator_kind = [&]
     {
-        if constexpr (std::is_same_v<Tag, AuxiliaryTag>)
+        switch (element.get_operator())
         {
-            if (element.get_operator() != loki::formalism::NumericEffectOperator::Increase)
-                throw std::runtime_error("Auxiliary numeric effect must use INCREASE operator.");
-
-            return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Increase, fterm);
-        }
-        else
-        {
-            switch (element.get_operator())
-            {
-                case loki::formalism::NumericEffectOperator::Assign:
-                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Assign, fterm);
-                case loki::formalism::NumericEffectOperator::Increase:
-                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Increase, fterm);
-                case loki::formalism::NumericEffectOperator::Decrease:
-                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::Decrease, fterm);
-                case loki::formalism::NumericEffectOperator::ScaleUp:
-                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::ScaleUp, fterm);
-                case loki::formalism::NumericEffectOperator::ScaleDown:
-                    return build_numeric_effect_term_helper(Tag {}, NumericEffectOperatorKind::ScaleDown, fterm);
-                default:
-                    throw std::runtime_error("Unexpected case.");
-            }
+            case loki::formalism::NumericEffectOperator::Assign:
+                return NumericEffectOperatorKind::Assign;
+            case loki::formalism::NumericEffectOperator::Increase:
+                return NumericEffectOperatorKind::Increase;
+            case loki::formalism::NumericEffectOperator::Decrease:
+                return NumericEffectOperatorKind::Decrease;
+            case loki::formalism::NumericEffectOperator::ScaleUp:
+                return NumericEffectOperatorKind::ScaleUp;
+            case loki::formalism::NumericEffectOperator::ScaleDown:
+                return NumericEffectOperatorKind::ScaleDown;
+            default:
+                throw std::runtime_error("Unexpected case.");
         }
     };
 
-    return std::visit(
-        [&]<typename T>(const T& arg) -> NumericEffectViewVariant
-        {
-            if constexpr (std::is_same_v<T, FunctionTermView<LiftedTag, StaticTag>>)
-                throw std::runtime_error("Cannot create NumericEffect over static function term.");
-            else if constexpr (std::is_same_v<T, FunctionTermView<LiftedTag, FluentTag>>)
-                return build_numeric_effect_term(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionTermView<LiftedTag, AuxiliaryTag>>)
-                return build_numeric_effect_term(AuxiliaryTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-        },
-        fterm_view_variant);
+    return std::visit(Overloaded { [](FunctionTermView<LiftedTag, StaticTag>) -> NumericEffectViewVariant
+                                   { throw std::runtime_error("Cannot create NumericEffect over static function term."); },
+                                   [&](FunctionTermView<LiftedTag, FluentTag> fterm) { return build(fterm, operator_kind()); },
+                                   [&](FunctionTermView<LiftedTag, AuxiliaryTag> fterm)
+                                   {
+                                       if (element.get_operator() != loki::formalism::NumericEffectOperator::Increase)
+                                           throw std::runtime_error("Auxiliary numeric effect must use INCREASE operator.");
+                                       return build(fterm, NumericEffectOperatorKind::Increase);
+                                   } },
+                      fterm_view_variant);
 }
 
 void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
@@ -680,7 +638,7 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
     using ConditionalEffectData = urd::Store<urd::map<urd::index<ConjunctiveCondition<LiftedTag>>, std::tuple<urd::flat_vector<urd::index<Variable>>,
                                                       urd::flat_vector<urd::index<Literal<LiftedTag, FluentTag>>>,
                                                       urd::flat_vector<urd::index<NumericEffect<LiftedTag, FluentTag>>>,
-                                                      ::cista::optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>>, urd::sorted>;
+                                                      urd::flat_optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>>, urd::sorted>;
 
     const auto translate_effect_func = [&](loki::formalism::EffectView effect, ConditionalEffectData& ref_conditional_effect_data)
     {
@@ -748,38 +706,22 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                     {
                         const auto literal_view_variant = translate_lifted(subeffect.get_literal(), builder, context);
 
-                        std::visit(
-                            [&]<typename SubSubEffectT>(const SubSubEffectT& subsubeffect)
-                            {
-                                if constexpr (std::is_same_v<SubSubEffectT, LiteralView<LiftedTag, StaticTag>>)
-                                    throw std::logic_error("Effect literal cannot be Static!");
-                                else if constexpr (std::is_same_v<SubSubEffectT, LiteralView<LiftedTag, FluentTag>>)
-                                    data_fluent_literals.push_back(subsubeffect.index());
-                                else if constexpr (std::is_same_v<SubSubEffectT, LiteralView<LiftedTag, DerivedTag>>)
-                                    throw std::runtime_error("Effect literal cannot be Derived!");
-                                else
-                                    static_assert(urd::repr::dependent_false<SubSubEffectT>::value, "Unexpected case.");
-                            },
-                            literal_view_variant);
+                        std::visit(Overloaded { [](LiteralView<LiftedTag, StaticTag>) { throw std::logic_error("Effect literal cannot be Static!"); },
+                                                [&](LiteralView<LiftedTag, FluentTag> literal) { data_fluent_literals.push_back(literal.index()); },
+                                                [](LiteralView<LiftedTag, DerivedTag>) { throw std::runtime_error("Effect literal cannot be Derived!"); } },
+                                   literal_view_variant);
                     }
                     else if constexpr (std::is_same_v<SubEffectT, loki::formalism::EntityView<loki::formalism::Effect<loki::formalism::NumericTag>>>)
                     {
                         const auto numeric_effect_view_variant = translate_lifted(subeffect, builder, context);
 
-                        std::visit(
-                            [&]<typename SubSubEffectT>(const SubSubEffectT& subsubeffect)
-                            {
-                                if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<LiftedTag, FluentTag>>)
-                                    data_fluent_numeric_effects.push_back(subsubeffect.index());
-                                else if constexpr (std::is_same_v<SubSubEffectT, NumericEffectView<LiftedTag, AuxiliaryTag>>)
-                                {
-                                    assert(!data_auxiliary_numeric_effect);
-                                    data_auxiliary_numeric_effect = subsubeffect.index();
-                                }
-                                else
-                                    static_assert(urd::repr::dependent_false<SubSubEffectT>::value, "Unexpected case.");
-                            },
-                            numeric_effect_view_variant);
+                        std::visit(Overloaded { [&](NumericEffectView<LiftedTag, FluentTag> numeric_effect) { data_fluent_numeric_effects.push_back(numeric_effect.index()); },
+                                                [&](NumericEffectView<LiftedTag, AuxiliaryTag> numeric_effect)
+                                                {
+                                                    assert(!data_auxiliary_numeric_effect);
+                                                    data_auxiliary_numeric_effect = numeric_effect.index();
+                                                } },
+                                   numeric_effect_view_variant);
                     }
                     else
                     {
@@ -884,15 +826,9 @@ urd::index<Axiom<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formali
         axiom->body = translate_lifted(element.get_condition(), axiom->variables, builder, context);
         const auto literal_view_variant = translate_lifted(element.get_head(), builder, context);
 
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, LiteralView<LiftedTag, DerivedTag>>)
-                    axiom->head = arg.get_atom().index();
-                else
-                    throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head.");
-            },
-            literal_view_variant);
+        std::visit(Overloaded { [&](LiteralView<LiftedTag, DerivedTag> literal) { axiom->head = literal.get_atom().index(); },
+                                [](auto) { throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head."); } },
+                   literal_view_variant);
     }
     ///---------- Pop parameters -------------
     m_param_map.pop_parameters(axiom->variables);
@@ -906,43 +842,23 @@ urd::index<Axiom<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formali
 
 urd::index<Object> LokiToTyrTranslator::translate_grounded(loki::formalism::TermView element, Builder& builder, Repository& context)
 {
-    return std::visit(
-        [&]<typename T>(const T& arg) -> urd::index<Object>
-        {
-            if constexpr (std::is_same_v<T, loki::formalism::ObjectView>)
-                return translate_common(arg, builder, context);
-            else if constexpr (std::is_same_v<T, loki::formalism::VariableView>)
-                throw std::runtime_error("Expected ground term.");
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-        },
-        element);
+    return std::visit(Overloaded { [&](loki::formalism::ObjectView object) { return translate_common(object, builder, context); },
+                                   [](loki::formalism::VariableView) -> urd::index<Object> { throw std::runtime_error("Expected ground term."); } },
+                      element);
 }
 
 GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Builder& builder, Repository& context)
 {
     auto predicate_view_variant = translate_common(element.get_predicate(), builder, context);
 
-    auto build_atom = [&]<typename Tag>(Tag, auto predicate)
-    {
-        auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
-        atom->binding =
-            to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
-                .first.index();
-        return planning::insert(context, *atom).first;
-    };
-
     return std::visit(
-        [&]<typename T>(const T& arg) -> GroundAtomViewVariant
+        [&]<FactKind Tag>(PredicateView<Tag> predicate) -> GroundAtomViewVariant
         {
-            if constexpr (std::is_same_v<T, PredicateView<StaticTag>>)
-                return build_atom(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, PredicateView<FluentTag>>)
-                return build_atom(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, PredicateView<DerivedTag>>)
-                return build_atom(DerivedTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
+            auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
+            atom->binding =
+                to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
+                    .first.index();
+            return planning::insert(context, *atom).first;
         },
         predicate_view_variant);
 }
@@ -952,42 +868,22 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::AtomView element, Build
 {
     auto atom_variant = translate_grounded(element, builder, context);
 
-    return std::visit(
-        [&]<typename T>(const T& arg) -> GroundAtomOrFactViewVariant
-        {
-            if constexpr (std::is_same_v<T, AtomView<GroundTag, StaticTag>> || std::is_same_v<T, AtomView<GroundTag, DerivedTag>>)
-                return arg;
-            else if constexpr (std::is_same_v<T, AtomView<GroundTag, FluentTag>>)
-                return fdr_context.get_fact(arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-        },
-        atom_variant);
+    return std::visit(Overloaded { [&](AtomView<GroundTag, FluentTag> atom) -> GroundAtomOrFactViewVariant { return fdr_context.get_fact(atom); },
+                                   []<FactKind F>(AtomView<GroundTag, F> atom) -> GroundAtomOrFactViewVariant { return atom; } },
+                      atom_variant);
 }
 
 GroundLiteralViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Builder& builder, Repository& context)
 {
     auto atom_view_variant = translate_grounded(element.get_atom(), builder, context);
 
-    auto build_literal = [&]<typename Tag>(Tag, auto atom)
-    {
-        auto literal = planning::checkout<Literal<GroundTag, Tag>>(builder);
-        literal->atom = atom.index();
-        literal->polarity = element.get_polarity();
-        return planning::insert(context, *literal).first;
-    };
-
     return std::visit(
-        [&]<typename T>(const T& arg) -> GroundLiteralViewVariant
+        [&]<FactKind Tag>(AtomView<GroundTag, Tag> atom) -> GroundLiteralViewVariant
         {
-            if constexpr (std::is_same_v<T, AtomView<GroundTag, StaticTag>>)
-                return build_literal(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<GroundTag, FluentTag>>)
-                return build_literal(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, AtomView<GroundTag, DerivedTag>>)
-                return build_literal(DerivedTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
+            auto literal = planning::checkout<Literal<GroundTag, Tag>>(builder);
+            literal->atom = atom.index();
+            literal->polarity = element.get_polarity();
+            return planning::insert(context, *literal).first;
         },
         atom_view_variant);
 }
@@ -997,17 +893,10 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::LiteralView element, Bu
 {
     auto literal_view_variant = translate_grounded(element, builder, context);
 
-    return std::visit(
-        [&]<typename T>(const T& arg) -> GroundLiteralOrFactViewVariant
-        {
-            if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>> || std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
-                return arg;
-            else if constexpr (std::is_same_v<T, LiteralView<GroundTag, FluentTag>>)
-                return std::make_pair(fdr_context.get_fact(arg.get_atom()), arg.get_polarity());
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-        },
-        literal_view_variant);
+    return std::visit(Overloaded { [&](LiteralView<GroundTag, FluentTag> literal) -> GroundLiteralOrFactViewVariant
+                                   { return std::make_pair(fdr_context.get_fact(literal.get_atom()), literal.get_polarity()); },
+                                   []<FactKind F>(LiteralView<GroundTag, F> literal) -> GroundLiteralOrFactViewVariant { return literal; } },
+                      literal_view_variant);
 }
 
 FunctionExpression<GroundTag>
@@ -1105,26 +994,14 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
 {
     auto function_view_variant = translate_common(element.get_function(), builder, context);
 
-    auto build_function_term = [&]<typename Tag>(Tag, auto function) -> GroundFunctionTermViewVariant
-    {
-        auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
-        fterm->binding =
-            to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
-                .first.index();
-        return planning::insert(context, *fterm).first;
-    };
-
     return std::visit(
-        [&]<typename T>(const T& arg) -> GroundFunctionTermViewVariant
+        [&]<FactKind Tag>(FunctionView<Tag> function) -> GroundFunctionTermViewVariant
         {
-            if constexpr (std::is_same_v<T, FunctionView<StaticTag>>)
-                return build_function_term(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionView<FluentTag>>)
-                return build_function_term(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionView<AuxiliaryTag>>)
-                return build_function_term(AuxiliaryTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
+            auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
+            fterm->binding =
+                to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
+                    .first.index();
+            return planning::insert(context, *fterm).first;
         },
         function_view_variant);
 }
@@ -1134,33 +1011,21 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::InitialFunctionValueVie
 {
     auto fterm_view_variant = translate_grounded(element.get_function(), builder, context);
 
-    auto build_fterm_value = [&]<typename Tag>(Tag, auto fterm) -> GroundFunctionTermValueViewVariant
-    {
-        auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, Tag>>(builder);
-        fterm_value->fterm = fterm.index();
-        fterm_value->value = std::visit(
-            []<typename T>(const T& expression) -> ygg::float_t
-            {
-                if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>>>)
-                    return expression.get_value();
-                else
-                    throw std::runtime_error("Expected numeric initial function value.");
-            },
-            element.get_value());
-        return planning::insert(context, *fterm_value).first;
-    };
-
     return std::visit(
-        [&]<typename T>(const T& arg) -> GroundFunctionTermValueViewVariant
+        [&]<FactKind Tag>(FunctionTermView<GroundTag, Tag> fterm) -> GroundFunctionTermValueViewVariant
         {
-            if constexpr (std::is_same_v<T, FunctionTermView<GroundTag, StaticTag>>)
-                return build_fterm_value(StaticTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionTermView<GroundTag, FluentTag>>)
-                return build_fterm_value(FluentTag {}, arg);
-            else if constexpr (std::is_same_v<T, FunctionTermView<GroundTag, AuxiliaryTag>>)
-                return build_fterm_value(AuxiliaryTag {}, arg);
-            else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
+            auto fterm_value = planning::checkout<FunctionTermValue<GroundTag, Tag>>(builder);
+            fterm_value->fterm = fterm.index();
+            fterm_value->value = std::visit(
+                []<typename T>(const T& expression) -> ygg::float_t
+                {
+                    if constexpr (std::is_same_v<T, loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>>>)
+                        return expression.get_value();
+                    else
+                        throw std::runtime_error("Expected numeric initial function value.");
+                },
+                element.get_value());
+            return planning::insert(context, *fterm_value).first;
         },
         fterm_view_variant);
 }
@@ -1203,30 +1068,13 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
 {
     auto conj_condition = planning::checkout<ConjunctiveCondition<GroundTag>>(builder);
 
-    const auto func_insert_literal = [](GroundLiteralOrFactViewVariant literal_or_fact_view_variant,
-                                        urd::flat_vector<urd::index<Literal<GroundTag, StaticTag>>>& static_literals,
-                                        urd::flat_vector<urd::index<Literal<GroundTag, DerivedTag>>>& derived_literals,
-                                        urd::flat_vector<urd::data<FDRFact<FluentTag>>>& positive_facts,
-                                        urd::flat_vector<urd::data<FDRFact<FluentTag>>>& negative_facts)
+    const auto insert_literal = [&](GroundLiteralOrFactViewVariant literal_or_fact_view_variant)
     {
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>>)
-                    static_literals.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, std::pair<FDRFactView<FluentTag>, bool>>)
-                {
-                    if (arg.second)
-                        positive_facts.push_back(arg.first.data());
-                    else
-                        negative_facts.push_back(arg.first.data());
-                }
-                else if constexpr (std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
-                    derived_literals.push_back(arg.index());
-                else
-                    static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-            },
-            literal_or_fact_view_variant);
+        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> literal) { conj_condition->static_literals.push_back(literal.index()); },
+                                [&](const std::pair<FDRFactView<FluentTag>, bool>& fact)
+                                { (fact.second ? conj_condition->positive_facts : conj_condition->negative_facts).push_back(fact.first.data()); },
+                                [&](LiteralView<GroundTag, DerivedTag> literal) { conj_condition->derived_literals.push_back(literal.index()); } },
+                   literal_or_fact_view_variant);
     };
 
     return std::visit(
@@ -1243,11 +1091,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
                             {
                                 const auto literal_or_fact_view_variant = translate_grounded(subcondition.get_literal(), builder, context, fdr_context);
 
-                                func_insert_literal(literal_or_fact_view_variant,
-                                                    conj_condition->static_literals,
-                                                    conj_condition->derived_literals,
-                                                    conj_condition->positive_facts,
-                                                    conj_condition->negative_facts);
+                                insert_literal(literal_or_fact_view_variant);
                             }
                             else if constexpr (std::is_same_v<SubConditionT,
                                                               loki::formalism::EntityView<loki::formalism::Condition<loki::formalism::NumericConstraintTag>>>)
@@ -1271,11 +1115,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
             {
                 const auto index_literal_variant = translate_grounded(condition.get_literal(), builder, context, fdr_context);
 
-                func_insert_literal(index_literal_variant,
-                                    conj_condition->static_literals,
-                                    conj_condition->derived_literals,
-                                    conj_condition->positive_facts,
-                                    conj_condition->negative_facts);
+                insert_literal(index_literal_variant);
 
                 return planning::insert(context, *conj_condition).first.index();
             }
@@ -1328,55 +1168,22 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     translate_common(element.get_constants(), builder, *context, domain->constants);
 
     /* Predicates section */
-    const auto func_insert_predicate = [](PredicateViewVariant predicate_view_variant,
-                                          urd::flat_vector<urd::index<Predicate<StaticTag>>>& static_predicates,
-                                          urd::flat_vector<urd::index<Predicate<FluentTag>>>& fluent_predicates,
-                                          urd::flat_vector<urd::index<Predicate<DerivedTag>>>& derived_predicates)
-    {
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, PredicateView<StaticTag>>)
-                    static_predicates.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, PredicateView<FluentTag>>)
-                    fluent_predicates.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, PredicateView<DerivedTag>>)
-                    derived_predicates.push_back(arg.index());
-                else
-                    static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-            },
-            predicate_view_variant);
-    };
-
     for (const auto predicate : element.get_predicates())
-        func_insert_predicate(translate_common(predicate, builder, *context), domain->static_predicates, domain->fluent_predicates, domain->derived_predicates);
+        std::visit(Overloaded { [&](PredicateView<StaticTag> p) { domain->static_predicates.push_back(p.index()); },
+                                [&](PredicateView<FluentTag> p) { domain->fluent_predicates.push_back(p.index()); },
+                                [&](PredicateView<DerivedTag> p) { domain->derived_predicates.push_back(p.index()); } },
+                   translate_common(predicate, builder, *context));
 
     /* Functions section */
-    const auto func_insert_function = [](FunctionViewVariant function_view_variant,
-                                         urd::flat_vector<urd::index<Function<StaticTag>>>& static_functions,
-                                         urd::flat_vector<urd::index<Function<FluentTag>>>& fluent_functions,
-                                         ::cista::optional<urd::index<Function<AuxiliaryTag>>>& auxiliary_function)
-    {
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, FunctionView<StaticTag>>)
-                    static_functions.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, FunctionView<FluentTag>>)
-                    fluent_functions.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, FunctionView<AuxiliaryTag>>)
-                {
-                    assert(!auxiliary_function);
-                    auxiliary_function = arg.index();
-                }
-                else
-                    static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-            },
-            function_view_variant);
-    };
-
     for (const auto function : element.get_functions())
-        func_insert_function(translate_common(function, builder, *context), domain->static_functions, domain->fluent_functions, domain->auxiliary_function);
+        std::visit(Overloaded { [&](FunctionView<StaticTag> f) { domain->static_functions.push_back(f.index()); },
+                                [&](FunctionView<FluentTag> f) { domain->fluent_functions.push_back(f.index()); },
+                                [&](FunctionView<AuxiliaryTag> f)
+                                {
+                                    assert(!domain->auxiliary_function);
+                                    domain->auxiliary_function = f.index();
+                                } },
+                   translate_common(function, builder, *context));
 
     /* Structures section */
     translate_lifted(element.get_actions(), builder, *context, domain->actions);
@@ -1412,16 +1219,13 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
 
     auto insert_task_predicate = [&](const auto& predicate_view_variant)
     {
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, PredicateView<DerivedTag>>)
-                {
-                    if (task_derived_predicates.insert(std::string(arg.get_name())).second)
-                        task->derived_predicates.push_back(arg.index());
-                }
-            },
-            predicate_view_variant);
+        std::visit(Overloaded { [&](PredicateView<DerivedTag> p)
+                                {
+                                    if (task_derived_predicates.insert(std::string(p.get_name())).second)
+                                        task->derived_predicates.push_back(p.index());
+                                },
+                                [](auto) {} },
+                   predicate_view_variant);
     };
 
     for (const auto predicate : element.get_domain().get_predicates())
@@ -1436,60 +1240,23 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
     translate_common(element.get_objects(), builder, *task_context, task->objects);
 
     /* Initial section */
-    const auto func_insert_ground_atom = [&](GroundLiteralOrFactViewVariant literal_or_fact_view_variant,
-                                             urd::flat_vector<urd::index<Atom<GroundTag, StaticTag>>>& static_atoms,
-                                             urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>& fluent_atoms)
-    {
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, LiteralView<GroundTag, StaticTag>>)
-                    static_atoms.push_back(arg.get_atom().index());
-                else if constexpr (std::is_same_v<T, std::pair<FDRFactView<FluentTag>, bool>>)
-                    fluent_atoms.push_back(arg.first.get_atom().value().index());  // we know it must have a value
-                else if constexpr (std::is_same_v<T, LiteralView<GroundTag, DerivedTag>>)
-                    throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section.");
-                else
-                    static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-            },
-            literal_or_fact_view_variant);
-    };
-
     for (const auto& literal : element.get_initial_literals())
-    {
-        const auto literal_or_fact_view_variant = translate_grounded(literal, builder, *task_context, *fdr_context);
-
-        func_insert_ground_atom(literal_or_fact_view_variant, task->static_atoms, task->fluent_atoms);
-    }
-
-    const auto func_insert_fterm_values = [](GroundFunctionTermValueViewVariant fterm_value_view_variant,
-                                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>& static_fterm_values,
-                                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>& fluent_fterm_values,
-                                             ::cista::optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>& auxiliary_fterm_value)
-    {
-        std::visit(
-            [&]<typename T>(const T& arg)
-            {
-                if constexpr (std::is_same_v<T, FunctionTermValueView<GroundTag, StaticTag>>)
-                    static_fterm_values.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, FunctionTermValueView<GroundTag, FluentTag>>)
-                    fluent_fterm_values.push_back(arg.index());
-                else if constexpr (std::is_same_v<T, FunctionTermValueView<GroundTag, AuxiliaryTag>>)
-                {
-                    assert(!auxiliary_fterm_value);
-                    auxiliary_fterm_value = arg.index();
-                }
-                else
-                    static_assert(urd::repr::dependent_false<T>::value, "Missing case for type");
-            },
-            fterm_value_view_variant);
-    };
+        std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> l) { task->static_atoms.push_back(l.get_atom().index()); },
+                                [&](const std::pair<FDRFactView<FluentTag>, bool>& fact)
+                                { task->fluent_atoms.push_back(fact.first.get_atom().value().index()); },  // we know it must have a value
+                                [](LiteralView<GroundTag, DerivedTag>)
+                                { throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section."); } },
+                   translate_grounded(literal, builder, *task_context, *fdr_context));
 
     for (const auto fterm_value : element.get_initial_function_values())
-        func_insert_fterm_values(translate_grounded(fterm_value, builder, *task_context),
-                                 task->static_fterm_values,
-                                 task->fluent_fterm_values,
-                                 task->auxiliary_fterm_value);
+        std::visit(Overloaded { [&](FunctionTermValueView<GroundTag, StaticTag> v) { task->static_fterm_values.push_back(v.index()); },
+                                [&](FunctionTermValueView<GroundTag, FluentTag> v) { task->fluent_fterm_values.push_back(v.index()); },
+                                [&](FunctionTermValueView<GroundTag, AuxiliaryTag> v)
+                                {
+                                    assert(!task->auxiliary_fterm_value);
+                                    task->auxiliary_fterm_value = v.index();
+                                } },
+                   translate_grounded(fterm_value, builder, *task_context));
 
     /* Goal section */
 

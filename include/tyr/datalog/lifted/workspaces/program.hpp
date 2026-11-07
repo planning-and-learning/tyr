@@ -38,14 +38,20 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <cassert>
-#include <concepts>
+#include <memory>
 #include <optional>
-#include <urd/repr/core/dependent_false.hpp>
+#include <urd/utils/family.hpp>
 #include <utility>
-#include <vector>
 
 namespace tyr::datalog
 {
+
+/// The workspaces of the rules of relation kind R, by rule index (none for a rule without one).
+template<typename R>
+using RuleWorkspaces = urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>>;
+
+template<typename R>
+using ConstRuleWorkspaces = urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, R>>>>;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>
@@ -69,30 +75,7 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     CostBuckets cost_buckets;
     PendingPredicateAchievers pending_achievers;
 
-    urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::PredicateTag>>>> predicate_rules;
-    urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, formalism::FunctionTag>>>> function_rules;
-
-    template<formalism::RelationKind R>
-    auto& get_rules() noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rules;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rules;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
-
-    template<formalism::RelationKind R>
-    const auto& get_rules() const noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rules;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rules;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
+    urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
 
     formalism::planning::Builder planning_builder;
     formalism::datalog::Builder datalog_builder;
@@ -119,35 +102,15 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     }
 };
 
+/// Prints the aggregated statistics of the rules and of their workers.
+void print_rule_statistics(const urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules);
+
 template<>
 struct ConstProgramWorkspace<LiftedTag>
 {
     ConstFactsWorkspace<LiftedTag> facts;
 
-    urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>>>> predicate_rules;
-    urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, formalism::FunctionTag>>>> function_rules;
-
-    template<formalism::RelationKind R>
-    auto& get_rules() noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rules;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rules;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
-
-    template<formalism::RelationKind R>
-    [[nodiscard]] const auto& get_rules() const noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rules;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rules;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
+    urd::utils::Family<ConstRuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
 
     explicit ConstProgramWorkspace(Program<LiftedTag>& program);
 };

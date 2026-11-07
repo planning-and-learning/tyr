@@ -26,8 +26,7 @@
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/planning/merge_datalog_decl.hpp"
-#include "tyr/formalism/planning/merge_planning_decl.hpp"
+#include "tyr/formalism/write_context.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/ground/programs/translation_context.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
@@ -57,19 +56,19 @@ void insert_numeric_variables_to_fact_set(const urd::data<State<GroundTag>>& sta
 void insert_fluent_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<LiftedTag>::FluentToFluentPredicateMapping& fluent_to_fluent_predicate,
-                                     formalism::planning::MergeDatalogContext& merge_context,
+                                     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
 void insert_derived_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                       const formalism::planning::Repository& repository,
                                       const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
-                                      formalism::planning::MergeDatalogContext& merge_context,
+                                      formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
                                       datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
 void insert_numeric_variables_to_fact_set(const urd::data<State<LiftedTag>>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<LiftedTag>::FluentToFluentFunctionMapping& fluent_to_fluent_function,
-                                          formalism::planning::MergeDatalogContext& merge_context,
+                                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
                                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
 void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
@@ -81,77 +80,41 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
 
 }
 
-template<TaskKind Kind, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_fluent_atoms_to_fact_set(const urd::data<State<Kind>>& state,
-                                     const formalism::planning::Repository& repository,
-                                     const P2DTranslationContext<Kind>& translation_context,
-                                     datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
-{
-    if constexpr (std::same_as<Kind, GroundTag>)
-    {
-        detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_atom, workspace.facts.fact_sets);
-    }
-    else
-    {
-        auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, *workspace.workspace_repository };
-        detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
-    }
-}
-
-template<TaskKind Kind, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_numeric_variables_to_fact_set(const urd::data<State<Kind>>& state,
-                                          const formalism::planning::Repository& repository,
-                                          const P2DTranslationContext<Kind>& translation_context,
-                                          datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
-{
-    if constexpr (std::same_as<Kind, GroundTag>)
-    {
-        detail::insert_numeric_variables_to_fact_set(state, repository, translation_context.fluent_to_fluent_fterm, workspace.facts.fact_sets);
-    }
-    else
-    {
-        auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, *workspace.workspace_repository };
-        detail::insert_numeric_variables_to_fact_set(state,
-                                                     repository,
-                                                     translation_context.fluent_to_fluent_function,
-                                                     merge_context,
-                                                     workspace.facts.fact_sets);
-    }
-}
-
+/// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
+/// ProgramExecutionContext populates assignment indices after insertion.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_derived_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
-                                      const formalism::planning::Repository& repository,
-                                      const P2DTranslationContext<LiftedTag>& translation_context,
-                                      datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
+void insert_unextended_state(const urd::data<State<GroundTag>>& state,
+                             const formalism::planning::Repository& repository,
+                             const P2DTranslationContext<GroundTag>& translation_context,
+                             datalog::ProgramWorkspace<GroundTag, AP, TP, CP>& workspace)
 {
-    auto merge_context = formalism::planning::MergeDatalogContext { workspace.datalog_builder, *workspace.workspace_repository };
-    detail::insert_derived_atoms_to_fact_set(state, repository, translation_context.derived_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
+    detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_atom, workspace.facts.fact_sets);
+    detail::insert_numeric_variables_to_fact_set(state, repository, translation_context.fluent_to_fluent_fterm, workspace.facts.fact_sets);
 }
 
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
-/// ProgramExecutionContext populates assignment indices after insertion.
+/// ProgramExecutionContext populates lifted assignment indices after insertion.
+template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
+void insert_unextended_state(const urd::data<State<LiftedTag>>& state,
+                             const formalism::planning::Repository& repository,
+                             const P2DTranslationContext<LiftedTag>& translation_context,
+                             datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
+{
+    auto merge_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository };
+    detail::insert_fluent_atoms_to_fact_set(state, repository, translation_context.fluent_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
+    detail::insert_numeric_variables_to_fact_set(state, repository, translation_context.fluent_to_fluent_function, merge_context, workspace.facts.fact_sets);
+}
+
+/// insert_unextended_state, and the derived atoms.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
 void insert_extended_state(const urd::data<State<LiftedTag>>& state,
                            const formalism::planning::Repository& repository,
                            const P2DTranslationContext<LiftedTag>& translation_context,
                            datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
 {
-    insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
-    insert_derived_atoms_to_fact_set(state, repository, translation_context, workspace);
-    insert_numeric_variables_to_fact_set(state, repository, translation_context, workspace);
-}
-
-/// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
-/// ProgramExecutionContext populates lifted assignment indices after insertion.
-template<TaskKind Kind, datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_unextended_state(const urd::data<State<Kind>>& state,
-                             const formalism::planning::Repository& repository,
-                             const P2DTranslationContext<Kind>& translation_context,
-                             datalog::ProgramWorkspace<Kind, AP, TP, CP>& workspace)
-{
-    insert_fluent_atoms_to_fact_set(state, repository, translation_context, workspace);
-    insert_numeric_variables_to_fact_set(state, repository, translation_context, workspace);
+    insert_unextended_state(state, repository, translation_context, workspace);
+    auto merge_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository };
+    detail::insert_derived_atoms_to_fact_set(state, repository, translation_context.derived_to_fluent_predicate, merge_context, workspace.facts.fact_sets);
 }
 
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>

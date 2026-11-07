@@ -25,6 +25,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <cassert>
+#include <concepts>
 #include <iterator>
 #include <ranges>
 #include <urd/elements/equal_to.hpp>
@@ -81,7 +82,6 @@ public:
     bool insert(formalism::datalog::PredicateBindingIndex<T> binding);
     bool insert(formalism::datalog::PredicateBindingView<T> binding) { return insert(binding.index()); }
     bool insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
-    bool insert(const urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<T>>>& bindings);
 
     [[nodiscard]] bool contains(formalism::datalog::PredicateBindingIndex<T> binding) const noexcept;
     [[nodiscard]] bool contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept { return contains(binding.index()); }
@@ -137,9 +137,6 @@ public:
     { return insert(binding.index(), std::move(interval)); }
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
     bool insert(formalism::datalog::FunctionBindingRandomAccessRangeView<T> bindings, const urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>>& intervals);
-    bool insert(formalism::datalog::FunctionBindingRandomAccessRangeView<T> bindings, const urd::Store<urd::sequence<ygg::float_t>>& values);
-    bool insert(const urd::Store<urd::sequence<formalism::datalog::FunctionBindingView<T>>>& bindings, const urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>>& intervals);
-    bool insert(const urd::Store<urd::sequence<formalism::datalog::FunctionBindingView<T>>>& bindings, const urd::Store<urd::sequence<ygg::float_t>>& values);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, const ygg::ClosedInterval<ygg::float_t>& interval);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, ygg::float_t value);
     bool insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value);
@@ -209,10 +206,14 @@ public:
     FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const TaggedFactSets<formalism::FluentTag>& fluent_sets) noexcept;
 
     template<formalism::FactKind T>
-    [[nodiscard]] const TaggedFactSets<T>& get() const;
-
-    [[nodiscard]] const TaggedFactSets<formalism::StaticTag>& static_sets() const noexcept { return *m_static_sets; }
-    [[nodiscard]] const TaggedFactSets<formalism::FluentTag>& fluent_sets() const noexcept { return *m_fluent_sets; }
+        requires std::same_as<T, formalism::StaticTag> || std::same_as<T, formalism::FluentTag>
+    [[nodiscard]] const TaggedFactSets<T>& get() const noexcept
+    {
+        if constexpr (std::same_as<T, formalism::StaticTag>)
+            return *m_static_sets;
+        else
+            return *m_fluent_sets;
+    }
 
 private:
     const TaggedFactSets<formalism::StaticTag>* m_static_sets;

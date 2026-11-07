@@ -19,6 +19,7 @@
 #define TYR_DATALOG_GROUND_SCHEDULER_HPP_
 
 #include "tyr/datalog/applicability.hpp"
+#include <urd/repr/queues/queue.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/datalog/cost_buckets.hpp"
@@ -32,12 +33,12 @@
 
 #include <algorithm>
 #include <concepts>
-#include <functional>
 #include <limits>
 #include <optional>
 #include <tuple>
 #include <vector>
 #include <urd/elements/flat.hpp>
+#include <urd/utils/family.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
@@ -69,7 +70,7 @@ struct GroundSchedulerScratch
 {
     RuleEvaluationWorkspace rule_evaluation;
     PredicateHeadUpdates predicate_updates;
-    FunctionHeadUpdates function_updates;
+    FunctionHeadUpdates function_updates { urd::layer { 0 } };
     StagedPredicateAnnotation delta_annotations;
     urd::Store<urd::sequence<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>>> head_bindings;
     StagedFunctionAnnotation delta_numeric_annotations;
@@ -99,19 +100,15 @@ class Scheduler<GroundTag>
 {
 public:
     explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) :
-        m_program(program),
-        m_predicate_rules(program),
-        m_function_rules(program),
-        m_scratch()
+        m_program(program)
     {
-        m_predicate_queue.reserve(program.template get_rules<formalism::PredicateTag>().size());
-        m_function_queue.reserve(program.template get_rules<formalism::FunctionTag>().size());
+        m_queues.get<formalism::PredicateTag>().reserve(program.template get_rules<formalism::PredicateTag>().size());
+        m_queues.get<formalism::FunctionTag>().reserve(program.template get_rules<formalism::FunctionTag>().size());
     }
 
     void reset(const FactSets& fact_sets)
     {
-        m_predicate_queue.clear();
-        m_function_queue.clear();
+        m_queues.clear();
         m_statistics = {};
         m_scratch.clear();
         initialize_rule_states<formalism::PredicateTag>(fact_sets);
@@ -129,24 +126,21 @@ public:
             return;
         state.queued_cost = queue_label;
 
-        auto& queue = get_queue<R>();
-        queue.emplace_back(queue_label, rule);
-        std::push_heap(queue.begin(), queue.end(), std::greater<> {});
+        m_queues.get<R>().emplace(queue_label, rule);
 
         ++m_statistics.num_queue_pushes;
-        m_statistics.max_queue_size = std::max(m_statistics.max_queue_size, static_cast<ygg::uint_t>(m_predicate_queue.size() + m_function_queue.size()));
+        m_statistics.max_queue_size = std::max(m_statistics.max_queue_size, static_cast<ygg::uint_t>(m_queues.get<formalism::PredicateTag>().size() + m_queues.get<formalism::FunctionTag>().size()));
     }
 
     template<formalism::RelationKind R>
     std::optional<GroundQueueEntry<R>> pop()
     {
-        auto& queue = get_queue<R>();
+        auto& queue = m_queues.get<R>();
         if (queue.empty())
             return std::nullopt;
 
-        std::pop_heap(queue.begin(), queue.end(), std::greater<> {});
-        auto entry = queue.back();
-        queue.pop_back();
+        auto entry = queue.top();
+        queue.pop();
         ++m_statistics.num_queue_pops;
         return entry;
     }
@@ -167,8 +161,8 @@ public:
     template<formalism::RelationKind R>
     [[nodiscard]] Cost next_cost() const noexcept
     {
-        const auto& queue = get_queue<R>();
-        return queue.empty() ? std::numeric_limits<Cost>::max() : queue.front().cost;
+        const auto& queue = m_queues.get<R>();
+        return queue.empty() ? std::numeric_limits<Cost>::max() : queue.top().cost;
     }
 
     [[nodiscard]] Cost next_cost() const noexcept { return std::min(next_cost<formalism::PredicateTag>(), next_cost<formalism::FunctionTag>()); }
@@ -191,11 +185,11 @@ public:
 
     template<formalism::RelationKind R>
     auto& get_states() noexcept
-    { return get_rules(R {}).states; }
+    { return m_states.get<R>(); }
 
     template<formalism::RelationKind R>
     [[nodiscard]] const auto& get_states() const noexcept
-    { return get_rules(R {}).states; }
+    { return m_states.get<R>(); }
 
     GroundQueueStatistics& statistics() noexcept { return m_statistics; }
     [[nodiscard]] const GroundQueueStatistics& statistics() const noexcept { return m_statistics; }
@@ -226,7 +220,7 @@ private:
                     ++unsatisfied_count;
 
             const auto numeric_constraints = rule.get_body().get_numeric_constraints();
-            state.numeric_constraint_satisfied.assign(numeric_constraints.size(), false);
+            state.numeric_constraint_satisfied.clear();
             unsatisfied_count += numeric_constraints.size();
             state.unsatisfied_count = unsatisfied_count;
             state.queued_cost.reset();
@@ -243,29 +237,12 @@ private:
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_numeric_changed_for(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    auto& get_queue(formalism::PredicateTag) noexcept { return m_predicate_queue; }
-    auto& get_queue(formalism::FunctionTag) noexcept { return m_function_queue; }
-    [[nodiscard]] const auto& get_queue(formalism::PredicateTag) const noexcept { return m_predicate_queue; }
-    [[nodiscard]] const auto& get_queue(formalism::FunctionTag) const noexcept { return m_function_queue; }
-
-    template<formalism::RelationKind R>
-    auto& get_queue() noexcept
-    { return get_queue(R {}); }
-
-    template<formalism::RelationKind R>
-    [[nodiscard]] const auto& get_queue() const noexcept
-    { return get_queue(R {}); }
-
-    auto& get_rules(formalism::PredicateTag) noexcept { return m_predicate_rules; }
-    auto& get_rules(formalism::FunctionTag) noexcept { return m_function_rules; }
-    [[nodiscard]] const auto& get_rules(formalism::PredicateTag) const noexcept { return m_predicate_rules; }
-    [[nodiscard]] const auto& get_rules(formalism::FunctionTag) const noexcept { return m_function_rules; }
+    template<typename R>
+    using Queue = urd::Store<urd::queue<GroundQueueEntry<R>>, urd::by_priority>;
 
     formalism::datalog::ProgramView<GroundTag> m_program;
-    RuleWorkspace<GroundTag, formalism::PredicateTag> m_predicate_rules;
-    RuleWorkspace<GroundTag, formalism::FunctionTag> m_function_rules;
-    urd::Store<urd::sequence<GroundQueueEntry<formalism::PredicateTag>>> m_predicate_queue;
-    urd::Store<urd::sequence<GroundQueueEntry<formalism::FunctionTag>>> m_function_queue;
+    urd::utils::Family<RuleStates, formalism::PredicateTag, formalism::FunctionTag> m_states;
+    urd::utils::Family<Queue, formalism::PredicateTag, formalism::FunctionTag> m_queues;
     GroundQueueStatistics m_statistics;
     GroundSchedulerScratch m_scratch;
 };

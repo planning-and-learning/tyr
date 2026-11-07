@@ -38,7 +38,8 @@ namespace tyr::planning
 {
 
 /// Where the fluent FDR values and derived atoms of a ground task's states lie, packed bitwise into ygg::uint_t blocks.
-struct GroundStateLayout
+template<>
+struct StateLayout<GroundTag>
 {
     /// Bit range of a fluent FDR variable's value.
     struct VariableInfo
@@ -48,7 +49,7 @@ struct GroundStateLayout
         uint8_t length;
     };
 
-    explicit GroundStateLayout(const Task<GroundTag>& task);
+    explicit StateLayout(const Task<GroundTag>& task);
 
     urd::Store<urd::sequence<VariableInfo>> fluent_infos;
     ygg::uint_t fluent_num_blocks;

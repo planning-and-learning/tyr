@@ -44,13 +44,13 @@ void bind_metric(nb::module_& m, RepositoryBinding& repository)
         auto cls = nb::class_<V>(m, "Metric")  //
                        .def("get_index", &V::index)
                        .def("get_optimization_direction", &V::get_optimization_direction)
-                       .def("get_fexpr", &V::get_fexpr, nb::keep_alive<0, 1>());
+                       .def("get_fexpr", &V::get_fexpr);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Metric>(repository);
+    ygg::bind_insert<Metric>(repository);
 }
 
 }  // namespace tyr::formalism::planning

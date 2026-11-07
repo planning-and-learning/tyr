@@ -61,14 +61,14 @@ void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository,
             cls.def("get_variables", &V::get_variables);
             cls.def("get_arity", &V::get_arity);
         }
-        cls.def("get_condition", &V::get_condition, nb::keep_alive<0, 1>());
-        cls.def("get_effect", &V::get_effect, nb::keep_alive<0, 1>());
+        cls.def("get_condition", &V::get_condition);
+        cls.def("get_effect", &V::get_effect);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

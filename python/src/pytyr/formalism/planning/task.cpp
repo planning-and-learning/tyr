@@ -62,7 +62,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                     "goal"_a,
                     "metric"_a,
                     "axioms"_a);
-            cls.def(nb::init<::cista::offset::string,
+            cls.def(nb::init<urd::flat_string,
                              urd::index<Domain>,
                              urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
                              urd::flat_vector<urd::index<Object>>,
@@ -70,9 +70,9 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                              urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
                              urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
                              urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
-                             ::cista::optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
+                             urd::flat_optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
                              urd::index<ConjunctiveCondition<GroundTag>>,
-                             ::cista::optional<urd::index<Metric>>,
+                             urd::flat_optional<urd::index<Metric>>,
                              urd::flat_vector<urd::index<Axiom<LiftedTag>>>>(),
                     "name"_a,
                     "domain"_a,
@@ -123,7 +123,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                     "goal"_a,
                     "ground_actions"_a,
                     "ground_axioms"_a);
-            cls.def(nb::init<::cista::offset::string,
+            cls.def(nb::init<urd::flat_string,
                              urd::index<Domain>,
                              urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
                              urd::flat_vector<urd::index<Object>>,
@@ -132,8 +132,8 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                              urd::flat_vector<urd::index<Atom<GroundTag, DerivedTag>>>,
                              urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
                              urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
-                             ::cista::optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
-                             ::cista::optional<urd::index<Metric>>,
+                             urd::flat_optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
+                             urd::flat_optional<urd::index<Metric>>,
                              urd::flat_vector<urd::index<Axiom<LiftedTag>>>,
                              urd::flat_vector<urd::index<FDRVariable<FluentTag>>>,
                              urd::flat_vector<urd::data<FDRFact<FluentTag>>>,
@@ -169,7 +169,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
         auto cls = nb::class_<V>(m, view_name)  //
                        .def("get_index", &V::index)
                        .def("get_name", &V::get_name)
-                       .def("get_domain", &V::get_domain, nb::keep_alive<0, 1>())
+                       .def("get_domain", &V::get_domain)
                        .def("get_derived_predicates", &V::get_derived_predicates)
                        .def("get_objects", &V::get_objects)
                        .def("get_num_objects", &V::get_num_objects)
@@ -178,7 +178,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
                        .def("get_static_fterm_values", &V::template get_fterm_values<StaticTag>)
                        .def("get_fluent_fterm_values", &V::template get_fterm_values<FluentTag>)
                        .def("get_auxiliary_fterm_value", &V::get_auxiliary_fterm_value)
-                       .def("get_goal", &V::get_goal, nb::keep_alive<0, 1>())
+                       .def("get_goal", &V::get_goal)
                        .def("get_metric", &V::get_metric)
                        .def("get_axioms", &V::get_axioms);
         if constexpr (std::same_as<T, GroundTag>)
@@ -192,7 +192,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Task<T>>(repository);
+    ygg::bind_insert<Task<T>>(repository);
 }
 }  // namespace
 

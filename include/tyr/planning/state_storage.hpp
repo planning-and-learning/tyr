@@ -62,6 +62,13 @@ class NumericStorageBackend;
  * Unpacked
  */
 
+/// Where a task's state components lie in its packed states; only ground tasks lay out anything.
+template<TaskKind Kind>
+struct StateLayout
+{
+    explicit StateLayout(const Task<Kind>&) noexcept {}
+};
+
 template<TaskKind Kind>
 struct AtomUnpackedStorage;
 

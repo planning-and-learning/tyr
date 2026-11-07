@@ -32,10 +32,10 @@ template<>
 struct data<::tyr::formalism::Object>
 {
     urd::index<::tyr::formalism::Object> index;
-    ::cista::offset::string name;
+    urd::flat_string name;
 
     data() = default;
-    data(::cista::offset::string name_) : index(), name(std::move(name_)) {}
+    data(urd::flat_string name_) : index(), name(std::move(name_)) {}
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;

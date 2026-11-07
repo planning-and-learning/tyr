@@ -1,11 +1,12 @@
-#include "tyr/formalism/binding_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/binding_index.hpp"
-#include "tyr/formalism/binding_view.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -155,10 +156,10 @@ void check_binding_copy()
 }  // namespace
 
 TEST(TyrFormalismDatalogCopy, RemapsBindingRelationsAndObjects)
-{ check_binding_copy<tyr::formalism::datalog::RepositoryFactory, tyr::formalism::datalog::Builder, tyr::formalism::datalog::CopyContext>(); }
+{ check_binding_copy<tyr::formalism::datalog::RepositoryFactory, tyr::formalism::datalog::Builder, tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>>(); }
 
 TEST(TyrFormalismPlanningCopy, RemapsBindingRelationsAndObjects)
-{ check_binding_copy<tyr::formalism::planning::RepositoryFactory, tyr::formalism::planning::Builder, tyr::formalism::planning::CopyContext>(); }
+{ check_binding_copy<tyr::formalism::planning::RepositoryFactory, tyr::formalism::planning::Builder, tyr::formalism::WriteContext<tyr::formalism::planning::Builder, tyr::formalism::planning::Repository>>(); }
 
 TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
 {

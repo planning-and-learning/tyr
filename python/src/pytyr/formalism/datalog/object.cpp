@@ -34,7 +34,7 @@ void bind_object(nb::module_& m, RepositoryBinding& repository)
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Object>(repository);
+    ygg::bind_insert<Object>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

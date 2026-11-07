@@ -4,7 +4,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -16,7 +16,15 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/serialization/serialization.hpp"
+#include "tyr/planning/formatter.hpp"
+#include "tyr/serialization/formalism/enums.hpp"
+#include "tyr/serialization/formalism/planning/planning.hpp"
+#include "tyr/serialization/planning/ground/task.hpp"
+#include "tyr/serialization/planning/lifted/task.hpp"
+#include "tyr/serialization/planning/node.hpp"
+#include "tyr/serialization/planning/plan.hpp"
+#include "tyr/serialization/planning/state_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <boost/json.hpp>
 #include <gtest/gtest.h>
@@ -216,8 +224,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     const auto atom = make_atom(repository, "truck");
     auto variable_data = urd::data<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>> {};
     variable_data.atoms.push_back(atom.index());
-    canonicalize(variable_data);
-    const auto variable = repository.insert(variable_data).first;
+    const auto variable = ygg::formalism::insert(repository, variable_data).first;
     const auto fact_data = urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(variable.index(), tyr::formalism::planning::FDRValue::none());
     const auto fact = urd::resolve(fact_data, repository);
     ASSERT_FALSE(fact.get_atom().has_value());
@@ -239,8 +246,7 @@ TEST(TyrSerialization, ExpressionsKeepConstantsInline)
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
     const auto constant = tyr::formalism::planning::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3));
     auto binary_data = urd::data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
-    canonicalize(binary_data);
-    const auto binary = repository.insert(binary_data).first;
+    const auto binary = ygg::formalism::insert(repository, binary_data).first;
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<BinaryView>("binary_operators", "b");
 

@@ -59,7 +59,7 @@ void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
 
     bind_fdr_variable_view<FluentTag>(m, "FluentFDRVariable");
 
-    bind_insert<FDRVariable<FluentTag>>(repository);
+    ygg::bind_insert<FDRVariable<FluentTag>>(repository);
 }
 
 }  // namespace tyr::formalism::planning

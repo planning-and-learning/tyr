@@ -16,7 +16,6 @@ foreach(subdir ${SUBDIRECTORIES})
     list(APPEND TYR_PUBLIC_HEADER_FILES ${TMP_PUBLIC_HEADER_FILES})
 endforeach()
 
-list(APPEND TYR_PUBLIC_HEADER_FILES "../include/tyr/tyr.hpp")
 
 add_library(
     core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
@@ -33,9 +32,7 @@ add_library(
     formalism/formatter.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
-    formalism/datalog/copy.cpp
     formalism/datalog/repository.cpp
-    formalism/datalog/views.cpp
     formalism/datalog/variable_dependency_graph.cpp
 
     formalism/planning/invariants/constraints.cpp
@@ -52,9 +49,7 @@ add_library(
     formalism/planning/grounder.cpp
     formalism/planning/merge_datalog.cpp
     formalism/planning/merge_planning.cpp
-    formalism/planning/copy.cpp
     formalism/planning/repository.cpp
-    formalism/planning/views.cpp
     formalism/planning/loki_to_tyr.cpp
     formalism/planning/parser.cpp
     formalism/planning/planning_task.cpp
@@ -85,11 +80,10 @@ add_library(
 
     planning/state_storage/numeric.cpp
     planning/state_storage/tree_bitset/atom.cpp
+    planning/state_storage/tree_bitset/fact.cpp
     planning/ground/state_storage.cpp
     planning/ground/state_storage/vectors.cpp
-    planning/ground/state_storage/tree_bitset/fact.cpp
     planning/lifted/state_storage/vectors.cpp
-    planning/lifted/state_storage/tree_bitset/fact.cpp
 
     planning/heuristic.cpp
     planning/heuristics/goal_count.cpp
@@ -104,10 +98,8 @@ add_library(
     planning/ground/axiom_evaluator.cpp
     planning/ground/axiom_stratification.cpp
     planning/ground/match_tree.cpp
-    planning/ground/node.cpp
     planning/ground/successor_generator.cpp
     planning/lifted/axiom_evaluator.cpp
-    planning/lifted/node.cpp
     planning/lifted/effect_atom_index.cpp
     planning/lifted/successor_generator.cpp
     planning/lifted/task_grounder.cpp

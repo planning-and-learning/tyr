@@ -18,7 +18,8 @@
 #ifndef TYR_FORMALISM_DATALOG_RULE_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_RULE_VIEW_HPP_
 
-#include "tyr/formalism/binding_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/datalog/atom_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"

@@ -25,7 +25,26 @@
 #include "tyr/datalog/lifted/assignment.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -268,9 +287,6 @@ template class PredicateAssignmentSet<formalism::FluentTag>;
  */
 
 template<formalism::FactKind T>
-PredicateAssignmentSets<T>::PredicateAssignmentSets() = default;
-
-template<formalism::FactKind T>
 PredicateAssignmentSets<T>::PredicateAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
                                                     const analysis::PredicateDomainMap<T>& predicate_domains,
                                                     size_t num_objects) :
@@ -386,35 +402,6 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const Edg
 }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const
-{
-    const auto objects = binding.get_objects();
-    const auto arity = objects.size();
-
-    auto result = (*this)[EmptyAssignment()];
-    if (empty(result))
-        return result;
-
-    for (ygg::uint_t i = 0; i < arity; ++i)
-    {
-        result = intersect(result, (*this)[VertexAssignment(formalism::ParameterIndex(i), objects[i].index())]);
-        if (empty(result))
-            return result;
-
-        for (ygg::uint_t j = i + 1; j < arity; ++j)
-        {
-            result =
-                intersect(result,
-                          (*this)[EdgeAssignment(formalism::ParameterIndex(i), objects[i].index(), formalism::ParameterIndex(j), objects[j].index())]);
-            if (empty(result))
-                return result;
-        }
-    }
-
-    return result;
-}
-
-template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EmptyAssignment&) const noexcept
 { return m_set[EmptyAssignment::rank]; }
 
@@ -425,34 +412,6 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const VertexAssig
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EdgeAssignment& assignment) const noexcept
 { return m_set[m_hash.get_rank(assignment)]; }
-
-template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(formalism::datalog::FunctionBindingView<T> binding) const
-{
-    const auto objects = binding.get_objects();
-    const auto arity = objects.size();
-
-    auto result = at(EmptyAssignment());
-    if (empty(result))
-        return result;
-
-    for (ygg::uint_t i = 0; i < arity; ++i)
-    {
-        result = intersect(result, at(VertexAssignment(formalism::ParameterIndex(i), objects[i].index())));
-        if (empty(result))
-            return result;
-
-        for (ygg::uint_t j = i + 1; j < arity; ++j)
-        {
-            result = intersect(result,
-                               at(EdgeAssignment(formalism::ParameterIndex(i), objects[i].index(), formalism::ParameterIndex(j), objects[j].index())));
-            if (empty(result))
-                return result;
-        }
-    }
-
-    return result;
-}
 
 template<formalism::FactKind T>
 size_t FunctionAssignmentSet<T>::size() const noexcept
@@ -468,9 +427,6 @@ template class FunctionAssignmentSet<formalism::FluentTag>;
 /**
  * FunctionAssignmentSets
  */
-
-template<formalism::FactKind T>
-FunctionAssignmentSets<T>::FunctionAssignmentSets() = default;
 
 template<formalism::FactKind T>
 FunctionAssignmentSets<T>::FunctionAssignmentSets(formalism::datalog::FunctionListView<T> functions,
@@ -528,14 +484,6 @@ const FunctionAssignmentSet<T>& FunctionAssignmentSets<T>::get_set(urd::index<fo
 { return m_sets[index.value]; }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSets<T>::operator[](formalism::datalog::FunctionBindingView<T> binding) const
-{ return get_set(binding.get_relation().index())[binding]; }
-
-template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSets<T>::at(formalism::datalog::FunctionBindingView<T> binding) const
-{ return get_set(binding.get_relation().index()).at(binding); }
-
-template<formalism::FactKind T>
 urd::Store<urd::sequence<FunctionAssignmentSet<T>>>& FunctionAssignmentSets<T>::get_sets() noexcept
 { return m_sets; }
 
@@ -555,9 +503,6 @@ template class FunctionAssignmentSets<formalism::FluentTag>;
 /**
  * TaggedAssignmentSets
  */
-
-template<formalism::FactKind T>
-TaggedAssignmentSets<T>::TaggedAssignmentSets() = default;
 
 template<formalism::FactKind T>
 TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListView<T> predicates,
@@ -620,17 +565,4 @@ AssignmentSets::AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>&
 {
 }
 
-template<formalism::FactKind T>
-const TaggedAssignmentSets<T>& AssignmentSets::get() const noexcept
-{
-    if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return *m_static_sets;
-    else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-        return *m_fluent_sets;
-    else
-        static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-}
-
-template const TaggedAssignmentSets<formalism::StaticTag>& AssignmentSets::get<formalism::StaticTag>() const noexcept;
-template const TaggedAssignmentSets<formalism::FluentTag>& AssignmentSets::get<formalism::FluentTag>() const noexcept;
 }

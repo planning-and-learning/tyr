@@ -20,6 +20,7 @@
 
 #include "../repository_statistics.hpp"
 #include "concepts.hpp"
+#include "engine.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
@@ -225,15 +226,15 @@ public:
                  const OptionsT<SearchPolicy>& options,
                  const EventHandlerPtrT<SearchPolicy>& event_handler) :
         m_worker(urd::index<Worker>(0),
-                 state_repository,
-                 axiom_evaluator,
-                 successor_generator,
-                 heuristic,
+                 borrowed(state_repository),
+                 borrowed(axiom_evaluator),
+                 borrowed(successor_generator),
+                 borrowed(heuristic),
                  1,
                  options,
                  options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create(),
                  options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task),
-                 SearchPolicy::make_worker_event_handler(event_handler, urd::index<Worker>(0)))
+                 make_worker_event_handler(event_handler, urd::index<Worker>(0)))
     {
     }
 

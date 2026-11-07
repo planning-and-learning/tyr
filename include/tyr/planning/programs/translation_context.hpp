@@ -24,14 +24,10 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind>
-struct D2PTranslationContext
-{
-};
+struct D2PTranslationContext;
 
 template<TaskKind Kind>
-struct P2DTranslationContext
-{
-};
+struct P2DTranslationContext;
 
 template<TaskKind Kind>
 struct TranslationContext

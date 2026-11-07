@@ -24,7 +24,26 @@
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
 
@@ -47,7 +66,7 @@ public:
     using StaticLiteralIndex = urd::index<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>;
 
     Decomposer(urd::data<formalism::datalog::Program<LiftedTag>>& program,
-               formalism::datalog::CopyContext& context,
+               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                const PredicateFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
         m_context(&context),
@@ -241,7 +260,7 @@ private:
     }
 
     urd::data<formalism::datalog::Program<LiftedTag>>* m_program;
-    formalism::datalog::CopyContext* m_context;
+    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
     const PredicateFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_predicates = 0;
     urd::Store<urd::map<StaticLiteralIndex, std::optional<urd::Store<urd::sequence<StaticLiteralIndex>>>>> m_decompositions;
@@ -253,12 +272,12 @@ formalism::datalog::ProgramView<LiftedTag>
 decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, StaticLiteralDecomposition& result)
 {
     auto builder = formalism::datalog::Builder {};
-    auto context = formalism::datalog::CopyContext { builder, repository };
+    auto context = formalism::WriteContext { builder, repository };
     auto output = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
     formalism::datalog::copy_except_rules(program, *output, context);
     for (const auto rule : program.get_rules<formalism::FunctionTag>())
     {
-        const auto copy = formalism::datalog::copy(rule, context).first.index();
+        const auto copy = formalism::copy(rule, context).first.index();
         output->function_rules.push_back(copy);
         result.rules.function.emplace(rule.index(), copy);
     }
@@ -271,7 +290,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
     {
         // Only rules of the program are inserted: rule workspaces are indexed by rule.
-        const auto body = formalism::datalog::copy(rule.get_body(), context).first;
+        const auto body = formalism::copy(rule.get_body(), context).first;
         auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
         auto decomposed = false;
         for (const auto literal : body.get_literals<formalism::StaticTag>())
@@ -286,7 +305,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
         }
         if (!decomposed)
         {
-            const auto copy = formalism::datalog::copy(rule, context).first.index();
+            const auto copy = formalism::copy(rule, context).first.index();
             output->predicate_rules.push_back(copy);
             result.rules.predicate.emplace(rule.index(), copy);
             continue;
@@ -305,7 +324,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
             new_rule->variables.push_back(urd::to_stored(variable));
         new_rule->body = new_body.index();
         for (const auto head : rule.get_heads())
-            new_rule->heads.push_back(formalism::datalog::copy(head, context).first.index());
+            new_rule->heads.push_back(formalism::copy(head, context).first.index());
         new_rule->cost = rule.get_cost();
         const auto rewritten = formalism::datalog::insert(repository, *new_rule).first.index();
         output->predicate_rules.push_back(rewritten);

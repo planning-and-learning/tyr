@@ -67,6 +67,16 @@ struct AggregatedRuleWorkerStatistics
     uint64_t num_rejected_rules { 0 };
 };
 
+/// The median of nonempty samples (the mean of the middle two for an even count); reorders them.
+inline std::chrono::nanoseconds median(urd::Store<urd::sequence<std::chrono::nanoseconds>>& samples)
+{
+    const auto middle = samples.begin() + samples.size() / 2;
+    std::nth_element(samples.begin(), middle, samples.end());
+    if (samples.size() % 2 == 1)
+        return *middle;
+    return (*std::max_element(samples.begin(), middle) + *middle) / 2;
+}
+
 inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const urd::Store<urd::sequence<datalog::RuleStatistics>>& statistics)
 {
     AggregatedRuleStatistics result {};
@@ -93,34 +103,14 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const urd::St
     if (samples.empty())
         return result;
 
-    std::sort(samples.begin(), samples.end(), [](auto a, auto b) { return a.count() < b.count(); });
-    std::sort(avg_samples.begin(), avg_samples.end(), [](auto a, auto b) { return a.count() < b.count(); });
-
-    result.tot_time_min = samples.front();
-    result.tot_time_max = samples.back();
-
-    result.avg_time_min = avg_samples.front();
-    result.avg_time_max = avg_samples.back();
-
-    const std::size_t n = samples.size();
-    if (n % 2 == 1)
-    {
-        result.tot_time_median = samples[n / 2];
-        result.avg_time_median = avg_samples[n / 2];
-    }
-    else
-    {
-        {
-            const auto a = samples[n / 2 - 1].count();
-            const auto b = samples[n / 2].count();
-            result.tot_time_median = std::chrono::nanoseconds { (a + b) / 2 };
-        }
-        {
-            const auto a = avg_samples[n / 2 - 1].count();
-            const auto b = avg_samples[n / 2].count();
-            result.avg_time_median = std::chrono::nanoseconds { (a + b) / 2 };
-        }
-    }
+    const auto [tot_min, tot_max] = std::minmax_element(samples.begin(), samples.end());
+    result.tot_time_min = *tot_min;
+    result.tot_time_max = *tot_max;
+    const auto [avg_min, avg_max] = std::minmax_element(avg_samples.begin(), avg_samples.end());
+    result.avg_time_min = *avg_min;
+    result.avg_time_max = *avg_max;
+    result.tot_time_median = median(samples);
+    result.avg_time_median = median(avg_samples);
 
     return result;
 }

@@ -89,18 +89,16 @@ TEST(TyrDatalogLiftedBottomUpTest, MissingLiteralBindingUsesClosedWorldPolarityW
 {
     auto fixture = make_lifted_predicate_program();
     auto object_data = urd::data<tyr::formalism::Object>(std::string("missing"));
-    tyr::formalism::canonicalize(object_data);
-    const auto object = fixture.repository->insert(object_data).first;
+    const auto object = ygg::formalism::insert(*fixture.repository, object_data).first;
 
     const auto rule = fixture.program.get_program().get_rules<tyr::formalism::PredicateTag>().front();
     const auto positive = rule.get_body().get_literals<tyr::formalism::FluentTag>().front();
     auto negative_data = urd::data<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>(positive.get_atom().index(), false);
-    tyr::formalism::datalog::canonicalize(negative_data);
-    const auto negative = fixture.repository->insert(negative_data).first;
+    const auto negative = ygg::formalism::insert(*fixture.repository, negative_data).first;
 
     auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(fixture.program);
     workspace.binding.push_back(object.index());
-    auto grounder = tyr::formalism::datalog::GrounderContext { workspace.datalog_builder, *workspace.workspace_repository, workspace.binding };
+    auto grounder = tyr::formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository, workspace.binding };
     const auto fact_sets = tyr::datalog::FactSets { workspace.const_workspace->facts.fact_sets, workspace.facts.fact_sets };
     const auto applicability_context = tyr::datalog::ApplicabilityContext { fact_sets, grounder };
     const auto relation = positive.get_atom().get_predicate().index();
@@ -217,7 +215,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
 
     auto builder = tyr::formalism::datalog::Builder {};
     auto binding = urd::flat_vector<urd::index<tyr::formalism::Object>> {};
-    auto grounder = tyr::formalism::datalog::GrounderContext { builder, *fixture.repository, binding };
+    auto grounder = tyr::formalism::WriteContext { builder, *fixture.repository, binding };
     auto ground_program_data = urd::data<tyr::formalism::datalog::Program<GroundTag>> {};
     const auto lifted_program = fixture.program.get_program();
     for (const auto predicate : lifted_program.get_predicates<tyr::formalism::FluentTag>())
@@ -230,8 +228,7 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
         ground_program_data.predicate_rules.push_back(tyr::formalism::datalog::ground(rule, grounder).first.index());
     for (const auto rule : lifted_program.get_rules<tyr::formalism::FunctionTag>())
         ground_program_data.function_rules.push_back(tyr::formalism::datalog::ground(rule, grounder).first.index());
-    tyr::formalism::datalog::canonicalize(ground_program_data);
-    const auto ground_program_view = fixture.repository->insert(ground_program_data).first;
+    const auto ground_program_view = ygg::formalism::insert(*fixture.repository, ground_program_data).first;
     auto ground_program = tyr::datalog::Program<GroundTag>(ground_program_view, fixture.repository, fixture.factory);
 
     using GroundAnnotationPolicy = tyr::datalog::MinCostAnnotationPolicy<tyr::datalog::SumAggregation>;
@@ -298,14 +295,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
 {
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared();
-    const auto intern = [&]<typename T>(urd::data<T> data)
-    {
-        if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
-            tyr::formalism::datalog::canonicalize(data);
-        else
-            tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
-    };
+    const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
 
     const auto diagonal = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("diagonal"), 2));
     const auto seed = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("seed"), 1));
@@ -416,14 +406,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
     // iteration. Only the new atoms can generate h(a,b,c), and only the one of the first literal may (Debug checks duplicates).
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared();
-    const auto intern = [&]<typename T>(urd::data<T> data)
-    {
-        if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
-            tyr::formalism::datalog::canonicalize(data);
-        else
-            tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
-    };
+    const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
 
     using FluentPredicate = tyr::formalism::Predicate<tyr::formalism::FluentTag>;
     const auto t = intern(urd::data<FluentPredicate>(std::string("t"), 3));
@@ -512,7 +495,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
         EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(other.index()));
 
     // The h rule rejected (a,b,c) before t(a,b,c) existed, so the new atom, not a delta edge, generated it.
-    const auto& h_rule = workspace.predicate_rules[static_cast<ygg::uint_t>(derive_h.index().value)];
+    const auto& h_rule = workspace.rules.get<tyr::formalism::PredicateTag>()[static_cast<ygg::uint_t>(derive_h.index().value)];
     ASSERT_NE(h_rule, nullptr);
     EXPECT_GT(h_rule->worker.front().solve.statistics.num_rejected_rules, 0);
 }
@@ -521,14 +504,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
 {
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared();
-    const auto intern = [&]<typename T>(urd::data<T> data)
-    {
-        if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
-            tyr::formalism::datalog::canonicalize(data);
-        else
-            tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
-    };
+    const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
 
     const auto source = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("source"), 1));
     const auto goal = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
@@ -574,7 +550,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     const auto program_view = intern(std::move(program_data));
 
     auto program = tyr::datalog::Program<LiftedTag>(program_view, repository, factory);
-    const auto& const_rule_workspace = program.get_const_program_workspace().get_rules<tyr::formalism::PredicateTag>().front().value();
+    const auto& const_rule_workspace = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>().front().value();
     EXPECT_EQ(&const_rule_workspace.get_nullary_condition().context(), &program.get_program_repository());
 
     using AnnotationPolicy = tyr::datalog::MinCostAnnotationPolicy<tyr::datalog::SumAggregation>;
@@ -593,8 +569,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     auto repository = factory->create_shared();
     const auto intern = [&]<typename T>(urd::data<T> data)
     {
-        tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
+        return ygg::formalism::insert(*repository, data).first;
     };
 
     const auto predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("workspace-predicate"), 1));
@@ -602,8 +577,7 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     auto program_data = urd::data<tyr::formalism::datalog::Program<LiftedTag>> {};
     program_data.fluent_predicates.push_back(predicate.index());
     program_data.objects.push_back(object.index());
-    tyr::formalism::datalog::canonicalize(program_data);
-    const auto program_view = repository->insert(program_data).first;
+    const auto program_view = ygg::formalism::insert(*repository, program_data).first;
     const auto program = tyr::datalog::Program<LiftedTag>(program_view, repository, factory);
 
     auto first = tyr::datalog::ProgramWorkspace<LiftedTag>(program);
@@ -647,8 +621,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
     auto repository = factory->create_shared();
     const auto intern = [&]<typename T>(urd::data<T> data)
     {
-        tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
+        return ygg::formalism::insert(*repository, data).first;
     };
 
     const auto first_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("first"), 1));
@@ -688,8 +661,7 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     auto repository = factory->create_shared();
     const auto intern = [&]<typename T>(urd::data<T> data)
     {
-        tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
+        return ygg::formalism::insert(*repository, data).first;
     };
 
     const auto first_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("first"), 1));

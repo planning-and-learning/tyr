@@ -26,32 +26,16 @@
 
 #include <vector>
 #include <urd/elements/flat.hpp>
+#include <urd/utils/family.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::analysis
 {
 
-template<formalism::RelationKind R>
+template<typename R>
 using TypedRuleStratum = urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
 
-struct RuleStratum
-{
-    TypedRuleStratum<formalism::PredicateTag> predicate_rules;
-    TypedRuleStratum<formalism::FunctionTag> function_rules;
-
-    auto& get(formalism::PredicateTag) noexcept { return predicate_rules; }
-    auto& get(formalism::FunctionTag) noexcept { return function_rules; }
-    [[nodiscard]] const auto& get(formalism::PredicateTag) const noexcept { return predicate_rules; }
-    [[nodiscard]] const auto& get(formalism::FunctionTag) const noexcept { return function_rules; }
-
-    template<formalism::RelationKind R>
-    auto& get() noexcept
-    { return get(R {}); }
-
-    template<formalism::RelationKind R>
-    [[nodiscard]] const auto& get() const noexcept
-    { return get(R {}); }
-};
+using RuleStratum = urd::utils::Family<TypedRuleStratum, formalism::PredicateTag, formalism::FunctionTag>;
 
 struct RuleStrata
 {

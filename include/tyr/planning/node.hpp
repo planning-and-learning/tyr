@@ -18,8 +18,8 @@
 #ifndef TYR_PLANNING_NODE_HPP_
 #define TYR_PLANNING_NODE_HPP_
 
-#include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
@@ -41,8 +41,6 @@ template<TaskKind Kind, StateViewConcept<Kind> State>
 class Node : public urd::compared_by_identity<Node<Kind, State>>
 {
 public:
-    using StateType = State;
-
     Node(State state, ygg::float_t metric) noexcept(std::is_nothrow_move_constructible_v<State>) : m_state(std::move(state)), m_metric(metric) {}
 
     [[nodiscard]] const State& get_state() const noexcept { return m_state; }
@@ -89,16 +87,11 @@ private:
     ygg::float_t m_metric;
 };
 
-template<TaskKind Kind,
-         StateViewConcept<Kind> State,
-         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+template<TaskKind Kind, StateViewConcept<Kind> State, ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
 struct LabeledNode
 {
-    using StateType = State;
-
     Binding label;
     Node<Kind, State> node;
-
 
     [[nodiscard]] auto pack() const noexcept(noexcept(node.pack()))
         requires std::same_as<Binding, formalism::planning::ActionBindingView> && requires(const Node<Kind, State>& value) { value.pack(); }

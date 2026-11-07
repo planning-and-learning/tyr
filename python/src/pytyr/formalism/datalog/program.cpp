@@ -67,7 +67,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                          urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
                          urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
                          urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
-                         ::cista::optional<urd::index<ConjunctiveCondition<GroundTag>>>,
+                         urd::flat_optional<urd::index<ConjunctiveCondition<GroundTag>>>,
                          urd::flat_vector<urd::index<Rule<T, PredicateTag>>>,
                          urd::flat_vector<urd::index<Rule<T, FunctionTag>>>>(),
                 "static_predicates"_a,
@@ -100,7 +100,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
         cls.def("get_fluent_atoms", &V::template get_atoms<FluentTag>);
         cls.def("get_static_fterm_values", &V::template get_fterm_values<StaticTag>);
         cls.def("get_fluent_fterm_values", &V::template get_fterm_values<FluentTag>);
-        cls.def("get_goal", &V::get_goal, nb::keep_alive<0, 1>());
+        cls.def("get_goal", &V::get_goal);
         cls.def("get_rules", &V::template get_rules<PredicateTag>);
         cls.def("get_function_rules", &V::template get_rules<FunctionTag>);
         ygg::add_print(cls);
@@ -108,7 +108,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

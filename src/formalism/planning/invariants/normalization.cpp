@@ -83,18 +83,13 @@ void remove_covered_atoms(MutableInvariant& inv)
 void remove_unused_parameters(MutableInvariant& inv)
 {
     const size_t total = inv.num_rigid_variables + inv.num_counted_variables;
-    std::vector<bool> used(total, false);
-
-    for (size_t p = 0; p < total; ++p)
-        used[p] = uses_parameter(inv, ParameterIndex(p));
-
     urd::Store<urd::sequence<std::optional<ParameterIndex>>> remap(total, std::nullopt);
     size_t next = 0;
     size_t new_num_rigid = 0;
 
     for (size_t p = 0; p < total; ++p)
     {
-        if (!used[p])
+        if (!uses_parameter(inv, ParameterIndex(p)))
             continue;
 
         remap[p] = ParameterIndex(next);

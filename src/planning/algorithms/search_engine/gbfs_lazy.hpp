@@ -22,7 +22,6 @@
 #include "parent_state.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
-#include "tyr/planning/algorithms/openlists/alternating.hpp"
 
 #include <algorithm>
 #include <array>
@@ -32,6 +31,8 @@
 #include <limits>
 #include <stdexcept>
 #include <tuple>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/store.hpp>
 #include <utility>
 
 namespace tyr::planning::detail
@@ -69,7 +70,6 @@ public:
     struct QueueEntry
     {
         using KeyType = std::tuple<ygg::float_t, ygg::float_t, ygg::uint_t>;
-        using ItemType = urd::index<State<Kind>>;
 
         ygg::float_t g_value;
         ygg::float_t h_value;
@@ -77,7 +77,6 @@ public:
         ygg::uint_t step;
 
         [[nodiscard]] KeyType get_key() const { return std::make_tuple(h_value, g_value, step); }
-        [[nodiscard]] ItemType get_item() const { return state; }
     };
 
     struct PoppedEntry
@@ -85,12 +84,7 @@ public:
         urd::index<State<Kind>> state;
     };
 
-    LazyGBFSPolicy(Heuristic<Kind>& heuristic, const Options& options) :
-        m_heuristic(&heuristic),
-        m_options(&options),
-        m_openlist(m_preferred_openlist, m_standard_openlist, std::array<size_t, 2> { 1, 1 })
-    {
-    }
+    LazyGBFSPolicy(Heuristic<Kind>& heuristic, const Options& options) : m_heuristic(&heuristic), m_options(&options) {}
 
     SearchNode& initialize_start(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value)
     {
@@ -104,17 +98,25 @@ public:
     [[nodiscard]] ygg::float_t get_start_priority() const noexcept { return m_start_h_value; }
 
     void open_start(urd::index<State<Kind>> state, const SearchNode& search_node)
-    { m_standard_openlist.push(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ }); }
+    { m_openlists[standard_list].push(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ }); }
 
-    [[nodiscard]] bool empty() const { return m_openlist.empty(); }
+    [[nodiscard]] bool empty() const { return m_openlists[preferred_list].empty() && m_openlists[standard_list].empty(); }
 
+    /// Alternates between the preferred and the standard open list: m_weights[i] pops from list i before switching.
     PoppedEntry pop()
     {
-        auto& weights = m_openlist.get_weights();
-        weights[0] += m_pending_preferred_boost.exchange(0, std::memory_order_relaxed);
-        const auto state = m_openlist.top();
-        m_openlist.pop();
-        weights[0] = std::max(weights[0] - 1, size_t { 1 });
+        m_weights[preferred_list] += m_pending_preferred_boost.exchange(0, std::memory_order_relaxed);
+        if (m_openlists[m_current].empty() || m_num_current_pops >= m_weights[m_current])
+        {
+            do
+                m_current = 1 - m_current;
+            while (m_openlists[m_current].empty());
+            m_num_current_pops = 0;
+        }
+        const auto state = m_openlists[m_current].top().state;
+        m_openlists[m_current].pop();
+        ++m_num_current_pops;
+        m_weights[preferred_list] = std::max(m_weights[preferred_list] - 1, size_t { 1 });
         return PoppedEntry { state };
     }
 
@@ -125,7 +127,7 @@ public:
 
     SearchNode& get_search_node(urd::index<State<Kind>> state)
     {
-        static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), no_parent(), SearchNodeStatus::NEW };
+        static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(), ParentPolicy::no_parent(), SearchNodeStatus::NEW };
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
@@ -172,14 +174,9 @@ public:
         return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric(), m_state_h_value, preferred };
     }
 
-    static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
-
-    void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool preferred)
+    void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool is_preferred)
     {
-        if (preferred)
-            m_preferred_openlist.push(QueueEntry { g_value, h_value, state, m_step++ });
-        else
-            m_standard_openlist.push(QueueEntry { g_value, h_value, state, m_step++ });
+        m_openlists[is_preferred ? preferred_list : standard_list].push(QueueEntry { g_value, h_value, state, m_step++ });
     }
 
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
@@ -203,7 +200,7 @@ public:
         const auto& successor_state = successor_node.get_state();
         const auto g_value = successor_node.get_metric();
         successor_search_node.status = SearchNodeStatus::OPEN;
-        set_parent(successor_search_node, routed_successor.metadata.parent);
+        successor_search_node.parent_state = ParentPolicy::make_parent(routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
         if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
@@ -234,9 +231,6 @@ public:
 
     [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& get_search_nodes() const noexcept { return m_search_nodes; }
 
-    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, urd::index<Worker> index)
-    { return event_handler ? event_handler->make_worker(index) : nullptr; }
-
     template<typename Handler>
     static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
     { handler.on_start_search(node, priority); }
@@ -260,9 +254,9 @@ public:
     }
 
 private:
-    using Queue = PriorityQueue<QueueEntry>;
-
-    static constexpr ParentState no_parent() noexcept { return ParentPolicy::no_parent(); }
+    using Queue = urd::Store<urd::queue<QueueEntry>, urd::by_priority, urd::order_by<urd::by<&QueueEntry::get_key>>>;
+    static constexpr size_t preferred_list = 0;
+    static constexpr size_t standard_list = 1;
 
     Heuristic<Kind>* m_heuristic;
     const Options* m_options;
@@ -271,9 +265,10 @@ private:
     ygg::float_t m_state_h_value { 0 };
     const urd::Store<urd::set<formalism::planning::ActionBindingView>>* m_relaxed_plan { nullptr };
     urd::Store<urd::sequence<SearchNode>, urd::stable_refs> m_search_nodes;
-    Queue m_preferred_openlist;
-    Queue m_standard_openlist;
-    AlternatingOpenList<Queue, Queue> m_openlist;
+    std::array<Queue, 2> m_openlists;
+    std::array<size_t, 2> m_weights { 1, 1 };
+    size_t m_current { preferred_list };
+    size_t m_num_current_pops { 0 };
     std::atomic<size_t> m_pending_preferred_boost { 0 };
 };
 

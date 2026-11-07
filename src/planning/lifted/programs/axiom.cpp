@@ -20,15 +20,69 @@
 #include "../../programs/common.hpp"
 #include "../../programs/translated_program.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
-#include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/atom_data.hpp"
+#include "tyr/formalism/datalog/binary_operator_data.hpp"
+#include "tyr/formalism/datalog/conditional_effect_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/function_term_data.hpp"
+#include "tyr/formalism/datalog/function_term_value_data.hpp"
+#include "tyr/formalism/datalog/literal_data.hpp"
+#include "tyr/formalism/datalog/multi_operator_data.hpp"
+#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/datalog/unary_operator_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
 
 namespace tyr::planning
 {
@@ -36,7 +90,7 @@ namespace
 {
 void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag> axiom_body,
                         const TranslationContext<LiftedTag>& translation_context,
-                        formalism::planning::MergeDatalogContext& context,
+                        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                         urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
 {
     for (const auto literal : axiom_body.get_literals<formalism::StaticTag>())
@@ -58,7 +112,7 @@ void process_axiom_body(formalism::planning::ConjunctiveConditionView<LiftedTag>
 
 auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                        const TranslationContext<LiftedTag>& translation_context,
-                       formalism::planning::MergeDatalogContext& context)
+                       formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
 
@@ -88,61 +142,10 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
                     formalism::datalog::Repository& repository)
 {
     auto builder = formalism::datalog::Builder();
-    auto context = formalism::planning::MergeDatalogContext(builder, repository);
+    auto context = formalism::WriteContext(builder, repository);
     auto program = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
 
-    for (const auto predicate : task.get_domain().get_predicates<formalism::StaticTag>())
-    {
-        const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
-        translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
-        translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
-        program->static_predicates.push_back(new_predicate.index());
-    }
-    for (const auto predicate : task.get_domain().get_predicates<formalism::FluentTag>())
-    {
-        const auto new_predicate = formalism::planning::merge_p2d(predicate, context).first;
-        translation_context.d2p.fluent_to_fluent_predicate.emplace(new_predicate, predicate);
-        translation_context.p2d.fluent_to_fluent_predicate.emplace(predicate, new_predicate);
-        program->fluent_predicates.push_back(new_predicate.index());
-    }
-    for (const auto predicate : task.get_domain().get_predicates<formalism::DerivedTag>())
-    {
-        const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
-        translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
-        translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-        program->fluent_predicates.push_back(new_predicate.index());
-    }
-    for (const auto predicate : task.get_derived_predicates())
-    {
-        const auto new_predicate = formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(predicate, context).first;
-        translation_context.d2p.fluent_to_derived_predicate.emplace(new_predicate, predicate);
-        translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
-        program->fluent_predicates.push_back(new_predicate.index());
-    }
-
-    for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
-        program->static_functions.push_back(formalism::planning::merge_p2d(function, context).first.index());
-    for (const auto function : task.get_domain().get_functions<formalism::FluentTag>())
-    {
-        const auto new_function = formalism::planning::merge_p2d(function, context).first;
-        translation_context.p2d.fluent_to_fluent_function.emplace(function, new_function);
-        program->fluent_functions.push_back(new_function.index());
-    }
-
-    for (const auto object : task.get_domain().get_constants())
-        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.index());
-    for (const auto object : task.get_objects())
-        program->objects.push_back(formalism::planning::merge_p2d(object, context).first.index());
-
-    for (const auto atom : task.get_atoms<formalism::StaticTag>())
-        program->static_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.index());
-    for (const auto atom : task.get_atoms<formalism::FluentTag>())
-        program->fluent_atoms.push_back(formalism::planning::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
-
-    for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
-        program->static_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.index());
-    for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
-        program->fluent_fterm_values.push_back(formalism::planning::merge_p2d(fterm_value, context).first.index());
+    translate_task_symbols(task, true, translation_context, context, *program);
 
     for (const auto axiom : task.get_domain().get_axioms())
         program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
@@ -174,19 +177,19 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task, Trans
 }
 }
 
-AxiomEvaluatorProgram<LiftedTag>::AxiomEvaluatorProgram(formalism::planning::TaskView<LiftedTag> task) :
+AxiomEvaluatorProgram::AxiomEvaluatorProgram(formalism::planning::TaskView<LiftedTag> task) :
     m_translation_context(),
     m_datalog_program(create_datalog_program(task, m_translation_context))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }
 
-const TranslationContext<LiftedTag>& AxiomEvaluatorProgram<LiftedTag>::get_translation_context() const noexcept { return m_translation_context; }
+const TranslationContext<LiftedTag>& AxiomEvaluatorProgram::get_translation_context() const noexcept { return m_translation_context; }
 
-datalog::Program<LiftedTag>& AxiomEvaluatorProgram<LiftedTag>::get_datalog_program() noexcept { return m_datalog_program; }
+datalog::Program<LiftedTag>& AxiomEvaluatorProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
-const datalog::Program<LiftedTag>& AxiomEvaluatorProgram<LiftedTag>::get_datalog_program() const noexcept { return m_datalog_program; }
+const datalog::Program<LiftedTag>& AxiomEvaluatorProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
-const datalog::ConstProgramWorkspace<LiftedTag>& AxiomEvaluatorProgram<LiftedTag>::get_const_program_workspace() const noexcept
+const datalog::ConstProgramWorkspace<LiftedTag>& AxiomEvaluatorProgram::get_const_program_workspace() const noexcept
 { return m_datalog_program.get_const_program_workspace(); }
 }

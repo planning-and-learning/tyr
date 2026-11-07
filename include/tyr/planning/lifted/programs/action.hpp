@@ -19,10 +19,46 @@
 #define TYR_PLANNING_LIFTED_PROGRAMS_ACTION_HPP_
 
 #include "tyr/datalog/lifted/program.hpp"
-#include "tyr/formalism/datalog/views.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
-#include "tyr/planning/programs/action.hpp"
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
@@ -34,12 +70,9 @@
 namespace tyr::planning
 {
 
-template<>
-class ApplicableActionProgram<LiftedTag>
+class ApplicableActionProgram
 {
 public:
-    using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>>;
-
     struct SchemaProgram
     {
         SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program, const P2DTranslationContext<LiftedTag>& translation_context);
@@ -52,12 +85,6 @@ public:
 
     /// A program per action schema with its action rule and the rules of its conditional effects.
     using SchemaPrograms = urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, SchemaProgram>>;
-
-    /// The predicate of each conditional effect with variables or a condition, whose atoms are the applicable bindings of its action
-    /// followed by the objects of the effect's variables for which the effect fires.
-    /// Keyed by the action too, since actions can share an interned conditional effect.
-    using ConditionalEffectToPredicateMapping =
-        urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
 
     explicit ApplicableActionProgram(formalism::planning::TaskView<LiftedTag> task);
 

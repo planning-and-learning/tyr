@@ -35,13 +35,13 @@ struct data<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>
 {
     urd::index<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
     urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint;
-    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child;
-    ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
+    urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child;
+    urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
     data(urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint_,
-         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
-         ::cista::optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
+         urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
+         urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),
         constraint(std::move(constraint_)),
         true_child(std::move(true_child_)),

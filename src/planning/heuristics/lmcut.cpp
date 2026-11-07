@@ -39,6 +39,7 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <urd/utils/family.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -134,14 +135,17 @@ private:
     urd::Store<urd::map<ActionBinding, datalog::Cost>> m_action_used_costs;
     urd::Store<urd::map<RuleEdge, datalog::Cost>> m_rule_edge_used_costs;
     urd::Store<urd::map<NumericEdge, datalog::Cost>> m_numeric_edge_used_costs;
-    urd::Store<urd::set<PredicateHead>> m_goal_zone;
-    urd::Store<urd::set<NumericNode>> m_numeric_goal_zone;
-    urd::Store<urd::set<PredicateHead>> m_before_goal_zone;
-    urd::Store<urd::set<NumericNode>> m_numeric_before_goal_zone;
-    urd::Store<urd::set<PredicateHead>> m_before_goal_zone_explored;
-    urd::Store<urd::set<NumericNode>> m_numeric_before_goal_zone_explored;
-    urd::Store<urd::map<PredicateHead, urd::Store<urd::sequence<Precondition>>>> m_before_goal_zone_dependents;
-    urd::Store<urd::map<NumericNode, urd::Store<urd::sequence<Precondition>>>> m_numeric_before_goal_zone_dependents;
+    template<typename Node>
+    using NodeSet = urd::Store<urd::set<Node>>;
+    template<typename Node>
+    using NodeDependents = urd::Store<urd::map<Node, urd::Store<urd::sequence<Precondition>>>>;
+    /// Per kind of node (Precondition's alternatives).
+    using Nodes = urd::utils::Family<NodeSet, PredicateHead, NumericNode>;
+
+    Nodes m_goal_zone;
+    Nodes m_before_goal_zone;
+    Nodes m_before_goal_zone_explored;
+    urd::utils::Family<NodeDependents, PredicateHead, NumericNode> m_before_goal_zone_dependents;
     urd::Store<urd::map<ActionBinding, datalog::Cost>> m_cut;
     urd::Store<urd::map<RuleEdge, datalog::Cost>> m_rule_cut;
     urd::Store<urd::map<NumericEdge, datalog::Cost>> m_numeric_cut;
@@ -338,7 +342,7 @@ void LMCutImplementation<Kind>::mark_goal_zone(Precondition precondition, size_t
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::mark_goal_zone(PredicateHead head, size_t depth)
 {
-    if (!m_goal_zone.insert(head).second)
+    if (!m_goal_zone.template get<PredicateHead>().insert(head).second)
         return;
 
     const auto head_cost = this->get_predicate_cost(head);
@@ -362,7 +366,7 @@ void LMCutImplementation<Kind>::mark_goal_zone(PredicateHead head, size_t depth)
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::mark_goal_zone(const NumericNode& node, size_t depth)
 {
-    if (!m_numeric_goal_zone.insert(node).second)
+    if (!m_goal_zone.template get<NumericNode>().insert(node).second)
         return;
 
     const auto* witness = get_numeric_witness(node);
@@ -389,15 +393,9 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, urd:
             is_base = true;
         for (const auto& precondition : preconditions)
         {
-            std::visit(
-                [&](const auto& key)
-                {
-                    if constexpr (std::same_as<std::remove_cvref_t<decltype(key)>, PredicateHead>)
-                        m_before_goal_zone_dependents[key].push_back(node);
-                    else
-                        m_numeric_before_goal_zone_dependents[key].push_back(node);
-                },
-                precondition);
+            std::visit([&](const auto& key)
+                       { m_before_goal_zone_dependents.template get<std::remove_cvref_t<decltype(key)>>()[key].push_back(node); },
+                       precondition);
             stack.push_back(precondition);
         }
     };
@@ -460,14 +458,14 @@ void LMCutImplementation<Kind>::compute_before_goal_zone()
     const auto push_preconditions = [&](const urd::Store<urd::sequence<Precondition>>& preconditions)
     { stack.insert(stack.end(), preconditions.begin(), preconditions.end()); };
 
-    for (const auto head : m_goal_zone)
+    for (const auto head : m_goal_zone.template get<PredicateHead>())
         this->for_each_achiever(head,
                                 [&](const auto& witness)
                                 {
                                     if (const auto action_binding = this->get_action_binding(witness))
                                         push_preconditions(get_witness_max_preconditions(witness, get_witness_edge_residual_cost(witness), 0));
                                 });
-    for (const auto& node : m_numeric_goal_zone)
+    for (const auto& node : m_goal_zone.template get<NumericNode>())
         if (const auto* witness = get_numeric_witness(node); witness && this->get_action_binding(*witness))
             push_preconditions(get_witness_max_preconditions(*witness, get_witness_edge_residual_cost(*witness), 0));
 
@@ -478,10 +476,8 @@ void LMCutImplementation<Kind>::compute_before_goal_zone()
         const auto explored = std::visit(
             [&](const auto& key)
             {
-                if constexpr (std::same_as<std::remove_cvref_t<decltype(key)>, PredicateHead>)
-                    return m_goal_zone.contains(key) || !m_before_goal_zone_explored.insert(key).second;
-                else
-                    return m_numeric_goal_zone.contains(key) || !m_numeric_before_goal_zone_explored.insert(key).second;
+                using Node = std::remove_cvref_t<decltype(key)>;
+                return m_goal_zone.template get<Node>().contains(key) || !m_before_goal_zone_explored.template get<Node>().insert(key).second;
             },
             node);
         if (!explored)
@@ -495,18 +491,10 @@ void LMCutImplementation<Kind>::compute_before_goal_zone()
         std::visit(
             [&](const auto& key)
             {
-                if constexpr (std::same_as<std::remove_cvref_t<decltype(key)>, PredicateHead>)
-                {
-                    if (m_before_goal_zone.insert(key).second)
-                        for (const auto& dependent : m_before_goal_zone_dependents[key])
-                            base.push_back(dependent);
-                }
-                else
-                {
-                    if (m_numeric_before_goal_zone.insert(key).second)
-                        for (const auto& dependent : m_numeric_before_goal_zone_dependents[key])
-                            base.push_back(dependent);
-                }
+                using Node = std::remove_cvref_t<decltype(key)>;
+                if (m_before_goal_zone.template get<Node>().insert(key).second)
+                    for (const auto& dependent : m_before_goal_zone_dependents.template get<Node>()[key])
+                        base.push_back(dependent);
             },
             node);
     }
@@ -515,28 +503,17 @@ void LMCutImplementation<Kind>::compute_before_goal_zone()
 template<TaskKind Kind>
 bool LMCutImplementation<Kind>::is_before_goal_zone(Precondition precondition) const
 {
-    return std::visit(
-        [&](const auto& key)
-        {
-            if constexpr (std::same_as<std::remove_cvref_t<decltype(key)>, PredicateHead>)
-                return m_before_goal_zone.contains(key);
-            else
-                return m_numeric_before_goal_zone.contains(key);
-        },
-        precondition);
+    return std::visit([&](const auto& key) { return m_before_goal_zone.template get<std::remove_cvref_t<decltype(key)>>().contains(key); }, precondition);
 }
 
 template<TaskKind Kind>
 void LMCutImplementation<Kind>::clear_zones() noexcept
 {
-    m_goal_zone.clear();
-    m_numeric_goal_zone.clear();
-    m_before_goal_zone.clear();
-    m_numeric_before_goal_zone.clear();
-    m_before_goal_zone_explored.clear();
-    m_numeric_before_goal_zone_explored.clear();
-    m_before_goal_zone_dependents.clear();
-    m_numeric_before_goal_zone_dependents.clear();
+    const auto clear = [](auto& member) { member.clear(); };
+    m_goal_zone.for_each(clear);
+    m_before_goal_zone.for_each(clear);
+    m_before_goal_zone_explored.for_each(clear);
+    m_before_goal_zone_dependents.for_each(clear);
 }
 
 template<TaskKind Kind>
@@ -631,10 +608,10 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
         }
     };
 
-    for (const auto head : m_goal_zone)
+    for (const auto head : m_goal_zone.template get<PredicateHead>())
         this->for_each_achiever(head, [&](const auto& witness) { inspect_witness(witness, &head); });
 
-    for (const auto& node : m_numeric_goal_zone)
+    for (const auto& node : m_goal_zone.template get<NumericNode>())
         if (const auto* witness = get_numeric_witness(node); witness && witness->get_cost() == get_numeric_cost(node))
             inspect_witness(*witness, nullptr);
 }
@@ -688,7 +665,7 @@ void LMCutImplementation<Kind>::extract_expanded_cut(CutFrontierAtoms* cut_front
         }
     };
 
-    for (const auto head : m_goal_zone)
+    for (const auto head : m_goal_zone.template get<PredicateHead>())
     {
         const auto head_cost = this->get_predicate_cost(head);
         this->for_each_achiever(head,
@@ -699,7 +676,7 @@ void LMCutImplementation<Kind>::extract_expanded_cut(CutFrontierAtoms* cut_front
                                 });
     }
 
-    for (const auto& node : m_numeric_goal_zone)
+    for (const auto& node : m_goal_zone.template get<NumericNode>())
         if (const auto* witness = get_numeric_witness(node); witness && witness->get_cost() == get_numeric_cost(node))
             inspect_numeric_witness(node, *witness);
 }

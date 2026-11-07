@@ -6,10 +6,10 @@
 #include "planning/parser.hpp"
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
-#include "tyr/formalism/datalog/copy_decl.hpp"
+#include "tyr/formalism/write_context.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
@@ -55,12 +55,6 @@ static_assert(std::same_as<tyr::planning::BorrowedActionBindingView<tyr::GroundT
 static_assert(std::same_as<tyr::planning::BorrowedActionBindingView<tyr::LiftedTag>, tyr::formalism::planning::ActionBindingDataView>);
 static_assert(!HasBindingQuery<tyr::GroundTag, tyr::planning::BuilderStateView<tyr::LiftedTag>>);
 static_assert(!HasBindingQuery<tyr::LiftedTag, tyr::planning::StateView<tyr::GroundTag>>);
-static_assert(tyr::planning::SuccessorGeneratorConcept<tyr::planning::SuccessorGenerator<tyr::GroundTag>,
-                                                       tyr::GroundTag,
-                                                       tyr::planning::BuilderStateView<tyr::GroundTag>>);
-static_assert(tyr::planning::SuccessorGeneratorConcept<tyr::planning::SuccessorGenerator<tyr::LiftedTag>,
-                                                       tyr::LiftedTag,
-                                                       tyr::planning::BuilderStateView<tyr::LiftedTag>>);
 
 namespace tyr::tests
 {
@@ -193,8 +187,8 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
         }
         EXPECT_TRUE(schema.program.get_rules<formalism::FunctionTag>().empty());
         ASSERT_EQ(schema.strata.data.size(), 1);
-        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front().predicate_rules, data.predicate_rules));
-        EXPECT_TRUE(schema.strata.data.front().function_rules.empty());
+        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front().get<tyr::formalism::PredicateTag>(), data.predicate_rules));
+        EXPECT_TRUE(schema.strata.data.front().get<tyr::formalism::FunctionTag>().empty());
     }
 }
 
@@ -315,15 +309,15 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
                                                                                "static-copy-problem.pddl"));
     auto destination = source->get_domain().get_repository_factory()->create_shared(source->get_domain().get_repository().get());
     auto builder = tyr::formalism::planning::Builder {};
-    auto context = tyr::formalism::planning::CopyContext { builder, *destination };
+    auto context = tyr::formalism::WriteContext { builder, *destination };
     ASSERT_EQ(source->get_task().get_atoms<formalism::StaticTag>().size(), 1);
     ASSERT_EQ(source->get_task().get_goal().get_literals<formalism::StaticTag>().size(), 1);
     const auto source_present = source->get_task().get_atoms<formalism::StaticTag>()[0];
     const auto source_absent = source->get_task().get_goal().get_literals<formalism::StaticTag>()[0];
 
     // Reverse insertion order so source and destination atom indices differ.
-    const auto absent = tyr::formalism::planning::copy(source_absent, context).first;
-    const auto present = tyr::formalism::planning::copy(source_present, context).first;
+    const auto absent = tyr::formalism::copy(source_absent, context).first;
+    const auto present = tyr::formalism::copy(source_present, context).first;
     ASSERT_NE(present.index(), source_present.index());
     auto atoms = urd::flat_vector<urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::StaticTag>>> { present.index() };
     auto fterm_values = urd::flat_vector<urd::index<tyr::formalism::planning::FunctionTermValue<GroundTag, formalism::StaticTag>>> {};

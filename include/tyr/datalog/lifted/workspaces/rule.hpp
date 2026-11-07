@@ -27,8 +27,26 @@
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <cassert>
 #include <type_traits>
@@ -87,7 +105,13 @@ struct RuleWorkspace<LiftedTag, R>
         void clear() noexcept;
 
         /// Head updates
-        RuleHeadUpdatesT<R> head_updates;
+        RuleHeadUpdatesT<R> head_updates = []
+        {
+            if constexpr (std::same_as<R, formalism::PredicateTag>)
+                return PredicateHeadUpdates();
+            else
+                return FunctionHeadUpdates(urd::layer { 0 });  // an insertion-ordered set is numbered
+        }();
 
         /// KCKP
         kckp::Workspace kckp_workspace;
@@ -174,10 +198,6 @@ private:
  * Implementations
  */
 
-inline PredicateHeadUpdates make_head_updates(formalism::PredicateTag) { return {}; }
-
-inline FunctionHeadUpdates make_head_updates(formalism::FunctionTag) { return {}; }
-
 inline bool supports_inner_parallelism(formalism::PredicateTag) noexcept { return true; }
 inline bool supports_inner_parallelism(formalism::FunctionTag) noexcept { return false; }
 
@@ -202,7 +222,6 @@ void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentS
 
 template<formalism::RelationKind R>
 RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>&, const Common& common) :
-    head_updates(make_head_updates(R {})),
     kckp_workspace(common.kckp.get_graph_layout())
 {
 }

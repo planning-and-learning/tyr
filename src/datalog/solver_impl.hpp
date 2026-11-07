@@ -73,9 +73,9 @@ bool commit_head_bucket(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, Schedule
 }
 
 template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    requires SolverPolicyConcept<Kind, AP, TP, CP>
-void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
+void compute_model(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
 {
+    static_assert(SolverPolicyConcept<Kind, AP, TP, CP>);
     auto policy = SolverPolicy<Kind, AP, TP, CP>(ctx);
     while (policy.next_stratum())
     {
@@ -118,14 +118,6 @@ void compute_model_impl(ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
         }
     }
 }
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void compute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
-{ compute_model_impl(ctx); }
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void compute_model(ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
-{ compute_model_impl(ctx); }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void execute_model(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx, ygg::ExecutionContext& execution_context)

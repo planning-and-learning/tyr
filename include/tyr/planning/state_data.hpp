@@ -28,7 +28,6 @@
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <urd/elements/flat.hpp>
-#include <urd/repr/core/dependent_false.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
 namespace tyr::planning
@@ -56,21 +55,6 @@ struct PackedState
         numeric_storage(numeric_storage_)
     {
     }
-
-    urd::index<State<Kind>> get_index() const noexcept { return index; }
-
-    template<formalism::FactKind T>
-    auto get_atom_storage() const noexcept
-    {
-        if constexpr (std::same_as<T, formalism::FluentTag>)
-            return fact_storage;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return atom_storage;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
-
-    auto get_numeric_variables() const noexcept { return numeric_storage; }
 
     friend bool operator==(const PackedState& lhs, const PackedState& rhs) { return urd::EqualTo<PackedState> {}(lhs, rhs); }
 

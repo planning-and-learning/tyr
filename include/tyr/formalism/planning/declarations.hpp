@@ -172,8 +172,6 @@ template<TaskKind T>
 using FunctionTermValueTypes = boost::mp11::mp_list<FunctionTermValue<T, StaticTag>, FunctionTermValue<T, FluentTag>, FunctionTermValue<T, AuxiliaryTag>>;
 using FDRVariableTypes = boost::mp11::mp_transform<FDRVariable, boost::mp11::mp_list<FluentTag>>;
 using InvariantTypes = boost::mp11::mp_list<Invariant>;
-using FDRFactTypes = boost::mp11::mp_transform<FDRFact, boost::mp11::mp_list<FluentTag>>;
-
 template<TaskKind T>
 using ArithmeticExpressionTypes = boost::mp11::mp_list<UnaryOperator<T, ArithmeticOperatorKind>, BinaryOperator<T, ArithmeticOperatorKind>, MultiOperator<T, ArithmeticOperatorKind>>;
 template<TaskKind T>
@@ -244,8 +242,6 @@ using RepositoryFactoryPtr = std::shared_ptr<RepositoryFactory>;
 template<TaskKind T>
 using ActionView = urd::index_view<Action<T>, Repository>;
 template<TaskKind T>
-using ActionListView = urd::resolved_range<urd::flat_vector<urd::index<Action<T>>>, Repository>;
-template<TaskKind T>
 using ActionViewList = urd::Store<urd::sequence<ActionView<T>>>;
 
 template<TaskKind T, FactKind F>
@@ -258,15 +254,10 @@ using AtomViewList = urd::Store<urd::sequence<AtomView<T, F>>>;
 template<TaskKind T>
 using AxiomView = urd::index_view<Axiom<T>, Repository>;
 template<TaskKind T>
-using AxiomListView = urd::resolved_range<urd::flat_vector<urd::index<Axiom<T>>>, Repository>;
-template<TaskKind T>
 using AxiomViewList = urd::Store<urd::sequence<AxiomView<T>>>;
 
 template<TaskKind T, OperatorKind O>
 using BinaryOperatorView = urd::index_view<BinaryOperator<T, O>, Repository>;
-
-template<TaskKind T, OperatorKind O>
-using BinaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<BinaryOperator<T, O>>>, Repository>;
 
 template<FactKind T>
 using PredicateBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Predicate<T>, ::tyr::formalism::ObjectTag>, Repository>;
@@ -294,16 +285,8 @@ using ConditionalEffectViewList = urd::Store<urd::sequence<urd::index_view<Condi
 template<TaskKind T>
 using ConjunctiveConditionView = urd::index_view<ConjunctiveCondition<T>, Repository>;
 template<TaskKind T>
-using ConjunctiveConditionListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveCondition<T>>>, Repository>;
-
-template<TaskKind T>
 using ConjunctiveEffectView = urd::index_view<ConjunctiveEffect<T>, Repository>;
-template<TaskKind T>
-using ConjunctiveEffectListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveEffect<T>>>, Repository>;
-
 using DomainView = urd::index_view<Domain, Repository>;
-using DomainListView = urd::resolved_range<urd::flat_vector<urd::index<Domain>>, Repository>;
-
 template<FactKind T>
 using FDRFactView = urd::borrowed_view<FDRFact<T>, Repository>;
 template<FactKind T>
@@ -314,21 +297,15 @@ using FDRFactViewList = urd::Store<urd::sequence<FDRFactView<T>>>;
 template<FactKind T>
 using FDRVariableView = urd::index_view<FDRVariable<T>, Repository>;
 template<FactKind T>
-using FDRVariableListView = urd::resolved_range<urd::flat_vector<urd::index<FDRVariable<T>>>, Repository>;
-template<FactKind T>
 using FDRVariableViewList = urd::Store<urd::sequence<FDRVariableView<T>>>;
 
 using InvariantView = urd::index_view<Invariant, Repository>;
-using InvariantListView = urd::resolved_range<urd::flat_vector<urd::index<Invariant>>, Repository>;
 using InvariantViewList = urd::Store<urd::sequence<InvariantView>>;
 
 template<TaskKind T, FactKind F>
 using FunctionTermView = urd::index_view<FunctionTerm<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using FunctionTermListView = urd::resolved_range<urd::flat_vector<urd::index<FunctionTerm<T, F>>>, Repository>;
-
-template<TaskKind T, FactKind F>
-using FunctionTermViewList = urd::Store<urd::sequence<FunctionTermView<T, F>>>;
 
 template<FactKind T>
 using FunctionView = urd::index_view<Function<T>, Repository>;
@@ -347,9 +324,6 @@ using FunctionTermValueViewList = urd::Store<urd::sequence<FunctionTermValueView
 template<TaskKind T, FactKind F>
 using FunctionTermViewValuePair = std::pair<urd::index_view<FunctionTerm<T, F>, Repository>, ygg::float_t>;
 template<TaskKind T, FactKind F>
-using FunctionTermViewValuePairList = urd::Store<urd::sequence<FunctionTermViewValuePair<T, F>>>;
-
-template<TaskKind T, FactKind F>
 using LiteralView = urd::index_view<Literal<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using LiteralListView = urd::resolved_range<urd::flat_vector<urd::index<Literal<T, F>>>, Repository>;
@@ -357,13 +331,8 @@ template<TaskKind T, FactKind F>
 using LiteralViewList = urd::Store<urd::sequence<LiteralView<T, F>>>;
 
 using MetricView = urd::index_view<Metric, Repository>;
-using MetricListView = urd::resolved_range<urd::flat_vector<urd::index<Metric>>, Repository>;
-
 template<TaskKind T, OperatorKind O>
 using MultiOperatorView = urd::index_view<MultiOperator<T, O>, Repository>;
-
-template<TaskKind T, OperatorKind O>
-using MultiOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<MultiOperator<T, O>>>, Repository>;
 
 template<TaskKind T, FactKind F>
 using NumericEffectOperatorView = urd::index_view<NumericEffect<T, F>, Repository>;
@@ -374,11 +343,7 @@ using NumericEffectOperatorViewList = urd::Store<urd::sequence<NumericEffectOper
 
 template<TaskKind T, FactKind F>
 using NumericEffectView = urd::index_view<NumericEffect<T, F>, Repository>;
-template<TaskKind T, FactKind F>
-using NumericEffectListView = urd::resolved_range<urd::flat_vector<urd::index<NumericEffect<T, F>>>, Repository>;
-
 using ObjectView = urd::index_view<Object, Repository>;
-using ObjectListView = urd::resolved_range<urd::flat_vector<urd::index<Object>>, Repository>;
 using ObjectViewList = urd::Store<urd::sequence<ObjectView>>;
 
 template<FactKind T>
@@ -401,11 +366,7 @@ using TermViewList = urd::Store<urd::sequence<TermView>>;
 template<TaskKind T, OperatorKind O>
 using UnaryOperatorView = urd::index_view<UnaryOperator<T, O>, Repository>;
 
-template<TaskKind T, OperatorKind O>
-using UnaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<UnaryOperator<T, O>>>, Repository>;
-
 using VariableView = urd::index_view<Variable, Repository>;
-using VariableListView = urd::resolved_range<urd::flat_vector<urd::index<Variable>>, Repository>;
 using VariableViewList = urd::Store<urd::sequence<VariableView>>;
 
 /// A function expression: a number, an arithmetic operator or a function term (ground ones also the auxiliary term).
@@ -413,21 +374,21 @@ using VariableViewList = urd::Store<urd::sequence<VariableView>>;
 template<TaskKind T>
 using FunctionExpression =
     std::conditional_t<std::same_as<T, GroundTag>,
-                       ::cista::offset::variant<ygg::float_t,
+                       urd::flat_variant<ygg::float_t,
                                                 urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<FunctionTerm<T, StaticTag>>,
                                                 urd::index<FunctionTerm<T, FluentTag>>,
                                                 urd::index<FunctionTerm<T, AuxiliaryTag>>>,
-                       ::cista::offset::variant<ygg::float_t,
+                       urd::flat_variant<ygg::float_t,
                                                 urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<FunctionTerm<T, StaticTag>>,
                                                 urd::index<FunctionTerm<T, FluentTag>>>>;
 template<TaskKind T>
-using FunctionExpressionList = ::cista::offset::vector<FunctionExpression<T>>;
+using FunctionExpressionList = urd::flat_vector<FunctionExpression<T>>;
 
 /// A function expression read through the repository: the number, or the view of the record, it holds.
 template<TaskKind T>
@@ -445,25 +406,6 @@ using FunctionExpressionView = std::conditional_t<std::same_as<T, GroundTag>,
                                                                MultiOperatorView<T, ArithmeticOperatorKind>,
                                                                FunctionTermView<T, StaticTag>,
                                                                FunctionTermView<T, FluentTag>>>;
-template<TaskKind T>
-using FunctionExpressionListView = urd::resolved_range<FunctionExpressionList<T>, Repository>;
-
-/**
- * Context
- */
-
-template<typename Repo, typename... Tags>
-constexpr bool repository_access_for_types(boost::mp11::mp_list<Tags...>) noexcept
-{ return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...); }
-
-template<typename T>
-concept RepositoryConcept = repository_access_for_types<T>(SymbolRepositoryTypes {}) && repository_access_for_types<T>(RelationRepositoryTypes {});
-
-template<typename T>
-concept Context = requires(const T& a) {
-    { get_repository(a) } -> RepositoryConcept;
-};
-
 class FDRContext;
 using FDRContextPtr = std::shared_ptr<FDRContext>;
 class PlanningDomain;

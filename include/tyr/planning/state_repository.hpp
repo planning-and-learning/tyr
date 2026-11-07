@@ -22,7 +22,6 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_repository_concepts.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
 
@@ -108,9 +107,6 @@ public:
     [[nodiscard]] size_t num_states() const noexcept;
     /// The stored, packed record of a registered state (a StateView or PackedStateView is the usual handle).
     [[nodiscard]] const PackedState<Kind>& packed(urd::index<State<Kind>> state_index) const;
-
-    /// A repository owns the states it registers.
-    friend const StateRepository& get_repository(const StateRepository& repository URD_LIFETIMEBOUND) noexcept { return repository; }
 
 private:
     std::unique_ptr<Impl> m_impl;

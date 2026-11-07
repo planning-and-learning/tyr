@@ -20,8 +20,9 @@
 #include <urd/store.hpp>
 
 #include "tyr/analysis/variable_domain.hpp"
-#include "tyr/formalism/binding_data.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
@@ -57,15 +58,32 @@ auto make_binding(tyr::formalism::datalog::Repository& repository,
     data.relation = relation.index();
     for (const auto object : objects)
         data.objects.push_back(object);
-    canonicalize(data);
-    return repository.insert(data).first;
+    return ygg::formalism::insert(repository, data).first;
+}
+
+/// What every projection of the binding allows: the intersection of its empty, vertex and edge assignments.
+template<typename Set, typename Binding>
+ygg::ClosedInterval<ygg::float_t> interval_of(const Set& set, Binding binding)
+{
+    const auto objects = binding.get_objects();
+    auto result = set[tyr::datalog::EmptyAssignment {}];
+    for (ygg::uint_t i = 0; i < objects.size(); ++i)
+    {
+        result = intersect(result, set[tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(i), objects[i].index())]);
+        for (ygg::uint_t j = i + 1; j < objects.size(); ++j)
+            result = intersect(result,
+                               set[tyr::datalog::EdgeAssignment(tyr::formalism::ParameterIndex(i),
+                                                                objects[i].index(),
+                                                                tyr::formalism::ParameterIndex(j),
+                                                                objects[j].index())]);
+    }
+    return result;
 }
 
 template<typename T>
 auto intern(tyr::formalism::datalog::Repository& repository, urd::data<T> data)
 {
-    canonicalize(data);
-    return repository.insert(data).first;
+    return ygg::formalism::insert(repository, data).first;
 }
 
 struct Fixture
@@ -196,7 +214,7 @@ TEST(TyrDatalogLiftedAssignmentSets, FunctionInsertionTracksHullsAndEmptyAssignm
     EXPECT_TRUE(empty(set[tyr::datalog::EmptyAssignment {}]));
     EXPECT_TRUE(empty(set[tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(0), fixture.objects[1].index())]));
     EXPECT_TRUE(set.insert(first, first_interval));
-    EXPECT_EQ(set[first], first_interval);
+    EXPECT_EQ(interval_of(set, first), first_interval);
     EXPECT_TRUE(set.insert(second, second_interval));
     EXPECT_FALSE(set.insert(second, second_interval));
     EXPECT_EQ(set[tyr::datalog::EmptyAssignment {}], second_interval);
@@ -206,8 +224,8 @@ TEST(TyrDatalogLiftedAssignmentSets, FunctionInsertionTracksHullsAndEmptyAssignm
                                                   tyr::formalism::ParameterIndex(1),
                                                   fixture.objects[1].index())),
               second_interval);
-    EXPECT_EQ(set[first], first_interval);
-    EXPECT_EQ(set[second], second_interval);
+    EXPECT_EQ(interval_of(set, first), first_interval);
+    EXPECT_EQ(interval_of(set, second), second_interval);
     EXPECT_TRUE(empty(set[tyr::datalog::EdgeAssignment(tyr::formalism::ParameterIndex(0),
                                                        fixture.objects[1].index(),
                                                        tyr::formalism::ParameterIndex(1),
@@ -215,10 +233,10 @@ TEST(TyrDatalogLiftedAssignmentSets, FunctionInsertionTracksHullsAndEmptyAssignm
 
     set.reset();
     EXPECT_TRUE(empty(set[tyr::datalog::EmptyAssignment {}]));
-    EXPECT_TRUE(empty(set[first]));
+    EXPECT_TRUE(empty(interval_of(set, first)));
     EXPECT_TRUE(set.insert(out_of_domain, projected_interval));
     EXPECT_EQ(set[tyr::datalog::EmptyAssignment {}], projected_interval);
-    EXPECT_TRUE(empty(set[out_of_domain]));
+    EXPECT_TRUE(empty(interval_of(set, out_of_domain)));
     EXPECT_TRUE(empty(set[tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(0), fixture.objects[1].index())]));
     EXPECT_EQ(set.at(tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(1), fixture.objects[1].index())), projected_interval);
     EXPECT_EQ(set.at(tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(2), fixture.objects[3].index())), projected_interval);
@@ -235,9 +253,9 @@ TEST(TyrDatalogLiftedAssignmentSets, FunctionInsertionTracksHullsAndEmptyAssignm
     const auto nullary_binding = make_binding<tyr::formalism::Function<tyr::formalism::FluentTag>>(fixture.repository, nullary, {});
     auto nullary_set = tyr::datalog::FunctionAssignmentSet<tyr::formalism::FluentTag>(nullary, {}, fixture.objects.size());
     EXPECT_EQ(nullary_set.size(), 1);
-    EXPECT_TRUE(empty(nullary_set[nullary_binding]));
+    EXPECT_TRUE(empty(interval_of(nullary_set, nullary_binding)));
     EXPECT_TRUE(nullary_set.insert(nullary_binding, static_cast<ygg::float_t>(7)));
-    EXPECT_EQ(nullary_set[nullary_binding], ygg::ClosedInterval<ygg::float_t>(7, 7));
+    EXPECT_EQ(interval_of(nullary_set, nullary_binding), ygg::ClosedInterval<ygg::float_t>(7, 7));
 }
 TEST(TyrDatalogLiftedAssignmentSets, TouchedBlocksAndPreparedRanksMatchScalarRanks)
 {

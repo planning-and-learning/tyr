@@ -29,7 +29,11 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
-#include "tyr/planning/lifted/state_data.hpp"
+#include "tyr/planning/lifted/state_storage/vectors.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/state_builder.hpp"
@@ -57,7 +61,7 @@ struct RPGPolicy<LiftedTag>
         if (!mapping.contains(head.get_relation()))
             return std::nullopt;
 
-        auto merge_context = formalism::planning::MergePlanningContext { workspace.planning_builder, *definition.task->get_repository() };
+        auto merge_context = formalism::WriteContext { workspace.planning_builder, *definition.task->get_repository() };
         return formalism::planning::merge_atom_d2p<formalism::FluentTag, formalism::FluentTag>(head, mapping, merge_context).first;
     }
 
@@ -85,7 +89,7 @@ struct RPGPolicy<LiftedTag>
         if (it == mapping.end())
             return std::nullopt;
 
-        auto grounder_context = formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
+        auto grounder_context = formalism::WriteContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
         if constexpr (std::same_as<R, formalism::PredicateTag>)
         {
@@ -138,11 +142,11 @@ struct RPGPolicy<LiftedTag>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
-        const auto& const_rule_workspace = *workspace.const_workspace->template get_rules<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
+        const auto& const_rule_workspace = *workspace.const_workspace->rules.template get<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
         auto binding = urd::flat_vector<urd::index<formalism::Object>> {};
         for (const auto object : rule_binding.get_objects())
             binding.push_back(urd::to_stored(object));
-        auto grounder_context = formalism::datalog::GrounderContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
+        auto grounder_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
         const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace, grounder_context);
         std::forward<Callback>(callback)(instance);
     }
@@ -155,25 +159,7 @@ struct RPGPolicy<LiftedTag>
 
         std::cout << "[RPGHeuristic] Summary" << '\n';
         fmt::print(std::cout, "{}\n", workspace.statistics);
-        auto rule_statistics = urd::Store<urd::sequence<datalog::RuleStatistics>> {};
-        const auto collect_rule_statistics = [&]<formalism::RelationKind R>()
-        {
-            for (const auto& ws_rule : workspace.template get_rules<R>())
-                rule_statistics.push_back(ws_rule->common.statistics);
-        };
-        collect_rule_statistics.template operator()<formalism::PredicateTag>();
-        collect_rule_statistics.template operator()<formalism::FunctionTag>();
-        fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(rule_statistics));
-        auto rule_worker_statistics = urd::Store<urd::sequence<datalog::RuleWorkerStatistics>> {};
-        const auto collect_worker_statistics = [&]<formalism::RelationKind R>()
-        {
-            for (const auto& ws_rule : workspace.template get_rules<R>())
-                for (const auto& worker : ws_rule->worker)
-                    rule_worker_statistics.push_back(worker.solve.statistics);
-        };
-        collect_worker_statistics.template operator()<formalism::PredicateTag>();
-        collect_worker_statistics.template operator()<formalism::FunctionTag>();
-        fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(rule_worker_statistics));
+        datalog::print_rule_statistics(workspace.rules);
     }
 };
 

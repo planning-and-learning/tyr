@@ -19,7 +19,6 @@
 
 #include "search_engine/astar_eager.hpp"
 #include "search_engine/parallel.hpp"
-#include "search_engine/sequential.hpp"
 #include "tyr/planning/algorithms/concepts.hpp"
 
 namespace tyr::planning::astar_eager
@@ -32,25 +31,7 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
                                  SuccessorGenerator<Kind>& successor_generator,
                                  Heuristic<Kind>& heuristic,
                                  const Options<Kind>& options)
-{
-    if (options.num_search_workers == 0)
-        throw std::invalid_argument("astar_eager::find_solution(...): num_search_workers must be greater than zero.");
-    if (options.num_search_workers > 1)
-    {
-        using Search = detail::EagerAStarPolicy<Kind, ParallelSearch>;
-        return detail::find_parallel_solution<Kind, Search>(task,
-                                                            state_repository,
-                                                            axiom_evaluator,
-                                                            successor_generator,
-                                                            heuristic,
-                                                            options,
-                                                            "astar_eager::find_solution(...): unknown distribution hash mode.");
-    }
-
-    using Search = detail::EagerAStarPolicy<Kind, SequentialSearch>;
-    using Execution = detail::SequentialExecutionPolicy<Kind, Search>;
-    return detail::SearchEngine<Kind, Search, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
-}
+{ return planning::detail::find_solution<planning::detail::EagerAStarPolicy>(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, "astar_eager"); }
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,
                                                           StateRepository<LiftedTag>& state_repository,

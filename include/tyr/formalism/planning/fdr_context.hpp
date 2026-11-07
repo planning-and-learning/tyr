@@ -19,7 +19,32 @@
 #define TYR_FORMALISM_FDR_CONTEXT_HPP_
 
 #include "tyr/formalism/planning/atom_view.hpp"
-#include "tyr/formalism/planning/datas.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
+#include "tyr/formalism/planning/action_data.hpp"
+#include "tyr/formalism/planning/atom_data.hpp"
+#include "tyr/formalism/planning/axiom_data.hpp"
+#include "tyr/formalism/planning/binary_operator_data.hpp"
+#include "tyr/formalism/planning/conditional_effect_data.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_data.hpp"
+#include "tyr/formalism/planning/domain_data.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
+#include "tyr/formalism/planning/fdr_variable_data.hpp"
+#include "tyr/formalism/planning/function_term_data.hpp"
+#include "tyr/formalism/planning/function_term_value_data.hpp"
+#include "tyr/formalism/planning/invariant_data.hpp"
+#include "tyr/formalism/planning/literal_data.hpp"
+#include "tyr/formalism/planning/metric_data.hpp"
+#include "tyr/formalism/planning/multi_operator_data.hpp"
+#include "tyr/formalism/planning/numeric_effect_data.hpp"
+#include "tyr/formalism/planning/task_data.hpp"
+#include "tyr/formalism/planning/unary_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -66,7 +91,6 @@ private:
         urd::data<FDRFact<FluentTag>> fact;
         std::atomic_bool ready { false };
     };
-
 
     std::optional<FDRFactView<FluentTag>> find_fact(AtomView<GroundTag, FluentTag> atom) const;
     void ensure_fact_slot(AtomView<GroundTag, FluentTag> atom);

@@ -25,7 +25,7 @@
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
-#include <urd/repr/core/dependent_false.hpp>
+#include <urd/utils/family.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
@@ -63,7 +63,7 @@ using PredicateDomainMap = SimpleScopedDomainMap<formalism::Predicate<T>>;
 template<formalism::FactKind T>
 using FunctionDomainMap = SimpleScopedDomainMap<formalism::Function<T>>;
 
-template<formalism::RelationKind R>
+template<typename R>
 using RuleDomainMap = ScopedDomainMap<formalism::datalog::Rule<LiftedTag, R>>;
 
 using AxiomDomainMap = ScopedDomainMap<formalism::planning::Axiom<LiftedTag>>;
@@ -98,30 +98,7 @@ struct ProgramVariableDomains
     PredicateDomainMap<formalism::FluentTag> fluent_predicate_domains;
     FunctionDomainMap<formalism::StaticTag> static_function_domains;
     FunctionDomainMap<formalism::FluentTag> fluent_function_domains;
-    RuleDomainMap<formalism::PredicateTag> predicate_rule_domains;
-    RuleDomainMap<formalism::FunctionTag> function_rule_domains;
-
-    template<formalism::RelationKind R>
-    auto& get_rule_domains() noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rule_domains;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rule_domains;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
-
-    template<formalism::RelationKind R>
-    const auto& get_rule_domains() const noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rule_domains;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rule_domains;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
+    urd::utils::Family<RuleDomainMap, formalism::PredicateTag, formalism::FunctionTag> rule_domains;
 };
 
 struct TaskVariableDomains
@@ -180,9 +157,6 @@ using PredicateDomainViewMap = SimpleScopedDomainViewMap<formalism::Predicate<T>
 
 template<formalism::FactKind T, typename C>
 using FunctionDomainViewMap = SimpleScopedDomainViewMap<formalism::Function<T>, C>;
-
-template<formalism::RelationKind R, typename C>
-using RuleDomainViewMap = ScopedDomainViewMap<formalism::datalog::Rule<LiftedTag, R>, C>;
 
 template<typename C>
 using AxiomDomainViewMap = ScopedDomainViewMap<formalism::planning::Axiom<LiftedTag>, C>;

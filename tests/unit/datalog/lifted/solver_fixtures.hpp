@@ -28,9 +28,28 @@
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
-#include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/atom_data.hpp"
+#include "tyr/formalism/datalog/binary_operator_data.hpp"
+#include "tyr/formalism/datalog/conditional_effect_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/function_term_data.hpp"
+#include "tyr/formalism/datalog/function_term_value_data.hpp"
+#include "tyr/formalism/datalog/literal_data.hpp"
+#include "tyr/formalism/datalog/multi_operator_data.hpp"
+#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/datalog/unary_operator_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
@@ -249,14 +268,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
 {
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared();
-    const auto intern = [&]<typename T>(urd::data<T> data)
-    {
-        if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
-            tyr::formalism::datalog::canonicalize(data);
-        else
-            tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
-    };
+    const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
     const auto bind_function = [&](auto function)
     {
         auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
@@ -408,14 +420,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
 {
     auto factory = std::make_shared<tyr::formalism::datalog::RepositoryFactory>();
     auto repository = factory->create_shared();
-    const auto intern = [&]<typename T>(urd::data<T> data)
-    {
-        if constexpr (requires { tyr::formalism::datalog::canonicalize(data); })
-            tyr::formalism::datalog::canonicalize(data);
-        else
-            tyr::formalism::canonicalize(data);
-        return repository->insert(data).first;
-    };
+    const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
     const auto source_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("source"), 1));
     const auto goal_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
     const auto value_function = intern(urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("value"), 1));

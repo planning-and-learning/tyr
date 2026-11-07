@@ -196,9 +196,6 @@ using RepositoryFactoryPtr = std::shared_ptr<RepositoryFactory>;
 template<TaskKind T, OperatorKind O>
 using BinaryOperatorView = urd::index_view<BinaryOperator<T, O>, Repository>;
 
-template<TaskKind T, OperatorKind O>
-using BinaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<BinaryOperator<T, O>>>, Repository>;
-
 template<FactKind F>
 using PredicateBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Predicate<F>, ::tyr::formalism::ObjectTag>, Repository>;
 template<FactKind F>
@@ -237,12 +234,8 @@ using FunctionViewList = urd::Store<urd::sequence<FunctionView<F>>>;
 template<TaskKind T, OperatorKind O>
 using MultiOperatorView = urd::index_view<MultiOperator<T, O>, Repository>;
 
-template<TaskKind T, OperatorKind O>
-using MultiOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<MultiOperator<T, O>>>, Repository>;
-
 using ObjectView = urd::index_view<Object, Repository>;
 
-using ObjectListView = urd::resolved_range<urd::flat_vector<urd::index<Object>>, Repository>;
 using ObjectViewList = urd::Store<urd::sequence<ObjectView>>;
 
 template<FactKind F>
@@ -262,12 +255,8 @@ using TermViewList = urd::Store<urd::sequence<TermView>>;
 template<TaskKind T, OperatorKind O>
 using UnaryOperatorView = urd::index_view<UnaryOperator<T, O>, Repository>;
 
-template<TaskKind T, OperatorKind O>
-using UnaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<UnaryOperator<T, O>>>, Repository>;
-
 using VariableView = urd::index_view<Variable, Repository>;
 
-using VariableListView = urd::resolved_range<urd::flat_vector<urd::index<Variable>>, Repository>;
 using VariableViewList = urd::Store<urd::sequence<VariableView>>;
 
 template<TaskKind T, FactKind F>
@@ -283,11 +272,7 @@ using ConditionalEffectView = urd::index_view<ConditionalEffect<T>, Repository>;
 template<TaskKind T>
 using ConditionalEffectViewList = urd::Store<urd::sequence<ConditionalEffectView<T>>>;
 template<TaskKind T>
-using ConjunctiveConditionListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveCondition<T>>>, Repository>;
-template<TaskKind T>
 using ConjunctiveConditionView = urd::index_view<ConjunctiveCondition<T>, Repository>;
-template<TaskKind T>
-using ConjunctiveEffectListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveEffect<T>>>, Repository>;
 template<TaskKind T>
 using ConjunctiveEffectView = urd::index_view<ConjunctiveEffect<T>, Repository>;
 template<TaskKind T, FactKind F>
@@ -300,8 +285,6 @@ template<TaskKind T, FactKind F>
 using FunctionTermValueViewList = urd::Store<urd::sequence<FunctionTermValueView<T, F>>>;
 template<TaskKind T, FactKind F>
 using FunctionTermView = urd::index_view<FunctionTerm<T, F>, Repository>;
-template<TaskKind T, FactKind F>
-using FunctionTermViewList = urd::Store<urd::sequence<FunctionTermView<T, F>>>;
 template<TaskKind T, FactKind F>
 using LiteralListView = urd::resolved_range<urd::flat_vector<urd::index<Literal<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
@@ -317,11 +300,7 @@ using NumericEffectOperatorViewList = urd::Store<urd::sequence<NumericEffectOper
 template<TaskKind T, FactKind F>
 using NumericEffectView = urd::index_view<NumericEffect<T, F>, Repository>;
 template<TaskKind T>
-using ProgramListView = urd::resolved_range<urd::flat_vector<urd::index<Program<T>>>, Repository>;
-template<TaskKind T>
 using ProgramView = urd::index_view<Program<T>, Repository>;
-template<TaskKind T, RelationKind R>
-using RuleListView = urd::resolved_range<urd::flat_vector<urd::index<Rule<T, R>>>, Repository>;
 template<TaskKind T, RelationKind R>
 using RuleView = urd::index_view<Rule<T, R>, Repository>;
 template<TaskKind T, RelationKind R>
@@ -332,21 +311,21 @@ using RuleViewList = urd::Store<urd::sequence<RuleView<T, R>>>;
 template<TaskKind T>
 using FunctionExpression =
     std::conditional_t<std::same_as<T, GroundTag>,
-                       ::cista::offset::variant<ygg::float_t,
+                       urd::flat_variant<ygg::float_t,
                                                 urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<FunctionTerm<T, StaticTag>>,
                                                 urd::index<FunctionTerm<T, FluentTag>>,
                                                 urd::index<FunctionTerm<T, AuxiliaryTag>>>,
-                       ::cista::offset::variant<ygg::float_t,
+                       urd::flat_variant<ygg::float_t,
                                                 urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
                                                 urd::index<FunctionTerm<T, StaticTag>>,
                                                 urd::index<FunctionTerm<T, FluentTag>>>>;
 template<TaskKind T>
-using FunctionExpressionList = ::cista::offset::vector<FunctionExpression<T>>;
+using FunctionExpressionList = urd::flat_vector<FunctionExpression<T>>;
 
 /// A function expression read through the repository: the number, or the view of the record, it holds.
 template<TaskKind T>
@@ -364,25 +343,6 @@ using FunctionExpressionView = std::conditional_t<std::same_as<T, GroundTag>,
                                                                MultiOperatorView<T, ArithmeticOperatorKind>,
                                                                FunctionTermView<T, StaticTag>,
                                                                FunctionTermView<T, FluentTag>>>;
-template<TaskKind T>
-using FunctionExpressionListView = urd::resolved_range<FunctionExpressionList<T>, Repository>;
-
-/**
- * Context
- */
-
-template<typename Repo, typename... Tags>
-constexpr bool repository_access_for_types(boost::mp11::mp_list<Tags...>) noexcept
-{ return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...); }
-
-template<typename T>
-concept RepositoryConcept = repository_access_for_types<T>(SymbolRepositoryTypes {}) && repository_access_for_types<T>(RelationRepositoryTypes {});
-
-template<typename T>
-concept Context = requires(const T& a) {
-    { get_repository(a) } -> RepositoryConcept;
-};
-
 class VariableDependencyGraph;
 
 }

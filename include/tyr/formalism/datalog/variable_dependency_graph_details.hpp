@@ -24,42 +24,26 @@
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include <cstddef>
+#include <type_traits>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::datalog::details
 {
 
+/// The literal dependency set of dep (unary or binary) for fact kind F and polarity P.
 template<FactKind F, PolarityKind P, typename Dep>
-decltype(auto) select_literal_dependency(Dep&& dep) noexcept
+auto& select_literal_dependency(Dep& dep) noexcept
 {
-    if constexpr (std::is_same_v<F, StaticTag>)
-    {
-        if constexpr (std::is_same_v<P, PositiveTag>)
-            return (std::forward<Dep>(dep).static_positive_literal);
-        else if constexpr (std::is_same_v<P, NegativeTag>)
-            return (std::forward<Dep>(dep).static_negative_literal);
-        else
-            static_assert(urd::repr::dependent_false<P>::value, "Missing case");
-    }
-    else if constexpr (std::is_same_v<F, FluentTag>)
-    {
-        if constexpr (std::is_same_v<P, PositiveTag>)
-            return (std::forward<Dep>(dep).fluent_positive_literal);
-        else if constexpr (std::is_same_v<P, NegativeTag>)
-            return (std::forward<Dep>(dep).fluent_negative_literal);
-        else
-            static_assert(urd::repr::dependent_false<P>::value, "Missing case");
-    }
-    else
-    {
-        static_assert(urd::repr::dependent_false<F>::value, "Missing case");
-    }
+    using D = std::remove_const_t<Dep>;
+    using namespace boost::mp11;
+    return tagged_member<mp_product<mp_list, StaticFluentTags, PositiveNegativeTags>,
+                         mp_list<F, P>,
+                         &D::static_positive_literal,
+                         &D::static_negative_literal,
+                         &D::fluent_positive_literal,
+                         &D::fluent_negative_literal>(dep);
 }
-
-template<typename Dep>
-decltype(auto) select_numeric_dependency(Dep&& dep) noexcept
-{ return (std::forward<Dep>(dep).numeric_constraint); }
 
 struct UnaryDependencies
 {
@@ -73,7 +57,7 @@ struct UnaryDependencies
     [[nodiscard]] const auto& get_literal_dependency() const noexcept
     { return details::select_literal_dependency<F, P>(*this); }
 
-    [[nodiscard]] const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
+    [[nodiscard]] const auto& get_numeric_dependency() const noexcept { return numeric_constraint; }
 
     /**
      * has_
@@ -130,7 +114,7 @@ struct BinaryDependencies
     [[nodiscard]] const auto& get_literal_dependency() const noexcept
     { return details::select_literal_dependency<F, P>(*this); }
 
-    [[nodiscard]] const auto& get_numeric_dependency() const noexcept { return details::select_numeric_dependency(*this); }
+    [[nodiscard]] const auto& get_numeric_dependency() const noexcept { return numeric_constraint; }
 
     /**
      * has_

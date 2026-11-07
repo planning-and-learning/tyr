@@ -46,7 +46,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
     urd::flat_vector<urd::index<::tyr::formalism::datalog::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_atoms;
     urd::flat_vector<urd::index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
-    ::cista::optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal;
+    urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal;
     urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::PredicateTag>>> predicate_rules;
     urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::FunctionTag>>> function_rules;
 
@@ -60,7 +60,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
          urd::flat_vector<urd::index<::tyr::formalism::datalog::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_atoms_,
          urd::flat_vector<urd::index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
-         ::cista::optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal_,
+         urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal_,
          urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::PredicateTag>>> predicate_rules_,
          urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::FunctionTag>>> function_rules_) :
         index(),
@@ -86,69 +86,27 @@ struct data<::tyr::formalism::datalog::Program<T>>
     /// Dispatches on the relation kind, mirroring FactSets::get<F>() and AssignmentSets::get<F>().
     template<::tyr::formalism::RelationKind R>
     auto& get_rules() noexcept
-    {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
-            return predicate_rules;
-        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
-            return function_rules;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::PredicateFunctionTags, R, &data::predicate_rules, &data::function_rules>(*this); }
 
     template<::tyr::formalism::RelationKind R>
     const auto& get_rules() const noexcept
-    {
-        if constexpr (std::same_as<R, ::tyr::formalism::PredicateTag>)
-            return predicate_rules;
-        else if constexpr (std::same_as<R, ::tyr::formalism::FunctionTag>)
-            return function_rules;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::PredicateFunctionTags, R, &data::predicate_rules, &data::function_rules>(*this); }
 
     template<::tyr::formalism::FactKind F>
     const auto& get_predicates() const
-    {
-        if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-            return static_predicates;
-        else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return fluent_predicates;
-        else
-            static_assert(urd::repr::dependent_false<F>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_predicates, &data::fluent_predicates>(*this); }
 
     template<::tyr::formalism::FactKind F>
     const auto& get_functions() const
-    {
-        if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-            return static_functions;
-        else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return fluent_functions;
-        else
-            static_assert(urd::repr::dependent_false<F>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_functions, &data::fluent_functions>(*this); }
 
     template<::tyr::formalism::FactKind F>
     const auto& get_atoms() const
-    {
-        if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-            return static_atoms;
-        else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return fluent_atoms;
-        else
-            static_assert(urd::repr::dependent_false<F>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_atoms, &data::fluent_atoms>(*this); }
 
     template<::tyr::formalism::FactKind F>
     const auto& get_fterm_values() const
-    {
-        if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-            return static_fterm_values;
-        else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return fluent_fterm_values;
-        else
-            static_assert(urd::repr::dependent_false<F>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_fterm_values, &data::fluent_fterm_values>(*this); }
 
     static constexpr auto cista_members() noexcept
     {

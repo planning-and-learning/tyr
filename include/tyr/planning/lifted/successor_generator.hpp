@@ -22,7 +22,6 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
@@ -34,6 +33,8 @@
 
 namespace tyr::planning
 {
+
+class ApplicableActionProgram;
 
 template<>
 class SuccessorGenerator<LiftedTag>
@@ -304,7 +305,7 @@ public:
     void print_summary(size_t verbosity) const;
 
     // Getters
-    [[nodiscard]] const ApplicableActionProgram<LiftedTag>& get_action_program() const noexcept;
+    [[nodiscard]] const ApplicableActionProgram& get_action_program() const noexcept;
     [[nodiscard]] const TaskPtr<LiftedTag>& get_task() const noexcept;
     [[nodiscard]] ygg::uint_t get_index() const noexcept;
 
@@ -312,7 +313,6 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-static_assert(SuccessorGeneratorConcept<SuccessorGenerator<LiftedTag>, LiftedTag>);
 }
 
 #endif

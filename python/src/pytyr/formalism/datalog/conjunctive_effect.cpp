@@ -51,7 +51,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

@@ -39,7 +39,7 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind, DistHashKind HashKind>
+template<TaskKind Kind, typename HashKind>
 class DistHash;
 
 template<TaskKind Kind>
@@ -53,8 +53,8 @@ public:
     [[nodiscard]] ygg::hash_t hash(const urd::data<State<Kind>>& state) const noexcept
     {
         auto result = static_cast<ygg::hash_t>(m_seed);
-        urd::hash_combine(result, state.template get_atom_storage<formalism::FluentTag>());
-        urd::hash_combine(result, state.get_numeric_variables());
+        urd::hash_combine(result, state.fact_storage);
+        urd::hash_combine(result, state.numeric_storage);
         // Final avalanche over the accumulated hash, using XXH64's 64-bit seed and result.
         return boost::hash2::xxhash_64(result).result();
     }

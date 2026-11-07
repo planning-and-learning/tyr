@@ -36,13 +36,6 @@
 namespace tyr::formalism::datalog
 {
 
-
-template<typename T>
-void bind_insert(RepositoryBinding& repository)
-{
-    repository.def("insert", [](Repository& self, urd::data<T>& data) { return insert(self, data); }, nb::arg("data"));
-}
-
 template<typename T>
 urd::borrowed_view<T, Repository> create_data(Repository& repository, const urd::data<T>& data)
 { return urd::resolve(data, repository); }

@@ -70,49 +70,22 @@ inline bool validate_tuple(std::span<const ygg::uint_t> tuple)
     return true;
 }
 
-template<size_t K>
-inline TupleIndex choose(ygg::uint_t n)
+/// The binomial coefficient (n choose k), k > 0, computed as ((n-k+1) * (n-k+2) / 2 * ...) * n / k so every division is exact.
+inline TupleIndex choose(ygg::uint_t n, size_t k)
 {
-    static_assert(K > 0);
-
-    if constexpr (K == 1)
-    {
-        return n;
-    }
-    else
-    {
-        if (n < K)
-            return 0;
-
-        auto result = choose<K - 1>(n - 1);
-        if (result > std::numeric_limits<TupleIndex>::max() / n)
-            throw std::overflow_error("iw::choose(...): tuple index overflow.");
-
-        result *= n;
-        result /= K;
-        return result;
-    }
-}
-
-template<size_t Arity, size_t K = 1>
-inline TupleIndex rank_tuple_impl(std::span<const ygg::uint_t> tuple)
-{
-    if constexpr (K > Arity)
-    {
+    assert(k > 0);
+    if (n < k)
         return 0;
-    }
-    else
+
+    auto result = TupleIndex { n - k + 1 };
+    for (auto j = size_t { 2 }; j <= k; ++j)
     {
-        if (tuple.size() < K)
-            return 0;
-
-        const auto summand = choose<K>(tuple[K - 1]);
-        const auto suffix = rank_tuple_impl<Arity, K + 1>(tuple);
-        if (summand > std::numeric_limits<TupleIndex>::max() - suffix)
-            throw std::overflow_error("iw::rank_tuple(...): tuple index overflow.");
-
-        return summand + suffix;
+        const auto m = TupleIndex { n - k + j };
+        if (result > std::numeric_limits<TupleIndex>::max() / m)
+            throw std::overflow_error("iw::choose(...): tuple index overflow.");
+        result = result * m / j;
     }
+    return result;
 }
 
 /// @brief Rank a canonical tuple of atom indices using the combinadic number system.
@@ -124,7 +97,15 @@ template<size_t Arity>
 inline TupleIndex rank_tuple(std::span<const ygg::uint_t> tuple)
 {
     assert(validate_tuple<Arity>(tuple));
-    return rank_tuple_impl<Arity>(tuple);
+    auto result = TupleIndex { 0 };
+    for (auto k = std::min(tuple.size(), Arity); k > 0; --k)
+    {
+        const auto summand = choose(tuple[k - 1], k);
+        if (summand > std::numeric_limits<TupleIndex>::max() - result)
+            throw std::overflow_error("iw::rank_tuple(...): tuple index overflow.");
+        result += summand;
+    }
+    return result;
 }
 
 template<size_t Arity, typename Callback>
@@ -156,11 +137,6 @@ void for_each_tuple(const AtomIndexList& atoms, size_t max_arity, std::array<ygg
     for (auto tuple_size = size_t { 1 }; tuple_size <= std::min({ Arity, max_arity, atoms.size() }); ++tuple_size)
         for_each_tuple<Arity>(atoms, tuple_size, 0, 0, tuple, callback);
 }
-
-template<size_t Arity, typename Callback>
-void for_each_tuple(const AtomIndexList& atoms, std::array<ygg::uint_t, Arity>& tuple, Callback callback)
-    requires(Arity > 0)
-{ for_each_tuple<Arity>(atoms, Arity, tuple, std::move(callback)); }
 
 template<size_t Arity, typename Callback>
 void for_each_tuple_with_added_atoms(const AtomIndexList& added_atoms,
@@ -220,17 +196,8 @@ void for_each_tuple_with_added_atoms(const AtomIndexList& added_atoms,
     }
 }
 
-template<size_t Arity, typename Callback>
-void for_each_tuple_with_added_atoms(const AtomIndexList& added_atoms,
-                                     const AtomIndexList& kept_atoms,
-                                     std::array<ygg::uint_t, Arity>& added_tuple,
-                                     std::array<ygg::uint_t, Arity>& kept_tuple,
-                                     std::array<ygg::uint_t, Arity>& tuple,
-                                     Callback callback)
-    requires(Arity > 0)
-{ for_each_tuple_with_added_atoms<Arity>(added_atoms, kept_atoms, Arity, added_tuple, kept_tuple, tuple, std::move(callback)); }
-
 template<size_t Arity>
+    requires(Arity > 0)
 class DynamicNoveltyTable
 {
 public:
@@ -248,8 +215,6 @@ public:
         return DynamicNoveltyTable(m_storage, true);
     }
 
-    ygg::uint_t get_arity() const noexcept { return Arity; }
-
     void clear()
     {
         const auto lock = lock_if_shared();
@@ -261,13 +226,6 @@ public:
     {
         if (max_arity > Arity)
             throw std::invalid_argument("DynamicNoveltyTable::validate_max_arity(...): max_arity exceeds table arity.");
-    }
-
-    bool test(std::span<const ygg::uint_t> tuple) const
-    {
-        assert(validate_tuple<Arity>(tuple));
-        const auto lock = lock_if_shared();
-        return test_unlocked(tuple);
     }
 
     bool insert(std::span<const ygg::uint_t> tuple)
@@ -285,74 +243,46 @@ public:
         collect_atoms(state, m_atoms);
         const auto lock = lock_if_shared();
 
-        if constexpr (Arity == 0)
-        {
+        if (max_arity == 0)
             return insert_unlocked(std::span<const ygg::uint_t> {});
-        }
-        else
-        {
-            if (max_arity == 0)
-                return insert_unlocked(std::span<const ygg::uint_t> {});
 
-            auto novel = false;
-            for_each_tuple<Arity>(m_atoms, max_arity, m_tuple, [&](std::span<const ygg::uint_t> tuple) { novel = insert_unlocked(tuple) || novel; });
+        auto novel = false;
+        for_each_tuple<Arity>(m_atoms, max_arity, m_tuple, [&](std::span<const ygg::uint_t> tuple) { novel = insert_unlocked(tuple) || novel; });
 
-            return novel;
-        }
+        return novel;
     }
-
-    template<TaskKind Kind>
-    bool insert(const StateView<Kind>& state)
-    { return insert(state, Arity); }
 
     template<TaskKind Kind>
     bool insert(const StateView<Kind>& src, const StateView<Kind>& dst, ygg::uint_t max_arity)
     {
         validate_max_arity(max_arity);
 
-        if constexpr (Arity == 0)
-        {
-            static_cast<void>(src);
-            static_cast<void>(dst);
+        if (max_arity == 0)
             return false;
-        }
-        else
-        {
-            if (max_arity == 0)
-            {
-                static_cast<void>(src);
-                static_cast<void>(dst);
-                return false;
-            }
 
-            collect_atoms(src, m_src_atoms);
-            collect_atoms(dst, m_atoms);
+        collect_atoms(src, m_src_atoms);
+        collect_atoms(dst, m_atoms);
 
-            m_added_atoms.clear();
-            std::ranges::set_difference(m_atoms, m_src_atoms, std::back_inserter(m_added_atoms));
-            if (m_added_atoms.empty())
-                return false;
+        m_added_atoms.clear();
+        std::ranges::set_difference(m_atoms, m_src_atoms, std::back_inserter(m_added_atoms));
+        if (m_added_atoms.empty())
+            return false;
 
-            m_kept_atoms.clear();
-            std::ranges::set_intersection(m_atoms, m_src_atoms, std::back_inserter(m_kept_atoms));
+        m_kept_atoms.clear();
+        std::ranges::set_intersection(m_atoms, m_src_atoms, std::back_inserter(m_kept_atoms));
 
-            const auto lock = lock_if_shared();
-            auto novel = false;
-            for_each_tuple_with_added_atoms<Arity>(m_added_atoms,
-                                                   m_kept_atoms,
-                                                   max_arity,
-                                                   m_added_tuple,
-                                                   m_kept_tuple,
-                                                   m_tuple,
-                                                   [&](std::span<const ygg::uint_t> tuple) { novel = insert_unlocked(tuple) || novel; });
+        const auto lock = lock_if_shared();
+        auto novel = false;
+        for_each_tuple_with_added_atoms<Arity>(m_added_atoms,
+                                               m_kept_atoms,
+                                               max_arity,
+                                               m_added_tuple,
+                                               m_kept_tuple,
+                                               m_tuple,
+                                               [&](std::span<const ygg::uint_t> tuple) { novel = insert_unlocked(tuple) || novel; });
 
-            return novel;
-        }
+        return novel;
     }
-
-    template<TaskKind Kind>
-    bool insert(const StateView<Kind>& src, const StateView<Kind>& dst)
-    { return insert(src, dst, Arity); }
 
 private:
     explicit DynamicNoveltyTable(std::shared_ptr<detail::NoveltyTableStorage<Arity>> storage, bool thread_safe) :
@@ -367,11 +297,6 @@ private:
         if (m_thread_safe)
             lock.lock();
         return lock;
-    }
-
-    bool test_unlocked(std::span<const ygg::uint_t> tuple) const
-    {
-        return m_storage->seen_by_arity[tuple.size()].contains(rank_tuple<Arity>(tuple));
     }
 
     bool insert_unlocked(std::span<const ygg::uint_t> tuple)

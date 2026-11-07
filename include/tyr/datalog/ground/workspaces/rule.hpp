@@ -20,12 +20,12 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <optional>
-#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
@@ -35,18 +35,13 @@ struct RuleState
 {
     ygg::uint_t unsatisfied_count = 0;
     std::optional<Cost> queued_cost;
-    std::vector<bool> numeric_constraint_satisfied;
+    /// The positions of the rule's numeric constraints that hold.
+    urd::Store<urd::set<ygg::uint_t>, urd::dense> numeric_constraint_satisfied;
 };
 
-template<formalism::RelationKind R>
-struct RuleWorkspace<GroundTag, R>
-{
-    urd::Store<urd::sequence<RuleState>> states;
-
-    explicit RuleWorkspace(formalism::datalog::ProgramView<GroundTag>) {}
-
-    void clear() { states.clear(); }
-};
+/// The states of the ground rules of relation kind R, by rule index (an urd::utils::Family member).
+template<typename R>
+using RuleStates = urd::Store<urd::sequence<RuleState>>;
 
 }
 

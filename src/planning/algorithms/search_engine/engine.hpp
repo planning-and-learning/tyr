@@ -25,18 +25,16 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/ground/axiom_evaluator.hpp"
-#include "tyr/planning/ground/state_repository.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristic.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_delta.hpp"
-#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <cassert>
@@ -69,11 +67,22 @@ enum class ExpansionResult : uint8_t
 template<TaskKind Kind, typename SearchNode>
 SearchNode& get_or_create_search_node(urd::index<State<Kind>> state_index, urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes, const SearchNode& default_node)
 {
-    while (static_cast<ygg::uint_t>(state_index.value) >= search_nodes.size())
-        search_nodes.push_back(default_node);
+    const auto i = static_cast<ygg::uint_t>(state_index.value);
+    if (i >= search_nodes.size())
+        search_nodes.resize(i + 1, default_node);
 
-    return search_nodes[static_cast<ygg::uint_t>(state_index.value)];
+    return search_nodes[i];
 }
+
+/// The worker's event handler: one the root handler makes, if there is a root handler.
+template<typename Handler>
+auto make_worker_event_handler(const std::shared_ptr<Handler>& handler, urd::index<Worker> index) -> decltype(handler->make_worker(index))
+{ return handler ? handler->make_worker(index) : nullptr; }
+
+/// A pointer to an object the caller keeps alive for the whole search; it owns nothing.
+template<typename T>
+std::shared_ptr<T> borrowed(T& object) noexcept
+{ return std::shared_ptr<T>(std::shared_ptr<T> {}, &object); }
 
 template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, ExecutionPolicyConcept<Kind, SearchPolicy> ExecutionPolicy>
 class SearchEngine
@@ -97,29 +106,7 @@ public:
 
     struct WorkerData
     {
-        WorkerData(urd::index<Worker> index_,
-                   StateRepository<Kind>& state_repository_,
-                   AxiomEvaluator<Kind>& axiom_evaluator_,
-                   SuccessorGenerator<Kind>& successor_generator_,
-                   Heuristic<Kind>& heuristic_,
-                   size_t num_state_owners_,
-                   const Options& options,
-                   PruningStrategyPtr<Kind> pruning_strategy_,
-                   GoalStrategyPtr<Kind> goal_strategy_,
-                   WorkerEventHandlerPtrT<SearchPolicy> event_handler_) :
-            index(index_),
-            num_state_owners(num_state_owners_),
-            state_repository(&state_repository_),
-            axiom_evaluator(&axiom_evaluator_),
-            successor_generator(&successor_generator_),
-            heuristic(&heuristic_),
-            search(heuristic_, options),
-            rng(options.random_seed + static_cast<ygg::uint_t>(index.value)),
-            pruning_strategy(std::move(pruning_strategy_)),
-            goal_strategy(std::move(goal_strategy_)),
-            event_handler(std::move(event_handler_))
-        { assert(num_state_owners > 0); }
-
+        /// The root worker of a search borrows the caller's objects through non-owning (aliasing) pointers.
         WorkerData(urd::index<Worker> index_,
                    StateRepositoryPtr<Kind> state_repository_,
                    AxiomEvaluatorPtr<Kind> axiom_evaluator_,
@@ -132,20 +119,16 @@ public:
                    WorkerEventHandlerPtrT<SearchPolicy> event_handler_) :
             index(index_),
             num_state_owners(num_state_owners_),
-            owned_state_repository(std::move(state_repository_)),
-            owned_axiom_evaluator(std::move(axiom_evaluator_)),
-            owned_successor_generator(std::move(successor_generator_)),
-            owned_heuristic(std::move(heuristic_)),
-            state_repository(owned_state_repository.get()),
-            axiom_evaluator(owned_axiom_evaluator.get()),
-            successor_generator(owned_successor_generator.get()),
-            heuristic(owned_heuristic.get()),
+            state_repository(std::move(state_repository_)),
+            axiom_evaluator(std::move(axiom_evaluator_)),
+            successor_generator(std::move(successor_generator_)),
+            heuristic(std::move(heuristic_)),
             search(*heuristic, options),
             rng(options.random_seed + static_cast<ygg::uint_t>(index.value)),
             pruning_strategy(std::move(pruning_strategy_)),
             goal_strategy(std::move(goal_strategy_)),
             event_handler(std::move(event_handler_))
-        { assert(num_state_owners > 0); }
+        { assert(num_state_owners > 0 && state_repository && axiom_evaluator && successor_generator && heuristic); }
 
         urd::index<State<Kind>> get_search_node_index(urd::index<State<Kind>> state) const noexcept
         { return ExecutionPolicy::search_node_index(state, index, num_state_owners); }
@@ -157,16 +140,11 @@ public:
 
         urd::index<Worker> index;
         size_t num_state_owners { 1 };
-        StateRepositoryPtr<Kind> owned_state_repository;
-        AxiomEvaluatorPtr<Kind> owned_axiom_evaluator;
-        SuccessorGeneratorPtr<Kind> owned_successor_generator;
-        HeuristicPtr<Kind> owned_heuristic;
-        // Never null: they point at the owned objects or at the caller's.
-        StateRepository<Kind>* state_repository;
+        StateRepositoryPtr<Kind> state_repository;
         urd::Store<urd::sequence<StateRepositoryPtr<Kind>>> registration_repositories;
-        AxiomEvaluator<Kind>* axiom_evaluator;
-        SuccessorGenerator<Kind>* successor_generator;
-        Heuristic<Kind>* heuristic;
+        AxiomEvaluatorPtr<Kind> axiom_evaluator;
+        SuccessorGeneratorPtr<Kind> successor_generator;
+        HeuristicPtr<Kind> heuristic;
         SearchPolicy search;
         WorkerExecutionState execution;
         std::mt19937_64 rng;
@@ -286,6 +264,11 @@ private:
     {
         const auto deadline = m_options->search_budget.max_time ? std::optional(m_search_start_time_point + *m_options->search_budget.max_time) : std::nullopt;
         const auto timed_out = [&] { return deadline && std::chrono::steady_clock::now() >= *deadline; };
+        const auto stop = [&](SearchStatus status)
+        {
+            finalize(status);
+            return std::move(m_result);
+        };
 
         m_result.statistics.set_search_start_time_point(m_search_start_time_point);
         for_each_worker(
@@ -299,10 +282,7 @@ private:
         auto& root_worker = get_worker(urd::index<Worker>(0));
 
         if (!root_worker.goal_strategy->is_static_goal_satisfied(*m_task))
-        {
-            finalize(SearchStatus::UNSOLVABLE);
-            return std::move(m_result);
-        }
+            return stop(SearchStatus::UNSOLVABLE);
 
         if (root_worker.goal_strategy->is_dynamic_goal_satisfied(m_start_node.get_state(), m_start_node.get_state()))
         {
@@ -316,41 +296,26 @@ private:
         // Count solve-local states, including an unsolved start. Existing repository population is ignored, but a pre-interned state counts when first
         // encountered, and an over-limit successor may already be interned. A satisfied start may solve even when this is zero.
         if (m_options->search_budget.max_num_states == 0)
-        {
-            finalize(SearchStatus::OUT_OF_STATES);
-            return std::move(m_result);
-        }
+            return stop(SearchStatus::OUT_OF_STATES);
 
         if (timed_out())
-        {
-            finalize(SearchStatus::OUT_OF_TIME);
-            return std::move(m_result);
-        }
+            return stop(SearchStatus::OUT_OF_TIME);
 
         auto& start_worker = get_worker(start_owner);
         const auto start_state_index = start_state.index();
         const auto start_g_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(m_start_node.get_metric());
 
         if (start_worker.pruning_strategy->should_prune_state(start_state))
-        {
-            finalize(SearchStatus::EXHAUSTED);
-            return std::move(m_result);
-        }
+            return stop(SearchStatus::EXHAUSTED);
 
         if (timed_out())
-        {
-            finalize(SearchStatus::OUT_OF_TIME);
-            return std::move(m_result);
-        }
+            return stop(SearchStatus::OUT_OF_TIME);
 
         const auto start_h_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(start_worker.heuristic->evaluate(start_state));
         if (std::isnan(start_h_value))
             throw std::runtime_error("find_solution(...): start heuristic value is NaN.");
         if (timed_out())
-        {
-            finalize(SearchStatus::OUT_OF_TIME);
-            return std::move(m_result);
-        }
+            return stop(SearchStatus::OUT_OF_TIME);
         m_execution.initialize_best_h(start_h_value);
         auto& start_search_node = start_worker.initialize_start(start_state_index, start_g_value, start_h_value);
         call_root_event([&](auto& handler) { SearchPolicy::on_start_search(handler, m_start_node, start_worker.search.get_start_priority()); });
@@ -358,8 +323,7 @@ private:
         if (start_search_node.status == SearchNodeStatus::DEAD_END)
         {
             start_worker.statistics.increment_num_deadends();
-            finalize(SearchStatus::UNSOLVABLE);
-            return std::move(m_result);
+            return stop(SearchStatus::UNSOLVABLE);
         }
 
         start_worker.search.open_start(start_state_index, start_search_node);

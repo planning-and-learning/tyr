@@ -44,7 +44,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
                     "auxiliary_numeric_effect"_a);
             cls.def(nb::init<urd::flat_vector<urd::index<Literal<LiftedTag, FluentTag>>>,
                              urd::flat_vector<urd::index<NumericEffect<LiftedTag, FluentTag>>>,
-                             ::cista::optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>(),
+                             urd::flat_optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>(),
                     "fluent_literals"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
@@ -62,7 +62,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
             cls.def(nb::init<urd::flat_vector<urd::data<FDRFact<FluentTag>>>,
                              urd::flat_vector<urd::data<FDRFact<FluentTag>>>,
                              urd::flat_vector<urd::index<NumericEffect<GroundTag, FluentTag>>>,
-                             ::cista::optional<urd::index<NumericEffect<GroundTag, AuxiliaryTag>>>>(),
+                             urd::flat_optional<urd::index<NumericEffect<GroundTag, AuxiliaryTag>>>>(),
                     "add_facts"_a,
                     "del_facts"_a,
                     "fluent_numeric_effects"_a,
@@ -93,7 +93,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

@@ -44,10 +44,10 @@ template<typename V>
 void bind_fdr_fact_view(nb::module_& m, const char* name)
 {
     auto cls = nb::class_<V>(m, name)
-                   .def("get_variable", &V::get_variable, nb::keep_alive<0, 1>())
+                   .def("get_variable", &V::get_variable)
                    .def("get_value", &V::get_value)
                    .def("has_value", &V::has_value)
-                   .def("get_atom", &V::get_atom, nb::keep_alive<0, 1>());
+                   .def("get_atom", &V::get_atom);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

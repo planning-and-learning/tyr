@@ -32,7 +32,7 @@ template<formalism::RelationKind R>
 class RuleInstance<LiftedTag, R>
 {
 public:
-    RuleInstance(const ConstRuleWorkspace<LiftedTag, R>& workspace, formalism::datalog::GrounderContext& grounder) :
+    RuleInstance(const ConstRuleWorkspace<LiftedTag, R>& workspace, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) :
         m_workspace(&workspace),
         m_grounder(&grounder)
     {
@@ -63,7 +63,7 @@ public:
 
 private:
     const ConstRuleWorkspace<LiftedTag, R>* m_workspace;
-    formalism::datalog::GrounderContext* m_grounder;
+    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_grounder;
     mutable std::optional<formalism::datalog::RuleBindingView<R>> m_witness_key;
 };
 

@@ -44,8 +44,8 @@ void bind_predicate(nb::module_& m, RepositoryBinding& repository)
     bind_predicate_view<StaticTag>(m, "StaticPredicate");
     bind_predicate_view<FluentTag>(m, "FluentPredicate");
 
-    bind_insert<Predicate<StaticTag>>(repository);
-    bind_insert<Predicate<FluentTag>>(repository);
+    ygg::bind_insert<Predicate<StaticTag>>(repository);
+    ygg::bind_insert<Predicate<FluentTag>>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

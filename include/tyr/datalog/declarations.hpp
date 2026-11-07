@@ -72,12 +72,10 @@ class RuleCostOverridePolicy;
 class NumericSupportSelectorWorkspace;
 class NumericSupportSelector;
 
-struct D2PWorkspace;
 template<TaskKind Kind>
 struct FactsWorkspace;
 template<TaskKind Kind>
 struct ConstFactsWorkspace;
-struct P2DWorkspace;
 template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTerminationPolicy, typename CP = RuleCostPolicy>
 struct ProgramWorkspace;
 template<TaskKind Kind>

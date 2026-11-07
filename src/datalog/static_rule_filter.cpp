@@ -41,7 +41,7 @@ formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(
     const auto fact_sets = FactSets { static_fact_sets, fluent_fact_sets };
 
     auto builder = formalism::datalog::Builder {};
-    auto context = formalism::datalog::CopyContext { builder, repository };
+    auto context = formalism::WriteContext { builder, repository };
     auto result = formalism::datalog::checkout<formalism::datalog::Program<GroundTag>>(builder);
     formalism::datalog::copy_except_rules(program, *result, context);
 
@@ -49,7 +49,7 @@ formalism::datalog::ProgramView<GroundTag> remove_statically_inapplicable_rules(
     {
         for (const auto rule : program.get_rules<R>())
             if (is_statically_applicable(rule, fact_sets))
-                result->get_rules<R>().push_back(formalism::datalog::copy(rule, context).first.index());
+                result->get_rules<R>().push_back(formalism::copy(rule, context).first.index());
     };
     merge_applicable_rules.template operator()<formalism::PredicateTag>();
     merge_applicable_rules.template operator()<formalism::FunctionTag>();

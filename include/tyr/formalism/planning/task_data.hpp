@@ -40,7 +40,7 @@ template<>
 struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
 {
     urd::index<::tyr::formalism::planning::Task<::tyr::LiftedTag>> index;
-    ::cista::offset::string name;
+    urd::flat_string name;
     urd::index<::tyr::formalism::planning::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> objects;
@@ -48,13 +48,13 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_atoms;
     urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
-    ::cista::optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
+    urd::flat_optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal;
-    ::cista::optional<urd::index<::tyr::formalism::planning::Metric>> metric;
+    urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
 
     data() = default;
-    data(::cista::offset::string name_,
+    data(urd::flat_string name_,
          urd::index<::tyr::formalism::planning::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> objects_,
@@ -62,9 +62,9 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
          urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_atoms_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
-         ::cista::optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
+         urd::flat_optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal_,
-         ::cista::optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
+         urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_) :
         index(),
         name(std::move(name_)),
@@ -88,25 +88,11 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_atoms() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_atoms;
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return fluent_atoms;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_atoms, &data::fluent_atoms>(*this); }
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_fterm_values() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_fterm_values;
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return fluent_fterm_values;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_fterm_values, &data::fluent_fterm_values>(*this); }
 
     static constexpr auto cista_members() noexcept
     {
@@ -145,7 +131,7 @@ template<>
 struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::planning::Task<::tyr::GroundTag>> index;
-    ::cista::offset::string name;
+    urd::flat_string name;
     urd::index<::tyr::formalism::planning::Domain> domain;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> objects;
@@ -154,8 +140,8 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_atoms;
     urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
-    ::cista::optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
-    ::cista::optional<urd::index<::tyr::formalism::planning::Metric>> metric;
+    urd::flat_optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
+    urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
 
     /// FDR-related
@@ -166,7 +152,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>> ground_axioms;
 
     data() = default;
-    data(::cista::offset::string name_,
+    data(urd::flat_string name_,
          urd::index<::tyr::formalism::planning::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> objects_,
@@ -175,8 +161,8 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
          urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>> derived_atoms_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
-         ::cista::optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
-         ::cista::optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
+         urd::flat_optional<urd::index<::tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
+         urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables_,
          urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts_,
@@ -210,27 +196,11 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_atoms() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_atoms;
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return fluent_atoms;
-        else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
-            return derived_atoms;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_atoms, &data::fluent_atoms, &data::derived_atoms>(*this); }
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_fterm_values() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_fterm_values;
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return fluent_fterm_values;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_fterm_values, &data::fluent_fterm_values>(*this); }
 
     [[nodiscard]] const auto& get_fluent_variables() const { return fluent_variables; }
 

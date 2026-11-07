@@ -44,7 +44,7 @@ template<FactKind F>
 void bind_function_term_value_view(nb::module_& m, const char* name)
 {
     using V = FunctionTermValueView<GroundTag, F>;
-    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_fterm", &V::get_fterm, nb::keep_alive<0, 1>()).def("get_value", &V::get_value);
+    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_fterm", &V::get_fterm).def("get_value", &V::get_value);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
@@ -65,9 +65,9 @@ void bind_function_term_value(nb::module_& m, RepositoryBinding& repository)
     bind_function_term_value_view<FluentTag>(m, "FluentGroundFunctionTermValue");
     bind_function_term_value_view<AuxiliaryTag>(m, "AuxiliaryGroundFunctionTermValue");
 
-    bind_insert<FunctionTermValue<GroundTag, StaticTag>>(repository);
-    bind_insert<FunctionTermValue<GroundTag, FluentTag>>(repository);
-    bind_insert<FunctionTermValue<GroundTag, AuxiliaryTag>>(repository);
+    ygg::bind_insert<FunctionTermValue<GroundTag, StaticTag>>(repository);
+    ygg::bind_insert<FunctionTermValue<GroundTag, FluentTag>>(repository);
+    ygg::bind_insert<FunctionTermValue<GroundTag, AuxiliaryTag>>(repository);
 }
 
 }  // namespace tyr::formalism::planning

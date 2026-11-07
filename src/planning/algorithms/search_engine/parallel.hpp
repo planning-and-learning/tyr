@@ -23,6 +23,7 @@
 #include <urd/store.hpp>
 #include "concepts.hpp"
 #include "engine.hpp"
+#include "sequential.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
@@ -48,6 +49,8 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -56,7 +59,7 @@
 namespace tyr::planning::detail
 {
 
-template<TaskKind Kind, DistHashKind HashKind>
+template<TaskKind Kind, typename HashKind>
 class HashDistributedStatePolicy
 {
     using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>>>;
@@ -756,17 +759,17 @@ public:
         auto pruning_strategy = options.pruning_strategy ? options.pruning_strategy : PruningStrategy<Kind>::create();
         auto goal_strategy = options.goal_strategy ? options.goal_strategy : ConjunctiveGoalStrategy<Kind>::create(task);
         const auto num_datalog_threads = axiom_evaluator.get_execution_context()->get_num_threads();
-        auto& root_state_repository = uses_owner_repositories ? *m_owner_state_repositories.front() : state_repository;
+        auto root_state_repository = uses_owner_repositories ? m_owner_state_repositories.front() : borrowed(state_repository);
         m_workers.push_back(std::make_unique<WorkerData>(urd::index<Worker>(0),
-                                                         root_state_repository,
-                                                         axiom_evaluator,
-                                                         successor_generator,
-                                                         heuristic,
+                                                         std::move(root_state_repository),
+                                                         borrowed(axiom_evaluator),
+                                                         borrowed(successor_generator),
+                                                         borrowed(heuristic),
                                                          num_workers,
                                                          options,
                                                          pruning_strategy,
                                                          goal_strategy,
-                                                         SearchPolicy::make_worker_event_handler(event_handler, urd::index<Worker>(0))));
+                                                         make_worker_event_handler(event_handler, urd::index<Worker>(0))));
 
         for (size_t i = 1; i < num_workers; ++i)
         {
@@ -790,7 +793,7 @@ public:
             auto worker_goal_strategy = goal_strategy->make_worker(index);
             if (!worker_goal_strategy)
                 throw std::invalid_argument("Parallel search goal strategy does not support worker construction.");
-            auto worker_event_handler = SearchPolicy::make_worker_event_handler(event_handler, index);
+            auto worker_event_handler = make_worker_event_handler(event_handler, index);
             m_workers.push_back(std::make_unique<WorkerData>(index,
                                                              std::move(worker_state_repository),
                                                              std::move(worker_axiom_evaluator),
@@ -871,36 +874,45 @@ private:
     urd::Store<urd::sequence<std::unique_ptr<WorkerData>>> m_workers;
 };
 
-template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy>
-    requires std::same_as<SearchTagT<SearchPolicy>, ParallelSearch>
-SearchResult<Kind> find_parallel_solution(Task<Kind>& task,
-                                          StateRepository<Kind>& state_repository,
-                                          AxiomEvaluator<Kind>& axiom_evaluator,
-                                          SuccessorGenerator<Kind>& successor_generator,
-                                          Heuristic<Kind>& heuristic,
-                                          const OptionsT<SearchPolicy>& options,
-                                          const char* invalid_hash_message)
+/// Runs search policy Policy (A*, GBFS, BrFS) sequentially or, with more than one worker, in parallel; name prefixes errors.
+template<template<TaskKind, SearchKind> class Policy, TaskKind Kind>
+SearchResult<Kind> find_solution(Task<Kind>& task,
+                                 StateRepository<Kind>& state_repository,
+                                 AxiomEvaluator<Kind>& axiom_evaluator,
+                                 SuccessorGenerator<Kind>& successor_generator,
+                                 Heuristic<Kind>& heuristic,
+                                 const OptionsT<Policy<Kind, SequentialSearch>>& options,
+                                 std::string_view name)
 {
-    if (state_repository.is_concurrent())
+    if (options.num_search_workers == 0)
+        throw std::invalid_argument(std::string(name) + "::find_solution(...): num_search_workers must be greater than zero.");
+
+    if (options.num_search_workers == 1)
     {
-        using Execution = ParallelExecutionPolicy<Kind, SearchPolicy, SharedStatePolicy<Kind>>;
-        return SearchEngine<Kind, SearchPolicy, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
+        using Search = Policy<Kind, SequentialSearch>;
+        return SearchEngine<Kind, Search, SequentialExecutionPolicy<Kind, Search>>::find_solution(task,
+                                                                                                  state_repository,
+                                                                                                  axiom_evaluator,
+                                                                                                  successor_generator,
+                                                                                                  heuristic,
+                                                                                                  options);
     }
+
+    using Search = Policy<Kind, ParallelSearch>;
+    const auto run = [&]<typename Routing>
+    { return SearchEngine<Kind, Search, ParallelExecutionPolicy<Kind, Search, Routing>>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options); };
+
+    if (state_repository.is_concurrent())
+        return run.template operator()<SharedStatePolicy<Kind>>();
 
     switch (options.dist_hash_mode)
     {
         case DistHashMode::RANDOM:
-        {
-            using Execution = ParallelExecutionPolicy<Kind, SearchPolicy, HashDistributedStatePolicy<Kind, RandomDistHashTag>>;
-            return SearchEngine<Kind, SearchPolicy, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
-        }
+            return run.template operator()<HashDistributedStatePolicy<Kind, RandomDistHashTag>>();
         case DistHashMode::LMCUT:
-        {
-            using Execution = ParallelExecutionPolicy<Kind, SearchPolicy, HashDistributedStatePolicy<Kind, LMCutDistHashTag>>;
-            return SearchEngine<Kind, SearchPolicy, Execution>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options);
-        }
+            return run.template operator()<HashDistributedStatePolicy<Kind, LMCutDistHashTag>>();
     }
-    throw std::invalid_argument(invalid_hash_message);
+    throw std::invalid_argument(std::string(name) + "::find_solution(...): unknown distribution hash mode.");
 }
 
 }

@@ -19,9 +19,10 @@
 #include "pytyr/module.hpp"
 #include "bindings.hpp"
 
-#include <tyr/formalism/binding_data.hpp>
+#include <tyr/formalism/declarations.hpp>
+#include <yggdrasil/formalism/binding_data.hpp>
 #include <tyr/formalism/binding_index.hpp>
-#include <tyr/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/binding_view.hpp>
 
 namespace tyr::formalism
 {

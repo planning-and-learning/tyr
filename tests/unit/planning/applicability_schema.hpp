@@ -7,10 +7,10 @@
 #include <urd/store.hpp>
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
-#include "tyr/formalism/datalog/copy_decl.hpp"
+#include "tyr/formalism/write_context.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
@@ -180,7 +180,7 @@ void expect_schema_queries_match_filtered_successors()
     auto owned = pool.acquire_unique();
     owned->assign(registered_initial.get_state().data());
     owned->set(urd::index<tyr::planning::State<Kind>> {});
-    ASSERT_TRUE(owned->get_index().is_none());
+    ASSERT_TRUE(owned->index.is_none());
     const auto initial_node = [&]
     {
         if constexpr (Borrowed)
@@ -377,7 +377,7 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_TRUE(std::ranges::equal(actual->get_fluent_facts(), expected->get_fluent_facts()));
         EXPECT_TRUE(std::ranges::equal(actual->template get_fterm_values<formalism::FluentTag>(), expected->template get_fterm_values<formalism::FluentTag>()));
         EXPECT_EQ(state_repository->num_states(), num_states);
-        EXPECT_TRUE(owned->get_index().is_none());
+        EXPECT_TRUE(owned->index.is_none());
     }
     const auto same_successor = [&](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && same_node(lhs.node, rhs.node); };
     ASSERT_EQ(all_successors.size(), 4);

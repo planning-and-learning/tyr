@@ -50,12 +50,6 @@ public:
         return std::shared_ptr<NoveltyPruningStrategy>(new NoveltyPruningStrategy(m_max_arity, m_root_state, m_novelty_table.make_worker()));
     }
 
-    ygg::uint_t get_max_arity() const noexcept { return m_max_arity; }
-
-    const DynamicNoveltyTable<MaxArity>& get_novelty_table() const noexcept { return m_novelty_table; }
-
-    DynamicNoveltyTable<MaxArity>& get_novelty_table() noexcept { return m_novelty_table; }
-
     bool should_prune_state(const StateView<Kind>& state) override
     {
         if (m_max_arity == 0)

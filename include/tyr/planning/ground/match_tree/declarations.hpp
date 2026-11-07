@@ -23,7 +23,6 @@
 #include <concepts>
 #include <variant>
 #include <vector>
-#include <urd/config.hpp>
 #include <boost/mp11.hpp>
 
 namespace tyr::planning::match_tree
@@ -87,30 +86,6 @@ template<typename Tag>
 class Repository;
 template<typename Tag>
 using RepositoryPtr = std::unique_ptr<Repository<Tag>>;
-
-template<typename Repo, typename... Tags>
-constexpr bool match_tree_repository_access_for_types(boost::mp11::mp_list<Tags...>) noexcept
-{ return (ygg::formalism::SymbolRepositoryFor<Repo, Tags> && ...); }
-
-template<typename T>
-concept HasFormalismRepository = requires(const T& r) {
-    { r.get_formalism_repository() } -> formalism::planning::Context;
-};
-
-template<typename T, typename Tag>
-concept RepositoryConcept = HasFormalismRepository<T> && match_tree_repository_access_for_types<T>(RepositoryTypes<Tag> {});
-
-/// @brief Make Repository a trivial context.
-/// @param context
-/// @return
-template<typename Tag>
-inline const Repository<Tag>& get_repository(const Repository<Tag>& context URD_LIFETIMEBOUND) noexcept
-{ return context; }
-
-template<typename T, typename Tag>
-concept Context = requires(const T& a) {
-    { get_repository(a) } -> RepositoryConcept<Tag>;
-};
 
 }
 

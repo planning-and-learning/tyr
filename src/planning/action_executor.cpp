@@ -18,7 +18,32 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 //
 
 #include "tyr/analysis/domains.hpp"
@@ -85,7 +110,7 @@ void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> c
                          urd::builder<State<LiftedTag>>& successor_state_builder,
                          StateContext<LiftedTag>& state_context,
                          const ApplicabilityContext& applicability_context,
-                         formalism::planning::GrounderContext& grounder_context,
+                         formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder_context,
                          formalism::planning::FDRContext& fdr_context,
                          urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
                          urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
@@ -219,7 +244,7 @@ template ygg::float_t ActionExecutor::apply_action_unregistered(const StateConte
 
 bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<LiftedTag> action,
                                             const StateContext<LiftedTag>& state_context,
-                                            formalism::planning::GrounderContext& grounder,
+                                            formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
                                             const formalism::planning::FDRContext& fdr,
                                             ForEachEffectBinding for_each_effect_binding)
 {
@@ -238,7 +263,7 @@ bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<Lift
 
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                                        formalism::planning::ActionView<LiftedTag> action,
-                                                       formalism::planning::GrounderContext& grounder,
+                                                       formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
                                                        formalism::planning::FDRContext& fdr,
                                                        ForEachEffectBinding for_each_effect_binding,
                                                        urd::builder<State<LiftedTag>>& successor_state_builder,

@@ -31,9 +31,9 @@ NumericSupportSelector::Key NumericSupportSelector::fluent_key(formalism::datalo
 { return term.get_row().index(); }
 
 ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::lookup_static(formalism::datalog::FunctionTermView<GroundTag, formalism::StaticTag> term) const
-{ return m_fact_sets.static_sets().function[term]; }
+{ return m_fact_sets.get<formalism::StaticTag>().function[term]; }
 
-ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::current_interval(Key key) const { return m_fact_sets.fluent_sets().function[key]; }
+ygg::ClosedInterval<ygg::float_t> NumericSupportSelector::current_interval(Key key) const { return m_fact_sets.get<formalism::FluentTag>().function[key]; }
 
 const NumericIntervalAnnotations<>::Entries* NumericSupportSelector::find_entries(Key key) const { return m_annotations->find_entries(key); }
 

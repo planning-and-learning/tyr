@@ -21,7 +21,7 @@
 
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
@@ -75,78 +75,66 @@ struct GroundQueueFixture
     tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> fluent_atom(const std::string& name)
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(name, 0);
-        canonicalize(predicate_builder);
-        const auto [predicate, predicate_inserted] = repository.insert(predicate_builder);
+        const auto [predicate, predicate_inserted] = ygg::formalism::insert(repository, predicate_builder);
         if (predicate_inserted)
             fluent_predicates.push_back(predicate.index());
 
         auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         binding_builder.relation = predicate.index();
-        canonicalize(binding_builder);
-        const auto [binding, binding_inserted] = repository.insert(binding_builder);
+        const auto [binding, binding_inserted] = ygg::formalism::insert(repository, binding_builder);
         (void) binding_inserted;
 
         auto atom_builder = urd::data<tyr::formalism::datalog::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index());
-        canonicalize(atom_builder);
-        return repository.insert(atom_builder).first;
+        return ygg::formalism::insert(repository, atom_builder).first;
     }
 
     tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>
     fluent_literal(tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> atom, bool polarity = true)
     {
         auto literal_builder = urd::data<tyr::formalism::datalog::Literal<GroundTag, tyr::formalism::FluentTag>>(atom.index(), polarity);
-        canonicalize(literal_builder);
-        return repository.insert(literal_builder).first;
+        return ygg::formalism::insert(repository, literal_builder).first;
     }
 
     tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::StaticTag> static_atom(const std::string& name)
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::StaticTag>>(name, 0);
-        canonicalize(predicate_builder);
-        const auto [predicate, predicate_inserted] = repository.insert(predicate_builder);
+        const auto [predicate, predicate_inserted] = ygg::formalism::insert(repository, predicate_builder);
         if (predicate_inserted)
             static_predicates.push_back(predicate.index());
 
         auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>();
         binding_builder.relation = predicate.index();
-        canonicalize(binding_builder);
-        const auto binding = repository.insert(binding_builder).first;
+        const auto binding = ygg::formalism::insert(repository, binding_builder).first;
 
         auto atom_builder = urd::data<tyr::formalism::datalog::Atom<GroundTag, tyr::formalism::StaticTag>>(binding.index());
-        canonicalize(atom_builder);
-        return repository.insert(atom_builder).first;
+        return ygg::formalism::insert(repository, atom_builder).first;
     }
 
     tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::StaticTag>
     static_literal(tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::StaticTag> atom, bool polarity = true)
     {
         auto literal_builder = urd::data<tyr::formalism::datalog::Literal<GroundTag, tyr::formalism::StaticTag>>(atom.index(), polarity);
-        canonicalize(literal_builder);
-        return repository.insert(literal_builder).first;
+        return ygg::formalism::insert(repository, literal_builder).first;
     }
 
     tyr::formalism::datalog::FunctionTermView<GroundTag, tyr::formalism::FluentTag> fluent_function_term(const std::string& name)
     {
         auto function_builder = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(name, 0);
-        canonicalize(function_builder);
-        const auto function = repository.insert(function_builder).first;
+        const auto function = ygg::formalism::insert(repository, function_builder).first;
         fluent_functions.push_back(function.index());
 
         auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
         binding_builder.relation = function.index();
-        canonicalize(binding_builder);
-        const auto binding = repository.insert(binding_builder).first;
+        const auto binding = ygg::formalism::insert(repository, binding_builder).first;
 
         auto term_builder = urd::data<tyr::formalism::datalog::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(binding.index());
-        canonicalize(term_builder);
-        return repository.insert(term_builder).first;
+        return ygg::formalism::insert(repository, term_builder).first;
     }
 
     void initial_fluent_function_value(tyr::formalism::datalog::FunctionTermView<GroundTag, tyr::formalism::FluentTag> term, ygg::float_t value)
     {
         auto value_builder = urd::data<tyr::formalism::datalog::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(term.index(), value);
-        canonicalize(value_builder);
-        initial_fluent_fterm_values.push_back(repository.insert(value_builder).first.index());
+        initial_fluent_fterm_values.push_back(ygg::formalism::insert(repository, value_builder).first.index());
     }
 
     tyr::formalism::datalog::ConjunctiveConditionView<GroundTag>
@@ -158,8 +146,7 @@ struct GroundQueueFixture
             condition_builder.fluent_literals.push_back(literal.index());
         for (const auto literal : static_literals)
             condition_builder.static_literals.push_back(literal.index());
-        canonicalize(condition_builder);
-        return repository.insert(condition_builder).first;
+        return ygg::formalism::insert(repository, condition_builder).first;
     }
 
     tyr::formalism::datalog::ConjunctiveConditionView<GroundTag>
@@ -171,40 +158,33 @@ struct GroundQueueFixture
             op,
             tyr::formalism::datalog::FunctionExpression<GroundTag>(term.index()),
             tyr::formalism::datalog::FunctionExpression<GroundTag>(value));
-        canonicalize(comparison_builder);
-        const auto comparison = repository.insert(comparison_builder).first;
+        const auto comparison = ygg::formalism::insert(repository, comparison_builder).first;
 
         auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<GroundTag>>();
         condition_builder.numeric_constraints.emplace_back(comparison.index());
-        canonicalize(condition_builder);
-        return repository.insert(condition_builder).first;
+        return ygg::formalism::insert(repository, condition_builder).first;
     }
 
     tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> fresh_rule_binding()
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>("dummy_" + std::to_string(next_rule_id++), 0);
-        canonicalize(predicate_builder);
-        const auto predicate = repository.insert(predicate_builder).first;
+        const auto predicate = ygg::formalism::insert(repository, predicate_builder).first;
 
         auto atom_builder = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
         atom_builder.predicate = predicate.index();
-        canonicalize(atom_builder);
-        const auto atom = repository.insert(atom_builder).first;
+        const auto atom = ygg::formalism::insert(repository, atom_builder).first;
 
         auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
-        canonicalize(condition_builder);
-        const auto lifted_condition = repository.insert(condition_builder).first;
+        const auto lifted_condition = ygg::formalism::insert(repository, condition_builder).first;
 
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
         rule_builder.body = lifted_condition.index();
         rule_builder.heads.push_back(atom.index());
-        canonicalize(rule_builder);
-        const auto rule = repository.insert(rule_builder).first;
+        const auto rule = ygg::formalism::insert(repository, rule_builder).first;
 
         auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
         binding_builder.relation = rule.index();
-        canonicalize(binding_builder);
-        return repository.insert(binding_builder).first;
+        return ygg::formalism::insert(repository, binding_builder).first;
     }
 
     tyr::formalism::datalog::RuleView<GroundTag, tyr::formalism::PredicateTag>
@@ -216,8 +196,7 @@ struct GroundQueueFixture
         rule_builder.binding = binding.index();
         rule_builder.body = body.index();
         rule_builder.heads.push_back(head.index());
-        canonicalize(rule_builder);
-        const auto ground_rule = repository.insert(rule_builder).first;
+        const auto ground_rule = ygg::formalism::insert(repository, rule_builder).first;
         ground_rules.push_back(ground_rule.index());
         return ground_rule;
     }
@@ -237,8 +216,7 @@ struct GroundQueueFixture
         rule_builder.body = body.index();
         rule_builder.heads.push_back(head.index());
         rule_builder.cost = cost;
-        canonicalize(rule_builder);
-        const auto ground_rule = repository.insert(rule_builder).first;
+        const auto ground_rule = ygg::formalism::insert(repository, rule_builder).first;
         ground_rules.push_back(ground_rule.index());
         return ground_rule;
     }
@@ -252,45 +230,38 @@ struct GroundQueueFixture
     {
         auto lifted_term_builder = urd::data<tyr::formalism::datalog::FunctionTerm<LiftedTag, tyr::formalism::FluentTag>>();
         lifted_term_builder.function = head.get_function().index();
-        canonicalize(lifted_term_builder);
-        const auto lifted_term = repository.insert(lifted_term_builder).first;
+        const auto lifted_term = ygg::formalism::insert(repository, lifted_term_builder).first;
 
         auto lifted_effect_builder = urd::data<tyr::formalism::datalog::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
             op,
             lifted_term.index(),
             tyr::formalism::datalog::FunctionExpression<LiftedTag>(value));
-        canonicalize(lifted_effect_builder);
-        const auto lifted_effect = repository.insert(lifted_effect_builder).first;
+        const auto lifted_effect = ygg::formalism::insert(repository, lifted_effect_builder).first;
 
         auto lifted_condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
-        canonicalize(lifted_condition_builder);
-        const auto lifted_condition = repository.insert(lifted_condition_builder).first;
+        const auto lifted_condition = ygg::formalism::insert(repository, lifted_condition_builder).first;
 
         auto lifted_rule_builder = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>();
         lifted_rule_builder.body = lifted_condition.index();
         lifted_rule_builder.head = lifted_effect.index();
-        canonicalize(lifted_rule_builder);
-        const auto lifted_rule = repository.insert(lifted_rule_builder).first;
+        const auto lifted_rule = ygg::formalism::insert(repository, lifted_rule_builder).first;
 
         auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>>();
         binding_builder.relation = lifted_rule.index();
-        canonicalize(binding_builder);
-        const auto binding = repository.insert(binding_builder).first;
+        const auto binding = ygg::formalism::insert(repository, binding_builder).first;
 
         auto effect_builder = urd::data<tyr::formalism::datalog::NumericEffect<GroundTag, tyr::formalism::FluentTag>>(
             op,
             head.index(),
             tyr::formalism::datalog::FunctionExpression<GroundTag>(value));
-        canonicalize(effect_builder);
-        const auto effect = repository.insert(effect_builder).first;
+        const auto effect = ygg::formalism::insert(repository, effect_builder).first;
 
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::FunctionTag>>();
         rule_builder.binding = binding.index();
         rule_builder.body = body.index();
         rule_builder.head = effect.index();
         rule_builder.cost = cost;
-        canonicalize(rule_builder);
-        const auto ground_rule = repository.insert(rule_builder).first;
+        const auto ground_rule = ygg::formalism::insert(repository, rule_builder).first;
         ground_function_rules.push_back(ground_rule.index());
         return ground_rule;
     }
@@ -321,8 +292,7 @@ struct GroundQueueFixture
                                                    initial_fluent_fterm_values.end());
         program_builder.predicate_rules.insert(program_builder.predicate_rules.end(), ground_rules.begin(), ground_rules.end());
         program_builder.function_rules.insert(program_builder.function_rules.end(), ground_function_rules.begin(), ground_function_rules.end());
-        canonicalize(program_builder);
-        return repository.insert(program_builder).first;
+        return ygg::formalism::insert(repository, program_builder).first;
     }
 };
 

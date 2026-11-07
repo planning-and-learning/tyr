@@ -57,7 +57,7 @@ void bind_binary_operator_kind(nb::module_& m, RepositoryBinding& repository, co
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

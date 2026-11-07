@@ -22,7 +22,26 @@
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
 
@@ -56,7 +75,7 @@ public:
 
     Splitter(urd::data<formalism::datalog::Program<LiftedTag>>& program,
              RuleSplitting& splitting,
-             formalism::datalog::CopyContext& context,
+             formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
              const PredicateFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
         m_splitting(&splitting),
@@ -345,7 +364,7 @@ private:
 
     urd::data<formalism::datalog::Program<LiftedTag>>* m_program;
     RuleSplitting* m_splitting;
-    formalism::datalog::CopyContext* m_context;
+    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
     const PredicateFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_projections = 0;
     urd::Store<urd::map<std::pair<urd::index<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>>
@@ -358,12 +377,12 @@ formalism::datalog::ProgramView<LiftedTag>
 split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::Repository& repository, RuleSplitting& splitting)
 {
     auto builder = formalism::datalog::Builder {};
-    auto context = formalism::datalog::CopyContext { builder, repository };
+    auto context = formalism::WriteContext { builder, repository };
     auto result = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
     formalism::datalog::copy_except_rules(program, *result, context);
     for (const auto rule : program.get_rules<formalism::FunctionTag>())
     {
-        const auto copy = formalism::datalog::copy(rule, context).first.index();
+        const auto copy = formalism::copy(rule, context).first.index();
         result->function_rules.push_back(copy);
         splitting.rules.function.emplace(rule.index(), copy);
     }
@@ -378,15 +397,15 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
     {
         auto heads = urd::Store<urd::sequence<Splitter::FluentAtom>> {};
         for (const auto head : rule.get_heads())
-            heads.push_back(formalism::datalog::copy(head, context).first.index());
-        if (const auto main_rule = splitter.split(formalism::datalog::copy(rule.get_body(), context).first, heads, rule.get_cost()))
+            heads.push_back(formalism::copy(head, context).first.index());
+        if (const auto main_rule = splitter.split(formalism::copy(rule.get_body(), context).first, heads, rule.get_cost()))
         {
             result->predicate_rules.push_back(*main_rule);
             splitting.rules.predicate.emplace(rule.index(), *main_rule);
         }
         else
         {
-            const auto copy = formalism::datalog::copy(rule, context).first.index();
+            const auto copy = formalism::copy(rule, context).first.index();
             result->predicate_rules.push_back(copy);
             splitting.rules.predicate.emplace(rule.index(), copy);
         }

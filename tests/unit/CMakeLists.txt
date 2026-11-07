@@ -100,21 +100,14 @@ add_gtest(datalog_lifted_solver "datalog/lifted/solver.cpp" "datalog/lifted/solv
 target_link_libraries(datalog_lifted_solver PRIVATE Boost::iostreams Boost::json)
 add_gtest(algorithms_delta_kckp "algorithms/kckp/delta_kckp.cpp")
 
-foreach(task_kind ground lifted)
-    foreach(heuristic rpg_max rpg_add rpg_ff lmcut)
-        add_gtest(planning_heuristics_${task_kind}_${heuristic} "planning/heuristics/${task_kind}/${heuristic}.cpp")
-        target_link_libraries(planning_heuristics_${task_kind}_${heuristic} PRIVATE Boost::json)
-    endforeach()
+foreach(heuristic rpg_max rpg_add rpg_ff lmcut)
+    add_gtest(planning_heuristics_${heuristic} "planning/heuristics/${heuristic}.cpp")
+    target_link_libraries(planning_heuristics_${heuristic} PRIVATE Boost::json)
 endforeach()
 
-foreach(task_kind ground lifted)
-    foreach(algorithm brfs astar gbfs iw siw)
-        add_gtest(
-            planning_algorithms_statistics_${task_kind}_${algorithm}
-            "planning/algorithms/statistics/${task_kind}/${algorithm}.cpp"
-        )
-        target_link_libraries(planning_algorithms_statistics_${task_kind}_${algorithm} PRIVATE Boost::json)
-    endforeach()
+foreach(algorithm brfs astar gbfs iw siw)
+    add_gtest(planning_algorithms_statistics_${algorithm} "planning/algorithms/statistics/${algorithm}.cpp")
+    target_link_libraries(planning_algorithms_statistics_${algorithm} PRIVATE Boost::json)
 endforeach()
 add_gtest(planning_algorithms_utils "planning/algorithms/utils.cpp")
 add_gtest(planning_algorithms_iw_novelty_table "planning/algorithms/iw/novelty_table.cpp")

@@ -6,7 +6,7 @@
 #include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -20,7 +20,15 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/serialization/serialization.hpp"
+#include "tyr/planning/formatter.hpp"
+#include "tyr/serialization/formalism/enums.hpp"
+#include "tyr/serialization/formalism/planning/planning.hpp"
+#include "tyr/serialization/planning/ground/task.hpp"
+#include "tyr/serialization/planning/lifted/task.hpp"
+#include "tyr/serialization/planning/node.hpp"
+#include "tyr/serialization/planning/plan.hpp"
+#include "tyr/serialization/planning/state_view.hpp"
+#include "yggdrasil/serialization/dictionaries.hpp"
 
 #include <boost/json.hpp>
 #include <gtest/gtest.h>
@@ -38,19 +46,15 @@ inline tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag> 
                                                                                           const std::string& object_name)
 {
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 1);
-    canonicalize(predicate_data);
-    const auto predicate = repository.insert(predicate_data).first;
+    const auto predicate = ygg::formalism::insert(repository, predicate_data).first;
     auto object_data = urd::data<tyr::formalism::Object>(object_name);
-    canonicalize(object_data);
-    const auto object = repository.insert(object_data).first;
+    const auto object = ygg::formalism::insert(repository, object_data).first;
     auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     binding_data.relation = predicate.index();
     binding_data.objects.push_back(object.index());
-    canonicalize(binding_data);
-    const auto binding = repository.insert(binding_data).first;
+    const auto binding = ygg::formalism::insert(repository, binding_data).first;
     auto atom_data = urd::data<tyr::formalism::planning::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index());
-    canonicalize(atom_data);
-    return repository.insert(atom_data).first;
+    return ygg::formalism::insert(repository, atom_data).first;
 }
 
 template<TaskKind Kind>

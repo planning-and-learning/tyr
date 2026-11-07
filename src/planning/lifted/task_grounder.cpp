@@ -23,8 +23,7 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
@@ -32,7 +31,32 @@
 #include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/mutable/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -99,7 +123,7 @@ RemappedFDRFact remap_fdr_fact(formalism::planning::FDRFactView<formalism::Fluen
                                bool polarity,
                                const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms,
                                const formalism::planning::FDRContext& fdr_context,
-                               formalism::planning::CopyContext& context)
+                               formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context)
 {
     assert(fact.has_value());
 
@@ -127,7 +151,7 @@ struct RemappedLiteral
 
 template<formalism::FactKind T>
 RemappedLiteral<T> remap_literal(formalism::planning::LiteralView<GroundTag, T> literal,
-                                 formalism::planning::CopyContext& context,
+                                 formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context,
                                  const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, T>>>& atoms)
 {
     const auto new_literal = copy(literal, context).first;
@@ -157,7 +181,7 @@ create_ground_fdr_conjunctive_condition(formalism::planning::ConjunctiveConditio
                                         const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>& derived_atoms,
                                         const StaticState& static_state,
                                         const formalism::planning::FDRContext& fdr_context,
-                                        formalism::planning::CopyContext& context)
+                                        formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context)
 {
     auto fdr_conj_cond = formalism::planning::checkout<formalism::planning::ConjunctiveCondition<GroundTag>>(context.builder());
 
@@ -224,7 +248,7 @@ ground_pruned(formalism::planning::ConjunctiveConditionView<LiftedTag> element,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>& derived_atoms,
               const StaticState& static_state,
-              formalism::planning::GrounderContext& context,
+              formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context,
               const formalism::planning::FDRContext& fdr_context)
 {
     auto conj_cond = formalism::planning::checkout<formalism::planning::ConjunctiveCondition<GroundTag>>(context.builder());
@@ -284,7 +308,7 @@ ground_pruned(formalism::planning::ConjunctiveConditionView<LiftedTag> element,
 std::optional<formalism::planning::ConjunctiveEffectView<GroundTag>>
 ground_pruned(formalism::planning::ConjunctiveEffectView<LiftedTag> element,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms,
-              formalism::planning::GrounderContext& context,
+              formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context,
               const formalism::planning::FDRContext& fdr)
 {
     // Fetch and clear
@@ -323,7 +347,7 @@ ground_pruned(formalism::planning::ConditionalEffectView<LiftedTag> element,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>& derived_atoms,
               const StaticState& static_state,
-              formalism::planning::GrounderContext& context,
+              formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context,
               const formalism::planning::FDRContext& fdr_context)
 {
     // Fetch and clear
@@ -355,7 +379,7 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>& derived_atoms,
               ForEachEffectBinding for_each_effect_binding,
               const StaticState& static_state,
-              formalism::planning::GrounderContext& context,
+              formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context,
               const formalism::planning::FDRContext& fdr_context)
 {
     // Fetch and clear
@@ -392,7 +416,7 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>& fluent_atoms,
               const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>& derived_atoms,
               const StaticState& static_state,
-              formalism::planning::GrounderContext& context,
+              formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& context,
               const formalism::planning::FDRContext& fdr_context)
 {
     // Fetch and clear
@@ -502,7 +526,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
 
     auto ground_task = formalism::planning::checkout<formalism::planning::Task<GroundTag>>(builder);
 
-    auto merge_context = formalism::planning::CopyContext { builder, *repository };
+    auto merge_context = formalism::WriteContext { builder, *repository };
 
     ground_task->name = task.get_name();
     ground_task->domain = task.get_domain().index();
@@ -528,7 +552,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto fluent_atoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> {};
     auto derived_atoms = formalism::planning::AtomViewList<GroundTag, formalism::DerivedTag> {};
     {
-        auto merge_planning_context = formalism::planning::MergePlanningContext { builder, *repository };
+        auto merge_planning_context = formalism::WriteContext { builder, *repository };
         for_each_predicate_binding(
             [&](const auto binding)
             {
@@ -639,7 +663,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 for (const auto object : binding.get_objects())
                     workspace.binding.push_back(urd::to_stored(object));
 
-                auto grounder_context = formalism::planning::GrounderContext { workspace.planning_builder, *repository, workspace.binding };
+                auto grounder_context = formalism::WriteContext { workspace.planning_builder, *repository, workspace.binding };
 
                 const auto ground_action_or_nullopt = ground_pruned(
                     action,
@@ -677,7 +701,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 for (const auto object : binding.get_objects())
                     workspace.binding.push_back(urd::to_stored(object));
 
-                auto grounder_context = formalism::planning::GrounderContext { workspace.planning_builder, *repository, workspace.binding };
+                auto grounder_context = formalism::WriteContext { workspace.planning_builder, *repository, workspace.binding };
 
                 for (const auto axiom : it->second)
                 {

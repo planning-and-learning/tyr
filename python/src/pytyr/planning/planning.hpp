@@ -32,15 +32,63 @@
 #include <nanobind/stl/vector.h>
 #include <ranges>
 #include <type_traits>
-#include <tyr/planning/planning.hpp>
+#include <tyr/planning/algorithms/astar_eager.hpp>
+#include <tyr/planning/algorithms/astar_eager/event_handler.hpp>
+#include <tyr/planning/algorithms/brfs.hpp>
+#include <tyr/planning/algorithms/brfs/event_handler.hpp>
+#include <tyr/planning/algorithms/gbfs_lazy.hpp>
+#include <tyr/planning/algorithms/gbfs_lazy/event_handler.hpp>
+#include <tyr/planning/algorithms/iw.hpp>
+#include <tyr/planning/algorithms/iw/novelty_table.hpp>
+#include <tyr/planning/algorithms/iw/pruning_strategy.hpp>
+#include <tyr/planning/algorithms/serialized.hpp>
+#include <tyr/planning/algorithms/serialized/event_handler.hpp>
+#include <tyr/planning/algorithms/serialized/statistics.hpp>
+#include <tyr/planning/algorithms/siw.hpp>
+#include <tyr/planning/algorithms/siw/event_handler.hpp>
+#include <tyr/planning/algorithms/siw/statistics.hpp>
+#include <tyr/planning/algorithms/statistics.hpp>
+#include <tyr/planning/algorithms/strategies/goal.hpp>
+#include <tyr/planning/algorithms/strategies/pruning.hpp>
+#include <tyr/planning/declarations.hpp>
+#include <tyr/planning/factory.hpp>
+#include <tyr/planning/formatter.hpp>
+#include <tyr/planning/axiom_evaluator.hpp>
+#include <tyr/planning/state_storage/tree_bitset/fact.hpp>
+#include <tyr/planning/ground/state_storage/vectors.hpp>
+#include <tyr/planning/state_storage/numeric.hpp>
+#include <tyr/planning/state_storage/tree_bitset/atom.hpp>
+#include <tyr/planning/state_data.hpp>
+#include <tyr/planning/state_builder.hpp>
+#include <tyr/planning/state_repository.hpp>
+#include <tyr/planning/ground/successor_generator.hpp>
+#include <tyr/planning/ground/task.hpp>
+#include <tyr/planning/heuristics/blind.hpp>
+#include <tyr/planning/heuristics/goal_count.hpp>
+#include <tyr/planning/heuristics/lmcut.hpp>
+#include <tyr/planning/heuristics/rpg_add.hpp>
+#include <tyr/planning/heuristics/rpg_ff.hpp>
+#include <tyr/planning/heuristics/rpg_max.hpp>
+#include <tyr/planning/lifted/programs/action.hpp>
+#include <tyr/planning/lifted/programs/axiom.hpp>
+#include <tyr/planning/lifted/programs/ground.hpp>
+#include <tyr/planning/lifted/state_storage/vectors.hpp>
+#include <tyr/planning/lifted/successor_generator.hpp>
+#include <tyr/planning/lifted/task.hpp>
+#include <tyr/planning/node.hpp>
+#include <tyr/planning/plan.hpp>
+#include <tyr/planning/programs/rpg.hpp>
+#include <tyr/planning/search_space/search_node.hpp>
+#include <tyr/planning/state_routing/dist_hash.hpp>
+#include <tyr/planning/state_storage/iterators.hpp>
+#include <tyr/planning/task.hpp>
+#include <tyr/planning/worker_state_index.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include "pytyr/module.hpp"
 
 namespace tyr::planning
 {
-using urd::python::bind_index;
-
 template<typename Range, typename Value>
 class OwningIterator
 {
@@ -331,8 +379,8 @@ void bind_state_repository(nb::module_& m, const std::string& name)
     nb::class_<T>(m, name.c_str())  //
         .def("get_worker_index", &T::get_worker_index)
         .def("get_index", &T::get_index)
-        .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a, nb::keep_alive<0, 1>())
-        .def("get_registered_state", &T::get_registered_state, nb::rv_policy::move, "state_index"_a, nb::keep_alive<0, 1>())
+        .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a)
+        .def("get_registered_state", &T::get_registered_state, nb::rv_policy::move, "state_index"_a)
         .def("is_concurrent", &T::is_concurrent)
         .def("num_states", &T::num_states)
         .def("memory_usage", &T::memory_usage)
@@ -344,22 +392,19 @@ void bind_state_repository(nb::module_& m, const std::string& name)
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
-             "fterm_values"_a,
-             nb::keep_alive<0, 1>())
+             "fterm_values"_a)
         .def("create_state",
              &T::template create_state<formalism::planning::FDRFactView<formalism::FluentTag>>,
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
-             "fterm_values"_a,
-             nb::keep_alive<0, 1>())
+             "fterm_values"_a)
         .def("create_state",
              &T::template create_state<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>,
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
-             "fterm_values"_a,
-             nb::keep_alive<0, 1>());
+             "fterm_values"_a);
 }
 
 /// Runs visit(repository, emit) without the GIL, `emit` handing each value to `callback`; the values borrow the
@@ -796,11 +841,11 @@ void bind_goal_count_heuristic(nb::module_& m, const std::string& name)
         .def_static("create", &T::create, "task"_a);
 }
 
-template<TaskKind Kind>
-void bind_rpg_max_heuristic(nb::module_& m, const std::string& name)
+/// The RPG and LM-cut heuristics share one constructor signature.
+template<TaskKind Kind, typename T>
+void bind_task_heuristic(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
-    using T = MaxRPGHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
         .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
@@ -811,49 +856,38 @@ void bind_rpg_max_heuristic(nb::module_& m, const std::string& name)
         .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
 }
 
+/// The classes bound identically for both task kinds.
 template<TaskKind Kind>
-void bind_rpg_add_heuristic(nb::module_& m, const std::string& name)
+void bind_kind_definitions(nb::module_& m)
 {
-    using namespace nb::literals;
-    using T = AddRPGHeuristic<Kind>;
-
-    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-        .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
-                      { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
-             "task"_a,
-             "execution_context"_a,
-             "cost_mode"_a = CostMode::UNIT)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
-}
-
-template<TaskKind Kind>
-void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    using T = FFRPGHeuristic<Kind>;
-
-    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-        .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
-                      { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
-             "task"_a,
-             "execution_context"_a,
-             "cost_mode"_a = CostMode::UNIT)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
-}
-
-template<TaskKind Kind>
-void bind_lmcut_heuristic(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    using T = LMCutHeuristic<Kind>;
-
-    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-        .def(nb::new_([](TaskPtr<Kind> task, std::shared_ptr<ygg::ExecutionContext> execution_context, CostMode cost_mode)
-                      { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
-             "task"_a,
-             "execution_context"_a,
-             "cost_mode"_a = CostMode::UNIT)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
+    urd::python::bind_index<urd::index<State<Kind>>>(m, "StateIndex");
+    bind_packed_state<Kind>(m, "PackedState");
+    bind_state<Kind>(m, "State");
+    bind_state_data<Kind>(m, "StateBuilder");
+    bind_node<Kind>(m, "Node");
+    bind_packed_node<Kind>(m, "PackedNode");
+    bind_labeled_node<Kind>(m, "LabeledNode");
+    bind_packed_labeled_node<Kind>(m, "PackedLabeledNode");
+    bind_plan<Kind>(m, "Plan");
+    bind_packed_plan<Kind>(m, "PackedPlan");
+    bind_axiom_evaluator<Kind>(m, "AxiomEvaluator");
+    bind_axiom_evaluator_factory<Kind>(m, "AxiomEvaluatorFactory");
+    bind_state_repository<Kind>(m, "StateRepository");
+    bind_state_repository_factory<Kind>(m, "StateRepositoryFactory");
+    bind_successor_generator<Kind>(m, "SuccessorGenerator");
+    bind_successor_generator_factory<Kind>(m, "SuccessorGeneratorFactory");
+    bind_search_result<Kind>(m, "SearchResult");
+    bind_goal_strategy<Kind>(m, "GoalStrategy");
+    bind_conjunctive_goal_strategy<Kind>(m, "ConjunctiveGoalStrategy");
+    bind_exhaustive_goal_strategy<Kind>(m, "ExhaustiveGoalStrategy");
+    bind_pruning_strategy<Kind>(m, "PruningStrategy");
+    bind_heuristic<Kind>(m, "Heuristic");
+    bind_blind_heuristic<Kind>(m, "BlindHeuristic");
+    bind_task_heuristic<Kind, MaxRPGHeuristic<Kind>>(m, "MaxRPGHeuristic");
+    bind_task_heuristic<Kind, AddRPGHeuristic<Kind>>(m, "AddRPGHeuristic");
+    bind_task_heuristic<Kind, FFRPGHeuristic<Kind>>(m, "FFRPGHeuristic");
+    bind_task_heuristic<Kind, LMCutHeuristic<Kind>>(m, "LMCutHeuristic");
+    bind_goal_count_heuristic<Kind>(m, "GoalCountHeuristic");
 }
 
 }  // namespace tyr::planning

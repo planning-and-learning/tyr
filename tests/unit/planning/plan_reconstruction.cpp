@@ -34,11 +34,10 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/factory.hpp"
-#include "tyr/planning/ground/axiom_evaluator.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/lifted/task_grounder_decl.hpp"
@@ -747,7 +746,7 @@ void expect_parallel_lazy_gbfs(const tyr::planning::TaskPtr<Kind>& task, Reposit
     {
         const auto& state = node.get_state();
         EXPECT_EQ(&state.get_state_repository(), repository.get());
-        EXPECT_EQ(state.data().get_index(), state.index());
+        EXPECT_EQ(state.data().index, state.index());
         EXPECT_EQ(repository->get_registered_state(state.index()), state);
     };
     expect_caller_state(result.plan.value().get_start_node());

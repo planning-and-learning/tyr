@@ -75,12 +75,6 @@ public:
         return it != m_positions.end() && !m_data[it->second].has_value();
     }
 
-    [[nodiscard]] bool has_binding(ParameterIndex p) const noexcept
-    {
-        const auto slot = try_get(p);
-        return slot != nullptr && slot->has_value();
-    }
-
     [[nodiscard]] const std::optional<T>* try_get(ParameterIndex p) const noexcept
     {
         const auto it = m_positions.find(p);
@@ -158,22 +152,6 @@ private:
     urd::Store<urd::sequence<std::optional<T>>> m_data;
     urd::Store<urd::map<ParameterIndex, size_t>> m_positions;
 };
-
-template<typename S, typename V>
-concept SubstitutionFor = requires(std::remove_reference_t<S>& s, const std::remove_reference_t<S>& cs, ParameterIndex p, const V& v) {
-    { cs.contains_parameter(p) } -> std::same_as<bool>;
-    { cs.is_bound(p) } -> std::same_as<bool>;
-    { cs.is_unbound(p) } -> std::same_as<bool>;
-    { cs[p] } -> std::same_as<const std::optional<V>&>;
-    { s[p] } -> std::same_as<std::optional<V>&>;
-    { s.assign_or_check(p, v) } -> std::same_as<bool>;
-};
-
-template<typename S>
-concept ObjectSubstitution = SubstitutionFor<S, urd::index<Object>>;
-
-template<typename S>
-concept TermSubstitution = SubstitutionFor<S, Term>;
 
 }
 #endif

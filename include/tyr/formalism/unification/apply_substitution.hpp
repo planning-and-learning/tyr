@@ -33,8 +33,7 @@
 namespace tyr::formalism::unification
 {
 
-template<TermSubstitution S>
-[[nodiscard]] Term apply_substitution_once(const Term& term, const S& rho)
+[[nodiscard]] inline Term apply_substitution_once(const Term& term, const SubstitutionFunction<Term>& rho)
 {
     if (!is_parameter(term))
         return term;
@@ -48,22 +47,20 @@ template<TermSubstitution S>
     return Term(*value);
 }
 
-template<TermUnifiableStructure T, TermSubstitution S>
-[[nodiscard]] T apply_substitution_once(const T& value, const S& rho)
+template<TermUnifiableStructure T>
+[[nodiscard]] T apply_substitution_once(const T& value, const SubstitutionFunction<Term>& rho)
 {
     return transform_terms(value, [&](const Term& term) { return apply_substitution_once(term, rho); });
 }
 
-template<TermSubstitution S>
-[[nodiscard]] Term apply_substitution(const Term& term, const S& rho)
+[[nodiscard]] inline Term apply_substitution(const Term& term, const SubstitutionFunction<Term>& rho)
 { return apply_substitution_once(term, rho); }
 
-template<TermUnifiableStructure T, TermSubstitution S>
-[[nodiscard]] T apply_substitution(const T& value, const S& rho)
+template<TermUnifiableStructure T>
+[[nodiscard]] T apply_substitution(const T& value, const SubstitutionFunction<Term>& rho)
 { return apply_substitution_once(value, rho); }
 
-template<TermSubstitution S>
-[[nodiscard]] Term apply_substitution_fixpoint(const Term& term, const S& rho)
+[[nodiscard]] inline Term apply_substitution_fixpoint(const Term& term, const SubstitutionFunction<Term>& rho)
 {
     auto current = term;
     auto seen = urd::Store<urd::sequence<ParameterIndex>> {};
@@ -89,14 +86,13 @@ template<TermSubstitution S>
     return current;
 }
 
-template<TermUnifiableStructure T, TermSubstitution S>
-[[nodiscard]] T apply_substitution_fixpoint(const T& value, const S& rho)
+template<TermUnifiableStructure T>
+[[nodiscard]] T apply_substitution_fixpoint(const T& value, const SubstitutionFunction<Term>& rho)
 {
     return transform_terms(value, [&](const Term& term) { return apply_substitution_fixpoint(term, rho); });
 }
 
-template<TermSubstitution S1, TermSubstitution S2>
-[[nodiscard]] SubstitutionFunction<Term> compose_substitutions(const S1& outer, const S2& inner)
+[[nodiscard]] inline SubstitutionFunction<Term> compose_substitutions(const SubstitutionFunction<Term>& outer, const SubstitutionFunction<Term>& inner)
 {
     auto parameters = urd::Store<urd::sequence<ParameterIndex>> {};
     parameters.reserve(inner.parameters().size() + outer.parameters().size());

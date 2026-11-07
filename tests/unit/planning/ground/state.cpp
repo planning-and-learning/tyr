@@ -3,7 +3,11 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/factory.hpp"
-#include "tyr/planning/ground/state_data.hpp"
+#include "tyr/planning/ground/state_storage/vectors.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
@@ -27,22 +31,17 @@ using View = tyr::planning::StateView<tyr::GroundTag>;
 
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::planning::StateView<tyr::GroundTag>>);
 static_assert(tyr::planning::IterableStateConcept<View>);
 static_assert(tyr::planning::IterableViewStateConcept<View>);
 static_assert(requires(const Data& data, const Builder& builder, const View& view, const tyr::formalism::planning::Repository& repository) {
-    data.get_index();
-    data.template get_atom_storage<tyr::formalism::FluentTag>();
-    data.template get_atom_storage<tyr::formalism::DerivedTag>();
-    data.get_numeric_variables();
+    data.index;
+    data.fact_storage;
+    data.atom_storage;
+    data.numeric_storage;
     builder.get_fluent_facts();
     builder.template get_atoms<tyr::formalism::FluentTag>(repository);
     builder.template get_atoms<::tyr::formalism::DerivedTag>(repository);
     builder.template get_fterm_values<tyr::formalism::FluentTag>();
-    builder.get_fluent_facts_view(repository);
-    builder.template get_atoms_view<tyr::formalism::FluentTag>(repository);
-    builder.template get_atoms_view<tyr::formalism::DerivedTag>(repository);
-    builder.template get_fterm_values_view<tyr::formalism::FluentTag>(repository);
     view.index();
     view.template get_atoms<::tyr::formalism::StaticTag>();
     view.get_fluent_facts();
@@ -65,15 +64,15 @@ TEST(TyrPlanningGroundStateTest, ClearResetsRegistrationWithoutReallocatingVecto
     auto builder = urd::builder<Entity> {};
     builder.set(Index(7));
     builder.resize_fluent_facts(64);
-    builder.get_numeric_variables().values.resize(64);
-    const auto fact_capacity = builder.get_atom_storage<tyr::formalism::FluentTag>().values.capacity();
-    const auto numeric_capacity = builder.get_numeric_variables().values.capacity();
+    builder.numeric_storage.values.resize(64);
+    const auto fact_capacity = builder.fact_storage.values.capacity();
+    const auto numeric_capacity = builder.numeric_storage.values.capacity();
 
     builder.clear();
 
-    EXPECT_TRUE(builder.get_index().is_none());
-    EXPECT_EQ(builder.get_atom_storage<tyr::formalism::FluentTag>().values.capacity(), fact_capacity);
-    EXPECT_EQ(builder.get_numeric_variables().values.capacity(), numeric_capacity);
+    EXPECT_TRUE(builder.index.is_none());
+    EXPECT_EQ(builder.fact_storage.values.capacity(), fact_capacity);
+    EXPECT_EQ(builder.numeric_storage.values.capacity(), numeric_capacity);
 }
 
 TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwnedBuffers)
@@ -112,17 +111,17 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     const auto borrowed = urd::resolve(source, *source_repository);
     auto target = tyr::planning::StateRepositoryFactory<tyr::GroundTag>().create(task);
     auto warm = target->get_state_builder();
-    warm->get_numeric_variables().values.reserve(64);
+    warm->numeric_storage.values.reserve(64);
     const auto slot = warm.get();
-    const auto buffer = std::ranges::data(warm->get_numeric_variables().values);
-    const auto capacity = warm->get_numeric_variables().values.capacity();
+    const auto buffer = std::ranges::data(warm->numeric_storage.values);
+    const auto capacity = warm->numeric_storage.values.capacity();
     warm = {};
 
     const auto retained = target->register_extended_state(borrowed);
     EXPECT_EQ(&retained.data(), slot);
-    EXPECT_EQ(std::ranges::data(retained.data().get_numeric_variables().values), buffer);
-    EXPECT_EQ(retained.data().get_numeric_variables().values.capacity(), capacity);
-    EXPECT_TRUE(source.get_index().is_none());
+    EXPECT_EQ(std::ranges::data(retained.data().numeric_storage.values), buffer);
+    EXPECT_EQ(retained.data().numeric_storage.values.capacity(), capacity);
+    EXPECT_TRUE(source.index.is_none());
     EXPECT_TRUE(std::ranges::equal(source.get_fluent_facts(), initial.get_fluent_facts()));
     EXPECT_TRUE(std::ranges::equal(source.template get_atoms<tyr::formalism::DerivedTag>(*task->get_repository()),
                                    initial.template get_atoms<tyr::formalism::DerivedTag>()));

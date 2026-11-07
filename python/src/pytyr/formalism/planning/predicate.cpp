@@ -35,7 +35,7 @@ void bind_predicate_data(nb::module_& m, const char* name)
     using namespace nb::literals;
     using V = urd::data<Predicate<T>>;
     auto cls = nb::class_<V>(m, name).def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
-    cls.def(nb::init<::cista::offset::string, ygg::uint_t>(), "name"_a, "arity"_a);
+    cls.def(nb::init<urd::flat_string, ygg::uint_t>(), "name"_a, "arity"_a);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
@@ -61,9 +61,9 @@ void bind_predicate(nb::module_& m, RepositoryBinding& repository)
     bind_predicate_view<FluentTag>(m, "FluentPredicate");
     bind_predicate_view<DerivedTag>(m, "DerivedPredicate");
 
-    bind_insert<Predicate<StaticTag>>(repository);
-    bind_insert<Predicate<FluentTag>>(repository);
-    bind_insert<Predicate<DerivedTag>>(repository);
+    ygg::bind_insert<Predicate<StaticTag>>(repository);
+    ygg::bind_insert<Predicate<FluentTag>>(repository);
+    ygg::bind_insert<Predicate<DerivedTag>>(repository);
 }
 
 }  // namespace tyr::formalism::planning

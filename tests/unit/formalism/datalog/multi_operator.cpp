@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -48,11 +49,11 @@ TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
         data.args.emplace_back(1.0);
         data.args.emplace_back(1.0);
 
-        EXPECT_FALSE(tyr::formalism::datalog::is_canonical(data));
+        EXPECT_FALSE(std::is_sorted(data.args.begin(), data.args.end()));
         const auto [view, inserted] = tyr::formalism::datalog::insert(repository, data);
         EXPECT_TRUE(inserted);
         EXPECT_EQ(data.index, view.index());
-        EXPECT_TRUE(tyr::formalism::datalog::is_canonical(data));
+        EXPECT_TRUE(std::is_sorted(data.args.begin(), data.args.end()));
         ASSERT_EQ(data.args.size(), 3);
         EXPECT_EQ(data.args[0], data.args[1]);
         EXPECT_EQ(view.get_args().size(), 3);

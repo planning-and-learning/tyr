@@ -54,16 +54,14 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::dat
     auto& states = get_states<R>();
     auto& satisfied = states[ygg::uint_t(rule_index.value)].numeric_constraint_satisfied;
     const auto numeric_constraints = rule.get_body().get_numeric_constraints();
-    if (satisfied.size() != numeric_constraints.size())
-        satisfied.assign(numeric_constraints.size(), false);
 
     const auto fact_sets = FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets };
     for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
     {
-        if (satisfied[i] || !evaluate(numeric_constraints[i], fact_sets))
+        if (satisfied.contains(i) || !evaluate(numeric_constraints[i], fact_sets))
             continue;
 
-        satisfied[i] = true;
+        satisfied.insert(i);
         auto& unsatisfied_count = states[ygg::uint_t(rule_index.value)].unsatisfied_count;
         assert(unsatisfied_count > 0);
         --unsatisfied_count;

@@ -39,25 +39,25 @@ template<>
 struct data<::tyr::formalism::planning::Domain>
 {
     urd::index<::tyr::formalism::planning::Domain> index;
-    ::cista::offset::string name;
+    urd::flat_string name;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates;
     urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::StaticTag>>> static_functions;
     urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>> fluent_functions;
-    ::cista::optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function;
+    urd::flat_optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function;
     urd::flat_vector<urd::index<::tyr::formalism::Object>> constants;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>> actions;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
 
     data() = default;
-    data(::cista::offset::string name_,
+    data(urd::flat_string name_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::StaticTag>>> static_functions_,
          urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::FluentTag>>> fluent_functions_,
-         ::cista::optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function_,
+         urd::flat_optional<urd::index<::tyr::formalism::Function<::tyr::formalism::AuxiliaryTag>>> auxiliary_function_,
          urd::flat_vector<urd::index<::tyr::formalism::Object>> constants_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::LiftedTag>>> actions_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_) :
@@ -81,27 +81,11 @@ struct data<::tyr::formalism::planning::Domain>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_predicates() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_predicates;
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return fluent_predicates;
-        else if constexpr (std::same_as<T, ::tyr::formalism::DerivedTag>)
-            return derived_predicates;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_predicates, &data::fluent_predicates, &data::derived_predicates>(*this); }
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_functions() const
-    {
-        if constexpr (std::same_as<T, ::tyr::formalism::StaticTag>)
-            return static_functions;
-        else if constexpr (std::same_as<T, ::tyr::formalism::FluentTag>)
-            return fluent_functions;
-        else
-            static_assert(urd::repr::dependent_false<T>::value, "Missing case");
-    }
+    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_functions, &data::fluent_functions>(*this); }
 
     static constexpr auto cista_members() noexcept
     {

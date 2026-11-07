@@ -18,8 +18,27 @@
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/formalism/datalog/canonicalization.hpp"
-#include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/atom_data.hpp"
+#include "tyr/formalism/datalog/binary_operator_data.hpp"
+#include "tyr/formalism/datalog/conditional_effect_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/function_term_data.hpp"
+#include "tyr/formalism/datalog/function_term_value_data.hpp"
+#include "tyr/formalism/datalog/literal_data.hpp"
+#include "tyr/formalism/datalog/multi_operator_data.hpp"
+#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/datalog/unary_operator_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <gtest/gtest.h>
@@ -41,32 +60,27 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
     auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>();
     predicate_builder.name = "p";
     predicate_builder.arity = 0;
-    canonicalize(predicate_builder);
-    const auto [predicate, predicate_success] = repository.insert(predicate_builder);
+    const auto [predicate, predicate_success] = ygg::formalism::insert(repository, predicate_builder);
     EXPECT_TRUE(predicate_success);
 
     auto atom_builder = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
     atom_builder.predicate = predicate.index();
-    canonicalize(atom_builder);
-    const auto [atom, atom_success] = repository.insert(atom_builder);
+    const auto [atom, atom_success] = ygg::formalism::insert(repository, atom_builder);
     EXPECT_TRUE(atom_success);
 
     auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
-    canonicalize(condition_builder);
-    const auto [condition, condition_success] = repository.insert(condition_builder);
+    const auto [condition, condition_success] = ygg::formalism::insert(repository, condition_builder);
     EXPECT_TRUE(condition_success);
 
     auto rule_builder = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
     rule_builder.body = condition.index();
     rule_builder.heads.push_back(atom.index());
-    canonicalize(rule_builder);
-    const auto [rule, rule_success] = repository.insert(rule_builder);
+    const auto [rule, rule_success] = ygg::formalism::insert(repository, rule_builder);
     EXPECT_TRUE(rule_success);
 
     auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
     binding_builder.relation = rule.index();
-    canonicalize(binding_builder);
-    const auto [binding, binding_success] = repository.insert(binding_builder);
+    const auto [binding, binding_success] = ygg::formalism::insert(repository, binding_builder);
     EXPECT_TRUE(binding_success);
 
     return { rule, binding };
@@ -76,14 +90,12 @@ tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> make_nul
                                                                                                       const char* name)
 {
     auto function_builder = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string(name), 0);
-    canonicalize(function_builder);
-    const auto [function, function_success] = repository.insert(function_builder);
+    const auto [function, function_success] = ygg::formalism::insert(repository, function_builder);
     EXPECT_TRUE(function_success);
 
     auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
     binding_builder.relation = function.index();
-    canonicalize(binding_builder);
-    const auto [binding, binding_success] = repository.insert(binding_builder);
+    const auto [binding, binding_success] = ygg::formalism::insert(repository, binding_builder);
     EXPECT_TRUE(binding_success);
     return binding;
 }

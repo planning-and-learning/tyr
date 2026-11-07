@@ -30,21 +30,6 @@ namespace
 {
 using TermSubstitution = tyr::formalism::unification::SubstitutionFunction<tyr::formalism::Term>;
 
-class TermSubstitutionWithoutValueType : public TermSubstitution
-{
-public:
-    explicit TermSubstitutionWithoutValueType(TermSubstitution substitution) : TermSubstitution(std::move(substitution)) {}
-
-private:
-    using value_type = void;
-};
-
-static_assert(tyr::formalism::unification::TermSubstitution<TermSubstitutionWithoutValueType>);
-static_assert(tyr::formalism::unification::TermSubstitution<TermSubstitutionWithoutValueType&>);
-static_assert(!tyr::formalism::unification::TermSubstitution<const TermSubstitutionWithoutValueType&>);
-static_assert(!tyr::formalism::unification::TermSubstitution<volatile TermSubstitutionWithoutValueType&>);
-static_assert(!tyr::formalism::unification::ObjectSubstitution<TermSubstitutionWithoutValueType>);
-
 static_assert(tyr::formalism::unification::TermUnifiableStructure<tyr::formalism::Term>);
 
 tyr::formalism::Term parameter(size_t index) { return tyr::formalism::Term(tyr::formalism::ParameterIndex(index)); }
@@ -56,7 +41,7 @@ void expect_term_eq(const tyr::formalism::Term& lhs, const tyr::formalism::Term&
 
 TEST(TyrTests, TyrFormalismUnificationApplySubstitutionFixpoint)
 {
-    auto sigma = TermSubstitutionWithoutValueType(TermSubstitution::from_range(tyr::formalism::ParameterIndex(0), 3));
+    auto sigma = TermSubstitution::from_range(tyr::formalism::ParameterIndex(0), 3);
 
     EXPECT_TRUE(sigma.assign(tyr::formalism::ParameterIndex(0), parameter(1)));
     EXPECT_TRUE(sigma.assign(tyr::formalism::ParameterIndex(1), object(7)));
@@ -120,8 +105,8 @@ TEST(TyrTests, TyrFormalismUnificationSubstitutionTryGet)
     ASSERT_NE(slot, nullptr);
     ASSERT_TRUE(slot->has_value());
     expect_term_eq(slot->value(), object(11));
-    EXPECT_TRUE(sigma.has_binding(tyr::formalism::ParameterIndex(1)));
-    EXPECT_FALSE(sigma.has_binding(tyr::formalism::ParameterIndex(0)));
+    EXPECT_TRUE(sigma.is_bound(tyr::formalism::ParameterIndex(1)));
+    EXPECT_FALSE(sigma.is_bound(tyr::formalism::ParameterIndex(0)));
 }
 
 TEST(TyrTests, TyrFormalismUnificationSubstitutionAssignOrCheckAndReset)
@@ -131,7 +116,7 @@ TEST(TyrTests, TyrFormalismUnificationSubstitutionAssignOrCheckAndReset)
     EXPECT_TRUE(sigma.assign_or_check(tyr::formalism::ParameterIndex(0), object(5)));
     EXPECT_TRUE(sigma.assign_or_check(tyr::formalism::ParameterIndex(0), object(5)));
     EXPECT_FALSE(sigma.assign_or_check(tyr::formalism::ParameterIndex(0), object(6)));
-    EXPECT_TRUE(sigma.has_binding(tyr::formalism::ParameterIndex(0)));
+    EXPECT_TRUE(sigma.is_bound(tyr::formalism::ParameterIndex(0)));
     expect_term_eq(sigma[tyr::formalism::ParameterIndex(0)].value(), object(5));
 
     EXPECT_TRUE(sigma.assign_or_check(tyr::formalism::ParameterIndex(1), parameter(0)));
@@ -140,8 +125,8 @@ TEST(TyrTests, TyrFormalismUnificationSubstitutionAssignOrCheckAndReset)
     sigma.reset();
 
     EXPECT_TRUE(sigma.is_identity());
-    EXPECT_FALSE(sigma.has_binding(tyr::formalism::ParameterIndex(0)));
-    EXPECT_FALSE(sigma.has_binding(tyr::formalism::ParameterIndex(1)));
+    EXPECT_FALSE(sigma.is_bound(tyr::formalism::ParameterIndex(0)));
+    EXPECT_FALSE(sigma.is_bound(tyr::formalism::ParameterIndex(1)));
     EXPECT_TRUE(sigma.is_unbound(tyr::formalism::ParameterIndex(0)));
     EXPECT_TRUE(sigma.is_unbound(tyr::formalism::ParameterIndex(1)));
 }

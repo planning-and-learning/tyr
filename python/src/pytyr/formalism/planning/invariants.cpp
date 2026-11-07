@@ -15,7 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/planning/invariants/invariants.hpp"
+#include "tyr/formalism/planning/invariants/matcher.hpp"
+#include "tyr/formalism/planning/invariants/mutexes.hpp"
+#include "tyr/formalism/planning/invariants/ordering.hpp"
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <urd/python/sequences/sequence.hpp>
@@ -50,7 +53,7 @@ void bind_substitution_function(nb::module_& m, const std::string& name)
                    .def("contains_parameter", &V::contains_parameter, "parameter"_a)
                    .def("is_bound", &V::is_bound, "parameter"_a)
                    .def("is_unbound", &V::is_unbound, "parameter"_a)
-                   .def("has_binding", &V::has_binding, "parameter"_a)
+                   .def("has_binding", &V::is_bound, "parameter"_a)
                    .def(
                        "get",
                        [](const V& self, ParameterIndex p) -> std::optional<T>

@@ -30,6 +30,7 @@
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
+#include <utility>
 
 namespace tyr::planning
 {
@@ -46,6 +47,15 @@ struct D2PTranslationContext<LiftedTag>
         fluent_to_fluent_predicate;
     FluentToDerivedPredicateMapping fluent_to_derived_predicate;
 };
+
+/// The action whose applicability atoms each predicate holds (action and ground task programs).
+using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView<LiftedTag>>>;
+
+/// The predicate of each conditional effect with variables or a condition, whose atoms are the bindings of its action
+/// followed by the objects of the effect's variables for which the effect fires.
+/// Keyed by the action too, since actions can share an interned conditional effect.
+using ConditionalEffectToPredicateMapping =
+    urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
 
 /// Mappings select which state inputs are translated; omitted symbols are not inserted.
 template<>

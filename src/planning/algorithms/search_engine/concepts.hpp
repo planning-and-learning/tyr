@@ -85,7 +85,6 @@ concept SearchPolicyConcept =
            { const_policy.should_discard(entry, value) } -> std::convertible_to<bool>;
            { policy.get_search_node(state) } -> std::same_as<SearchNodeT<T>&>;
            { const_policy.make_successor_metadata(worker, node, action) } -> std::same_as<SuccessorMetadataT<T>>;
-           { T::make_worker_event_handler(event_handler, worker) } -> std::same_as<WorkerEventHandlerPtrT<T>>;
            { const_policy.get_search_nodes() } -> std::same_as<const urd::Store<urd::sequence<SearchNodeT<T>>, urd::stable_refs>&>;
        } && (!T::supports_priority_layer_synchronization || requires(const T& policy, const OptionsT<T>& options) {
            { T::synchronize_priority_layers(options) } -> std::convertible_to<bool>;

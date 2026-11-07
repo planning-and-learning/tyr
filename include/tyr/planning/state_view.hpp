@@ -20,7 +20,32 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
+#include "tyr/formalism/planning/function_term_value_view.hpp"
+#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
@@ -83,7 +108,12 @@ public:
     auto get_atoms_view(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const;
 
     /// The facts, computed on the fly: each view owns its fact.
-    [[nodiscard]] auto get_fluent_facts_view() const noexcept { return self().data().get_fluent_facts_view(*get_formalism_repository()); }
+    [[nodiscard]] auto get_fluent_facts_view() const noexcept
+    {
+        return get_fluent_facts()
+               | std::views::transform([repository = get_formalism_repository().get()](auto fact)
+                                       { return ::tyr::formalism::planning::computed_fact_view(fact, *repository); });
+    }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values_view() const noexcept;
 };
@@ -138,12 +168,9 @@ template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F>
 auto ::tyr::planning::StateAccessors<Kind, V>::get_fterm_values_view() const noexcept
 {
-    if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-        return get_fterm_values<F>()
-               | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
-                                       { return std::make_pair(urd::resolve(pair.first, *repository), pair.second); });
-    else
-        return self().data().template get_fterm_values_view<F>(*get_formalism_repository());
+    return get_fterm_values<F>()
+           | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
+                                   { return std::make_pair(urd::resolve(pair.first, *repository), pair.second); });
 }
 
 

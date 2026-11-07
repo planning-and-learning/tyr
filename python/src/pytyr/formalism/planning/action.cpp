@@ -42,7 +42,7 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
                     "variables"_a,
                     "condition"_a,
                     "effects"_a);
-            cls.def(nb::init<::cista::offset::string,
+            cls.def(nb::init<urd::flat_string,
                              ygg::uint_t,
                              urd::flat_vector<urd::index<Variable>>,
                              urd::index<ConjunctiveCondition<LiftedTag>>,
@@ -64,8 +64,8 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
                     "variables"_a,
                     "condition"_a,
                     "effects"_a);
-            cls.def(nb::init<::cista::offset::string,
-                             ::cista::offset::string,
+            cls.def(nb::init<urd::flat_string,
+                             urd::flat_string,
                              ygg::uint_t,
                              urd::flat_vector<urd::index<Variable>>,
                              urd::index<ConjunctiveCondition<LiftedTag>>,
@@ -106,18 +106,18 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
         }
         else
         {
-            cls.def("get_action", &V::get_action, nb::keep_alive<0, 1>());
-            cls.def("get_row", &V::get_row, nb::keep_alive<0, 1>());
+            cls.def("get_action", &V::get_action);
+            cls.def("get_row", &V::get_row);
             cls.def("get_objects", &V::get_objects);
         }
-        cls.def("get_condition", &V::get_condition, nb::keep_alive<0, 1>());
+        cls.def("get_condition", &V::get_condition);
         cls.def("get_effects", &V::get_effects);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

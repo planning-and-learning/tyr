@@ -45,9 +45,9 @@ void bind_function(nb::module_& m, RepositoryBinding& repository)
     bind_function_view<FluentTag>(m, "FluentFunction");
     bind_function_view<AuxiliaryTag>(m, "AuxiliaryFunction");
 
-    bind_insert<Function<StaticTag>>(repository);
-    bind_insert<Function<FluentTag>>(repository);
-    bind_insert<Function<AuxiliaryTag>>(repository);
+    ygg::bind_insert<Function<StaticTag>>(repository);
+    ygg::bind_insert<Function<FluentTag>>(repository);
+    ygg::bind_insert<Function<AuxiliaryTag>>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

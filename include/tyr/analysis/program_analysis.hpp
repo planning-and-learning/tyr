@@ -16,25 +16,10 @@
 namespace tyr::analysis
 {
 
-template<formalism::RelationKind R>
+template<typename R>
 using RuleCompatibilityGraphMap = urd::Store<urd::map<urd::index<formalism::datalog::Rule<LiftedTag, R>>, kckp::Graph>>;
 
-struct ProgramCompatibilityGraphs
-{
-    RuleCompatibilityGraphMap<formalism::PredicateTag> predicate_rules;
-    RuleCompatibilityGraphMap<formalism::FunctionTag> function_rules;
-
-    template<formalism::RelationKind R>
-    auto& get_rules() noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate_rules;
-        else if constexpr (std::same_as<R, formalism::FunctionTag>)
-            return function_rules;
-        else
-            static_assert(urd::repr::dependent_false<R>::value, "Missing case");
-    }
-};
+using ProgramCompatibilityGraphs = urd::utils::Family<RuleCompatibilityGraphMap, formalism::PredicateTag, formalism::FunctionTag>;
 
 struct ProgramAnalysis
 {

@@ -24,7 +24,7 @@
 namespace tyr::planning
 {
 
-GroundStateLayout::GroundStateLayout(const Task<GroundTag>& task)
+StateLayout<GroundTag>::StateLayout(const Task<GroundTag>& task)
 {
     constexpr auto bits_per_block = static_cast<ygg::uint_t>(urd::repr::bit::bits_per_block_v<ygg::uint_t>);
 

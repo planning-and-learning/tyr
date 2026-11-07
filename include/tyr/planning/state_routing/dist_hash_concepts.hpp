@@ -18,8 +18,6 @@
 #ifndef TYR_PLANNING_STATE_ROUTING_DIST_HASH_CONCEPTS_HPP_
 #define TYR_PLANNING_STATE_ROUTING_DIST_HASH_CONCEPTS_HPP_
 
-#include <concepts>
-
 namespace tyr::planning
 {
 
@@ -30,9 +28,6 @@ struct RandomDistHashTag
 struct LMCutDistHashTag
 {
 };
-
-template<typename T>
-concept DistHashKind = std::same_as<T, RandomDistHashTag> || std::same_as<T, LMCutDistHashTag>;
 
 }
 

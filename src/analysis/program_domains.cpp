@@ -17,10 +17,46 @@
 
 #include "static_literal_compatibility.hpp"
 #include "tyr/analysis/domains.hpp"
-#include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/atom_data.hpp"
+#include "tyr/formalism/datalog/binary_operator_data.hpp"
+#include "tyr/formalism/datalog/conditional_effect_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/function_term_data.hpp"
+#include "tyr/formalism/datalog/function_term_value_data.hpp"
+#include "tyr/formalism/datalog/literal_data.hpp"
+#include "tyr/formalism/datalog/multi_operator_data.hpp"
+#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/datalog/unary_operator_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/binding_data.hpp>
+#include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/views.hpp"
+#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include <yggdrasil/formalism/binding_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <assert.h>
@@ -492,7 +528,7 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
     const auto restrict_rule_domains = [&]<typename R>(R /*kind*/, auto& domain_sets)
     {
         domain_sets.reserve(program.get_rules<R>().size());
-        auto& graphs = compatibility_graphs.get_rules<R>();
+        auto& graphs = compatibility_graphs.get<R>();
         graphs.reserve(program.get_rules<R>().size());
 
         for (const auto rule : program.get_rules<R>())
@@ -563,20 +599,17 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
     auto fluent_predicate_domains = to_predicate_domain_map(fluent_predicate_domain_sets);
     auto static_function_domains = to_function_domain_map(static_function_domain_sets);
     auto fluent_function_domains = to_function_domain_map(fluent_function_domain_sets);
-    auto predicate_rule_domains = to_rule_domain_map(predicate_rule_domain_sets);
-    auto function_rule_domains = to_rule_domain_map(function_rule_domain_sets);
-
-    return ProgramAnalysis {
-        ProgramVariableDomains {
-            std::move(static_predicate_domains),
-            std::move(fluent_predicate_domains),
-            std::move(static_function_domains),
-            std::move(fluent_function_domains),
-            std::move(predicate_rule_domains),
-            std::move(function_rule_domains),
-        },
-        std::move(compatibility_graphs),
+    auto domains = ProgramVariableDomains {
+        std::move(static_predicate_domains),
+        std::move(fluent_predicate_domains),
+        std::move(static_function_domains),
+        std::move(fluent_function_domains),
+        {},
     };
+    domains.rule_domains.get<formalism::PredicateTag>() = to_rule_domain_map(predicate_rule_domain_sets);
+    domains.rule_domains.get<formalism::FunctionTag>() = to_rule_domain_map(function_rule_domain_sets);
+
+    return ProgramAnalysis { std::move(domains), std::move(compatibility_graphs) };
 }
 
 ProgramVariableDomains compute_variable_domains(formalism::datalog::ProgramView<LiftedTag> program) { return std::move(analyze_program(program).domains); }

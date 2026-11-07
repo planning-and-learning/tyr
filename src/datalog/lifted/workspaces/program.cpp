@@ -19,19 +19,23 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
+#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+
+#include <fmt/ostream.h>
+#include <iostream>
 
 namespace tyr::datalog
 {
 namespace
 {
 template<formalism::RelationKind R>
-void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace, urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>>& workspaces)
+void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace, RuleWorkspaces<R>& workspaces)
 {
-    const auto& const_workspaces = const_workspace.template get_rules<R>();
+    const auto& const_workspaces = const_workspace.rules.template get<R>();
     workspaces.reserve(const_workspaces.size());
     for (const auto& workspace : const_workspaces)
         workspaces.emplace_back(workspace ? std::make_unique<RuleWorkspace<LiftedTag, R>>(*workspace) : nullptr);
@@ -41,13 +45,33 @@ template<formalism::RelationKind R>
 void initialize_const_rule_workspaces(Program<LiftedTag>& program,
                                       formalism::datalog::Repository& program_repository,
                                       analysis::RuleCompatibilityGraphMap<R>& graphs,
-                                      urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, R>>>>& workspaces)
+                                      ConstRuleWorkspaces<R>& workspaces)
 {
     const auto rules = program.get_program().template get_rules<R>();
     workspaces.resize(rules.size());
     for (const auto rule : rules)
         workspaces[ygg::uint_t(rule.index().value)].emplace(rule, program_repository, std::move(graphs.at(rule.index())));
 }
+}
+
+void print_rule_statistics(const urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules)
+{
+    auto rule_statistics = urd::Store<urd::sequence<RuleStatistics>> {};
+    auto rule_worker_statistics = urd::Store<urd::sequence<RuleWorkerStatistics>> {};
+    rules.for_each(
+        [&](const auto& workspaces)
+        {
+            for (const auto& ws_rule : workspaces)
+            {
+                if (!ws_rule)
+                    continue;
+                rule_statistics.push_back(ws_rule->common.statistics);
+                for (const auto& worker : ws_rule->worker)
+                    rule_worker_statistics.push_back(worker.solve.statistics);
+            }
+        });
+    fmt::print(std::cout, "{}\n", compute_aggregated_rule_statistics(rule_statistics));
+    fmt::print(std::cout, "{}\n", compute_aggregated_rule_worker_statistics(rule_worker_statistics));
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -71,8 +95,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     numeric_support_selector(),
     tp(std::move(tp_)),
     cost_policy(std::move(cost_policy_)),
-    predicate_rules(),
-    function_rules(),
+    rules(),
     planning_builder(),
     datalog_builder(),
     schedulers(create_schedulers(program.get_strata(),
@@ -85,21 +108,20 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     if constexpr (AP::records_propositional_achievers)
         this->annotation_policy.initialize(program.get_program().get_predicates<formalism::FluentTag>().size());
 
-    initialize_rule_workspaces<formalism::PredicateTag>(*const_workspace, predicate_rules);
-    initialize_rule_workspaces<formalism::FunctionTag>(*const_workspace, function_rules);
+    initialize_rule_workspaces<formalism::PredicateTag>(*const_workspace, rules.template get<formalism::PredicateTag>());
+    initialize_rule_workspaces<formalism::FunctionTag>(*const_workspace, rules.template get<formalism::FunctionTag>());
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
 {
-    const auto clear_rules = [](auto& rules)
-    {
-        for (auto& rule : rules)
-            if (rule)
-                rule->clear();
-    };
-    clear_rules(predicate_rules);
-    clear_rules(function_rules);
+    rules.for_each(
+        [](auto& workspaces)
+        {
+            for (auto& rule : workspaces)
+                if (rule)
+                    rule->clear();
+        });
 
     cost_buckets.clear();
     tp.clear();
@@ -138,17 +160,16 @@ ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& prog
           program.get_program().get_atoms<formalism::StaticTag>(),
           program.get_program().get_fterm_values<formalism::StaticTag>(),
           *program.m_program_repository),
-    predicate_rules(),
-    function_rules()
+    rules()
 {
     initialize_const_rule_workspaces<formalism::PredicateTag>(program,
                                                               *program.m_program_repository,
-                                                              program.m_analysis.compatibility_graphs.predicate_rules,
-                                                              predicate_rules);
+                                                              program.m_analysis.compatibility_graphs.get<formalism::PredicateTag>(),
+                                                              rules.get<formalism::PredicateTag>());
     initialize_const_rule_workspaces<formalism::FunctionTag>(program,
                                                              *program.m_program_repository,
-                                                             program.m_analysis.compatibility_graphs.function_rules,
-                                                             function_rules);
+                                                             program.m_analysis.compatibility_graphs.get<formalism::FunctionTag>(),
+                                                             rules.get<formalism::FunctionTag>());
 }
 
 }

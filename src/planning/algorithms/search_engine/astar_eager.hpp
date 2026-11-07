@@ -22,12 +22,13 @@
 #include "parent_state.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
-#include "tyr/planning/algorithms/openlists/priority_queue.hpp"
 
 #include <cmath>
 #include <limits>
 #include <stdexcept>
 #include <tuple>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/store.hpp>
 #include <utility>
 
 namespace tyr::planning::detail
@@ -111,7 +112,6 @@ public:
     struct QueueEntry
     {
         using KeyType = std::tuple<ygg::float_t, SearchNodeStatus, ygg::uint_t>;
-        using ItemType = std::tuple<ygg::float_t, urd::index<State<Kind>>>;
 
         ygg::float_t f_value;
         urd::index<State<Kind>> state;
@@ -119,7 +119,6 @@ public:
         ygg::uint_t step;
 
         [[nodiscard]] KeyType get_key() const { return std::make_tuple(f_value, status, step); }
-        [[nodiscard]] ItemType get_item() const { return std::make_tuple(f_value, state); }
     };
 
     struct PoppedEntry
@@ -167,7 +166,7 @@ public:
     SearchNode& get_search_node(urd::index<State<Kind>> state)
     {
         static const auto default_node =
-            SearchNode { std::numeric_limits<ygg::float_t>::infinity(), std::numeric_limits<ygg::float_t>::quiet_NaN(), no_parent(), SearchNodeStatus::NEW };
+            SearchNode { std::numeric_limits<ygg::float_t>::infinity(), std::numeric_limits<ygg::float_t>::quiet_NaN(), ParentPolicy::no_parent(), SearchNodeStatus::NEW };
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 
@@ -195,8 +194,6 @@ public:
 
     [[nodiscard]] SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView) const
     { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric() }; }
-
-    static void set_parent(SearchNode& search_node, WorkerStateIndex<Kind> parent) noexcept { search_node.parent_state = ParentPolicy::make_parent(parent); }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus status, bool)
     {
@@ -230,7 +227,7 @@ public:
         if (engine.m_execution.is_generated_goal(engine, worker, routed_successor, successor_state))
         {
             worker.statistics.increment_num_generated_successors();
-            set_parent(successor_search_node, routed_successor.metadata.parent);
+            successor_search_node.parent_state = ParentPolicy::make_parent(routed_successor.metadata.parent);
             successor_search_node.g_value = g_value;
             successor_search_node.h_value = 0;
 
@@ -254,7 +251,7 @@ public:
         }
 
         worker.statistics.increment_num_generated_successors();
-        set_parent(successor_search_node, routed_successor.metadata.parent);
+        successor_search_node.parent_state = ParentPolicy::make_parent(routed_successor.metadata.parent);
         successor_search_node.g_value = g_value;
 
         if (successor_search_node.status == SearchNodeStatus::HEURISTIC_PENDING)
@@ -294,9 +291,6 @@ public:
 
     static bool synchronize_priority_layers(const Options& options) noexcept { return ModePolicy::synchronize_priority_layers(options); }
 
-    static WorkerEventHandlerPtr make_worker_event_handler(const EventHandlerPtr& event_handler, urd::index<Worker> index)
-    { return event_handler ? event_handler->make_worker(index) : nullptr; }
-
     template<typename Handler>
     static void on_start_search(Handler& handler, const Node<Kind>& node, ygg::float_t priority)
     { handler.on_start_search(node, priority); }
@@ -308,12 +302,10 @@ public:
     [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& get_search_nodes() const noexcept { return m_search_nodes; }
 
 private:
-    static constexpr ParentState no_parent() noexcept { return ParentPolicy::no_parent(); }
-
     ygg::uint_t m_step { 0 };
     ygg::float_t m_f_value { 0 };
     urd::Store<urd::sequence<SearchNode>, urd::stable_refs> m_search_nodes;
-    PriorityQueue<QueueEntry> m_openlist;
+    urd::Store<urd::queue<QueueEntry>, urd::by_priority, urd::order_by<urd::by<&QueueEntry::get_key>>> m_openlist;
 };
 
 // Search nodes and queue entries are dense in hot loops; these sizes guard their layout.

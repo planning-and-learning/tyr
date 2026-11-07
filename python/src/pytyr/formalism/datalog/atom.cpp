@@ -57,14 +57,14 @@ void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         using V = AtomView<T, F>;
         auto cls = nb::class_<V>(m, name.c_str());
         cls.def("get_index", &V::index);
-        cls.def("get_predicate", &V::get_predicate, nb::keep_alive<0, 1>());
+        cls.def("get_predicate", &V::get_predicate);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_terms", &V::get_terms);
         }
         else
         {
-            cls.def("get_row", &V::get_row, nb::keep_alive<0, 1>());
+            cls.def("get_row", &V::get_row);
             cls.def("get_objects", &V::get_objects);
         }
         ygg::add_print(cls);
@@ -72,7 +72,7 @@ void bind_atom_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         urd::python::add_hash(cls);
     }
 
-    bind_insert<Tag>(repository);
+    ygg::bind_insert<Tag>(repository);
 }
 }  // namespace
 

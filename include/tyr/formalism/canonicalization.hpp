@@ -18,36 +18,17 @@
 #ifndef TYR_FORMALISM_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_CANONICALIZATION_HPP_
 
-#include "tyr/formalism/datas.hpp"
+#include "tyr/formalism/declarations.hpp"
 
-#include <algorithm>
-#include <urd/elements/less.hpp>
-#include <yggdrasil/semantics/canonicalization.hpp>
+#include <urd/elements/data.hpp>
 
 namespace tyr::formalism
 {
 
 /**
- * Datalog
+ * Canonicalization of the records shared by planning and datalog (found by ADL from prepare_for_insert). Every record
+ * has a canonicalize overload, a no-op where it is canonical as built, so a record without one is a compile error.
  */
-
-inline bool is_canonical(const urd::data<Variable>&) { return true; }
-
-inline bool is_canonical(const urd::data<Object>&) { return true; }
-
-template<typename Tag>
-bool is_canonical(const urd::data<RelationBinding<Tag>>&)
-{ return true; }
-
-inline bool is_canonical(const Term&) { return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<Predicate<T>>&)
-{ return true; }
-
-template<FactKind T>
-bool is_canonical(const urd::data<Function<T>>&)
-{ return true; }
 
 inline void canonicalize(urd::data<Variable>&)
 {  // Trivially canonical

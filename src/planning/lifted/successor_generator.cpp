@@ -30,14 +30,13 @@
 #include "tyr/planning/applicability_lifted.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_delta.hpp"
-#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
 #include "tyr/planning/task_utils.hpp"
 
@@ -84,7 +83,7 @@ void validate_task(const TaskPtr<LiftedTag>& task, const S& state)
 
 struct SuccessorGenerator<LiftedTag>::Impl
 {
-    using Program = ApplicableActionProgram<LiftedTag>;
+    using Program = ApplicableActionProgram;
     using ActionBindingMap = urd::Store<urd::map<formalism::planning::ActionBindingView, formalism::planning::ActionView<GroundTag>>>;
     using StateKey = std::pair<const void*, ygg::uint_t>;
 
@@ -333,7 +332,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
 
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().data(), node.get_metric());
     auto grounder_context =
-        formalism::planning::GrounderContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), scratch_binding.objects };
+        formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), scratch_binding.objects };
     const auto& mapping = definition->action_program.get_predicate_to_action_mapping();
 
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
@@ -385,7 +384,7 @@ SuccessorGenerator<LiftedTag>::Impl::generate_successor_state(const Node<LiftedT
         evaluator.workspace.binding.push_back(object);
 
     auto grounder_context =
-        formalism::planning::GrounderContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
+        formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.get_state().data(), node.get_metric());
     const auto action = urd::resolve(binding.relation, *definition->task->get_repository());
 
@@ -625,7 +624,7 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Node<LiftedTag, 
     binding.objects.clear();
     for (const auto object : indices)
         binding.objects.push_back(object);
-    auto grounder = formalism::planning::GrounderContext { workspace.planning_builder, *task->get_repository(), binding.objects };
+    auto grounder = formalism::WriteContext { workspace.planning_builder, *task->get_repository(), binding.objects };
     const auto state = StateContext<LiftedTag>(*task, node.get_state().data(), node.get_metric());
     if (!is_applicable(action.get_condition(), ApplicabilityContext { state, grounder, *task->get_fdr_context() }))
         return ActionBindingStatus::INAPPLICABLE;
@@ -706,14 +705,14 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
     for (const auto object : binding.get_objects())
         m_impl->evaluator.workspace.binding.push_back(urd::to_stored(object));
 
-    auto grounder_context = formalism::planning::GrounderContext { m_impl->evaluator.workspace.planning_builder,
+    auto grounder_context = formalism::WriteContext { m_impl->evaluator.workspace.planning_builder,
                                                                    *m_impl->definition->task->get_repository(),
                                                                    m_impl->evaluator.workspace.binding };
     // Without a state, an effect has every completed binding that the static consistency graph of its rule allows.
     const auto action = binding.get_relation();
     const auto objects = urd::flat_vector<urd::index<formalism::Object>>(m_impl->evaluator.workspace.binding.begin(), m_impl->evaluator.workspace.binding.end());
     const auto& mapping = m_impl->definition->action_program.get_conditional_effect_to_predicate_mapping();
-    const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().get_rules<formalism::PredicateTag>();
+    const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().rules.get<formalism::PredicateTag>();
     const auto schema_rules = m_impl->get_schema_evaluator(action).program.get_rules<formalism::PredicateTag>();
     const auto ground_action =
         formalism::planning::ground(
@@ -1234,7 +1233,7 @@ SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Node<LiftedTag, S
         return finalize_successor_state(state_repository, axiom_evaluator, std::move(successor), auxiliary_value).pack();
 }
 
-const ApplicableActionProgram<LiftedTag>& SuccessorGenerator<LiftedTag>::get_action_program() const noexcept { return m_impl->definition->action_program; }
+const ApplicableActionProgram& SuccessorGenerator<LiftedTag>::get_action_program() const noexcept { return m_impl->definition->action_program; }
 
 const TaskPtr<LiftedTag>& SuccessorGenerator<LiftedTag>::get_task() const noexcept { return m_impl->definition->task; }
 
@@ -1248,15 +1247,7 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
 
     std::cout << "[Successor generator] Summary" << '\n';
     fmt::print(std::cout, "{}\n", m_impl->evaluator.workspace.statistics);
-    auto successor_generator_rule_statistics = urd::Store<urd::sequence<datalog::RuleStatistics>> {};
-    for (const auto& ws_rule : m_impl->evaluator.workspace.template get_rules<formalism::PredicateTag>())
-        successor_generator_rule_statistics.push_back(ws_rule->common.statistics);
-    fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_statistics(successor_generator_rule_statistics));
-    auto successor_generator_rule_worker_statistics = urd::Store<urd::sequence<datalog::RuleWorkerStatistics>> {};
-    for (const auto& ws_rule : m_impl->evaluator.workspace.template get_rules<formalism::PredicateTag>())
-        for (const auto& worker : ws_rule->worker)
-            successor_generator_rule_worker_statistics.push_back(worker.solve.statistics);
-    fmt::print(std::cout, "{}\n", datalog::compute_aggregated_rule_worker_statistics(successor_generator_rule_worker_statistics));
+    datalog::print_rule_statistics(m_impl->evaluator.workspace.rules);
 }
 
 template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Node<LiftedTag>& node, formalism::planning::ActionBindingView binding);
@@ -1672,6 +1663,4 @@ template PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_success
     const urd::data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>>& binding,
     StateRepository<LiftedTag>& state_repository,
     AxiomEvaluator<LiftedTag>& axiom_evaluator);
-
-static_assert(SuccessorGeneratorConcept<SuccessorGenerator<LiftedTag>, LiftedTag>);
 }

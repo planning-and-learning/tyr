@@ -18,11 +18,10 @@
 #include "tyr/planning/algorithms/utils.hpp"
 
 #include "../metric.hpp"
-#include "tyr/planning/ground/axiom_evaluator.hpp"
-#include "tyr/planning/ground/state_repository.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/ground/task.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
-#include "tyr/planning/lifted/state_repository.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 #include <cmath>

@@ -21,7 +21,7 @@
 
 #include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/copy.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
@@ -40,7 +40,7 @@ namespace tyr::formalism::planning
 {
 namespace
 {
-std::pair<FDRVariableView<FluentTag>, bool> copy(FDRVariableView<FluentTag> element, CopyContext& context)
+std::pair<FDRVariableView<FluentTag>, bool> copy(FDRVariableView<FluentTag> element, WriteContext<Builder, Repository>& context)
 {
     auto variable = planning::checkout<FDRVariable<FluentTag>>(context.builder());
 
@@ -50,7 +50,7 @@ std::pair<FDRVariableView<FluentTag>, bool> copy(FDRVariableView<FluentTag> elem
     return planning::insert(context.destination(), *variable);
 }
 
-urd::data<FDRFact<FluentTag>> copy(FDRFactView<FluentTag> element, CopyContext& context)
+urd::data<FDRFact<FluentTag>> copy(FDRFactView<FluentTag> element, WriteContext<Builder, Repository>& context)
 { return urd::data<FDRFact<FluentTag>>(copy(element.get_variable(), context).first.index(), element.get_value()); }
 }
 
@@ -103,7 +103,7 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
     m_builder(),
     m_variables()
 {
-    auto merge_context = CopyContext { builder, *m_context };
+    auto merge_context = WriteContext<Builder, Repository> { builder, *m_context };
 
     for (const auto variable : other.m_variables)
         m_variables.push_back(copy(variable, merge_context).first);
