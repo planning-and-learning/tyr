@@ -10,7 +10,7 @@ namespace lifted_tests
 
 using ConjunctiveEffectIndex = urd::index<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
 using ConjunctiveEffectData = urd::data<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>;
-using ConjunctiveEffectView = urd::view<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ConjunctiveEffectView = urd::index_view<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ConjunctiveEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConjunctiveEffectIndex>);
@@ -40,7 +40,7 @@ namespace ground_tests
 
 using GroundConjunctiveEffectIndex = urd::index<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>;
 using GroundConjunctiveEffectData = urd::data<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>;
-using GroundConjunctiveEffectView = urd::view<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundConjunctiveEffectView = urd::index_view<tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundConjunctiveEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConjunctiveEffectIndex>);

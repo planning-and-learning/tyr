@@ -68,7 +68,7 @@ public:
     ~Repository() = default;
 
     [[nodiscard]] const auto& get_index() const noexcept { return m_index; }
-    /// The repository's number, as urd::view asks of a context.
+    /// The repository's number, as urd's views ask of a context.
     [[nodiscard]] std::size_t layer() const noexcept { return m_index; }
 
     [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return *m_formalism_repository; }
@@ -84,8 +84,8 @@ public:
 
     /// An index as its view here (urd's resolves contract): what compositions of indices are read through (urd::resolve).
     template<typename T>
-    [[nodiscard]] urd::view<T, Repository> view(urd::index<T> index) const noexcept
-    { return { index, *this }; }
+    [[nodiscard]] urd::index_view<T, Repository> view(urd::index<T> index) const noexcept
+    { return { index, this }; }
 };
 
 static_assert(RepositoryConcept<Repository<formalism::planning::Action<GroundTag>>, formalism::planning::Action<GroundTag>>);

@@ -33,19 +33,6 @@
 namespace tyr::planning
 {
 
-template<TaskKind Kind>
-struct AtomPackedStorage<Kind, TreeBitset> : urd::compared_by_identity<AtomPackedStorage<Kind, TreeBitset>>
-{
-    using Index = urd::repr::TreeHandle;
-
-    Index index;
-
-    AtomPackedStorage() = default;
-    explicit AtomPackedStorage(Index index_) : index(index_) {}
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&AtomPackedStorage::index> {}; }
-};
-
 /// Stores derived atoms, given as a bitset in ground and lifted tasks alike, as a bitset tree.
 template<TaskKind Kind, bool ThreadSafe>
 class AtomStorageBackend<Kind, TreeBitset, ThreadSafe>
@@ -53,7 +40,7 @@ class AtomStorageBackend<Kind, TreeBitset, ThreadSafe>
 public:
     using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
     using Unpacked = AtomUnpackedStorage<Kind>;
-    using Packed = AtomPackedStorage<Kind, TreeBitset>;
+    using Packed = typename Context::BitsetSet::handle_type;
 
     explicit AtomStorageBackend(Context& ctx);
 

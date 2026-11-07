@@ -10,9 +10,9 @@ concept NumericConstraintSelectorContract =
     std::constructible_from<urd::index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>, ygg::uint_t>
     && std::totally_ordered<urd::index<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>>
     && std::totally_ordered<urd::data<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>>
-    && std::totally_ordered<urd::view<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
+    && std::totally_ordered<urd::index_view<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
     && requires(urd::data<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>& data,
-                const urd::view<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
+                const urd::index_view<tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.constraint;
            data.true_child;

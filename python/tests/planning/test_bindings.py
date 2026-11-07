@@ -1479,6 +1479,18 @@ def test_packed_nodes_preserve_state_metric_and_label() -> None:
     _check_packed_nodes_lifted(lifted_task)
 
 
+def test_packed_node_keeps_its_state_repository_alive() -> None:
+    ground_task, lifted_task = _make_gripper_tasks()
+    for components in (_make_components_ground(ground_task), _make_components_lifted(lifted_task)):
+        state_repository, axiom_evaluator, successor_generator = components
+        packed = successor_generator.get_packed_initial_node(state_repository, axiom_evaluator)
+        state_text = str(successor_generator.get_initial_node(state_repository, axiom_evaluator).get_state())
+        del components, state_repository, axiom_evaluator, successor_generator
+        gc.collect()
+
+        assert str(packed.unpack().get_state()) == state_text
+
+
 def _first_successor_label_ground(
     task: planning.ground.Task, *, packed: bool
 ) -> tuple[formalism_planning.ActionBinding, str]:

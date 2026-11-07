@@ -281,7 +281,7 @@ MutexGroup make_group(const InvariantViewList& invariants, const InstanceGroup& 
     auto objects = ObjectViewList {};
     objects.reserve(group.rigid_values.size());
     for (const auto object : group.rigid_values)
-        objects.emplace_back(object, atoms.front().context());
+        objects.push_back(atoms.front().context().view(object));
     return MutexGroup { invariants[group.inv_index], std::move(objects), std::move(atoms) };
 }
 

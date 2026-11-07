@@ -25,7 +25,6 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_storage/iterators.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <concepts>
@@ -81,7 +80,7 @@ public:
     auto get_atoms_view() const noexcept;
 
     template<::tyr::formalism::FactKind F, typename C>
-    auto get_atoms_view(urd::view<::tyr::formalism::Predicate<F>, C> predicate) const;
+    auto get_atoms_view(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const;
 
     /// The facts, computed on the fly: each view owns its fact.
     [[nodiscard]] auto get_fluent_facts_view() const noexcept { return self().data().get_fluent_facts_view(*get_formalism_repository()); }
@@ -130,7 +129,7 @@ auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms_view() const noexcept
 template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F, typename C>
 auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms_view(
-    urd::view<::tyr::formalism::Predicate<F>, C> predicate) const
+    urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const
 {
     return get_atoms_view<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
 }

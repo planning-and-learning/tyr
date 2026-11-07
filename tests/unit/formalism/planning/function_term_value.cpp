@@ -8,8 +8,8 @@
 template<typename Entity>
 concept GroundFunctionTermValueContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::planning::Repository>>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::planning::Repository>& view) {
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
            data.index;
            data.fterm;
            data.value;
@@ -22,11 +22,11 @@ concept GroundFunctionTermValueContract =
        };
 
 static_assert(GroundFunctionTermValueContract<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>>);
-static_assert(std::same_as<urd::view<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+static_assert(std::same_as<urd::index_view<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
 static_assert(GroundFunctionTermValueContract<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>>);
-static_assert(std::same_as<urd::view<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+static_assert(std::same_as<urd::index_view<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 static_assert(GroundFunctionTermValueContract<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);
-static_assert(std::same_as<urd::view<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>, tyr::formalism::planning::Repository>,
+static_assert(std::same_as<urd::index_view<tyr::formalism::planning::FunctionTermValue<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);

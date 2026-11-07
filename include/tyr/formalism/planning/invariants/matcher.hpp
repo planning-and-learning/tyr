@@ -26,11 +26,15 @@
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
+#include <cstddef>
+#include <urd/repr/values/dense_set.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
+/// A set of binding indices.
+using BindingSet = urd::Store<urd::set<std::size_t>, urd::dense>;
+
 struct InvariantMatchData
 {
 public:
@@ -49,8 +53,8 @@ private:
     MutableInvariant m_inv;
     urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> m_rigid_variable_bindings;
 
-    /// postings[p][o][b] is true iff the b-th binding binds object o to rigid parameter p.
-    urd::Store<urd::sequence<urd::Store<urd::map<urd::index<Object>, boost::dynamic_bitset<>>>>> m_postings;
+    /// postings[p][o] holds b iff the b-th binding binds object o to rigid parameter p.
+    urd::Store<urd::sequence<urd::Store<urd::map<urd::index<Object>, BindingSet>>>> m_postings;
 };
 
 using InvariantMatchDataList = urd::Store<urd::sequence<InvariantMatchData>>;
@@ -68,8 +72,8 @@ struct QueryResult
 
 struct QueryWorkspace
 {
-    boost::dynamic_bitset<> candidates;
-    boost::dynamic_bitset<> matches;
+    BindingSet candidates;
+    BindingSet matches;
 };
 
 class Matcher

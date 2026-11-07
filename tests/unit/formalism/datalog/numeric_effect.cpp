@@ -13,9 +13,9 @@ namespace lifted_tests
 template<typename Entity>
 concept NumericEffectContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, tyr::formalism::NumericEffectOperatorKind>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            { data.operator_kind } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            view.index();
@@ -27,7 +27,7 @@ concept NumericEffectContract =
 using Fluent = tyr::formalism::datalog::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>;
 
 static_assert(NumericEffectContract<Fluent>);
-static_assert(std::same_as<urd::view<Fluent, tyr::formalism::datalog::Repository>,
+static_assert(std::same_as<urd::index_view<Fluent, tyr::formalism::datalog::Repository>,
                            tyr::formalism::datalog::NumericEffectView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
 }
 
@@ -37,9 +37,9 @@ namespace ground_tests
 template<typename Entity>
 concept GroundNumericEffectContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, tyr::formalism::NumericEffectOperatorKind>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            { data.operator_kind } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            view.index();
@@ -51,6 +51,6 @@ concept GroundNumericEffectContract =
 using Fluent = tyr::formalism::datalog::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>;
 
 static_assert(GroundNumericEffectContract<Fluent>);
-static_assert(std::same_as<urd::view<Fluent, tyr::formalism::datalog::Repository>,
+static_assert(std::same_as<urd::index_view<Fluent, tyr::formalism::datalog::Repository>,
                            tyr::formalism::datalog::NumericEffectView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 }

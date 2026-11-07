@@ -26,3 +26,5 @@ concept FdrFactContract = std::totally_ordered<urd::data<Entity>> && std::totall
 static_assert(FdrFactContract<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>);
 static_assert(std::same_as<urd::borrowed_view<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>>);
+// A fact computed on the fly is held by its view; it reads and compares as a stored one.
+static_assert(std::totally_ordered<urd::owning_view<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>>);

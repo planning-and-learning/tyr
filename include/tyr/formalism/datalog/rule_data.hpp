@@ -42,7 +42,7 @@ template<TaskKind T>
 struct RuleHeadMember<T, PredicateTag>
 {
     template<typename C>
-    using HeadView = urd::Store<urd::sequence<urd::view<Atom<T, FluentTag>, C>>>;
+    using HeadView = urd::Store<urd::sequence<urd::index_view<Atom<T, FluentTag>, C>>>;
 
     urd::flat_vector<urd::index<Atom<T, FluentTag>>> heads;
 
@@ -56,7 +56,7 @@ template<TaskKind T>
 struct RuleHeadMember<T, FunctionTag>
 {
     template<typename C>
-    using HeadView = urd::view<NumericEffect<T, FluentTag>, C>;
+    using HeadView = urd::index_view<NumericEffect<T, FluentTag>, C>;
 
     urd::index<NumericEffect<T, FluentTag>> head;
 

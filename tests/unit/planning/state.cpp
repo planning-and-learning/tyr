@@ -12,7 +12,6 @@
 #include "tyr/planning/formatter.hpp"
 #include "tyr/planning/ground/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_data.hpp"
-#include "tyr/planning/ground/state_storage/hash_set/fact.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/axiom_evaluator.hpp"
@@ -28,9 +27,6 @@
 #include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_repository.hpp"
-#include "tyr/planning/state_storage/config.hpp"
-#include "tyr/planning/state_storage/hash_set/numeric.hpp"
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>
@@ -277,21 +273,21 @@ template<TaskKind Kind>
 void expect_packed_state_identity()
 {
     using Data = tyr::planning::PackedState<Kind>;
-    auto facts = tyr::planning::FactPackedStorage<Kind, tyr::planning::StateStoragePolicyTag> {};
-    auto derived = tyr::planning::AtomPackedStorage<Kind, tyr::planning::StateStoragePolicyTag> {};
-    auto numeric = tyr::planning::NumericPackedStorage<Kind, tyr::planning::StateStoragePolicyTag> {};
+    auto facts = typename Data::FactStorage {};
+    auto derived = typename Data::AtomStorage {};
+    auto numeric = typename Data::NumericStorage {};
     const auto base = Data(facts, derived, numeric);
     const auto hash = urd::Hash<Data> {};
-    derived.index = { 1 };
+    derived = typename Data::AtomStorage(1);
     const auto extended = Data(facts, derived, numeric);
     EXPECT_NE(base.template get_atom_storage<formalism::DerivedTag>(), extended.template get_atom_storage<formalism::DerivedTag>());
     EXPECT_EQ(base, extended);
     EXPECT_EQ(hash(base), hash(extended));
 
-    facts.index = { 1 };
+    facts = typename Data::FactStorage(1);
     const auto changed_facts = Data(facts, derived, numeric);
     EXPECT_NE(base, changed_facts);
-    numeric.index = { 1 };
+    numeric = typename Data::NumericStorage(1);
     const auto changed_numeric = Data(base.template get_atom_storage<formalism::FluentTag>(), derived, numeric);
     EXPECT_NE(base, changed_numeric);
 }
@@ -383,14 +379,14 @@ void expect_state_builder_lifecycle()
     EXPECT_EQ(source.get(variable), tyr::formalism::planning::FDRValue(1));
     EXPECT_EQ(source.get(Numeric(2)), 3);
     target.clear_unextended_part();
-    EXPECT_TRUE(target.get_fluent_facts().begin() == target.get_fluent_facts().end());
+    EXPECT_TRUE(std::ranges::empty(target.get_fluent_facts()));
     EXPECT_TRUE(target.get_numeric_variables().values.empty());
     EXPECT_EQ(target.get_index(), urd::index<tyr::planning::State<Kind>>(7));
     EXPECT_TRUE(target.test(Atom(0)));
 
     target.clear();
     EXPECT_TRUE(target.get_index().is_none());
-    EXPECT_TRUE(target.get_fluent_facts().begin() == target.get_fluent_facts().end());
+    EXPECT_TRUE(std::ranges::empty(target.get_fluent_facts()));
     EXPECT_TRUE(target.template get_atom_storage<formalism::DerivedTag>().indices.empty());
     EXPECT_TRUE(target.get_numeric_variables().values.empty());
 }
@@ -491,7 +487,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::DerivedTag>(), registered.template get_atoms_view<formalism::DerivedTag>()));
     const auto check_filtered = [&]<formalism::FactKind F>()
     {
-        const auto indices = registered.template get_atoms_view<F>() | std::views::transform([](auto atom) { return atom.index(); });
+        auto indices = registered.template get_atoms_view<F>() | std::views::transform([](auto atom) { return atom.index(); });
         EXPECT_TRUE(std::ranges::equal(registered.template get_atoms<F>(), indices));
         EXPECT_TRUE(std::ranges::equal(state.template get_atoms<F>(), indices));
         if constexpr (!std::same_as<F, formalism::StaticTag>)
@@ -570,7 +566,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     auto moved = std::move(owned);
     EXPECT_FALSE(owned);
     EXPECT_EQ(&state.data(), moved.get());
-    const auto numeric = registered.template get_fterm_values_view<::tyr::formalism::FluentTag>();
+    auto numeric = registered.template get_fterm_values_view<::tyr::formalism::FluentTag>();
     ASSERT_NE(numeric.begin(), numeric.end());
     const auto [fterm, value] = *numeric.begin();
     moved->set(fterm, value + 1);
@@ -587,10 +583,8 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     }
     else
         moved->template get_atom_storage<formalism::FluentTag>().indices.clear();
-    const auto atoms = moved->template get_atoms_view<formalism::FluentTag>(*task->get_repository());
-    EXPECT_TRUE(atoms.begin() == atoms.end());
-    const auto indices = moved->template get_atoms<formalism::FluentTag>(*task->get_repository());
-    EXPECT_TRUE(indices.begin() == indices.end());
+    EXPECT_TRUE(std::ranges::empty(moved->template get_atoms_view<formalism::FluentTag>(*task->get_repository())));
+    EXPECT_TRUE(std::ranges::empty(moved->template get_atoms<formalism::FluentTag>(*task->get_repository())));
     for (const auto atom : registered.template get_atoms_view<formalism::FluentTag>())
     {
         auto filtered = state.get_atoms_view(atom.get_predicate());
@@ -707,7 +701,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     // Registering a successor relative to its parent may use delta insertion, which must not change the result.
     const auto expect_delta_registration = [&](const auto& parent)
     {
-        const auto fluent_facts = parent.get_fluent_facts();
+        auto fluent_facts = parent.get_fluent_facts();
         const auto facts = std::vector(fluent_facts.begin(), fluent_facts.end());
         ASSERT_FALSE(facts.empty());
         const auto deleted = [](auto fact)
@@ -749,7 +743,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                     builder.set(deleted(fact));
             });
 
-        const auto fterm_values = parent.template get_fterm_values<formalism::FluentTag>();
+        auto fterm_values = parent.template get_fterm_values<formalism::FluentTag>();
         if (fterm_values.begin() != fterm_values.end())
         {
             const auto [fterm, value] = *fterm_values.begin();

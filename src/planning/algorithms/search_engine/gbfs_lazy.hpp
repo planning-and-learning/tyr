@@ -104,7 +104,7 @@ public:
     [[nodiscard]] ygg::float_t get_start_priority() const noexcept { return m_start_h_value; }
 
     void open_start(urd::index<State<Kind>> state, const SearchNode& search_node)
-    { m_standard_openlist.insert(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ }); }
+    { m_standard_openlist.push(QueueEntry { search_node.g_value, m_start_h_value, state, m_step++ }); }
 
     [[nodiscard]] bool empty() const { return m_openlist.empty(); }
 
@@ -177,9 +177,9 @@ public:
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool preferred)
     {
         if (preferred)
-            m_preferred_openlist.insert(QueueEntry { g_value, h_value, state, m_step++ });
+            m_preferred_openlist.push(QueueEntry { g_value, h_value, state, m_step++ });
         else
-            m_standard_openlist.insert(QueueEntry { g_value, h_value, state, m_step++ });
+            m_standard_openlist.push(QueueEntry { g_value, h_value, state, m_step++ });
     }
 
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>

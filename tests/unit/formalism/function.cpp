@@ -9,7 +9,7 @@
 
 using Function = tyr::formalism::Function<tyr::formalism::StaticTag>;
 using FunctionData = urd::data<Function>;
-using FunctionView = urd::view<Function, tyr::formalism::planning::Repository>;
+using FunctionView = urd::index_view<Function, tyr::formalism::planning::Repository>;
 
 template<typename Entity, typename Repository>
 struct FunctionPublicView;
@@ -28,9 +28,9 @@ struct FunctionPublicView<tyr::formalism::Function<T>, tyr::formalism::planning:
 
 template<typename Entity, typename Repository>
 concept FunctionContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
-                           && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::view<Entity, Repository>>
-                           && std::same_as<urd::view<Entity, Repository>, typename FunctionPublicView<Entity, Repository>::type>
-                           && requires(urd::data<Entity>& data, const urd::view<Entity, Repository>& view) {
+                           && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, Repository>>
+                           && std::same_as<urd::index_view<Entity, Repository>, typename FunctionPublicView<Entity, Repository>::type>
+                           && requires(urd::data<Entity>& data, const urd::index_view<Entity, Repository>& view) {
                                   data.index;
                                   data.name;
                                   data.arity;

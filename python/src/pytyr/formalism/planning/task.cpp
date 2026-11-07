@@ -16,7 +16,7 @@
  */
 
 #include "binding_utils.hpp"
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 #include "bindings.hpp"
 
 #include <concepts>

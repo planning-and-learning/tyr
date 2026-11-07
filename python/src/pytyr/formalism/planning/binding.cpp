@@ -16,7 +16,7 @@
  */
 
 #include "binding_utils.hpp"
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 #include "bindings.hpp"
 
 #include <tyr/formalism/binding_data.hpp>
@@ -33,7 +33,7 @@ void bind_binding_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
     using V = urd::data<RelationBinding<Relation>>;
-    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<urd::view<Relation, Repository>, const ObjectViewList&>(), "relation"_a, "objects"_a);
+    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<urd::index_view<Relation, Repository>, const ObjectViewList&>(), "relation"_a, "objects"_a);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

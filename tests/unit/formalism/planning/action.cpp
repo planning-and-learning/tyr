@@ -18,7 +18,7 @@ namespace lifted_tests
 
 using ActionIndex = urd::index<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
 using ActionData = urd::data<tyr::formalism::planning::Action<::tyr::LiftedTag>>;
-using ActionView = urd::view<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ActionView = urd::index_view<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ActionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ActionIndex>);
@@ -155,7 +155,7 @@ namespace ground_tests
 
 using GroundActionIndex = urd::index<tyr::formalism::planning::Action<::tyr::GroundTag>>;
 using GroundActionData = urd::data<tyr::formalism::planning::Action<::tyr::GroundTag>>;
-using GroundActionView = urd::view<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundActionView = urd::index_view<tyr::formalism::planning::Action<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundActionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundActionIndex>);

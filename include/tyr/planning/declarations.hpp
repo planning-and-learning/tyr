@@ -80,14 +80,15 @@ class StateRepository;
 template<TaskKind Kind>
 using StateRepositoryPtr = std::shared_ptr<StateRepository<Kind>>;
 
-/// A registered state, unpacked: the view of its data<State<Kind>>, shared from its repository's pool, through the
-/// repository that registered it; it is identified by its index and that repository.
+/// A registered state, unpacked: the view of its data<State<Kind>>, shared from its repository's pool (whose slot keeps
+/// the repository alive), through the repository that registered it; it is identified by its record and that repository.
 template<TaskKind Kind>
 using StateView = urd::shared_view<State<Kind>, StateRepository<Kind>>;
 /// A state builder, borrowed, read through a state repository of its task.
 template<TaskKind Kind>
 using BuilderStateView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>>>;
-/// A registered state, packed: its index, through its repository (unpack() gives its StateView).
+/// A registered state, packed: its index, through its repository, which must outlive it (a PackedNode keeps it alive;
+/// unpack() gives its StateView).
 template<TaskKind Kind>
 using PackedStateView = urd::index_view<State<Kind>, StateRepository<Kind>>;
 template<TaskKind Kind>

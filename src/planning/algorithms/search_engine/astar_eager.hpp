@@ -145,18 +145,18 @@ public:
     [[nodiscard]] ygg::float_t get_start_priority() const noexcept { return m_f_value; }
 
     void open_start(urd::index<State<Kind>> state, const SearchNode& search_node)
-    { m_openlist.insert(QueueEntry { m_f_value, state, search_node.status, m_step++ }); }
+    { m_openlist.push(QueueEntry { m_f_value, state, search_node.status, m_step++ }); }
 
     [[nodiscard]] bool empty() const { return m_openlist.empty(); }
 
     [[nodiscard]] ygg::float_t get_min_priority() const noexcept
-    { return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : m_openlist.top_entry().f_value; }
+    { return m_openlist.empty() ? std::numeric_limits<ygg::float_t>::infinity() : m_openlist.top().f_value; }
 
     [[nodiscard]] size_t get_num_open_entries() const noexcept { return m_openlist.size(); }
 
     PoppedEntry pop()
     {
-        const auto entry = m_openlist.top_entry();
+        const auto entry = m_openlist.top();
         m_openlist.pop();
         return PoppedEntry { entry.f_value, entry.state };
     }
@@ -203,7 +203,7 @@ public:
         const auto f_value = ygg::FloatTolerance<ygg::float_t>::canonicalize(g_value + h_value);
         if (std::isnan(f_value))
             throw std::runtime_error("A* successor f-value is NaN.");
-        m_openlist.insert(QueueEntry { f_value, state, status, m_step++ });
+        m_openlist.push(QueueEntry { f_value, state, status, m_step++ });
     }
 
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>

@@ -7,7 +7,7 @@
 
 using DomainIndex = urd::index<tyr::formalism::planning::Domain>;
 using DomainData = urd::data<tyr::formalism::planning::Domain>;
-using DomainView = urd::view<tyr::formalism::planning::Domain, tyr::formalism::planning::Repository>;
+using DomainView = urd::index_view<tyr::formalism::planning::Domain, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<DomainIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<DomainIndex>);

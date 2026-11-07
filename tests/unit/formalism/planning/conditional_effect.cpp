@@ -10,7 +10,7 @@ namespace lifted_tests
 
 using ConditionalEffectIndex = urd::index<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
 using ConditionalEffectData = urd::data<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>;
-using ConditionalEffectView = urd::view<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ConditionalEffectView = urd::index_view<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ConditionalEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConditionalEffectIndex>);
@@ -41,7 +41,7 @@ namespace ground_tests
 
 using GroundConditionalEffectIndex = urd::index<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
 using GroundConditionalEffectData = urd::data<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>;
-using GroundConditionalEffectView = urd::view<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundConditionalEffectView = urd::index_view<tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundConditionalEffectIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConditionalEffectIndex>);

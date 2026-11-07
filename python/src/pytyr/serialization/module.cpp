@@ -1,5 +1,5 @@
 #include "module.hpp"
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 
 #include <tyr/serialization/serialization.hpp>
 #include <tyr/serialization/types.hpp>

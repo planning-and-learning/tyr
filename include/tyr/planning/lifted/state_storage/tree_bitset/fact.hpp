@@ -37,26 +37,13 @@
 namespace tyr::planning
 {
 
-template<>
-struct FactPackedStorage<LiftedTag, TreeBitset> : urd::compared_by_identity<FactPackedStorage<LiftedTag, TreeBitset>>
-{
-    using Index = urd::repr::TreeHandle;
-
-    Index index;
-
-    FactPackedStorage() = default;
-    explicit FactPackedStorage(Index index_) : index(index_) {}
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&FactPackedStorage::index> {}; }
-};
-
 template<bool ThreadSafe>
 class FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>;
     using Unpacked = FactUnpackedStorage<LiftedTag>;
-    using Packed = FactPackedStorage<LiftedTag, TreeBitset>;
+    using Packed = typename Context::BitsetSet::handle_type;
 
     explicit FactStorageBackend(Context& ctx);
 

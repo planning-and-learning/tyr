@@ -158,47 +158,30 @@ struct StateRepository<Kind>::Impl
         NumericStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> numeric_backend;
         urd::Store<urd::slots<urd::builder<State<Kind>>>, urd::concurrent> state_builder_pool;
 
-        /// Inserts the fluent facts of `state`, as `delta` to `parent` if given and supported by the backend.
+        /// Inserts the fluent facts of `state`, as `delta` to `parent` if given.
         auto insert_fluents(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const StateDelta* delta)
         {
             const auto& unpacked = state.template get_atom_storage<formalism::FluentTag>();
-            if constexpr (requires { fluent_backend.insert(unpacked, parent->template get_atom_storage<formalism::FluentTag>(), std::span(delta->fluents)); })
-            {
-                if (parent)
-                    return fluent_backend.insert(unpacked, parent->template get_atom_storage<formalism::FluentTag>(), std::span(delta->fluents));
-            }
-            return fluent_backend.insert(unpacked);
+            return parent ? fluent_backend.insert(unpacked, parent->template get_atom_storage<formalism::FluentTag>(), std::span(delta->fluents)) :
+                            fluent_backend.insert(unpacked);
         }
 
-        /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given and supported by the backend.
+        /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given.
         /// Axioms recompute derived atoms, so their changes are not part of a StateDelta.
         auto insert_derived(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const urd::data<State<Kind>>* parent_state)
         {
             const auto& unpacked = state.template get_atom_storage<formalism::DerivedTag>();
-            if constexpr (requires {
-                              derived_backend.insert(unpacked,
-                                                     parent->template get_atom_storage<formalism::DerivedTag>(),
-                                                     parent_state->template get_atom_storage<formalism::DerivedTag>());
-                          })
-            {
-                if (parent)
-                    return derived_backend.insert(unpacked,
-                                                  parent->template get_atom_storage<formalism::DerivedTag>(),
-                                                  parent_state->template get_atom_storage<formalism::DerivedTag>());
-            }
-            return derived_backend.insert(unpacked);
+            return parent ? derived_backend.insert(unpacked,
+                                                   parent->template get_atom_storage<formalism::DerivedTag>(),
+                                                   parent_state->template get_atom_storage<formalism::DerivedTag>()) :
+                            derived_backend.insert(unpacked);
         }
 
-        /// Inserts the numeric values of `state`, as `delta` to `parent` if given and supported by the backend.
+        /// Inserts the numeric values of `state`, as `delta` to `parent` if given.
         auto insert_numeric(urd::builder<State<Kind>>& state, const PackedState<Kind>* parent, const StateDelta* delta)
         {
             auto& unpacked = state.get_numeric_variables();
-            if constexpr (requires { numeric_backend.insert(unpacked, parent->get_numeric_variables(), std::span(delta->numerics)); })
-            {
-                if (parent)
-                    return numeric_backend.insert(unpacked, parent->get_numeric_variables(), std::span(delta->numerics));
-            }
-            return numeric_backend.insert(unpacked);
+            return parent ? numeric_backend.insert(unpacked, parent->get_numeric_variables(), std::span(delta->numerics)) : numeric_backend.insert(unpacked);
         }
 
         /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
@@ -365,7 +348,7 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(urd::index<State<Kin
             evaluator.numeric_backend.unpack(packed_state.get_numeric_variables(), state_builder->get_numeric_variables());
         });
 
-    return StateView<Kind>(std::move(state_builder), *this);
+    return StateView<Kind>(std::move(state_builder), this);
 }
 
 template<TaskKind Kind>
@@ -429,7 +412,7 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
     if (axiom_evaluator.get_task() != m_impl->definition->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }); });
-    return StateView<Kind>(std::move(state), *this);
+    return StateView<Kind>(std::move(state), this);
 }
 
 template<TaskKind Kind>
@@ -447,14 +430,14 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
     const auto* parent_delta = shares_storage ? &delta : nullptr;
     m_impl->visit_evaluator([&](auto& evaluator)
                             { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }, parent_state, parent_delta); });
-    return StateView<Kind>(std::move(state), *this);
+    return StateView<Kind>(std::move(state), this);
 }
 
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::register_extended_state(std::shared_ptr<urd::builder<State<Kind>>> state)
 {
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [] {}); });
-    return StateView<Kind>(std::move(state), *this);
+    return StateView<Kind>(std::move(state), this);
 }
 
 template<TaskKind Kind>
@@ -509,7 +492,7 @@ template StateView<GroundTag> StateRepository<GroundTag>::create_state(
     const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateView<GroundTag> StateRepository<GroundTag>::create_state(
     AxiomEvaluator<GroundTag>&,
-    const urd::Store<urd::sequence<urd::owned_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,
+    const urd::Store<urd::sequence<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,
     const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateView<LiftedTag> StateRepository<LiftedTag>::create_state(
     AxiomEvaluator<LiftedTag>&,
@@ -517,7 +500,7 @@ template StateView<LiftedTag> StateRepository<LiftedTag>::create_state(
     const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateView<LiftedTag> StateRepository<LiftedTag>::create_state(
     AxiomEvaluator<LiftedTag>&,
-    const urd::Store<urd::sequence<urd::owned_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,
+    const urd::Store<urd::sequence<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,
     const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 
 template StateView<GroundTag>

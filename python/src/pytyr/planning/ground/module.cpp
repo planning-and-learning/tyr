@@ -16,7 +16,7 @@
  */
 
 #include "module.hpp"
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 
 #include "../planning.hpp"
 #include "astar_eager/module.hpp"

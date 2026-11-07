@@ -15,9 +15,9 @@
 template<typename Entity>
 concept MultiOperatorContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, typename urd::data<Entity>::OperatorType>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            { data.operator_kind } -> std::same_as<typename urd::data<Entity>::OperatorType&>;
            view.index();
@@ -33,8 +33,8 @@ static_assert(ygg::formalism::SupportsSymbol<tyr::formalism::datalog::Repository
 static_assert(!ygg::formalism::SupportsSymbol<tyr::formalism::datalog::Repository, int>);
 static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
-static_assert(std::same_as<urd::view<Lifted, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
-static_assert(std::same_as<urd::view<Ground, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 
 TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
 {

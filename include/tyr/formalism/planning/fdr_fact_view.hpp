@@ -43,16 +43,27 @@ public:
     auto get_atom() const noexcept { return urd::resolve(get_atom_index(), self().context()); }
 };
 
-/// A fact read through a context: its view through the context that owns its variable, which borrows it (never a
-/// temporary: a fact computed on the fly is viewed as an urd::owned_view).
+/// A stored fact (a member of a condition or effect) read through a context: its borrowed view, through the context that
+/// owns its variable. Never a temporary: a fact computed on the fly is viewed by computed_fact_view.
 template<::tyr::formalism::FactKind T>
 struct urd::resolution<urd::data<::tyr::formalism::planning::FDRFact<T>>>
 {
-    template<typename M, typename C>
-        requires std::constructible_from<urd::borrowed<urd::data<::tyr::formalism::planning::FDRFact<T>>>, M>
-    static urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, C> of(M&& fact, const C& context)
-    { return { std::forward<M>(fact), context.view(fact.variable).context() }; }
+    template<typename C>
+    static urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, C> of(const urd::data<::tyr::formalism::planning::FDRFact<T>>& fact,
+                                                                            const C& context)
+    { return { &fact, &context.view(fact.variable).context() }; }
+    template<typename C>
+    static void of(const urd::data<::tyr::formalism::planning::FDRFact<T>>&& fact, const C& context) = delete;
 };
+
+namespace tyr::formalism::planning
+{
+/// A fact computed on the fly (a state's): its view holds it, through the context that owns its variable.
+template<FactKind T, typename C>
+urd::owning_view<FDRFact<T>, C> computed_fact_view(urd::data<FDRFact<T>> fact, const C& context)
+{ return { fact, &context.view(fact.variable).context() }; }
+}  // namespace tyr::formalism::planning
+
 static_assert(std::is_trivially_copyable_v<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>);
 
 #endif

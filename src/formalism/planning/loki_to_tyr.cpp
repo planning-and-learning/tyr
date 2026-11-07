@@ -278,7 +278,7 @@ namespace
 {
 
 template<typename T, std::ranges::sized_range Range, typename Translate>
-auto to_binding(urd::view<T, Repository> element, const Range& terms, Builder& builder, Repository& context, Translate translate)
+auto to_binding(urd::index_view<T, Repository> element, const Range& terms, Builder& builder, Repository& context, Translate translate)
 {
     if (std::ranges::size(terms) != element.get_arity())
         throw std::invalid_argument("RelationBinding object count does not match relation arity.");

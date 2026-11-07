@@ -24,17 +24,36 @@
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
-#include "tyr/planning/state_storage/tags.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
+#include <ranges>
 #include <tuple>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
+
+/// Where the fluent FDR values and derived atoms of a ground task's states lie, packed bitwise into ygg::uint_t blocks.
+struct GroundStateLayout
+{
+    /// Bit range of a fluent FDR variable's value.
+    struct VariableInfo
+    {
+        ygg::uint_t begin;
+        uint8_t offset;
+        uint8_t length;
+    };
+
+    explicit GroundStateLayout(const Task<GroundTag>& task);
+
+    urd::Store<urd::sequence<VariableInfo>> fluent_infos;
+    ygg::uint_t fluent_num_blocks;
+    ygg::uint_t derived_num_bits;
+};
 
 template<>
 struct AtomUnpackedStorage<GroundTag>
@@ -72,6 +91,21 @@ struct FactUnpackedStorage<GroundTag>
     {
         assert(static_cast<ygg::uint_t>(fact.variable.value) < values.size());
         values[static_cast<ygg::uint_t>(fact.variable.value)] = fact.value.value;
+    }
+    /// The facts whose value is not none, by ascending variable.
+    [[nodiscard]] auto facts() const noexcept
+    {
+        using formalism::planning::FDRValue;
+        return std::views::iota(std::size_t { 0 }, values.size())
+               | std::views::filter([this](std::size_t i) { return FDRValue(values[i]) != FDRValue::none(); })
+               | std::views::transform(
+                   [this](std::size_t i)
+                   {
+                       return urd::data<formalism::planning::FDRFact<formalism::FluentTag>> {
+                           urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> { static_cast<ygg::uint_t>(i) },
+                           FDRValue(values[i])
+                       };
+                   });
     }
     void resize(size_t size) { values.resize(size, 0); }
     void clear() { values.clear(); }

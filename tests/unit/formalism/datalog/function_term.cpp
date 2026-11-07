@@ -20,9 +20,9 @@ struct FunctionTermPublicView<tyr::formalism::datalog::FunctionTerm<::tyr::Lifte
 template<typename Entity>
 concept FunctionTermContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<urd::view<Entity, tyr::formalism::datalog::Repository>, typename FunctionTermPublicView<Entity>::type>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+    && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename FunctionTermPublicView<Entity>::type>
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            data.function;
            data.terms;
@@ -50,9 +50,9 @@ struct GroundFunctionTermPublicView<tyr::formalism::datalog::FunctionTerm<::tyr:
 template<typename Entity>
 concept GroundFunctionTermContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<urd::view<Entity, tyr::formalism::datalog::Repository>, typename GroundFunctionTermPublicView<Entity>::type>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+    && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename GroundFunctionTermPublicView<Entity>::type>
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            data.binding;
            view.index();

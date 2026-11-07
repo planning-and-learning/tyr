@@ -21,11 +21,13 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground/state_storage/iterators.hpp"
-#include "tyr/planning/lifted/state_storage/iterators.hpp"
+#include "tyr/planning/ground/state_storage.hpp"
+#include "tyr/planning/lifted/state_storage.hpp"
+#include "tyr/planning/state_storage/iterators.hpp"
 #include "tyr/planning/state_builder_concepts.hpp"
 
 #include <concepts>
+#include <cstddef>
 #include <ranges>
 #include <tuple>
 #include <type_traits>
@@ -61,12 +63,13 @@ struct data<::tyr::planning::State<Kind>>
     { return get(view.index()); }
     [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
 
-    [[nodiscard]] ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag> get_fluent_facts() const noexcept
-    { return ::tyr::planning::FDRFactRange<Kind, ::tyr::formalism::FluentTag>(fact_storage); }
+    [[nodiscard]] auto get_fluent_facts() const noexcept { return fact_storage.facts(); }
     template<::tyr::formalism::FactKind F>
     [[nodiscard]] auto get_atoms(const ::tyr::formalism::planning::Repository& repository) const noexcept;
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] ::tyr::planning::FunctionTermValueRange<F> get_fterm_values() const noexcept;
+        requires std::same_as<F, ::tyr::formalism::FluentTag>
+    [[nodiscard]] auto get_fterm_values() const noexcept
+    { return numeric_storage.fterm_values(); }
 
     [[nodiscard]] auto get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository) const noexcept;
     template<::tyr::formalism::FactKind F>
@@ -174,17 +177,8 @@ template<::tyr::formalism::FactKind F>
         return get_fluent_facts()
                | std::views::transform([repository = &repository_](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
     else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
-        return ::tyr::planning::AtomRange<F>(atom_storage);
-    else
-        static_assert(urd::repr::dependent_false<F>::value);
-}
-
-template<::tyr::TaskKind Kind>
-template<::tyr::formalism::FactKind F>
-[[nodiscard]] ::tyr::planning::FunctionTermValueRange<F> urd::data<::tyr::planning::State<Kind>>::get_fterm_values() const noexcept
-{
-    if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-        return ::tyr::planning::FunctionTermValueRange<F>(numeric_storage);
+        return urd::transform(::tyr::planning::SetBits(atom_storage.indices),
+                              [](std::size_t i) { return urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, F>> { static_cast<ygg::uint_t>(i) }; });
     else
         static_assert(urd::repr::dependent_false<F>::value);
 }
@@ -192,9 +186,9 @@ template<::tyr::formalism::FactKind F>
 template<::tyr::TaskKind Kind>
 auto urd::data<::tyr::planning::State<Kind>>::get_fluent_facts_view(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
-    // Computed on the fly: each view owns its fact, read through the context that owns its variable.
+    // Computed on the fly: each view holds its fact, read through the context that owns its variable.
     return get_fluent_facts()
-           | std::views::transform([repository = &repository_](auto fact) { return repository->view(fact.variable).context().view(std::move(fact)); });
+           | std::views::transform([repository = &repository_](auto fact) { return ::tyr::formalism::planning::computed_fact_view(fact, *repository); });
 }
 
 template<::tyr::TaskKind Kind>

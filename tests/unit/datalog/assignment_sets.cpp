@@ -50,7 +50,7 @@ tyr::analysis::VariableDomain domain(std::initializer_list<ygg::uint_t> objects)
 
 template<typename Relation>
 auto make_binding(tyr::formalism::datalog::Repository& repository,
-                  urd::view<Relation, tyr::formalism::datalog::Repository> relation,
+                  urd::index_view<Relation, tyr::formalism::datalog::Repository> relation,
                   std::initializer_list<ObjectIndex> objects)
 {
     auto data = urd::data<tyr::formalism::RelationBinding<Relation>> {};

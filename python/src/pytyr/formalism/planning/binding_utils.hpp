@@ -31,7 +31,7 @@
 #include <tyr/formalism/planning/repository.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <urd/python/owner.hpp>
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {

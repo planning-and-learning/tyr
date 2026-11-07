@@ -11,7 +11,7 @@ namespace lifted_tests
 using Entity = tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::PredicateTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
@@ -40,7 +40,7 @@ namespace ground_tests
 using Entity = tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using View = urd::view<Entity, tyr::formalism::datalog::Repository>;
+using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);

@@ -7,7 +7,7 @@
 
 using MetricIndex = urd::index<tyr::formalism::planning::Metric>;
 using MetricData = urd::data<tyr::formalism::planning::Metric>;
-using MetricView = urd::view<tyr::formalism::planning::Metric, tyr::formalism::planning::Repository>;
+using MetricView = urd::index_view<tyr::formalism::planning::Metric, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<MetricIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<MetricIndex>);

@@ -60,10 +60,10 @@ private:
     Evaluator m_evaluator;
 
 public:
-    MatchTree(urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>> elements, const formalism::planning::Repository& context);
+    MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements, const formalism::planning::Repository& context);
     ~MatchTree();
 
-    static MatchTreePtr<Tag> create(urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>> elements,
+    static MatchTreePtr<Tag> create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
                                     const formalism::planning::Repository& context);
 
     [[nodiscard]] MatchTreePtr<Tag> make_worker() const;
@@ -73,7 +73,7 @@ public:
     MatchTree(MatchTree&& other) = delete;
     MatchTree& operator=(MatchTree&& other) = delete;
 
-    void generate(const StateContext<GroundTag>& state, urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>>& out_applicable_elements);
+    void generate(const StateContext<GroundTag>& state, urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>>& out_applicable_elements);
 };
 
 }

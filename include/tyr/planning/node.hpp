@@ -27,6 +27,7 @@
 #include "tyr/planning/task.hpp"
 
 #include <concepts>
+#include <memory>
 #include <ranges>
 #include <tuple>
 #include <type_traits>
@@ -62,11 +63,18 @@ private:
     ygg::float_t m_metric;
 };
 
+/// A node whose state is packed. It keeps the state's repository alive (the view borrows it), so that it can be held
+/// past the repository's other owners and unpacked; its identity is the state and the metric.
 template<TaskKind Kind>
 class PackedNode : public urd::compared_by_identity<PackedNode<Kind>>
 {
 public:
-    PackedNode(PackedStateView<Kind> state, ygg::float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
+    PackedNode(PackedStateView<Kind> state, ygg::float_t metric) :
+        m_repository(state.context().shared_from_this()),
+        m_state(std::move(state)),
+        m_metric(metric)
+    {
+    }
 
     [[nodiscard]] const PackedStateView<Kind>& get_state() const noexcept { return m_state; }
     [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
@@ -76,6 +84,7 @@ public:
     static constexpr auto identifying_members() noexcept { return urd::Members<&PackedNode::m_state, &PackedNode::m_metric> {}; }
 
 private:
+    std::shared_ptr<const StateRepository<Kind>> m_repository;
     PackedStateView<Kind> m_state;
     ygg::float_t m_metric;
 };

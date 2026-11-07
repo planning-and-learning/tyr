@@ -30,7 +30,7 @@
 #include <tyr/formalism/planning/declarations.hpp>
 #include <tyr/formalism/views.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 #include <urd/elements/flat.hpp>
 
 namespace tyr::formalism

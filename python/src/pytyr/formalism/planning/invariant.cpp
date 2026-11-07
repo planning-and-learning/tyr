@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include "binding_utils.hpp"
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 #include "bindings.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 

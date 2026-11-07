@@ -37,10 +37,6 @@
 namespace tyr::planning
 {
 
-/**
- * Context
- */
-
 template<bool ThreadSafe>
 struct StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>
 {
@@ -50,13 +46,7 @@ struct StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>
     FloatVectorSet float_vectors;
     BitsetSet bitsets;
 
-    [[nodiscard]] size_t memory_usage() const noexcept
-    {
-        size_t bytes = 0;
-        bytes += urd::memory_usage(float_vectors);
-        bytes += urd::memory_usage(bitsets);
-        return bytes;
-    }
+    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(float_vectors) + urd::memory_usage(bitsets); }
 };
 
 }

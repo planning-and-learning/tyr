@@ -18,32 +18,6 @@ endforeach()
 
 list(APPEND TYR_PUBLIC_HEADER_FILES "../include/tyr/tyr.hpp")
 
-if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
-    set(
-        TYR_STATE_STORAGE_SRC_FILES
-        planning/state_storage/hash_set/numeric.cpp
-        planning/ground/state_storage/hash_set/atom.cpp
-        planning/ground/state_storage/hash_set/fact.cpp
-        planning/ground/state_storage/hash_set/context.cpp
-        planning/lifted/state_storage/hash_set/atom.cpp
-        planning/lifted/state_storage/hash_set/fact.cpp
-    )
-elseif("${TYR_STATE_STORAGE_POLICY}" MATCHES "^Tree(Vector|Bitset)$")
-    set(
-        TYR_STATE_STORAGE_SRC_FILES
-        planning/state_storage/tree_vector/numeric.cpp
-        planning/state_storage/tree_bitset/atom.cpp
-        planning/ground/state_storage/tree_vector/atom.cpp
-        planning/ground/state_storage/tree_vector/fact.cpp
-        planning/ground/state_storage/tree_vector/context.cpp
-        planning/ground/state_storage/tree_bitset/fact.cpp
-        planning/ground/state_storage/tree_bitset/context.cpp
-        planning/lifted/state_storage/tree_vector/atom.cpp
-        planning/lifted/state_storage/tree_vector/fact.cpp
-        planning/lifted/state_storage/tree_bitset/fact.cpp
-    )
-endif()
-
 add_library(
     core SHARED ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     algorithms/kckp/graphs.cpp
@@ -109,7 +83,13 @@ add_library(
     datalog/ground/solver.cpp
     datalog/lifted/scheduler.cpp
 
-    ${TYR_STATE_STORAGE_SRC_FILES}
+    planning/state_storage/numeric.cpp
+    planning/state_storage/tree_bitset/atom.cpp
+    planning/ground/state_storage.cpp
+    planning/ground/state_storage/vectors.cpp
+    planning/ground/state_storage/tree_bitset/fact.cpp
+    planning/lifted/state_storage/vectors.cpp
+    planning/lifted/state_storage/tree_bitset/fact.cpp
 
     planning/heuristic.cpp
     planning/heuristics/goal_count.cpp
@@ -178,13 +158,7 @@ if(TYR_ENABLE_SEMI_NAIVE)
     target_compile_definitions(core PUBLIC TYR_ENABLE_SEMI_NAIVE)
 endif()
 
-if("${TYR_STATE_STORAGE_POLICY}" STREQUAL "Hashset")
-    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_HASHSET)
-elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "TreeVector")
-    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE_VECTOR)
-elseif("${TYR_STATE_STORAGE_POLICY}" STREQUAL "TreeBitset")
-    target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_TREE_BITSET)
-endif()
+target_compile_definitions(core PUBLIC TYR_STATE_STORAGE_POLICY=${TYR_STATE_STORAGE_POLICY})
 
 if("${TYR_RELATION_STORAGE_POLICY}" STREQUAL "Word")
     target_compile_definitions(core PUBLIC TYR_RELATION_STORAGE_WORD)

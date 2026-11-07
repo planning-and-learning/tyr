@@ -15,22 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/state_storage/tree_vector/numeric.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
 
 #include "tyr/planning/ground/state_storage/tree_bitset/context.hpp"
-#include "tyr/planning/ground/state_storage/tree_vector/context.hpp"
-#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/ground/state_storage/vectors.hpp"
 #include "tyr/planning/lifted/state_storage/tree_bitset/context.hpp"
-#include "tyr/planning/lifted/state_storage/tree_vector/context.hpp"
-#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/lifted/state_storage/vectors.hpp"
 
 #include <urd/elements/equal_to.hpp>
-
 
 namespace tyr::planning
 {
 
-template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
+template<TaskKind Kind, typename Tag, bool ThreadSafe>
 NumericStorageBackend<Kind, Tag, ThreadSafe>::NumericStorageBackend(Context& ctx) : m_float_vectors(&ctx.float_vectors)
 {
 }
@@ -45,24 +42,23 @@ void canonicalize(NumericUnpackedStorage<Kind>& unpacked)
 }
 }
 
-template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
-typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked)
+template<TaskKind Kind, typename Tag, bool ThreadSafe>
+auto NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked) -> Packed
 {
     canonicalize(unpacked);
-    return Packed { m_float_vectors->insert(unpacked.values).first };
+    return m_float_vectors->insert(unpacked.values).first;
 }
 
-template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
-typename NumericStorageBackend<Kind, Tag, ThreadSafe>::Packed
-NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes)
+template<TaskKind Kind, typename Tag, bool ThreadSafe>
+auto NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes) -> Packed
 {
     canonicalize(unpacked);
 
     // Value vectors grow with the highest function term set, so a successor may be longer than its parent,
     // and a write delta cannot grow a stored vector.
     const auto& values = unpacked.values;
-    if (values.size() != parent.index.size)
-        return Packed { m_float_vectors->insert(values).first };
+    if (values.size() != m_float_vectors->row_size(parent))
+        return m_float_vectors->insert(values).first;
 
     m_writes.clear();
     for (const auto& change : changes)
@@ -71,23 +67,27 @@ NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const P
         m_writes.push_back(urd::Write<ygg::float_t> { position, values[position] });
     }
 
-    return Packed { m_float_vectors->insert(parent.index, m_writes).first };
+    return m_float_vectors->insert(parent, m_writes).first;
 }
 
-template<TaskKind Kind, TreeCompressionTag Tag, bool ThreadSafe>
+template<TaskKind Kind, typename Tag, bool ThreadSafe>
 void NumericStorageBackend<Kind, Tag, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    unpacked.values.resize(packed.index.size);
-    m_float_vectors->read(packed.index, unpacked.values);
+    unpacked.values.resize(m_float_vectors->row_size(packed));
+    m_float_vectors->read(packed, unpacked.values);
 }
 
-template class NumericStorageBackend<LiftedTag, TreeVector, false>;
-template class NumericStorageBackend<LiftedTag, TreeBitset, false>;
-template class NumericStorageBackend<LiftedTag, TreeVector, true>;
-template class NumericStorageBackend<LiftedTag, TreeBitset, true>;
-template class NumericStorageBackend<GroundTag, TreeVector, false>;
 template class NumericStorageBackend<GroundTag, TreeBitset, false>;
-template class NumericStorageBackend<GroundTag, TreeVector, true>;
 template class NumericStorageBackend<GroundTag, TreeBitset, true>;
+template class NumericStorageBackend<GroundTag, TreeVector, false>;
+template class NumericStorageBackend<GroundTag, TreeVector, true>;
+template class NumericStorageBackend<GroundTag, Hashset, false>;
+template class NumericStorageBackend<GroundTag, Hashset, true>;
+template class NumericStorageBackend<LiftedTag, TreeBitset, false>;
+template class NumericStorageBackend<LiftedTag, TreeBitset, true>;
+template class NumericStorageBackend<LiftedTag, TreeVector, false>;
+template class NumericStorageBackend<LiftedTag, TreeVector, true>;
+template class NumericStorageBackend<LiftedTag, Hashset, false>;
+template class NumericStorageBackend<LiftedTag, Hashset, true>;
 
 }

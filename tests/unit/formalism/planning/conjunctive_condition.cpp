@@ -17,7 +17,7 @@ namespace lifted_tests
 
 using ConjunctiveConditionIndex = urd::index<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>;
 using ConjunctiveConditionData = urd::data<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>;
-using ConjunctiveConditionView = urd::view<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using ConjunctiveConditionView = urd::index_view<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<ConjunctiveConditionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<ConjunctiveConditionIndex>);
@@ -57,7 +57,7 @@ namespace ground_tests
 
 using GroundConjunctiveConditionIndex = urd::index<tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>;
 using GroundConjunctiveConditionData = urd::data<tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>;
-using GroundConjunctiveConditionView = urd::view<tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundConjunctiveConditionView = urd::index_view<tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundConjunctiveConditionIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundConjunctiveConditionIndex>);

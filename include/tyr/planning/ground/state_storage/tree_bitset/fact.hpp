@@ -38,19 +38,6 @@
 namespace tyr::planning
 {
 
-template<>
-struct FactPackedStorage<GroundTag, TreeBitset> : urd::compared_by_identity<FactPackedStorage<GroundTag, TreeBitset>>
-{
-    using Index = urd::repr::TreeHandle;
-
-    Index index;
-
-    FactPackedStorage() = default;
-    explicit FactPackedStorage(Index index_) : index(index_) {}
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&FactPackedStorage::index> {}; }
-};
-
 /// Packs the FDR values bitwise into blocks, as in TreeVector, and stores the blocks as a bitset tree.
 template<bool ThreadSafe>
 class FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>
@@ -58,8 +45,7 @@ class FactStorageBackend<GroundTag, TreeBitset, ThreadSafe>
 public:
     using Context = StateStorageContext<GroundTag, TreeBitset, ThreadSafe>;
     using Unpacked = FactUnpackedStorage<GroundTag>;
-    using Packed = FactPackedStorage<GroundTag, TreeBitset>;
-    using VariableInfo = typename Context::VariableInfo;
+    using Packed = typename Context::BitsetSet::handle_type;
 
     explicit FactStorageBackend(Context& ctx);
 
@@ -72,8 +58,7 @@ public:
 
 private:
     typename Context::BitsetSet* m_bitsets;
-    const urd::Store<urd::sequence<VariableInfo>>* m_infos;
-    ygg::uint_t m_num_blocks;
+    const GroundStateLayout* m_layout;
 
     urd::Store<urd::sequence<tree_bitset::Block>> m_blocks;
     urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;

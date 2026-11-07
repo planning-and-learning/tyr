@@ -18,172 +18,69 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_ITERATORS_HPP_
 #define TYR_PLANNING_STATE_STORAGE_ITERATORS_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/planning/indices.hpp"
-#include "tyr/planning/state_storage.hpp"
-
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
-#include <cmath>
+#include <cstddef>
 #include <iterator>
 #include <ranges>
-#include <utility>
-#include <vector>
-#include <urd/elements/flat.hpp>
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
 
-/**
- * Atom
- */
-
-template<class Tag>
-class AtomIterator
+/// The positions of the bits set in a dynamic_bitset, ascending; find_first/find_next skip clear blocks. The iterators
+/// read the bitset, which must outlive them and stay unchanged.
+/// ponytail: the one hand-written state iterator left; it goes once the state storages are dense-set Stores (their own ranges).
+class SetBits : public std::ranges::view_interface<SetBits>
 {
 public:
-    using value_type = urd::index<formalism::planning::Atom<GroundTag, Tag>>;
-    using reference = value_type;
-    using difference_type = std::ptrdiff_t;
-    using iterator_category = std::input_iterator_tag;
-    using iterator_concept = std::input_iterator_tag;
-    using pointer = void;
-
-    AtomIterator() noexcept = default;
-    AtomIterator(const boost::dynamic_bitset<>& data, bool begin) noexcept : m_data(&data), m_i(begin ? m_data->find_first() : boost::dynamic_bitset<>::npos) {}
-
-    value_type operator*() const noexcept
+    class iterator
     {
-        assert(m_data);
-        return urd::index<formalism::planning::Atom<GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) };
-    }
+    public:
+        using value_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using iterator_category = std::input_iterator_tag;
+        using iterator_concept = std::forward_iterator_tag;
 
-    AtomIterator& operator++() noexcept
-    {
-        assert(m_data);
-        m_i = m_data->find_next(m_i);
-        return *this;
-    }
-    AtomIterator operator++(int) noexcept
-    {
-        AtomIterator tmp = *this;
-        ++(*this);
-        return tmp;
-    }
+        iterator() noexcept = default;
+        iterator(const boost::dynamic_bitset<>& bits, std::size_t position) noexcept : m_bits(&bits), m_i(position) {}
 
-    friend bool operator==(const AtomIterator& lhs, const AtomIterator& rhs) noexcept { return lhs.m_data == rhs.m_data && lhs.m_i == rhs.m_i; }
-    friend bool operator!=(const AtomIterator& lhs, const AtomIterator& rhs) noexcept { return !(lhs == rhs); }
+        std::size_t operator*() const noexcept
+        {
+            assert(m_bits && m_i != boost::dynamic_bitset<>::npos);
+            return m_i;
+        }
+        iterator& operator++() noexcept
+        {
+            m_i = m_bits->find_next(m_i);
+            return *this;
+        }
+        iterator operator++(int) noexcept
+        {
+            auto result = *this;
+            ++*this;
+            return result;
+        }
+        friend bool operator==(const iterator& lhs, const iterator& rhs) noexcept { return lhs.m_bits == rhs.m_bits && lhs.m_i == rhs.m_i; }
+
+    private:
+        const boost::dynamic_bitset<>* m_bits { nullptr };
+        std::size_t m_i = boost::dynamic_bitset<>::npos;
+    };
+
+    SetBits() = default;
+    explicit SetBits(const boost::dynamic_bitset<>& bits) noexcept : m_bits(&bits) {}
+
+    [[nodiscard]] iterator begin() const noexcept { return iterator(*m_bits, m_bits->find_first()); }
+    [[nodiscard]] iterator end() const noexcept { return iterator(*m_bits, boost::dynamic_bitset<>::npos); }
 
 private:
-    const boost::dynamic_bitset<>* m_data { nullptr };
-    boost::dynamic_bitset<>::size_type m_i = 0;
+    const boost::dynamic_bitset<>* m_bits { nullptr };
 };
 
-template<class Tag>
-class AtomRange : public std::ranges::view_interface<AtomRange<Tag>>
-{
-public:
-    AtomRange() = default;
-    explicit AtomRange(const boost::dynamic_bitset<>& values) : m_data(&values) {}
-    template<TaskKind Kind>
-    explicit AtomRange(const AtomUnpackedStorage<Kind>& storage) : AtomRange(storage.indices)
-    {
-    }
-
-    [[nodiscard]] auto begin() const { return AtomIterator<Tag>(*m_data, true); }
-    [[nodiscard]] auto end() const { return AtomIterator<Tag>(*m_data, false); }
-
-private:
-    const boost::dynamic_bitset<>* m_data { nullptr };
-};
-
-/**
- * FDRFact
- */
-
-template<TaskKind Kind, class IteratorTag>
-class FDRFactIterator;
-
-template<TaskKind Kind, class RangeTag>
-class FDRFactRange;
-
-/**
- * FunctionTermValue
- */
-
-template<class Tag>
-class FunctionTermValueIterator
-{
-public:
-    using value_type = std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>;
-    using reference = value_type;
-    using difference_type = std::ptrdiff_t;
-    using iterator_category = std::input_iterator_tag;
-    using iterator_concept = std::input_iterator_tag;
-    using pointer = void;
-
-    void skip_nan() noexcept
-    {
-        assert(m_data);
-        while (m_i < m_data->size() && std::isnan((*m_data)[m_i]))
-            ++m_i;
-    }
-
-    FunctionTermValueIterator() noexcept = default;
-    FunctionTermValueIterator(const urd::Store<urd::sequence<ygg::float_t>>& data, bool begin) noexcept : m_data(&data), m_i(begin ? 0 : m_data->size())
-    {
-        if (begin)
-            skip_nan();
-    }
-
-    value_type operator*() const noexcept
-    {
-        assert(m_data);
-        return { urd::index<formalism::planning::FunctionTerm<GroundTag, Tag>> { static_cast<ygg::uint_t>(m_i) }, (*m_data)[m_i] };
-    }
-
-    FunctionTermValueIterator& operator++() noexcept
-    {
-        ++m_i;
-        skip_nan();
-        return *this;
-    }
-    FunctionTermValueIterator operator++(int) noexcept
-    {
-        FunctionTermValueIterator tmp = *this;
-        ++(*this);
-        return tmp;
-    }
-
-    friend bool operator==(const FunctionTermValueIterator& lhs, const FunctionTermValueIterator& rhs) noexcept
-    { return lhs.m_data == rhs.m_data && lhs.m_i == rhs.m_i; }
-    friend bool operator!=(const FunctionTermValueIterator& lhs, const FunctionTermValueIterator& rhs) noexcept { return !(lhs == rhs); }
-
-private:
-    const urd::Store<urd::sequence<ygg::float_t>>* m_data { nullptr };
-    std::size_t m_i = 0;
-};
-
-template<class Tag>
-class FunctionTermValueRange : public std::ranges::view_interface<FunctionTermValueRange<Tag>>
-{
-public:
-    FunctionTermValueRange() = default;
-    explicit FunctionTermValueRange(const urd::Store<urd::sequence<ygg::float_t>>& values) : m_data(&values) {}
-    template<TaskKind Kind>
-    explicit FunctionTermValueRange(const NumericUnpackedStorage<Kind>& storage) : FunctionTermValueRange(storage.values)
-    {
-    }
-
-    [[nodiscard]] auto begin() const { return FunctionTermValueIterator<Tag>(*m_data, true); }
-    [[nodiscard]] auto end() const { return FunctionTermValueIterator<Tag>(*m_data, false); }
-
-private:
-    const urd::Store<urd::sequence<ygg::float_t>>* m_data { nullptr };
-};
 }
+
+/// Its iterators read the bitset, not the range object.
+template<>
+inline constexpr bool std::ranges::enable_borrowed_range<tyr::planning::SetBits> = true;
 
 #endif

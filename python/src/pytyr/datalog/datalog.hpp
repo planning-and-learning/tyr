@@ -42,50 +42,12 @@
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
 #include <urd/python/owner.hpp>
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 
 namespace tyr::datalog
 {
 
 using Interval = ygg::ClosedInterval<ygg::float_t>;
-
-/// An iterator of a range that its iterators share, so that the range lives as long as the Python iterator: a
-/// transform_view (a binding view range) made in the call, whose iterators point into it.
-template<std::ranges::forward_range R>
-class SharedRangeIterator
-{
-    std::shared_ptr<const R> m_range;
-    std::ranges::iterator_t<const R> m_it {};
-
-public:
-    using value_type = std::ranges::range_value_t<const R>;
-    using difference_type = std::ptrdiff_t;
-
-    SharedRangeIterator() = default;
-    SharedRangeIterator(std::shared_ptr<const R> range, std::ranges::iterator_t<const R> it) : m_range(std::move(range)), m_it(std::move(it)) {}
-
-    decltype(auto) operator*() const { return *m_it; }
-    SharedRangeIterator& operator++()
-    {
-        ++m_it;
-        return *this;
-    }
-    SharedRangeIterator operator++(int)
-    {
-        auto old = *this;
-        ++m_it;
-        return old;
-    }
-    friend bool operator==(const SharedRangeIterator& lhs, const SharedRangeIterator& rhs) { return lhs.m_it == rhs.m_it; }
-};
-
-template<std::ranges::forward_range R>
-    requires std::ranges::common_range<const R>
-auto make_shared_range_iterator(nb::handle scope, const char* name, R range)
-{
-    const auto shared = std::make_shared<const R>(std::move(range));
-    return nb::make_iterator(scope, name, SharedRangeIterator<R>(shared, std::ranges::begin(*shared)), SharedRangeIterator<R>(shared, std::ranges::end(*shared)));
-}
 
 template<formalism::FactKind T>
 void bind_predicate_fact_set(nb::module_& m, const char* name)
@@ -99,7 +61,8 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
             "get_bindings",
             [](const Set& self)
             {
-                return make_shared_range_iterator(nb::type<Set>(), "BindingIterator", self.get_bindings());
+                const auto bindings = self.get_bindings();
+                return nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end());
             },
             nb::keep_alive<0, 1>())
         .def("count",
@@ -127,8 +90,13 @@ void bind_function_fact_set(nb::module_& m, const char* name)
             "get_binding_values",
             [](const Set& self)
             {
-                const auto project = [set = &self](const Binding binding) { return std::pair(binding, (*set)[binding]); };
-                return make_shared_range_iterator(nb::type<Set>(), "BindingValueIterator", self.get_bindings() | std::views::transform(project));
+                struct ValueOf
+                {
+                    const Set* set = nullptr;
+                    auto operator()(const Binding binding) const { return std::pair(binding, (*set)[binding]); }
+                };
+                const auto values = urd::transform(self.get_bindings(), ValueOf { &self });
+                return nb::make_iterator(nb::type<Set>(), "BindingValueIterator", values.begin(), values.end());
             },
             nb::keep_alive<0, 1>())
         .def("count", [](const Set& self) { return self.get_values().size(); })

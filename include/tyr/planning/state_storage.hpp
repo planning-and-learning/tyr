@@ -23,9 +23,13 @@
 #include <urd/store.hpp>
 #include "tyr/planning/task.hpp"
 
+#include <cmath>
 #include <concepts>
+#include <cstddef>
 #include <limits>
+#include <ranges>
 #include <tuple>
+#include <utility>
 #include <vector>
 #include "tyr/containers.hpp"
 #include <urd/elements/flat.hpp>
@@ -41,12 +45,6 @@ namespace tyr::planning
 template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 struct StateStorageContext;
 
-template<typename Context>
-using ArraySetT = typename Context::ArraySet;
-
-template<typename Context>
-using UintVectorSetT = typename Context::UintVectorSet;
-
 /**
  * Backend
  */
@@ -59,19 +57,6 @@ class FactStorageBackend;
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 class NumericStorageBackend;
-
-/**
- * Packed
- */
-
-template<TaskKind Kind, typename Tag>
-struct AtomPackedStorage;
-
-template<TaskKind Kind, typename Tag>
-struct FactPackedStorage;
-
-template<TaskKind Kind, typename Tag>
-struct NumericPackedStorage;
 
 /**
  * Unpacked
@@ -96,6 +81,17 @@ struct NumericUnpackedStorage
                  ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
                  values,
                  std::numeric_limits<ygg::float_t>::quiet_NaN());
+    }
+    /// The function terms with a value (not NaN) and their values, by ascending function term.
+    [[nodiscard]] auto fterm_values() const noexcept
+    {
+        return std::views::iota(std::size_t { 0 }, values.size()) | std::views::filter([this](std::size_t i) { return !std::isnan(values[i]); })
+               | std::views::transform(
+                   [this](std::size_t i)
+                   {
+                       using FunctionTermIndex = urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>;
+                       return std::pair<FunctionTermIndex, ygg::float_t> { FunctionTermIndex { static_cast<ygg::uint_t>(i) }, values[i] };
+                   });
     }
     void clear() { values.clear(); }
     void swap(NumericUnpackedStorage& other) noexcept { values.swap(other.values); }

@@ -23,11 +23,12 @@
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
-#include "tyr/planning/state_storage/tags.hpp"
+#include "tyr/planning/state_storage/iterators.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cstddef>
+#include <ranges>
 #include <tuple>
 #include <yggdrasil/core/config.hpp>
 #include <urd/elements/hash_dynamic_bitset.hpp>
@@ -91,6 +92,18 @@ struct FactUnpackedStorage<LiftedTag>
             if (index + 1 == indices.size())
                 trim_trailing_zeros(indices);
         }
+    }
+    /// The facts set (value 1), by ascending variable.
+    [[nodiscard]] auto facts() const noexcept
+    {
+        return urd::transform(SetBits(indices),
+                              [](std::size_t i)
+                              {
+                                  return urd::data<formalism::planning::FDRFact<formalism::FluentTag>> {
+                                      urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> { static_cast<ygg::uint_t>(i) },
+                                      formalism::planning::FDRValue { 1 }
+                                  };
+                              });
     }
     void clear() { indices.clear(); }
     void swap(FactUnpackedStorage& other) noexcept { indices.swap(other.indices); }

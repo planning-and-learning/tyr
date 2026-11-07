@@ -16,7 +16,7 @@
  */
 
 #include "binding_utils.hpp"
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 #include "bindings.hpp"
 
 #include <tyr/formalism/planning/fdr_fact_data.hpp>
@@ -39,7 +39,7 @@ void bind_fdr_fact_data(nb::module_& m, const char* name)
     urd::python::add_hash(cls);
 }
 
-/// A fact's view: borrowed (a stored fact) or owned (a state's, computed on the fly).
+/// A fact's view: borrowed (a stored fact) or owning (a state's, computed on the fly).
 template<typename V>
 void bind_fdr_fact_view(nb::module_& m, const char* name)
 {
@@ -58,7 +58,7 @@ void bind_fdr_fact(nb::module_& m, RepositoryBinding&)
 {
     bind_fdr_fact_data<FluentTag>(m, "FluentFDRFactData");
     bind_fdr_fact_view<FDRFactView<FluentTag>>(m, "FluentFDRFact");
-    bind_fdr_fact_view<urd::owned_view<FDRFact<FluentTag>, Repository>>(m, "OwnedFluentFDRFact");
+    bind_fdr_fact_view<urd::owning_view<FDRFact<FluentTag>, Repository>>(m, "OwnedFluentFDRFact");
 }
 
 }  // namespace tyr::formalism::planning

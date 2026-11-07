@@ -1250,13 +1250,13 @@ void expect_parallel_astar_heuristic_exceptions_propagate(const tyr::planning::T
 TEST(TyrPlanningSearchEngineTest, PriorityQueueUsesKeyGetterWithoutMetadata)
 {
     auto queue = tyr::planning::PriorityQueue<QueueEntryWithoutKeyType> {};
-    queue.insert({ 3, 30 });
-    queue.insert({ 1, 10 });
-    queue.insert({ 2, 20 });
+    queue.push({ 3, 30 });
+    queue.push({ 1, 10 });
+    queue.push({ 2, 20 });
 
     for (const auto item : { 10, 20, 30 })
     {
-        EXPECT_EQ(queue.top(), item);
+        EXPECT_EQ(queue.top().get_item(), item);
         queue.pop();
     }
     EXPECT_TRUE(queue.empty());
@@ -1268,8 +1268,8 @@ TEST(TyrPlanningSearchEngineTest, AlternatingOpenListConstructsSelectedItemWitho
     auto first = Queue {};
     auto second = Queue {};
     auto alternating = tyr::planning::AlternatingOpenList<Queue, Queue>(first, second, std::array<std::size_t, 2> { 1, 1 });
-    first.insert({ 1, 10 });
-    second.insert({ 2, 20 });
+    first.push({ 1, 10 });
+    second.push({ 2, 20 });
 
     EXPECT_EQ(alternating.top().value, 10);
     alternating.pop();
@@ -1284,9 +1284,9 @@ TEST(TyrPlanningSearchEngineTest, AlternatingOpenListClearsEveryQueue)
     auto first = Queue {};
     auto second = Queue {};
     auto alternating = tyr::planning::AlternatingOpenList<Queue, Queue>(first, second, std::array<std::size_t, 2> { 1, 1 });
-    first.insert({ 1, 10 });
-    first.insert({ 2, 20 });
-    second.insert({ 3, 30 });
+    first.push({ 1, 10 });
+    first.push({ 2, 20 });
+    second.push({ 3, 30 });
     EXPECT_EQ(alternating.size(), 3);
 
     alternating.clear();
@@ -1295,8 +1295,8 @@ TEST(TyrPlanningSearchEngineTest, AlternatingOpenListClearsEveryQueue)
     EXPECT_TRUE(alternating.empty());
     EXPECT_EQ(alternating.size(), 0);
 
-    first.insert({ 4, 40 });
-    second.insert({ 5, 50 });
+    first.push({ 4, 40 });
+    second.push({ 5, 50 });
     EXPECT_EQ(alternating.top(), 40);
     alternating.pop();
     EXPECT_EQ(alternating.top(), 50);

@@ -10,7 +10,7 @@ namespace lifted_tests
 
 using AxiomIndex = urd::index<tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
 using AxiomData = urd::data<tyr::formalism::planning::Axiom<::tyr::LiftedTag>>;
-using AxiomView = urd::view<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using AxiomView = urd::index_view<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<AxiomIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<AxiomIndex>);
@@ -41,7 +41,7 @@ namespace ground_tests
 
 using GroundAxiomIndex = urd::index<tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
 using GroundAxiomData = urd::data<tyr::formalism::planning::Axiom<::tyr::GroundTag>>;
-using GroundAxiomView = urd::view<tyr::formalism::planning::Axiom<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using GroundAxiomView = urd::index_view<tyr::formalism::planning::Axiom<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<GroundAxiomIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<GroundAxiomIndex>);

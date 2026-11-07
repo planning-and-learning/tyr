@@ -22,15 +22,8 @@
 
 namespace tyr::planning
 {
-#if defined(TYR_STATE_STORAGE_TREE_VECTOR)
-using StateStoragePolicyTag = TreeVector;
-#elif defined(TYR_STATE_STORAGE_TREE_BITSET)
-using StateStoragePolicyTag = TreeBitset;
-#elif defined(TYR_STATE_STORAGE_HASHSET)
-using StateStoragePolicyTag = HashSet;
-#else
-#error "No lifted state storage policy selected"
-#endif
+/// The tag CMake's TYR_STATE_STORAGE_POLICY names (tags.hpp).
+using StateStoragePolicyTag = TYR_STATE_STORAGE_POLICY;
 }
 
 #endif

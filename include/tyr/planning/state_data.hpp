@@ -39,15 +39,17 @@ namespace tyr::planning
 template<TaskKind Kind>
 struct PackedState
 {
+    using FactStorage = typename FactStorageBackend<Kind, StateStoragePolicyTag>::Packed;
+    using AtomStorage = typename AtomStorageBackend<Kind, StateStoragePolicyTag>::Packed;
+    using NumericStorage = typename NumericStorageBackend<Kind, StateStoragePolicyTag>::Packed;
+
     urd::index<State<Kind>> index;
-    FactPackedStorage<Kind, StateStoragePolicyTag> fact_storage;
-    AtomPackedStorage<Kind, StateStoragePolicyTag> atom_storage;
-    NumericPackedStorage<Kind, StateStoragePolicyTag> numeric_storage;
+    FactStorage fact_storage;
+    AtomStorage atom_storage;
+    NumericStorage numeric_storage;
 
     PackedState() = default;
-    PackedState(FactPackedStorage<Kind, StateStoragePolicyTag> fact_storage_,
-                AtomPackedStorage<Kind, StateStoragePolicyTag> atom_storage_,
-                NumericPackedStorage<Kind, StateStoragePolicyTag> numeric_storage_) :
+    PackedState(FactStorage fact_storage_, AtomStorage atom_storage_, NumericStorage numeric_storage_) :
         index(),
         fact_storage(fact_storage_),
         atom_storage(atom_storage_),

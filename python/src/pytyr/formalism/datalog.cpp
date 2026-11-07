@@ -16,7 +16,7 @@
  */
 
 #include "datalog/bindings.hpp"
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 #include "datalog/module.hpp"
 
 #include <cstddef>

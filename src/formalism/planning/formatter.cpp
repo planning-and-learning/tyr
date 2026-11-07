@@ -526,7 +526,7 @@ std::string to_string(FDRVariableView<FluentTag> value) { return detail::fdr_var
 
 std::string to_string(InvariantView value) { return detail::invariant(value); }
 std::string to_string(FDRFactView<FluentTag> value) { return detail::fdr_fact_view(value); }
-std::string to_string(urd::owned_view<FDRFact<FluentTag>, Repository> value) { return detail::fdr_fact_view(value); }
+std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value) { return detail::fdr_fact_view(value); }
 
 
 std::string to_string(ConjunctiveConditionView<LiftedTag> value)

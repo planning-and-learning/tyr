@@ -18,22 +18,10 @@
 #ifndef TYR_PLANNING_GROUND_STATE_DATA_HPP_
 #define TYR_PLANNING_GROUND_STATE_DATA_HPP_
 
-#include "tyr/planning/state_storage/config.hpp"
-
-#if defined(TYR_STATE_STORAGE_HASHSET)
-#include "tyr/planning/ground/state_storage/hash_set/atom.hpp"
-#include "tyr/planning/ground/state_storage/hash_set/fact.hpp"
-#include "tyr/planning/state_storage/hash_set/numeric.hpp"
-#elif defined(TYR_STATE_STORAGE_TREE_VECTOR)
-#include "tyr/planning/ground/state_storage/tree_vector/atom.hpp"
-#include "tyr/planning/ground/state_storage/tree_vector/fact.hpp"
-#include "tyr/planning/state_storage/tree_vector/numeric.hpp"
-#elif defined(TYR_STATE_STORAGE_TREE_BITSET)
 #include "tyr/planning/ground/state_storage/tree_bitset/fact.hpp"
+#include "tyr/planning/ground/state_storage/vectors.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
 #include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_storage/tree_vector/numeric.hpp"
-#endif
-
 #include "tyr/planning/state_data.hpp"
 
 #endif

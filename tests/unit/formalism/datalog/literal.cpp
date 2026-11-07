@@ -19,9 +19,9 @@ struct LiteralPublicView<tyr::formalism::datalog::Literal<::tyr::LiftedTag, T>>
 
 template<typename Entity>
 concept LiteralContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
-                          && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
-                          && std::same_as<urd::view<Entity, tyr::formalism::datalog::Repository>, typename LiteralPublicView<Entity>::type>
-                          && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
+                          && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+                          && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename LiteralPublicView<Entity>::type>
+                          && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
                                  data.index;
                                  data.atom;
                                  data.polarity;
@@ -49,9 +49,9 @@ struct GroundLiteralPublicView<tyr::formalism::datalog::Literal<::tyr::GroundTag
 template<typename Entity>
 concept GroundLiteralContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<urd::view<Entity, tyr::formalism::datalog::Repository>, typename GroundLiteralPublicView<Entity>::type>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::datalog::Repository>& view) {
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+    && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename GroundLiteralPublicView<Entity>::type>
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
            data.atom;
            data.polarity;

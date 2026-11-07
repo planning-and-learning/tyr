@@ -61,8 +61,8 @@ public:
     StateRepository& operator=(StateRepository&&) = delete;
 
     StateView<Kind> get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator);
-    /// A registered state, packed: the view of its index.
-    [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return PackedStateView<Kind>(state_index, *this); }
+    /// A registered state, packed: the view of its index, through this repository.
+    [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return { state_index, this }; }
     /// Const: the state's builder comes from the repository's pool of scratch builders.
     StateView<Kind> get_registered_state(urd::index<State<Kind>> state_index) const;
 
@@ -103,7 +103,7 @@ public:
     [[nodiscard]] ygg::uint_t get_worker_index() const noexcept;
     /// The identity of the storage that owns the states; shared by all workers of a cohort.
     [[nodiscard]] ygg::uint_t get_index() const noexcept;
-    /// The repository's number, as urd::view asks of a context.
+    /// The repository's number, as urd's views ask of a context.
     [[nodiscard]] std::size_t layer() const noexcept { return get_index(); }
     [[nodiscard]] size_t num_states() const noexcept;
     /// The stored, packed record of a registered state (a StateView or PackedStateView is the usual handle).

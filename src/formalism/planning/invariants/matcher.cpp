@@ -28,8 +28,8 @@
 #include "tyr/formalism/unification/substitution.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
+#include <ranges>
 #include <yggdrasil/core/config.hpp>
 #include <urd/config.hpp>
 
@@ -81,26 +81,20 @@ void InvariantMatchData::build_postings()
             URD_ASSUME(bound.has_value());
             const auto object = *bound;
 
-            auto& bitset = m_postings[p][object];
-            if (bitset.size() == 0)
-                bitset.resize(num_bindings);
-
-            bitset.set(b);
+            m_postings[p][object].insert(b);
         }
     }
 }
 
 namespace
 {
-bool intersect_matching_bindings(const InvariantMatchData& data, const InvariantSubstitution& sigma, boost::dynamic_bitset<>& candidates)
+/// The bindings that bind each rigid parameter sigma binds to the same object, into candidates; whether there is one.
+bool intersect_matching_bindings(const InvariantMatchData& data, const InvariantSubstitution& sigma, BindingSet& candidates)
 {
     const auto& inv = data.mutable_invariant();
     const auto& postings = data.postings();
-    const auto num_bindings = data.rigid_variable_bindings().size();
 
-    candidates.resize(num_bindings);
-    candidates.set();
-
+    auto first = true;
     for (size_t p = 0; p < inv.num_rigid_variables; ++p)
     {
         const auto parameter = ParameterIndex(static_cast<ygg::uint_t>(p));
@@ -115,17 +109,25 @@ bool intersect_matching_bindings(const InvariantMatchData& data, const Invariant
 
         const auto it = postings[p].find(object);
         if (it == postings[p].end())
-        {
-            candidates.reset();
             return false;
-        }
 
-        candidates &= it->second;
-        if (candidates.none())
+        if (first)
+            candidates = it->second;
+        else
+            candidates &= it->second;
+        first = false;
+        if (candidates.empty())
             return false;
     }
 
-    return !candidates.none();
+    if (first)
+    {
+        // sigma binds no rigid parameter: every binding.
+        const auto all = std::views::iota(size_t { 0 }, data.rigid_variable_bindings().size());
+        candidates.clear();
+        candidates.insert(all.begin(), all.end());
+    }
+    return !candidates.empty();
 }
 }
 
@@ -144,8 +146,7 @@ void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, Que
         if (num_bindings == 0)
             continue;
 
-        ws.matches.resize(num_bindings);
-        ws.matches.reset();
+        ws.matches.clear();
 
         for (const auto& pattern : inv.atoms)
         {
@@ -163,11 +164,8 @@ void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, Que
                 ws.matches |= ws.candidates;
         }
 
-        for (size_t binding_index = ws.matches.find_first(); binding_index != boost::dynamic_bitset<>::npos;
-             binding_index = ws.matches.find_next(binding_index))
-        {
+        for (const auto binding_index : ws.matches)
             result.matches.push_back({ invariant_index, binding_index });
-        }
     }
 }
 

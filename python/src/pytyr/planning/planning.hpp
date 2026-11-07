@@ -35,7 +35,7 @@
 #include <tyr/planning/planning.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 
 namespace tyr::planning
 {
@@ -97,7 +97,7 @@ void bind_packed_state(nb::module_& m, const std::string& name)
     auto cls = nb::class_<T>(m, name.c_str())  //
                    .def("get_index", &T::index, nb::rv_policy::copy)
                    .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
-                   .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
+                   .def("unpack", &T::unpack);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
 }
@@ -112,7 +112,7 @@ void bind_state(nb::module_& m, const std::string& name)
                    .def("get_index", &T::index, nb::rv_policy::copy)
                    .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
                    .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
-                   .def("pack", &T::pack, nb::keep_alive<0, 1>())
+                   .def("pack", &T::pack)
                    // AccessibleStateConcept
                    .def("test",
                         nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
@@ -153,7 +153,7 @@ void bind_state(nb::module_& m, const std::string& name)
                        "fluent_facts",
                        [](const T& s)
                        {
-                           return make_owning_iterator<urd::owned_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>(nb::type<T>(),
+                           return make_owning_iterator<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>(nb::type<T>(),
                                                                                                                "fluent facts iterator",
                                                                                                                s.get_fluent_facts_view());
                        },
@@ -228,7 +228,7 @@ void bind_node(nb::module_& m, const std::string& name)
                    .def(nb::init<StateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a, nb::keep_alive<1, 2>())
                    .def("get_state", &T::get_state, nb::rv_policy::reference_internal)
                    .def("get_metric", &T::get_metric, nb::rv_policy::copy)
-                   .def("pack", &T::pack, nb::keep_alive<0, 1>());
+                   .def("pack", &T::pack);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
@@ -241,10 +241,10 @@ void bind_packed_node(nb::module_& m, const std::string& name)
     using T = PackedNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())
-                   .def(nb::init<PackedStateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a, nb::keep_alive<1, 2>())
+                   .def(nb::init<PackedStateView<Kind>, ygg::float_t>(), "state"_a, "metric_value"_a)
                    .def("get_state", &T::get_state, nb::rv_policy::reference_internal)
                    .def("get_metric", &T::get_metric, nb::rv_policy::copy)
-                   .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
+                   .def("unpack", &T::unpack);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
@@ -354,7 +354,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
              "fterm_values"_a,
              nb::keep_alive<0, 1>())
         .def("create_state",
-             &T::template create_state<urd::owned_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>,
+             &T::template create_state<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>,
              nb::rv_policy::move,
              "axiom_evaluator"_a,
              "fluent_facts"_a,
@@ -389,8 +389,8 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
     cls.def("get_index", &T::get_index)
         .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a, nb::keep_alive<0, 2>())
         .def("get_node", &T::get_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a, nb::keep_alive<0, 2>())
-        .def("get_packed_initial_node", &T::get_packed_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a, nb::keep_alive<0, 2>())
-        .def("get_packed_node", &T::get_packed_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a, nb::keep_alive<0, 2>());
+        .def("get_packed_initial_node", &T::get_packed_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
+        .def("get_packed_node", &T::get_packed_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a);
 
     cls.def("get_applicable_action_bindings",
             nb::overload_cast<const Node<Kind>&>(&T::template get_applicable_action_bindings<StateView<Kind>>),
@@ -463,16 +463,14 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
             "node"_a,
             "binding"_a,
             "state_repository"_a,
-            "axiom_evaluator"_a,
-            nb::keep_alive<0, 4>())
+            "axiom_evaluator"_a)
         .def("get_packed_successor_node",
              nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
                  &T::template get_packed_successor_node<StateView<Kind>>),
              "node"_a,
              "action"_a,
              "state_repository"_a,
-             "axiom_evaluator"_a,
-             nb::keep_alive<0, 4>());
+             "axiom_evaluator"_a);
 
     cls.def("get_packed_successor_nodes",
             nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_packed_successor_nodes<StateView<Kind>>),

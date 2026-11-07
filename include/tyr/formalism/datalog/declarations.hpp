@@ -194,7 +194,7 @@ using RepositoryFactoryPtr = std::shared_ptr<RepositoryFactory>;
  * Include repository.hpp before constructing, storing, or accessing views.
  */
 template<TaskKind T, OperatorKind O>
-using BinaryOperatorView = urd::view<BinaryOperator<T, O>, Repository>;
+using BinaryOperatorView = urd::index_view<BinaryOperator<T, O>, Repository>;
 
 template<TaskKind T, OperatorKind O>
 using BinaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<BinaryOperator<T, O>>>, Repository>;
@@ -219,7 +219,7 @@ template<FactKind F>
 using FunctionBindingRandomAccessRangeView = RelationBindingsView<Function<F>, urd::Store<urd::sequence<urd::index<Row>>>, Repository>;
 
 template<TaskKind T>
-using BooleanOperatorView = urd::view<BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>, Repository>;
+using BooleanOperatorView = urd::index_view<BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>, Repository>;
 
 template<TaskKind T>
 using BooleanOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>>>, Repository>;
@@ -227,7 +227,7 @@ template<TaskKind T>
 using BooleanOperatorViewList = urd::Store<urd::sequence<BooleanOperatorView<T>>>;
 
 template<FactKind F>
-using FunctionView = urd::view<Function<F>, Repository>;
+using FunctionView = urd::index_view<Function<F>, Repository>;
 
 template<FactKind F>
 using FunctionListView = urd::resolved_range<urd::flat_vector<urd::index<Function<F>>>, Repository>;
@@ -235,18 +235,18 @@ template<FactKind F>
 using FunctionViewList = urd::Store<urd::sequence<FunctionView<F>>>;
 
 template<TaskKind T, OperatorKind O>
-using MultiOperatorView = urd::view<MultiOperator<T, O>, Repository>;
+using MultiOperatorView = urd::index_view<MultiOperator<T, O>, Repository>;
 
 template<TaskKind T, OperatorKind O>
 using MultiOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<MultiOperator<T, O>>>, Repository>;
 
-using ObjectView = urd::view<Object, Repository>;
+using ObjectView = urd::index_view<Object, Repository>;
 
 using ObjectListView = urd::resolved_range<urd::flat_vector<urd::index<Object>>, Repository>;
 using ObjectViewList = urd::Store<urd::sequence<ObjectView>>;
 
 template<FactKind F>
-using PredicateView = urd::view<Predicate<F>, Repository>;
+using PredicateView = urd::index_view<Predicate<F>, Repository>;
 
 template<FactKind F>
 using PredicateListView = urd::resolved_range<urd::flat_vector<urd::index<Predicate<F>>>, Repository>;
@@ -260,12 +260,12 @@ using TermListView = urd::resolved_range<TermList, Repository>;
 using TermViewList = urd::Store<urd::sequence<TermView>>;
 
 template<TaskKind T, OperatorKind O>
-using UnaryOperatorView = urd::view<UnaryOperator<T, O>, Repository>;
+using UnaryOperatorView = urd::index_view<UnaryOperator<T, O>, Repository>;
 
 template<TaskKind T, OperatorKind O>
 using UnaryOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<UnaryOperator<T, O>>>, Repository>;
 
-using VariableView = urd::view<Variable, Repository>;
+using VariableView = urd::index_view<Variable, Repository>;
 
 using VariableListView = urd::resolved_range<urd::flat_vector<urd::index<Variable>>, Repository>;
 using VariableViewList = urd::Store<urd::sequence<VariableView>>;
@@ -273,57 +273,57 @@ using VariableViewList = urd::Store<urd::sequence<VariableView>>;
 template<TaskKind T, FactKind F>
 using AtomListView = urd::resolved_range<urd::flat_vector<urd::index<Atom<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
-using AtomView = urd::view<Atom<T, F>, Repository>;
+using AtomView = urd::index_view<Atom<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using AtomViewList = urd::Store<urd::sequence<AtomView<T, F>>>;
 template<TaskKind T>
 using ConditionalEffectListView = urd::resolved_range<urd::flat_vector<urd::index<ConditionalEffect<T>>>, Repository>;
 template<TaskKind T>
-using ConditionalEffectView = urd::view<ConditionalEffect<T>, Repository>;
+using ConditionalEffectView = urd::index_view<ConditionalEffect<T>, Repository>;
 template<TaskKind T>
 using ConditionalEffectViewList = urd::Store<urd::sequence<ConditionalEffectView<T>>>;
 template<TaskKind T>
 using ConjunctiveConditionListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveCondition<T>>>, Repository>;
 template<TaskKind T>
-using ConjunctiveConditionView = urd::view<ConjunctiveCondition<T>, Repository>;
+using ConjunctiveConditionView = urd::index_view<ConjunctiveCondition<T>, Repository>;
 template<TaskKind T>
 using ConjunctiveEffectListView = urd::resolved_range<urd::flat_vector<urd::index<ConjunctiveEffect<T>>>, Repository>;
 template<TaskKind T>
-using ConjunctiveEffectView = urd::view<ConjunctiveEffect<T>, Repository>;
+using ConjunctiveEffectView = urd::index_view<ConjunctiveEffect<T>, Repository>;
 template<TaskKind T, FactKind F>
 using FunctionTermListView = urd::resolved_range<urd::flat_vector<urd::index<FunctionTerm<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
 using FunctionTermValueListView = urd::resolved_range<urd::flat_vector<urd::index<FunctionTermValue<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
-using FunctionTermValueView = urd::view<FunctionTermValue<T, F>, Repository>;
+using FunctionTermValueView = urd::index_view<FunctionTermValue<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using FunctionTermValueViewList = urd::Store<urd::sequence<FunctionTermValueView<T, F>>>;
 template<TaskKind T, FactKind F>
-using FunctionTermView = urd::view<FunctionTerm<T, F>, Repository>;
+using FunctionTermView = urd::index_view<FunctionTerm<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using FunctionTermViewList = urd::Store<urd::sequence<FunctionTermView<T, F>>>;
 template<TaskKind T, FactKind F>
 using LiteralListView = urd::resolved_range<urd::flat_vector<urd::index<Literal<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
-using LiteralView = urd::view<Literal<T, F>, Repository>;
+using LiteralView = urd::index_view<Literal<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using LiteralViewList = urd::Store<urd::sequence<LiteralView<T, F>>>;
 template<TaskKind T, FactKind F>
 using NumericEffectOperatorListView = urd::resolved_range<urd::flat_vector<urd::index<NumericEffect<T, F>>>, Repository>;
 template<TaskKind T, FactKind F>
-using NumericEffectOperatorView = urd::view<NumericEffect<T, F>, Repository>;
+using NumericEffectOperatorView = urd::index_view<NumericEffect<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using NumericEffectOperatorViewList = urd::Store<urd::sequence<NumericEffectOperatorView<T, F>>>;
 template<TaskKind T, FactKind F>
-using NumericEffectView = urd::view<NumericEffect<T, F>, Repository>;
+using NumericEffectView = urd::index_view<NumericEffect<T, F>, Repository>;
 template<TaskKind T>
 using ProgramListView = urd::resolved_range<urd::flat_vector<urd::index<Program<T>>>, Repository>;
 template<TaskKind T>
-using ProgramView = urd::view<Program<T>, Repository>;
+using ProgramView = urd::index_view<Program<T>, Repository>;
 template<TaskKind T, RelationKind R>
 using RuleListView = urd::resolved_range<urd::flat_vector<urd::index<Rule<T, R>>>, Repository>;
 template<TaskKind T, RelationKind R>
-using RuleView = urd::view<Rule<T, R>, Repository>;
+using RuleView = urd::index_view<Rule<T, R>, Repository>;
 template<TaskKind T, RelationKind R>
 using RuleViewList = urd::Store<urd::sequence<RuleView<T, R>>>;
 

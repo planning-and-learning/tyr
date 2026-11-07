@@ -97,8 +97,7 @@ bool PredicateFactSet<T>::contains(formalism::datalog::PredicateBindingIndex<T> 
 template<formalism::FactKind T>
 PredicateBindingViewRange<T> PredicateFactSet<T>::get_bindings() const noexcept
 {
-    const auto rows = m_rows | std::views::transform(detail::RowOfFact {});
-    return formalism::bindings_view(m_predicate_index, rows, *m_repository);
+    return formalism::bindings_view(m_predicate_index, urd::transform(m_rows, detail::RowOfFact {}), *m_repository);
 }
 
 template class PredicateFactSet<formalism::StaticTag>;

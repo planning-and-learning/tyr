@@ -57,7 +57,7 @@ using PreconditionVariant = std::variant<urd::index<formalism::planning::Atom<Gr
                                          urd::index<formalism::planning::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>;
 
 template<typename Tag>
-using ElementView = urd::view<Tag, formalism::planning::Repository>;
+using ElementView = urd::index_view<Tag, formalism::planning::Repository>;
 
 template<typename Tag>
 using ElementViews = urd::Store<urd::sequence<ElementView<Tag>>>;
@@ -604,7 +604,7 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 }
 
 template<typename Tag>
-MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>> elements_, const formalism::planning::Repository& context_) :
+MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements_, const formalism::planning::Repository& context_) :
     m_definition(),
     m_evaluator()
 {
@@ -740,7 +740,7 @@ MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_defi
 }
 
 template<typename Tag>
-MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>> elements,
+MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
                                          const formalism::planning::Repository& context)
 { return std::make_unique<MatchTree<Tag>>(std::move(elements), context); }
 
@@ -750,7 +750,7 @@ MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
 
 template<typename Tag>
 void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
-                              urd::Store<urd::sequence<urd::view<Tag, formalism::planning::Repository>>>& out_applicable_elements)
+                              urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>>& out_applicable_elements)
 {
     out_applicable_elements.clear();
     auto& stack = m_evaluator.stack;

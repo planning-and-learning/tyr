@@ -48,7 +48,7 @@ struct RowOfFact
     urd::index<formalism::Row> operator()(ygg::uint_t row) const noexcept { return urd::index<formalism::Row> { row }; }
 };
 
-using PredicateFactRowRange = std::ranges::transform_view<std::ranges::ref_view<const PredicateFactRows>, RowOfFact>;
+using PredicateFactRowRange = urd::transformed_range<PredicateFactRows, RowOfFact>;
 
 template<formalism::FactKind T>
 using PredicateBindingRangeView = formalism::RelationBindingsView<formalism::Predicate<T>, PredicateFactRowRange, formalism::datalog::Repository>;

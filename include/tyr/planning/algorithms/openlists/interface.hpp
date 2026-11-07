@@ -27,9 +27,9 @@ namespace tyr::planning
 {
 
 template<typename T>
-concept IsOpenList = requires(T a, typename T::EntryType entry) {
-    { a.insert(entry) } -> std::same_as<void>;
-    { a.top() } -> std::convertible_to<typename T::ItemType>;
+concept IsOpenList = requires(T a, typename T::value_type entry) {
+    a.push(entry);
+    { a.top().get_item() } -> std::convertible_to<typename T::value_type::ItemType>;
     { a.pop() } -> std::same_as<void>;
     { a.clear() } -> std::same_as<void>;
     { a.empty() } -> std::same_as<bool>;

@@ -179,7 +179,7 @@ std::string to_string(FDRVariableView<FluentTag> value);
 
 std::string to_string(InvariantView value);
 std::string to_string(FDRFactView<FluentTag> value);
-std::string to_string(urd::owned_view<FDRFact<FluentTag>, Repository> value);
+std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value);
 
 std::string to_string(ConjunctiveConditionView<LiftedTag> value);
 std::string to_string(ConjunctiveConditionView<GroundTag> value);

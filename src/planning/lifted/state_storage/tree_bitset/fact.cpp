@@ -31,7 +31,7 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::FactStorageBackend(Contex
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
-{ return Packed { insert_bitset(*m_bitsets, unpacked.indices, m_blocks) }; }
+{ return insert_bitset(*m_bitsets, unpacked.indices, m_blocks); }
 
 template<bool ThreadSafe>
 typename FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::Packed
@@ -47,13 +47,13 @@ FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
     }
     normalize_flips(m_flips);
 
-    return Packed { m_bitsets->insert_flips(parent.index, m_flips) };
+    return m_bitsets->insert_flips(parent, m_flips);
 }
 
 template<bool ThreadSafe>
 void FactStorageBackend<LiftedTag, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    read_bitset(*m_bitsets, packed.index, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
+    read_bitset(*m_bitsets, packed, unpacked.indices, m_blocks);  // Ends at the last true atom, as FactUnpackedStorage::set does.
 }
 
 template class FactStorageBackend<LiftedTag, TreeBitset, false>;

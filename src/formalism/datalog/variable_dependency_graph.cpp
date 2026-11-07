@@ -45,8 +45,8 @@ static void insert_literal_dependencies(const urd::Store<urd::sequence<Parameter
         {
             const auto pj = parameters[j].value;
 
-            binary_dep.set(binary.get_index(pi, pj));
-            binary_dep.set(binary.get_index(pj, pi));
+            binary_dep[pi].set(pj);
+            binary_dep[pj].set(pi);
         }
     }
 }
@@ -84,8 +84,8 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
         {
             const auto pj = parameters[j].value;
 
-            binary_dep.set(binary.get_index(pi, pj));
-            binary_dep.set(binary.get_index(pj, pi));
+            binary_dep[pi].set(pj);
+            binary_dep[pj].set(pi);
         }
     }
 }

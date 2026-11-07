@@ -23,7 +23,6 @@
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_term_view.hpp"
-#include "tyr/planning/state_storage/iterators.hpp"
 
 #include <functional>
 #include <limits>
@@ -59,7 +58,7 @@ public:
     [[nodiscard]] auto get_atoms() const noexcept { return std::views::all(m_atoms); }
     [[nodiscard]] auto get_fterm_values() const noexcept
     {
-        return m_numeric_variables | std::views::transform([](const auto& entry) { return std::pair(entry.first, entry.second); });
+        return urd::transform(m_numeric_variables, [](const auto& entry) { return std::pair(entry.first, entry.second); });
     }
 
 private:

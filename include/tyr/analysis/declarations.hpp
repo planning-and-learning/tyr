@@ -142,14 +142,14 @@ struct TaskVariableDomains
 template<typename Element, typename Payload, typename C>
 struct ScopedView
 {
-    urd::view<Element, C> element;
+    urd::index_view<Element, C> element;
     Payload payload;
 };
 
 template<typename C>
 struct VariableDomainView
 {
-    urd::Store<urd::sequence<urd::view<formalism::Object, C>>> objects;
+    urd::Store<urd::sequence<urd::index_view<formalism::Object, C>>> objects;
 
     auto begin() noexcept { return objects.begin(); }
     auto end() noexcept { return objects.end(); }
@@ -170,10 +170,10 @@ template<typename Element, typename C>
 using SimpleScopedDomainView = ScopedView<Element, VariableDomainViewList<C>, C>;
 
 template<typename Element, typename C>
-using SimpleScopedDomainViewMap = urd::Store<urd::map<urd::view<Element, C>, VariableDomainViewList<C>>>;
+using SimpleScopedDomainViewMap = urd::Store<urd::map<urd::index_view<Element, C>, VariableDomainViewList<C>>>;
 
 template<typename Element, typename C>
-using ScopedDomainViewMap = urd::Store<urd::map<urd::view<Element, C>, SimpleScopedDomainView<Element, C>>>;
+using ScopedDomainViewMap = urd::Store<urd::map<urd::index_view<Element, C>, SimpleScopedDomainView<Element, C>>>;
 
 template<formalism::FactKind T, typename C>
 using PredicateDomainViewMap = SimpleScopedDomainViewMap<formalism::Predicate<T>, C>;
@@ -205,7 +205,7 @@ using ConditionalEffectDomainView = ScopedView<formalism::planning::ConditionalE
 
 template<typename C>
 using ConditionalEffectDomainViewMap =
-    urd::Store<urd::map<urd::view<formalism::planning::ConditionalEffect<LiftedTag>, C>, ConditionalEffectDomainView<C>>>;
+    urd::Store<urd::map<urd::index_view<formalism::planning::ConditionalEffect<LiftedTag>, C>, ConditionalEffectDomainView<C>>>;
 
 template<typename C>
 struct ActionDomainViewData
@@ -218,7 +218,7 @@ template<typename C>
 using ActionDomainView = ScopedView<formalism::planning::Action<LiftedTag>, ActionDomainViewData<C>, C>;
 
 template<typename C>
-using ActionDomainViewMap = urd::Store<urd::map<urd::view<formalism::planning::Action<LiftedTag>, C>, ActionDomainView<C>>>;
+using ActionDomainViewMap = urd::Store<urd::map<urd::index_view<formalism::planning::Action<LiftedTag>, C>, ActionDomainView<C>>>;
 
 /**
  * Stratification

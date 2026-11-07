@@ -11,7 +11,7 @@ namespace lifted_tests
 
 using TaskIndex = urd::index<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
 using TaskData = urd::data<tyr::formalism::planning::Task<::tyr::LiftedTag>>;
-using TaskView = urd::view<tyr::formalism::planning::Task<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
+using TaskView = urd::index_view<tyr::formalism::planning::Task<::tyr::LiftedTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<TaskIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<TaskIndex>);
@@ -62,7 +62,7 @@ namespace ground_tests
 
 using TaskIndex = urd::index<tyr::formalism::planning::Task<::tyr::GroundTag>>;
 using TaskData = urd::data<tyr::formalism::planning::Task<::tyr::GroundTag>>;
-using TaskView = urd::view<tyr::formalism::planning::Task<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
+using TaskView = urd::index_view<tyr::formalism::planning::Task<::tyr::GroundTag>, tyr::formalism::planning::Repository>;
 
 static_assert(std::constructible_from<TaskIndex, ygg::uint_t>);
 static_assert(std::totally_ordered<TaskIndex>);

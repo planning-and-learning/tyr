@@ -336,7 +336,7 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> copy(ConjunctiveCond
 }
 
 template<TaskKind T, RelationKind R, typename C>
-void copy_rule_heads(urd::view<Rule<T, R>, C> element, urd::data<Rule<T, R>>& rule, CopyContext& context)
+void copy_rule_heads(urd::index_view<Rule<T, R>, C> element, urd::data<Rule<T, R>>& rule, CopyContext& context)
 {
     if constexpr (std::same_as<R, PredicateTag>)
         for (const auto head : element.get_heads())

@@ -28,7 +28,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
 #include <yggdrasil/python/bindings.hpp>
-#include <yggdrasil/python/type_casters.hpp>
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning::invariant
 {

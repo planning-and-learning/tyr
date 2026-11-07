@@ -20,10 +20,11 @@
 
 #include "tyr/formalism/declarations.hpp"
 
-#include <boost/dynamic_bitset.hpp>
+#include <urd/repr/sequences/jagged.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include <cstddef>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::datalog::details
@@ -108,20 +109,17 @@ struct UnaryDependencies
 
 struct BinaryDependencies
 {
+    /// k rows of k bits: bit pj of row pi is set iff parameters pi and pj occur together.
+    using Pairs = urd::Store<urd::sequence<urd::Store<urd::set<std::size_t>, urd::dense>>, urd::fixed_shape>;
+
     explicit BinaryDependencies(ygg::uint_t k_) :
         k(k_),
-        static_positive_literal(static_cast<std::size_t>(k_) * k_),
-        static_negative_literal(static_cast<std::size_t>(k_) * k_),
-        fluent_positive_literal(static_cast<std::size_t>(k_) * k_),
-        fluent_negative_literal(static_cast<std::size_t>(k_) * k_),
-        numeric_constraint(static_cast<std::size_t>(k_) * k_)
+        static_positive_literal(std::vector<std::size_t>(k_, k_)),
+        static_negative_literal(std::vector<std::size_t>(k_, k_)),
+        fluent_positive_literal(std::vector<std::size_t>(k_, k_)),
+        fluent_negative_literal(std::vector<std::size_t>(k_, k_)),
+        numeric_constraint(std::vector<std::size_t>(k_, k_))
     {
-    }
-
-    [[nodiscard]] ygg::uint_t get_index(ygg::uint_t pi, ygg::uint_t pj) const noexcept
-    {
-        assert(pi < k && pj < k);
-        return pi * k + pj;
     }
 
     /**
@@ -140,9 +138,9 @@ struct BinaryDependencies
 
     template<FactKind F, PolarityKind P>
     [[nodiscard]] bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
-    { return get_literal_dependency<F, P>().test(get_index(pi, pj)); }
+    { return get_literal_dependency<F, P>()[pi].test(pj); }
 
-    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return numeric_constraint.test(get_index(pi, pj)); }
+    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return numeric_constraint[pi].test(pj); }
 
     [[nodiscard]] bool has_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
     {
@@ -153,11 +151,11 @@ struct BinaryDependencies
 
     ygg::uint_t k;
 
-    boost::dynamic_bitset<> static_positive_literal;
-    boost::dynamic_bitset<> static_negative_literal;
-    boost::dynamic_bitset<> fluent_positive_literal;
-    boost::dynamic_bitset<> fluent_negative_literal;
-    boost::dynamic_bitset<> numeric_constraint;
+    Pairs static_positive_literal;
+    Pairs static_negative_literal;
+    Pairs fluent_positive_literal;
+    Pairs fluent_negative_literal;
+    Pairs numeric_constraint;
 };
 }
 

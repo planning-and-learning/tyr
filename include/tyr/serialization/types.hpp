@@ -10,7 +10,7 @@ namespace tyr::serialization
 {
 
 template<typename T>
-using FormalismIndexView = urd::view<T, formalism::planning::Repository>;
+using FormalismIndexView = urd::index_view<T, formalism::planning::Repository>;
 template<typename R>
 using FormalismBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<R, formalism::ObjectTag>, formalism::planning::Repository>;
 

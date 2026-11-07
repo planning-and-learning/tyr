@@ -12,9 +12,9 @@
 template<typename Entity>
 concept UnaryOperatorContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::planning::Repository>>
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, typename urd::data<Entity>::OperatorType>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::planning::Repository>& view) {
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
            data.index;
            { data.operator_kind } -> std::same_as<typename urd::data<Entity>::OperatorType&>;
            { data == data } -> std::same_as<bool>;
@@ -30,8 +30,8 @@ using Ground = tyr::formalism::planning::UnaryOperator<::tyr::GroundTag, tyr::fo
 
 static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
-static_assert(std::same_as<urd::view<Lifted, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
-static_assert(std::same_as<urd::view<Ground, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 
 TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
 {

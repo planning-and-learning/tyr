@@ -11,8 +11,8 @@ namespace lifted_tests
 template<typename Entity>
 concept LiteralContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::planning::Repository>>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::planning::Repository>& view) {
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
            data.index;
            data.atom;
            data.polarity;
@@ -26,15 +26,15 @@ concept LiteralContract =
 
 static_assert(LiteralContract<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
 static_assert(
-    std::same_as<urd::view<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::LiteralView<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
 static_assert(LiteralContract<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
 static_assert(
-    std::same_as<urd::view<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::LiteralView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
 static_assert(LiteralContract<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
 static_assert(
-    std::same_as<urd::view<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::planning::Literal<::tyr::LiftedTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::LiteralView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
 }
 
@@ -44,8 +44,8 @@ namespace ground_tests
 template<typename Entity>
 concept GroundLiteralContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::view<Entity, tyr::formalism::planning::Repository>>
-    && requires(urd::data<Entity>& data, const urd::view<Entity, tyr::formalism::planning::Repository>& view) {
+    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
            data.index;
            data.atom;
            data.polarity;
@@ -59,14 +59,14 @@ concept GroundLiteralContract =
 
 static_assert(GroundLiteralContract<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>>);
 static_assert(
-    std::same_as<urd::view<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::LiteralView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
 static_assert(GroundLiteralContract<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 static_assert(
-    std::same_as<urd::view<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::LiteralView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 static_assert(GroundLiteralContract<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
 static_assert(
-    std::same_as<urd::view<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::planning::Literal<::tyr::GroundTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::LiteralView<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
 }

@@ -20,7 +20,7 @@
 
 #include "tyr/planning/algorithms/openlists/interface.hpp"
 
-#include <cassert>
+#include <concepts>
 #include <urd/repr/queues/queue.hpp>
 #include <urd/store.hpp>
 
@@ -34,49 +34,17 @@ concept IsPriorityQueueEntry = requires(const T a) {
     { a.get_item() } -> std::convertible_to<typename T::ItemType>;
 };
 
-template<IsPriorityQueueEntry E>
-class PriorityQueue
+/// Orders entries by key; a priority queue gives the least first.
+struct KeyLess
 {
-private:
-    /// Orders entries by key; the queue gives the least first.
-    struct KeyLess
-    {
-        bool operator()(const E& l, const E& r) const { return l.get_key() < r.get_key(); }
-    };
-
-public:
-    using EntryType = E;
-    using ItemType = typename E::ItemType;
-
-    void insert(E entry) { m_priority_queue.push(std::move(entry)); }
-
-    [[nodiscard]] decltype(auto) top() const
-    {
-        assert(!empty());
-        return m_priority_queue.top().get_item();
-    }
-
-    [[nodiscard]] const auto& top_entry() const
-    {
-        assert(!empty());
-        return m_priority_queue.top();
-    }
-
-    void pop()
-    {
-        assert(!empty());
-        m_priority_queue.pop();
-    }
-
-    void clear() { m_priority_queue.clear(); }
-
-    [[nodiscard]] bool empty() const { return m_priority_queue.empty(); }
-
-    [[nodiscard]] std::size_t size() const { return m_priority_queue.size(); }
-
-private:
-    urd::Store<urd::queue<E>, urd::by_priority, urd::order_by<KeyLess>> m_priority_queue;
+    template<IsPriorityQueueEntry E>
+    bool operator()(const E& l, const E& r) const
+    { return l.get_key() < r.get_key(); }
 };
+
+/// Entries by key, least first; top().get_item() is the next item.
+template<IsPriorityQueueEntry E>
+using PriorityQueue = urd::Store<urd::queue<E>, urd::by_priority, urd::order_by<KeyLess>>;
 
 }
 

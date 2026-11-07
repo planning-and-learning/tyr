@@ -30,13 +30,14 @@ namespace tyr::planning
 {
 
 template<IsOpenList First, IsOpenList... Rest>
-    requires(std::same_as<typename First::ItemType, typename Rest::ItemType> && ...) && std::move_constructible<typename First::ItemType>
+    requires(std::same_as<typename First::value_type::ItemType, typename Rest::value_type::ItemType> && ...)
+             && std::move_constructible<typename First::value_type::ItemType>
 class AlternatingOpenList
 {
 public:
     static constexpr std::size_t N = 1 + sizeof...(Rest);
 
-    using ItemType = typename First::ItemType;
+    using ItemType = typename First::value_type::ItemType;
 
 private:
     bool cur_empty()
@@ -89,7 +90,7 @@ public:
             find_next_nonempty_queue();
         }
 
-        return boost::mp11::mp_with_index<N>(m_pos, [&](auto i) -> ItemType { return std::get<i>(m_queues).get().top(); });
+        return boost::mp11::mp_with_index<N>(m_pos, [&](auto i) -> ItemType { return std::get<i>(m_queues).get().top().get_item(); });
     }
 
     void pop()

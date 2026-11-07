@@ -235,7 +235,7 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
 TEST(TyrSerialization, ExpressionsKeepConstantsInline)
 {
     using Binary = tyr::formalism::planning::BinaryOperator<LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
-    using BinaryView = urd::view<Binary, tyr::formalism::planning::Repository>;
+    using BinaryView = urd::index_view<Binary, tyr::formalism::planning::Repository>;
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
     const auto constant = tyr::formalism::planning::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3));
     auto binary_data = urd::data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);

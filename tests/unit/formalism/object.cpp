@@ -11,8 +11,8 @@
 
 using ObjectData = urd::data<tyr::formalism::Object>;
 using ObjectIndex = urd::index<tyr::formalism::Object>;
-using ObjectView = urd::view<tyr::formalism::Object, tyr::formalism::planning::Repository>;
-using DatalogObjectView = urd::view<tyr::formalism::Object, tyr::formalism::datalog::Repository>;
+using ObjectView = urd::index_view<tyr::formalism::Object, tyr::formalism::planning::Repository>;
+using DatalogObjectView = urd::index_view<tyr::formalism::Object, tyr::formalism::datalog::Repository>;
 
 static_assert(std::constructible_from<ObjectIndex, ygg::uint_t>);
 static_assert(requires(ObjectData& data) {

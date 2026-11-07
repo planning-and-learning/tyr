@@ -18,25 +18,24 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_TAGS_HPP_
 #define TYR_PLANNING_STATE_STORAGE_TAGS_HPP_
 
-#include <concepts>
+#include <urd/tags.hpp>
 
 namespace tyr::planning
 {
-/// Stores state components as tree-compressed vectors.
-struct TreeVector
+/// Stores state components as vectors in urd pools that carry the extra urd tags `Tags`.
+template<typename... Tags>
+struct Vectors
 {
 };
+
+/// The vectors as trees: a successor shares all but the paths to its changed values with its parent.
+using TreeVector = Vectors<urd::structural_sharing>;
+
+/// The vectors whole, in hash tables.
+using Hashset = Vectors<>;
 
 /// Like TreeVector, but stores fluent facts and derived atoms as position-stable bitset trees, inserting successors as deltas to their parent.
 struct TreeBitset
-{
-};
-
-/// Numeric storage, which both tree-compressed policies share, is specialized on this concept.
-template<typename Tag>
-concept TreeCompressionTag = std::same_as<Tag, TreeVector> || std::same_as<Tag, TreeBitset>;
-
-struct HashSet
 {
 };
 }

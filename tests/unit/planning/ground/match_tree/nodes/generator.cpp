@@ -13,9 +13,9 @@ concept ElementGeneratorContract =
     && std::constructible_from<urd::index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>, ygg::uint_t>
     && std::totally_ordered<urd::index<tyr::planning::match_tree::ElementGeneratorNode<Tag>>>
     && std::totally_ordered<urd::data<tyr::planning::match_tree::ElementGeneratorNode<Tag>>>
-    && std::totally_ordered<urd::view<tyr::planning::match_tree::ElementGeneratorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
+    && std::totally_ordered<urd::index_view<tyr::planning::match_tree::ElementGeneratorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>>
     && requires(urd::data<tyr::planning::match_tree::ElementGeneratorNode<Tag>>& data,
-                const urd::view<tyr::planning::match_tree::ElementGeneratorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
+                const urd::index_view<tyr::planning::match_tree::ElementGeneratorNode<Tag>, tyr::planning::match_tree::Repository<Tag>>& view) {
            data.index;
            data.elements;
            view.get_elements();
@@ -63,6 +63,6 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     const auto found = repository.find(*data);
     ASSERT_TRUE(found);
     EXPECT_EQ(&found.value().context(), &repository);
-    EXPECT_EQ(&repository.front<Generator>(), &view.data());
+    EXPECT_EQ(&repository.front_local<Generator>(), &view.data());
     EXPECT_EQ(repository.size<Generator>(), 1);
 }
