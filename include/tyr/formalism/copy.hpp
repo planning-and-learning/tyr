@@ -29,15 +29,16 @@
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/interning.hpp>
 
-/// Copying records of one repository into another (datalog or planning; include that namespace's interning.hpp, which
-/// canonicalizes on insert). A copy is found by ADL on its WriteContext: call it unqualified or as formalism::copy.
+/// Copying records of one repository S into another R (datalog or planning, the same or the other: the records both
+/// store have one type; include R's namespace's interning.hpp, which canonicalizes on insert). A copy is found by ADL on
+/// its WriteContext: call it unqualified or as formalism::copy.
 namespace tyr::formalism
 {
 
 /// A binding: its relation and its objects copied.
-template<typename Rel, typename B, typename R>
+template<typename Rel, typename S, typename B, typename R>
 std::pair<ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Rel, ObjectTag>, R>, bool>
-copy(ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Rel, ObjectTag>, R> element, WriteContext<B, R>& context)
+copy(ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Rel, ObjectTag>, S> element, WriteContext<B, R>& context)
 {
     auto binding = ygg::formalism::checkout<RelationBinding<Rel>>(context.builder());
 
@@ -50,8 +51,8 @@ copy(ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Re
 
 /// A record: its members copied, each child (every index of a type the builder builds, urd::map_children) and its
 /// binding (a ground record's) copied first.
-template<typename T, typename B, typename R>
-std::pair<urd::index_view<T, R>, bool> copy(urd::index_view<T, R> element, WriteContext<B, R>& context)
+template<typename T, typename S, typename B, typename R>
+std::pair<urd::index_view<T, R>, bool> copy(urd::index_view<T, S> element, WriteContext<B, R>& context)
 {
     auto record = ygg::formalism::checkout<T>(context.builder());
 

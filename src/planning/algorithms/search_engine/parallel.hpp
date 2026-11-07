@@ -28,7 +28,6 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/search_space/parallel.hpp"
 #include "tyr/planning/state_routing/dist_hash.hpp"
 #include "tyr/planning/successor_generator.hpp"
@@ -748,10 +747,9 @@ public:
         constexpr auto uses_owner_repositories = ExecutionPolicy::uses_owner_repositories;
         if constexpr (uses_owner_repositories)
         {
-            auto state_repository_factory = StateRepositoryFactory<Kind> {};
             m_owner_state_repositories.reserve(num_workers);
             for (size_t i = 0; i < num_workers; ++i)
-                m_owner_state_repositories.push_back(state_repository_factory.create_concurrent(state_repository.get_task()));
+                m_owner_state_repositories.push_back(std::make_shared<StateRepository<Kind>>(state_repository.get_task(), true));
         }
 
         m_workers.reserve(num_workers);

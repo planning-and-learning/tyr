@@ -42,7 +42,6 @@ void bind_unary_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_binary_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_multi_operator(nb::module_& m, RepositoryBinding& repository);
 void bind_numeric_effect(nb::module_& m, RepositoryBinding& repository);
-void bind_conditional_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository);
 void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository);
 void bind_rule(nb::module_& m, RepositoryBinding& repository);

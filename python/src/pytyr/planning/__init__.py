@@ -9,7 +9,6 @@ from pytyr._pytyr.planning import (
     DistHashMode as DistHashMode,
     ParallelSearchMode as ParallelSearchMode,
     ProgressStatistics as ProgressStatistics,
-    ProgressStatisticsSnapshot as ProgressStatisticsSnapshot,
     SearchBudget as SearchBudget,
     SearchStatus as SearchStatus,
     Statistics as Statistics,

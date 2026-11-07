@@ -28,8 +28,9 @@
 #include <ranges>
 #include <type_traits>
 #include <utility>
-#include <yggdrasil/core/config.hpp>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
@@ -39,7 +40,7 @@ namespace tyr::planning
 
 template<class R, class Tag>
 concept AtomRangeConcept =
-    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, urd::index<formalism::planning::Atom<GroundTag, Tag>>>;
+    std::ranges::input_range<R> && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, urd::index<formalism::Atom<GroundTag, Tag>>>;
 
 template<class R, class Tag>
 concept FactRangeConcept =
@@ -48,7 +49,7 @@ concept FactRangeConcept =
 template<class R, class Tag>
 concept FunctionTermValueRangeConcept =
     std::ranges::input_range<R>
-    && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, Tag>>, ygg::float_t>>;
+    && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, std::pair<urd::index<formalism::FunctionTerm<GroundTag, Tag>>, ygg::float_t>>;
 
 template<typename T>
 concept IterableStateConcept = requires(const std::remove_reference_t<T>& cs) {
@@ -88,15 +89,16 @@ concept IterableViewStateConcept = requires(const std::remove_reference_t<T>& cs
     { cs.template get_fterm_values_view<formalism::FluentTag>() } -> FunctionTermViewValueRangeConcept<formalism::FluentTag>;
 };
 
-/// State contents and task context, accepting values and references without requiring repository identity.
+/// State contents and task context, accepting values and references without requiring repository identity; compared
+/// and hashed by its identity (urd::Identifiable).
 template<typename T, typename Kind>
-concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && IterableViewStateConcept<T>
+concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && IterableViewStateConcept<T> && urd::Identifiable<std::remove_cvref_t<T>>
                            && requires(const std::remove_reference_t<T>& state,
                                        urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
-                                       urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
-                                       urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
-                                       urd::index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> static_atom,
-                                       urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> derived_atom,
+                                       urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> static_fterm,
+                                       urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> fluent_fterm,
+                                       urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> static_atom,
+                                       urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> derived_atom,
                                        formalism::planning::FDRVariableView<formalism::FluentTag> variable_view,
                                        formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> static_fterm_view,
                                        formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fluent_fterm_view,

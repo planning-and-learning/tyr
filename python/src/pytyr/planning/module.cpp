@@ -60,7 +60,6 @@ void bind_module_definitions(nb::module_& m)
     nb::enum_<SearchStatus>(m, "SearchStatus")
         .value("IN_PROGRESS", SearchStatus::IN_PROGRESS)
         .value("OUT_OF_TIME", SearchStatus::OUT_OF_TIME)
-        .value("OUT_OF_MEMORY", SearchStatus::OUT_OF_MEMORY)
         .value("OUT_OF_STATES", SearchStatus::OUT_OF_STATES)
         .value("FAILED", SearchStatus::FAILED)
         .value("EXHAUSTED", SearchStatus::EXHAUSTED)
@@ -118,24 +117,6 @@ void bind_module_definitions(nb::module_& m)
                               .def("get_destination_lock_wait_time", &Statistics::get_destination_lock_wait_time)
                               .def("get_destination_lock_hold_time", &Statistics::get_destination_lock_hold_time);
     ygg::add_print(statistics_cls);
-
-    using ProgressSnapshot = ProgressStatistics::Snapshot;
-
-    auto progress_snapshot_cls = nb::class_<ProgressSnapshot>(m, "ProgressStatisticsSnapshot")
-                                     .def(nb::init<uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t>(),
-                                          "num_generated_successors"_a,
-                                          "num_expanded"_a,
-                                          "num_deadends"_a,
-                                          "num_pruned"_a,
-                                          "num_generated_candidates"_a = 0,
-                                          "num_transferred_candidates"_a = 0)
-                                     .def("get_num_generated_successors", &ProgressSnapshot::get_num_generated_successors)
-                                     .def("get_num_expanded", &ProgressSnapshot::get_num_expanded)
-                                     .def("get_num_deadends", &ProgressSnapshot::get_num_deadends)
-                                     .def("get_num_pruned", &ProgressSnapshot::get_num_pruned)
-                                     .def("get_num_generated_candidates", &ProgressSnapshot::get_num_generated_candidates)
-                                     .def("get_num_transferred_candidates", &ProgressSnapshot::get_num_transferred_candidates);
-    ygg::add_print(progress_snapshot_cls);
 
     auto progress_statistics_cls = nb::class_<ProgressStatistics>(m, "ProgressStatistics")
                                        .def(nb::init<>())

@@ -36,7 +36,6 @@
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristic.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
@@ -135,10 +134,9 @@ template<TaskKind Kind>
 SearchContext<Kind> make_search_context(const tyr::planning::TaskPtr<Kind>& task, bool concurrent = false, size_t num_datalog_threads = 1)
 {
     auto execution_context = ygg::ExecutionContext::create(num_datalog_threads);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository_factory = tyr::planning::StateRepositoryFactory<Kind> {};
-    auto repository = concurrent ? repository_factory.create_concurrent(task) : repository_factory.create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task, concurrent);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     return { std::move(execution_context), std::move(repository), std::move(axiom_evaluator), std::move(successor_generator) };
 }
 

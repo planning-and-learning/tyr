@@ -20,12 +20,13 @@
 #include "loki_to_tyr.hpp"
 
 #include <loki/loki.hpp>
+#include <yggdrasil/io/project_path.hpp>
 
 namespace tyr::formalism::planning
 {
 
 Parser::Parser(const std::filesystem::path& domain_filepath, const loki::semantic::ParserOptions& options, const loki::semantic::TranslatorOptions& translator_options) :
-    Parser(loki::semantic::read_file(domain_filepath), domain_filepath, options, translator_options)
+    Parser(ygg::common::read_file(domain_filepath), domain_filepath, options, translator_options)
 {
 }
 
@@ -57,7 +58,7 @@ Parser& Parser::operator=(Parser&&) noexcept = default;
 Parser::~Parser() = default;
 
 PlanningTask<LiftedTag> Parser::parse_task(const std::filesystem::path& task_filepath, const loki::semantic::ParserOptions& options)
-{ return parse_task(loki::semantic::read_file(task_filepath), task_filepath, options); }
+{ return parse_task(ygg::common::read_file(task_filepath), task_filepath, options); }
 
 PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<std::filesystem::path> task_filepath, const loki::semantic::ParserOptions&)
 {

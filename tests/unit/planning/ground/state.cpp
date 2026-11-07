@@ -1,8 +1,8 @@
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/state_storage/vectors.hpp"
 #include "tyr/planning/state_storage/numeric.hpp"
 #include "tyr/planning/state_storage/tree_bitset/atom.hpp"
@@ -101,15 +101,15 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     };
     const auto task = make_task();
     ASSERT_TRUE(task);
-    auto axioms = tyr::planning::AxiomEvaluatorFactory<tyr::GroundTag>().create(task, execution_context);
-    auto source_repository = tyr::planning::StateRepositoryFactory<tyr::GroundTag>().create(task);
+    auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<tyr::GroundTag>>(task, execution_context);
+    auto source_repository = std::make_shared<tyr::planning::StateRepository<tyr::GroundTag>>(task);
     const auto initial = source_repository->get_initial_state(*axioms);
     const auto derived = initial.template get_atoms<::tyr::formalism::DerivedTag>();
     ASSERT_FALSE(derived.begin() == derived.end());
     auto source = urd::builder<tyr::planning::State<tyr::GroundTag>> { initial.data() };
     source.set(Index {});
     const auto borrowed = urd::resolve(source, *source_repository);
-    auto target = tyr::planning::StateRepositoryFactory<tyr::GroundTag>().create(task);
+    auto target = std::make_shared<tyr::planning::StateRepository<tyr::GroundTag>>(task);
     auto warm = target->get_state_builder();
     warm->numeric_storage.values.reserve(64);
     const auto slot = warm.get();
@@ -129,7 +129,7 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
         std::ranges::equal(source.template get_fterm_values<tyr::formalism::FluentTag>(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
     EXPECT_EQ(target->register_extended_state(borrowed), retained);
     EXPECT_EQ(target->num_states(), 1);
-    auto foreign = tyr::planning::StateRepositoryFactory<tyr::GroundTag>().create(make_task());
+    auto foreign = std::make_shared<tyr::planning::StateRepository<tyr::GroundTag>>(make_task());
     EXPECT_THROW(foreign->register_extended_state(borrowed), std::invalid_argument);
     EXPECT_EQ(foreign->num_states(), 0);
 
@@ -163,9 +163,9 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
                                                                                     "mutex-membership-problem.pddl"));
     const auto task = lifted->instantiate_ground_task(*execution_context).task;
     ASSERT_TRUE(task);
-    auto axioms = tyr::planning::AxiomEvaluatorFactory<tyr::GroundTag>().create(task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<tyr::GroundTag>().create(task);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<tyr::GroundTag>().create(task, execution_context);
+    auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<tyr::GroundTag>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<tyr::GroundTag>>(task);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<tyr::GroundTag>>(task, execution_context);
     const auto initial = repository->get_initial_state(*axioms);
     const auto successors = generator->get_labeled_successor_nodes(tyr::planning::Node<tyr::GroundTag>(initial, 0), *repository, *axioms);
     ASSERT_EQ(successors.size(), 1);

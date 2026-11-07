@@ -18,11 +18,11 @@
 #include "tyr/analysis/listeners.hpp"
 
 #include "tyr/analysis/stratification.hpp"
-#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"

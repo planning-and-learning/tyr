@@ -18,14 +18,12 @@
 #include "../common.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
-#include "tyr/planning/factory.hpp"
-#include "tyr/planning/ground/axiom_evaluator.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/lmcut.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
 #include "tyr/planning/heuristics/rpg_ff.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
@@ -93,9 +91,9 @@ try
 
     for ([[maybe_unused]] auto _ : state)
     {
-        auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-        auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-        auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+        auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+        auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+        auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
         auto heuristic = Heuristic::create(task, execution_context);
         auto options = tyr::planning::gbfs_lazy::Options<Kind>();
         options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);

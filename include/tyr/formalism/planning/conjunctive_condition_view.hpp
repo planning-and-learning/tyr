@@ -18,10 +18,10 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <ranges>

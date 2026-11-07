@@ -24,7 +24,6 @@
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -60,9 +59,6 @@ void expect_distinct(const std::shared_ptr<T>& source, const std::shared_ptr<T>&
     EXPECT_NE(source.get(), worker.get());
     EXPECT_NE(source.get(), nested.get());
     EXPECT_NE(worker.get(), nested.get());
-    EXPECT_NE(source->get_index(), worker->get_index());
-    EXPECT_NE(source->get_index(), nested->get_index());
-    EXPECT_NE(worker->get_index(), nested->get_index());
 }
 
 template<TaskKind Kind>
@@ -71,13 +67,9 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
     ASSERT_TRUE(task->has_axioms());
 
     auto source_context = ygg::ExecutionContext::create(1);
-    auto axiom_factory = tyr::planning::AxiomEvaluatorFactory<Kind> {};
-    auto state_repository_factory = tyr::planning::StateRepositoryFactory<Kind> {};
-    auto successor_generator_factory = tyr::planning::SuccessorGeneratorFactory<Kind> {};
-
-    auto source_axiom_evaluator = axiom_factory.create(task, source_context);
-    auto source_state_repository = state_repository_factory.create(task);
-    auto source = successor_generator_factory.create(task, source_context);
+    auto source_axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, source_context);
+    auto source_state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto source = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, source_context);
 
     auto worker_context = ygg::ExecutionContext::create(1);
     auto worker_axiom_evaluator = source_axiom_evaluator->make_worker(worker_context);
@@ -218,10 +210,10 @@ template<TaskKind Kind>
 void expect_independent_repository_identity(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto first_axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto first_axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto second_axiom_evaluator = first_axiom_evaluator->make_worker(execution_context);
-    auto first_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto second_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
+    auto first_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto second_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
 
     const auto first_state = first_repository->get_initial_state(*first_axiom_evaluator);
     const auto second_state = second_repository->get_initial_state(*second_axiom_evaluator);
@@ -244,12 +236,11 @@ template<TaskKind Kind>
 void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto source_context = ygg::ExecutionContext::create(1);
-    auto source_axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, source_context);
-    auto repository_factory = tyr::planning::StateRepositoryFactory<Kind> {};
-    auto source_repository = repository_factory.create_concurrent(task);
-    auto other_owner_repository = repository_factory.create_concurrent(task);
+    auto source_axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, source_context);
+    auto source_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task, true);
+    auto other_owner_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task, true);
     auto other_owner_worker_repository = other_owner_repository->make_worker();
-    auto source = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, source_context);
+    auto source = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, source_context);
     auto worker_context = ygg::ExecutionContext::create(1);
     auto worker_axiom_evaluator = source_axiom_evaluator->make_worker(worker_context);
     auto worker_repository = source_repository->make_worker();
@@ -263,9 +254,8 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     const auto& second_repository = worker_repository;
     EXPECT_NE(source.get(), worker.get());
     EXPECT_NE(first_repository.get(), second_repository.get());
-    EXPECT_NE(source->get_index(), worker->get_index());
     EXPECT_NE(first_repository->get_worker_index(), second_repository->get_worker_index());
-    EXPECT_EQ(first_repository->get_index(), second_repository->get_index());
+    EXPECT_EQ(first_repository->layer(), second_repository->layer());
     EXPECT_TRUE(first_repository->shares_storage_with(*second_repository));
     EXPECT_TRUE(first_repository->is_concurrent());
     EXPECT_TRUE(second_repository->is_concurrent());

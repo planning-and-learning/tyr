@@ -109,23 +109,6 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots() -
     ):
         assert label in str(statistics)
 
-    snapshot = planning.ProgressStatisticsSnapshot(1, 2, 3, 4)
-    assert snapshot.get_num_generated_candidates() == 0
-    assert snapshot.get_num_transferred_candidates() == 0
-    snapshot = planning.ProgressStatisticsSnapshot(1, 2, 3, 4, num_generated_candidates=9, num_transferred_candidates=5)
-
-    assert snapshot.get_num_generated_successors() == 1
-    assert snapshot.get_num_expanded() == 2
-    assert snapshot.get_num_deadends() == 3
-    assert snapshot.get_num_pruned() == 4
-    assert snapshot.get_num_generated_candidates() == 9
-    assert snapshot.get_num_transferred_candidates() == 5
-    assert repr(snapshot) == str(snapshot)
-    assert "generated successors" in str(snapshot)
-    assert "deadend" in str(snapshot)
-    assert "Number of generated candidates at snapshot: 9" in str(snapshot)
-    assert "Number of transferred candidates at snapshot: 5" in str(snapshot)
-
     progress_statistics = planning.ProgressStatistics()
 
     assert progress_statistics.get_snapshots() == []
@@ -571,12 +554,9 @@ def _make_components_ground(
     task: planning.ground.Task, *, concurrent: bool = False
 ) -> tuple[planning.ground.StateRepository, planning.ground.AxiomEvaluator, planning.ground.SuccessorGenerator]:
     execution_context = ExecutionContext(1)
-    axiom_evaluator = planning.ground.AxiomEvaluatorFactory().create(task, execution_context)
-    state_repository_factory = planning.ground.StateRepositoryFactory()
-    state_repository = (
-        state_repository_factory.create_concurrent(task) if concurrent else state_repository_factory.create(task)
-    )
-    successor_generator = planning.ground.SuccessorGeneratorFactory().create(task, execution_context)
+    axiom_evaluator = planning.ground.AxiomEvaluator(task, execution_context)
+    state_repository = planning.ground.StateRepository(task, concurrent=concurrent)
+    successor_generator = planning.ground.SuccessorGenerator(task, execution_context)
     return state_repository, axiom_evaluator, successor_generator
 
 
@@ -584,12 +564,9 @@ def _make_components_lifted(
     task: planning.lifted.Task, *, concurrent: bool = False
 ) -> tuple[planning.lifted.StateRepository, planning.lifted.AxiomEvaluator, planning.lifted.SuccessorGenerator]:
     execution_context = ExecutionContext(1)
-    axiom_evaluator = planning.lifted.AxiomEvaluatorFactory().create(task, execution_context)
-    state_repository_factory = planning.lifted.StateRepositoryFactory()
-    state_repository = (
-        state_repository_factory.create_concurrent(task) if concurrent else state_repository_factory.create(task)
-    )
-    successor_generator = planning.lifted.SuccessorGeneratorFactory().create(task, execution_context)
+    axiom_evaluator = planning.lifted.AxiomEvaluator(task, execution_context)
+    state_repository = planning.lifted.StateRepository(task, concurrent=concurrent)
+    successor_generator = planning.lifted.SuccessorGenerator(task, execution_context)
     return state_repository, axiom_evaluator, successor_generator
 
 
@@ -1213,9 +1190,8 @@ def test_state_repository_concurrency_is_bound() -> None:
         (planning.ground, ground_task),
         (planning.lifted, lifted_task),
     ):
-        factory = task_module.StateRepositoryFactory()
-        assert not factory.create(task).is_concurrent()
-        assert factory.create_concurrent(task).is_concurrent()
+        assert not task_module.StateRepository(task).is_concurrent()
+        assert task_module.StateRepository(task, concurrent=True).is_concurrent()
 
 
 def test_dist_hash_mode_is_bound() -> None:
@@ -1340,12 +1316,12 @@ def test_state_iterable_methods_return_stable_iterators() -> None:
 def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_ground(task)
     state = state_repository.get_initial_state(axiom_evaluator)
-    state_index = state.get_index()
+    state_index = state.index()
     state_text = str(state)
     packed = state.pack()
 
     assert type(packed) is planning.ground.PackedState
-    assert packed.get_index() == state_index
+    assert packed.index() == state_index
     assert packed.get_state_repository() == state_repository
     assert packed.unpack() == state
     assert packed == state.pack()
@@ -1356,7 +1332,7 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
 
     unpacked = packed.unpack()
     assert type(unpacked) is planning.ground.State
-    assert unpacked.get_index() == state_index
+    assert unpacked.index() == state_index
     assert str(unpacked) == state_text
     assert unpacked.pack() == packed
 
@@ -1368,12 +1344,12 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
 def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task)
     state = state_repository.get_initial_state(axiom_evaluator)
-    state_index = state.get_index()
+    state_index = state.index()
     state_text = str(state)
     packed = state.pack()
 
     assert type(packed) is planning.lifted.PackedState
-    assert packed.get_index() == state_index
+    assert packed.index() == state_index
     assert packed.get_state_repository() == state_repository
     assert packed.unpack() == state
     assert packed == state.pack()
@@ -1384,7 +1360,7 @@ def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
 
     unpacked = packed.unpack()
     assert type(unpacked) is planning.lifted.State
-    assert unpacked.get_index() == state_index
+    assert unpacked.index() == state_index
     assert str(unpacked) == state_text
     assert unpacked.pack() == packed
 
@@ -1543,17 +1519,17 @@ def _check_create_state_ground(task: planning.ground.Task) -> None:
             formalism_planning.FluentFDRFactData(fact.get_variable(), fact.get_value())
             for fact in initial_state.fluent_facts()
         ],
-        [(fterm.get_index(), value) for fterm, value in initial_state.fluent_fterm_values()],
+        [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
     )
 
-    registered_state = state_repository.get_registered_state(initial_state.get_index())
+    registered_state = state_repository.get_registered_state(initial_state.index())
 
     assert registered_state == initial_state
-    assert registered_state.get_index() == initial_state.get_index()
+    assert registered_state.index() == initial_state.index()
     assert recreated_state == initial_state
-    assert recreated_state.get_index() == initial_state.get_index()
+    assert recreated_state.index() == initial_state.index()
     assert value_recreated_state == initial_state
-    assert value_recreated_state.get_index() == initial_state.get_index()
+    assert value_recreated_state.index() == initial_state.index()
     assert state_repository.num_states() == 1
 
 
@@ -1575,17 +1551,17 @@ def _check_create_state_lifted(task: planning.lifted.Task) -> None:
             formalism_planning.FluentFDRFactData(fact.get_variable(), fact.get_value())
             for fact in initial_state.fluent_facts()
         ],
-        [(fterm.get_index(), value) for fterm, value in initial_state.fluent_fterm_values()],
+        [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
     )
 
-    registered_state = state_repository.get_registered_state(initial_state.get_index())
+    registered_state = state_repository.get_registered_state(initial_state.index())
 
     assert registered_state == initial_state
-    assert registered_state.get_index() == initial_state.get_index()
+    assert registered_state.index() == initial_state.index()
     assert recreated_state == initial_state
-    assert recreated_state.get_index() == initial_state.get_index()
+    assert recreated_state.index() == initial_state.index()
     assert value_recreated_state == initial_state
-    assert value_recreated_state.get_index() == initial_state.get_index()
+    assert value_recreated_state.index() == initial_state.index()
     assert state_repository.num_states() == 1
 
 
@@ -1666,14 +1642,13 @@ def test_node_python_equality_and_hash_follow_state_and_metric() -> None:
 def _check_node_lookup_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_ground(task)
     initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
-    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().get_index())
+    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().index())
 
-    assert successor_generator.get_index() == 0
     assert not hasattr(successor_generator, "get_state_repository")
     assert looked_up_node == initial_node
     assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
     assert (
-        successor_generator.get_packed_node(state_repository, initial_node.get_state().get_index()).unpack()
+        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack()
         == initial_node
     )
 
@@ -1681,14 +1656,13 @@ def _check_node_lookup_ground(task: planning.ground.Task) -> None:
 def _check_node_lookup_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task)
     initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
-    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().get_index())
+    looked_up_node = successor_generator.get_node(state_repository, initial_node.get_state().index())
 
-    assert successor_generator.get_index() == 0
     assert not hasattr(successor_generator, "get_state_repository")
     assert looked_up_node == initial_node
     assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
     assert (
-        successor_generator.get_packed_node(state_repository, initial_node.get_state().get_index()).unpack()
+        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack()
         == initial_node
     )
 
@@ -2226,21 +2200,20 @@ def test_state_views_from_independent_repository_factories_use_distinct_storage_
         (planning.lifted, lifted_task),
     ):
         execution_context = ExecutionContext(1)
-        axiom_evaluator_factory = task_module.AxiomEvaluatorFactory()
-        first_axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)
-        second_axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)
+        first_axiom_evaluator = task_module.AxiomEvaluator(task, execution_context)
+        second_axiom_evaluator = task_module.AxiomEvaluator(task, execution_context)
 
-        first_repository = task_module.StateRepositoryFactory().create(task)
-        second_repository = task_module.StateRepositoryFactory().create(task)
+        first_repository = task_module.StateRepository(task)
+        second_repository = task_module.StateRepository(task)
 
         first_state = first_repository.get_initial_state(first_axiom_evaluator)
         second_state = second_repository.get_initial_state(second_axiom_evaluator)
 
         assert first_repository.get_worker_index() == 0
         assert second_repository.get_worker_index() == 0
-        assert first_state.get_index() == second_state.get_index()
+        assert first_state.index() == second_state.index()
         assert first_state != second_state
         assert len({first_state, second_state}) == 2
-        assert first_state.pack().get_index() == second_state.pack().get_index()
+        assert first_state.pack().index() == second_state.pack().index()
         assert first_state.pack() != second_state.pack()
         assert len({first_state.pack(), second_state.pack()}) == 2

@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/function_term_data.hpp"
-#include "tyr/formalism/datalog/function_term_view.hpp"
+#include "tyr/formalism/function_term_data.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
@@ -12,7 +12,7 @@ template<typename Entity>
 struct FunctionTermPublicView;
 
 template<tyr::formalism::FactKind T>
-struct FunctionTermPublicView<tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, T>>
+struct FunctionTermPublicView<tyr::formalism::FunctionTerm<::tyr::LiftedTag, T>>
 {
     using type = tyr::formalism::datalog::FunctionTermView<::tyr::LiftedTag, T>;
 };
@@ -42,7 +42,7 @@ template<typename Entity>
 struct GroundFunctionTermPublicView;
 
 template<tyr::formalism::FactKind T>
-struct GroundFunctionTermPublicView<tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, T>>
+struct GroundFunctionTermPublicView<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>>
 {
     using type = tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, T>;
 };

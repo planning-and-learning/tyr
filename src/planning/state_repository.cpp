@@ -21,24 +21,24 @@
 
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -99,7 +99,6 @@ void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>>
 {
     state.clear();
     state.resize_fluent_facts(task.get_task().get_fluent_variables().size());
-    state.resize_derived_atoms(task.get_task().template get_atoms<formalism::DerivedTag>().size());
 }
 
 void prepare_builder(const Task<LiftedTag>&, urd::builder<State<LiftedTag>>& state) { state.clear(); }
@@ -276,9 +275,10 @@ struct StateRepository<Kind>::Impl
     ygg::uint_t storage_identity;
 };
 
+/// The root of a cohort is worker 0; make_worker numbers the others.
 template<TaskKind Kind>
-StateRepository<Kind>::StateRepository(ygg::uint_t index, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::move(task), concurrent, std::move(next_index)))
+StateRepository<Kind>::StateRepository(TaskPtr<Kind> task, bool concurrent) :
+    m_impl(std::make_unique<Impl>(0, std::move(task), concurrent, std::make_shared<std::atomic<ygg::uint_t>>(1)))
 {
 }
 
@@ -337,7 +337,7 @@ template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::create_state(
     AxiomEvaluator<Kind>& axiom_evaluator,
     const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>& fluent_facts,
-    const urd::Store<urd::sequence<std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values)
+    const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values)
 {
     auto state_builder = get_state_builder();
 
@@ -456,7 +456,7 @@ ygg::uint_t StateRepository<Kind>::get_worker_index() const noexcept
 { return m_impl->index; }
 
 template<TaskKind Kind>
-ygg::uint_t StateRepository<Kind>::get_index() const noexcept
+std::size_t StateRepository<Kind>::layer() const noexcept
 { return m_impl->storage_identity; }
 
 template<TaskKind Kind>

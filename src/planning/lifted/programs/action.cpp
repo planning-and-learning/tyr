@@ -23,19 +23,18 @@
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/atom_view.hpp"
-#include "tyr/formalism/datalog/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
-#include "tyr/formalism/datalog/function_term_value_view.hpp"
-#include "tyr/formalism/datalog/function_term_view.hpp"
-#include "tyr/formalism/datalog/literal_view.hpp"
-#include "tyr/formalism/datalog/multi_operator_view.hpp"
-#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -46,24 +45,16 @@
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
 
 #include <algorithm>
 
@@ -84,7 +75,7 @@ auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> a
 
 auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
 
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -143,10 +134,10 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
         auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
         for (const auto variable : action.get_variables())
-            rule->variables.push_back(formalism::planning::merge_p2d(variable, context).first.index());
+            rule->variables.push_back(formalism::copy(variable, context).first.index());
 
         for (const auto variable : action.get_condition().get_variables())
-            conj_cond->variables.push_back(formalism::planning::merge_p2d(variable, context).first.index());
+            conj_cond->variables.push_back(formalism::copy(variable, context).first.index());
 
         append_condition(action.get_condition(), *conj_cond);
 
@@ -179,15 +170,15 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
             auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(builder);
             auto effect_condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
             for (const auto variable : action.get_variables())
-                effect_condition->variables.push_back(formalism::planning::merge_p2d(variable, context).first.index());
+                effect_condition->variables.push_back(formalism::copy(variable, context).first.index());
             for (const auto variable : cond_eff.get_variables())
-                effect_condition->variables.push_back(formalism::planning::merge_p2d(variable, context).first.index());
+                effect_condition->variables.push_back(formalism::copy(variable, context).first.index());
             effect_rule->variables = effect_condition->variables;
             append_condition(action.get_condition(), *effect_condition);
             append_condition(condition, *effect_condition);
             effect_rule->body = formalism::datalog::insert(repository, *effect_condition).first.index();
 
-            auto effect_atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(builder);
+            auto effect_atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(builder);
             effect_atom->predicate = new_effect_predicate.index();
             for (ygg::uint_t i = 0; i < new_effect_predicate.get_arity(); ++i)
                 effect_atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));

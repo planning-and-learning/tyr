@@ -2,6 +2,7 @@
 #define TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
@@ -13,7 +14,6 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
@@ -53,7 +53,7 @@ inline tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag> 
     binding_data.relation = predicate.index();
     binding_data.objects.push_back(object.index());
     const auto binding = ygg::formalism::insert(repository, binding_data).first;
-    auto atom_data = urd::data<tyr::formalism::planning::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index());
+    auto atom_data = urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index());
     return ygg::formalism::insert(repository, atom_data).first;
 }
 
@@ -87,9 +87,9 @@ std::pair<tyr::planning::StateRepositoryPtr<Kind>, tyr::planning::Plan<Kind>> ma
 {
     auto task = make_task<Kind>();
     auto execution = ygg::ExecutionContext::create(1);
-    auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution);
     const auto initial = generator->get_initial_node(*repository, *evaluator);
     const auto successors = generator->get_labeled_successor_nodes(initial, *repository, *evaluator);
     if (successors.size() != 1)

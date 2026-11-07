@@ -22,7 +22,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/planning/numeric_effect_data.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 
 #include <optional>
 #include <tuple>
@@ -38,15 +38,15 @@ template<>
 struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
 {
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects;
-    urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
+    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals;
+    urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects;
+    urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
         auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
-    data(urd::flat_vector<urd::index<::tyr::formalism::planning::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
-         urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
+    data(urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
+         urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
              auxiliary_numeric_effect_) :
         index(),
         literals(std::move(literals_)),
@@ -70,15 +70,15 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> index;
     urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts;
     urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects;
-    urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
+    urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects;
+    urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
         auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
     data(urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts_,
          urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
-         urd::flat_optional<urd::index<::tyr::formalism::planning::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
+         urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
+         urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
              auxiliary_numeric_effect_) :
         index(),
         add_facts(std::move(add_facts_)),

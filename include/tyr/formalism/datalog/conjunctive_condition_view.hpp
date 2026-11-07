@@ -18,9 +18,9 @@
 #ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_VIEW_HPP_
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
-#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <urd/elements/flat.hpp>

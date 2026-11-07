@@ -34,7 +34,6 @@
 #include <cstdint>
 #include <urd/elements/hash.hpp>
 #include <vector>
-#include <urd/elements/hash_dynamic_bitset.hpp>
 
 namespace tyr::planning
 {
@@ -90,7 +89,7 @@ public:
 private:
     struct Feature
     {
-        urd::index<formalism::planning::Atom<GroundTag, formalism::FluentTag>> atom;
+        urd::index<formalism::Atom<GroundTag, formalism::FluentTag>> atom;
         urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact;
     };
 

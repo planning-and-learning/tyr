@@ -3,8 +3,8 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/multi_operator_data.hpp"
-#include "tyr/formalism/datalog/multi_operator_view.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
@@ -26,8 +26,8 @@ concept MultiOperatorContract =
            view.get_args();
        };
 
-using Lifted = tyr::formalism::datalog::MultiOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
-using Ground = tyr::formalism::datalog::MultiOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
+using Lifted = tyr::formalism::MultiOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
+using Ground = tyr::formalism::MultiOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
 
 static_assert(urd::resolves<tyr::formalism::datalog::Repository, Lifted>);
 static_assert(ygg::formalism::SupportsSymbol<tyr::formalism::datalog::Repository, Lifted>);

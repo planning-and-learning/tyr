@@ -21,7 +21,6 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_builder.hpp"
 
-#include <atomic>
 #include <concepts>
 #include <cstddef>
 #include <memory>
@@ -34,15 +33,13 @@ namespace tyr::planning
 template<TaskKind Kind>
 class AxiomEvaluator
 {
-    friend class AxiomEvaluatorFactory<Kind>;
-
 private:
     struct Impl;
 
-    AxiomEvaluator(ygg::uint_t index, TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
     explicit AxiomEvaluator(std::unique_ptr<Impl> impl);
 
 public:
+    AxiomEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context);
     ~AxiomEvaluator();
 
     AxiomEvaluator(const AxiomEvaluator&) = delete;
@@ -55,7 +52,6 @@ public:
 
     [[nodiscard]] const TaskPtr<Kind>& get_task() const noexcept;
     [[nodiscard]] const ygg::ExecutionContextPtr& get_execution_context() const noexcept;
-    [[nodiscard]] ygg::uint_t get_index() const noexcept;
 
     /// Lifted axioms are evaluated by a Datalog program, whose statistics this prints.
     void print_summary(size_t verbosity) const

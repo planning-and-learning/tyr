@@ -17,9 +17,6 @@
 
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
 
-#include "tyr/containers.hpp"
-
-#include <boost/dynamic_bitset.hpp>
 
 namespace tyr::planning
 {
@@ -33,8 +30,7 @@ template<typename U, typename Context>
 auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked) -> Packed
 {
     m_buffer.clear();
-    const auto& bits = unpacked.indices;
-    for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
+    for (const auto i : unpacked.indices)
         m_buffer.push_back(i);
 
     return m_uint_vectors->insert(m_buffer).first;
@@ -45,7 +41,7 @@ auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked, const Pac
 {
     // A write cannot grow or shrink a stored row, so only rows with as many true positions as the parent go in as writes.
     const auto& bits = unpacked.indices;
-    if (bits.count() != m_uint_vectors->row_size(parent))
+    if (bits.size() != m_uint_vectors->row_size(parent))
         return insert(unpacked);
 
     m_parent.resize(m_uint_vectors->row_size(parent));
@@ -53,9 +49,12 @@ auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked, const Pac
 
     m_writes.clear();
     auto position = std::size_t { 0 };
-    for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i), ++position)
+    for (const auto i : bits)
+    {
         if (m_parent[position] != i)
-            m_writes.push_back(urd::Write<ygg::uint_t> { position, static_cast<ygg::uint_t>(i) });
+            m_writes.push_back(urd::Write<ygg::uint_t> { position, i });
+        ++position;
+    }
 
     return m_uint_vectors->insert(parent, m_writes).first;
 }
@@ -67,8 +66,7 @@ void BitPositionsBackend<U, Context>::unpack(const Packed& packed, Unpacked& unp
     m_uint_vectors->read(packed, m_buffer);
 
     unpacked.indices.clear();
-    for (const auto i : m_buffer)
-        tyr::set(i, true, unpacked.indices);
+    unpacked.indices.insert(m_buffer.begin(), m_buffer.end());
 }
 
 template class BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, TreeVector, false>>;

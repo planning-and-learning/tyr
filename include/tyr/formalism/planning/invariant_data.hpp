@@ -38,12 +38,12 @@ struct data<::tyr::formalism::planning::Invariant>
     urd::index<::tyr::formalism::planning::Invariant> index;
     ygg::uint_t num_rigid_variables = 0;
     ygg::uint_t num_counted_variables = 0;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms;
+    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms;
 
     data() = default;
     data(ygg::uint_t num_rigid_variables_,
          ygg::uint_t num_counted_variables_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms_) :
+         urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms_) :
         index(),
         num_rigid_variables(num_rigid_variables_),
         num_counted_variables(num_counted_variables_),

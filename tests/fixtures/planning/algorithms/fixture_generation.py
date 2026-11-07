@@ -96,7 +96,6 @@ SEARCH_STATUS_NAMES = {
     SearchStatus.FAILED: "FAILED",
     SearchStatus.IN_PROGRESS: "IN_PROGRESS",
     SearchStatus.OUT_OF_TIME: "OUT_OF_TIME",
-    SearchStatus.OUT_OF_MEMORY: "OUT_OF_MEMORY",
     SearchStatus.OUT_OF_STATES: "OUT_OF_STATES",
 }
 
@@ -189,18 +188,18 @@ def make_context(kind: TaskKind, domain_file: Path, task_file: Path) -> Context:
     lifted_task = lifted_planning.Task(parse_task(domain_file, task_file))
 
     if kind == "lifted":
-        axiom_evaluator = lifted_planning.AxiomEvaluatorFactory().create(lifted_task, execution_context)
-        state_repository = lifted_planning.StateRepositoryFactory().create(lifted_task)
-        successor_generator = lifted_planning.SuccessorGeneratorFactory().create(lifted_task, execution_context)
+        axiom_evaluator = lifted_planning.AxiomEvaluator(lifted_task, execution_context)
+        state_repository = lifted_planning.StateRepository(lifted_task)
+        successor_generator = lifted_planning.SuccessorGenerator(lifted_task, execution_context)
         return Context(kind, execution_context, lifted_task, state_repository, axiom_evaluator, successor_generator)
 
     instantiation = lifted_task.instantiate_ground_task(
         execution_context, lifted_planning.GroundTaskInstantiationOptions()
     )
     task = instantiation.task
-    axiom_evaluator = ground_planning.AxiomEvaluatorFactory().create(task, execution_context)
-    state_repository = ground_planning.StateRepositoryFactory().create(task)
-    successor_generator = ground_planning.SuccessorGeneratorFactory().create(task, execution_context)
+    axiom_evaluator = ground_planning.AxiomEvaluator(task, execution_context)
+    state_repository = ground_planning.StateRepository(task)
+    successor_generator = ground_planning.SuccessorGenerator(task, execution_context)
     return Context(kind, execution_context, task, state_repository, axiom_evaluator, successor_generator)
 
 

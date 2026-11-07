@@ -24,19 +24,18 @@
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/atom_view.hpp"
-#include "tyr/formalism/datalog/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
-#include "tyr/formalism/datalog/function_term_value_view.hpp"
-#include "tyr/formalism/datalog/function_term_view.hpp"
-#include "tyr/formalism/datalog/literal_view.hpp"
-#include "tyr/formalism/datalog/multi_operator_view.hpp"
-#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -47,24 +46,16 @@
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -78,7 +69,7 @@ void append_variable(formalism::planning::VariableView variable,
                      formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                      urd::data<formalism::datalog::ConjunctiveCondition<LiftedTag>>& conj_cond)
 {
-    const auto index = merge_p2d(variable, context).first.index();
+    const auto index = formalism::copy(variable, context).first.index();
     if (std::ranges::find(conj_cond.variables, index) == conj_cond.variables.end())
         conj_cond.variables.push_back(index);
 }

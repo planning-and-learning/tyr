@@ -148,49 +148,8 @@ public:
 class ProgressStatistics
 {
 public:
-    class Snapshot
-    {
-    private:
-        uint64_t m_num_generated_successors;
-        uint64_t m_num_expanded;
-        uint64_t m_num_deadends;
-        uint64_t m_num_pruned;
-        uint64_t m_num_generated_candidates;
-        uint64_t m_num_transferred_candidates;
-
-    public:
-        Snapshot(uint64_t num_generated_successors,
-                 uint64_t num_expanded,
-                 uint64_t num_deadends,
-                 uint64_t num_pruned,
-                 uint64_t num_generated_candidates = 0,
-                 uint64_t num_transferred_candidates = 0) :
-            m_num_generated_successors(num_generated_successors),
-            m_num_expanded(num_expanded),
-            m_num_deadends(num_deadends),
-            m_num_pruned(num_pruned),
-            m_num_generated_candidates(num_generated_candidates),
-            m_num_transferred_candidates(num_transferred_candidates)
-        {
-        }
-
-        [[nodiscard]] uint64_t get_num_generated_successors() const noexcept { return m_num_generated_successors; }
-        [[nodiscard]] uint64_t get_num_expanded() const { return m_num_expanded; }
-        [[nodiscard]] uint64_t get_num_deadends() const { return m_num_deadends; }
-        [[nodiscard]] uint64_t get_num_pruned() const { return m_num_pruned; }
-        [[nodiscard]] uint64_t get_num_generated_candidates() const noexcept { return m_num_generated_candidates; }
-        [[nodiscard]] uint64_t get_num_transferred_candidates() const noexcept { return m_num_transferred_candidates; }
-    };
-
-    void add_snapshot(const Statistics& statistics)
-    {
-        m_snapshots.emplace_back(statistics.get_num_generated_successors(),
-                                 statistics.get_num_expanded(),
-                                 statistics.get_num_deadends(),
-                                 statistics.get_num_pruned(),
-                                 statistics.get_num_generated_candidates(),
-                                 statistics.get_num_transferred_candidates());
-    }
+    /// A copy of the statistics as they are now.
+    void add_snapshot(const Statistics& statistics) { m_snapshots.push_back(statistics); }
 
     void clear() noexcept { m_snapshots.clear(); }
     [[nodiscard]] bool empty() const noexcept { return m_snapshots.empty(); }
@@ -199,7 +158,7 @@ public:
     [[nodiscard]] const auto& get_snapshots() const { return m_snapshots; }
 
 private:
-    urd::Store<urd::sequence<Snapshot>> m_snapshots;
+    urd::Store<urd::sequence<Statistics>> m_snapshots;
 };
 
 }

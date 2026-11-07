@@ -136,19 +136,19 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<T>>> {};
             binding.relation = predicate_.index();
             const auto binding_view = intern(std::move(binding));
-            return intern(urd::data<tyr::formalism::datalog::Atom<::tyr::GroundTag, T>> { binding_view.index() });
+            return intern(urd::data<tyr::formalism::Atom<::tyr::GroundTag, T>> { binding_view.index() });
         };
         const auto ground_fterm = [&]<tyr::formalism::FactKind T>(tyr::formalism::datalog::FunctionView<T> function_)
         {
             auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<T>>> {};
             binding.relation = function_.index();
             const auto binding_view = intern(std::move(binding));
-            return intern(urd::data<tyr::formalism::datalog::FunctionTerm<::tyr::GroundTag, T>> { binding_view.index() });
+            return intern(urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>> { binding_view.index() });
         };
         const auto static_literal = [&](tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag> atom, bool polarity)
-        { return intern(urd::data<tyr::formalism::datalog::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>> { atom.index(), polarity }); };
+        { return intern(urd::data<tyr::formalism::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>> { atom.index(), polarity }); };
         const auto fluent_literal = [&](tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag> atom, bool polarity)
-        { return intern(urd::data<tyr::formalism::datalog::Literal<::tyr::GroundTag, tyr::formalism::FluentTag>> { atom.index(), polarity }); };
+        { return intern(urd::data<tyr::formalism::Literal<::tyr::GroundTag, tyr::formalism::FluentTag>> { atom.index(), polarity }); };
         const auto condition =
             [&](std::initializer_list<tyr::formalism::datalog::LiteralView<::tyr::GroundTag, tyr::formalism::StaticTag>> static_literals,
                 std::initializer_list<tyr::formalism::datalog::LiteralView<::tyr::GroundTag, tyr::formalism::FluentTag>> fluent_literals = {})
@@ -162,13 +162,13 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         };
         const auto lifted_atom = [&](tyr::formalism::datalog::PredicateView<tyr::formalism::FluentTag> predicate_)
         {
-            auto data = urd::data<tyr::formalism::datalog::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>> {};
+            auto data = urd::data<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>> {};
             data.predicate = predicate_.index();
             return intern(std::move(data));
         };
         const auto lifted_fterm = [&](tyr::formalism::datalog::FunctionView<tyr::formalism::FluentTag> function_)
         {
-            auto data = urd::data<tyr::formalism::datalog::FunctionTerm<::tyr::LiftedTag, tyr::formalism::FluentTag>> {};
+            auto data = urd::data<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::FluentTag>> {};
             data.function = function_.index();
             return intern(std::move(data));
         };
@@ -196,10 +196,10 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
                                        tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, tyr::formalism::FluentTag> head)
         {
             const auto source_fterm = lifted_fterm(head.get_function());
-            const auto lifted_effect = intern(urd::data<tyr::formalism::datalog::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>> {
+            const auto lifted_effect = intern(urd::data<tyr::formalism::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>> {
                 tyr::formalism::NumericEffectOperatorKind::Assign,
                 source_fterm.index(),
-                tyr::formalism::datalog::FunctionExpression<::tyr::LiftedTag> { 1.0 } });
+                tyr::formalism::FunctionExpression<::tyr::LiftedTag> { 1.0 } });
             auto lifted_rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::FunctionTag>> {};
             lifted_rule_data.body = empty_lifted_body.index();
             lifted_rule_data.head = lifted_effect.index();
@@ -208,10 +208,10 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::FunctionTag>>> {};
             binding_data.relation = lifted_rule.index();
             const auto binding = intern(std::move(binding_data));
-            const auto effect = intern(urd::data<tyr::formalism::datalog::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>> {
+            const auto effect = intern(urd::data<tyr::formalism::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>> {
                 tyr::formalism::NumericEffectOperatorKind::Assign,
                 head.index(),
-                tyr::formalism::datalog::FunctionExpression<::tyr::GroundTag> { 1.0 } });
+                tyr::formalism::FunctionExpression<::tyr::GroundTag> { 1.0 } });
 
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>> {};
             rule_data.binding = binding.index();
@@ -238,9 +238,9 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         retained_function_source_index = static_cast<ygg::uint_t>(retained_function_rule.index().value);
         const auto goal = condition({}, { fluent_literal(retained_atom, true) });
         const auto static_value =
-            intern(urd::data<tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>> { static_term.index(), 2.0 });
+            intern(urd::data<tyr::formalism::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>> { static_term.index(), 2.0 });
         const auto fluent_value =
-            intern(urd::data<tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>> { retained_term.index(), 3.0 });
+            intern(urd::data<tyr::formalism::FunctionTermValue<::tyr::GroundTag, tyr::formalism::FluentTag>> { retained_term.index(), 3.0 });
 
         auto program_data = urd::data<tyr::formalism::datalog::Program<::tyr::GroundTag>> {};
         program_data.static_predicates = { present.get_predicate().index(), absent.get_predicate().index() };

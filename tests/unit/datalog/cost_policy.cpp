@@ -19,19 +19,18 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/atom_data.hpp"
-#include "tyr/formalism/datalog/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/conditional_effect_data.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
-#include "tyr/formalism/datalog/function_term_data.hpp"
-#include "tyr/formalism/datalog/function_term_value_data.hpp"
-#include "tyr/formalism/datalog/literal_data.hpp"
-#include "tyr/formalism/datalog/multi_operator_data.hpp"
-#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/function_term_data.hpp"
+#include "tyr/formalism/function_term_value_data.hpp"
+#include "tyr/formalism/literal_data.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/datalog/unary_operator_data.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_data.hpp>
 #include "tyr/formalism/function_data.hpp"
@@ -63,7 +62,7 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
     const auto [predicate, predicate_success] = ygg::formalism::insert(repository, predicate_builder);
     EXPECT_TRUE(predicate_success);
 
-    auto atom_builder = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
+    auto atom_builder = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
     atom_builder.predicate = predicate.index();
     const auto [atom, atom_success] = ygg::formalism::insert(repository, atom_builder);
     EXPECT_TRUE(atom_success);

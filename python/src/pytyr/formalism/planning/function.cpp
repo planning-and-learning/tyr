@@ -32,7 +32,7 @@ template<FactKind T>
 void bind_function_view(nb::module_& m, const char* name)
 {
     using V = FunctionView<T>;
-    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
+    auto cls = nb::class_<V>(m, name).def("index", &V::index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

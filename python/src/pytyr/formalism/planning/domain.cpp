@@ -80,7 +80,7 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
         using V = DomainView;
 
         auto cls = nb::class_<V>(m, "Domain")  //
-                       .def("get_index", &V::index)
+                       .def("index", &V::index)
                        .def("get_name", &V::get_name)
                        .def("get_static_predicates", &V::get_predicates<StaticTag>)
                        .def("get_fluent_predicates", &V::get_predicates<FluentTag>)

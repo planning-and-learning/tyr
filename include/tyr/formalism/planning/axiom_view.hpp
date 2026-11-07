@@ -20,7 +20,7 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"

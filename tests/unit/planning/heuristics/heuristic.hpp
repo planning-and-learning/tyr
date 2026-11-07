@@ -19,9 +19,9 @@
 #define TYR_TESTS_PLANNING_HEURISTICS_HEURISTIC_HPP_
 
 #include "planning/parser.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
@@ -127,9 +127,9 @@ HeuristicContext<Kind> create_heuristic_context(const tyr::planning::TaskPtr<Lif
     else
         task = lifted_task->instantiate_ground_task(*execution_context).task;
 
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
 
     return HeuristicContext<Kind> { std::move(execution_context),
                                     std::move(task),

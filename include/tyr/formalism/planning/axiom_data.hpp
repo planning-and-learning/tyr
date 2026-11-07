@@ -38,12 +38,12 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
     urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> body;
-    urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head;
+    urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head;
 
     data() = default;
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> body_,
-         urd::index<::tyr::formalism::planning::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head_) :
+         urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head_) :
         index(),
         variables(std::move(variables_)),
         body(body_),
@@ -65,12 +65,12 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
     urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>> index;
     ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding;
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body;
-    urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
+    urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
 
     data() = default;
     data(ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body_,
-         urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
+         urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
         index(),
         binding(binding_),
         body(body_),

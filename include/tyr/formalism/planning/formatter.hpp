@@ -66,40 +66,7 @@ struct formatter<tyr::formalism::planning::PlanningTask<T>, char>
 namespace tyr::formalism::planning
 {
 
-std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, BooleanOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<GroundTag, BooleanOperatorKind>>& value);
-std::string to_string(const urd::data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<MultiOperator<GroundTag, ArithmeticOperatorKind>>& value);
 
-std::string to_string(const urd::data<Atom<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<Atom<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<Atom<LiftedTag, DerivedTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, DerivedTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, DerivedTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, DerivedTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<NumericEffect<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<NumericEffect<LiftedTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<NumericEffect<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<NumericEffect<GroundTag, AuxiliaryTag>>& value);
 std::string to_string(const urd::data<FDRVariable<FluentTag>>& value);
 
 std::string to_string(const urd::data<Invariant>& value);

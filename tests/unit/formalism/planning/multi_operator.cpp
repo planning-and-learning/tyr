@@ -3,8 +3,8 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/interning.hpp"
-#include "tyr/formalism/planning/multi_operator_data.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
@@ -30,8 +30,8 @@ concept MultiOperatorContract =
            { view < view } -> std::same_as<bool>;
        };
 
-using Lifted = tyr::formalism::planning::MultiOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
-using Ground = tyr::formalism::planning::MultiOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
+using Lifted = tyr::formalism::MultiOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
+using Ground = tyr::formalism::MultiOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
 
 static_assert(urd::resolves<tyr::formalism::planning::Repository, Lifted>);
 static_assert(ygg::formalism::SupportsSymbol<tyr::formalism::planning::Repository, Lifted>);
@@ -43,7 +43,7 @@ static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Rep
 
 TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
 {
-    using Args = urd::flat_vector<tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>>;
+    using Args = urd::flat_vector<tyr::formalism::FunctionExpression<::tyr::LiftedTag>>;
     EXPECT_THROW((urd::data<Lifted>(tyr::formalism::ArithmeticOperatorKind::Sub, Args {})), std::invalid_argument);
 }
 

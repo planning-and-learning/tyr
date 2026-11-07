@@ -20,19 +20,18 @@
 #include "../../programs/common.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/atom_view.hpp"
-#include "tyr/formalism/datalog/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
-#include "tyr/formalism/datalog/function_term_value_view.hpp"
-#include "tyr/formalism/datalog/function_term_view.hpp"
-#include "tyr/formalism/datalog/literal_view.hpp"
-#include "tyr/formalism/datalog/multi_operator_view.hpp"
-#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -43,24 +42,16 @@
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -90,7 +81,7 @@ auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> a
 
 auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
 
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -113,7 +104,7 @@ auto create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> ax
 
 auto create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
 
     const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
 
@@ -145,7 +136,7 @@ void append_from_condition(formalism::planning::ConjunctiveConditionView<LiftedT
 
 auto create_applicability_literal(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::FluentTag>>(context.builder());
+    auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::FluentTag>>(context.builder());
 
     literal->polarity = true;
     literal->atom = create_applicability_atom(action, context).first.index();
@@ -162,7 +153,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : action.get_variables())
-        conj_cond->variables.push_back(merge_p2d(variable, context).first.index());
+        conj_cond->variables.push_back(formalism::copy(variable, context).first.index());
     append_from_condition(action.get_condition(), translation_context, context, *conj_cond);
 
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
@@ -177,7 +168,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
 
 auto create_applicability_literal(formalism::planning::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::FluentTag>>(context.builder());
+    auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::FluentTag>>(context.builder());
 
     literal->polarity = true;
     literal->atom = create_applicability_atom(axiom, context).first.index();
@@ -194,7 +185,7 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
-        conj_cond->variables.push_back(merge_p2d(variable, context).first.index());
+        conj_cond->variables.push_back(formalism::copy(variable, context).first.index());
     append_from_condition(axiom.get_body(), translation_context, context, *conj_cond);
 
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
@@ -219,13 +210,13 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : action.get_variables())
-        conj_cond->variables.push_back(merge_p2d(variable, context).first.index());
+        conj_cond->variables.push_back(formalism::copy(variable, context).first.index());
     for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
         conj_cond->static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
     conj_cond->fluent_literals.push_back(create_applicability_literal(action, context).first.index());
 
     for (const auto variable : cond_eff.get_variables())
-        conj_cond->variables.push_back(merge_p2d(variable, context).first.index());
+        conj_cond->variables.push_back(formalism::copy(variable, context).first.index());
     append_from_condition(cond_eff.get_condition(), translation_context, context, *conj_cond);
 
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
@@ -239,7 +230,7 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
                 formalism::planning::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
     if (effect_predicate)
     {
-        auto effect_atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+        auto effect_atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
         effect_atom->predicate = effect_predicate->index();
         for (ygg::uint_t i = 0; i < effect_predicate->get_arity(); ++i)
             effect_atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
@@ -259,7 +250,7 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
     for (const auto variable : axiom.get_variables())
-        conj_cond->variables.push_back(merge_p2d(variable, context).first.index());
+        conj_cond->variables.push_back(formalism::copy(variable, context).first.index());
     for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
         conj_cond->static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.index());
     conj_cond->fluent_literals.push_back(create_applicability_literal(axiom, context).first.index());

@@ -25,7 +25,6 @@
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
-#include <atomic>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -39,19 +38,13 @@ class ApplicableActionProgram;
 template<>
 class SuccessorGenerator<LiftedTag>
 {
-    friend class SuccessorGeneratorFactory<LiftedTag>;
-
 private:
     struct Impl;
-
-    SuccessorGenerator(ygg::uint_t index,
-                       TaskPtr<LiftedTag> task,
-                       ygg::ExecutionContextPtr execution_context,
-                       std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
 
     explicit SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept;
 
 public:
+    SuccessorGenerator(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context);
     ~SuccessorGenerator();
 
     SuccessorGenerator(const SuccessorGenerator&) = delete;
@@ -307,7 +300,6 @@ public:
     // Getters
     [[nodiscard]] const ApplicableActionProgram& get_action_program() const noexcept;
     [[nodiscard]] const TaskPtr<LiftedTag>& get_task() const noexcept;
-    [[nodiscard]] ygg::uint_t get_index() const noexcept;
 
 private:
     std::unique_ptr<Impl> m_impl;

@@ -20,10 +20,10 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
-#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <urd/elements/flat.hpp>

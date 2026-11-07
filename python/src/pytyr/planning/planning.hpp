@@ -51,7 +51,6 @@
 #include <tyr/planning/algorithms/strategies/goal.hpp>
 #include <tyr/planning/algorithms/strategies/pruning.hpp>
 #include <tyr/planning/declarations.hpp>
-#include <tyr/planning/factory.hpp>
 #include <tyr/planning/formatter.hpp>
 #include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/state_storage/tree_bitset/fact.hpp>
@@ -80,7 +79,6 @@
 #include <tyr/planning/programs/rpg.hpp>
 #include <tyr/planning/search_space/search_node.hpp>
 #include <tyr/planning/state_routing/dist_hash.hpp>
-#include <tyr/planning/state_storage/iterators.hpp>
 #include <tyr/planning/task.hpp>
 #include <tyr/planning/worker_state_index.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -143,7 +141,7 @@ void bind_packed_state(nb::module_& m, const std::string& name)
     using T = PackedStateView<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("get_index", &T::index, nb::rv_policy::copy)
+                   .def("index", &T::index, nb::rv_policy::copy)
                    .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
                    .def("unpack", &T::unpack);
     urd::python::add_comparison(cls);
@@ -157,7 +155,7 @@ void bind_state(nb::module_& m, const std::string& name)
     using T = StateView<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("get_index", &T::index, nb::rv_policy::copy)
+                   .def("index", &T::index, nb::rv_policy::copy)
                    .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
                    .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
                    .def("pack", &T::pack)
@@ -365,9 +363,14 @@ void bind_packed_plan(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_axiom_evaluator(nb::module_& m, const std::string& name)
 {
+    using namespace nb::literals;
     using T = AxiomEvaluator<Kind>;
 
-    nb::class_<T>(m, name.c_str()).def("get_index", &T::get_index);
+    nb::class_<T>(m, name.c_str())
+        .def(nb::new_([](TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
+                      { return std::make_shared<T>(std::move(task), std::move(execution_context)); }),
+             "task"_a,
+             "execution_context"_a);
 }
 
 template<TaskKind Kind>
@@ -377,8 +380,11 @@ void bind_state_repository(nb::module_& m, const std::string& name)
     using T = StateRepository<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
+        .def(nb::new_([](TaskPtr<Kind> task, bool concurrent) { return std::make_shared<T>(std::move(task), concurrent); }),
+             "task"_a,
+             "concurrent"_a = false)
         .def("get_worker_index", &T::get_worker_index)
-        .def("get_index", &T::get_index)
+        .def("layer", &T::layer)
         .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a)
         .def("get_registered_state", &T::get_registered_state, nb::rv_policy::move, "state_index"_a)
         .def("is_concurrent", &T::is_concurrent)
@@ -387,7 +393,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
         .def("create_state",
              static_cast<StateView<Kind> (T::*)(AxiomEvaluator<Kind>&,
                                                 const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>&,
-                                                const urd::Store<urd::sequence<std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&)>(
+                                                const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&)>(
                  &T::create_state),
              nb::rv_policy::move,
              "axiom_evaluator"_a,
@@ -431,7 +437,10 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 
     auto cls = nb::class_<T>(m, name.c_str());
 
-    cls.def("get_index", &T::get_index)
+    cls.def(nb::new_([](TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
+                     { return std::make_shared<T>(std::move(task), std::move(execution_context)); }),
+            "task"_a,
+            "execution_context"_a)
         .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a, nb::keep_alive<0, 2>())
         .def("get_node", &T::get_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a, nb::keep_alive<0, 2>())
         .def("get_packed_initial_node", &T::get_packed_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
@@ -631,40 +640,6 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 }
 
 template<TaskKind Kind>
-void bind_axiom_evaluator_factory(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    using T = AxiomEvaluatorFactory<Kind>;
-
-    nb::class_<T>(m, name.c_str())  //
-        .def(nb::init<>())
-        .def("create", &T::create, "task"_a, "execution_context"_a);
-}
-
-template<TaskKind Kind>
-void bind_state_repository_factory(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    using T = StateRepositoryFactory<Kind>;
-
-    nb::class_<T>(m, name.c_str())  //
-        .def(nb::init<>())
-        .def("create", &T::create, "task"_a)
-        .def("create_concurrent", &T::create_concurrent, "task"_a);
-}
-
-template<TaskKind Kind>
-void bind_successor_generator_factory(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    using T = SuccessorGeneratorFactory<Kind>;
-
-    nb::class_<T>(m, name.c_str())  //
-        .def(nb::init<>())
-        .def("create", &T::create, "task"_a, "execution_context"_a);
-}
-
-template<TaskKind Kind>
 void bind_search_result(nb::module_& m, const std::string& name)
 {
     using T = SearchResult<Kind>;
@@ -826,19 +801,16 @@ void bind_blind_heuristic(nb::module_& m, const std::string& name)
     using T = BlindHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-        .def(nb::new_([]() { return std::make_shared<T>(); }))
-        .def_static("create", &T::create);
+        .def(nb::new_([]() { return std::make_shared<T>(); }));
 }
 
 template<TaskKind Kind>
 void bind_goal_count_heuristic(nb::module_& m, const std::string& name)
 {
-    using namespace nb::literals;
     using T = GoalCountHeuristic<Kind>;
 
     nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
-        .def(nb::new_([](std::shared_ptr<const Task<Kind>> task) { return std::make_shared<T>(std::move(task)); }))
-        .def_static("create", &T::create, "task"_a);
+        .def(nb::new_([](std::shared_ptr<const Task<Kind>> task) { return std::make_shared<T>(std::move(task)); }));
 }
 
 /// The RPG and LM-cut heuristics share one constructor signature.
@@ -852,8 +824,7 @@ void bind_task_heuristic(nb::module_& m, const std::string& name)
                       { return std::make_shared<T>(std::move(task), std::move(execution_context), cost_mode); }),
              "task"_a,
              "execution_context"_a,
-             "cost_mode"_a = CostMode::UNIT)
-        .def_static("create", &T::create, "task"_a, "execution_context"_a, "cost_mode"_a = CostMode::UNIT);
+             "cost_mode"_a = CostMode::UNIT);
 }
 
 /// The classes bound identically for both task kinds.
@@ -871,11 +842,8 @@ void bind_kind_definitions(nb::module_& m)
     bind_plan<Kind>(m, "Plan");
     bind_packed_plan<Kind>(m, "PackedPlan");
     bind_axiom_evaluator<Kind>(m, "AxiomEvaluator");
-    bind_axiom_evaluator_factory<Kind>(m, "AxiomEvaluatorFactory");
     bind_state_repository<Kind>(m, "StateRepository");
-    bind_state_repository_factory<Kind>(m, "StateRepositoryFactory");
     bind_successor_generator<Kind>(m, "SuccessorGenerator");
-    bind_successor_generator_factory<Kind>(m, "SuccessorGeneratorFactory");
     bind_search_result<Kind>(m, "SearchResult");
     bind_goal_strategy<Kind>(m, "GoalStrategy");
     bind_conjunctive_goal_strategy<Kind>(m, "ConjunctiveGoalStrategy");

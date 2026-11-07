@@ -20,7 +20,6 @@
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
@@ -88,7 +87,7 @@ try
 #if defined(__GLIBC__)
         const auto before = allocated_bytes();
 #endif
-        prepared.generator = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(prepared.task, execution_context);
+        prepared.generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(prepared.task, execution_context);
 #if defined(__GLIBC__)
         prepared.generator_bytes = allocated_bytes() - before;
 #endif
@@ -101,8 +100,8 @@ try
     state.counters["generator_glibc_bytes"] = static_cast<double>(prepared.generator_bytes);
     state.counters["worker_glibc_bytes"] = static_cast<double>(allocated_bytes() - before_worker);
 #endif
-    auto evaluator = tyr::planning::AxiomEvaluatorFactory<LiftedTag>().create(prepared.task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<LiftedTag>().create(prepared.task);
+    auto evaluator = std::make_shared<tyr::planning::AxiomEvaluator<LiftedTag>>(prepared.task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<LiftedTag>>(prepared.task);
     const auto node = generator->get_initial_node(*repository, *evaluator);
     auto expected_bindings = generator->get_applicable_action_bindings(node);
     const auto schemas = prepared.task->get_task().get_domain().get_actions();
@@ -128,7 +127,7 @@ try
     {
         if constexpr (operation == Operation::CONSTRUCTION)
         {
-            auto result = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(prepared.task, execution_context);
+            auto result = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(prepared.task, execution_context);
             benchmark::DoNotOptimize(result);
         }
         else if constexpr (operation == Operation::WORKER)

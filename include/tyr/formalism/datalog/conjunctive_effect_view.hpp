@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_EFFECT_VIEW_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 
 #include <urd/elements/flat.hpp>
 

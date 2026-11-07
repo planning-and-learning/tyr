@@ -25,7 +25,7 @@ from pytyr.planning import SearchStatus, Statistics
 # e.g., from pytyr.planning.ground import ..., and from pytyr.planning.ground.astar_eager import ...
 # However, some heuristics, like MaxRPGHeuristic might not be available yet.
 from pytyr.planning.lifted import (
-    AxiomEvaluatorFactory,
+    AxiomEvaluator,
     ConjunctiveGoalStrategy,
     GoalCountHeuristic,
     GoalStrategy,
@@ -34,8 +34,8 @@ from pytyr.planning.lifted import (
     Plan,
     PruningStrategy,
     State,
-    StateRepositoryFactory,
-    SuccessorGeneratorFactory,
+    StateRepository,
+    SuccessorGenerator,
     Task,
 )
 from pytyr.planning.lifted.astar_eager import (
@@ -146,12 +146,9 @@ def main() -> None:
     parser = Parser(str(domain_filepath), parser_options)
     lifted_task = Task(parser.parse_task(str(task_filepath), parser_options))
     heuristic = GoalCountHeuristic(lifted_task)
-    axiom_evaluator_factory = AxiomEvaluatorFactory()
-    state_repository_factory = StateRepositoryFactory()
-    successor_generator_factory = SuccessorGeneratorFactory()
-    axiom_evaluator = axiom_evaluator_factory.create(lifted_task, execution_context)
-    state_repository = state_repository_factory.create(lifted_task)
-    successor_generator = successor_generator_factory.create(lifted_task, execution_context)
+    axiom_evaluator = AxiomEvaluator(lifted_task, execution_context)
+    state_repository = StateRepository(lifted_task)
+    successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
     options = Options()  # Search defaults to one worker; ExecutionContext controls lifted inner parallelism.
     options.event_handler = DefaultEventHandler(0)  # Prints search progress when verbosity is nonzero.

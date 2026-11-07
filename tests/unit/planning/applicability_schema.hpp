@@ -2,6 +2,7 @@
 #define TYR_TESTS_UNIT_PLANNING_APPLICABILITY_SCHEMA_HPP_
 
 #include "planning/parser.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include <urd/repr/sequences/segmented.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -16,7 +17,6 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
@@ -171,9 +171,9 @@ void expect_schema_queries_match_filtered_successors()
             return make_lifted_task();
     }();
     ASSERT_TRUE(task);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto source = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto source = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
     auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
@@ -646,9 +646,9 @@ void expect_schema_queries_match_filtered_successors()
         for (const bool schema_only : { false, true })
         {
             const auto fresh_task = make_lifted_task();
-            auto fresh_axioms = tyr::planning::AxiomEvaluatorFactory<Kind>().create(fresh_task, execution_context);
-            auto fresh_repository = tyr::planning::StateRepositoryFactory<Kind>().create(fresh_task);
-            auto fresh_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(fresh_task, execution_context);
+            auto fresh_axioms = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(fresh_task, execution_context);
+            auto fresh_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(fresh_task);
+            auto fresh_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(fresh_task, execution_context);
             const auto node = fresh_generator->get_initial_node(*fresh_repository, *fresh_axioms);
             const auto fresh_actions = fresh_task->get_domain().get_domain().get_actions();
             const auto alias = std::ranges::find_if(fresh_actions, [](auto action) { return action.get_name().str() == "alias"; });
@@ -775,7 +775,7 @@ void expect_schema_queries_match_filtered_successors()
         else
             return foreign_task;
     }();
-    const auto foreign_repository = tyr::planning::StateRepositoryFactory<Kind>().create(foreign_same_kind);
+    const auto foreign_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(foreign_same_kind);
     const auto foreign_node =
         tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(*owned, *foreign_repository), initial_node.get_metric());
     EXPECT_THROW(source->get_applicable_action_bindings(foreign_node), std::invalid_argument);

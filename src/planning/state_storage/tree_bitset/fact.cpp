@@ -43,8 +43,8 @@ auto insert_facts(Set& bitsets, const StateLayout<GroundTag>& layout, const Fact
 }
 
 template<typename Set>
-auto insert_facts(Set& bitsets, const StateLayout<LiftedTag>&, const FactUnpackedStorage<LiftedTag>& unpacked, Blocks& blocks)
-{ return insert_bitset(bitsets, unpacked.indices, blocks); }
+auto insert_facts(Set& bitsets, const StateLayout<LiftedTag>&, const FactUnpackedStorage<LiftedTag>& unpacked, Blocks&)
+{ return bitsets.insert(unpacked.indices).first; }
 
 /// XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
 void append_flips(const StateLayout<GroundTag>& layout, const StateDelta::FluentChange& change, Flips& flips)
@@ -73,10 +73,9 @@ void unpack_facts(Set& bitsets, const StateLayout<GroundTag>& layout, typename S
         values[i] = ygg::uint_t(urd::repr::bit::read_int<tree_bitset::Block>(std::span(blocks).subspan(infos[i].begin), infos[i].offset, infos[i].length));
 }
 
-/// Ends at the last true atom, as FactUnpackedStorage<LiftedTag>::set does.
 template<typename Set>
-void unpack_facts(Set& bitsets, const StateLayout<LiftedTag>&, typename Set::handle_type packed, FactUnpackedStorage<LiftedTag>& unpacked, Blocks& blocks)
-{ read_bitset(bitsets, packed, unpacked.indices, blocks); }
+void unpack_facts(Set& bitsets, const StateLayout<LiftedTag>&, typename Set::handle_type packed, FactUnpackedStorage<LiftedTag>& unpacked, Blocks&)
+{ bitsets.read(packed, unpacked.indices); }
 }
 
 template<TaskKind Kind, bool ThreadSafe>

@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_CONSTRAINT_DATA_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_CONSTRAINT_DATA_HPP_
 
-#include "tyr/formalism/planning/binary_operator_data.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 
 #include <optional>
@@ -34,12 +34,12 @@ template<typename Tag>
 struct data<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>
 {
     urd::index<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
-    urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint;
+    urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
-    data(urd::index<::tyr::formalism::planning::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint_,
+    data(urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),

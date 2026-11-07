@@ -1,7 +1,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/formalism/planning/numeric_effect_data.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
@@ -49,8 +49,8 @@ concept NumericEffectContract =
            { view < view } -> std::same_as<bool>;
        };
 
-using Fluent = tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>;
-using Auxiliary = tyr::formalism::planning::NumericEffect<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>;
+using Fluent = tyr::formalism::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>;
+using Auxiliary = tyr::formalism::NumericEffect<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>;
 
 static_assert(NumericEffectContract<Fluent>);
 static_assert(NumericEffectContract<Auxiliary>);
@@ -63,10 +63,10 @@ static_assert(tyr::formalism::effect_family(tyr::formalism::NumericEffectOperato
 
 TEST(TyrFormalismPlanningNumericEffect, RejectsNonIncreaseAuxiliaryEffect)
 {
-    using FunctionTermIndex = urd::index<tyr::formalism::planning::FunctionTerm<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>>;
+    using FunctionTermIndex = urd::index<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>>;
     EXPECT_THROW((urd::data<Auxiliary>(tyr::formalism::NumericEffectOperatorKind::Assign,
                                        FunctionTermIndex {},
-                                       tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
+                                       tyr::formalism::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
                  std::invalid_argument);
 }
 
@@ -92,8 +92,8 @@ concept GroundNumericEffectContract =
            { view < view } -> std::same_as<bool>;
        };
 
-using Fluent = tyr::formalism::planning::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>;
-using Auxiliary = tyr::formalism::planning::NumericEffect<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>;
+using Fluent = tyr::formalism::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>;
+using Auxiliary = tyr::formalism::NumericEffect<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>;
 
 static_assert(GroundNumericEffectContract<Fluent>);
 static_assert(GroundNumericEffectContract<Auxiliary>);
@@ -104,10 +104,10 @@ static_assert(std::same_as<urd::index_view<Auxiliary, tyr::formalism::planning::
 
 TEST(TyrFormalismPlanningGroundNumericEffect, RejectsNonIncreaseAuxiliaryEffect)
 {
-    using FunctionTermIndex = urd::index<tyr::formalism::planning::FunctionTerm<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>;
+    using FunctionTermIndex = urd::index<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>;
     EXPECT_THROW((urd::data<Auxiliary>(tyr::formalism::NumericEffectOperatorKind::Assign,
                                        FunctionTermIndex {},
-                                       tyr::formalism::planning::FunctionExpression<::tyr::GroundTag>(ygg::float_t(0)))),
+                                       tyr::formalism::FunctionExpression<::tyr::GroundTag>(ygg::float_t(0)))),
                  std::invalid_argument);
 }
 

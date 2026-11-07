@@ -30,7 +30,6 @@
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
-#include <cassert>
 #include <utility>
 #include <boost/mp11.hpp>
 #include <urd/elements/flat.hpp>
@@ -67,20 +66,10 @@ public:
     Repository& operator=(Repository&& other) = delete;
     ~Repository() = default;
 
-    [[nodiscard]] const auto& get_index() const noexcept { return m_index; }
     /// The repository's number, as urd's views ask of a context.
     [[nodiscard]] std::size_t layer() const noexcept { return m_index; }
 
     [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return *m_formalism_repository; }
-
-    /// @brief Access the element with the given index.
-    template<typename T>
-        requires ygg::formalism::SupportsSymbol<Repository, T>
-    const urd::data<T>& operator[](urd::index<T> index) const noexcept
-    {
-        assert(index != urd::index<T>() && "Unassigned index.");
-        return this->template local<T>(index);
-    }
 
     /// An index as its view here (urd's resolves contract): what compositions of indices are read through (urd::resolve).
     template<typename T>

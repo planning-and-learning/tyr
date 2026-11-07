@@ -53,6 +53,14 @@ void bind_formalism(nb::module_& m)
     bind_binding(m);
     bind_predicate(m);
     bind_function(m);
+    bind_atom(m);
+    bind_literal(m);
+    bind_function_term(m);
+    bind_function_term_value(m);
+    bind_unary_operator(m);
+    bind_binary_operator(m);
+    bind_multi_operator(m);
+    bind_numeric_effect(m);
 }
 
 }  // namespace tyr::formalism

@@ -18,19 +18,18 @@
 #ifndef TYR_FORMALISM_DATALOG_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_DATALOG_CANONICALIZATION_HPP_
 
-#include "tyr/formalism/datalog/atom_data.hpp"
-#include "tyr/formalism/datalog/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/conditional_effect_data.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
-#include "tyr/formalism/datalog/function_term_data.hpp"
-#include "tyr/formalism/datalog/function_term_value_data.hpp"
-#include "tyr/formalism/datalog/literal_data.hpp"
-#include "tyr/formalism/datalog/multi_operator_data.hpp"
-#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/function_term_data.hpp"
+#include "tyr/formalism/function_term_value_data.hpp"
+#include "tyr/formalism/literal_data.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/datalog/unary_operator_data.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_data.hpp>
@@ -51,60 +50,6 @@ namespace tyr::formalism::datalog
 // (ADL does not find them for urd::index, whose namespace is urd's).
 using ygg::canonicalize;
 
-/**
- * Datalog
- */
-
-template<TaskKind T>
-void canonicalize(urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, OperatorKind O>
-void canonicalize(urd::data<BinaryOperator<T, O>>& data)
-{
-    if constexpr (std::same_as<O, ArithmeticOperatorKind>)
-    {
-        if ((data.operator_kind == ArithmeticOperatorKind::Add || data.operator_kind == ArithmeticOperatorKind::Mul) && data.lhs > data.rhs)
-            std::swap(data.lhs, data.rhs);
-    }
-}
-
-template<TaskKind T>
-void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{ ygg::canonicalize<false>(data.args); }
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<Atom<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<Literal<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<FunctionTerm<T, F>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind F>
-void canonicalize(urd::data<FunctionTermValue<GroundTag, F>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, FactKind F>
-void canonicalize(urd::data<NumericEffect<T, F>>&)
-{
-    // Trivially canonical
-}
-
 template<TaskKind T>
 void canonicalize(urd::data<ConjunctiveCondition<T>>& data)
 {
@@ -116,11 +61,6 @@ void canonicalize(urd::data<ConjunctiveCondition<T>>& data)
 template<TaskKind T>
 void canonicalize(urd::data<ConjunctiveEffect<T>>& data)
 { canonicalize(data.numeric_effects); }
-
-template<TaskKind T>
-void canonicalize(urd::data<ConditionalEffect<T>>&)
-{
-}
 
 template<TaskKind T, RelationKind R>
 void canonicalize(urd::data<Rule<T, R>>& data)

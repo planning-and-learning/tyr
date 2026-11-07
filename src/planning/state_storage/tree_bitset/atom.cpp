@@ -24,22 +24,12 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "../../tree_bitset.hpp"
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+
 namespace tyr::planning
 {
-namespace
-{
-/// Ground derived atoms span all derived atoms of the task.
-template<bool ThreadSafe>
-void restore_unpacked_size(AtomUnpackedStorage<GroundTag>& unpacked, const StateStorageContext<GroundTag, TreeBitset, ThreadSafe>& context)
-{ unpacked.indices.resize(context.layout.derived_num_bits); }
-
-/// Lifted derived atoms end at their last true atom, as read_bitset leaves them.
-template<bool ThreadSafe>
-void restore_unpacked_size(AtomUnpackedStorage<LiftedTag>&, const StateStorageContext<LiftedTag, TreeBitset, ThreadSafe>&)
-{
-}
-}
-
 template<TaskKind Kind, bool ThreadSafe>
 AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_context(&ctx)
 {
@@ -47,19 +37,25 @@ AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::AtomStorageBackend(Context& ct
 
 template<TaskKind Kind, bool ThreadSafe>
 typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
-{ return insert_bitset(m_context->bitsets, unpacked.indices, m_blocks); }
+{ return m_context->bitsets.insert(unpacked.indices).first; }
 
 template<TaskKind Kind, bool ThreadSafe>
 typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed
 AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
-{ return insert_bitset(m_context->bitsets, parent, parent_unpacked.indices, unpacked.indices, m_blocks, m_flips); }
+{
+    // One flip per block in which the two rows differ, by increasing position.
+    const auto from = parent_unpacked.indices.significant_words();
+    const auto to = unpacked.indices.significant_words();
+    m_flips.clear();
+    for (std::size_t i = 0; i < 2 * std::max(from.size(), to.size()); ++i)
+        if (const auto mask = tree_bitset::Block(block_of(from, i) ^ block_of(to, i)); mask != tree_bitset::Block { 0 })
+            m_flips.push_back(tree_bitset::Flip { static_cast<std::uint32_t>(i), mask });
+    return m_context->bitsets.insert_flips(parent, m_flips);
+}
 
 template<TaskKind Kind, bool ThreadSafe>
 void AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
-{
-    read_bitset(m_context->bitsets, packed, unpacked.indices, m_blocks);
-    restore_unpacked_size(unpacked, *m_context);
-}
+{ m_context->bitsets.read(packed, unpacked.indices); }
 
 template class AtomStorageBackend<GroundTag, TreeBitset, false>;
 template class AtomStorageBackend<GroundTag, TreeBitset, true>;

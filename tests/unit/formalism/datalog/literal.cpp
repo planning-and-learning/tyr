@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/literal_data.hpp"
-#include "tyr/formalism/datalog/literal_view.hpp"
+#include "tyr/formalism/literal_data.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
@@ -12,7 +12,7 @@ template<typename Entity>
 struct LiteralPublicView;
 
 template<tyr::formalism::FactKind T>
-struct LiteralPublicView<tyr::formalism::datalog::Literal<::tyr::LiftedTag, T>>
+struct LiteralPublicView<tyr::formalism::Literal<::tyr::LiftedTag, T>>
 {
     using type = tyr::formalism::datalog::LiteralView<::tyr::LiftedTag, T>;
 };
@@ -41,7 +41,7 @@ template<typename Entity>
 struct GroundLiteralPublicView;
 
 template<tyr::formalism::FactKind T>
-struct GroundLiteralPublicView<tyr::formalism::datalog::Literal<::tyr::GroundTag, T>>
+struct GroundLiteralPublicView<tyr::formalism::Literal<::tyr::GroundTag, T>>
 {
     using type = tyr::formalism::datalog::LiteralView<::tyr::GroundTag, T>;
 };

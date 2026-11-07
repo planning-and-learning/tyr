@@ -45,7 +45,7 @@ void bind_invariant_view(nb::module_& m, const char* name)
 {
     using V = InvariantView;
     auto cls = nb::class_<V>(m, name)
-                   .def("get_index", &V::index)
+                   .def("index", &V::index)
                    .def("get_num_rigid_variables", &V::get_num_rigid_variables)
                    .def("get_num_counted_variables", &V::get_num_counted_variables)
                    .def("get_atoms", &V::get_atoms);

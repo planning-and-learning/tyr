@@ -15,7 +15,7 @@ concept FdrFactContract = std::totally_ordered<urd::data<Entity>> && std::totall
                                  view.has_value();
                                  {
                                      view.get_atom_index()
-                                 } -> std::same_as<std::optional<urd::index<tyr::formalism::planning::Atom<tyr::GroundTag, tyr::formalism::FluentTag>>>>;
+                                 } -> std::same_as<std::optional<urd::index<tyr::formalism::Atom<tyr::GroundTag, tyr::formalism::FluentTag>>>>;
                                  {
                                      view.get_atom()
                                  } -> std::same_as<std::optional<tyr::formalism::planning::AtomView<tyr::GroundTag, tyr::formalism::FluentTag>>>;

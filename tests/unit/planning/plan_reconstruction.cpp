@@ -33,7 +33,6 @@
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -87,8 +86,7 @@ enum class RepositoryMode : std::uint8_t
 template<TaskKind Kind>
 tyr::planning::StateRepositoryPtr<Kind> make_repository(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode mode)
 {
-    auto factory = tyr::planning::StateRepositoryFactory<Kind> {};
-    return mode == RepositoryMode::SHARED ? factory.create_concurrent(task) : factory.create(task);
+    return std::make_shared<tyr::planning::StateRepository<Kind>>(task, mode == RepositoryMode::SHARED);
 }
 
 template<TaskKind Kind>
@@ -559,9 +557,9 @@ void expect_action_sequence_replay(const tyr::planning::TaskPtr<Kind>& task)
     auto plan = std::optional<tyr::planning::PackedPlan<Kind>> {};
     {
         auto execution = ygg::ExecutionContext::create(1);
-        auto axioms = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution);
-        auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-        auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution);
+        auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution);
+        auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+        auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution);
         retained_repository = repository;
         const auto initial = generator->get_packed_initial_node(*repository, *axioms);
         const auto start = tyr::planning::PackedNode<Kind>(initial.get_state(), 11);
@@ -604,9 +602,9 @@ template<TaskKind Kind>
 void expect_sequential_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
 
     const auto start = generator->get_initial_node(*repository, *axiom_evaluator);
     const auto successors = generator->get_labeled_successor_nodes(start, *repository, *axiom_evaluator);
@@ -643,9 +641,9 @@ template<TaskKind Kind>
 void expect_parallel_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto caller_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto caller_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto caller_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto caller_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto plan = std::optional<tyr::planning::Plan<Kind>> {};
     auto first_repository = std::weak_ptr<tyr::planning::StateRepository<Kind>> {};
     auto second_repository = std::weak_ptr<tyr::planning::StateRepository<Kind>> {};
@@ -727,9 +725,9 @@ template<TaskKind Kind>
 void expect_parallel_lazy_gbfs(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode state_repository_mode)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
 
     auto options = tyr::planning::gbfs_lazy::Options<Kind> {};
@@ -803,9 +801,9 @@ template<TaskKind Kind>
 void expect_parallel_brfs(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode state_repository_mode)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
 
     auto options = tyr::planning::brfs::Options<Kind> {};
     options.num_search_workers = 2;
@@ -852,9 +850,9 @@ template<TaskKind Kind>
 void expect_brfs_events(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode state_repository_mode, size_t num_workers)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto event_handler = std::make_shared<CountingBrFSEventHandler<Kind>>();
 
     auto options = tyr::planning::brfs::Options<Kind> {};
@@ -916,9 +914,9 @@ template<TaskKind Kind>
 void expect_parallel_iw(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode state_repository_mode)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto brfs_solver = tyr::planning::brfs::Solver<Kind> { task, repository, axiom_evaluator, generator };
     brfs_solver.options.num_search_workers = 2;
 
@@ -933,9 +931,9 @@ template<TaskKind Kind>
 void expect_parallel_siw_outer_orchestration(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<Kind>().create_concurrent(task);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task, true);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto brfs_solver = tyr::planning::brfs::Solver<Kind> { task, repository, axiom_evaluator, generator };
     brfs_solver.options.num_search_workers = 2;
 
@@ -959,9 +957,9 @@ void expect_parallel_astar(const tyr::planning::TaskPtr<Kind>& task,
                            tyr::planning::astar_eager::ParallelSearchMode parallel_search_mode)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
 
     auto options = tyr::planning::astar_eager::Options<Kind> {};
@@ -1002,9 +1000,9 @@ template<TaskKind Kind>
 void expect_lazy_gbfs_worker_events(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode state_repository_mode, size_t num_search_workers)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
     auto event_handler = std::make_shared<CountingGBFSEventHandler<Kind>>(repository.get());
 
@@ -1099,9 +1097,9 @@ void expect_parallel_astar_keeps_searching_after_first_goal(const tyr::planning:
                                                             tyr::planning::astar_eager::ParallelSearchMode mode)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
     const auto seed = state_repository_mode == RepositoryMode::HASH_DISTRIBUTED ? find_weighted_astar_seed(*generator, *repository, *axiom_evaluator) :
                                                                                   std::optional<uint64_t> { 0 };
@@ -1146,9 +1144,9 @@ void expect_parallel_astar_coordinates_f_layers(const tyr::planning::TaskPtr<Kin
                                                 bool expect_higher_expansion)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
     const auto seed = state_repository_mode == RepositoryMode::HASH_DISTRIBUTED ? find_weighted_astar_seed(*generator, *repository, *axiom_evaluator) :
                                                                                   std::optional<uint64_t> { 0 };
@@ -1178,9 +1176,9 @@ template<TaskKind Kind>
 void expect_synchronous_parallel_astar_stops_all_workers(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
     const auto seed = find_weighted_astar_seed(*generator, *repository, *axiom_evaluator);
     ASSERT_TRUE(seed);
@@ -1205,9 +1203,9 @@ template<TaskKind Kind>
 void expect_parallel_lazy_gbfs_exhaustion(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode state_repository_mode)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto heuristic = tyr::planning::BlindHeuristic<Kind>::create();
     auto options = tyr::planning::gbfs_lazy::Options<Kind> {};
     options.num_search_workers = 2;
@@ -1226,18 +1224,18 @@ void expect_parallel_brfs_exhaustion(const tyr::planning::TaskPtr<Kind>& task, R
     SCOPED_TRACE(state_repository_mode == RepositoryMode::HASH_DISTRIBUTED ? "hash-distributed" : "shared");
 
     auto sequential_execution_context = ygg::ExecutionContext::create(1);
-    auto sequential_axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, sequential_execution_context);
-    auto sequential_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto sequential_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, sequential_execution_context);
+    auto sequential_axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, sequential_execution_context);
+    auto sequential_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto sequential_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, sequential_execution_context);
     auto sequential_options = tyr::planning::brfs::Options<Kind> {};
     sequential_options.goal_strategy = tyr::planning::ExhaustiveGoalStrategy<Kind>::create();
     const auto sequential_result =
         tyr::planning::brfs::find_solution(*task, *sequential_repository, *sequential_axiom_evaluator, *sequential_generator, sequential_options);
 
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
     auto repository = make_repository(task, state_repository_mode);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     constexpr auto seed = uint64_t { 0 };
     auto guard = std::make_shared<OwnerAccessGuard<Kind>>(state_repository_mode, seed);
     auto options = tyr::planning::brfs::Options<Kind> {};

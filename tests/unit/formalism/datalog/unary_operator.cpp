@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/unary_operator_data.hpp"
-#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 
 #include <concepts>
 #include <tuple>
@@ -20,8 +20,8 @@ concept UnaryOperatorContract =
            view.get_arg();
        };
 
-using Lifted = tyr::formalism::datalog::UnaryOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
-using Ground = tyr::formalism::datalog::UnaryOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
+using Lifted = tyr::formalism::UnaryOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
+using Ground = tyr::formalism::UnaryOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
 
 static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);

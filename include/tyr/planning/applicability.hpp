@@ -24,24 +24,24 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -221,19 +221,19 @@ bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<Gro
 
 bool is_consistent(formalism::planning::ConjunctiveConditionView<GroundTag> element,
                    urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& fluent_assign,
-                   urd::Store<urd::map<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign);
+                   urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign);
 
 // GroundAction
 
 bool is_consistent(formalism::planning::ActionView<GroundTag> element,
                    urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
-                   urd::Store<urd::map<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign);
+                   urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign);
 
 // GroundAxiom
 
 bool is_consistent(formalism::planning::AxiomView<GroundTag> element,
                    urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
-                   urd::Store<urd::map<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign);
+                   urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign);
 
 /**
  * evaluate
@@ -499,7 +499,7 @@ bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<Gro
 
 inline bool is_consistent(formalism::planning::ConjunctiveConditionView<GroundTag> element,
                           urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& fluent_assign,
-                          urd::Store<urd::map<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign)
+                          urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign)
 {
     for (const auto fact : element.template get_facts<formalism::PositiveTag>())
     {
@@ -553,7 +553,7 @@ inline bool is_consistent(formalism::planning::ConjunctiveConditionView<GroundTa
 inline bool
 is_consistent(formalism::planning::ActionView<GroundTag> element,
               urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
-              urd::Store<urd::map<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
+              urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();
@@ -565,7 +565,7 @@ is_consistent(formalism::planning::ActionView<GroundTag> element,
 inline bool
 is_consistent(formalism::planning::AxiomView<GroundTag> element,
               urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& out_fluent_assign,
-              urd::Store<urd::map<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
+              urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& out_derived_assign)
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();

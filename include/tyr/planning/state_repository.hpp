@@ -39,19 +39,18 @@
 namespace tyr::planning
 {
 
-/// Always owned by a StateRepositoryPtr (the factory makes it): the states it hands out keep it alive.
+/// Always owned by a StateRepositoryPtr (std::make_shared): the states it hands out keep it alive.
 template<TaskKind Kind>
 class StateRepository : public std::enable_shared_from_this<StateRepository<Kind>>
 {
-    friend class StateRepositoryFactory<Kind>;
-
 private:
     struct Impl;
 
-    StateRepository(ygg::uint_t index, TaskPtr<Kind> task, bool concurrent, std::shared_ptr<std::atomic<ygg::uint_t>> next_index);
     explicit StateRepository(std::unique_ptr<Impl> impl);
 
 public:
+    /// A private repository; with `concurrent`, one whose workers (make_worker) share canonical state storage.
+    explicit StateRepository(TaskPtr<Kind> task, bool concurrent = false);
     ~StateRepository();
 
     StateRepository(const StateRepository&) = delete;
@@ -68,7 +67,7 @@ public:
     StateView<Kind>
     create_state(AxiomEvaluator<Kind>& axiom_evaluator,
                  const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>& fluent_facts,
-                 const urd::Store<urd::sequence<std::pair<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values);
+                 const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>& fterm_values);
     /// The facts as views: borrowed (stored facts, FDRFactView) or owned (a state's, computed on the fly).
     template<typename FactView>
         requires std::same_as<typename FactView::value_type, formalism::planning::FDRFact<formalism::FluentTag>>
@@ -100,10 +99,9 @@ public:
     [[nodiscard]] bool is_concurrent() const noexcept;
     /// The index of this worker among the repositories sharing its storage.
     [[nodiscard]] ygg::uint_t get_worker_index() const noexcept;
-    /// The identity of the storage that owns the states; shared by all workers of a cohort.
-    [[nodiscard]] ygg::uint_t get_index() const noexcept;
-    /// The repository's number, as urd's views ask of a context.
-    [[nodiscard]] std::size_t layer() const noexcept { return get_index(); }
+    /// The repository's number, as urd's views ask of a context: the identity of the storage that owns the states,
+    /// shared by all workers of a cohort.
+    [[nodiscard]] std::size_t layer() const noexcept;
     [[nodiscard]] size_t num_states() const noexcept;
     /// The stored, packed record of a registered state (a StateView or PackedStateView is the usual handle).
     [[nodiscard]] const PackedState<Kind>& packed(urd::index<State<Kind>> state_index) const;

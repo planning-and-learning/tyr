@@ -55,7 +55,7 @@ void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository,
     {
         using V = ConditionalEffectView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::index);
+        cls.def("index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_variables", &V::get_variables);

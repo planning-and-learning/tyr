@@ -44,7 +44,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
     {
         using V = ConjunctiveEffectView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::index);
+        cls.def("index", &V::index);
         cls.def("get_numeric_effects", &V::get_numeric_effects);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);

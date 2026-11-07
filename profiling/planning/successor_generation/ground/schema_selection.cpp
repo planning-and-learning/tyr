@@ -20,7 +20,6 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -117,7 +116,7 @@ try
             prepared.tree =
                 Tree::create(tyr::formalism::planning::ActionViewList<GroundTag>(actions.begin(), actions.end()), prepared.task->get_task().context());
             prepared.forest = make_forest(*prepared.task);
-            prepared.generator = tyr::planning::SuccessorGeneratorFactory<GroundTag>().create(prepared.task, execution_context);
+            prepared.generator = std::make_shared<tyr::planning::SuccessorGenerator<GroundTag>>(prepared.task, execution_context);
         }
     }
     auto task = prepared.task;
@@ -132,8 +131,8 @@ try
     auto forest = Forest {};
     for (const auto& [schema, prototype] : prepared.forest)
         forest.emplace(schema, prototype->make_worker());
-    auto evaluator = tyr::planning::AxiomEvaluatorFactory<GroundTag>().create(task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<GroundTag>().create(task);
+    auto evaluator = std::make_shared<tyr::planning::AxiomEvaluator<GroundTag>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<GroundTag>>(task);
     auto generator = prepared.generator->make_worker(execution_context);
     const auto node = generator->get_initial_node(*repository, *evaluator);
     const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state().get_state_builder(), node.get_metric());

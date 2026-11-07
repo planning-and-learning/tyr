@@ -44,7 +44,7 @@ template<FactKind T>
 void bind_fdr_variable_view(nb::module_& m, const char* name)
 {
     using V = FDRVariableView<T>;
-    auto cls = nb::class_<V>(m, name).def("get_index", &V::index).def("get_domain_size", &V::get_domain_size).def("get_atoms", &V::get_atoms);
+    auto cls = nb::class_<V>(m, name).def("index", &V::index).def("get_domain_size", &V::get_domain_size).def("get_atoms", &V::get_atoms);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

@@ -24,24 +24,24 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -68,7 +68,6 @@
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 #include <urd/repr/core/dependent_false.hpp>
-#include <yggdrasil/formalism/detail/basic_symbol_repository_impl.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -76,10 +75,10 @@ namespace tyr::planning::match_tree
 namespace
 {
 
-using PreconditionVariant = std::variant<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>,
+using PreconditionVariant = std::variant<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>,
                                          formalism::planning::FDRVariableView<formalism::FluentTag>,
                                          urd::data<formalism::planning::FDRFact<formalism::FluentTag>>,
-                                         urd::index<formalism::planning::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>;
+                                         urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>;
 
 template<typename Tag>
 using ElementView = urd::index_view<Tag, formalism::planning::Repository>;
@@ -149,7 +148,7 @@ struct AtomStackEntry
 
     AtomStackEntry(Builder<Tag>& builder,
                    BaseEntry<Tag> base_,
-                   urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom,
+                   urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> atom,
                    ElementSpan<Tag> true_elements_,
                    ElementSpan<Tag> false_elements_,
                    ElementSpan<Tag> dontcare_elements_) :
@@ -235,7 +234,7 @@ struct ConstraintStackEntry
 
     ConstraintStackEntry(Builder<Tag>& builder,
                          BaseEntry<Tag> base_,
-                         urd::index<formalism::planning::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
+                         urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
                          ElementSpan<Tag> true_elements_,
                          ElementSpan<Tag> dontcare_elements_) :
         base(base_),
@@ -414,7 +413,7 @@ inline auto get_condition(formalism::planning::AxiomView<GroundTag> el) { return
 inline auto get_condition(formalism::planning::ActionView<GroundTag> el) { return el.get_condition(); }
 
 template<typename Tag>
-static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> atom,
+static std::optional<StackEntry<Tag>> try_create_atom_stack_entry(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> atom,
                                                                   BaseEntry<Tag> base,
                                                                   const PreconditionDetails<Tag>& details,
                                                                   Builder<Tag>& builder)
@@ -547,7 +546,7 @@ static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(urd::
 }
 
 template<typename Tag>
-static std::optional<StackEntry<Tag>> try_create_constraint_stack_entry(urd::index<formalism::planning::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
+static std::optional<StackEntry<Tag>> try_create_constraint_stack_entry(urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
                                                                         BaseEntry<Tag> base,
                                                                         const PreconditionDetails<Tag>& details,
                                                                         Builder<Tag>& builder)
@@ -598,9 +597,9 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
                 return try_create_variable_stack_entry(arg, base, details, builder);
             else if constexpr (std::same_as<Alternative, urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>)
                 return try_create_negative_fact_stack_entry(arg, base, details, builder);
-            else if constexpr (std::same_as<Alternative, urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>>)
+            else if constexpr (std::same_as<Alternative, urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>>)
                 return try_create_atom_stack_entry(arg, base, details, builder);
-            else if constexpr (std::same_as<Alternative, urd::index<formalism::planning::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>)
+            else if constexpr (std::same_as<Alternative, urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>)
                 return try_create_constraint_stack_entry(arg, base, details, builder);
             else
                 static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
@@ -858,15 +857,3 @@ template class MatchTree<formalism::planning::Axiom<GroundTag>>;
 
 }
 
-// Tests intern match-tree nodes too; their insertion path needs basic_symbol_repository_impl.hpp.
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::AtomSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<
-    tyr::planning::match_tree::NumericConstraintSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::VariableSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NegativeFactSelectorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::ElementGeneratorNode<tyr::formalism::planning::Action<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::AtomSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NumericConstraintSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::VariableSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::NegativeFactSelectorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;
-template class ygg::formalism::BasicSymbolRepository<tyr::planning::match_tree::ElementGeneratorNode<tyr::formalism::planning::Axiom<tyr::GroundTag>>>;

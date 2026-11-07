@@ -21,6 +21,8 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <urd/elements/data.hpp>
+#include <utility>
+#include <yggdrasil/semantics/canonicalization.hpp>
 
 namespace tyr::formalism
 {
@@ -58,6 +60,57 @@ void canonicalize(urd::data<Predicate<T>>&)
 
 template<FactKind T>
 void canonicalize(urd::data<Function<T>>&)
+{
+    // Trivially canonical
+}
+
+
+template<TaskKind T>
+void canonicalize(urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
+{
+    // Trivially canonical
+}
+
+template<TaskKind T, OperatorKind O>
+void canonicalize(urd::data<BinaryOperator<T, O>>& data)
+{
+    if constexpr (std::same_as<O, ArithmeticOperatorKind>)
+    {
+        if ((data.operator_kind == ArithmeticOperatorKind::Add || data.operator_kind == ArithmeticOperatorKind::Mul) && data.lhs > data.rhs)
+            std::swap(data.lhs, data.rhs);
+    }
+}
+
+template<TaskKind T>
+void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
+{ ygg::canonicalize<false>(data.args); }
+
+template<TaskKind T, FactKind F>
+void canonicalize(urd::data<Atom<T, F>>&)
+{
+    // Trivially canonical
+}
+
+template<TaskKind T, FactKind F>
+void canonicalize(urd::data<Literal<T, F>>&)
+{
+    // Trivially canonical
+}
+
+template<TaskKind T, FactKind F>
+void canonicalize(urd::data<FunctionTerm<T, F>>&)
+{
+    // Trivially canonical
+}
+
+template<FactKind F>
+void canonicalize(urd::data<FunctionTermValue<GroundTag, F>>&)
+{
+    // Trivially canonical
+}
+
+template<TaskKind T, FactKind F>
+void canonicalize(urd::data<NumericEffect<T, F>>&)
 {
     // Trivially canonical
 }

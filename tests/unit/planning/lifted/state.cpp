@@ -1,9 +1,8 @@
-#include "tyr/containers.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
 #include "tyr/planning/state_storage/numeric.hpp"
@@ -17,7 +16,6 @@
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <concepts>
 #include <gtest/gtest.h>
 #include <stdexcept>
@@ -98,15 +96,15 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     };
     const auto task = make_task();
     ASSERT_TRUE(task);
-    auto axioms = tyr::planning::AxiomEvaluatorFactory<tyr::LiftedTag>().create(task, execution_context);
-    auto source_repository = tyr::planning::StateRepositoryFactory<tyr::LiftedTag>().create(task);
+    auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<tyr::LiftedTag>>(task, execution_context);
+    auto source_repository = std::make_shared<tyr::planning::StateRepository<tyr::LiftedTag>>(task);
     const auto initial = source_repository->get_initial_state(*axioms);
     const auto derived = initial.template get_atoms<::tyr::formalism::DerivedTag>();
     ASSERT_FALSE(derived.begin() == derived.end());
     auto source = urd::builder<tyr::planning::State<tyr::LiftedTag>> { initial.data() };
     source.set(Index {});
     const auto borrowed = urd::resolve(source, *source_repository);
-    auto target = tyr::planning::StateRepositoryFactory<tyr::LiftedTag>().create(task);
+    auto target = std::make_shared<tyr::planning::StateRepository<tyr::LiftedTag>>(task);
     auto warm = target->get_state_builder();
     warm->numeric_storage.values.reserve(64);
     const auto slot = warm.get();
@@ -126,7 +124,7 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
         std::ranges::equal(source.template get_fterm_values<tyr::formalism::FluentTag>(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
     EXPECT_EQ(target->register_extended_state(borrowed), retained);
     EXPECT_EQ(target->num_states(), 1);
-    auto foreign = tyr::planning::StateRepositoryFactory<tyr::LiftedTag>().create(make_task());
+    auto foreign = std::make_shared<tyr::planning::StateRepository<tyr::LiftedTag>>(make_task());
     EXPECT_THROW(foreign->register_extended_state(borrowed), std::invalid_argument);
     EXPECT_EQ(foreign->num_states(), 0);
 
@@ -137,56 +135,3 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
         std::ranges::equal(retained.template get_fterm_values<tyr::formalism::FluentTag>(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
 }
 
-TEST(TyrPlanningLiftedStateTest, BitsetHelpersTreatOutOfRangeTestAsFalseAndResizeOnSet)
-{
-    auto bitset = boost::dynamic_bitset<>();
-
-    EXPECT_FALSE(tyr::test(3, bitset));
-
-    tyr::set(3, true, bitset);
-    EXPECT_EQ(bitset.size(), 4);
-    EXPECT_TRUE(tyr::test(3, bitset));
-
-    tyr::set(6, false, bitset);
-    EXPECT_EQ(bitset.size(), 7);
-    EXPECT_FALSE(tyr::test(6, bitset));
-    EXPECT_TRUE(tyr::test(3, bitset));
-}
-
-TEST(TyrPlanningLiftedStateTest, TrimTrailingZerosEndsAtLastSetBit)
-{
-    auto bitset = boost::dynamic_bitset<>(10);
-    bitset.set(2);
-    bitset.set(7);
-
-    tyr::planning::trim_trailing_zeros(bitset);
-    EXPECT_EQ(bitset.size(), 8);
-
-    bitset.reset(7);
-    tyr::planning::trim_trailing_zeros(bitset);
-    EXPECT_EQ(bitset.size(), 3);
-    EXPECT_TRUE(bitset.test(2));
-
-    bitset.reset();
-    tyr::planning::trim_trailing_zeros(bitset);
-    EXPECT_TRUE(bitset.empty());
-
-    // Block boundaries and many trailing zero blocks.
-    auto sparse = boost::dynamic_bitset<>(100001);
-    sparse.set(3);
-    sparse.set(63);
-    sparse.set(64);
-    sparse.set(100000);
-    tyr::planning::trim_trailing_zeros(sparse);
-    EXPECT_EQ(sparse.size(), 100001);
-    sparse.reset(100000);
-    tyr::planning::trim_trailing_zeros(sparse);
-    EXPECT_EQ(sparse.size(), 65);
-    sparse.reset(64);
-    tyr::planning::trim_trailing_zeros(sparse);
-    EXPECT_EQ(sparse.size(), 64);
-    sparse.reset(63);
-    tyr::planning::trim_trailing_zeros(sparse);
-    EXPECT_EQ(sparse.size(), 4);
-    EXPECT_TRUE(sparse.test(3));
-}

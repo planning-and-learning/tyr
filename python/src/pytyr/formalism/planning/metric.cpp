@@ -42,7 +42,7 @@ void bind_metric(nb::module_& m, RepositoryBinding& repository)
         using V = MetricView;
 
         auto cls = nb::class_<V>(m, "Metric")  //
-                       .def("get_index", &V::index)
+                       .def("index", &V::index)
                        .def("get_optimization_direction", &V::get_optimization_direction)
                        .def("get_fexpr", &V::get_fexpr);
         ygg::add_print(cls);

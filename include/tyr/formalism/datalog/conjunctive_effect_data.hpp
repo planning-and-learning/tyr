@@ -21,7 +21,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 
 #include <tuple>
 #include <utility>
@@ -35,10 +35,10 @@ template<::tyr::TaskKind T>
 struct data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
 {
     urd::index<::tyr::formalism::datalog::ConjunctiveEffect<T>> index;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::NumericEffect<T, ::tyr::formalism::FluentTag>>> numeric_effects;
+    urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<T, ::tyr::formalism::FluentTag>>> numeric_effects;
 
     data() = default;
-    explicit data(urd::flat_vector<urd::index<::tyr::formalism::datalog::NumericEffect<T, ::tyr::formalism::FluentTag>>> numeric_effects_) :
+    explicit data(urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<T, ::tyr::formalism::FluentTag>>> numeric_effects_) :
         index(),
         numeric_effects(std::move(numeric_effects_))
     {

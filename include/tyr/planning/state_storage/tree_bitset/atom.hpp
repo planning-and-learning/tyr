@@ -34,7 +34,7 @@
 namespace tyr::planning
 {
 
-/// Stores derived atoms, given as a bitset in ground and lifted tasks alike, as a bitset tree.
+/// Stores derived atoms, a dense set in ground and lifted tasks alike, as a bitset tree, by its words.
 template<TaskKind Kind, bool ThreadSafe>
 class AtomStorageBackend<Kind, TreeBitset, ThreadSafe>
 {
@@ -48,7 +48,7 @@ public:
     Packed insert(const Unpacked& unpacked);
 
     /// Inserts `unpacked` as a delta to the stored `parent`, whose unpacked form is `parent_unpacked`.
-    /// Derived atoms are recomputed per state, so the changed blocks are found by comparing both bitsets.
+    /// Derived atoms are recomputed per state, so the changed blocks are found by comparing both rows' words.
     Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
@@ -56,7 +56,6 @@ public:
 private:
     Context* m_context;
 
-    urd::Store<urd::sequence<tree_bitset::Block>> m_blocks;
     urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;
 };
 

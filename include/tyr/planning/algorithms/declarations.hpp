@@ -33,7 +33,6 @@ enum class SearchStatus : uint8_t
 {
     IN_PROGRESS,
     OUT_OF_TIME,
-    OUT_OF_MEMORY,
     OUT_OF_STATES,
     FAILED,
     EXHAUSTED,

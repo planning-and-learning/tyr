@@ -20,6 +20,8 @@
 #include "../../tree_bitset.hpp"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <span>
 #include <urd/repr/containers/bit.hpp>
 
@@ -94,34 +96,29 @@ void FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const P
 template<typename... Tags, bool ThreadSafe>
 AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::AtomStorageBackend(Context& ctx) :
     m_array_set(&ctx.derived_array_set),
-    m_num_bits(ctx.layout.derived_num_bits),
-    m_buffer(urd::repr::bit::ceil_div(m_num_bits, static_cast<ygg::uint_t>(urd::repr::bit::bits_per_block_v<ygg::uint_t>)))
+    m_buffer(urd::repr::bit::ceil_div(ctx.layout.derived_num_bits, static_cast<ygg::uint_t>(urd::repr::bit::bits_per_block_v<ygg::uint_t>)))
 {
 }
 
 template<typename... Tags, bool ThreadSafe>
 auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
 {
-    std::ranges::fill(m_buffer, ygg::uint_t { 0 });
-    for (ygg::uint_t i = 0; i < m_num_bits; ++i)
-        urd::repr::bit::bit_reference(std::span(m_buffer), i) = unpacked.indices.test(i);
+    const auto words = unpacked.indices.significant_words();
+    for (std::size_t i = 0; i < m_buffer.size(); ++i)
+        m_buffer[i] = block_of(words, i);
     return m_array_set->insert(m_buffer).first;
 }
 
 template<typename... Tags, bool ThreadSafe>
 auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked) -> Packed
 {
-    // Both bitsets span all derived atoms, so the blocks that differ lie within the stored row.
-    m_blocks.clear();
-    append_blocks(parent_unpacked.indices, m_blocks);
-    const auto num_parent_blocks = m_blocks.size();
-    append_blocks(unpacked.indices, m_blocks);
-
-    m_flips.clear();
-    append_diff_flips<ygg::uint_t>(std::span<const ygg::uint_t>(m_blocks).first(num_parent_blocks),
-                                   std::span<const ygg::uint_t>(m_blocks).subspan(num_parent_blocks),
-                                   m_flips);
-    flips_to_writes(*m_array_set, parent, m_flips, m_writes);
+    // Derived atoms lie within the stored row, so the blocks that differ are written there.
+    const auto from = parent_unpacked.indices.significant_words();
+    const auto to = unpacked.indices.significant_words();
+    m_writes.clear();
+    for (std::size_t i = 0; i < m_buffer.size(); ++i)
+        if (const auto block = block_of(to, i); block != block_of(from, i))
+            m_writes.push_back(urd::Write<ygg::uint_t> { i, block });
 
     return m_array_set->insert(parent, m_writes).first;
 }
@@ -130,12 +127,13 @@ template<typename... Tags, bool ThreadSafe>
 void AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto view = m_array_set->view(packed);
-    const auto data = std::span(view.data(), view.size());
-    auto& indices = unpacked.indices;
-
-    indices.resize(m_num_bits);
-    for (ygg::uint_t i = 0; i < m_num_bits; ++i)
-        indices[i] = bool(urd::repr::bit::bit_reference(data, i));
+    const auto blocks = std::span(view.data(), view.size());
+    unpacked.indices.assign_words((blocks.size() + 1) / 2,
+                                  [blocks](std::span<std::uint64_t> words)
+                                  {
+                                      for (std::size_t i = 0; i < blocks.size(); ++i)
+                                          words[i / 2] |= std::uint64_t { blocks[i] } << (tree_bitset::bits_per_block * (i % 2));
+                                  });
 }
 
 template class FactStorageBackend<GroundTag, TreeVector, false>;

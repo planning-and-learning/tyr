@@ -11,7 +11,6 @@
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
@@ -190,7 +189,7 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
     const auto first = make_atom(first_repository, "truck");
     const auto second = make_atom(second_repository, "truck");
     ASSERT_EQ(first.index(), second.index());
-    ASSERT_NE(first.context().get_index(), second.context().get_index());
+    ASSERT_NE(first.context().layer(), second.context().layer());
     for (const bool nested : { false, true })
     {
         auto incomplete = ygg::serialization::Dictionaries {};
@@ -241,10 +240,10 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
 
 TEST(TyrSerialization, ExpressionsKeepConstantsInline)
 {
-    using Binary = tyr::formalism::planning::BinaryOperator<LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
+    using Binary = tyr::formalism::BinaryOperator<LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
     using BinaryView = urd::index_view<Binary, tyr::formalism::planning::Repository>;
     auto repository = tyr::formalism::planning::RepositoryFactory().create();
-    const auto constant = tyr::formalism::planning::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3));
+    const auto constant = tyr::formalism::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3));
     auto binary_data = urd::data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
     const auto binary = ygg::formalism::insert(repository, binary_data).first;
     auto dictionaries = ygg::serialization::Dictionaries {};

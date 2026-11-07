@@ -35,7 +35,7 @@ struct IwExpectation
     std::optional<tyr::planning::SearchStatus> status;
     std::optional<PlanStatistics> plan;
     std::optional<ygg::uint_t> solution_arity;
-    std::optional<tyr::planning::ProgressStatistics::Snapshot> counters;
+    std::optional<Counters> counters;
 };
 
 struct IwCase

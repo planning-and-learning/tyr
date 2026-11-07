@@ -79,7 +79,7 @@ auto intern_invariant(tyr::formalism::planning::Repository& repository, const ty
         auto terms = tyr::formalism::TermList {};
         for (const auto& term : atom.terms)
             terms.push_back(term);
-        auto atom_data = urd::data<tyr::formalism::planning::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>>(atom.predicate.index(), std::move(terms));
+        auto atom_data = urd::data<tyr::formalism::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>>(atom.predicate.index(), std::move(terms));
         data.atoms.push_back(tyr::formalism::planning::insert(repository, atom_data).first.index());
     }
     return tyr::formalism::planning::insert(repository, data).first;

@@ -101,11 +101,8 @@ public:
 
 private:
     typename Context::ArraySet* m_array_set;
-    ygg::uint_t m_num_bits;
 
     urd::Store<urd::sequence<ygg::uint_t>> m_buffer;
-    urd::Store<urd::sequence<ygg::uint_t>> m_blocks;
-    urd::Store<urd::sequence<tree_bitset::Flip>> m_flips;
     urd::Store<urd::sequence<urd::Write<ygg::uint_t>>> m_writes;
 };
 

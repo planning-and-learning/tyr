@@ -95,7 +95,7 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
     {
         using V = ActionView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::index);
+        cls.def("index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_name", &V::get_name);

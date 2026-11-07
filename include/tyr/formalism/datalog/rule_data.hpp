@@ -21,9 +21,9 @@
 #include "tyr/formalism/binding_index.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/formalism/datalog/binary_operator_data.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/numeric_effect_data.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <utility>

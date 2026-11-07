@@ -52,9 +52,7 @@ public:
         }
     { return PackedNode<Kind>(m_state.pack(), m_metric); }
 
-    static constexpr auto identifying_members() noexcept
-        requires urd::Identifiable<State>
-    { return urd::Members<&Node::m_state, &Node::m_metric> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&Node::m_state, &Node::m_metric> {}; }
 
 private:
     State m_state;

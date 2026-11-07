@@ -37,7 +37,7 @@ struct SiwExpectation
     std::optional<tyr::planning::SearchStatus> status;
     std::optional<PlanStatistics> plan;
     std::optional<ygg::uint_t> maximum_effective_width;
-    std::optional<tyr::planning::ProgressStatistics::Snapshot> counters;
+    std::optional<Counters> counters;
 };
 
 struct SiwCase

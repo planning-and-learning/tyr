@@ -89,10 +89,6 @@ The `formalism_task` is **moved** into the planning task. After calling this
 constructor, the original formalism task should be considered consumed and
 should not be used further.
         )doc")
-            .def_static(
-                "create",
-                [](formalism::planning::PlanningTask<LiftedTag>&& source_task) { return Task<LiftedTag>::create(std::move(source_task)); },
-                "formalism_task"_a)
             .def("get_formalism_task", &Task<LiftedTag>::get_formalism_task, nb::rv_policy::reference_internal)
             .def("get_repository", &Task<LiftedTag>::get_repository)
             .def("get_task", &Task<LiftedTag>::get_task)

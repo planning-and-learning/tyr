@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/numeric_effect_data.hpp"
-#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
@@ -24,7 +24,7 @@ concept NumericEffectContract =
            view.get_fexpr();
        };
 
-using Fluent = tyr::formalism::datalog::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>;
+using Fluent = tyr::formalism::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>;
 
 static_assert(NumericEffectContract<Fluent>);
 static_assert(std::same_as<urd::index_view<Fluent, tyr::formalism::datalog::Repository>,
@@ -48,7 +48,7 @@ concept GroundNumericEffectContract =
            view.get_fexpr();
        };
 
-using Fluent = tyr::formalism::datalog::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>;
+using Fluent = tyr::formalism::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>;
 
 static_assert(GroundNumericEffectContract<Fluent>);
 static_assert(std::same_as<urd::index_view<Fluent, tyr::formalism::datalog::Repository>,

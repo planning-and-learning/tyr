@@ -32,7 +32,6 @@ add_library(
     formalism/formatter.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
-    formalism/datalog/repository.cpp
     formalism/datalog/variable_dependency_graph.cpp
 
     formalism/planning/invariants/constraints.cpp
@@ -49,7 +48,6 @@ add_library(
     formalism/planning/grounder.cpp
     formalism/planning/merge_datalog.cpp
     formalism/planning/merge_planning.cpp
-    formalism/planning/repository.cpp
     formalism/planning/loki_to_tyr.cpp
     formalism/planning/parser.cpp
     formalism/planning/planning_task.cpp
@@ -125,7 +123,6 @@ add_library(
     planning/applicability.cpp
     planning/applicability_lifted.cpp
     planning/action_executor.cpp
-    planning/factory.cpp
     planning/task.cpp
     planning/plan.cpp
     planning/task_utils.cpp

@@ -34,10 +34,10 @@ template<::tyr::formalism::FactKind T>
 struct data<::tyr::formalism::planning::FDRVariable<T>>
 {
     urd::index<::tyr::formalism::planning::FDRVariable<T>> index;
-    urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>>> atoms;
+    urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>> atoms;
 
     data() = default;
-    data(urd::flat_vector<urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, T>>> atoms_) : index(), atoms(std::move(atoms_)) {}
+    data(urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>> atoms_) : index(), atoms(std::move(atoms_)) {}
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;

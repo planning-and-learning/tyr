@@ -93,7 +93,7 @@ TEST(TyrDatalogLiftedBottomUpTest, MissingLiteralBindingUsesClosedWorldPolarityW
 
     const auto rule = fixture.program.get_program().get_rules<tyr::formalism::PredicateTag>().front();
     const auto positive = rule.get_body().get_literals<tyr::formalism::FluentTag>().front();
-    auto negative_data = urd::data<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>(positive.get_atom().index(), false);
+    auto negative_data = urd::data<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>(positive.get_atom().index(), false);
     const auto negative = ygg::formalism::insert(*fixture.repository, negative_data).first;
 
     auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(fixture.program);
@@ -236,8 +236,8 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
     auto ground_workspace = GroundWorkspace(ground_program);
     auto ground_context = tyr::datalog::ProgramExecutionContext(ground_workspace);
 
-    auto ground_source_data = urd::data<tyr::formalism::datalog::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(fixture.source.index());
-    auto ground_target_data = urd::data<tyr::formalism::datalog::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(fixture.target.index());
+    auto ground_source_data = urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(fixture.source.index());
+    auto ground_target_data = urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(fixture.target.index());
     const auto ground_source = fixture.repository->insert(ground_source_data).first;
     const auto ground_target = fixture.repository->insert(ground_target_data).first;
     ground_workspace.numeric_annotations.clear();
@@ -307,20 +307,20 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
 
     const auto make_atom = [&](auto predicate, std::initializer_list<tyr::formalism::ParameterIndex> terms)
     {
-        auto data = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
+        auto data = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
         data.predicate = predicate.index();
         for (const auto term : terms)
             data.terms.emplace_back(term);
         return intern(std::move(data));
     };
     const auto make_literal = [&](auto atom)
-    { return intern(urd::data<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>(atom.index(), true)); };
+    { return intern(urd::data<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>(atom.index(), true)); };
     const auto make_initial_atom = [&](auto predicate, std::initializer_list<urd::index<tyr::formalism::Object>> objects)
     {
         auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         binding_data.relation = predicate.index();
         binding_data.objects.insert(binding_data.objects.end(), objects.begin(), objects.end());
-        return intern(urd::data<tyr::formalism::datalog::Atom<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(binding_data)).index()));
+        return intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(binding_data)).index()));
     };
 
     const auto derive_seed_atom = make_atom(seed, { tyr::formalism::ParameterIndex(0) });
@@ -427,14 +427,14 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
 
     const auto make_atom = [&](auto predicate, std::initializer_list<tyr::formalism::ParameterIndex> terms)
     {
-        auto data = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
+        auto data = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
         data.predicate = predicate.index();
         for (const auto term : terms)
             data.terms.emplace_back(term);
         return intern(std::move(data));
     };
     const auto make_literal = [&](auto atom)
-    { return intern(urd::data<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>(atom.index(), true)); };
+    { return intern(urd::data<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>(atom.index(), true)); };
     const auto make_binding = [&](auto predicate, std::initializer_list<urd::index<tyr::formalism::Object>> objects)
     {
         auto data = urd::data<tyr::formalism::RelationBinding<FluentPredicate>>();
@@ -443,8 +443,8 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
         return intern(std::move(data));
     };
     const auto make_initial_atom = [&](auto predicate, std::initializer_list<urd::index<tyr::formalism::Object>> objects)
-    { return intern(urd::data<tyr::formalism::datalog::Atom<GroundTag, tyr::formalism::FluentTag>>(make_binding(predicate, objects).index())); };
-    const auto make_predicate_rule = [&](auto head, urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>>> literals)
+    { return intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(make_binding(predicate, objects).index())); };
+    const auto make_predicate_rule = [&](auto head, urd::Store<urd::sequence<urd::index<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>>> literals)
     {
         auto body = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
         body.variables = { x.index(), y.index(), z.index() };
@@ -456,7 +456,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
         return intern(std::move(rule));
     };
 
-    const auto seeded = urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>>> { make_literal(make_atom(s, { p0 })).index(), make_literal(make_atom(m, { p1, p2 })).index() };
+    const auto seeded = urd::Store<urd::sequence<urd::index<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>>> { make_literal(make_atom(s, { p0 })).index(), make_literal(make_atom(m, { p1, p2 })).index() };
     const auto derive_t = make_predicate_rule(make_atom(t, { p0, p1, p2 }), seeded);
     const auto derive_u = make_predicate_rule(make_atom(u, { p0, p1, p2 }), seeded);
     const auto derive_h =
@@ -510,18 +510,18 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     const auto goal = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
     const auto variable = intern(urd::data<tyr::formalism::Variable>(std::string("x")));
 
-    auto source_atom_data = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
+    auto source_atom_data = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
     source_atom_data.predicate = source.index();
     source_atom_data.terms.emplace_back(tyr::formalism::ParameterIndex(0));
     const auto source_atom = intern(std::move(source_atom_data));
 
-    const auto source_literal = intern(urd::data<tyr::formalism::datalog::Literal<LiftedTag, tyr::formalism::FluentTag>>(source_atom.index(), true));
+    const auto source_literal = intern(urd::data<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>(source_atom.index(), true));
     auto body_data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
     body_data.variables.push_back(variable.index());
     body_data.fluent_literals.push_back(source_literal.index());
     const auto body = intern(std::move(body_data));
 
-    auto goal_atom_data = urd::data<tyr::formalism::datalog::Atom<LiftedTag, tyr::formalism::FluentTag>>();
+    auto goal_atom_data = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
     goal_atom_data.predicate = goal.index();
     const auto goal_atom = intern(std::move(goal_atom_data));
 
@@ -545,7 +545,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
         binding_data.objects.push_back(object.index());
         const auto binding = intern(std::move(binding_data));
         program_data.fluent_atoms.push_back(
-            intern(urd::data<tyr::formalism::datalog::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index())).index());
+            intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.index())).index());
     }
     const auto program_view = intern(std::move(program_data));
 

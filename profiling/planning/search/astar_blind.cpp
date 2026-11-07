@@ -20,12 +20,10 @@
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
-#include "tyr/planning/factory.hpp"
-#include "tyr/planning/ground/axiom_evaluator.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
-#include "tyr/planning/lifted/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
@@ -171,15 +169,15 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
         {
             prepared.task = create_task<Kind>(benchmark_case, prepared, *execution_context);
             const auto component_start = Clock::now();
-            prepared.axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(prepared.task, execution_context);
-            prepared.successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(prepared.task, execution_context);
+            prepared.axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(prepared.task, execution_context);
+            prepared.successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(prepared.task, execution_context);
             prepared.component_setup_seconds = std::chrono::duration<double>(Clock::now() - component_start).count();
         }
 
         for ([[maybe_unused]] auto _ : state)
         {
             const auto worker_setup_start = Clock::now();
-            auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(prepared.task);
+            auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(prepared.task);
             auto axiom_evaluator = prepared.axiom_evaluator->make_worker(execution_context);
             auto successor_generator = prepared.successor_generator->make_worker(execution_context);
             auto heuristic = tyr::planning::BlindHeuristic<Kind> {};
@@ -211,7 +209,7 @@ void run(benchmark::State& state, const BenchmarkCase& benchmark_case, PreparedC
             }
 
             static constexpr auto status_names =
-                std::array { "IN_PROGRESS", "OUT_OF_TIME", "OUT_OF_MEMORY", "OUT_OF_STATES", "FAILED", "EXHAUSTED", "CYCLE", "SOLVED", "UNSOLVABLE" };
+                std::array { "IN_PROGRESS", "OUT_OF_TIME", "OUT_OF_STATES", "FAILED", "EXHAUSTED", "CYCLE", "SOLVED", "UNSOLVABLE" };
             state.SetLabel(status_names.at(static_cast<size_t>(result.status)));
             state.counters["status"] = static_cast<double>(result.status);
             state.counters["solved"] = solved ? 1 : 0;

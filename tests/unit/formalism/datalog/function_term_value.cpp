@@ -1,6 +1,6 @@
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/function_term_value_data.hpp"
-#include "tyr/formalism/datalog/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_value_data.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
@@ -9,7 +9,7 @@ template<typename Entity>
 struct GroundFunctionTermValuePublicView;
 
 template<tyr::formalism::FactKind T>
-struct GroundFunctionTermValuePublicView<tyr::formalism::datalog::FunctionTermValue<::tyr::GroundTag, T>>
+struct GroundFunctionTermValuePublicView<tyr::formalism::FunctionTermValue<::tyr::GroundTag, T>>
 {
     using type = tyr::formalism::datalog::FunctionTermValueView<::tyr::GroundTag, T>;
 };

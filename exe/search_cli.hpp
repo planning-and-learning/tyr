@@ -33,7 +33,6 @@
 #include <tyr/formalism/planning/parser.hpp>
 #include <tyr/formalism/planning/repository.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
-#include <tyr/planning/factory.hpp>
 #include <tyr/planning/formatter.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
@@ -185,9 +184,9 @@ void set_common_options(Options& options, const Arguments& arguments, const Sear
 inline void print_summary(const formalism::planning::Repository& repository, const planning::Statistics& statistics)
 {
     std::cout << "[Total] Number of objects: " << repository.template size<formalism::Object>() << '\n';
-    std::cout << "[Total] Number of fluent atoms: " << repository.template size<formalism::planning::Atom<GroundTag, formalism::FluentTag>>() << '\n';
-    std::cout << "[Total] Number of derived atoms: " << repository.template size<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>() << '\n';
-    std::cout << "[Total] Number of fluent fterms: " << repository.template size<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>() << '\n';
+    std::cout << "[Total] Number of fluent atoms: " << repository.template size<formalism::Atom<GroundTag, formalism::FluentTag>>() << '\n';
+    std::cout << "[Total] Number of derived atoms: " << repository.template size<formalism::Atom<GroundTag, formalism::DerivedTag>>() << '\n';
+    std::cout << "[Total] Number of fluent fterms: " << repository.template size<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>() << '\n';
     std::cout << "[Total] Action bindings memory usage: " << statistics.get_action_bindings_memory_usage() << " bytes" << '\n';
     std::cout << "[Total] Predicate bindings memory usage: " << statistics.get_predicate_bindings_memory_usage() << " bytes" << '\n';
     std::cout << "[Total] Axiom bindings memory usage: " << statistics.get_axiom_bindings_memory_usage() << " bytes" << '\n';
@@ -234,11 +233,10 @@ int run_search(const Arguments& arguments,
                bool print_component_summaries)
 {
     auto search = Search<Kind> { std::move(task), std::move(execution_context) };
-    search.axiom_evaluator = planning::AxiomEvaluatorFactory<Kind>().create(search.task, search.execution_context);
-    auto state_repository_factory = planning::StateRepositoryFactory<Kind>();
+    search.axiom_evaluator = std::make_shared<planning::AxiomEvaluator<Kind>>(search.task, search.execution_context);
     search.state_repository =
-        arguments.state_repository_mode == "shared" ? state_repository_factory.create_concurrent(search.task) : state_repository_factory.create(search.task);
-    search.successor_generator = planning::SuccessorGeneratorFactory<Kind>().create(search.task, search.execution_context);
+        std::make_shared<planning::StateRepository<Kind>>(search.task, arguments.state_repository_mode == "shared");
+    search.successor_generator = std::make_shared<planning::SuccessorGenerator<Kind>>(search.task, search.execution_context);
     search.heuristic = make_heuristic(arguments, search);
 
     const planning::SearchResult<Kind> result = solve(search);

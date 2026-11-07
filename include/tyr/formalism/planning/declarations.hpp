@@ -44,42 +44,6 @@ namespace tyr::formalism::planning
  * Formalism tag
  */
 
-template<TaskKind T, OperatorKind O>
-struct UnaryOperator
-{
-};
-
-template<TaskKind T, OperatorKind O>
-struct BinaryOperator
-{
-};
-
-template<TaskKind T, OperatorKind O>
-struct MultiOperator
-{
-};
-
-template<TaskKind T, FactKind F>
-struct Atom
-{
-};
-
-template<TaskKind T, FactKind F>
-struct Literal
-{
-};
-
-template<TaskKind T, FactKind F>
-struct FunctionTerm
-{
-};
-
-template<TaskKind T, FactKind F>
-    requires std::same_as<T, GroundTag>
-struct FunctionTermValue
-{
-};
-
 using EffectFamilyList = urd::Store<urd::sequence<EffectFamily>>;
 
 inline bool is_compatible_effect_family(EffectFamily lhs, EffectFamily rhs)
@@ -92,12 +56,6 @@ inline bool is_compatible_effect_family(EffectFamily lhs, EffectFamily rhs)
 
     return false;  ///< disallow mixing assign, additive, or multiplicative
 }
-
-template<TaskKind T, FactKind F>
-    requires std::same_as<F, FluentTag> || std::same_as<F, AuxiliaryTag>
-struct NumericEffect
-{
-};
 
 template<TaskKind T>
 struct ConditionalEffect
@@ -368,27 +326,6 @@ using UnaryOperatorView = urd::index_view<UnaryOperator<T, O>, Repository>;
 
 using VariableView = urd::index_view<Variable, Repository>;
 using VariableViewList = urd::Store<urd::sequence<VariableView>>;
-
-/// A function expression: a number, an arithmetic operator or a function term (ground ones also the auxiliary term).
-/// Stored as it is, not interned; read through a repository as FunctionExpressionView.
-template<TaskKind T>
-using FunctionExpression =
-    std::conditional_t<std::same_as<T, GroundTag>,
-                       urd::flat_variant<ygg::float_t,
-                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<FunctionTerm<T, StaticTag>>,
-                                                urd::index<FunctionTerm<T, FluentTag>>,
-                                                urd::index<FunctionTerm<T, AuxiliaryTag>>>,
-                       urd::flat_variant<ygg::float_t,
-                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<FunctionTerm<T, StaticTag>>,
-                                                urd::index<FunctionTerm<T, FluentTag>>>>;
-template<TaskKind T>
-using FunctionExpressionList = urd::flat_vector<FunctionExpression<T>>;
 
 /// A function expression read through the repository: the number, or the view of the record, it holds.
 template<TaskKind T>

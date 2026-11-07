@@ -32,6 +32,14 @@ void bind_variable(nb::module_& m);
 void bind_binding(nb::module_& m);
 void bind_predicate(nb::module_& m);
 void bind_function(nb::module_& m);
+void bind_atom(nb::module_& m);
+void bind_literal(nb::module_& m);
+void bind_function_term(nb::module_& m);
+void bind_function_term_value(nb::module_& m);
+void bind_unary_operator(nb::module_& m);
+void bind_binary_operator(nb::module_& m);
+void bind_multi_operator(nb::module_& m);
+void bind_numeric_effect(nb::module_& m);
 
 }  // namespace tyr::formalism
 

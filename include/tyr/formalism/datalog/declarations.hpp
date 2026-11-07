@@ -42,48 +42,6 @@ namespace tyr::formalism::datalog
  * Formalism tag
  */
 
-template<TaskKind T, OperatorKind O>
-struct UnaryOperator
-{
-};
-
-template<TaskKind T, OperatorKind O>
-struct BinaryOperator
-{
-};
-
-template<TaskKind T, OperatorKind O>
-struct MultiOperator
-{
-};
-
-template<TaskKind T, FactKind F>
-struct Atom
-{
-};
-
-template<TaskKind T, FactKind F>
-struct Literal
-{
-};
-
-template<TaskKind T, FactKind F>
-struct FunctionTerm
-{
-};
-
-template<TaskKind T, FactKind F>
-    requires std::same_as<F, FluentTag>
-struct NumericEffect
-{
-};
-
-template<TaskKind T, FactKind F>
-    requires std::same_as<T, GroundTag>
-struct FunctionTermValue
-{
-};
-
 template<TaskKind T>
 struct ConjunctiveCondition
 {
@@ -91,11 +49,6 @@ struct ConjunctiveCondition
 
 template<TaskKind T>
 struct ConjunctiveEffect
-{
-};
-
-template<TaskKind T>
-struct ConditionalEffect
 {
 };
 
@@ -152,9 +105,9 @@ using EffectTypes = boost::mp11::mp_append<NumericEffectTypes<LiftedTag>, Numeri
 template<TaskKind T>
 using RuleTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Rule, T>, PredicateFunctionTags>;
 
-using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveEffect<LiftedTag>, ConditionalEffect<LiftedTag>>,
+using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveEffect<LiftedTag>>,
                                             RuleTypes<LiftedTag>,
-                                            boost::mp11::mp_list<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>, ConditionalEffect<GroundTag>>,
+                                            boost::mp11::mp_list<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>>,
                                             RuleTypes<GroundTag>,
                                             boost::mp11::mp_list<Program<LiftedTag>, Program<GroundTag>>>;
 
@@ -266,12 +219,6 @@ using AtomView = urd::index_view<Atom<T, F>, Repository>;
 template<TaskKind T, FactKind F>
 using AtomViewList = urd::Store<urd::sequence<AtomView<T, F>>>;
 template<TaskKind T>
-using ConditionalEffectListView = urd::resolved_range<urd::flat_vector<urd::index<ConditionalEffect<T>>>, Repository>;
-template<TaskKind T>
-using ConditionalEffectView = urd::index_view<ConditionalEffect<T>, Repository>;
-template<TaskKind T>
-using ConditionalEffectViewList = urd::Store<urd::sequence<ConditionalEffectView<T>>>;
-template<TaskKind T>
 using ConjunctiveConditionView = urd::index_view<ConjunctiveCondition<T>, Repository>;
 template<TaskKind T>
 using ConjunctiveEffectView = urd::index_view<ConjunctiveEffect<T>, Repository>;
@@ -305,27 +252,6 @@ template<TaskKind T, RelationKind R>
 using RuleView = urd::index_view<Rule<T, R>, Repository>;
 template<TaskKind T, RelationKind R>
 using RuleViewList = urd::Store<urd::sequence<RuleView<T, R>>>;
-
-/// A function expression: a number, an arithmetic operator or a function term (ground ones also the auxiliary term).
-/// Stored as it is, not interned; read through a repository as FunctionExpressionView.
-template<TaskKind T>
-using FunctionExpression =
-    std::conditional_t<std::same_as<T, GroundTag>,
-                       urd::flat_variant<ygg::float_t,
-                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<FunctionTerm<T, StaticTag>>,
-                                                urd::index<FunctionTerm<T, FluentTag>>,
-                                                urd::index<FunctionTerm<T, AuxiliaryTag>>>,
-                       urd::flat_variant<ygg::float_t,
-                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
-                                                urd::index<FunctionTerm<T, StaticTag>>,
-                                                urd::index<FunctionTerm<T, FluentTag>>>>;
-template<TaskKind T>
-using FunctionExpressionList = urd::flat_vector<FunctionExpression<T>>;
 
 /// A function expression read through the repository: the number, or the view of the record, it holds.
 template<TaskKind T>

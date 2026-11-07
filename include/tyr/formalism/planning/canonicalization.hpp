@@ -27,24 +27,24 @@
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
-#include "tyr/formalism/planning/atom_data.hpp"
+#include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/planning/axiom_data.hpp"
-#include "tyr/formalism/planning/binary_operator_data.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
-#include "tyr/formalism/planning/function_term_data.hpp"
-#include "tyr/formalism/planning/function_term_value_data.hpp"
+#include "tyr/formalism/function_term_data.hpp"
+#include "tyr/formalism/function_term_value_data.hpp"
 #include "tyr/formalism/planning/invariant_data.hpp"
-#include "tyr/formalism/planning/literal_data.hpp"
+#include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
-#include "tyr/formalism/planning/multi_operator_data.hpp"
-#include "tyr/formalism/planning/numeric_effect_data.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
-#include "tyr/formalism/planning/unary_operator_data.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <algorithm>
@@ -57,88 +57,6 @@ namespace tyr::formalism::planning
 // yggdrasil's overloads for lists of indices: found by ordinary lookup, as the standard's two-step `using std::swap`
 // (ADL does not find them for urd::index, whose namespace is urd's).
 using ygg::canonicalize;
-
-/**
- * Datalog
- */
-
-template<TaskKind T>
-void canonicalize(urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
-{
-    // Trivially canonical
-}
-
-template<TaskKind T, OperatorKind Operator>
-void canonicalize(urd::data<BinaryOperator<T, Operator>>& data)
-{
-    if constexpr (std::same_as<Operator, ArithmeticOperatorKind>)
-    {
-        if ((data.operator_kind == ArithmeticOperatorKind::Add || data.operator_kind == ArithmeticOperatorKind::Mul) && data.lhs > data.rhs)
-            std::swap(data.lhs, data.rhs);
-    }
-}
-
-template<TaskKind T>
-void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{
-    ygg::canonicalize<false>(data.args);
-}
-
-template<FactKind T>
-void canonicalize(urd::data<NumericEffect<LiftedTag, T>>&)
-{
-}
-
-template<FactKind T>
-void canonicalize(urd::data<NumericEffect<GroundTag, T>>&)
-{
-}
-
-template<FactKind T>
-void canonicalize(urd::data<Atom<LiftedTag, T>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<Literal<LiftedTag, T>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<Atom<GroundTag, T>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<Literal<GroundTag, T>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<FunctionTerm<LiftedTag, T>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<FunctionTerm<GroundTag, T>>&)
-{
-    // Trivially canonical
-}
-
-template<FactKind T>
-void canonicalize(urd::data<FunctionTermValue<GroundTag, T>>&)
-{
-    // Trivially canonical
-}
-
-/**
- * Planning
- */
 
 inline void canonicalize(urd::data<ConditionalEffect<LiftedTag>>&) {}
 

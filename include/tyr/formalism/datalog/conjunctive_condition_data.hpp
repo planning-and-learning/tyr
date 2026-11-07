@@ -21,7 +21,7 @@
 #include "tyr/formalism/binding_index.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/formalism/datalog/binary_operator_data.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -39,15 +39,15 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
 {
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
+    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
     data() = default;
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
+         urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
         index(),
         variables(std::move(variables_)),
         static_literals(std::move(static_literals_)),
@@ -74,14 +74,14 @@ template<>
 struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> index;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
+    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals;
+    urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
     data() = default;
-    data(urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
+    data(urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
+         urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
         index(),
         static_literals(std::move(static_literals_)),
         fluent_literals(std::move(fluent_literals_)),

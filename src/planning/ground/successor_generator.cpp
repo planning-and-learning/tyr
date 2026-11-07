@@ -21,24 +21,24 @@
 #include "../metric.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -120,17 +120,9 @@ struct SuccessorGenerator<GroundTag>::Impl
         urd::data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>> checked_binding;
     };
 
-    Impl(ygg::uint_t index_, TaskPtr<GroundTag> task, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
-        definition(std::make_shared<Definition>(std::move(task))),
-        evaluator(*definition)
-    {
-    }
+    explicit Impl(TaskPtr<GroundTag> task) : definition(std::make_shared<Definition>(std::move(task))), evaluator(*definition) {}
 
-    Impl(ygg::uint_t index_, std::shared_ptr<const Definition> definition_, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
+    explicit Impl(std::shared_ptr<const Definition> definition_) :
         definition(std::move(definition_)),
         evaluator(*this->definition)
     {
@@ -181,8 +173,6 @@ struct SuccessorGenerator<GroundTag>::Impl
         return true;
     }
 
-    ygg::uint_t index;
-    std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
     std::shared_ptr<const Definition> definition;
     Evaluator evaluator;
 };
@@ -217,11 +207,8 @@ SuccessorGenerator<GroundTag>::Impl::Evaluator::Evaluator(const Definition& defi
         schema_match_trees.emplace(schema, tree->make_worker());
 }
 
-SuccessorGenerator<GroundTag>::SuccessorGenerator(ygg::uint_t index,
-                                                  TaskPtr<GroundTag> task,
-                                                  const ygg::ExecutionContextPtr& execution_context,
-                                                  std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(next_index)))
+SuccessorGenerator<GroundTag>::SuccessorGenerator(TaskPtr<GroundTag> task, const ygg::ExecutionContextPtr& execution_context) :
+    m_impl(std::make_unique<Impl>(std::move(task)))
 { static_cast<void>(execution_context); }
 
 SuccessorGenerator<GroundTag>::SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept : m_impl(std::move(impl)) {}
@@ -233,8 +220,7 @@ SuccessorGenerator<GroundTag>& SuccessorGenerator<GroundTag>::operator=(Successo
 SuccessorGeneratorPtr<GroundTag> SuccessorGenerator<GroundTag>::make_worker(const ygg::ExecutionContextPtr& execution_context) const
 {
     static_cast<void>(execution_context);
-    return SuccessorGeneratorPtr<GroundTag>(new SuccessorGenerator<GroundTag>(
-        std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed), m_impl->definition, m_impl->next_index)));
+    return SuccessorGeneratorPtr<GroundTag>(new SuccessorGenerator<GroundTag>(std::make_unique<Impl>(m_impl->definition)));
 }
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_initial_node(StateRepository<GroundTag>& state_repository, AxiomEvaluator<GroundTag>& axiom_evaluator)
@@ -521,7 +507,6 @@ Node<GroundTag, S> SuccessorGenerator<GroundTag>::get_successor_node(const Node<
         if (&storage == &node.get_state().data())
             throw std::invalid_argument("SuccessorGenerator: source and successor builder must be distinct.");
         storage.clear();
-        storage.resize_derived_atoms(m_impl->definition->task->get_task().template get_atoms<formalism::DerivedTag>().size());
         const auto auxiliary_value = m_impl->evaluator.executor.apply_action_unregistered(state_context, action, storage, m_impl->evaluator.successor_delta);
         const auto metric = evaluate_successor_metric(*m_impl->definition->task, storage, auxiliary_value);
         axiom_evaluator.compute_extended_state(storage);
@@ -916,8 +901,6 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_node(StateRepository<GroundTa
 }
 
 const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
-
-ygg::uint_t SuccessorGenerator<GroundTag>::get_index() const noexcept { return m_impl->index; }
 
 template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Node<GroundTag>& node, formalism::planning::ActionBindingView binding);
 

@@ -167,7 +167,7 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
         using V = TaskView<T>;
 
         auto cls = nb::class_<V>(m, view_name)  //
-                       .def("get_index", &V::index)
+                       .def("index", &V::index)
                        .def("get_name", &V::get_name)
                        .def("get_domain", &V::get_domain)
                        .def("get_derived_predicates", &V::get_derived_predicates)

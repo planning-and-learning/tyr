@@ -1,5 +1,5 @@
-#include "tyr/formalism/planning/atom_data.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -29,17 +29,17 @@ concept AtomContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> 
                               { view < view } -> std::same_as<bool>;
                           };
 
-static_assert(AtomContract<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
+static_assert(AtomContract<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
 static_assert(
-    std::same_as<urd::index_view<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
-static_assert(AtomContract<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
+static_assert(AtomContract<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
 static_assert(
-    std::same_as<urd::index_view<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
-static_assert(AtomContract<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
+static_assert(AtomContract<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
 static_assert(
-    std::same_as<urd::index_view<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
 
 TEST(TyrFormalismPlanningAtom, PreservesConstructorArguments)
@@ -48,7 +48,7 @@ TEST(TyrFormalismPlanningAtom, PreservesConstructorArguments)
     auto terms = tyr::formalism::TermList {};
     terms.emplace_back(tyr::formalism::ParameterIndex(2));
 
-    const auto data = urd::data<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>(predicate, std::move(terms));
+    const auto data = urd::data<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>(predicate, std::move(terms));
 
     EXPECT_EQ(data.predicate, predicate);
     ASSERT_EQ(data.terms.size(), 1);
@@ -70,7 +70,7 @@ TEST(TyrFormalismPlanningAtom, ExposesRepositoryView)
     auto terms = tyr::formalism::TermList {};
     terms.emplace_back(object.index());
     terms.emplace_back(tyr::formalism::ParameterIndex(0));
-    auto atom_data = urd::data<tyr::formalism::planning::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>(predicate.index(), std::move(terms));
+    auto atom_data = urd::data<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>(predicate.index(), std::move(terms));
     const auto [atom, atom_created] = ygg::formalism::insert(repository, atom_data);
     ASSERT_TRUE(atom_created);
 
@@ -123,17 +123,17 @@ concept GroundAtomContract =
            { view < view } -> std::same_as<bool>;
        };
 
-static_assert(GroundAtomContract<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>>);
+static_assert(GroundAtomContract<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>>);
 static_assert(
-    std::same_as<urd::index_view<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
-static_assert(GroundAtomContract<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+static_assert(GroundAtomContract<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 static_assert(
-    std::same_as<urd::index_view<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
-static_assert(GroundAtomContract<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
+static_assert(GroundAtomContract<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
 static_assert(
-    std::same_as<urd::index_view<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
+    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
 
 TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
@@ -155,7 +155,7 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
-    auto ground_atom_data = urd::data<tyr::formalism::planning::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
+    auto ground_atom_data = urd::data<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
     const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
@@ -166,7 +166,7 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     EXPECT_EQ(objects[1].index(), object.index());
     EXPECT_EQ(tyr::formalism::planning::to_string(binding), "(at truck truck)");
     EXPECT_EQ(tyr::formalism::planning::to_string(ground_atom), "(at truck truck)");
-    EXPECT_EQ(tyr::formalism::planning::to_string(ground_atom_data), fmt::format("{}", ground_atom_data));
+    EXPECT_EQ(tyr::formalism::to_string(ground_atom_data), fmt::format("{}", ground_atom_data));
     EXPECT_EQ(fmt::format("{}", binding), "(at truck truck)");
     EXPECT_EQ(fmt::format("{}", ground_atom), "(at truck truck)");
 }

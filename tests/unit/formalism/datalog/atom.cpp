@@ -1,5 +1,5 @@
-#include "tyr/formalism/datalog/atom_data.hpp"
-#include "tyr/formalism/datalog/atom_view.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
@@ -16,7 +16,7 @@ template<typename Entity>
 struct AtomPublicView;
 
 template<tyr::formalism::FactKind T>
-struct AtomPublicView<tyr::formalism::datalog::Atom<::tyr::LiftedTag, T>>
+struct AtomPublicView<tyr::formalism::Atom<::tyr::LiftedTag, T>>
 {
     using type = tyr::formalism::datalog::AtomView<::tyr::LiftedTag, T>;
 };
@@ -45,7 +45,7 @@ template<typename Entity>
 struct GroundAtomPublicView;
 
 template<tyr::formalism::FactKind T>
-struct GroundAtomPublicView<tyr::formalism::datalog::Atom<::tyr::GroundTag, T>>
+struct GroundAtomPublicView<tyr::formalism::Atom<::tyr::GroundTag, T>>
 {
     using type = tyr::formalism::datalog::AtomView<::tyr::GroundTag, T>;
 };
@@ -87,13 +87,13 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
-    auto ground_atom_data = urd::data<tyr::formalism::datalog::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
+    auto ground_atom_data = urd::data<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
     const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(tyr::formalism::datalog::to_string(binding), "(at truck truck)");
     EXPECT_EQ(tyr::formalism::datalog::to_string(ground_atom), "(at truck truck)");
-    EXPECT_EQ(tyr::formalism::datalog::to_string(ground_atom_data), fmt::format("{}", ground_atom_data));
+    EXPECT_EQ(tyr::formalism::to_string(ground_atom_data), fmt::format("{}", ground_atom_data));
     EXPECT_EQ(fmt::format("{}", binding), "(at truck truck)");
     EXPECT_EQ(fmt::format("{}", ground_atom), "(at truck truck)");
 }

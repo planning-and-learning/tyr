@@ -102,16 +102,16 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
         instantiated = task.instantiate_ground_task(execution, lifted.GroundTaskInstantiationOptions())
         assert instantiated.status == lifted.GroundTaskInstantiationStatus.SUCCESS
         task = instantiated.task
-        repository = ground.StateRepositoryFactory().create(task)
-        evaluator = ground.AxiomEvaluatorFactory().create(task, execution)
-        generator = ground.SuccessorGeneratorFactory().create(task, execution)
+        repository = ground.StateRepository(task)
+        evaluator = ground.AxiomEvaluator(task, execution)
+        generator = ground.SuccessorGenerator(task, execution)
         result = ground.brfs.find_solution(task, repository, evaluator, generator, ground.brfs.Options())
         state_type = ground.State
         node_type = ground.Node
     else:
-        repository = lifted.StateRepositoryFactory().create(task)
-        evaluator = lifted.AxiomEvaluatorFactory().create(task, execution)
-        generator = lifted.SuccessorGeneratorFactory().create(task, execution)
+        repository = lifted.StateRepository(task)
+        evaluator = lifted.AxiomEvaluator(task, execution)
+        generator = lifted.SuccessorGenerator(task, execution)
         result = lifted.brfs.find_solution(task, repository, evaluator, generator, lifted.brfs.Options())
         state_type = lifted.State
         node_type = lifted.Node

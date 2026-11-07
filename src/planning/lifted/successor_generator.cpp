@@ -160,20 +160,13 @@ struct SuccessorGenerator<LiftedTag>::Impl
                 evaluator.facts.state = std::nullopt;
     }
 
-    Impl(ygg::uint_t index_, TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
+    Impl(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context) :
         definition(std::make_shared<Definition>(std::move(task))),
         evaluator(*definition, std::move(execution_context))
     {
     }
 
-    Impl(ygg::uint_t index_,
-         std::shared_ptr<const Definition> definition_,
-         ygg::ExecutionContextPtr execution_context,
-         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
+    Impl(std::shared_ptr<const Definition> definition_, ygg::ExecutionContextPtr execution_context) :
         definition(std::move(definition_)),
         evaluator(*this->definition, std::move(execution_context))
     {
@@ -236,8 +229,6 @@ struct SuccessorGenerator<LiftedTag>::Impl
                                           urd::builder<State<LiftedTag>>& out_state,
                                           StateDelta& out_delta);
 
-    ygg::uint_t index;
-    std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
     std::shared_ptr<const Definition> definition;
     Evaluator evaluator;
 };
@@ -412,11 +403,8 @@ void SuccessorGenerator<LiftedTag>::Impl::require_action_facts(const Node<Lifted
     compute_action_facts(node, action);
 }
 
-SuccessorGenerator<LiftedTag>::SuccessorGenerator(ygg::uint_t index,
-                                                  TaskPtr<LiftedTag> task,
-                                                  ygg::ExecutionContextPtr execution_context,
-                                                  std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::move(task), std::move(execution_context), std::move(next_index)))
+SuccessorGenerator<LiftedTag>::SuccessorGenerator(TaskPtr<LiftedTag> task, ygg::ExecutionContextPtr execution_context) :
+    m_impl(std::make_unique<Impl>(std::move(task), std::move(execution_context)))
 {
 }
 
@@ -429,10 +417,7 @@ SuccessorGenerator<LiftedTag>& SuccessorGenerator<LiftedTag>::operator=(Successo
 SuccessorGeneratorPtr<LiftedTag> SuccessorGenerator<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
     return SuccessorGeneratorPtr<LiftedTag>(
-        new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
-                                                                 m_impl->definition,
-                                                                 std::move(execution_context),
-                                                                 m_impl->next_index)));
+        new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context))));
 }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator)
@@ -1236,8 +1221,6 @@ SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Node<LiftedTag, S
 const ApplicableActionProgram& SuccessorGenerator<LiftedTag>::get_action_program() const noexcept { return m_impl->definition->action_program; }
 
 const TaskPtr<LiftedTag>& SuccessorGenerator<LiftedTag>::get_task() const noexcept { return m_impl->definition->task; }
-
-ygg::uint_t SuccessorGenerator<LiftedTag>::get_index() const noexcept { return m_impl->index; }
 
 // Diagnostics
 void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const

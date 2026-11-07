@@ -1,4 +1,5 @@
 #include "tyr/planning/applicability.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -14,7 +15,6 @@
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
@@ -64,9 +64,9 @@ template<TaskKind Kind>
 void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     const auto count_action_bindings = [&]
     {
@@ -109,9 +109,9 @@ template<TaskKind Kind>
 void expect_pairwise_conditional_effect_successor(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     const auto bindings = successor_generator->get_applicable_action_bindings(initial_node);
 
@@ -140,7 +140,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
 {
     const auto task = tyr::planning::Task<LiftedTag>::create(tyr::formalism::planning::Parser(std::string(kEffectValidityDomain), "effect-validity-domain.pddl")
                                                                  .parse_task(std::string(kEffectValidityProblem), "effect-validity-problem.pddl"));
-    const auto generator = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(task, ygg::ExecutionContext::create(1));
+    const auto generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, ygg::ExecutionContext::create(1));
     const auto& action_program = generator->get_action_program();
     const auto global_program = action_program.get_datalog_program().get_program();
     const auto global_rules = global_program.get_rules<formalism::PredicateTag>();
@@ -216,9 +216,9 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
                                                                        "toggle-problem.pddl"));
     ASSERT_TRUE(task->has_axioms());
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<LiftedTag>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<LiftedTag>().create(task);
-    auto source = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<LiftedTag>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<LiftedTag>>(task);
+    auto source = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     const auto& action_program = source->get_action_program();
     EXPECT_EQ(action_program.get_translation_context().p2d.fluent_to_fluent_function.size(), 4);
@@ -277,9 +277,9 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
     auto task =
         tyr::planning::Task<LiftedTag>::create(make_test_parser(root / "numeric/tests/tpp/domain.pddl").parse_task(root / "numeric/tests/tpp/test-1.pddl"));
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<LiftedTag>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<LiftedTag>().create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<LiftedTag>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<LiftedTag>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<LiftedTag>>(task);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, execution_context);
     const auto bindings = successor_generator->get_applicable_action_bindings(successor_generator->get_initial_node(*state_repository, *axiom_evaluator));
 
     ASSERT_EQ(bindings.size(), 5);
@@ -319,10 +319,10 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
     const auto absent = tyr::formalism::copy(source_absent, context).first;
     const auto present = tyr::formalism::copy(source_present, context).first;
     ASSERT_NE(present.index(), source_present.index());
-    auto atoms = urd::flat_vector<urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::StaticTag>>> { present.index() };
-    auto fterm_values = urd::flat_vector<urd::index<tyr::formalism::planning::FunctionTermValue<GroundTag, formalism::StaticTag>>> {};
+    auto atoms = urd::flat_vector<urd::index<tyr::formalism::Atom<GroundTag, formalism::StaticTag>>> { present.index() };
+    auto fterm_values = urd::flat_vector<urd::index<tyr::formalism::FunctionTermValue<GroundTag, formalism::StaticTag>>> {};
     const auto static_state = tyr::planning::StaticState(urd::resolve(atoms, *destination), urd::resolve(fterm_values, *destination));
-    auto literal = urd::data<tyr::formalism::planning::Literal<GroundTag, formalism::StaticTag>>(present.index(), true);
+    auto literal = urd::data<tyr::formalism::Literal<GroundTag, formalism::StaticTag>>(present.index(), true);
 
     EXPECT_TRUE(tyr::planning::is_statically_applicable(tyr::formalism::planning::insert(*destination, literal).first, static_state));
     EXPECT_TRUE(tyr::planning::is_statically_applicable(absent, static_state));

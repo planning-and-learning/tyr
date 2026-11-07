@@ -1,7 +1,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/unary_operator_data.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 
 #include <concepts>
 #include <gtest/gtest.h>
@@ -25,8 +25,8 @@ concept UnaryOperatorContract =
            { view < view } -> std::same_as<bool>;
        };
 
-using Lifted = tyr::formalism::planning::UnaryOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
-using Ground = tyr::formalism::planning::UnaryOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
+using Lifted = tyr::formalism::UnaryOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
+using Ground = tyr::formalism::UnaryOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
 
 static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
@@ -36,6 +36,6 @@ static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Rep
 TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
 {
     EXPECT_THROW((urd::data<Lifted>(tyr::formalism::ArithmeticOperatorKind::Add,
-                                    tyr::formalism::planning::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
+                                    tyr::formalism::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
                  std::invalid_argument);
 }

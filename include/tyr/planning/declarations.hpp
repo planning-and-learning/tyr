@@ -72,8 +72,6 @@ template<TaskKind Kind>
 class SuccessorGenerator;
 template<TaskKind Kind>
 using SuccessorGeneratorPtr = std::shared_ptr<SuccessorGenerator<Kind>>;
-template<TaskKind Kind>
-class SuccessorGeneratorFactory;
 
 template<TaskKind Kind>
 class StateRepository;
@@ -91,15 +89,11 @@ using BuilderStateView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, 
 /// unpack() gives its StateView).
 template<TaskKind Kind>
 using PackedStateView = urd::index_view<State<Kind>, StateRepository<Kind>>;
-template<TaskKind Kind>
-class StateRepositoryFactory;
 
 template<TaskKind Kind>
 class AxiomEvaluator;
 template<TaskKind Kind>
 using AxiomEvaluatorPtr = std::shared_ptr<AxiomEvaluator<Kind>>;
-template<TaskKind Kind>
-class AxiomEvaluatorFactory;
 
 template<TaskKind Kind>
 class Heuristic;

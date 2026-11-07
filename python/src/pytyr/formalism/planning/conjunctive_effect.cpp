@@ -76,7 +76,7 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
     {
         using V = ConjunctiveEffectView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::index);
+        cls.def("index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def("get_literals", &V::get_literals);

@@ -108,10 +108,10 @@ void expect_condition_atom_projection()
             {
                 auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<F>>> {};
                 binding.relation = predicate.index();
-                return intern(urd::data<tyr::formalism::planning::Atom<Kind, F>>(intern(std::move(binding)).index()));
+                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(std::move(binding)).index()));
             }
             else
-                return intern(urd::data<tyr::formalism::planning::Atom<Kind, F>>(predicate.index(), {}));
+                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(predicate.index(), {}));
         };
         const auto positive = atom("positive");
         return std::pair(positive, atom("negative"));
@@ -121,9 +121,9 @@ void expect_condition_atom_projection()
     const auto derived_atoms = atoms.template operator()<tyr::formalism::DerivedTag>();
     const auto literals = [&]<tyr::formalism::FactKind F>(const auto& pair)
     {
-        auto result = urd::flat_vector<urd::index<tyr::formalism::planning::Literal<Kind, F>>> {};
-        result.push_back(intern(urd::data<tyr::formalism::planning::Literal<Kind, F>>(pair.first.index(), true)).index());
-        result.push_back(intern(urd::data<tyr::formalism::planning::Literal<Kind, F>>(pair.second.index(), false)).index());
+        auto result = urd::flat_vector<urd::index<tyr::formalism::Literal<Kind, F>>> {};
+        result.push_back(intern(urd::data<tyr::formalism::Literal<Kind, F>>(pair.first.index(), true)).index());
+        result.push_back(intern(urd::data<tyr::formalism::Literal<Kind, F>>(pair.second.index(), false)).index());
         return result;
     };
     auto data = urd::data<tyr::formalism::planning::ConjunctiveCondition<Kind>> {};

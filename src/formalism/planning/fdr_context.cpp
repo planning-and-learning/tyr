@@ -19,7 +19,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"

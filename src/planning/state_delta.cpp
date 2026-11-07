@@ -23,32 +23,16 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <type_traits>
 
 namespace tyr::planning
 {
-
-namespace
-{
-
-template<TaskKind Kind>
-size_t num_fluent_variables(const urd::data<State<Kind>>& state)
-{
-    const auto& storage = state.fact_storage;
-    if constexpr (std::same_as<Kind, LiftedTag>)
-        return storage.indices.size();
-    else
-        return storage.values.size();
-}
-
-}
 
 template<TaskKind Kind>
 void compute_state_delta(const urd::data<State<Kind>>& parent, const urd::data<State<Kind>>& successor, StateDelta& out)
 {
     out.clear();
 
-    const auto num_variables = std::max(num_fluent_variables(parent), num_fluent_variables(successor));
+    const auto num_variables = std::max(parent.fact_storage.num_variables(), successor.fact_storage.num_variables());
     for (size_t i = 0; i < num_variables; ++i)
     {
         const auto variable = urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
@@ -61,7 +45,7 @@ void compute_state_delta(const urd::data<State<Kind>>& parent, const urd::data<S
     const auto num_fterms = std::max(parent.numeric_storage.values.size(), successor.numeric_storage.values.size());
     for (size_t i = 0; i < num_fterms; ++i)
     {
-        const auto fterm = urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
+        const auto fterm = urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
         const auto from = parent.get(fterm);
         const auto to = successor.get(fterm);
         if (!urd::EqualTo<ygg::float_t> {}(from, to))

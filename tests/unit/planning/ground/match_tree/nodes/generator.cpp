@@ -39,7 +39,6 @@ concept MatchTreeCanIntern = requires(tyr::planning::match_tree::Repository<Acti
 static_assert(MatchTreeCanIntern<Generator>);
 static_assert(!MatchTreeCanIntern<tyr::planning::match_tree::ElementGeneratorNode<Axiom>>);
 
-static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<Action>&>()[std::declval<urd::index<Generator>>()]));
 static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<Action>&>().view(std::declval<urd::index<Generator>>())));
 
 TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
@@ -63,6 +62,6 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     const auto found = repository.find(*data);
     ASSERT_TRUE(found);
     EXPECT_EQ(&found.value().context(), &repository);
-    EXPECT_EQ(&repository.front_local<Generator>(), &view.data());
+    EXPECT_EQ(&repository[urd::index<Generator>(0)], &view.data());
     EXPECT_EQ(repository.size<Generator>(), 1);
 }

@@ -46,7 +46,7 @@ struct StateDelta
 
     struct NumericChange
     {
-        urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> fterm;
+        urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> fterm;
         ygg::float_t from;
         ygg::float_t to;
 

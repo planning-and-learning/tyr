@@ -32,10 +32,10 @@ struct data<::tyr::formalism::planning::Metric>
 {
     urd::index<::tyr::formalism::planning::Metric> index;
     ::tyr::formalism::OptimizationDirection optimization_direction = ::tyr::formalism::OptimizationDirection::Minimize;
-    ::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag> fexpr;
+    ::tyr::formalism::FunctionExpression<::tyr::GroundTag> fexpr;
 
     data() = default;
-    data(::tyr::formalism::OptimizationDirection optimization_direction_, ::tyr::formalism::planning::FunctionExpression<::tyr::GroundTag> fexpr_) :
+    data(::tyr::formalism::OptimizationDirection optimization_direction_, ::tyr::formalism::FunctionExpression<::tyr::GroundTag> fexpr_) :
         index(),
         optimization_direction(optimization_direction_),
         fexpr(std::move(fexpr_))

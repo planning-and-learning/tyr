@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include "tyr/planning/task.hpp"
 
@@ -69,8 +70,24 @@ struct StateLayout
     explicit StateLayout(const Task<Kind>&) noexcept {}
 };
 
+/// A state's bits by position (derived atoms; a lifted state's binary fluent variables): a dense set, equal and hashed
+/// by its keys however many words it keeps. The rows of the TreeBitset pool are these, so they go in and come back by
+/// their words.
+using StateBits = urd::Store<urd::set<ygg::uint_t>, urd::dense, urd::sorted>;
+
 template<TaskKind Kind>
-struct AtomUnpackedStorage;
+struct AtomUnpackedStorage
+{
+    StateBits indices;
+
+    [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) const
+    { return indices.contains(static_cast<ygg::uint_t>(index.value)); }
+    void set(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) { indices.insert(static_cast<ygg::uint_t>(index.value)); }
+    void clear() { indices.clear(); }
+    void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
+
+    static constexpr auto identifying_members() noexcept { return urd::Members<&AtomUnpackedStorage::indices> {}; }
+};
 
 template<TaskKind Kind>
 struct FactUnpackedStorage;
@@ -80,9 +97,9 @@ struct NumericUnpackedStorage
 {
     urd::Store<urd::sequence<ygg::float_t>> values;
 
-    [[nodiscard]] ygg::float_t get(urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
+    [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
     { return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
-    void set(urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
+    void set(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
     {
         tyr::set(static_cast<ygg::uint_t>(index.value),
                  ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
@@ -96,7 +113,7 @@ struct NumericUnpackedStorage
                | std::views::transform(
                    [this](std::size_t i)
                    {
-                       using FunctionTermIndex = urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>;
+                       using FunctionTermIndex = urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>;
                        return std::pair<FunctionTermIndex, ygg::float_t> { FunctionTermIndex { static_cast<ygg::uint_t>(i) }, values[i] };
                    });
     }

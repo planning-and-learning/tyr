@@ -17,6 +17,8 @@
 
 #include "tyr/formalism/planning/formatter.hpp"
 
+#include "../node_formatter.hpp"
+
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -61,86 +63,6 @@ void field(std::ostream& os, std::string_view name, const T& value)
     os << ygg::print_indent;
     fmt::print(os, "{}{}\n", name, value);
 }
-
-template<TaskKind T>
-std::string unary_operator(const urd::data<UnaryOperator<T, ArithmeticOperatorKind>>& value)
-{ return fmt::format("({} {})", value.operator_kind, value.arg); }
-
-template<TaskKind T>
-std::string unary_operator(UnaryOperatorView<T, ArithmeticOperatorKind> value)
-{ return fmt::format("({} {})", value.get_operator(), value.get_arg()); }
-
-template<TaskKind T, OperatorKind O>
-std::string binary_operator(const urd::data<BinaryOperator<T, O>>& value)
-{ return fmt::format("({} {} {})", value.operator_kind, value.lhs, value.rhs); }
-
-template<TaskKind T, OperatorKind O>
-std::string binary_operator(BinaryOperatorView<T, O> value)
-{ return fmt::format("({} {} {})", value.get_operator(), value.get_lhs(), value.get_rhs()); }
-
-template<TaskKind T>
-std::string multi_operator(const urd::data<MultiOperator<T, ArithmeticOperatorKind>>& value)
-{ return fmt::format("({} {})", value.operator_kind, fmt::join(ygg::to_strings(value.args), " ")); }
-
-template<TaskKind T>
-std::string multi_operator(MultiOperatorView<T, ArithmeticOperatorKind> value)
-{ return fmt::format("({} {})", value.get_operator(), fmt::join(ygg::to_strings(value.get_args()), " ")); }
-
-template<FactKind T>
-std::string atom(const urd::data<Atom<LiftedTag, T>>& value)
-{ return fmt::format("({} {})", value.predicate, fmt::join(ygg::to_strings(value.terms), " ")); }
-
-template<FactKind T>
-std::string atom(AtomView<LiftedTag, T> value)
-{ return fmt::format("({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " ")); }
-
-template<TaskKind T, FactKind F>
-std::string literal(const urd::data<Literal<T, F>>& value)
-{ return value.polarity ? fmt::format("{}", value.atom) : fmt::format("(not {})", value.atom); }
-
-template<TaskKind T, FactKind F>
-std::string literal(LiteralView<T, F> value)
-{ return value.get_polarity() ? fmt::format("{}", value.get_atom()) : fmt::format("(not {})", value.get_atom()); }
-
-template<FactKind T>
-std::string ground_atom(const urd::data<Atom<GroundTag, T>>& value)
-{ return fmt::format("({})", value.binding); }
-
-template<FactKind T>
-std::string ground_atom(AtomView<GroundTag, T> value)
-{ return fmt::format("{}", value.get_row()); }
-
-template<FactKind T>
-std::string function_term(const urd::data<FunctionTerm<LiftedTag, T>>& value)
-{ return fmt::format("({} {})", value.function, fmt::join(ygg::to_strings(value.terms), " ")); }
-
-template<FactKind T>
-std::string function_term(FunctionTermView<LiftedTag, T> value)
-{ return fmt::format("({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " ")); }
-
-template<FactKind T>
-std::string ground_function_term(const urd::data<FunctionTerm<GroundTag, T>>& value)
-{ return fmt::format("({})", value.binding); }
-
-template<FactKind T>
-std::string ground_function_term(FunctionTermView<GroundTag, T> value)
-{ return fmt::format("{}", value.get_row()); }
-
-template<FactKind T>
-std::string ground_function_term_value(const urd::data<FunctionTermValue<GroundTag, T>>& value)
-{ return fmt::format("(= {} {})", value.fterm, value.value); }
-
-template<FactKind T>
-std::string ground_function_term_value(FunctionTermValueView<GroundTag, T> value)
-{ return fmt::format("(= {} {})", value.get_fterm(), value.get_value()); }
-
-template<TaskKind T, FactKind F>
-std::string numeric_effect(const urd::data<NumericEffect<T, F>>& value)
-{ return fmt::format("({} {} {})", value.operator_kind, value.fterm, value.fexpr); }
-
-template<TaskKind T, FactKind F>
-std::string numeric_effect(NumericEffectView<T, F> value)
-{ return fmt::format("({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr()); }
 
 template<FactKind T>
 std::string fdr_variable(const urd::data<FDRVariable<T>>& value)
@@ -232,40 +154,7 @@ std::string relation_binding(const urd::data<RelationBinding<Tag>>& value)
 }  // namespace
 }  // namespace detail
 
-std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return detail::unary_operator(value); }
-std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value) { return detail::unary_operator(value); }
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return detail::binary_operator(value); }
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, BooleanOperatorKind>>& value) { return detail::binary_operator(value); }
-std::string to_string(const urd::data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>& value) { return detail::binary_operator(value); }
-std::string to_string(const urd::data<BinaryOperator<GroundTag, BooleanOperatorKind>>& value) { return detail::binary_operator(value); }
-std::string to_string(const urd::data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return detail::multi_operator(value); }
-std::string to_string(const urd::data<MultiOperator<GroundTag, ArithmeticOperatorKind>>& value) { return detail::multi_operator(value); }
 
-std::string to_string(const urd::data<Atom<LiftedTag, StaticTag>>& value) { return detail::atom(value); }
-std::string to_string(const urd::data<Atom<LiftedTag, FluentTag>>& value) { return detail::atom(value); }
-std::string to_string(const urd::data<Atom<LiftedTag, DerivedTag>>& value) { return detail::atom(value); }
-std::string to_string(const urd::data<Literal<LiftedTag, StaticTag>>& value) { return detail::literal(value); }
-std::string to_string(const urd::data<Literal<LiftedTag, FluentTag>>& value) { return detail::literal(value); }
-std::string to_string(const urd::data<Literal<LiftedTag, DerivedTag>>& value) { return detail::literal(value); }
-std::string to_string(const urd::data<Atom<GroundTag, StaticTag>>& value) { return detail::ground_atom(value); }
-std::string to_string(const urd::data<Atom<GroundTag, FluentTag>>& value) { return detail::ground_atom(value); }
-std::string to_string(const urd::data<Atom<GroundTag, DerivedTag>>& value) { return detail::ground_atom(value); }
-std::string to_string(const urd::data<Literal<GroundTag, StaticTag>>& value) { return detail::literal(value); }
-std::string to_string(const urd::data<Literal<GroundTag, FluentTag>>& value) { return detail::literal(value); }
-std::string to_string(const urd::data<Literal<GroundTag, DerivedTag>>& value) { return detail::literal(value); }
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, StaticTag>>& value) { return detail::function_term(value); }
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, FluentTag>>& value) { return detail::function_term(value); }
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, AuxiliaryTag>>& value) { return detail::function_term(value); }
-std::string to_string(const urd::data<FunctionTerm<GroundTag, StaticTag>>& value) { return detail::ground_function_term(value); }
-std::string to_string(const urd::data<FunctionTerm<GroundTag, FluentTag>>& value) { return detail::ground_function_term(value); }
-std::string to_string(const urd::data<FunctionTerm<GroundTag, AuxiliaryTag>>& value) { return detail::ground_function_term(value); }
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, StaticTag>>& value) { return detail::ground_function_term_value(value); }
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, FluentTag>>& value) { return detail::ground_function_term_value(value); }
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, AuxiliaryTag>>& value) { return detail::ground_function_term_value(value); }
-std::string to_string(const urd::data<NumericEffect<LiftedTag, FluentTag>>& value) { return detail::numeric_effect(value); }
-std::string to_string(const urd::data<NumericEffect<LiftedTag, AuxiliaryTag>>& value) { return detail::numeric_effect(value); }
-std::string to_string(const urd::data<NumericEffect<GroundTag, FluentTag>>& value) { return detail::numeric_effect(value); }
-std::string to_string(const urd::data<NumericEffect<GroundTag, AuxiliaryTag>>& value) { return detail::numeric_effect(value); }
 std::string to_string(const urd::data<FDRVariable<FluentTag>>& value) { return detail::fdr_variable(value); }
 
 std::string to_string(const urd::data<Invariant>& value) { return detail::invariant(value); }
@@ -488,40 +377,40 @@ std::string to_string(ActionBindingDataView value) { return detail::relation_bin
 
 std::string to_string(AxiomBindingView value) { return fmt::format("{}", fmt::join(ygg::to_strings(value.get_objects()), " ")); }
 
-std::string to_string(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return detail::unary_operator(value); }
-std::string to_string(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return detail::unary_operator(value); }
-std::string to_string(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return detail::binary_operator(value); }
-std::string to_string(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value) { return detail::binary_operator(value); }
-std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return detail::binary_operator(value); }
-std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return detail::binary_operator(value); }
-std::string to_string(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return detail::multi_operator(value); }
-std::string to_string(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value) { return detail::multi_operator(value); }
+std::string to_string(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+std::string to_string(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+std::string to_string(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+std::string to_string(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value) { return node_format::format(value); }
+std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return node_format::format(value); }
+std::string to_string(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+std::string to_string(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
 
-std::string to_string(AtomView<LiftedTag, StaticTag> value) { return detail::atom(value); }
-std::string to_string(AtomView<LiftedTag, FluentTag> value) { return detail::atom(value); }
-std::string to_string(AtomView<LiftedTag, DerivedTag> value) { return detail::atom(value); }
-std::string to_string(LiteralView<LiftedTag, StaticTag> value) { return detail::literal(value); }
-std::string to_string(LiteralView<LiftedTag, FluentTag> value) { return detail::literal(value); }
-std::string to_string(LiteralView<LiftedTag, DerivedTag> value) { return detail::literal(value); }
-std::string to_string(AtomView<GroundTag, StaticTag> value) { return detail::ground_atom(value); }
-std::string to_string(AtomView<GroundTag, FluentTag> value) { return detail::ground_atom(value); }
-std::string to_string(AtomView<GroundTag, DerivedTag> value) { return detail::ground_atom(value); }
-std::string to_string(LiteralView<GroundTag, StaticTag> value) { return detail::literal(value); }
-std::string to_string(LiteralView<GroundTag, FluentTag> value) { return detail::literal(value); }
-std::string to_string(LiteralView<GroundTag, DerivedTag> value) { return detail::literal(value); }
-std::string to_string(FunctionTermView<LiftedTag, StaticTag> value) { return detail::function_term(value); }
-std::string to_string(FunctionTermView<LiftedTag, FluentTag> value) { return detail::function_term(value); }
-std::string to_string(FunctionTermView<LiftedTag, AuxiliaryTag> value) { return detail::function_term(value); }
-std::string to_string(FunctionTermView<GroundTag, StaticTag> value) { return detail::ground_function_term(value); }
-std::string to_string(FunctionTermView<GroundTag, FluentTag> value) { return detail::ground_function_term(value); }
-std::string to_string(FunctionTermView<GroundTag, AuxiliaryTag> value) { return detail::ground_function_term(value); }
-std::string to_string(FunctionTermValueView<GroundTag, StaticTag> value) { return detail::ground_function_term_value(value); }
-std::string to_string(FunctionTermValueView<GroundTag, FluentTag> value) { return detail::ground_function_term_value(value); }
-std::string to_string(FunctionTermValueView<GroundTag, AuxiliaryTag> value) { return detail::ground_function_term_value(value); }
-std::string to_string(NumericEffectView<LiftedTag, FluentTag> value) { return detail::numeric_effect(value); }
-std::string to_string(NumericEffectView<LiftedTag, AuxiliaryTag> value) { return detail::numeric_effect(value); }
-std::string to_string(NumericEffectView<GroundTag, FluentTag> value) { return detail::numeric_effect(value); }
-std::string to_string(NumericEffectView<GroundTag, AuxiliaryTag> value) { return detail::numeric_effect(value); }
+std::string to_string(AtomView<LiftedTag, StaticTag> value) { return node_format::format(value); }
+std::string to_string(AtomView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(AtomView<LiftedTag, DerivedTag> value) { return node_format::format(value); }
+std::string to_string(LiteralView<LiftedTag, StaticTag> value) { return node_format::format(value); }
+std::string to_string(LiteralView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(LiteralView<LiftedTag, DerivedTag> value) { return node_format::format(value); }
+std::string to_string(AtomView<GroundTag, StaticTag> value) { return node_format::format(value); }
+std::string to_string(AtomView<GroundTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(AtomView<GroundTag, DerivedTag> value) { return node_format::format(value); }
+std::string to_string(LiteralView<GroundTag, StaticTag> value) { return node_format::format(value); }
+std::string to_string(LiteralView<GroundTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(LiteralView<GroundTag, DerivedTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermView<LiftedTag, StaticTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermView<LiftedTag, AuxiliaryTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermView<GroundTag, StaticTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermView<GroundTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermValueView<GroundTag, StaticTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermValueView<GroundTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(FunctionTermValueView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
+std::string to_string(NumericEffectView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(NumericEffectView<LiftedTag, AuxiliaryTag> value) { return node_format::format(value); }
+std::string to_string(NumericEffectView<GroundTag, FluentTag> value) { return node_format::format(value); }
+std::string to_string(NumericEffectView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
 std::string to_string(FDRVariableView<FluentTag> value) { return detail::fdr_variable(value); }
 
 std::string to_string(InvariantView value) { return detail::invariant(value); }

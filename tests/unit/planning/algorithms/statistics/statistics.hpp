@@ -19,6 +19,9 @@
 #define TYR_TESTS_PLANNING_ALGORITHMS_SEARCH_STATISTICS_HPP_
 
 #include "planning/parser.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/formatter.hpp"
@@ -35,7 +38,6 @@
 #include <string>
 #include <tyr/planning/algorithms/statistics.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
-#include <tyr/planning/factory.hpp>
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/plan.hpp>
@@ -55,31 +57,40 @@ struct PlanStatistics
     urd::Store<urd::sequence<std::string>> actions;
 };
 
+/// The four event-handler counters a search configuration pins.
+struct Counters
+{
+    uint64_t num_generated_successors;
+    uint64_t num_expanded;
+    uint64_t num_deadends;
+    uint64_t num_pruned;
+};
+
 /// Expected outcome of one search configuration: event-handler counters plus an optional plan.
 /// Pinning these fixes the exact search trajectory, making them cross-platform determinism regression tests.
 struct SearchStatistics
 {
-    planning::ProgressStatistics::Snapshot statistics;
+    Counters statistics;
     std::optional<PlanStatistics> plan;
 };
 
 /// Parse the four counters from an object that carries them inline (returns nullopt when absent).
-inline std::optional<planning::ProgressStatistics::Snapshot> parse_optional_counters(const boost::json::object& object)
+inline std::optional<Counters> parse_optional_counters(const boost::json::object& object)
 {
     if (!object.if_contains("num_generated_successors"))
         return std::nullopt;
-    return planning::ProgressStatistics::Snapshot { boost::json::value_to<uint64_t>(object.at("num_generated_successors")),
-                                                    boost::json::value_to<uint64_t>(object.at("num_expanded")),
-                                                    boost::json::value_to<uint64_t>(object.at("num_deadends")),
-                                                    boost::json::value_to<uint64_t>(object.at("num_pruned")) };
+    return Counters { boost::json::value_to<uint64_t>(object.at("num_generated_successors")),
+                      boost::json::value_to<uint64_t>(object.at("num_expanded")),
+                      boost::json::value_to<uint64_t>(object.at("num_deadends")),
+                      boost::json::value_to<uint64_t>(object.at("num_pruned")) };
 }
 
-inline void expect_counters(const planning::ProgressStatistics::Snapshot& expected, const planning::Statistics& actual)
+inline void expect_counters(const Counters& expected, const planning::Statistics& actual)
 {
-    EXPECT_EQ(actual.get_num_generated_successors(), expected.get_num_generated_successors());
-    EXPECT_EQ(actual.get_num_expanded(), expected.get_num_expanded());
-    EXPECT_EQ(actual.get_num_deadends(), expected.get_num_deadends());
-    EXPECT_EQ(actual.get_num_pruned(), expected.get_num_pruned());
+    EXPECT_EQ(actual.get_num_generated_successors(), expected.num_generated_successors);
+    EXPECT_EQ(actual.get_num_expanded(), expected.num_expanded);
+    EXPECT_EQ(actual.get_num_deadends(), expected.num_deadends);
+    EXPECT_EQ(actual.get_num_pruned(), expected.num_pruned);
 }
 
 inline std::optional<PlanStatistics> parse_optional_plan(const boost::json::object& object)
@@ -144,8 +155,6 @@ inline planning::SearchStatus parse_search_status(const std::string& status)
         return planning::SearchStatus::UNSOLVABLE;
     if (status == "OUT_OF_TIME")
         return planning::SearchStatus::OUT_OF_TIME;
-    if (status == "OUT_OF_MEMORY")
-        return planning::SearchStatus::OUT_OF_MEMORY;
     if (status == "OUT_OF_STATES")
         return planning::SearchStatus::OUT_OF_STATES;
     if (status == "FAILED")
@@ -213,9 +222,9 @@ SearchContext<Kind> create_search_context(const std::filesystem::path& domain_fi
     else
         task = lifted_task->instantiate_ground_task(*execution_context).task;
 
-    auto axiom_evaluator = planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = planning::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto state_repository = std::make_shared<planning::StateRepository<Kind>>(task);
+    auto successor_generator = std::make_shared<planning::SuccessorGenerator<Kind>>(task, execution_context);
 
     return SearchContext<Kind> { std::move(execution_context),
                                  std::move(task),

@@ -131,11 +131,11 @@ def test_parsed_domain_exposes_symbol_metadata() -> None:
     domain = parser.get_domain().get_domain()
 
     static_predicates = [
-        (int(predicate.get_index()), predicate.get_name(), predicate.get_arity())
+        (int(predicate.index()), predicate.get_name(), predicate.get_arity())
         for predicate in domain.get_static_predicates()
     ]
     fluent_predicates = [
-        (int(predicate.get_index()), predicate.get_name(), predicate.get_arity())
+        (int(predicate.index()), predicate.get_name(), predicate.get_arity())
         for predicate in domain.get_fluent_predicates()
     ]
 
@@ -302,7 +302,7 @@ def test_views_from_independent_parsers_use_deterministic_factory_local_identity
     first_predicate = next(iter(first_parser.get_domain().get_domain().get_fluent_predicates()))
     second_predicate = next(iter(second_parser.get_domain().get_domain().get_fluent_predicates()))
 
-    assert int(first_predicate.get_index()) == int(second_predicate.get_index())
+    assert int(first_predicate.index()) == int(second_predicate.index())
     assert first_predicate.get_name() == second_predicate.get_name()
     assert first_predicate == second_predicate
     assert hash(first_predicate) == hash(second_predicate)

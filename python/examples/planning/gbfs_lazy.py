@@ -28,7 +28,6 @@ from pytyr.formalism.planning import Parser
 from pytyr.planning import SearchStatus
 from pytyr.planning.lifted import (
     AxiomEvaluator,
-    AxiomEvaluatorFactory,
     ConjunctiveGoalStrategy,
     FFRPGHeuristic,
     Heuristic,
@@ -38,9 +37,7 @@ from pytyr.planning.lifted import (
     SearchResult,
     StateIndex,
     StateRepository,
-    StateRepositoryFactory,
     SuccessorGenerator,
-    SuccessorGeneratorFactory,
     Task,
 )
 
@@ -72,7 +69,7 @@ def backtrack_plan(
     successor_generator: SuccessorGenerator,
 ) -> Plan:
     """Backtracks from the goal search node to compute the labeled state trajectory."""
-    cur_state_index = goal_node.get_state().get_index()
+    cur_state_index = goal_node.get_state().index()
     backward_state_trajectory: list[StateIndex] = []
 
     while cur_state_index is not None:
@@ -93,7 +90,7 @@ def backtrack_plan(
         ):
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
-            succ_state_index = succ_state.get_index()
+            succ_state_index = succ_state.index()
 
             if succ_state_index == forward_state_trajectory[i + 1]:
                 labeled_succ_nodes.append(labeled_succ_node)
@@ -137,7 +134,7 @@ def find_solution(
 
     initial_h_value = heuristic.evaluate(initial_state)
     initial_g_value = initial_node.get_metric()
-    initial_state_index = initial_state.get_index()
+    initial_state_index = initial_state.index()
 
     search_nodes: dict[StateIndex, SearchNode] = {}
     search_nodes[initial_state_index] = SearchNode(initial_g_value, None, SearchNodeStatus.NEW)
@@ -168,7 +165,7 @@ def find_solution(
             succ_node = labeled_succ_node.node
             succ_state = succ_node.get_state()
             succ_g_value = succ_node.get_metric()
-            succ_state_index = succ_state.get_index()
+            succ_state_index = succ_state.index()
 
             if succ_state_index not in search_nodes:
                 search_nodes[succ_state_index] = SearchNode(succ_g_value, state_index, SearchNodeStatus.NEW)
@@ -229,12 +226,9 @@ def main() -> None:
     parser = Parser(str(domain_filepath), parser_options)
     lifted_task = Task(parser.parse_task(str(task_filepath), parser_options))
     heuristic = FFRPGHeuristic(lifted_task, execution_context)
-    axiom_evaluator_factory = AxiomEvaluatorFactory()
-    state_repository_factory = StateRepositoryFactory()
-    successor_generator_factory = SuccessorGeneratorFactory()
-    axiom_evaluator = axiom_evaluator_factory.create(lifted_task, execution_context)
-    state_repository = state_repository_factory.create(lifted_task)
-    successor_generator = successor_generator_factory.create(lifted_task, execution_context)
+    axiom_evaluator = AxiomEvaluator(lifted_task, execution_context)
+    state_repository = StateRepository(lifted_task)
+    successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
     search_result = find_solution(lifted_task, state_repository, axiom_evaluator, successor_generator, heuristic)
 

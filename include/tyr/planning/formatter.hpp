@@ -177,28 +177,6 @@ struct formatter<tyr::planning::ProgressStatistics, char>
     }
 };
 
-template<>
-struct formatter<tyr::planning::ProgressStatistics::Snapshot, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::planning::ProgressStatistics::Snapshot& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(),
-                              "[Search] Number of expanded states at snapshot: {}\n"
-                              "[Search] Number of generated successors at snapshot: {}\n"
-                              "[Search] Number of generated candidates at snapshot: {}\n"
-                              "[Search] Number of transferred candidates at snapshot: {}\n"
-                              "[Search] Number of deadend states at snapshot: {}\n"
-                              "[Search] Number of pruned states at snapshot: {}",
-                              value.get_num_expanded(),
-                              value.get_num_generated_successors(),
-                              value.get_num_generated_candidates(),
-                              value.get_num_transferred_candidates(),
-                              value.get_num_deadends(),
-                              value.get_num_pruned());
-    }
-};
 
 template<::tyr::TaskKind Kind>
 struct formatter<tyr::planning::iw::Statistics<Kind>, char>

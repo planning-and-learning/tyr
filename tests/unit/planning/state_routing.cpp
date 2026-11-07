@@ -23,7 +23,6 @@
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -58,9 +57,9 @@ template<TaskKind Kind>
 void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
 
     auto worker_context = ygg::ExecutionContext::create(1);
     auto worker_axiom_evaluator = axiom_evaluator->make_worker(worker_context);
@@ -116,14 +115,14 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 
     auto derived_only_difference = repository->get_state_builder();
     derived_only_difference->assign_unextended_part(initial.get_state().data());
-    derived_only_difference->set(urd::index<tyr::formalism::planning::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
+    derived_only_difference->set(urd::index<tyr::formalism::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
     EXPECT_EQ(dist_hash.hash(*derived_only_difference), dist_hash.hash(initial.get_state().data()));
 
     auto first_numeric = repository->get_state_builder();
     auto second_numeric = repository->get_state_builder();
     first_numeric->assign_unextended_part(initial.get_state().data());
     second_numeric->assign_unextended_part(initial.get_state().data());
-    const auto numeric_index = urd::index<tyr::formalism::planning::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(0);
+    const auto numeric_index = urd::index<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(0);
     const auto first_value = ygg::float_t { 1 };
     const auto second_value = first_value + ygg::FloatTolerance<ygg::float_t>::abs_epsilon * ygg::float_t { 0.25 };
     first_numeric->set(numeric_index, first_value);
@@ -203,9 +202,9 @@ template<TaskKind Kind>
 void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
 {
     auto execution_context = ygg::ExecutionContext::create(1);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     const auto initial_node = generator->get_initial_node(*repository, *axiom_evaluator);
     const auto& initial = initial_node.get_state();
 

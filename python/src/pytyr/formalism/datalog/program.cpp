@@ -90,7 +90,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
     {
         using V = ProgramView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("get_index", &V::index);
+        cls.def("index", &V::index);
         cls.def("get_static_predicates", &V::template get_predicates<StaticTag>);
         cls.def("get_fluent_predicates", &V::template get_predicates<FluentTag>);
         cls.def("get_static_functions", &V::template get_functions<StaticTag>);

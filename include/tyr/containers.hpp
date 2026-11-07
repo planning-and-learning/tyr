@@ -18,29 +18,12 @@
 #ifndef TYR_CONTAINERS_HPP_
 #define TYR_CONTAINERS_HPP_
 
-#include <boost/dynamic_bitset.hpp>
 #include <cstddef>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
 namespace tyr
 {
-
-/// Bit `pos` of `bitset`, false past its end.
-inline bool test(std::size_t pos, const boost::dynamic_bitset<>& bitset) noexcept
-{
-    if (pos >= bitset.size())
-        return false;
-    return bitset.test(pos);
-}
-
-/// Sets bit `pos` of `bitset` to `value`, growing it with false bits if needed.
-inline void set(std::size_t pos, bool value, boost::dynamic_bitset<>& bitset)
-{
-    if (pos >= bitset.size())
-        bitset.resize(pos + 1, false);
-    bitset[pos] = value;
-}
 
 /// Element `pos` of `vec`, `default_value` past its end.
 template<typename T>

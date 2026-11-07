@@ -19,24 +19,24 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -77,7 +77,7 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
                      StateContext<Kind>& state_context,
                      urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
                      urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
-                     urd::Store<urd::sequence<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
+                     urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
 {
     for (const auto cond_effect : action.get_effects())
     {
@@ -114,7 +114,7 @@ void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> c
                          formalism::planning::FDRContext& fdr_context,
                          urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
                          urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
-                         urd::Store<urd::sequence<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
+                         urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& tmp_numeric_writes)
 {
     const auto effect = cond_effect.get_effect();
 
@@ -147,7 +147,7 @@ void compute_touched_delta(const urd::data<State<Kind>>& parent,
                            const urd::data<State<Kind>>& successor,
                            const urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& del_effects,
                            const urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& add_effects,
-                           const urd::Store<urd::sequence<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
+                           const urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
                            StateDelta& delta)
 {
     delta.clear();
@@ -171,7 +171,7 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
                                             urd::builder<State<Kind>>& successor_state_builder,
                                             urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& del_effects,
                                             urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& add_effects,
-                                            urd::Store<urd::sequence<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
+                                            urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
                                             StateDelta& delta,
                                             ProcessEffects process_effects)
 {

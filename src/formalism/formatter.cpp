@@ -17,6 +17,8 @@
 
 #include "tyr/formalism/formatter.hpp"
 
+#include "node_formatter.hpp"
+
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_data.hpp>
 #include "tyr/formalism/function_data.hpp"
@@ -79,5 +81,39 @@ std::string to_string(const urd::data<RelationBinding<Function<StaticTag>>>& val
 std::string to_string(const urd::data<RelationBinding<Function<FluentTag>>>& value) { return to_string_impl(value); }
 
 std::string to_string(const urd::data<RelationBinding<Function<AuxiliaryTag>>>& value) { return to_string_impl(value); }
+
+std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<BinaryOperator<LiftedTag, BooleanOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<BinaryOperator<GroundTag, BooleanOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<MultiOperator<GroundTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Atom<LiftedTag, StaticTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Atom<LiftedTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Atom<LiftedTag, DerivedTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Literal<LiftedTag, StaticTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Literal<LiftedTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Literal<LiftedTag, DerivedTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Atom<GroundTag, StaticTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Atom<GroundTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Atom<GroundTag, DerivedTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Literal<GroundTag, StaticTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Literal<GroundTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<Literal<GroundTag, DerivedTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTerm<LiftedTag, StaticTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTerm<LiftedTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTerm<LiftedTag, AuxiliaryTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTerm<GroundTag, StaticTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTerm<GroundTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTerm<GroundTag, AuxiliaryTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTermValue<GroundTag, StaticTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTermValue<GroundTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<FunctionTermValue<GroundTag, AuxiliaryTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<NumericEffect<LiftedTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<NumericEffect<LiftedTag, AuxiliaryTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<NumericEffect<GroundTag, FluentTag>>& value) { return node_format::format(value); }
+std::string to_string(const urd::data<NumericEffect<GroundTag, AuxiliaryTag>>& value) { return node_format::format(value); }
 
 }  // namespace tyr::formalism

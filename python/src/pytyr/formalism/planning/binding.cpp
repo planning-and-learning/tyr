@@ -45,7 +45,7 @@ void bind_binding_view(nb::module_& m, const char* name)
 {
     using V = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>;
     auto cls = nb::class_<V>(m, name)
-                   .def("get_index", &V::index)
+                   .def("index", &V::index)
                    .def("get_relation", &V::get_relation)
                    .def("get_objects", [](const V& self) { return self.get_objects(); });
     ygg::add_print(cls);

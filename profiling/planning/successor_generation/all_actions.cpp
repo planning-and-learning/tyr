@@ -20,7 +20,6 @@
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
@@ -63,9 +62,9 @@ try
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = create_task(benchmark_case, *execution_context);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     auto successors = urd::Store<urd::sequence<tyr::planning::LabeledNode<Kind>>>();
 
@@ -88,9 +87,9 @@ try
 {
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = create_task(benchmark_case, *execution_context);
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<Kind>().create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
     auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>>();
 

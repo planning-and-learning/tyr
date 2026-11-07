@@ -34,13 +34,13 @@ template<typename Tag>
 struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
 {
     urd::index<::tyr::planning::match_tree::AtomSelectorNode<Tag>> index;
-    urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
+    urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> false_child;
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
-    data(urd::index<::tyr::formalism::planning::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
+    data(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> false_child_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :

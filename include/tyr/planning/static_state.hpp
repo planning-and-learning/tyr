@@ -18,11 +18,11 @@
 #ifndef TYR_PLANNING_STATIC_STATE_HPP_
 #define TYR_PLANNING_STATIC_STATE_HPP_
 
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 
 #include <functional>
 #include <limits>
@@ -45,9 +45,9 @@ public:
     template<TaskKind Kind>
     explicit StaticState(formalism::planning::TaskView<Kind> task);
 
-    [[nodiscard]] bool test(urd::index<formalism::planning::Atom<GroundTag, formalism::StaticTag>> index) const
+    [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> index) const
     { return m_atoms.contains(index); }
-    [[nodiscard]] ygg::float_t get(urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
+    [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
     { return m_numeric_variables.read(index, std::identity {}, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
     [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.index()); }
@@ -62,8 +62,8 @@ public:
     }
 
 private:
-    urd::Store<urd::set<urd::index<formalism::planning::Atom<GroundTag, formalism::StaticTag>>>, urd::dense, urd::sorted> m_atoms;
-    urd::Store<urd::map<urd::index<formalism::planning::FunctionTerm<GroundTag, formalism::StaticTag>>, ygg::float_t>, urd::dense> m_numeric_variables;
+    urd::Store<urd::set<urd::index<formalism::Atom<GroundTag, formalism::StaticTag>>>, urd::dense, urd::sorted> m_atoms;
+    urd::Store<urd::map<urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>>, ygg::float_t>, urd::dense> m_numeric_variables;
 };
 
 }

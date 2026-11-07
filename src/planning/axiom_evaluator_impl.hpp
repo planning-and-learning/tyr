@@ -20,7 +20,6 @@
 
 #include "tyr/planning/axiom_evaluator.hpp"
 
-#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -40,19 +39,12 @@ struct AxiomWorkspace;
 template<TaskKind Kind>
 struct AxiomEvaluator<Kind>::Impl
 {
-    Impl(ygg::uint_t index_,
-         std::shared_ptr<const detail::AxiomDefinition<Kind>> definition_,
-         ygg::ExecutionContextPtr execution_context,
-         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
-        index(index_),
-        next_index(std::move(next_index_)),
+    Impl(std::shared_ptr<const detail::AxiomDefinition<Kind>> definition_, ygg::ExecutionContextPtr execution_context) :
         definition(std::move(definition_)),
         evaluator(*definition, std::move(execution_context))
     {
     }
 
-    ygg::uint_t index;
-    std::shared_ptr<std::atomic<ygg::uint_t>> next_index;
     std::shared_ptr<const detail::AxiomDefinition<Kind>> definition;
     detail::AxiomWorkspace<Kind> evaluator;
 };
@@ -61,11 +53,8 @@ template<TaskKind Kind>
 AxiomEvaluator<Kind>::~AxiomEvaluator() = default;
 
 template<TaskKind Kind>
-AxiomEvaluator<Kind>::AxiomEvaluator(ygg::uint_t index,
-                                     TaskPtr<Kind> task,
-                                     ygg::ExecutionContextPtr execution_context,
-                                     std::shared_ptr<std::atomic<ygg::uint_t>> next_index) :
-    m_impl(std::make_unique<Impl>(index, std::make_shared<const detail::AxiomDefinition<Kind>>(std::move(task)), std::move(execution_context), std::move(next_index)))
+AxiomEvaluator<Kind>::AxiomEvaluator(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context) :
+    m_impl(std::make_unique<Impl>(std::make_shared<const detail::AxiomDefinition<Kind>>(std::move(task)), std::move(execution_context)))
 {
 }
 
@@ -77,10 +66,7 @@ AxiomEvaluator<Kind>::AxiomEvaluator(std::unique_ptr<Impl> impl) : m_impl(std::m
 template<TaskKind Kind>
 AxiomEvaluatorPtr<Kind> AxiomEvaluator<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
 {
-    return AxiomEvaluatorPtr<Kind>(new AxiomEvaluator<Kind>(std::make_unique<Impl>(m_impl->next_index->fetch_add(1, std::memory_order_relaxed),
-                                                                                   m_impl->definition,
-                                                                                   std::move(execution_context),
-                                                                                   m_impl->next_index)));
+    return AxiomEvaluatorPtr<Kind>(new AxiomEvaluator<Kind>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context))));
 }
 
 template<TaskKind Kind>
@@ -90,10 +76,6 @@ const TaskPtr<Kind>& AxiomEvaluator<Kind>::get_task() const noexcept
 template<TaskKind Kind>
 const ygg::ExecutionContextPtr& AxiomEvaluator<Kind>::get_execution_context() const noexcept
 { return m_impl->evaluator.execution_context; }
-
-template<TaskKind Kind>
-ygg::uint_t AxiomEvaluator<Kind>::get_index() const noexcept
-{ return m_impl->index; }
 
 }
 

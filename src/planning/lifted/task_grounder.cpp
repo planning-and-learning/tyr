@@ -32,24 +32,24 @@
 #include "tyr/formalism/planning/mutable/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -558,7 +558,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
             {
                 if (ground_program.get_translation_context().d2p.fluent_to_fluent_predicate.contains(binding.get_relation()))
                 {
-                    auto fluent_atom = formalism::planning::checkout<formalism::planning::Atom<GroundTag, formalism::FluentTag>>(builder);
+                    auto fluent_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(builder);
                     fluent_atom->binding = formalism::planning::merge_d2p<formalism::FluentTag, formalism::FluentTag>(
                                                binding,
                                                ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
@@ -568,7 +568,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 }
                 else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
                 {
-                    auto derived_atom = formalism::planning::checkout<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>(builder);
+                    auto derived_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(builder);
                     derived_atom->binding = formalism::planning::merge_d2p<formalism::FluentTag, formalism::DerivedTag>(
                                                 binding,
                                                 ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
@@ -642,7 +642,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     /// --- Create FDR actions and axioms
 
     auto fluent_assign = urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>> {};
-    auto derived_assign = urd::Store<urd::map<urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>>, bool>> {};
+    auto derived_assign = urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>> {};
 
     // The atoms of the effect predicates are the relaxed reachable groundings of the conditional effects.
     auto effect_atom_index = EffectAtomIndex(ground_program.get_predicate_to_action_mapping(),

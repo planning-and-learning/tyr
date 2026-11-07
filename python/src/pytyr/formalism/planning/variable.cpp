@@ -28,7 +28,7 @@ void bind_variable(nb::module_& m, RepositoryBinding& repository)
         using V = VariableView;
 
         auto cls = nb::class_<V>(m, "Variable")  //
-                       .def("get_index", &V::index)
+                       .def("index", &V::index)
                        .def("get_name", &V::get_name);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);

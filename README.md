@@ -63,14 +63,11 @@ task = tpl.Task(parser.parse_task("problem.pddl", parser_options))
 # Instantiate a single-threaded execution environment.
 execution_context = ExecutionContext(1)
 
-# Instantiate the planning objects. Factories assign unique context indices so
+# Instantiate the planning objects. Each state repository has its own number, so
 # state views from different state repositories hash and compare correctly.
-axiom_evaluator_factory = tpl.AxiomEvaluatorFactory()
-state_repository_factory = tpl.StateRepositoryFactory()
-successor_generator_factory = tpl.SuccessorGeneratorFactory()
-axiom_evaluator = axiom_evaluator_factory.create(task, execution_context)
-state_repository = state_repository_factory.create(task)
-successor_generator = successor_generator_factory.create(task, execution_context)
+axiom_evaluator = tpl.AxiomEvaluator(task, execution_context)
+state_repository = tpl.StateRepository(task)
+successor_generator = tpl.SuccessorGenerator(task, execution_context)
 
 # Get the initial node (state + metric value)
 initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
@@ -122,15 +119,11 @@ auto task = tp::Task<tyr::LiftedTag>::create(parser.parse_task("problem.pddl"));
 // Instantiate a single-threaded execution environment
 auto execution_context = ygg::ExecutionContext::create(1);
 
-// Instantiate the planning objects. Factories assign unique context indices so
+// Instantiate the planning objects. Each state repository has its own number, so
 // state views from different state repositories hash and compare correctly.
-auto axiom_evaluator_factory = tp::AxiomEvaluatorFactory<tyr::LiftedTag>();
-auto state_repository_factory = tp::StateRepositoryFactory<tyr::LiftedTag>();
-auto successor_generator_factory = tp::SuccessorGeneratorFactory<tyr::LiftedTag>();
-
-auto axiom_evaluator = axiom_evaluator_factory.create(task, execution_context);
-auto state_repository = state_repository_factory.create(task);
-auto successor_generator = successor_generator_factory.create(task, execution_context);
+auto axiom_evaluator = std::make_shared<tp::AxiomEvaluator<tyr::LiftedTag>>(task, execution_context);
+auto state_repository = std::make_shared<tp::StateRepository<tyr::LiftedTag>>(task);
+auto successor_generator = std::make_shared<tp::SuccessorGenerator<tyr::LiftedTag>>(task, execution_context);
 
 // Get the initial node (state + metric value).
 auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);

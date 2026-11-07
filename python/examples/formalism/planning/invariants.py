@@ -58,7 +58,7 @@ def rigid_parameter_domains_from_task_variable_domains(
             if parameter >= inv.get_num_rigid_variables():
                 continue
 
-            allowed_objects = {obj.get_index() for obj in predicate_domains[position].objects}
+            allowed_objects = {obj.index() for obj in predicate_domains[position].objects}
 
             domains[parameter] &= allowed_objects
 
@@ -171,7 +171,7 @@ def main() -> None:
 
     # 3. Build invariant match data by substituting all candidate objects
     #    for the rigid variables, constrained by task_variable_domains.
-    all_object_indices = {obj.get_index() for obj in task.get_task().get_objects()}
+    all_object_indices = {obj.index() for obj in task.get_task().get_objects()}
 
     invariant_match_data = build_invariant_match_data(
         invariants[:1],  # Use only the first invariant for demonstration purposes.

@@ -25,7 +25,6 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -57,28 +56,6 @@ struct StateLayout<GroundTag>
 };
 
 template<>
-struct AtomUnpackedStorage<GroundTag>
-{
-    boost::dynamic_bitset<> indices;
-
-    [[nodiscard]] bool test(urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index) const
-    {
-        assert(static_cast<ygg::uint_t>(index.value) < indices.size());
-        return indices.test(static_cast<ygg::uint_t>(index.value));
-    }
-    void set(urd::index<formalism::planning::Atom<GroundTag, formalism::DerivedTag>> index)
-    {
-        assert(static_cast<ygg::uint_t>(index.value) < indices.size());
-        indices.set(static_cast<ygg::uint_t>(index.value));
-    }
-    void resize(size_t size) { indices.resize(size, false); }
-    void clear() { indices.clear(); }
-    void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&AtomUnpackedStorage::indices> {}; }
-};
-
-template<>
 struct FactUnpackedStorage<GroundTag>
 {
     urd::Store<urd::sequence<ygg::uint_t>> values;
@@ -93,6 +70,8 @@ struct FactUnpackedStorage<GroundTag>
         assert(static_cast<ygg::uint_t>(fact.variable.value) < values.size());
         values[static_cast<ygg::uint_t>(fact.variable.value)] = fact.value.value;
     }
+    /// The number of variables, as resized to the task's.
+    [[nodiscard]] std::size_t num_variables() const noexcept { return values.size(); }
     /// The facts whose value is not none, by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {

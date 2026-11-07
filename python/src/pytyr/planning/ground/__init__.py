@@ -7,7 +7,6 @@
 from pytyr._pytyr.planning.ground import (
     AddRPGHeuristic as AddRPGHeuristic,
     AxiomEvaluator as AxiomEvaluator,
-    AxiomEvaluatorFactory as AxiomEvaluatorFactory,
     BlindHeuristic as BlindHeuristic,
     ConjunctiveGoalStrategy as ConjunctiveGoalStrategy,
     ExhaustiveGoalStrategy as ExhaustiveGoalStrategy,
@@ -30,9 +29,7 @@ from pytyr._pytyr.planning.ground import (
     StateBuilder as StateBuilder,
     StateIndex as StateIndex,
     StateRepository as StateRepository,
-    StateRepositoryFactory as StateRepositoryFactory,
     SuccessorGenerator as SuccessorGenerator,
-    SuccessorGeneratorFactory as SuccessorGeneratorFactory,
     Task as Task,
 )
 from pytyr.planning.ground import astar_eager as astar_eager, brfs as brfs, gbfs_lazy as gbfs_lazy, iw as iw, siw as siw

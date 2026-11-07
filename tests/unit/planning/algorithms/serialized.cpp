@@ -46,7 +46,6 @@
 #include <tyr/planning/algorithms/strategies/pruning.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
 #include <tyr/planning/declarations.hpp>
-#include <tyr/planning/factory.hpp>
 #include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
@@ -81,9 +80,9 @@ GroundSearchContext create_gripper_context()
 
     auto execution_context = ygg::ExecutionContext::create(1);
     auto task = tyr::planning::Task<LiftedTag>(make_test_parser(domain_file).parse_task(task_file)).instantiate_ground_task(*execution_context).task;
-    auto axiom_evaluator = tyr::planning::AxiomEvaluatorFactory<GroundTag>().create(task, execution_context);
-    auto state_repository = tyr::planning::StateRepositoryFactory<GroundTag>().create(task);
-    auto successor_generator = tyr::planning::SuccessorGeneratorFactory<GroundTag>().create(task, execution_context);
+    auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<GroundTag>>(task, execution_context);
+    auto state_repository = std::make_shared<tyr::planning::StateRepository<GroundTag>>(task);
+    auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<GroundTag>>(task, execution_context);
 
     return GroundSearchContext { std::move(task), std::move(state_repository), std::move(axiom_evaluator), std::move(successor_generator) };
 }

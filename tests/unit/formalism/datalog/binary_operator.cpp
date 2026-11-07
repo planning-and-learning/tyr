@@ -1,5 +1,5 @@
-#include "tyr/formalism/datalog/binary_operator_data.hpp"
-#include "tyr/formalism/datalog/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
@@ -21,10 +21,10 @@ concept BinaryOperatorContract =
            view.get_rhs();
        };
 
-using LiftedArithmetic = tyr::formalism::datalog::BinaryOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
-using LiftedBoolean = tyr::formalism::datalog::BinaryOperator<::tyr::LiftedTag, tyr::formalism::BooleanOperatorKind>;
-using GroundArithmetic = tyr::formalism::datalog::BinaryOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
-using GroundBoolean = tyr::formalism::datalog::BinaryOperator<::tyr::GroundTag, tyr::formalism::BooleanOperatorKind>;
+using LiftedArithmetic = tyr::formalism::BinaryOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
+using LiftedBoolean = tyr::formalism::BinaryOperator<::tyr::LiftedTag, tyr::formalism::BooleanOperatorKind>;
+using GroundArithmetic = tyr::formalism::BinaryOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
+using GroundBoolean = tyr::formalism::BinaryOperator<::tyr::GroundTag, tyr::formalism::BooleanOperatorKind>;
 
 static_assert(BinaryOperatorContract<LiftedArithmetic>);
 static_assert(BinaryOperatorContract<LiftedBoolean>);

@@ -49,43 +49,14 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
 namespace tyr::formalism::datalog
 {
 
-std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, BooleanOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<GroundTag, BooleanOperatorKind>>& value);
-std::string to_string(const urd::data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<MultiOperator<GroundTag, ArithmeticOperatorKind>>& value);
 
-std::string to_string(const urd::data<Atom<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<Atom<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<NumericEffect<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<NumericEffect<GroundTag, FluentTag>>& value);
 
 std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value);
 std::string to_string(const urd::data<ConjunctiveEffect<LiftedTag>>& value);
-std::string to_string(const urd::data<ConditionalEffect<LiftedTag>>& value);
 std::string to_string(const urd::data<Rule<LiftedTag, PredicateTag>>& value);
 std::string to_string(const urd::data<Rule<LiftedTag, FunctionTag>>& value);
 std::string to_string(const urd::data<ConjunctiveCondition<GroundTag>>& value);
 std::string to_string(const urd::data<ConjunctiveEffect<GroundTag>>& value);
-std::string to_string(const urd::data<ConditionalEffect<GroundTag>>& value);
 std::string to_string(const urd::data<Rule<GroundTag, PredicateTag>>& value);
 std::string to_string(const urd::data<Rule<GroundTag, FunctionTag>>& value);
 std::string to_string(const urd::data<Program<LiftedTag>>& value);
@@ -140,12 +111,10 @@ std::string to_string(NumericEffectView<GroundTag, FluentTag> value);
 
 std::string to_string(ConjunctiveConditionView<LiftedTag> value);
 std::string to_string(ConjunctiveEffectView<LiftedTag> value);
-std::string to_string(ConditionalEffectView<LiftedTag> value);
 std::string to_string(RuleView<LiftedTag, PredicateTag> value);
 std::string to_string(RuleView<LiftedTag, FunctionTag> value);
 std::string to_string(ConjunctiveConditionView<GroundTag> value);
 std::string to_string(ConjunctiveEffectView<GroundTag> value);
-std::string to_string(ConditionalEffectView<GroundTag> value);
 std::string to_string(RuleView<GroundTag, PredicateTag> value);
 std::string to_string(RuleView<GroundTag, FunctionTag> value);
 std::string to_string(ProgramView<LiftedTag> value);

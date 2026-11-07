@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_DECLARATIONS_HPP_
 #define TYR_FORMALISM_DECLARATIONS_HPP_
 
+#include "tyr/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
@@ -30,7 +31,9 @@
 
 #include <yggdrasil/core/config.hpp>
 #include <boost/mp11.hpp>
+#include <concepts>
 #include <tuple>
+#include <type_traits>
 #include <yggdrasil/formalism/declarations.hpp>
 
 namespace ygg::formalism
@@ -147,6 +150,72 @@ template<FactKind T>
 struct Function
 {
 };
+
+/**
+ * Records shared by datalog and planning: both repositories store them, so their indices have one type.
+ */
+
+template<TaskKind T, OperatorKind O>
+struct UnaryOperator
+{
+};
+
+template<TaskKind T, OperatorKind O>
+struct BinaryOperator
+{
+};
+
+template<TaskKind T, OperatorKind O>
+struct MultiOperator
+{
+};
+
+template<TaskKind T, FactKind F>
+struct Atom
+{
+};
+
+template<TaskKind T, FactKind F>
+struct Literal
+{
+};
+
+template<TaskKind T, FactKind F>
+struct FunctionTerm
+{
+};
+
+template<TaskKind T, FactKind F>
+    requires std::same_as<T, GroundTag>
+struct FunctionTermValue
+{
+};
+
+template<TaskKind T, FactKind F>
+    requires std::same_as<F, FluentTag> || std::same_as<F, AuxiliaryTag>
+struct NumericEffect
+{
+};
+
+/// A function expression: a number, an arithmetic operator or a function term (ground ones also the auxiliary term).
+/// Stored as it is, not interned; read through a repository as its namespace's FunctionExpressionView.
+template<TaskKind T>
+using FunctionExpression = std::conditional_t<std::same_as<T, GroundTag>,
+                                              urd::flat_variant<ygg::float_t,
+                                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
+                                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
+                                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
+                                                                urd::index<FunctionTerm<T, StaticTag>>,
+                                                                urd::index<FunctionTerm<T, FluentTag>>,
+                                                                urd::index<FunctionTerm<T, AuxiliaryTag>>>,
+                                              urd::flat_variant<ygg::float_t,
+                                                                urd::index<UnaryOperator<T, ArithmeticOperatorKind>>,
+                                                                urd::index<BinaryOperator<T, ArithmeticOperatorKind>>,
+                                                                urd::index<MultiOperator<T, ArithmeticOperatorKind>>,
+                                                                urd::index<FunctionTerm<T, StaticTag>>,
+                                                                urd::index<FunctionTerm<T, FluentTag>>>>;
+template<TaskKind T>
+using FunctionExpressionList = urd::flat_vector<FunctionExpression<T>>;
 
 struct PositiveTag
 {

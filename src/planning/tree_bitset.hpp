@@ -18,22 +18,19 @@
 #ifndef TYR_SRC_PLANNING_TREE_BITSET_HPP_
 #define TYR_SRC_PLANNING_TREE_BITSET_HPP_
 
-// boost::dynamic_bitset to and from urd's tree bitset sets (urd::repr::TreeBitsetSet: insert_blocks, insert_flips,
-// read_blocks, flip_type), for the tree_bitset state storages.
+// Blocks and block flips of packed state rows (urd's tree bitset sets, tyr's packed ground rows), for the state storages.
 
 #include <algorithm>
 #include <array>
-#include <bit>
-#include <boost/dynamic_bitset.hpp>
-#include <boost/iterator/function_output_iterator.hpp>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <span>
 #include <urd/repr/containers/bit.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+
+#include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
 namespace tyr::planning
 {
@@ -67,32 +64,10 @@ void append_int_flips(std::uint32_t position, std::uint8_t offset, std::uint8_t 
             flips.push_back(Flip { position + i, masks[i] });
 }
 
-/// Appends one flip per block in which `from` and `to` differ, in increasing position order.
-template<std::unsigned_integral Block, typename Flip>
-void append_diff_flips(std::span<const Block> from, std::span<const Block> to, urd::Store<urd::sequence<Flip>>& flips)
-{
-    for (std::size_t i = 0; i < std::max(from.size(), to.size()); ++i)
-    {
-        const auto mask = Block((i < from.size() ? from[i] : Block { 0 }) ^ (i < to.size() ? to[i] : Block { 0 }));
-        if (mask != Block { 0 })
-            flips.push_back(Flip { static_cast<std::uint32_t>(i), mask });
-    }
-}
-
-/// Appends the bits of `bitset` as blocks of type Block, which may be narrower than the blocks of `bitset`.
-template<std::unsigned_integral Block, std::unsigned_integral BitsetBlock, typename Allocator>
-    requires(sizeof(BitsetBlock) % sizeof(Block) == 0)
-void append_blocks(const boost::dynamic_bitset<BitsetBlock, Allocator>& bitset, urd::Store<urd::sequence<Block>>& blocks)
-{
-    constexpr auto parts = std::numeric_limits<BitsetBlock>::digits / std::numeric_limits<Block>::digits;
-    boost::to_block_range(bitset,
-                          boost::make_function_output_iterator(
-                              [&](BitsetBlock block)
-                              {
-                                  for (std::size_t i = 0; i < parts; ++i)
-                                      blocks.push_back(Block(block >> (i * std::numeric_limits<Block>::digits)));
-                              }));
-}
+/// Block `i` of a dense set's 64-bit words (StateBits::significant_words), 0 past them: the low (even i) or high (odd i)
+/// half of word i / 2, as urd's tree bitsets read a dense set.
+inline tree_bitset::Block block_of(std::span<const std::uint64_t> words, std::size_t i) noexcept
+{ return i / 2 < words.size() ? tree_bitset::Block(words[i / 2] >> (tree_bitset::bits_per_block * (i % 2))) : tree_bitset::Block { 0 }; }
 
 /// Removes trailing zero blocks, as inserting blocks requires a nonzero last block.
 template<std::unsigned_integral Block>
@@ -100,68 +75,6 @@ void trim_trailing_zero_blocks(urd::Store<urd::sequence<Block>>& blocks)
 {
     while (!blocks.empty() && blocks.back() == Block { 0 })
         blocks.pop_back();
-}
-
-/// Replaces the bits of `bitset` by those of `blocks`. The size becomes a multiple of the block width of `bitset`.
-template<std::unsigned_integral Block, std::unsigned_integral BitsetBlock, typename Allocator>
-    requires(sizeof(BitsetBlock) % sizeof(Block) == 0)
-void assign_blocks(std::span<const Block> blocks, boost::dynamic_bitset<BitsetBlock, Allocator>& bitset)
-{
-    constexpr auto parts = std::numeric_limits<BitsetBlock>::digits / std::numeric_limits<Block>::digits;
-    bitset.clear();
-    for (std::size_t i = 0; i < blocks.size(); i += parts)
-    {
-        auto block = BitsetBlock { 0 };
-        for (std::size_t j = 0; j < parts && i + j < blocks.size(); ++j)
-            block |= BitsetBlock(blocks[i + j]) << (j * std::numeric_limits<Block>::digits);
-        bitset.append(block);
-    }
-}
-
-/// Inserts `bits` into `set`. `blocks` is scratch space.
-template<typename Set, std::unsigned_integral BitsetBlock, typename Allocator>
-    requires(sizeof(BitsetBlock) % sizeof(typename Set::block_type) == 0)
-typename Set::handle_type insert_bitset(Set& set, const boost::dynamic_bitset<BitsetBlock, Allocator>& bits, urd::Store<urd::sequence<typename Set::block_type>>& blocks)
-{
-    blocks.clear();
-    append_blocks(bits, blocks);
-    trim_trailing_zero_blocks(blocks);
-    return set.insert_blocks(blocks);
-}
-
-/// Inserts `bits` into `set` as a delta to the stored `parent`, whose bits are `parent_bits`. Linear in the bitset
-/// size; when the changed bits are known, inserting their flips directly is cheaper. `blocks` and `flips` are scratch space.
-template<typename Set, std::unsigned_integral BitsetBlock, typename Allocator>
-    requires(sizeof(BitsetBlock) % sizeof(typename Set::block_type) == 0)
-typename Set::handle_type insert_bitset(Set& set,
-                                        typename Set::handle_type parent,
-                                        const boost::dynamic_bitset<BitsetBlock, Allocator>& parent_bits,
-                                        const boost::dynamic_bitset<BitsetBlock, Allocator>& bits,
-                                        urd::Store<urd::sequence<typename Set::block_type>>& blocks,
-                                        urd::Store<urd::sequence<typename Set::flip_type>>& flips)
-{
-    using Block = typename Set::block_type;
-    blocks.clear();
-    append_blocks(parent_bits, blocks);
-    const auto num_parent_blocks = blocks.size();
-    append_blocks(bits, blocks);
-
-    flips.clear();
-    append_diff_flips<Block>(std::span<const Block>(blocks).first(num_parent_blocks), std::span<const Block>(blocks).subspan(num_parent_blocks), flips);
-    return set.insert_flips(parent, flips);
-}
-
-/// Reads `index` from `set` into `bits`, which then ends at its last set bit. `blocks` is scratch space.
-template<typename Set, std::unsigned_integral BitsetBlock, typename Allocator>
-    requires(sizeof(BitsetBlock) % sizeof(typename Set::block_type) == 0)
-void read_bitset(const Set& set, typename Set::handle_type index, boost::dynamic_bitset<BitsetBlock, Allocator>& bits, urd::Store<urd::sequence<typename Set::block_type>>& blocks)
-{
-    using Block = typename Set::block_type;
-    blocks.resize(index.size);
-    set.read_blocks(index, blocks);
-    assign_blocks<Block>(blocks, bits);
-    if (!blocks.empty())
-        bits.resize((blocks.size() - 1) * std::numeric_limits<Block>::digits + std::bit_width(blocks.back()));
 }
 
 }

@@ -24,19 +24,18 @@
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/atom_view.hpp"
-#include "tyr/formalism/datalog/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conditional_effect_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
-#include "tyr/formalism/datalog/function_term_value_view.hpp"
-#include "tyr/formalism/datalog/function_term_view.hpp"
-#include "tyr/formalism/datalog/literal_view.hpp"
-#include "tyr/formalism/datalog/multi_operator_view.hpp"
-#include "tyr/formalism/datalog/numeric_effect_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/datalog/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -63,7 +62,7 @@ class Decomposer
 {
 public:
     using StaticLiteral = formalism::datalog::LiteralView<LiftedTag, formalism::StaticTag>;
-    using StaticLiteralIndex = urd::index<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>;
+    using StaticLiteralIndex = urd::index<formalism::Literal<LiftedTag, formalism::StaticTag>>;
 
     Decomposer(urd::data<formalism::datalog::Program<LiftedTag>>& program,
                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
@@ -213,16 +212,16 @@ private:
             binding->relation = new_predicate;
             for (const auto object : tuple)
                 binding->objects.push_back(urd::index<formalism::Object>(object));
-            auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
+            auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
             atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.index();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
-        auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
+        auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
         atom->predicate = new_predicate;
         for (const auto parameter : parameters)
             atom->terms.push_back(formalism::Term(parameter));
-        auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>(m_context->builder());
+        auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::StaticTag>>(m_context->builder());
         literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.index();
         literal->polarity = true;
         return formalism::datalog::insert(m_context->destination(), *literal).first.index();
@@ -244,16 +243,16 @@ private:
             binding->relation = new_predicate;
             binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
             binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
-            auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
+            auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
             atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.index();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
-        auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
+        auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
         atom->predicate = new_predicate;
         atom->terms.push_back(formalism::Term(first));
         atom->terms.push_back(formalism::Term(second));
-        auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::StaticTag>>(m_context->builder());
+        auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::StaticTag>>(m_context->builder());
         literal->atom = formalism::datalog::insert(m_context->destination(), *atom).first.index();
         literal->polarity = true;
         return formalism::datalog::insert(m_context->destination(), *literal).first.index();

@@ -26,24 +26,24 @@
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/planning/atom_view.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/planning/binary_operator_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/planning/function_term_value_view.hpp"
-#include "tyr/formalism/planning/function_term_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/planning/literal_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/multi_operator_view.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/planning/unary_operator_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include <yggdrasil/formalism/binding_view.hpp>
 #include "tyr/formalism/function_view.hpp"
@@ -86,21 +86,21 @@ struct GroundProgramBuildContext
     }
 };
 
-urd::index<formalism::datalog::NumericEffect<LiftedTag, formalism::FluentTag>> create_rule_binding_numeric_head(GroundProgramBuildContext& context)
+urd::index<formalism::NumericEffect<LiftedTag, formalism::FluentTag>> create_rule_binding_numeric_head(GroundProgramBuildContext& context)
 {
     auto function = formalism::datalog::checkout<formalism::Function<formalism::FluentTag>>(context.builder);
     function->name = "__tyr_ground_rule_binding";
     function->arity = 0;
     const auto function_view = formalism::datalog::insert(context.merge_context.destination(), *function).first;
 
-    auto term = formalism::datalog::checkout<formalism::datalog::FunctionTerm<LiftedTag, formalism::FluentTag>>(context.builder);
+    auto term = formalism::datalog::checkout<formalism::FunctionTerm<LiftedTag, formalism::FluentTag>>(context.builder);
     term->function = function_view.index();
     const auto term_view = formalism::datalog::insert(context.merge_context.destination(), *term).first;
 
-    auto effect = formalism::datalog::checkout<formalism::datalog::NumericEffect<LiftedTag, formalism::FluentTag>>(context.builder);
+    auto effect = formalism::datalog::checkout<formalism::NumericEffect<LiftedTag, formalism::FluentTag>>(context.builder);
     effect->operator_kind = formalism::NumericEffectOperatorKind::Assign;
     effect->fterm = term_view.index();
-    effect->fexpr = formalism::datalog::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(0));
+    effect->fexpr = formalism::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(0));
     return formalism::datalog::insert(context.merge_context.destination(), *effect).first.index();
 }
 
@@ -113,11 +113,11 @@ formalism::datalog::RuleBindingView<R> create_rule_binding(GroundProgramBuildCon
     const auto new_predicate = formalism::datalog::insert(context.merge_context.destination(), *predicate).first;
     context.program->fluent_predicates.push_back(new_predicate.index());
 
-    auto atom = formalism::datalog::checkout<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>(context.builder);
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder);
     atom->predicate = new_predicate.index();
     const auto new_atom = formalism::datalog::insert(context.merge_context.destination(), *atom).first;
 
-    auto literal = formalism::datalog::checkout<formalism::datalog::Literal<LiftedTag, formalism::FluentTag>>(context.builder);
+    auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::FluentTag>>(context.builder);
     literal->atom = new_atom.index();
     literal->polarity = false;
     const auto new_literal = formalism::datalog::insert(context.merge_context.destination(), *literal).first;
@@ -153,7 +153,7 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
         binding->objects.push_back(object.index());
     const auto new_binding = formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 
-    auto atom = formalism::datalog::checkout<formalism::datalog::Atom<GroundTag, formalism::FluentTag>>(context.builder);
+    auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(context.builder);
     atom->binding = new_binding.index();
     return formalism::datalog::insert(context.merge_context.destination(), *atom).first;
 }
@@ -161,7 +161,7 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
 formalism::datalog::LiteralView<GroundTag, formalism::FluentTag> create_positive_literal(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom,
                                                                                          GroundProgramBuildContext& context)
 {
-    auto literal = formalism::datalog::checkout<formalism::datalog::Literal<GroundTag, formalism::FluentTag>>(context.builder);
+    auto literal = formalism::datalog::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(context.builder);
     literal->atom = atom.index();
     literal->polarity = true;
     return formalism::datalog::insert(context.merge_context.destination(), *literal).first;
@@ -222,7 +222,7 @@ create_delete_free_numeric_effect_condition(formalism::planning::ConjunctiveCond
 
 formalism::datalog::RuleView<GroundTag, formalism::PredicateTag>
 create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> body,
-                        const urd::flat_vector<urd::index<formalism::datalog::Atom<GroundTag, formalism::FluentTag>>>& heads,
+                        const urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>>& heads,
                         GroundProgramBuildContext& context,
                         ygg::float_t cost = 0)
 {
@@ -230,7 +230,7 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
     rule->binding = create_rule_binding<formalism::PredicateTag>(context,
                                                                  [](auto atom)
                                                                  {
-                                                                     auto atoms = urd::flat_vector<urd::index<formalism::datalog::Atom<LiftedTag, formalism::FluentTag>>> {};
+                                                                     auto atoms = urd::flat_vector<urd::index<formalism::Atom<LiftedTag, formalism::FluentTag>>> {};
                                                                      atoms.push_back(atom.index());
                                                                      return atoms;
                                                                  })
@@ -261,7 +261,7 @@ create_applicability_rule(formalism::planning::ActionView<GroundTag> action,
                           TranslationContext<GroundTag>& translation_context,
                           GroundProgramBuildContext& context)
 {
-    auto heads = urd::flat_vector<urd::index<formalism::datalog::Atom<GroundTag, formalism::FluentTag>>> {};
+    auto heads = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>> {};
     heads.push_back(applicability_atom.index());
     return create_ground_atom_rule(create_delete_free_condition(action.get_condition(), translation_context, context), heads, context);
 }
@@ -283,7 +283,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
     {
         const auto body = create_delete_free_effect_condition(applicability_atom, cond_eff.get_condition(), translation_context, context);
 
-        auto heads = urd::flat_vector<urd::index<formalism::datalog::Atom<GroundTag, formalism::FluentTag>>> {};
+        auto heads = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>> {};
         for (const auto fact : cond_eff.get_effect().get_facts<formalism::PositiveTag>())
             if (const auto literal =
                     formalism::planning::merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_atom, context.fluent_predicates, context.merge_context))
@@ -315,26 +315,26 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
 
     for (const auto predicate : task.get_domain().get_predicates<formalism::StaticTag>())
     {
-        const auto new_predicate = formalism::planning::merge_p2d(predicate, merge_context).first;
+        const auto new_predicate = formalism::copy(predicate, merge_context).first;
         context.static_predicates.emplace(predicate, new_predicate);
         context.program->static_predicates.push_back(new_predicate.index());
     }
     for (const auto predicate : task.get_domain().get_predicates<formalism::FluentTag>())
     {
-        const auto new_predicate = formalism::planning::merge_p2d(predicate, merge_context).first;
+        const auto new_predicate = formalism::copy(predicate, merge_context).first;
         context.fluent_predicates.emplace(predicate, new_predicate);
         context.program->fluent_predicates.push_back(new_predicate.index());
     }
 
     for (const auto function : task.get_domain().get_functions<formalism::StaticTag>())
-        context.program->static_functions.push_back(formalism::planning::merge_p2d(function, merge_context).first.index());
+        context.program->static_functions.push_back(formalism::copy(function, merge_context).first.index());
     for (const auto function : task.get_domain().get_functions<formalism::FluentTag>())
-        context.program->fluent_functions.push_back(formalism::planning::merge_p2d(function, merge_context).first.index());
+        context.program->fluent_functions.push_back(formalism::copy(function, merge_context).first.index());
 
     for (const auto object : task.get_domain().get_constants())
-        context.program->objects.push_back(formalism::planning::merge_p2d(object, merge_context).first.index());
+        context.program->objects.push_back(formalism::copy(object, merge_context).first.index());
     for (const auto object : task.get_objects())
-        context.program->objects.push_back(formalism::planning::merge_p2d(object, merge_context).first.index());
+        context.program->objects.push_back(formalism::copy(object, merge_context).first.index());
 
     for (const auto atom : task.get_atoms<formalism::StaticTag>())
     {
@@ -364,14 +364,14 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
 
     for (const auto fterm_value : task.get_fterm_values<formalism::StaticTag>())
     {
-        const auto new_fterm_value = formalism::planning::merge_p2d(fterm_value, merge_context).first;
+        const auto new_fterm_value = formalism::copy(fterm_value, merge_context).first;
         translation_context.p2d.static_to_static_fterm.emplace(fterm_value.get_fterm(), new_fterm_value.get_fterm());
         translation_context.d2p.static_to_static_fterm.emplace(new_fterm_value.get_fterm(), fterm_value.get_fterm());
         context.program->static_fterm_values.push_back(new_fterm_value.index());
     }
     for (const auto fterm_value : task.get_fterm_values<formalism::FluentTag>())
     {
-        const auto new_fterm_value = formalism::planning::merge_p2d(fterm_value, merge_context).first;
+        const auto new_fterm_value = formalism::copy(fterm_value, merge_context).first;
         translation_context.p2d.fluent_to_fluent_fterm.emplace(fterm_value.get_fterm(), new_fterm_value.get_fterm());
         translation_context.d2p.fluent_to_fluent_fterm.emplace(new_fterm_value.get_fterm(), fterm_value.get_fterm());
         context.program->fluent_fterm_values.push_back(new_fterm_value.index());

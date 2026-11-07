@@ -8,7 +8,6 @@
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/factory.hpp"
 #include "tyr/planning/formatter.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_storage/vectors.hpp"
@@ -260,22 +259,19 @@ void expect_state_builder_identity()
     if constexpr (std::same_as<Kind, GroundTag>)
         base.fact_storage.values = { 1, 0 };
     else
-    {
-        base.fact_storage.indices.resize(2);
-        base.fact_storage.indices.set(0);
-    }
+        base.fact_storage.indices.insert(0);
     base.numeric_storage.values = { 3.0 };
     auto other = base;
     base.set(urd::index<tyr::planning::State<Kind>>(0));
     other.set(urd::index<tyr::planning::State<Kind>>(1));
-    other.atom_storage.indices.resize(3, true);
+    other.atom_storage.indices.insert({ 0, 1, 2 });
     EXPECT_TRUE(urd::EqualTo<Builder> {}(base, other));
     EXPECT_EQ(urd::Hash<Builder> {}(base), urd::Hash<Builder> {}(other));
 
     if constexpr (std::same_as<Kind, GroundTag>)
         other.fact_storage.values.front() = 0;
     else
-        other.fact_storage.indices.flip(0);
+        other.fact_storage.indices.erase(0);
     EXPECT_FALSE(urd::EqualTo<Builder> {}(base, other));
     other = base;
     other.numeric_storage.values.front() = 4.0;
@@ -287,8 +283,8 @@ void expect_state_builder_lifecycle()
 {
     using Builder = urd::builder<tyr::planning::State<Kind>>;
     using Fact = urd::data<tyr::formalism::planning::FDRFact<formalism::FluentTag>>;
-    using Atom = urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::DerivedTag>>;
-    using Numeric = urd::index<tyr::formalism::planning::FunctionTerm<GroundTag, formalism::FluentTag>>;
+    using Atom = urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>;
+    using Numeric = urd::index<tyr::formalism::FunctionTerm<GroundTag, formalism::FluentTag>>;
     const auto variable = urd::index<tyr::formalism::planning::FDRVariable<formalism::FluentTag>>(0);
     auto source = Builder {};
     auto target = Builder {};
@@ -296,8 +292,6 @@ void expect_state_builder_lifecycle()
     {
         source.resize_fluent_facts(1);
         target.resize_fluent_facts(1);
-        source.resize_derived_atoms(2);
-        target.resize_derived_atoms(2);
     }
     source.set(urd::index<tyr::planning::State<Kind>>(7));
     target.set(urd::index<tyr::planning::State<Kind>>(8));
@@ -513,7 +507,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     auto predicate_data = urd::data<formalism::Predicate<formalism::FluentTag>>(std::string("unregistered"), 0);
     auto atom_binding_data = urd::data<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>> {};
     atom_binding_data.relation = tyr::formalism::planning::insert(*task->get_repository(), predicate_data).first.index();
-    auto atom_data = urd::data<tyr::formalism::planning::Atom<GroundTag, formalism::FluentTag>>(
+    auto atom_data = urd::data<tyr::formalism::Atom<GroundTag, formalism::FluentTag>>(
         tyr::formalism::planning::insert(*task->get_repository(), atom_binding_data).first.index());
     const auto absent_atom = tyr::formalism::planning::insert(*task->get_repository(), atom_data).first;
     EXPECT_FALSE(state.test(absent_atom));
@@ -586,13 +580,12 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
 {
     SCOPED_TRACE(concurrent ? "concurrent storage" : "sequential storage");
     const auto context = ygg::ExecutionContext::create(1);
-    auto axioms = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, context);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, context);
-    auto factory = tyr::planning::StateRepositoryFactory<Kind> {};
-    auto repository = concurrent ? factory.create_concurrent(task) : factory.create(task);
+    auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task, concurrent);
     {
         const urd::data<tyr::planning::State<Kind>>* released_builder = nullptr;
-        auto temporary_repository = factory.create(task);
+        auto temporary_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
         const auto packed = [&]
         {
             const auto state = temporary_repository->get_initial_state(*axioms);
@@ -772,7 +765,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         if constexpr (std::same_as<Kind, GroundTag>)
             expect_same_node(generator->get_successor_node(borrowed, generator->ground_action(*raise), *generated, *axioms), raised);
 
-        auto reference_repository = factory.create(task);
+        auto reference_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
         const auto expected = generator->get_labeled_successor_nodes(cheap->node, *reference_repository, *axioms);
         auto states = urd::Store<urd::sequence<urd::builder<tyr::planning::State<Kind>>>, urd::stable_refs> {};
         const auto labeled = generator->get_labeled_successor_nodes(borrowed, states, *axioms);
@@ -848,9 +841,6 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         {
             EXPECT_EQ(generator->get_packed_successor_node(borrowed, generator->ground_action(*raise), *repository, *axioms), raised.pack());
         }
-        // Ground axiom evaluation expects the capacity normally prepared by the state repository.
-        if constexpr (std::same_as<Kind, GroundTag>)
-            generated->resize_derived_atoms(task->get_task().template get_atoms<formalism::DerivedTag>().size());
         auto generated_delta = tyr::planning::StateDelta {};
         generator->generate_successor_state(borrowed, *raise, *generated, generated_delta);
         auto expected_delta = tyr::planning::StateDelta {};
@@ -909,10 +899,9 @@ void expect_exact_successor_deltas(const tyr::planning::TaskPtr<Kind>& task, boo
 {
     SCOPED_TRACE(concurrent ? "concurrent storage" : "sequential storage");
     const auto context = ygg::ExecutionContext::create(1);
-    auto axioms = tyr::planning::AxiomEvaluatorFactory<Kind>().create(task, context);
-    auto generator = tyr::planning::SuccessorGeneratorFactory<Kind>().create(task, context);
-    auto factory = tyr::planning::StateRepositoryFactory<Kind> {};
-    auto repository = concurrent ? factory.create_concurrent(task) : factory.create(task);
+    auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, context);
+    auto generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, context);
+    auto repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task, concurrent);
 
     auto layer = urd::Store<urd::sequence<tyr::planning::Node<Kind>>> { generator->get_initial_node(*repository, *axioms) };
     for (int depth = 0; depth < 3; ++depth)
@@ -942,21 +931,20 @@ TEST(TyrPlanningStateTest, BuilderPartsRetainIndependentDataAndRegistration)
     expect_state_builder_lifecycle<LiftedTag>();
 }
 
-TEST(TyrPlanningStateTest, GroundBuilderRetainsNonbinaryFactsAndPresizedDerivedAtoms)
+TEST(TyrPlanningStateTest, GroundBuilderRetainsNonbinaryFactsAndDerivedAtoms)
 {
     auto builder = urd::builder<tyr::planning::State<GroundTag>> {};
     const auto variable = urd::index<tyr::formalism::planning::FDRVariable<formalism::FluentTag>>(1);
-    const auto derived = urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::DerivedTag>>(64);
+    const auto derived = urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(64);
     builder.resize_fluent_facts(2);
-    builder.resize_derived_atoms(130);
     EXPECT_EQ(builder.get(variable), tyr::formalism::planning::FDRValue::none());
     EXPECT_FALSE(builder.test(derived));
     builder.set(urd::data<tyr::formalism::planning::FDRFact<formalism::FluentTag>>(variable, tyr::formalism::planning::FDRValue(37)));
     builder.set(derived);
     EXPECT_EQ(builder.get(variable), tyr::formalism::planning::FDRValue(37));
     EXPECT_TRUE(builder.test(derived));
-    EXPECT_FALSE(builder.test(urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::DerivedTag>>(129)));
-    EXPECT_EQ(builder.atom_storage.indices.size(), 130);
+    EXPECT_FALSE(builder.test(urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(129)));
+    EXPECT_EQ(builder.atom_storage.indices.size(), 1);
 }
 
 TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
@@ -965,7 +953,7 @@ TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
     auto builder = urd::builder<tyr::planning::State<LiftedTag>> {};
     const auto low = urd::index<tyr::formalism::planning::FDRVariable<formalism::FluentTag>>(1);
     const auto high = urd::index<tyr::formalism::planning::FDRVariable<formalism::FluentTag>>(130);
-    const auto derived = urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::DerivedTag>>(130);
+    const auto derived = urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(130);
     EXPECT_EQ(builder.get(high), tyr::formalism::planning::FDRValue::none());
     EXPECT_FALSE(builder.test(derived));
     builder.set(Fact(high, tyr::formalism::planning::FDRValue::none()));
@@ -975,11 +963,11 @@ TEST(TyrPlanningStateTest, LiftedBuilderGrowsBinaryStorageAndTrimsClearedFacts)
     builder.set(derived);
     EXPECT_EQ(builder.get(high), tyr::formalism::planning::FDRValue(1));
     EXPECT_TRUE(builder.test(derived));
-    EXPECT_FALSE(builder.test(urd::index<tyr::formalism::planning::Atom<GroundTag, formalism::DerivedTag>>(131)));
+    EXPECT_FALSE(builder.test(urd::index<tyr::formalism::Atom<GroundTag, formalism::DerivedTag>>(131)));
     builder.set(Fact(high, tyr::formalism::planning::FDRValue::none()));
     EXPECT_EQ(builder.get(high), tyr::formalism::planning::FDRValue::none());
     EXPECT_EQ(builder.get(low), tyr::formalism::planning::FDRValue(1));
-    EXPECT_EQ(builder.fact_storage.indices.size(), 2);
+    EXPECT_EQ(builder.fact_storage.indices.size(), 1);
     builder.set(Fact(low, tyr::formalism::planning::FDRValue::none()));
     EXPECT_TRUE(builder.fact_storage.indices.empty());
     EXPECT_TRUE(builder.test(derived));
