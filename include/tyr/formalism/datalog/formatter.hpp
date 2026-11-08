@@ -59,8 +59,8 @@ std::string to_string(const urd::data<Rule<GroundTag, PredicateTag>>& value);
 std::string to_string(const urd::data<Rule<GroundTag, FunctionTag>>& value);
 std::string to_string(const urd::data<Program<LiftedTag>>& value);
 std::string to_string(const urd::data<Program<GroundTag>>& value);
-std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, PredicateTag>>>& value);
-std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, FunctionTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, PredicateTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, FunctionTag>>>& value);
 
 /// Each symbol type's view (SymbolRepositoryTypes) and each relation's binding view (RelationRepositoryTypes) as text;
 /// instantiated for these lists in formatter.cpp.
@@ -69,7 +69,7 @@ template<typename T>
 std::string to_string(urd::index_view<T, Repository> value);
 template<typename R>
     requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
-std::string to_string(::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<R, ::tyr::formalism::ObjectTag>, Repository> value);
+std::string to_string(ygg::RowView<R, Repository> value);
 std::string to_string(TermView value);
 
 }  // namespace tyr::formalism::datalog

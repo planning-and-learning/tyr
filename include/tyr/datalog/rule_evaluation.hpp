@@ -100,7 +100,7 @@ struct PredicateCandidate
 
 struct FunctionCandidate
 {
-    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> head;
+    formalism::datalog::FunctionRowIndex<formalism::FluentTag> head;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
     Cost queue_label;
@@ -111,11 +111,11 @@ struct FunctionCandidate
 class PredicateHeadUpdates
 {
 private:
-    using Binding = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using Binding = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
     using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
-    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<formalism::Row>>, urd::dense, urd::proportional_clear>>> m_seen_rows;
+    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>> m_seen_rows;
     urd::Store<urd::sequence<Binding>> m_bindings;
     urd::Store<urd::sequence<PredicateAchiever>> m_achievers;
 
@@ -146,11 +146,11 @@ public:
 
 struct FunctionHeadUpdate : urd::compared_by_identity<FunctionHeadUpdate>
 {
-    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding;
+    formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding;
     ygg::ClosedInterval<ygg::float_t> interval;
     bool grows_fact;
 
-    FunctionHeadUpdate(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding_, ygg::ClosedInterval<ygg::float_t> interval_, bool grows_fact_) :
+    FunctionHeadUpdate(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding_, ygg::ClosedInterval<ygg::float_t> interval_, bool grows_fact_) :
         binding(binding_),
         interval(std::move(interval_)),
         grows_fact(grows_fact_)
@@ -364,7 +364,7 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
 template<TaskKind Kind, formalism::RelationKind R, typename CP>
 Cost get_transition_credit(const CP& policy,
                            RuleInstance<Kind, R>& instance,
-                           formalism::datalog::FunctionBindingIndex<formalism::FluentTag> head,
+                           formalism::datalog::FunctionRowIndex<formalism::FluentTag> head,
                            const ygg::ClosedInterval<ygg::float_t>& interval)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
@@ -581,7 +581,7 @@ auto evaluate_propositional_candidate(RuleInstance<Kind, formalism::PredicateTag
 
 /// Prunes only once the instance cannot improve any of its heads.
 template<TaskKind Kind, typename AP, typename CP, PredicateAnnotationStore DeltaAnnotations>
-auto evaluate_propositional_candidate(std::span<const formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> heads,
+auto evaluate_propositional_candidate(std::span<const formalism::datalog::PredicateRowIndex<formalism::FluentTag>> heads,
                                       RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
@@ -650,7 +650,7 @@ WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const 
 
 /// Evaluates the rule instance once and updates each of its heads with the shared witness.
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations>
-RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog::PredicateBindingIndex<formalism::FluentTag>> heads,
+RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog::PredicateRowIndex<formalism::FluentTag>> heads,
                                              RuleUpdateInput<Kind, formalism::PredicateTag, AP, CP>& input,
                                              PredicateHeadUpdates& head_updates,
                                              DeltaAnnotations& delta_annotations,

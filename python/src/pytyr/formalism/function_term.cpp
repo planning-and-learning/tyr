@@ -47,9 +47,9 @@ void bind_function_term_data(nb::module_& m, const std::string& name)
     }
     else
     {
-        cls.def(urd::python::init_from_views<datalog::FunctionBindingView<F>>(), "binding"_a);
-        cls.def(urd::python::init_from_views<planning::FunctionBindingView<F>>(), "binding"_a);
-        cls.def(nb::init<ygg::formalism::RelationBindingIndex<Function<F>, ObjectTag>>(), "binding"_a);
+        cls.def(urd::python::init_from_views<datalog::FunctionRowView<F>>(), "binding"_a);
+        cls.def(urd::python::init_from_views<planning::FunctionRowView<F>>(), "binding"_a);
+        cls.def(nb::init<ygg::RowIndex<Function<F>>>(), "binding"_a);
     }
     ygg::add_print(cls);
     urd::python::add_comparison(cls);

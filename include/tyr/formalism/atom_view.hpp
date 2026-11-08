@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_ATOM_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 
@@ -51,7 +51,7 @@ public:
 
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::binding>(); }
+    { return self().template get<&urd::record_of<V>::row>(); }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_objects(); }

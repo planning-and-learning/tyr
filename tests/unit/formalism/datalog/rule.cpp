@@ -49,7 +49,7 @@ static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::GroundTag, tyr::formalism::PredicateTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
-    data.binding;
+    data.row;
     data.body;
     data.heads;
     data.cost;

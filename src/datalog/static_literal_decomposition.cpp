@@ -37,7 +37,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -208,12 +208,12 @@ private:
         std::ranges::sort(sorted);
         for (const auto& tuple : sorted)
         {
-            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
+            auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
             binding->relation = new_predicate;
             for (const auto object : tuple)
-                binding->objects.push_back(urd::index<formalism::Object>(object));
+                binding->values.push_back(urd::index<formalism::Object>(object));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.data();
+            atom->row = formalism::datalog::insert(m_context->destination(), *binding).first.data();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
@@ -239,12 +239,12 @@ private:
         std::ranges::sort(sorted);
         for (const auto key : sorted)
         {
-            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
+            auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
             binding->relation = new_predicate;
-            binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
-            binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
+            binding->values.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
+            binding->values.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.data();
+            atom->row = formalism::datalog::insert(m_context->destination(), *binding).first.data();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 

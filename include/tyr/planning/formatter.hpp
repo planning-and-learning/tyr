@@ -299,7 +299,7 @@ struct formatter<tyr::planning::Node<Kind, State>, char>
 
 template<::tyr::TaskKind Kind,
          ::tyr::planning::StateViewConcept<Kind> State,
-         ygg::formalism::RelationBindingViewConcept<tyr::formalism::planning::Action<tyr::LiftedTag>, tyr::formalism::ObjectTag> Binding>
+         ygg::RowViewConcept<tyr::formalism::planning::Action<tyr::LiftedTag>> Binding>
 struct formatter<tyr::planning::LabeledNode<Kind, State, Binding>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }

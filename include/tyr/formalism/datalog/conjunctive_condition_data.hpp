@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_DATA_HPP_
 
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/binary_operator_data.hpp"

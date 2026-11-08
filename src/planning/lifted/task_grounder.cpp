@@ -52,7 +52,7 @@
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -387,7 +387,7 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
     auto action = formalism::planning::checkout<formalism::planning::Action<GroundTag>>(context.builder());
 
     // Fill data
-    action->binding = ground(element, context).first.data();
+    action->row = ground(element, context).first.data();
 
     const auto new_condition_or_nullopt = ground_pruned(element.get_condition(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_condition_or_nullopt)
@@ -424,7 +424,7 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
     auto axiom = formalism::planning::checkout<formalism::planning::Axiom<GroundTag>>(context.builder());
 
     // Fill data
-    axiom->binding = ground(element, context).first.data();
+    axiom->row = ground(element, context).first.data();
 
     const auto new_body_or_nullopt = ground_pruned(element.get_body(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_body_or_nullopt.has_value())
@@ -510,7 +510,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     auto ctx = datalog::ProgramExecutionContext(workspace);
     datalog::execute_model(ctx, execution_context);
 
-    auto predicate_bindings = urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>> {};
+    auto predicate_bindings = urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>> {};
     for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
         for (const auto binding : set.get_bindings())
             predicate_bindings.push_back(binding);
@@ -560,7 +560,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 if (ground_program.get_translation_context().d2p.fluent_to_fluent_predicate.contains(binding.get_relation()))
                 {
                     auto fluent_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(builder);
-                    fluent_atom->binding = formalism::planning::merge_d2p<formalism::FluentTag, formalism::FluentTag>(
+                    fluent_atom->row = formalism::planning::merge_d2p<formalism::FluentTag, formalism::FluentTag>(
                                                binding,
                                                ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
                                                merge_planning_context)
@@ -570,7 +570,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
                 {
                     auto derived_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(builder);
-                    derived_atom->binding = formalism::planning::merge_d2p<formalism::FluentTag, formalism::DerivedTag>(
+                    derived_atom->row = formalism::planning::merge_d2p<formalism::FluentTag, formalism::DerivedTag>(
                                                 binding,
                                                 ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
                                                 merge_planning_context)

@@ -22,18 +22,18 @@
 
 namespace tyr::formalism::planning
 {
-template std::pair<datalog::PredicateBindingView<StaticTag>, bool>
-merge_p2d(PredicateBindingView<StaticTag> element, datalog::PredicateView<StaticTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
-merge_p2d(PredicateBindingView<FluentTag> element, datalog::PredicateView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
-merge_p2d(PredicateBindingView<DerivedTag> element, datalog::PredicateView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::FunctionBindingView<StaticTag>, bool>
-merge_p2d(FunctionBindingView<StaticTag> element, datalog::FunctionView<StaticTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::FunctionBindingView<FluentTag>, bool>
-merge_p2d(FunctionBindingView<FluentTag> element, datalog::FunctionView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::FunctionBindingView<FluentTag>, bool>
-merge_p2d(FunctionBindingView<AuxiliaryTag> element, datalog::FunctionView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::PredicateRowView<StaticTag>, bool>
+merge_p2d(PredicateRowView<StaticTag> element, datalog::PredicateView<StaticTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::PredicateRowView<FluentTag>, bool>
+merge_p2d(PredicateRowView<FluentTag> element, datalog::PredicateView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::PredicateRowView<FluentTag>, bool>
+merge_p2d(PredicateRowView<DerivedTag> element, datalog::PredicateView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::FunctionRowView<StaticTag>, bool>
+merge_p2d(FunctionRowView<StaticTag> element, datalog::FunctionView<StaticTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::FunctionRowView<FluentTag>, bool>
+merge_p2d(FunctionRowView<FluentTag> element, datalog::FunctionView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::FunctionRowView<FluentTag>, bool>
+merge_p2d(FunctionRowView<AuxiliaryTag> element, datalog::FunctionView<FluentTag> relation, WriteContext<datalog::Builder, datalog::Repository>& context);
 
 template std::pair<datalog::PredicateView<FluentTag>, bool> merge_p2d<DerivedTag, FluentTag>(PredicateView<DerivedTag> element,
                                                                                                    WriteContext<datalog::Builder, datalog::Repository>& context);
@@ -50,16 +50,16 @@ template std::pair<datalog::AtomView<LiftedTag, FluentTag>, bool>
 merge_p2d(AtomView<LiftedTag, DerivedTag> element,
           const urd::Store<urd::map<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>>& predicate_mapping,
           WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::PredicateBindingView<StaticTag>, bool>
-merge_p2d(PredicateBindingView<StaticTag> element,
+template std::pair<datalog::PredicateRowView<StaticTag>, bool>
+merge_p2d(PredicateRowView<StaticTag> element,
           const urd::Store<urd::map<PredicateView<StaticTag>, datalog::PredicateView<StaticTag>>>& predicate_mapping,
           WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
-merge_p2d(PredicateBindingView<FluentTag> element,
+template std::pair<datalog::PredicateRowView<FluentTag>, bool>
+merge_p2d(PredicateRowView<FluentTag> element,
           const urd::Store<urd::map<PredicateView<FluentTag>, datalog::PredicateView<FluentTag>>>& predicate_mapping,
           WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::PredicateBindingView<FluentTag>, bool>
-merge_p2d(PredicateBindingView<DerivedTag> element,
+template std::pair<datalog::PredicateRowView<FluentTag>, bool>
+merge_p2d(PredicateRowView<DerivedTag> element,
           const urd::Store<urd::map<PredicateView<DerivedTag>, datalog::PredicateView<FluentTag>>>& predicate_mapping,
           WriteContext<datalog::Builder, datalog::Repository>& context);
 
@@ -103,9 +103,9 @@ template std::pair<datalog::FunctionTermView<LiftedTag, FluentTag>, bool> merge_
 template std::pair<datalog::FunctionTermView<LiftedTag, FluentTag>, bool>
 merge_p2d<AuxiliaryTag, FluentTag>(FunctionTermView<LiftedTag, AuxiliaryTag> element, WriteContext<datalog::Builder, datalog::Repository>& context);
 
-template std::pair<datalog::FunctionBindingView<StaticTag>, bool> merge_p2d(FunctionBindingView<StaticTag> element, WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::FunctionBindingView<FluentTag>, bool> merge_p2d(FunctionBindingView<FluentTag> element, WriteContext<datalog::Builder, datalog::Repository>& context);
-template std::pair<datalog::FunctionBindingView<FluentTag>, bool> merge_p2d<AuxiliaryTag, FluentTag>(FunctionBindingView<AuxiliaryTag> element,
+template std::pair<datalog::FunctionRowView<StaticTag>, bool> merge_p2d(FunctionRowView<StaticTag> element, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::FunctionRowView<FluentTag>, bool> merge_p2d(FunctionRowView<FluentTag> element, WriteContext<datalog::Builder, datalog::Repository>& context);
+template std::pair<datalog::FunctionRowView<FluentTag>, bool> merge_p2d<AuxiliaryTag, FluentTag>(FunctionRowView<AuxiliaryTag> element,
                                                                                                             WriteContext<datalog::Builder, datalog::Repository>& context);
 
 template std::pair<datalog::FunctionTermView<GroundTag, StaticTag>, bool> merge_p2d(FunctionTermView<GroundTag, StaticTag> element,

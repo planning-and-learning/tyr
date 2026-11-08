@@ -28,11 +28,11 @@ namespace tyr::datalog
 template<typename T>
 concept RuleCostPolicyConcept = requires(T& policy,
                                          const T& const_policy,
-                                         formalism::datalog::RuleBindingView<formalism::PredicateTag> predicate_rule,
-                                         formalism::datalog::RuleBindingView<formalism::FunctionTag> function_rule,
-                                         formalism::datalog::RuleBindingIndex<formalism::PredicateTag> predicate_rule_key,
-                                         formalism::datalog::RuleBindingIndex<formalism::FunctionTag> function_rule_key,
-                                         formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
+                                         formalism::datalog::RuleRowView<formalism::PredicateTag> predicate_rule,
+                                         formalism::datalog::RuleRowView<formalism::FunctionTag> function_rule,
+                                         formalism::datalog::RuleRowIndex<formalism::PredicateTag> predicate_rule_key,
+                                         formalism::datalog::RuleRowIndex<formalism::FunctionTag> function_rule_key,
+                                         formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key,
                                          ygg::ClosedInterval<ygg::float_t> interval,
                                          Cost cost) {
     { const_policy.get_cost(predicate_rule) } -> std::same_as<Cost>;

@@ -42,7 +42,7 @@ void bind_formalism(nb::module_& m)
         nb::arg("parent_repository") = nullptr,
         nb::arg("num_objects") = nb::none(),
         nb::keep_alive<1, 2>());
-    bind_binding(m, repository);
+    bind_row(m, repository);
     bind_atom(m, repository);
     bind_literal(m, repository);
     bind_function_term(m, repository);

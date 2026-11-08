@@ -36,7 +36,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -95,7 +95,7 @@ public:
 
     void reset() noexcept;
 
-    void insert(formalism::datalog::PredicateBindingView<T> binding);
+    void insert(formalism::datalog::PredicateRowView<T> binding);
 
     bool operator[](const VertexAssignment& assignment) const noexcept;
     bool operator[](const EdgeAssignment& assignment) const noexcept;
@@ -119,8 +119,8 @@ public:
     void reset() noexcept;
 
     void insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
-    void insert(formalism::datalog::PredicateBindingView<T> binding);
-    void insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
+    void insert(formalism::datalog::PredicateRowView<T> binding);
+    void insert(formalism::datalog::PredicateRowForwardRangeView<T> bindings);
 
     [[nodiscard]] const PredicateAssignmentSet<T>& get_set(urd::index<formalism::Predicate<T>> index) const noexcept;
 
@@ -144,8 +144,8 @@ public:
 
     void reset() noexcept;
 
-    bool insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
-    bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
+    bool insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
+    bool insert(formalism::datalog::FunctionRowView<T> binding, ygg::float_t value);
     bool insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value);
 
     ygg::ClosedInterval<ygg::float_t> operator[](const EmptyAssignment& assignment) const noexcept;
@@ -171,7 +171,7 @@ public:
 
     void reset() noexcept;
 
-    bool insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
+    bool insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval);
     void insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values);

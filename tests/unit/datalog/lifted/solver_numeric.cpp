@@ -316,9 +316,9 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
     { return intern(urd::data<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>(atom.index(), true)); };
     const auto make_initial_atom = [&](auto predicate, std::initializer_list<urd::index<tyr::formalism::Object>> objects)
     {
-        auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+        auto binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         binding_data.relation = predicate.index();
-        binding_data.objects.insert(binding_data.objects.end(), objects.begin(), objects.end());
+        binding_data.values.insert(binding_data.values.end(), objects.begin(), objects.end());
         return intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(binding_data)).data()));
     };
 
@@ -362,7 +362,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
     const auto initial_ba = make_initial_atom(diagonal, { b.index(), a.index() });
     const auto initial_seed = make_initial_atom(seed, { b.index() });
 
-    auto goal_binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+    auto goal_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     goal_binding_data.relation = goal_predicate.index();
     const auto goal = intern(std::move(goal_binding_data));
 
@@ -435,9 +435,9 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
     { return intern(urd::data<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>(atom.index(), true)); };
     const auto make_binding = [&](auto predicate, std::initializer_list<urd::index<tyr::formalism::Object>> objects)
     {
-        auto data = urd::data<tyr::formalism::RelationBinding<FluentPredicate>>();
+        auto data = urd::data<ygg::Row<FluentPredicate>>();
         data.relation = predicate.index();
-        data.objects.insert(data.objects.end(), objects.begin(), objects.end());
+        data.values.insert(data.values.end(), objects.begin(), objects.end());
         return intern(std::move(data));
     };
     const auto make_initial_atom = [&](auto predicate, std::initializer_list<urd::index<tyr::formalism::Object>> objects)
@@ -537,9 +537,9 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
         const auto object = intern(urd::data<tyr::formalism::Object>(std::string(name)));
         program_data.objects.push_back(object.index());
 
-        auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+        auto binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         binding_data.relation = source.index();
-        binding_data.objects.push_back(object.index());
+        binding_data.values.push_back(object.index());
         const auto binding = intern(std::move(binding_data));
         program_data.fluent_atoms.push_back(
             intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.data())).index());
@@ -590,9 +590,9 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     auto second_variable = urd::data<tyr::formalism::Variable>(std::string("second-workspace-only"));
     EXPECT_TRUE(second.workspace_repository->insert(second_variable).second);
 
-    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+    auto binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     binding_data.relation = predicate.index();
-    binding_data.objects.push_back(object.index());
+    binding_data.values.push_back(object.index());
     const auto binding = first.workspace_repository->insert(binding_data).first;
     const auto binding_index = binding.data();
     first.annotations.insert_or_assign(binding.data(), tyr::datalog::BaseAnnotation(3));
@@ -603,9 +603,9 @@ TEST(TyrDatalogLiftedBottomUpTest, ProgramWorkspacesOwnIndependentRepositories)
     EXPECT_TRUE(second.workspace_repository->find(urd::data<tyr::formalism::Variable>(std::string("second-workspace-only"))).has_value());
     EXPECT_EQ(first.workspace_repository->parent(), &program.get_program_repository());
 
-    auto reused_binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+    auto reused_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     reused_binding_data.relation = predicate.index();
-    reused_binding_data.objects.push_back(object.index());
+    reused_binding_data.values.push_back(object.index());
     const auto reused_binding = first.workspace_repository->insert(reused_binding_data).first;
     EXPECT_EQ(reused_binding.data(), binding_index);
     EXPECT_EQ(first.annotations.find(reused_binding.data()), nullptr);
@@ -625,9 +625,9 @@ TEST(TyrDatalogLiftedBottomUpTest, PredicateAnnotationsUseRelationAndRowIndices)
     const auto second_object = intern(urd::data<tyr::formalism::Object>(std::string("b")));
     const auto make_binding = [&](auto predicate, auto object)
     {
-        auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+        auto data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         data.relation = predicate.index();
-        data.objects.push_back(object.index());
+        data.values.push_back(object.index());
         return intern(std::move(data));
     };
 
@@ -662,24 +662,24 @@ TEST(TyrDatalogLiftedBottomUpTest, DeltaAnnotationsAreConcurrentAndReusable)
     const auto second_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("second"), 1));
     const auto function = intern(urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("value"), 1));
 
-    auto first_bindings = urd::Store<urd::sequence<tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag>>> {};
-    auto second_bindings = urd::Store<urd::sequence<tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag>>> {};
-    auto function_bindings = urd::Store<urd::sequence<tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag>>> {};
+    auto first_bindings = urd::Store<urd::sequence<tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag>>> {};
+    auto second_bindings = urd::Store<urd::sequence<tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag>>> {};
+    auto function_bindings = urd::Store<urd::sequence<tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag>>> {};
     for (size_t i = 0; i < 64; ++i)
     {
         const auto object = intern(urd::data<tyr::formalism::Object>("o" + std::to_string(i)));
         const auto make_predicate_binding = [&](auto predicate)
         {
-            auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+            auto data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
             data.relation = predicate.index();
-            data.objects.push_back(object.index());
+            data.values.push_back(object.index());
             return intern(std::move(data));
         };
         const auto make_function_binding = [&](auto function_)
         {
-            auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>> {};
+            auto data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>> {};
             data.relation = function_.index();
-            data.objects.push_back(object.index());
+            data.values.push_back(object.index());
             return intern(std::move(data));
         };
         first_bindings.push_back(make_predicate_binding(first_predicate));

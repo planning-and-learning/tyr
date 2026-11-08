@@ -53,11 +53,11 @@ namespace
 
 struct LMCutNumericNode : urd::compared_by_identity<LMCutNumericNode>
 {
-    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
+    formalism::datalog::FunctionRowIndex<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     LMCutNumericNode() = delete;
-    LMCutNumericNode(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key_, ygg::ClosedInterval<ygg::float_t> interval_) :
+    LMCutNumericNode(formalism::datalog::FunctionRowIndex<formalism::FluentTag> key_, ygg::ClosedInterval<ygg::float_t> interval_) :
         key(key_),
         interval(std::move(interval_))
     {
@@ -90,10 +90,10 @@ struct LMCutImplementation :
                                       datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
-    using ActionBinding = formalism::planning::ActionBindingView;
-    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using ActionRow = formalism::planning::ActionRowView;
+    using PredicateHead = formalism::datalog::PredicateRowView<formalism::FluentTag>;
     using NumericNode = LMCutNumericNode;
-    using RuleEdge = formalism::datalog::RuleBindingIndex<formalism::PredicateTag>;
+    using RuleEdge = formalism::datalog::RuleRowIndex<formalism::PredicateTag>;
     using NumericEdge = datalog::NumericTransitionCostKey<formalism::FunctionTag>;
     using Precondition = std::variant<PredicateHead, NumericNode>;
     using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
@@ -109,7 +109,7 @@ private:
     datalog::Cost get_witness_edge_residual_cost(const datalog::WitnessAnnotation<R>& witness);
     datalog::Cost get_numeric_support_cost(const datalog::NumericSupport& support);
     void append_numeric_support_preconditions(const datalog::NumericSupport& support, datalog::Cost body_cost, urd::Store<urd::sequence<Precondition>>& result);
-    void use_action_cost(ActionBinding action_binding, datalog::Cost cost);
+    void use_action_cost(ActionRow action_binding, datalog::Cost cost);
     void use_rule_edge_cost(RuleEdge edge, datalog::Cost cost);
     void use_numeric_edge_cost(const NumericEdge& edge, datalog::Cost cost);
     void apply_residual_costs();
@@ -132,7 +132,7 @@ private:
     [[nodiscard]] bool use_numeric_edge_cuts() const noexcept { return m_use_numeric_edge_cuts; }
 
     bool m_use_numeric_edge_cuts;
-    urd::Store<urd::map<ActionBinding, datalog::Cost>> m_action_used_costs;
+    urd::Store<urd::map<ActionRow, datalog::Cost>> m_action_used_costs;
     urd::Store<urd::map<RuleEdge, datalog::Cost>> m_rule_edge_used_costs;
     urd::Store<urd::map<NumericEdge, datalog::Cost>> m_numeric_edge_used_costs;
     template<typename Node>
@@ -146,7 +146,7 @@ private:
     Nodes m_before_goal_zone;
     Nodes m_before_goal_zone_explored;
     urd::utils::Family<NodeDependents, PredicateHead, NumericNode> m_before_goal_zone_dependents;
-    urd::Store<urd::map<ActionBinding, datalog::Cost>> m_cut;
+    urd::Store<urd::map<ActionRow, datalog::Cost>> m_cut;
     urd::Store<urd::map<RuleEdge, datalog::Cost>> m_rule_cut;
     urd::Store<urd::map<NumericEdge, datalog::Cost>> m_numeric_cut;
     urd::Store<urd::sequence<urd::Store<urd::sequence<Precondition>>>, urd::stable_refs> m_max_precondition_buffers;
@@ -228,7 +228,7 @@ ygg::float_t LMCutImplementation<Kind>::evaluate(const urd::data<State<Kind>>& s
 }
 
 template<TaskKind Kind>
-void LMCutImplementation<Kind>::use_action_cost(ActionBinding action_binding, datalog::Cost cost)
+void LMCutImplementation<Kind>::use_action_cost(ActionRow action_binding, datalog::Cost cost)
 { m_action_used_costs[action_binding] += cost; }
 
 template<TaskKind Kind>

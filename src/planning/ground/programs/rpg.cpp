@@ -45,7 +45,7 @@
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -105,7 +105,7 @@ urd::index<formalism::NumericEffect<LiftedTag, formalism::FluentTag>> create_rul
 }
 
 template<formalism::RelationKind R, typename CreateHead>
-formalism::datalog::RuleBindingView<R> create_rule_binding(GroundProgramBuildContext& context, CreateHead&& create_head)
+formalism::datalog::RuleRowView<R> create_rule_binding(GroundProgramBuildContext& context, CreateHead&& create_head)
 {
     auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder);
     predicate->name = "ground_rule_" + std::to_string(context.next_rule_id++);
@@ -132,7 +132,7 @@ formalism::datalog::RuleBindingView<R> create_rule_binding(GroundProgramBuildCon
     rule->head_member() = std::forward<CreateHead>(create_head)(new_atom);
     const auto new_rule = formalism::datalog::insert(context.merge_context.destination(), *rule).first;
 
-    auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::datalog::Rule<LiftedTag, R>>>(context.builder);
+    auto binding = formalism::datalog::checkout<ygg::Row<formalism::datalog::Rule<LiftedTag, R>>>(context.builder);
     binding->relation = new_rule.index();
     return formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 }
@@ -147,14 +147,14 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
 
     context.program->fluent_predicates.push_back(new_predicate.index());
 
-    auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(context.builder);
+    auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::FluentTag>>>(context.builder);
     binding->relation = new_predicate.index();
     for (const auto object : action.get_objects())
-        binding->objects.push_back(object.index());
+        binding->values.push_back(object.index());
     const auto new_binding = formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 
     auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(context.builder);
-    atom->binding = new_binding.data();
+    atom->row = new_binding.data();
     return formalism::datalog::insert(context.merge_context.destination(), *atom).first;
 }
 
@@ -227,7 +227,7 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
                         ygg::float_t cost = 0)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag, formalism::PredicateTag>>(context.builder);
-    rule->binding = create_rule_binding<formalism::PredicateTag>(context,
+    rule->row = create_rule_binding<formalism::PredicateTag>(context,
                                                                  [](auto atom)
                                                                  {
                                                                      auto atoms = urd::flat_vector<urd::index<formalism::Atom<LiftedTag, formalism::FluentTag>>> {};
@@ -248,7 +248,7 @@ create_ground_numeric_effect_rule(formalism::datalog::ConjunctiveConditionView<G
 {
     const auto datalog_head = formalism::planning::merge_p2d(std::move(head), context.merge_context).first.index();
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag, formalism::FunctionTag>>(context.builder);
-    rule->binding = create_rule_binding<formalism::FunctionTag>(context, [&](auto) { return create_rule_binding_numeric_head(context); }).data();
+    rule->row = create_rule_binding<formalism::FunctionTag>(context, [&](auto) { return create_rule_binding_numeric_head(context); }).data();
     rule->body = body.index();
     rule->head = datalog_head;
     rule->cost = 1;

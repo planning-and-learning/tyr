@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
@@ -63,23 +63,23 @@ template<>
 struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>> index;
-    ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding;
+    ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> row;
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body;
     urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
 
     data() = default;
-    data(ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding_,
+    data(ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> row_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body_,
          urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
         index(),
-        binding(binding_),
+        row(row_),
         body(body_),
         head(head_)
     {
     }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::binding, &data::body, &data::head> {}; }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::binding> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, &data::head> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
 };
 
 }

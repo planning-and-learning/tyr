@@ -132,14 +132,14 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         { return intern(urd::data<tyr::formalism::Function<T>> { std::string(name), 0 }); };
         const auto ground_atom = [&]<tyr::formalism::FactKind T>(tyr::formalism::datalog::PredicateView<T> predicate_)
         {
-            auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<T>>> {};
+            auto binding = urd::data<ygg::Row<tyr::formalism::Predicate<T>>> {};
             binding.relation = predicate_.index();
             const auto binding_view = intern(std::move(binding));
             return intern(urd::data<tyr::formalism::Atom<::tyr::GroundTag, T>> { binding_view.data() });
         };
         const auto ground_fterm = [&]<tyr::formalism::FactKind T>(tyr::formalism::datalog::FunctionView<T> function_)
         {
-            auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<T>>> {};
+            auto binding = urd::data<ygg::Row<tyr::formalism::Function<T>>> {};
             binding.relation = function_.index();
             const auto binding_view = intern(std::move(binding));
             return intern(urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>> { binding_view.data() });
@@ -181,12 +181,12 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             lifted_rule_data.heads.push_back(lifted_atom(head.get_predicate()).index());
             const auto lifted_rule = intern(std::move(lifted_rule_data));
 
-            auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::PredicateTag>>> {};
+            auto binding_data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::PredicateTag>>> {};
             binding_data.relation = lifted_rule.index();
             const auto binding = intern(std::move(binding_data));
 
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>> {};
-            rule_data.binding = binding.data();
+            rule_data.row = binding.data();
             rule_data.body = body.index();
             rule_data.heads.push_back(head.index());
             return intern(std::move(rule_data));
@@ -204,7 +204,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             lifted_rule_data.head = lifted_effect.index();
             const auto lifted_rule = intern(std::move(lifted_rule_data));
 
-            auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::FunctionTag>>> {};
+            auto binding_data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::FunctionTag>>> {};
             binding_data.relation = lifted_rule.index();
             const auto binding = intern(std::move(binding_data));
             const auto effect = intern(urd::data<tyr::formalism::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>> {
@@ -213,7 +213,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
                 tyr::formalism::FunctionExpression<::tyr::GroundTag> { 1.0 } });
 
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>> {};
-            rule_data.binding = binding.data();
+            rule_data.row = binding.data();
             rule_data.body = body.index();
             rule_data.head = effect.index();
             return intern(std::move(rule_data));

@@ -48,7 +48,7 @@
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "yggdrasil/formalism/binding_view.hpp"
+#include "yggdrasil/formalism/row_view.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -105,7 +105,7 @@ struct AxiomWorkspace<LiftedTag>
 
     ygg::ExecutionContextPtr execution_context;
     std::unique_ptr<datalog::ProgramWorkspace<LiftedTag>> workspace;
-    urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>> derived_bindings;
+    urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>> derived_bindings;
 };
 }
 

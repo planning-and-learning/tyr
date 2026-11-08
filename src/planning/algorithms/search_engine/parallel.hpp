@@ -545,7 +545,7 @@ public:
                            BuilderPtr target,
                            const StateDelta& delta,
                            ygg::float_t auxiliary_value,
-                           formalism::planning::ActionBindingView action,
+                           formalism::planning::ActionRowView action,
                            Metadata metadata)
     {
         const auto metric = engine.evaluate_successor_metric(*target, auxiliary_value);

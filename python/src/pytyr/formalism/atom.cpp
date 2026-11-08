@@ -47,9 +47,9 @@ void bind_atom_data(nb::module_& m, const std::string& name)
     }
     else
     {
-        cls.def(urd::python::init_from_views<datalog::PredicateBindingView<F>>(), "binding"_a);
-        cls.def(urd::python::init_from_views<planning::PredicateBindingView<F>>(), "binding"_a);
-        cls.def(nb::init<ygg::formalism::RelationBindingIndex<Predicate<F>, ObjectTag>>(), "binding"_a);
+        cls.def(urd::python::init_from_views<datalog::PredicateRowView<F>>(), "binding"_a);
+        cls.def(urd::python::init_from_views<planning::PredicateRowView<F>>(), "binding"_a);
+        cls.def(nb::init<ygg::RowIndex<Predicate<F>>>(), "binding"_a);
     }
     ygg::add_print(cls);
     urd::python::add_comparison(cls);

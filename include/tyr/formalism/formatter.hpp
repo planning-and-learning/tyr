@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_FORMATTER_HPP_
 #define TYR_FORMALISM_FORMATTER_HPP_
 
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
@@ -45,13 +45,13 @@ std::string to_string(const urd::data<Function<StaticTag>>& value);
 std::string to_string(const urd::data<Function<FluentTag>>& value);
 std::string to_string(const urd::data<Function<AuxiliaryTag>>& value);
 
-std::string to_string(const urd::data<RelationBinding<Predicate<StaticTag>>>& value);
-std::string to_string(const urd::data<RelationBinding<Predicate<FluentTag>>>& value);
-std::string to_string(const urd::data<RelationBinding<Predicate<DerivedTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Predicate<StaticTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Predicate<FluentTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Predicate<DerivedTag>>>& value);
 
-std::string to_string(const urd::data<RelationBinding<Function<StaticTag>>>& value);
-std::string to_string(const urd::data<RelationBinding<Function<FluentTag>>>& value);
-std::string to_string(const urd::data<RelationBinding<Function<AuxiliaryTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Function<StaticTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Function<FluentTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Function<AuxiliaryTag>>>& value);
 
 std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
 std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
@@ -140,12 +140,12 @@ struct formatter<urd::data<T>, char>
 };
 
 template<typename Tag>
-struct formatter<ygg::formalism::RelationBindingIndex<Tag, tyr::formalism::ObjectTag>, char>
+struct formatter<ygg::RowIndex<Tag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template<typename FormatContext>
-    auto format(const ygg::formalism::RelationBindingIndex<Tag, tyr::formalism::ObjectTag>& value, FormatContext& ctx) const
+    auto format(const ygg::RowIndex<Tag>& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "<{},{}>", value.relation, value.row); }
 };
 

@@ -166,7 +166,7 @@ try
     if (expected != applicable)
         throw std::runtime_error("Selected schema match tree disagrees with global filtering.");
 
-    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>> {};
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionRowView>> {};
     auto successors = tyr::planning::LabeledNodeList<GroundTag> {};
     auto executor = tyr::planning::ActionExecutor {};
     const auto generate = [&]

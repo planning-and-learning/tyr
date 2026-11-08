@@ -41,7 +41,7 @@ struct RPGPolicy<GroundTag>
 
     template<typename Workspace>
     static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<GroundTag>& definition, Workspace&, formalism::datalog::PredicateBindingView<formalism::FluentTag> head)
+    translate_cut_atom(const RPGDefinition<GroundTag>& definition, Workspace&, formalism::datalog::PredicateRowView<formalism::FluentTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_atom;
         if (const auto it = mapping.find(head); it != mapping.end())

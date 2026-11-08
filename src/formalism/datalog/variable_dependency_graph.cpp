@@ -22,7 +22,7 @@
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"

@@ -85,8 +85,8 @@ std::string to_string(const urd::data<Metric>& value);
 std::string to_string(const urd::data<Task<LiftedTag>>& value);
 std::string to_string(const urd::data<Domain>& value);
 std::string to_string(const urd::data<Task<GroundTag>>& value);
-std::string to_string(const urd::data<RelationBinding<Action<LiftedTag>>>& value);
-std::string to_string(const urd::data<RelationBinding<Axiom<LiftedTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Action<LiftedTag>>>& value);
+std::string to_string(const urd::data<ygg::Row<Axiom<LiftedTag>>>& value);
 
 /// Each symbol type's view (SymbolRepositoryTypes) and each relation's binding view (RelationRepositoryTypes) as text;
 /// instantiated for these lists in formatter.cpp.
@@ -95,9 +95,9 @@ template<typename T>
 std::string to_string(urd::index_view<T, Repository> value);
 template<typename R>
     requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
-std::string to_string(::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<R, ::tyr::formalism::ObjectTag>, Repository> value);
+std::string to_string(ygg::RowView<R, Repository> value);
 std::string to_string(TermView value);
-std::string to_string(ActionBindingDataView value);
+std::string to_string(ActionRowDataView value);
 
 std::string to_string(FDRFactView<FluentTag> value);
 std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value);
@@ -146,7 +146,7 @@ struct formatter<tyr::formalism::OptimizationDirection, char>
 namespace tyr::formalism::planning
 {
 
-std::string to_string(const std::pair<ActionBindingView, PlanFormatting>& value);
+std::string to_string(const std::pair<ActionRowView, PlanFormatting>& value);
 std::string to_string(const std::pair<ActionView<GroundTag>, PlanFormatting>& value);
 
 }  // namespace tyr::formalism::planning

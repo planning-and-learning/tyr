@@ -123,7 +123,7 @@ public:
     }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding,
+    void notify_numeric_changed(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding,
                                 [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     { activate(binding.relation); }
 

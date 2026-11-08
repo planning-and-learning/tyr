@@ -32,7 +32,7 @@
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_data.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -49,6 +49,8 @@ namespace tyr::formalism::datalog
 // yggdrasil's overloads for lists of indices: found by ordinary lookup, as the standard's two-step `using std::swap`
 // (ADL does not find them for urd::index, whose namespace is urd's).
 using ygg::canonicalize;
+// tyr::formalism's overloads, e.g. for rows: ygg::Row<F> of a family of this namespace does not bring them by ADL.
+using ::tyr::formalism::canonicalize;
 
 template<TaskKind T>
 void canonicalize(urd::data<ConjunctiveCondition<T>>& data)

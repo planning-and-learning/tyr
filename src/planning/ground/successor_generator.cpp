@@ -40,7 +40,7 @@
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -76,7 +76,7 @@ namespace
 using Source = SourceNode<GroundTag>;
 using Builder = urd::builder<State<GroundTag>>;
 using BuilderNode = Node<GroundTag, BuilderStateView<GroundTag>>;
-using Bindings = urd::Store<urd::sequence<formalism::planning::ActionBindingView>>;
+using Bindings = urd::Store<urd::sequence<formalism::planning::ActionRowView>>;
 
 void validate_task(const TaskPtr<GroundTag>& task, const StateRepository<GroundTag>& state_repository)
 {
@@ -136,7 +136,7 @@ auto append_packed(Out& out)
 
 struct SuccessorGenerator<GroundTag>::Impl
 {
-    using ActionBindingMap = urd::Store<urd::map<formalism::planning::ActionBindingView, formalism::planning::ActionView<GroundTag>>>;
+    using ActionBindingMap = urd::Store<urd::map<formalism::planning::ActionRowView, formalism::planning::ActionView<GroundTag>>>;
     using ActionMatchTrees = urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, match_tree::MatchTreePtr<formalism::planning::Action<GroundTag>>>>;
     using MatchTree = match_tree::MatchTree<formalism::planning::Action<GroundTag>>;
 
@@ -159,7 +159,7 @@ struct SuccessorGenerator<GroundTag>::Impl
         formalism::planning::ActionViewList<GroundTag> applicable_actions;
         ActionExecutor executor;
         StateDelta successor_delta;
-        urd::data<formalism::RelationBinding<formalism::planning::Action<LiftedTag>>> checked_binding;
+        urd::data<ygg::Row<formalism::planning::Action<LiftedTag>>> checked_binding;
     };
 
     explicit Impl(TaskPtr<GroundTag> task) : definition(std::make_shared<Definition>(std::move(task))), evaluator(*definition) {}
@@ -676,9 +676,9 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
 
     auto& scratch = evaluator.checked_binding;
     scratch.relation = action.index();
-    scratch.objects.clear();
+    scratch.values.clear();
     for (const auto object : indices)
-        scratch.objects.push_back(object);
+        scratch.values.push_back(object);
     const auto binding = task->get_repository()->find(scratch);
     if (!binding)
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
@@ -691,7 +691,7 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     return { ActionBindingStatus::APPLICABLE, binding };
 }
 
-template<ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
 ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, Binding binding)
 {
     if constexpr (requires { binding.context().owner(binding.data()); })
@@ -700,13 +700,13 @@ ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_bin
     return m_impl->try_get_applicable_action_binding(node, binding.get_relation(), binding.get_objects());
 }
 
-template<ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
 ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, Binding binding)
 {
     return try_get_applicable_action_binding(node, binding).status;
 }
 
-formalism::planning::ActionBindingView SuccessorGenerator<GroundTag>::materialize_action_binding(BorrowedActionBindingView<GroundTag> binding)
+formalism::planning::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_binding(BorrowedActionRowView<GroundTag> binding)
 {
     const auto& repository = *m_impl->definition->task->get_repository();
     if (!ygg::formalism::contains(repository, binding))
@@ -725,7 +725,7 @@ formalism::planning::ActionBindingView SuccessorGenerator<GroundTag>::materializ
 }
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Source& node,
-                                                                  formalism::planning::ActionBindingView binding,
+                                                                  formalism::planning::ActionRowView binding,
                                                                   StateRepository<GroundTag>& storage,
                                                                   AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
@@ -733,7 +733,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Source& 
 }
 
 BuilderNode SuccessorGenerator<GroundTag>::get_successor_node(const Source& node,
-                                                              formalism::planning::ActionBindingView binding,
+                                                              formalism::planning::ActionRowView binding,
                                                               Builder& storage,
                                                               AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
@@ -802,7 +802,7 @@ void SuccessorGenerator<GroundTag>::get_applicable_action_bindings(const Source&
 }
 
 bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Source& node,
-                                                                       const std::function<bool(formalism::planning::ActionBindingView)>& callback)
+                                                                       const std::function<bool(formalism::planning::ActionRowView)>& callback)
 {
     validate_task(m_impl->definition->task, node);
     return m_impl->for_each_applicable_action(node, *m_impl->evaluator.action_match_tree, [&](const auto action) { return callback(action.get_row()); });
@@ -810,7 +810,7 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Sou
 
 bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Source& node,
                                                                        formalism::planning::ActionView<LiftedTag> action,
-                                                                       const std::function<bool(formalism::planning::ActionBindingView)>& callback)
+                                                                       const std::function<bool(formalism::planning::ActionRowView)>& callback)
 {
     validate_task(m_impl->definition->task, node);
     auto& tree = m_impl->get_schema_match_tree(action);
@@ -818,22 +818,22 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Sou
 }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
-                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback)
+                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
 {
     return for_each_applicable_action_binding(node, callback);
 }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
-                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback)
+                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
 {
     return for_each_applicable_action_binding(node, action, callback);
 }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
-                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& accept,
-                                                                                const std::function<bool(BorrowedActionBindingView<GroundTag>)>& callback,
+                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& accept,
+                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback,
                                                                                 const std::function<bool()>& stop)
 {
     validate_task(m_impl->definition->task, node);
@@ -858,7 +858,7 @@ PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_node(StateReposi
 }
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Source& node,
-                                                                               formalism::planning::ActionBindingView binding,
+                                                                               formalism::planning::ActionRowView binding,
                                                                                StateRepository<GroundTag>& state_repository,
                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
@@ -874,7 +874,7 @@ PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(c
 }
 
 ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Source& node,
-                                                                     formalism::planning::ActionBindingView binding,
+                                                                     formalism::planning::ActionRowView binding,
                                                                      Builder& out_state,
                                                                      StateDelta& out_delta)
 {
@@ -906,7 +906,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRep
     return Node<GroundTag>(state_repository.register_state(axiom_evaluator, std::move(state), parent, delta), metric);
 }
 
-formalism::planning::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(formalism::planning::ActionBindingView binding) const
+formalism::planning::ActionView<GroundTag> SuccessorGenerator<GroundTag>::ground_action(formalism::planning::ActionRowView binding) const
 {
     const auto it = m_impl->definition->action_binding_to_ground_action.find(binding);
     assert(it != m_impl->definition->action_binding_to_ground_action.end() && "Ground action binding not found.");
@@ -926,11 +926,11 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_node(StateRepository<GroundTa
 
 const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexcept { return m_impl->definition->task; }
 
-template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionBindingView binding);
-template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionBindingDataView binding);
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionRowView binding);
+template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionRowDataView binding);
 template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node,
-                                                                                              formalism::planning::ActionBindingView binding);
+                                                                                              formalism::planning::ActionRowView binding);
 template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node,
-                                                                                              formalism::planning::ActionBindingDataView binding);
+                                                                                              formalism::planning::ActionRowDataView binding);
 
 }

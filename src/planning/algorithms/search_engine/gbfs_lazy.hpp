@@ -167,7 +167,7 @@ public:
     }
 
     [[nodiscard]] SuccessorMetadata
-    make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView action) const
+    make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionRowView action) const
     {
         // Successors are applicable in the evaluated state, so the preferred ones are its relaxed plan's applicable actions.
         const auto preferred = m_relaxed_plan && m_relaxed_plan->contains(action);
@@ -263,7 +263,7 @@ private:
     ygg::uint_t m_step { 0 };
     ygg::float_t m_start_h_value { 0 };
     ygg::float_t m_state_h_value { 0 };
-    const urd::Store<urd::set<formalism::planning::ActionBindingView>>* m_relaxed_plan { nullptr };
+    const urd::Store<urd::set<formalism::planning::ActionRowView>>* m_relaxed_plan { nullptr };
     urd::Store<urd::sequence<SearchNode>, urd::stable_refs> m_search_nodes;
     std::array<Queue, 2> m_openlists;
     std::array<size_t, 2> m_weights { 1, 1 };

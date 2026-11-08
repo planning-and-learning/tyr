@@ -38,27 +38,27 @@ namespace tyr::formalism::planning
 {
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<PredicateBindingView<T_DST>, bool> merge_d2p(datalog::PredicateBindingView<T_SRC> element,  //
+std::pair<PredicateRowView<T_DST>, bool> merge_d2p(datalog::PredicateRowView<T_SRC> element,  //
                                                        const urd::Store<urd::map<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>>& predicate_mapping,
                                                        WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<RelationBinding<Predicate<T_DST>>>(context.builder());
+    auto binding = planning::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 
     binding->relation = predicate_mapping.at(element.get_relation()).index();
     for (const auto object : element.get_objects())
-        binding->objects.push_back(object.index());
+        binding->values.push_back(object.index());
 
     return planning::insert(context.destination(), *binding);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<AtomView<GroundTag, T_DST>, bool> merge_atom_d2p(datalog::PredicateBindingView<T_SRC> element,  //
+std::pair<AtomView<GroundTag, T_DST>, bool> merge_atom_d2p(datalog::PredicateRowView<T_SRC> element,  //
                                                            const urd::Store<urd::map<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>>& predicate_mapping,
                                                            WriteContext<Builder, Repository>& context)
 {
     auto atom = planning::checkout<Atom<GroundTag, T_DST>>(context.builder());
 
-    atom->binding = merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first.data();
+    atom->row = merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first.data();
 
     return planning::insert(context.destination(), *atom);
 }
@@ -69,28 +69,28 @@ std::pair<AtomView<GroundTag, T_DST>, bool> merge_atom_d2p(datalog::PredicateBin
 
 namespace tyr::formalism::planning
 {
-extern template std::pair<PredicateBindingView<StaticTag>, bool>
-merge_d2p(datalog::PredicateBindingView<StaticTag> element,
+extern template std::pair<PredicateRowView<StaticTag>, bool>
+merge_d2p(datalog::PredicateRowView<StaticTag> element,
           const urd::Store<urd::map<datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>>& predicate_mapping,
           WriteContext<Builder, Repository>& context);
-extern template std::pair<PredicateBindingView<FluentTag>, bool>
-merge_d2p(datalog::PredicateBindingView<FluentTag> element,
+extern template std::pair<PredicateRowView<FluentTag>, bool>
+merge_d2p(datalog::PredicateRowView<FluentTag> element,
           const urd::Store<urd::map<datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>>& predicate_mapping,
           WriteContext<Builder, Repository>& context);
-extern template std::pair<PredicateBindingView<DerivedTag>, bool>
-merge_d2p(datalog::PredicateBindingView<FluentTag> element,
+extern template std::pair<PredicateRowView<DerivedTag>, bool>
+merge_d2p(datalog::PredicateRowView<FluentTag> element,
           const urd::Store<urd::map<datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>>& predicate_mapping,
           WriteContext<Builder, Repository>& context);
 extern template std::pair<AtomView<GroundTag, StaticTag>, bool>
-merge_atom_d2p<StaticTag, StaticTag>(datalog::PredicateBindingView<StaticTag> element,
+merge_atom_d2p<StaticTag, StaticTag>(datalog::PredicateRowView<StaticTag> element,
                                      const urd::Store<urd::map<datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>>& predicate_mapping,
                                      WriteContext<Builder, Repository>& context);
 extern template std::pair<AtomView<GroundTag, FluentTag>, bool>
-merge_atom_d2p<FluentTag, FluentTag>(datalog::PredicateBindingView<FluentTag> element,
+merge_atom_d2p<FluentTag, FluentTag>(datalog::PredicateRowView<FluentTag> element,
                                      const urd::Store<urd::map<datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>>& predicate_mapping,
                                      WriteContext<Builder, Repository>& context);
 extern template std::pair<AtomView<GroundTag, DerivedTag>, bool>
-merge_atom_d2p<FluentTag, DerivedTag>(datalog::PredicateBindingView<FluentTag> element,
+merge_atom_d2p<FluentTag, DerivedTag>(datalog::PredicateRowView<FluentTag> element,
                                       const urd::Store<urd::map<datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>>& predicate_mapping,
                                       WriteContext<Builder, Repository>& context);
 }

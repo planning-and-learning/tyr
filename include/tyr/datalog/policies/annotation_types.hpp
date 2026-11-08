@@ -52,12 +52,12 @@ namespace tyr::datalog
 
 struct NumericSupport : urd::compared_by_identity<NumericSupport>
 {
-    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
+    formalism::datalog::FunctionRowIndex<formalism::FluentTag> key;
     ygg::ClosedInterval<ygg::float_t> interval;
     Cost cost;
 
     NumericSupport() = delete;
-    NumericSupport(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key_, ygg::ClosedInterval<ygg::float_t> interval_, Cost cost_) :
+    NumericSupport(formalism::datalog::FunctionRowIndex<formalism::FluentTag> key_, ygg::ClosedInterval<ygg::float_t> interval_, Cost cost_) :
         key(key_),
         interval(std::move(interval_)),
         cost(cost_)
@@ -78,9 +78,9 @@ private:
     using NumericSupports = urd::Store<urd::sequence<NumericSupport>>;
 
 public:
-    WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost);
-    WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost, NumericSupports numeric_supports);
-    WitnessAnnotation(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost, std::span<const NumericSupport> numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost);
+    WitnessAnnotation(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost, NumericSupports numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost, std::span<const NumericSupport> numeric_supports);
 
     [[nodiscard]] auto get_rule_key() const noexcept { return rule_key; }
     [[nodiscard]] auto get_cost() const noexcept { return cost; }
@@ -90,26 +90,26 @@ public:
     { return urd::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost, &WitnessAnnotation::numeric_supports> {}; }
 
 private:
-    formalism::datalog::RuleBindingIndex<R> rule_key;
+    formalism::datalog::RuleRowIndex<R> rule_key;
     Cost cost;
     NumericSupports numeric_supports;
 };
 
-using PredicateRuleBinding = formalism::datalog::RuleBindingIndex<formalism::PredicateTag>;
+using PredicateRuleRow = formalism::datalog::RuleRowIndex<formalism::PredicateTag>;
 
 struct PredicateAchiever
 {
-    formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
+    formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
     WitnessAnnotation<formalism::PredicateTag> witness;
 };
 
 struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey>
 {
-    PredicateRuleBinding rule_key;
-    formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head;
+    PredicateRuleRow rule_key;
+    formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
 
     PredicateAchieverKey() = default;
-    PredicateAchieverKey(PredicateRuleBinding rule_key_, formalism::datalog::PredicateBindingIndex<formalism::FluentTag> head_) :
+    PredicateAchieverKey(PredicateRuleRow rule_key_, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head_) :
         rule_key(rule_key_),
         head(head_)
     {
@@ -233,8 +233,8 @@ public:
     static constexpr bool thread_safe = ThreadSafe;
 
     using Key = std::conditional_t<std::same_as<R, formalism::PredicateTag>,
-                                   formalism::datalog::PredicateBindingIndex<formalism::FluentTag>,
-                                   formalism::datalog::FunctionBindingIndex<formalism::FluentTag>>;
+                                   formalism::datalog::PredicateRowIndex<formalism::FluentTag>,
+                                   formalism::datalog::FunctionRowIndex<formalism::FluentTag>>;
     using Relation = decltype(std::declval<Key>().relation);
     using Row = decltype(std::declval<Key>().row);
 
@@ -316,7 +316,7 @@ public:
     static constexpr bool thread_safe = ThreadSafe;
 
     /// Both engines key predicate annotations by the fluent predicate binding.
-    using Key = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using Key = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
     PredicateAnnotationMap()
         requires(!ThreadSafe)
@@ -420,7 +420,7 @@ public:
     static constexpr bool thread_safe = ThreadSafe;
 
 private:
-    using Binding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
+    using Binding = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
     using Entry = NumericIntervalAnnotation;
 
 public:
@@ -529,7 +529,7 @@ concept PredicateAnnotationStore = requires(T& store, const T& const_store, type
 template<typename T>
 concept FunctionAnnotationStore = requires(T& store,
                                            const T& const_store,
-                                           formalism::datalog::FunctionBindingIndex<formalism::FluentTag> binding,
+                                           formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding,
                                            ygg::ClosedInterval<ygg::float_t> interval,
                                            Annotation<formalism::FunctionTag> annotation) {
     { const_store.fetch_cost(binding, interval) } -> std::same_as<Cost>;
@@ -542,7 +542,7 @@ concept FunctionAnnotationStore = requires(T& store,
 class StagedPredicateAnnotation
 {
 public:
-    using Key = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using Key = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
     void clear() noexcept { m_entries.clear(); }
 
@@ -584,7 +584,7 @@ private:
 class StagedFunctionAnnotation
 {
 public:
-    using Binding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
+    using Binding = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
 
     void clear() noexcept { m_entry.reset(); }
 

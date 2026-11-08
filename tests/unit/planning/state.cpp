@@ -358,7 +358,7 @@ auto derived_names(const tyr::planning::StateView<Kind>& state)
 template<TaskKind Kind>
 void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
                                   const tyr::planning::StateView<Kind>& registered,
-                                  tyr::formalism::planning::ActionBindingView label)
+                                  tyr::formalism::planning::ActionRowView label)
 {
     const auto num_states = registered.get_state_repository().num_states();
     auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
@@ -383,21 +383,21 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto nodes = tyr::planning::NodeList<Kind, tyr::planning::BuilderStateView<Kind>> { node };
     const auto labeled_nodes = tyr::planning::LabeledNodeList<Kind, tyr::planning::BuilderStateView<Kind>> { labeled };
 
-    auto binding_data = urd::data<formalism::RelationBinding<tyr::formalism::planning::Action<LiftedTag>>> {};
+    auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<LiftedTag>>> {};
     binding_data.relation = label.get_relation().index();
     for (const auto object : label.get_objects())
-        binding_data.objects.push_back(object.index());
+        binding_data.values.push_back(object.index());
     const auto borrowed_label = urd::resolve(binding_data, label.context());
     const auto borrowed_labeled =
-        tyr::planning::LabeledNode<Kind, tyr::planning::BuilderStateView<Kind>, tyr::formalism::planning::ActionBindingDataView> { borrowed_label, node };
+        tyr::planning::LabeledNode<Kind, tyr::planning::BuilderStateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label, node };
     const auto indexed_labeled = tyr::planning::LabeledNode<Kind> { label, tyr::planning::Node<Kind>(registered, 3) };
     const auto borrowed_indexed_labeled =
-        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionBindingDataView> { borrowed_label,
+        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label,
                                                                                                                             indexed_labeled.node };
     static_assert(Packable<decltype(indexed_labeled)>);
     static_assert(!Packable<decltype(borrowed_labeled)> && !Packable<decltype(borrowed_indexed_labeled)>);
     const auto borrowed_labeled_nodes =
-        tyr::planning::LabeledNodeList<Kind, tyr::planning::BuilderStateView<Kind>, tyr::formalism::planning::ActionBindingDataView> { borrowed_labeled };
+        tyr::planning::LabeledNodeList<Kind, tyr::planning::BuilderStateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_labeled };
     EXPECT_EQ(&borrowed_labeled_nodes.front().label.data(), &binding_data);
     EXPECT_EQ(&borrowed_indexed_labeled.label.data(), &binding_data);
     EXPECT_EQ(indexed_labeled.pack().unpack().label, label);
@@ -505,7 +505,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
 
     const auto num_variables = task->get_fdr_context()->get_variables().size();
     auto predicate_data = urd::data<formalism::Predicate<formalism::FluentTag>>(std::string("unregistered"), 0);
-    auto atom_binding_data = urd::data<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>> {};
+    auto atom_binding_data = urd::data<ygg::Row<formalism::Predicate<formalism::FluentTag>>> {};
     atom_binding_data.relation = tyr::formalism::planning::insert(*task->get_repository(), predicate_data).first.index();
     auto atom_data = urd::data<tyr::formalism::Atom<GroundTag, formalism::FluentTag>>(
         tyr::formalism::planning::insert(*task->get_repository(), atom_binding_data).first.data());

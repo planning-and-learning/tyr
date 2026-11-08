@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_data.hpp"
@@ -61,7 +61,7 @@ public:
     { return get_row().get_relation(); }
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::binding>(); }
+    { return self().template get<&urd::record_of<V>::row>(); }
     auto get_objects() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_objects(); }

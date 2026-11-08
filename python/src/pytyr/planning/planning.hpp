@@ -303,7 +303,7 @@ void bind_labeled_node(nb::module_& m, const std::string& name)
     using T = LabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<formalism::planning::ActionBindingView, Node<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
+                   .def(nb::init<formalism::planning::ActionRowView, Node<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
                    .def_ro("node", &T::node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
                    .def("pack", &T::pack, nb::keep_alive<0, 1>());
@@ -317,7 +317,7 @@ void bind_packed_labeled_node(nb::module_& m, const std::string& name)
     using T = PackedLabeledNode<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def(nb::init<formalism::planning::ActionBindingView, PackedNode<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
+                   .def(nb::init<formalism::planning::ActionRowView, PackedNode<Kind>>(), "label"_a, "node"_a, nb::keep_alive<1, 3>())
                    .def_ro("label", &T::label, nb::rv_policy::reference_internal)
                    .def_ro("node", &T::node, nb::rv_policy::copy, nb::keep_alive<0, 1>())
                    .def("unpack", &T::unpack, nb::keep_alive<0, 1>());
@@ -467,7 +467,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
            "get_successor_node",
            [](T& self,
               const Node<Kind>& node,
-              formalism::planning::ActionBindingView binding,
+              formalism::planning::ActionRowView binding,
               StateRepository<Kind>& state_repository,
               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_successor_node(node, binding, state_repository, axiom_evaluator); },
            "node"_a,
@@ -538,7 +538,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
            "get_packed_successor_node",
            [](T& self,
               const Node<Kind>& node,
-              formalism::planning::ActionBindingView binding,
+              formalism::planning::ActionRowView binding,
               StateRepository<Kind>& state_repository,
               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_successor_node(node, binding, state_repository, axiom_evaluator); },
            "node"_a,
@@ -798,13 +798,13 @@ public:
     HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 
     /// A Python override returns None or a set; the set is kept here so the returned pointer stays valid until the next call.
-    const urd::Store<urd::set<formalism::planning::ActionBindingView>>* get_relaxed_plan() const override
+    const urd::Store<urd::set<formalism::planning::ActionRowView>>* get_relaxed_plan() const override
     {
         constexpr uint64_t nb_hash = nanobind::detail::str_hash("get_relaxed_plan");
         nanobind::detail::ticket nb_ticket(nb_trampoline, "get_relaxed_plan", nb_hash, false);
         if (!nb_ticket.key.is_valid())
             return Base::get_relaxed_plan();
-        m_relaxed_plan = nb::cast<std::optional<urd::Store<urd::set<formalism::planning::ActionBindingView>>>>(nb_trampoline.base().attr(nb_ticket.key)());
+        m_relaxed_plan = nb::cast<std::optional<urd::Store<urd::set<formalism::planning::ActionRowView>>>>(nb_trampoline.base().attr(nb_ticket.key)());
         return m_relaxed_plan ? &*m_relaxed_plan : nullptr;
     }
 
@@ -812,7 +812,7 @@ private:
     // The inherited constructors keep the access of the base constructors.
     NB_TRAMPOLINE(Base);
 
-    mutable std::optional<urd::Store<urd::set<formalism::planning::ActionBindingView>>> m_relaxed_plan;
+    mutable std::optional<urd::Store<urd::set<formalism::planning::ActionRowView>>> m_relaxed_plan;
 };
 
 template<TaskKind Kind>
@@ -830,7 +830,7 @@ void bind_heuristic(nb::module_& m, const std::string& name)
             "state"_a,
             nb::call_guard<nb::gil_scoped_release>())
         .def("get_relaxed_plan",
-             [](const T& self) -> std::optional<urd::Store<urd::set<formalism::planning::ActionBindingView>>>
+             [](const T& self) -> std::optional<urd::Store<urd::set<formalism::planning::ActionRowView>>>
              {
                  const auto* plan = self.get_relaxed_plan();
                  return plan ? std::optional(*plan) : std::nullopt;

@@ -72,7 +72,7 @@ def test_function_fact_value_iterator_preserves_pairing() -> None:
     entries = list(values)
     assert len(entries) == fact_set.count() == 1
     match entries[0]:
-        case (formalism_datalog.FluentFunctionBinding() as binding, float() as value):
+        case (formalism_datalog.FluentFunctionRow() as binding, float() as value):
             assert value == 0.0
         case entry:
             pytest.fail(f"expected a (binding, value) pair, got {entry!r}")

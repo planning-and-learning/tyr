@@ -32,7 +32,7 @@
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_data.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -51,7 +51,7 @@ namespace
 struct RuleBindingFixture
 {
     tyr::formalism::datalog::RuleView<LiftedTag, tyr::formalism::PredicateTag> rule;
-    tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> binding;
+    tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> binding;
 };
 
 RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository& repository)
@@ -77,7 +77,7 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
     const auto [rule, rule_success] = ygg::formalism::insert(repository, rule_builder);
     EXPECT_TRUE(rule_success);
 
-    auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
+    auto binding_builder = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
     binding_builder.relation = rule.index();
     const auto [binding, binding_success] = ygg::formalism::insert(repository, binding_builder);
     EXPECT_TRUE(binding_success);
@@ -85,14 +85,14 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
     return { rule, binding };
 }
 
-tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> make_nullary_function_binding(tyr::formalism::datalog::Repository& repository,
+tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> make_nullary_function_binding(tyr::formalism::datalog::Repository& repository,
                                                                                                       const char* name)
 {
     auto function_builder = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string(name), 0);
     const auto [function, function_success] = ygg::formalism::insert(repository, function_builder);
     EXPECT_TRUE(function_success);
 
-    auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
+    auto binding_builder = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
     binding_builder.relation = function.index();
     const auto [binding, binding_success] = ygg::formalism::insert(repository, binding_builder);
     EXPECT_TRUE(binding_success);
@@ -104,7 +104,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
 {
     auto repository = tyr::formalism::datalog::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
-    auto predicate_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+    auto predicate_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     predicate_data.relation = fixture.rule.get_heads().front().get_predicate().index();
     const auto predicate = repository.insert(predicate_data).first;
     const auto function = make_nullary_function_binding(repository, "value");

@@ -32,7 +32,7 @@ from pytyr.formalism.planning import (
     FluentLiteral,
     FluentLiteralData,
     FluentPredicate,
-    FluentPredicateBindingData,
+    FluentPredicateRowData,
     FluentPredicateData,
     GroundConjunctiveConditionData,
     LiftedPlanningTask,
@@ -49,7 +49,7 @@ from pytyr.formalism.planning import (
     StaticLiteral,
     StaticLiteralData,
     StaticPredicate,
-    StaticPredicateBindingData,
+    StaticPredicateRowData,
     StaticPredicateData,
     Variable,
     VariableData,
@@ -133,7 +133,7 @@ def make_static_ground_atom(
     repository: Repository, predicate: StaticPredicate, objects: Sequence[Object]
 ) -> StaticGroundAtom:
     """Insert the static ground atom of `predicate` over `objects`."""
-    binding = repository.insert(StaticPredicateBindingData(predicate, objects))[0]
+    binding = repository.insert(StaticPredicateRowData(predicate, objects))[0]
     return repository.insert(StaticGroundAtomData(binding))[0]
 
 
@@ -141,7 +141,7 @@ def make_fluent_ground_atom(
     repository: Repository, predicate: FluentPredicate, objects: Sequence[Object]
 ) -> FluentGroundAtom:
     """Insert the fluent ground atom of `predicate` over `objects`."""
-    binding = repository.insert(FluentPredicateBindingData(predicate, objects))[0]
+    binding = repository.insert(FluentPredicateRowData(predicate, objects))[0]
     return repository.insert(FluentGroundAtomData(binding))[0]
 
 

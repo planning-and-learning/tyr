@@ -38,21 +38,21 @@ namespace
 {
 using GroundAtomViews = urd::Store<urd::sequence<tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag>>>;
 using StaticGroundAtomViews = urd::Store<urd::sequence<tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::StaticTag>>>;
-using PredicateBindingViews = urd::Store<urd::sequence<tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag>>>;
+using PredicateRowViews = urd::Store<urd::sequence<tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag>>>;
 
 template<typename Context>
-PredicateBindingViews binding_views(const Context& ctx)
+PredicateRowViews binding_views(const Context& ctx)
 {
-    auto result = PredicateBindingViews {};
+    auto result = PredicateRowViews {};
     for (const auto& set : ctx.out().facts().fact_sets.predicate.get_sets())
         for (const auto binding : set.get_bindings())
             result.push_back(binding);
     return result;
 }
 
-PredicateBindingViews binding_views(std::initializer_list<tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag>> atoms)
+PredicateRowViews binding_views(std::initializer_list<tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag>> atoms)
 {
-    auto result = PredicateBindingViews {};
+    auto result = PredicateRowViews {};
     for (const auto atom : atoms)
         result.push_back(atom.get_row());
     return result;
@@ -78,7 +78,7 @@ struct GroundQueueFixture
         if (predicate_inserted)
             fluent_predicates.push_back(predicate.index());
 
-        auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+        auto binding_builder = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         binding_builder.relation = predicate.index();
         const auto [binding, binding_inserted] = ygg::formalism::insert(repository, binding_builder);
         (void) binding_inserted;
@@ -101,7 +101,7 @@ struct GroundQueueFixture
         if (predicate_inserted)
             static_predicates.push_back(predicate.index());
 
-        auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>();
+        auto binding_builder = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>();
         binding_builder.relation = predicate.index();
         const auto binding = ygg::formalism::insert(repository, binding_builder).first;
 
@@ -122,7 +122,7 @@ struct GroundQueueFixture
         const auto function = ygg::formalism::insert(repository, function_builder).first;
         fluent_functions.push_back(function.index());
 
-        auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
+        auto binding_builder = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
         binding_builder.relation = function.index();
         const auto binding = ygg::formalism::insert(repository, binding_builder).first;
 
@@ -164,7 +164,7 @@ struct GroundQueueFixture
         return ygg::formalism::insert(repository, condition_builder).first;
     }
 
-    tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> fresh_rule_binding()
+    tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> fresh_rule_binding()
     {
         auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>("dummy_" + std::to_string(next_rule_id++), 0);
         const auto predicate = ygg::formalism::insert(repository, predicate_builder).first;
@@ -181,7 +181,7 @@ struct GroundQueueFixture
         rule_builder.heads.push_back(atom.index());
         const auto rule = ygg::formalism::insert(repository, rule_builder).first;
 
-        auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
+        auto binding_builder = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
         binding_builder.relation = rule.index();
         return ygg::formalism::insert(repository, binding_builder).first;
     }
@@ -189,10 +189,10 @@ struct GroundQueueFixture
     tyr::formalism::datalog::RuleView<GroundTag, tyr::formalism::PredicateTag>
     rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body,
          tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> head,
-         tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> binding)
+         tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> binding)
     {
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::PredicateTag>>();
-        rule_builder.binding = binding.data();
+        rule_builder.row = binding.data();
         rule_builder.body = body.index();
         rule_builder.heads.push_back(head.index());
         const auto ground_rule = ygg::formalism::insert(repository, rule_builder).first;
@@ -207,11 +207,11 @@ struct GroundQueueFixture
     tyr::formalism::datalog::RuleView<GroundTag, tyr::formalism::PredicateTag>
     rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body,
          tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> head,
-         tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> binding,
+         tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> binding,
          ygg::float_t cost)
     {
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::PredicateTag>>();
-        rule_builder.binding = binding.data();
+        rule_builder.row = binding.data();
         rule_builder.body = body.index();
         rule_builder.heads.push_back(head.index());
         rule_builder.cost = cost;
@@ -245,7 +245,7 @@ struct GroundQueueFixture
         lifted_rule_builder.head = lifted_effect.index();
         const auto lifted_rule = ygg::formalism::insert(repository, lifted_rule_builder).first;
 
-        auto binding_builder = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>>();
+        auto binding_builder = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>>();
         binding_builder.relation = lifted_rule.index();
         const auto binding = ygg::formalism::insert(repository, binding_builder).first;
 
@@ -256,7 +256,7 @@ struct GroundQueueFixture
         const auto effect = ygg::formalism::insert(repository, effect_builder).first;
 
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::FunctionTag>>();
-        rule_builder.binding = binding.data();
+        rule_builder.row = binding.data();
         rule_builder.body = body.index();
         rule_builder.head = effect.index();
         rule_builder.cost = cost;
@@ -306,7 +306,7 @@ rule_indices(const urd::Store<urd::sequence<tyr::formalism::datalog::RuleView<Gr
 
 struct SolvedGroundQueue
 {
-    PredicateBindingViews fluent_bindings;
+    PredicateRowViews fluent_bindings;
     datalog::GroundQueueStatistics statistics;
 };
 
@@ -1002,7 +1002,7 @@ TEST(TyrDatalogGroundQueueTest, StaticLiteralsUseTheirPolarityAndInitialTruth)
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    auto expected = PredicateBindingViews {};
+    auto expected = PredicateRowViews {};
     for (const auto rule : program.get_rules<tyr::formalism::PredicateTag>())
         expected.push_back(rule.get_heads().front().get_row());
     EXPECT_EQ(binding_views(ctx), expected);

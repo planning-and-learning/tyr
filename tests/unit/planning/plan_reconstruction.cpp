@@ -570,7 +570,7 @@ void expect_action_sequence_replay(const tyr::planning::TaskPtr<Kind>& task)
         EXPECT_EQ(empty.get_cost(), 0);
 
         auto node = start.unpack();
-        auto actions = urd::Store<urd::sequence<formalism::planning::ActionBindingView>> {};
+        auto actions = urd::Store<urd::sequence<formalism::planning::ActionRowView>> {};
         for (const auto name : { "first", "second" })
         {
             const auto applicable = generator->get_applicable_action_bindings(node);

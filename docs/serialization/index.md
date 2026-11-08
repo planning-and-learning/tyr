@@ -8,7 +8,7 @@ A reference combines its table prefix and zero-based row position. For example, 
 {
   "atoms": {
     "prefix": "a",
-    "rows": [{"binding": "b0"}]
+    "rows": [{"row": "b0"}]
   },
   "bindings": {
     "prefix": "b",
@@ -34,7 +34,7 @@ Use a native type's `Fields` enum to inspect the ordered default column names wi
 ```python
 from pytyr.formalism import planning as fp
 
-list(fp.ActionBinding.Fields.__members__)  # ["relation", "objects"]
+list(fp.ActionRow.Fields.__members__)  # ["relation", "objects"]
 ```
 
 This describes the native declaration; registration's `fields` selection and `project` callback do not change it.
@@ -43,8 +43,8 @@ Each native class exposes a nested `Fields` enum generated from the same C++ dec
 
 ```python
 register_table(
-    dictionaries, fp.ActionBinding, "actions", "a",
-    fields=[fp.ActionBinding.Fields.objects],
+    dictionaries, fp.ActionRow, "actions", "a",
+    fields=[fp.ActionRow.Fields.objects],
 )
 ```
 
@@ -55,7 +55,7 @@ Pass `project` to define a complete row with your own column names and values:
 ```python
 register_table(
     dictionaries,
-    fp.ActionBinding,
+    fp.ActionRow,
     "actions",
     "a",
     project=lambda binding: {

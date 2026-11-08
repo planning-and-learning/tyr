@@ -47,10 +47,9 @@ void bind_formalism(nb::module_& m)
         .value("ScaleDown", NumericEffectOperatorKind::ScaleDown);
 
     bind_parameter(m);
-    bind_row(m);
     bind_object(m);
     bind_variable(m);
-    bind_binding(m);
+    bind_row(m);
     bind_predicate(m);
     bind_function(m);
     bind_atom(m);

@@ -33,7 +33,7 @@
 #include <utility>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/binding_key.hpp>
+#include <yggdrasil/formalism/row_key.hpp>
 
 namespace tyr::datalog
 {
@@ -42,7 +42,7 @@ template<formalism::RelationKind R>
 struct ActionCostLookup
 {
     formalism::planning::ActionView<LiftedTag> action;
-    formalism::datalog::RuleBindingView<R> rule_binding;
+    formalism::datalog::RuleRowView<R> rule_binding;
 
     [[nodiscard]] auto get_key() const
     {
@@ -55,13 +55,13 @@ struct ActionCostLookup
 template<formalism::RelationKind R>
 struct NumericTransitionCostKey : urd::compared_by_identity<NumericTransitionCostKey<R>>
 {
-    formalism::datalog::RuleBindingIndex<R> rule_key;
-    formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key;
+    formalism::datalog::RuleRowIndex<R> rule_key;
+    formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key;
     ygg::ClosedInterval<ygg::float_t> interval;
 
     NumericTransitionCostKey() = default;
-    NumericTransitionCostKey(formalism::datalog::RuleBindingIndex<R> rule_key_,
-                             formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key_,
+    NumericTransitionCostKey(formalism::datalog::RuleRowIndex<R> rule_key_,
+                             formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key_,
                              ygg::ClosedInterval<ygg::float_t> interval_) :
         rule_key(rule_key_),
         numeric_key(numeric_key_),
@@ -106,8 +106,8 @@ public:
 template<formalism::RelationKind R>
 class RuleCostOverrideStorage
 {
-    using RuleKey = formalism::datalog::RuleBindingIndex<R>;
-    using NumericKey = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
+    using RuleKey = formalism::datalog::RuleRowIndex<R>;
+    using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
     using CostMap = urd::Store<urd::map<RuleKey, Cost>>;
     using NumericTransitionCostMap = urd::Store<urd::map<NumericTransitionCostKey<R>, Cost>>;
 
@@ -155,7 +155,7 @@ class RuleCostOverridePolicy
 {
 public:
     template<formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
 
 private:
@@ -173,7 +173,7 @@ public:
 
     /// Takes the rule binding as a view: the lifted action cost reads the binding's objects.
     template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_cost(formalism::datalog::RuleBindingView<R> rule_key) const
+    [[nodiscard]] Cost get_cost(formalism::datalog::RuleRowView<R> rule_key) const
     {
         const auto& costs = storage(R {}).get_costs();
         if (const auto it = costs.find(rule_key.data()); it != costs.end())
@@ -182,8 +182,8 @@ public:
     }
 
     template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_cost(formalism::datalog::RuleBindingIndex<R> rule_key,
-                                formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
+    [[nodiscard]] Cost get_cost(formalism::datalog::RuleRowIndex<R> rule_key,
+                                formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key,
                                 ygg::ClosedInterval<ygg::float_t> interval) const
     { return storage(R {}).get_cost(rule_key, numeric_key, std::move(interval)); }
 
@@ -194,15 +194,15 @@ public:
         m_action_costs.clear();
     }
 
-    void set_action_cost(formalism::planning::ActionBindingView action, Cost cost) { m_action_costs.insert_or_assign(action, cost); }
+    void set_action_cost(formalism::planning::ActionRowView action, Cost cost) { m_action_costs.insert_or_assign(action, cost); }
 
     template<formalism::RelationKind R>
-    void set_cost(formalism::datalog::RuleBindingIndex<R> rule_key, Cost cost)
+    void set_cost(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost)
     { storage(R {}).set_cost(rule_key, cost); }
 
     template<formalism::RelationKind R>
-    void set_cost(formalism::datalog::RuleBindingIndex<R> rule_key,
-                  formalism::datalog::FunctionBindingIndex<formalism::FluentTag> numeric_key,
+    void set_cost(formalism::datalog::RuleRowIndex<R> rule_key,
+                  formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key,
                   ygg::ClosedInterval<ygg::float_t> interval,
                   Cost cost)
     { storage(R {}).set_cost(rule_key, numeric_key, std::move(interval), cost); }
@@ -217,7 +217,7 @@ private:
     [[nodiscard]] const auto* mapping(formalism::FunctionTag) const noexcept { return m_function_rule_to_action; }
 
     template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleBindingView<R> rule_binding) const
+    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView<R> rule_binding) const
         requires std::same_as<Kind, GroundTag>
     {
         const auto* rule_to_action = mapping(R {});
@@ -232,7 +232,7 @@ private:
     }
 
     template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleBindingView<R> rule_binding) const
+    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView<R> rule_binding) const
         requires std::same_as<Kind, LiftedTag>
     {
         const auto* rule_to_action = mapping(R {});
@@ -250,7 +250,7 @@ private:
     RuleCostOverrideStorage<formalism::FunctionTag> function_storage;
     const RuleToActionMapping<formalism::PredicateTag>* m_predicate_rule_to_action { nullptr };
     const RuleToActionMapping<formalism::FunctionTag>* m_function_rule_to_action { nullptr };
-    gtl::flat_hash_map<formalism::planning::ActionBindingView, Cost, ygg::formalism::BindingKeyHash, ygg::formalism::BindingKeyEqualTo> m_action_costs;
+    gtl::flat_hash_map<formalism::planning::ActionRowView, Cost, ygg::RowKeyHash, ygg::RowKeyEqualTo> m_action_costs;
 };
 
 }

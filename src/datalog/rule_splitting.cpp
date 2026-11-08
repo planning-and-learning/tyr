@@ -35,7 +35,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -264,11 +264,11 @@ private:
                 if (objects.insert(object).second)
                 {
                     auto domain_binding =
-                        formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
+                        formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
                     domain_binding->relation = new_predicate;
-                    domain_binding->objects.push_back(object);
+                    domain_binding->values.push_back(object);
                     auto ground_atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-                    ground_atom->binding = formalism::datalog::insert(m_context->destination(), *domain_binding).first.data();
+                    ground_atom->row = formalism::datalog::insert(m_context->destination(), *domain_binding).first.data();
                     m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *ground_atom).first.index());
                 }
             }

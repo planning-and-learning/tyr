@@ -48,8 +48,8 @@ struct FFRPGHeuristic<Kind>::Impl :
 {
     using Base =
         detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
-    using PredicateHead = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
-    using FunctionHead = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateRowView<formalism::FluentTag>;
+    using FunctionHead = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
     using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace;
 
     struct NumericCertificate : urd::compared_by_identity<NumericCertificate>
@@ -160,10 +160,10 @@ private:
             extract_relaxed_plan(support.get_key(), support.get_interval());
     }
 
-    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<formalism::Row>>, urd::dense, urd::proportional_clear>>> m_predicate_markings;
+    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>> m_predicate_markings;
     urd::Store<urd::set<NumericCertificate>> m_numeric_markings;
     NumericSupportWorkspace m_numeric_support_workspace;
-    urd::Store<urd::set<formalism::planning::ActionBindingView>> m_relaxed_plan;
+    urd::Store<urd::set<formalism::planning::ActionRowView>> m_relaxed_plan;
 };
 
 template<TaskKind Kind>
@@ -203,7 +203,7 @@ HeuristicPtr<Kind> FFRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr ex
 { return HeuristicPtr<Kind>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
 template<TaskKind Kind>
-const urd::Store<urd::set<formalism::planning::ActionBindingView>>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
+const urd::Store<urd::set<formalism::planning::ActionRowView>>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
 { return &m_impl->get_relaxed_plan(); }
 
 template<TaskKind Kind>

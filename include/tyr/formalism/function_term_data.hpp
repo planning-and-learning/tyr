@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_FUNCTION_TERM_DATA_HPP_
 #define TYR_FORMALISM_FUNCTION_TERM_DATA_HPP_
 
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
@@ -59,13 +59,13 @@ template<::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>
 {
     urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> index;
-    ygg::formalism::RelationBindingIndex<::tyr::formalism::Function<F>, ::tyr::formalism::ObjectTag> binding;
+    ygg::RowIndex<::tyr::formalism::Function<F>> row;
 
     data() = default;
-    data(ygg::formalism::RelationBindingIndex<::tyr::formalism::Function<F>, ::tyr::formalism::ObjectTag> binding_) : index(), binding(binding_) {}
+    data(ygg::RowIndex<::tyr::formalism::Function<F>> row_) : index(), row(row_) {}
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::binding> {}; }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::binding> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
 };
 
 }

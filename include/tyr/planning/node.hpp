@@ -19,7 +19,7 @@
 #define TYR_PLANNING_NODE_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
@@ -85,21 +85,21 @@ private:
     ygg::float_t m_metric;
 };
 
-template<TaskKind Kind, StateViewConcept<Kind> State, ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
+template<TaskKind Kind, StateViewConcept<Kind> State, ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
 struct LabeledNode
 {
     Binding label;
     Node<Kind, State> node;
 
     [[nodiscard]] auto pack() const noexcept(noexcept(node.pack()))
-        requires std::same_as<Binding, formalism::planning::ActionBindingView> && requires(const Node<Kind, State>& value) { value.pack(); }
+        requires std::same_as<Binding, formalism::planning::ActionRowView> && requires(const Node<Kind, State>& value) { value.pack(); }
     { return PackedLabeledNode<Kind> { label, node.pack() }; }
 };
 
 template<TaskKind Kind>
 struct PackedLabeledNode
 {
-    formalism::planning::ActionBindingView label;
+    formalism::planning::ActionRowView label;
     PackedNode<Kind> node;
 
 

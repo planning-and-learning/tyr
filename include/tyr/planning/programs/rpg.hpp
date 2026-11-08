@@ -34,7 +34,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -74,7 +74,7 @@ public:
     using Task = formalism::planning::TaskView<Kind>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
     template<formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
     template<formalism::RelationKind R>
     using RuleToActionMapping = urd::Store<urd::map<Rule<R>, Action>>;
 

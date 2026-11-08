@@ -39,12 +39,12 @@ namespace
 {
 TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
 {
-    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>(),
+    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>(),
               (urd::Store<urd::sequence<std::string>> { "relation", "objects" }));
     EXPECT_EQ((ygg::serialization::fields<tyr::formalism::planning::AtomView<LiftedTag, tyr::formalism::FluentTag>>()),
               (urd::Store<urd::sequence<std::string>> { "predicate", "terms" }));
     EXPECT_EQ((ygg::serialization::fields<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>()),
-              (urd::Store<urd::sequence<std::string>> { "binding" }));
+              (urd::Store<urd::sequence<std::string>> { "row" }));
 
     auto dictionaries = ygg::serialization::Dictionaries {};
     const auto selected_fields = std::optional<urd::Store<urd::sequence<std::string>>>(std::in_place);
@@ -100,7 +100,7 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     const auto atom = make_atom(repository, "truck");
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a");
-    dictionaries.register_table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>("bindings", "b");
+    dictionaries.register_table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>("bindings", "b");
     dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p");
     dictionaries.register_table<tyr::formalism::planning::ObjectView>("objects", "o");
 
@@ -108,14 +108,14 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
     EXPECT_EQ(dictionaries.serialize(atom).as_string(), "a0");
     const auto atoms = dictionaries.table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>();
     ASSERT_EQ(atoms.size(), 1);
-    EXPECT_EQ(atoms[0].as_object().at("binding").as_string(), "b0");
-    const auto binding = dictionaries.table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>()[0].as_object();
+    EXPECT_EQ(atoms[0].as_object().at("row").as_string(), "b0");
+    const auto binding = dictionaries.table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>()[0].as_object();
     EXPECT_EQ(binding.at("relation").as_string(), "p0");
     EXPECT_EQ(binding.at("objects").as_array()[0].as_string(), "o0");
     auto binding_fields = urd::Store<urd::sequence<std::string>> {};
     for (const auto& field : binding)
         binding_fields.emplace_back(field.key().data(), field.key().size());
-    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>(), binding_fields);
+    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>(), binding_fields);
     EXPECT_EQ(dictionaries.table<tyr::formalism::planning::ObjectView>()[0].as_object().at("name").as_string(), "truck");
     const auto before = dictionaries.tables();
     const auto other = make_atom(repository, "van");
@@ -134,13 +134,13 @@ TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
     for (const auto& fields : { urd::Store<urd::sequence<std::string>> { "objects" }, urd::Store<urd::sequence<std::string>> {} })
     {
         auto dictionaries = ygg::serialization::Dictionaries {};
-        dictionaries.register_table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>("bindings", "b", fields);
+        dictionaries.register_table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>("bindings", "b", fields);
         dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p");
         dictionaries.register_table<tyr::formalism::planning::ObjectView>("objects", "o");
 
         EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
         EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
-        const auto rows = dictionaries.table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>();
+        const auto rows = dictionaries.table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>();
         ASSERT_EQ(rows.size(), 1);
         EXPECT_EQ(rows[0].as_object().size(), fields.size());
         EXPECT_TRUE(dictionaries.table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>().empty());
@@ -158,7 +158,7 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
     const auto binding = make_atom(repository, "truck").get_row();
     auto dictionaries = ygg::serialization::Dictionaries {};
     size_t calls = 0;
-    dictionaries.register_table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>("bindings",
+    dictionaries.register_table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>("bindings",
                                                                                                            "b",
                                                                                                            std::nullopt,
                                                                                                            [&](auto& ar, const auto& value)
@@ -175,7 +175,7 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
     EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
     EXPECT_EQ(dictionaries.serialize(binding).as_string(), "b0");
     EXPECT_EQ(calls, 1);
-    EXPECT_EQ(dictionaries.table<tyr::formalism::planning::PredicateBindingView<tyr::formalism::FluentTag>>()[0].as_object(),
+    EXPECT_EQ(dictionaries.table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>()[0].as_object(),
               (boost::json::object { { "predicate_name", "at" }, { "arguments", boost::json::array { "o0" } }, { "text", ygg::to_string(binding) } }));
     EXPECT_TRUE(dictionaries.table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>().empty());
     EXPECT_EQ(dictionaries.table<tyr::formalism::planning::ObjectView>()[0].as_object().at("name").as_string(), "truck");
@@ -203,7 +203,7 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
         {
             const auto message = std::string(error.what());
             EXPECT_TRUE(message.starts_with("Unregistered serialization type: "));
-            EXPECT_NE(message.find(nested ? "RelationBinding" : "Atom"), std::string::npos);
+            EXPECT_NE(message.find(nested ? "RowIndex" : "Atom"), std::string::npos) << message;
         }
         EXPECT_THROW(incomplete.serialize(first), std::logic_error);
         EXPECT_THROW(incomplete.tables(), std::logic_error);

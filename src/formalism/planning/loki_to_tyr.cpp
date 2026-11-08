@@ -44,7 +44,7 @@
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -316,13 +316,13 @@ template<typename T, std::ranges::sized_range Range, typename Translate>
 auto to_binding(urd::index_view<T, Repository> element, const Range& terms, Builder& builder, Repository& context, Translate translate)
 {
     if (std::ranges::size(terms) != element.get_arity())
-        throw std::invalid_argument("RelationBinding object count does not match relation arity.");
+        throw std::invalid_argument("Row value count does not match relation arity.");
 
-    auto binding = planning::checkout<RelationBinding<T>>(builder);
+    auto binding = planning::checkout<ygg::Row<T>>(builder);
     binding->relation = element.index();
-    binding->objects.reserve(std::ranges::size(terms));
+    binding->values.reserve(std::ranges::size(terms));
     for (const auto term : terms)
-        binding->objects.push_back(translate(term));
+        binding->values.push_back(translate(term));
     return planning::insert(context, *binding);
 }
 
@@ -856,7 +856,7 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
         [&]<FactKind Tag>(PredicateView<Tag> predicate) -> GroundAtomViewVariant
         {
             auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
-            atom->binding =
+            atom->row =
                 to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.data();
             return planning::insert(context, *atom).first;
@@ -999,7 +999,7 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
         [&]<FactKind Tag>(FunctionView<Tag> function) -> GroundFunctionTermViewVariant
         {
             auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
-            fterm->binding =
+            fterm->row =
                 to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
                     .first.data();
             return planning::insert(context, *fterm).first;

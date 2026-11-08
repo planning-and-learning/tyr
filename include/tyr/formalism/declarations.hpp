@@ -124,7 +124,6 @@ struct ObjectTag
 };
 
 using Object = ::ygg::formalism::Object<ObjectTag>;
-using Row = ::ygg::formalism::Row;
 
 /// A term: an object, or a parameter of the enclosing rule or action. Stored as it is, not interned; read through a
 /// repository (urd::resolve) as std::variant<ObjectView, ParameterIndex>; printed as the alternative it
@@ -132,17 +131,16 @@ using Row = ::ygg::formalism::Row;
 using Term = urd::flat_variant<urd::index<Object>, ParameterIndex>;
 using TermList = urd::flat_vector<Term>;
 
-template<typename T>
-using RelationBinding = ::ygg::formalism::RelationBinding<T, ObjectTag>;
-
 template<FactKind T>
 struct Predicate
 {
+    using object_tag = ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 template<FactKind T>
 struct Function
 {
+    using object_tag = ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 /**

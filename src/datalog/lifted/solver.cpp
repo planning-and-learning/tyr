@@ -55,7 +55,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -119,7 +119,7 @@ public:
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
 
 private:
-    using GoalAtom = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using GoalAtom = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
     /// Enables the goal cutoff where stopping an iteration early keeps every witness: positive fluent goals without numeric
     /// constraints, propositional rules only, one stratum, and annotations without achievers.
@@ -387,9 +387,9 @@ private:
         auto missing = false;
         for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
-            auto binding = formalism::datalog::checkout<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder());
+            auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder());
             binding->relation = head_atom.get_predicate().index();
-            formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->objects);
+            formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->values);
             const auto head =
                 intern ? std::optional(formalism::datalog::insert(ground_context.destination(), *binding).first) : ground_context.destination().find(*binding);
             if (!head)

@@ -148,8 +148,8 @@ std::string relation_binding(View value)
 }
 
 template<typename Tag>
-std::string relation_binding(const urd::data<RelationBinding<Tag>>& value)
-{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
+std::string relation_binding(const urd::data<ygg::Row<Tag>>& value)
+{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
 
 }  // namespace
 }  // namespace detail
@@ -256,7 +256,7 @@ std::string to_string(const urd::data<Action<GroundTag>>& value)
                               [&](auto& os)
                               {
                                   detail::field(os, "index = ", value.index);
-                                  detail::field(os, "binding = ", value.binding);
+                                  detail::field(os, "row = ", value.row);
                                   detail::field(os, "condition = ", value.condition);
                                   detail::field(os, "effects = ", value.effects);
                               });
@@ -280,7 +280,7 @@ std::string to_string(const urd::data<Axiom<GroundTag>>& value)
                               [&](auto& os)
                               {
                                   detail::field(os, "index = ", value.index);
-                                  detail::field(os, "binding = ", value.binding);
+                                  detail::field(os, "row = ", value.row);
                                   detail::field(os, "body = ", value.body);
                                   detail::field(os, "head = ", value.head);
                               });
@@ -353,8 +353,8 @@ std::string to_string(const urd::data<Task<GroundTag>>& value)
                               });
 }
 
-std::string to_string(const urd::data<RelationBinding<Action<LiftedTag>>>& value) { return detail::relation_binding(value); }
-std::string to_string(const urd::data<RelationBinding<Axiom<LiftedTag>>>& value) { return detail::relation_binding(value); }
+std::string to_string(const urd::data<ygg::Row<Action<LiftedTag>>>& value) { return detail::relation_binding(value); }
+std::string to_string(const urd::data<ygg::Row<Axiom<LiftedTag>>>& value) { return detail::relation_binding(value); }
 
 static std::string as_text(VariableView value) { return detail::named(value); }
 static std::string as_text(ObjectView value) { return detail::named(value); }
@@ -365,17 +365,17 @@ static std::string as_text(PredicateView<DerivedTag> value) { return detail::sym
 static std::string as_text(FunctionView<StaticTag> value) { return detail::symbol(value); }
 static std::string as_text(FunctionView<FluentTag> value) { return detail::symbol(value); }
 static std::string as_text(FunctionView<AuxiliaryTag> value) { return detail::symbol(value); }
-static std::string as_text(PredicateBindingView<StaticTag> value) { return detail::relation_binding(value); }
-static std::string as_text(PredicateBindingView<FluentTag> value) { return detail::relation_binding(value); }
-static std::string as_text(PredicateBindingView<DerivedTag> value) { return detail::relation_binding(value); }
-static std::string as_text(FunctionBindingView<StaticTag> value) { return detail::relation_binding(value); }
-static std::string as_text(FunctionBindingView<FluentTag> value) { return detail::relation_binding(value); }
-static std::string as_text(FunctionBindingView<AuxiliaryTag> value) { return detail::relation_binding(value); }
+static std::string as_text(PredicateRowView<StaticTag> value) { return detail::relation_binding(value); }
+static std::string as_text(PredicateRowView<FluentTag> value) { return detail::relation_binding(value); }
+static std::string as_text(PredicateRowView<DerivedTag> value) { return detail::relation_binding(value); }
+static std::string as_text(FunctionRowView<StaticTag> value) { return detail::relation_binding(value); }
+static std::string as_text(FunctionRowView<FluentTag> value) { return detail::relation_binding(value); }
+static std::string as_text(FunctionRowView<AuxiliaryTag> value) { return detail::relation_binding(value); }
 
-static std::string as_text(ActionBindingView value) { return detail::relation_binding(value); }
-std::string to_string(ActionBindingDataView value) { return detail::relation_binding(value); }
+static std::string as_text(ActionRowView value) { return detail::relation_binding(value); }
+std::string to_string(ActionRowDataView value) { return detail::relation_binding(value); }
 
-static std::string as_text(AxiomBindingView value) { return fmt::format("{}", fmt::join(ygg::to_strings(value.get_objects()), " ")); }
+static std::string as_text(AxiomRowView value) { return fmt::format("{}", fmt::join(ygg::to_strings(value.get_objects()), " ")); }
 
 static std::string as_text(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
 static std::string as_text(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
@@ -617,7 +617,7 @@ std::string to_string(const PlanningDomain& value) { return fmt::format("{}", va
 std::string to_string(const PlanningTask<LiftedTag>& value) { return fmt::format("{}", value.get_task()); }
 std::string to_string(const PlanningTask<GroundTag>& value) { return fmt::format("{}", value.get_task()); }
 
-std::string to_string(const std::pair<ActionBindingView, PlanFormatting>& value)
+std::string to_string(const std::pair<ActionRowView, PlanFormatting>& value)
 {
     auto result = fmt::format("({}", value.first.get_relation().get_original_name());
     for (std::size_t i = 0; i < value.first.get_relation().get_original_arity(); ++i)
@@ -637,7 +637,7 @@ std::string to_string(urd::index_view<T, Repository> value)
 
 template<typename R>
     requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
-std::string to_string(::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<R, ::tyr::formalism::ObjectTag>, Repository> value)
+std::string to_string(ygg::RowView<R, Repository> value)
 { return as_text(value); }
 
 TYR_VIEW_TO_STRINGS(57, 8)

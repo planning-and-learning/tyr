@@ -47,7 +47,7 @@
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -63,7 +63,7 @@ namespace tyr::formalism::planning
  */
 
 template<FactKind T>
-std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<T> function, WriteContext<Builder, Repository>& context);
+std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> function, WriteContext<Builder, Repository>& context);
 
 template<FactKind T>
 std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
@@ -78,7 +78,7 @@ std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<Lift
 std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> element, WriteContext<Builder, Repository>& context);
 
 template<FactKind T>
-std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, WriteContext<Builder, Repository>& context);
+std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, WriteContext<Builder, Repository>& context);
 
 template<FactKind T>
 std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context);
@@ -99,7 +99,7 @@ std::pair<ConjunctiveEffectView<GroundTag>, bool> ground(ConjunctiveEffectView<L
 
 std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffectView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr);
 
-std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, WriteContext<Builder, Repository>& context);
+std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, WriteContext<Builder, Repository>& context);
 
 /// Grounds the action binding in the context with its effects grounded for each completed binding that
 /// `for_each_effect_binding(effect, callback)` puts into the context's binding before calling `callback`.
@@ -107,7 +107,7 @@ template<typename ForEachEffectBinding>
 std::pair<ActionView<GroundTag>, bool>
 ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr, ForEachEffectBinding for_each_effect_binding);
 
-std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, WriteContext<Builder, Repository>& context);
+std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteContext<Builder, Repository>& context);
 
 std::pair<AxiomView<GroundTag>, bool>
 ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr);
@@ -127,9 +127,9 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
  */
 
 template<FactKind T>
-std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<T> function, WriteContext<Builder, Repository>& context)
+std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> function, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<RelationBinding<Function<T>>>(context.builder());
+    auto binding = planning::checkout<ygg::Row<Function<T>>>(context.builder());
 
     binding->relation = function.index();
     for (const auto term : terms)
@@ -138,9 +138,9 @@ std::pair<FunctionBindingView<T>, bool> ground(TermListView terms, FunctionView<
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.index());
+                    binding->values.push_back(arg.index());
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -158,7 +158,7 @@ std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTa
     auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
     // Fill data
-    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.data();
+    fterm->row = ground(element.get_terms(), element.get_function(), context).first.data();
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *fterm);
@@ -220,9 +220,9 @@ inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
 }
 
 template<FactKind T>
-std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, WriteContext<Builder, Repository>& context)
+std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T> predicate, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<RelationBinding<Predicate<T>>>(context.builder());
+    auto binding = planning::checkout<ygg::Row<Predicate<T>>>(context.builder());
 
     binding->relation = predicate.index();
     for (const auto term : terms)
@@ -231,9 +231,9 @@ std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateVie
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.index());
+                    binding->values.push_back(arg.index());
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -251,7 +251,7 @@ std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, W
     auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
 
     // Fill data
-    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.data();
+    atom->row = ground(element.get_terms(), element.get_predicate(), context).first.data();
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *atom);
@@ -357,13 +357,13 @@ inline std::pair<ConditionalEffectView<GroundTag>, bool> ground(ConditionalEffec
     return planning::insert(context.destination(), *cond_effect);
 }
 
-inline std::pair<ActionBindingView, bool> ground(ActionView<LiftedTag> action, WriteContext<Builder, Repository>& context)
+inline std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<RelationBinding<Action<LiftedTag>>>(context.builder());
+    auto binding = planning::checkout<ygg::Row<Action<LiftedTag>>>(context.builder());
 
     binding->relation = action.index();
     for (ygg::uint_t i = 0; i < action.get_arity(); ++i)
-        binding->objects.push_back(context.binding()[i]);
+        binding->values.push_back(context.binding()[i]);
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *binding);
@@ -377,7 +377,7 @@ ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context
 
     auto action = planning::checkout<Action<GroundTag>>(context.builder());
 
-    action->binding = binding;
+    action->row = binding;
     action->condition = ground(element.get_condition(), context, fdr).first.index();
 
     for (const auto cond_effect : element.get_effects())
@@ -386,13 +386,13 @@ ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context
     return planning::insert(context.destination(), *action);
 }
 
-inline std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, WriteContext<Builder, Repository>& context)
+inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<RelationBinding<Axiom<LiftedTag>>>(context.builder());
+    auto binding = planning::checkout<ygg::Row<Axiom<LiftedTag>>>(context.builder());
 
     binding->relation = axiom.index();
     for (ygg::uint_t i = 0; i < axiom.get_arity(); ++i)
-        binding->objects.push_back(context.binding()[i]);
+        binding->values.push_back(context.binding()[i]);
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *binding);
@@ -409,7 +409,7 @@ ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context,
 
     auto axiom = planning::checkout<Axiom<GroundTag>>(context.builder());
 
-    axiom->binding = binding;
+    axiom->row = binding;
     axiom->body = ground(element.get_body(), context, fdr).first.index();
     axiom->head = ground(element.get_head(), context).first.index();
 
@@ -427,7 +427,7 @@ ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context,
 template<FactKind T>
 std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<RelationBinding<Function<T>>>(context.builder());
+    auto binding = planning::checkout<ygg::Row<Function<T>>>(context.builder());
 
     binding->relation = element.get_function().index();
     for (const auto term : element.get_terms())
@@ -436,9 +436,9 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.index());
+                    binding->values.push_back(arg.index());
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -451,7 +451,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 
     auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
-    fterm->binding = binding_or_nullopt->data();
+    fterm->row = binding_or_nullopt->data();
 
     return context.destination().find(*fterm);
 }
@@ -459,7 +459,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 template<FactKind T>
 std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = planning::checkout<RelationBinding<Predicate<T>>>(context.builder());
+    auto binding = planning::checkout<ygg::Row<Predicate<T>>>(context.builder());
 
     binding->relation = element.get_predicate().index();
     for (const auto term : element.get_terms())
@@ -468,9 +468,9 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->objects.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value]);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->objects.push_back(arg.index());
+                    binding->values.push_back(arg.index());
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -483,7 +483,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
     auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
 
-    atom->binding = binding_or_nullopt->data();
+    atom->row = binding_or_nullopt->data();
 
     return context.destination().find(*atom);
 }
@@ -494,9 +494,9 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
 namespace tyr::formalism::planning
 {
-extern template std::pair<FunctionBindingView<StaticTag>, bool> ground(TermListView terms, FunctionView<StaticTag> function, WriteContext<Builder, Repository>& context);
-extern template std::pair<FunctionBindingView<FluentTag>, bool> ground(TermListView terms, FunctionView<FluentTag> function, WriteContext<Builder, Repository>& context);
-extern template std::pair<FunctionBindingView<AuxiliaryTag>, bool> ground(TermListView terms, FunctionView<AuxiliaryTag> function, WriteContext<Builder, Repository>& context);
+extern template std::pair<FunctionRowView<StaticTag>, bool> ground(TermListView terms, FunctionView<StaticTag> function, WriteContext<Builder, Repository>& context);
+extern template std::pair<FunctionRowView<FluentTag>, bool> ground(TermListView terms, FunctionView<FluentTag> function, WriteContext<Builder, Repository>& context);
+extern template std::pair<FunctionRowView<AuxiliaryTag>, bool> ground(TermListView terms, FunctionView<AuxiliaryTag> function, WriteContext<Builder, Repository>& context);
 
 extern template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 extern template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> ground(FunctionTermView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
@@ -507,9 +507,9 @@ extern template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>,
 extern template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
                                                                                            WriteContext<Builder, Repository>& context);
 
-extern template std::pair<PredicateBindingView<StaticTag>, bool> ground(TermListView terms, PredicateView<StaticTag> predicate, WriteContext<Builder, Repository>& context);
-extern template std::pair<PredicateBindingView<FluentTag>, bool> ground(TermListView terms, PredicateView<FluentTag> predicate, WriteContext<Builder, Repository>& context);
-extern template std::pair<PredicateBindingView<DerivedTag>, bool> ground(TermListView terms, PredicateView<DerivedTag> predicate, WriteContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<StaticTag>, bool> ground(TermListView terms, PredicateView<StaticTag> predicate, WriteContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<FluentTag>, bool> ground(TermListView terms, PredicateView<FluentTag> predicate, WriteContext<Builder, Repository>& context);
+extern template std::pair<PredicateRowView<DerivedTag>, bool> ground(TermListView terms, PredicateView<DerivedTag> predicate, WriteContext<Builder, Repository>& context);
 
 extern template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& grounder_context);
 extern template std::pair<AtomView<GroundTag, FluentTag>, bool> ground(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& grounder_context);

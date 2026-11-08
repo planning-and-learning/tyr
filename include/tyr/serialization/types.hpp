@@ -21,14 +21,14 @@ namespace tyr::serialization
 template<typename T>
 using FormalismIndexView = urd::index_view<T, formalism::planning::Repository>;
 template<typename R>
-using FormalismBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<R, formalism::ObjectTag>, formalism::planning::Repository>;
+using FormalismRowView = ygg::RowView<R, formalism::planning::Repository>;
 
 // Terms and function expressions are not among them: std::variants (of views and values), serialized where their
 // holders hold them.
 using FormalismValueViews = boost::mp11::mp_list<formalism::planning::FDRFactView<formalism::FluentTag>>;
 
 using FormalismViews = boost::mp11::mp_append<boost::mp11::mp_transform<FormalismIndexView, formalism::planning::SymbolRepositoryTypes>,
-                                             boost::mp11::mp_transform<FormalismBindingView, formalism::planning::RelationRepositoryTypes>,
+                                             boost::mp11::mp_transform<FormalismRowView, formalism::planning::RelationRepositoryTypes>,
                                              FormalismValueViews>;
 
 using FormalismOwners =

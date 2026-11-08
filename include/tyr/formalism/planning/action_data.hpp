@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_ACTION_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_ACTION_DATA_HPP_
 
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
@@ -91,16 +91,16 @@ template<>
 struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>> index;
-    ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding;
+    ygg::RowIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>> row;
     urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition;
     urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects;
 
     data() = default;
-    data(ygg::formalism::RelationBindingIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>, ::tyr::formalism::ObjectTag> binding_,
+    data(ygg::RowIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>> row_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects_) :
         index(),
-        binding(binding_),
+        row(row_),
         condition(condition_),
         effects(std::move(effects_))
     {
@@ -110,9 +110,9 @@ struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     data(data&& other) = default;
     data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::binding, &data::condition, &data::effects> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::condition, &data::effects> {}; }
     // Have to include effects because row only binds objects to non-effect quantified variables.
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::binding, &data::condition, &data::effects> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::row, &data::condition, &data::effects> {}; }
 };
 
 }

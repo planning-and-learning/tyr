@@ -21,7 +21,7 @@
 
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_data.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/function_data.hpp"
@@ -54,10 +54,10 @@ auto make_binding(tyr::formalism::datalog::Repository& repository,
                   urd::index_view<Relation, tyr::formalism::datalog::Repository> relation,
                   std::initializer_list<ObjectIndex> objects)
 {
-    auto data = urd::data<tyr::formalism::RelationBinding<Relation>> {};
+    auto data = urd::data<ygg::Row<Relation>> {};
     data.relation = relation.index();
     for (const auto object : objects)
-        data.objects.push_back(object);
+        data.values.push_back(object);
     return ygg::formalism::insert(repository, data).first;
 }
 

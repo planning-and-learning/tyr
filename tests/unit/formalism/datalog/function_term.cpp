@@ -54,7 +54,7 @@ concept GroundFunctionTermContract =
     && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename GroundFunctionTermPublicView<Entity>::type>
     && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
-           data.binding;
+           data.row;
            view.index();
            view.get_function();
            view.get_row();

@@ -102,7 +102,7 @@ struct PlanReconstructionPolicy<ParallelSearch>
         }
         std::reverse(trajectory.begin(), trajectory.end());
 
-        auto labels = urd::Store<urd::sequence<formalism::planning::ActionBindingView>> {};
+        auto labels = urd::Store<urd::sequence<formalism::planning::ActionRowView>> {};
         labels.reserve(trajectory.size() - 1);
         auto successors = LabeledNodeList<Kind> {};
 

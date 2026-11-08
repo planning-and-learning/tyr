@@ -21,7 +21,7 @@
 #include "tyr/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <cista/containers/variant.h>
@@ -55,6 +55,7 @@ struct ConjunctiveEffect
 template<TaskKind T, RelationKind R>
 struct Rule
 {
+    using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T, RelationKind R>
@@ -125,7 +126,7 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
                                                     EffectTypes,
                                                     CompoundTypes>;
 using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, RuleTypes<LiftedTag>>;
-using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<RelationBinding, RelationRepositoryTypes>>;
+using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
 using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, BuilderTypes>;
 
 using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
@@ -147,23 +148,23 @@ template<TaskKind T, OperatorKind O>
 using BinaryOperatorView = urd::index_view<BinaryOperator<T, O>, Repository>;
 
 template<FactKind F>
-using PredicateBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Predicate<F>, ::tyr::formalism::ObjectTag>, Repository>;
+using PredicateRowView = ygg::RowView<Predicate<F>, Repository>;
 template<FactKind F>
-using FunctionBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Function<F>, ::tyr::formalism::ObjectTag>, Repository>;
+using FunctionRowView = ygg::RowView<Function<F>, Repository>;
 template<RelationKind R>
-using RuleBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Rule<LiftedTag, R>, ::tyr::formalism::ObjectTag>, Repository>;
+using RuleRowView = ygg::RowView<Rule<LiftedTag, R>, Repository>;
 
 template<FactKind F>
-using PredicateBindingIndex = ygg::formalism::RelationBindingIndex<Predicate<F>, ::tyr::formalism::ObjectTag>;
+using PredicateRowIndex = ygg::RowIndex<Predicate<F>>;
 template<FactKind F>
-using FunctionBindingIndex = ygg::formalism::RelationBindingIndex<Function<F>, ::tyr::formalism::ObjectTag>;
+using FunctionRowIndex = ygg::RowIndex<Function<F>>;
 template<RelationKind R>
-using RuleBindingIndex = ygg::formalism::RelationBindingIndex<Rule<LiftedTag, R>, ::tyr::formalism::ObjectTag>;
+using RuleRowIndex = ygg::RowIndex<Rule<LiftedTag, R>>;
 
 template<FactKind F>
-using PredicateBindingForwardRangeView = RelationBindingsView<Predicate<F>, urd::Store<urd::sequence<urd::index<Row>>>, Repository>;
+using PredicateRowForwardRangeView = ygg::RowsView<Predicate<F>, urd::Store<urd::sequence<urd::index<ygg::Row<Predicate<F>>>>>, Repository>;
 template<FactKind F>
-using FunctionBindingRandomAccessRangeView = RelationBindingsView<Function<F>, urd::Store<urd::sequence<urd::index<Row>>>, Repository>;
+using FunctionRowRandomAccessRangeView = ygg::RowsView<Function<F>, urd::Store<urd::sequence<urd::index<ygg::Row<Function<F>>>>>, Repository>;
 
 template<TaskKind T>
 using BooleanOperatorView = urd::index_view<BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>, Repository>;

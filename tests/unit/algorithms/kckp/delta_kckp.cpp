@@ -317,12 +317,12 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     {
         if (atom.get_predicate().get_name() != "at-robot")
             continue;
-        auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+        auto binding = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
         binding.relation = atom.get_predicate().index();
         for (const auto object : program_view.get_objects())
             if (object.get_name() == "loc-x0-y0")
-                binding.objects.push_back(object.index());
-        ASSERT_EQ(binding.objects.size(), 1);
+                binding.values.push_back(object.index());
+        ASSERT_EQ(binding.values.size(), 1);
         assignments.predicate.insert(tyr::formalism::datalog::insert(*additional.workspace_repository, binding).first);
         break;
     }

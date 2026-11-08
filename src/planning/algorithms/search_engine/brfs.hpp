@@ -157,7 +157,7 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionBindingView)
+    static SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionRowView)
     { return SuccessorMetadata { WorkerStateIndex<Kind> { worker, node.get_state().index() }, node.get_metric() }; }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t, SearchNodeStatus, bool)

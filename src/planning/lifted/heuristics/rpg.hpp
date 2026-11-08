@@ -51,11 +51,11 @@ namespace tyr::planning::detail
 template<>
 struct RPGPolicy<LiftedTag>
 {
-    using Action = formalism::planning::ActionBindingView;
+    using Action = formalism::planning::ActionRowView;
 
     template<typename Workspace>
     static std::optional<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>
-    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::datalog::PredicateBindingView<formalism::FluentTag> head)
+    translate_cut_atom(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, formalism::datalog::PredicateRowView<formalism::FluentTag> head)
     {
         const auto& mapping = definition.rpg_program.get_translation_context().d2p.fluent_to_fluent_predicate;
         if (!mapping.contains(head.get_relation()))

@@ -34,7 +34,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -111,7 +111,7 @@ public:
     }
 
 private:
-    using AtomIndex = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using AtomIndex = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
     /// The atoms of one effect predicate, grouped by the applicability row of their action binding, rebuilt in the
     /// storage held from (row, atom) pairs.
@@ -142,7 +142,7 @@ private:
     urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>> m_applicability_predicates;
     urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, Groups>> m_groups;
     urd::flat_vector<urd::index<formalism::Object>> m_prefix;
-    urd::data<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>> m_lookup;
+    urd::data<ygg::Row<formalism::Predicate<formalism::FluentTag>>> m_lookup;
 };
 
 }

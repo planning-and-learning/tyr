@@ -42,7 +42,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -95,9 +95,9 @@ struct RPGDefinition
 template<TaskKind Kind>
 struct RPGPolicy;
 
-inline formalism::planning::ActionBindingView to_action_binding(formalism::planning::ActionView<GroundTag> action) noexcept { return action.get_row(); }
+inline formalism::planning::ActionRowView to_action_binding(formalism::planning::ActionView<GroundTag> action) noexcept { return action.get_row(); }
 
-inline formalism::planning::ActionBindingView to_action_binding(formalism::planning::ActionBindingView action) noexcept { return action; }
+inline formalism::planning::ActionRowView to_action_binding(formalism::planning::ActionRowView action) noexcept { return action; }
 
 template<TaskKind Kind, typename Workspace>
 void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag> source_goal)
@@ -205,11 +205,11 @@ protected:
 
     ygg::float_t compute_result(const urd::data<State<Kind>>&) const { return get_goal_cost(); }
 
-    void set_action_binding_cost(formalism::planning::ActionBindingView action_binding, datalog::Cost cost)
+    void set_action_binding_cost(formalism::planning::ActionRowView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
     { m_workspace.cost_policy.set_action_cost(action_binding, cost); }
 
-    [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateBindingView<formalism::FluentTag> head) const noexcept
+    [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateRowView<formalism::FluentTag> head) const noexcept
     {
         const auto* annotation = m_workspace.annotations.find(head.data());
         return annotation ? datalog::get_cost(*annotation) : static_cast<datalog::Cost>(0);
@@ -229,7 +229,7 @@ protected:
     { return Policy::get_action(*m_definition, m_workspace, witness); }
 
     template<formalism::RelationKind R>
-    std::optional<formalism::planning::ActionBindingView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)
+    std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)
     {
         const auto action = get_action(witness);
         if (!action)
@@ -237,9 +237,9 @@ protected:
         return detail::to_action_binding(*action);
     }
 
-    formalism::planning::ActionBindingView get_action_binding(typename Policy::Action action) const noexcept { return detail::to_action_binding(action); }
+    formalism::planning::ActionRowView get_action_binding(typename Policy::Action action) const noexcept { return detail::to_action_binding(action); }
 
-    void append_planning_cut_frontier_atom(formalism::datalog::PredicateBindingView<formalism::FluentTag> head,
+    void append_planning_cut_frontier_atom(formalism::datalog::PredicateRowView<formalism::FluentTag> head,
                                            formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& atoms)
     {
         if (const auto atom = Policy::translate_cut_atom(*m_definition, m_workspace, head))
@@ -260,7 +260,7 @@ protected:
     }
 
     template<typename Callback>
-    void for_each_achiever(formalism::datalog::PredicateBindingView<formalism::FluentTag> head, Callback callback)
+    void for_each_achiever(formalism::datalog::PredicateRowView<formalism::FluentTag> head, Callback callback)
         requires AP::records_propositional_achievers
     {
         const auto* achievers = m_workspace.annotation_policy.find_achievers(head.data());

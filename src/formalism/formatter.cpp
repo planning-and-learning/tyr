@@ -20,7 +20,7 @@
 #include "node_formatter.hpp"
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_data.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -47,8 +47,8 @@ std::string to_string_impl(const urd::data<Function<T>>& value)
 { return fmt::format("{}/{}", value.name, value.arity); }
 
 template<typename T>
-std::string to_string_impl(const urd::data<RelationBinding<T>>& value)
-{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
+std::string to_string_impl(const urd::data<ygg::Row<T>>& value)
+{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
 
 }  // namespace
 
@@ -70,17 +70,17 @@ std::string to_string(const urd::data<Function<FluentTag>>& value) { return to_s
 
 std::string to_string(const urd::data<Function<AuxiliaryTag>>& value) { return to_string_impl(value); }
 
-std::string to_string(const urd::data<RelationBinding<Predicate<StaticTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Predicate<StaticTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const urd::data<RelationBinding<Predicate<FluentTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Predicate<FluentTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const urd::data<RelationBinding<Predicate<DerivedTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Predicate<DerivedTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const urd::data<RelationBinding<Function<StaticTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Function<StaticTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const urd::data<RelationBinding<Function<FluentTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Function<FluentTag>>>& value) { return to_string_impl(value); }
 
-std::string to_string(const urd::data<RelationBinding<Function<AuxiliaryTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Function<AuxiliaryTag>>>& value) { return to_string_impl(value); }
 
 std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
 std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }

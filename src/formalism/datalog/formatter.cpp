@@ -32,7 +32,7 @@
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_data.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -52,7 +52,7 @@
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -168,8 +168,8 @@ std::string format_view(RuleView<GroundTag, R> value)
     return os.str();
 }
 
-template<typename BindingView>
-std::string format_binding(BindingView value)
+template<typename V>
+std::string format_binding(V value)
 {
     if constexpr (requires { value.get_relation().get_name(); })
     {
@@ -223,19 +223,19 @@ static std::string as_text(PredicateView<FluentTag> value) { return fmt::format(
 static std::string as_text(FunctionView<StaticTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
 static std::string as_text(FunctionView<FluentTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
 static std::string as_text(FunctionView<AuxiliaryTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
-static std::string as_text(PredicateBindingView<StaticTag> value) { return format_binding(value); }
-static std::string as_text(PredicateBindingView<FluentTag> value) { return format_binding(value); }
-static std::string as_text(FunctionBindingView<StaticTag> value) { return format_binding(value); }
-static std::string as_text(FunctionBindingView<FluentTag> value) { return format_binding(value); }
-static std::string as_text(FunctionBindingView<AuxiliaryTag> value) { return format_binding(value); }
-static std::string as_text(RuleBindingView<PredicateTag> value) { return format_binding(value); }
-static std::string as_text(RuleBindingView<FunctionTag> value) { return format_binding(value); }
+static std::string as_text(PredicateRowView<StaticTag> value) { return format_binding(value); }
+static std::string as_text(PredicateRowView<FluentTag> value) { return format_binding(value); }
+static std::string as_text(FunctionRowView<StaticTag> value) { return format_binding(value); }
+static std::string as_text(FunctionRowView<FluentTag> value) { return format_binding(value); }
+static std::string as_text(FunctionRowView<AuxiliaryTag> value) { return format_binding(value); }
+static std::string as_text(RuleRowView<PredicateTag> value) { return format_binding(value); }
+static std::string as_text(RuleRowView<FunctionTag> value) { return format_binding(value); }
 
-std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, PredicateTag>>>& value)
-{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
+std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, PredicateTag>>>& value)
+{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
 
-std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, FunctionTag>>>& value)
-{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.objects), " ")); }
+std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, FunctionTag>>>& value)
+{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
 
 
 std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value)
@@ -559,7 +559,7 @@ std::string to_string(urd::index_view<T, Repository> value)
 
 template<typename R>
     requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
-std::string to_string(::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<R, ::tyr::formalism::ObjectTag>, Repository> value)
+std::string to_string(ygg::RowView<R, Repository> value)
 { return as_text(value); }
 
 TYR_VIEW_TO_STRINGS(44, 7)

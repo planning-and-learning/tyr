@@ -40,7 +40,7 @@ concept SchedulerConcept = TaskKind<Kind> && AnnotationPolicyConcept<AP> && Term
                            && requires(Scheduler<Kind>& scheduler,
                                        ProgramExecutionContext<Kind, AP, TP, CP>& ctx,
                                        const CostBuckets::Bucket& bucket,
-                                       formalism::datalog::FunctionBindingIndex<formalism::FluentTag> function) {
+                                       formalism::datalog::FunctionRowIndex<formalism::FluentTag> function) {
                                   { scheduler.begin_stratum(ctx) } -> std::same_as<void>;
                                   { scheduler.begin_iteration(ctx) } -> std::same_as<void>;
                                   { scheduler.finish_iteration(SchedulerIterationTrigger::FactChanged) } -> std::same_as<void>;

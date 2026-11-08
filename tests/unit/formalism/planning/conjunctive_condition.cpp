@@ -105,7 +105,7 @@ void expect_condition_atom_projection()
             const auto predicate = intern(urd::data<tyr::formalism::Predicate<F>>(std::string(name), 0));
             if constexpr (std::same_as<Kind, tyr::GroundTag>)
             {
-                auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<F>>> {};
+                auto binding = urd::data<ygg::Row<tyr::formalism::Predicate<F>>> {};
                 binding.relation = predicate.index();
                 return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(std::move(binding)).data()));
             }

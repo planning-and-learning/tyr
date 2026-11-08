@@ -38,7 +38,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -235,7 +235,7 @@ void PredicateAssignmentSet<T>::reset() noexcept
 }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
+void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateRowView<T> binding)
 {
     assert(binding.data().relation == m_predicate_index);
     for_each_assignment_rank(m_hash,
@@ -315,11 +315,11 @@ void PredicateAssignmentSets<T>::insert(formalism::datalog::AtomView<GroundTag, 
 { insert(ground_atom.get_row()); }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
+void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateRowView<T> binding)
 { m_sets[static_cast<ygg::uint_t>(binding.data().relation.value)].insert(binding); }
 
 template<formalism::FactKind T>
-void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings)
+void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateRowForwardRangeView<T> bindings)
 {
     for (const auto binding : bindings)
         insert(binding);
@@ -362,7 +362,7 @@ void FunctionAssignmentSet<T>::reset() noexcept
 { std::fill(m_set.begin(), m_set.end(), ygg::ClosedInterval<ygg::float_t>()); }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
     assert(binding.data().relation == m_function_index);
     auto changed = update_interval(m_set[EmptyAssignment::rank], interval);
@@ -375,7 +375,7 @@ bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionBindingView<T>
 }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value)
+bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> binding, ygg::float_t value)
 { return insert(binding, ygg::ClosedInterval<ygg::float_t>(value, value)); }
 
 template<formalism::FactKind T>
@@ -451,7 +451,7 @@ void FunctionAssignmentSets<T>::reset() noexcept
 }
 
 template<formalism::FactKind T>
-bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
+bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 { return m_sets[binding.get_relation().index().value].insert(binding, std::move(interval)); }
 
 template<formalism::FactKind T>

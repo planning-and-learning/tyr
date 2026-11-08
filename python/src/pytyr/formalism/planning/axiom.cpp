@@ -44,9 +44,9 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
         }
         else
         {
-            cls.def(urd::python::init_from_views<AxiomBindingView, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "binding"_a, "body"_a, "head"_a);
+            cls.def(urd::python::init_from_views<AxiomRowView, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "binding"_a, "body"_a, "head"_a);
             cls.def(
-                nb::init<ygg::formalism::RelationBindingIndex<Axiom<LiftedTag>, ::tyr::formalism::ObjectTag>, urd::index<ConjunctiveCondition<GroundTag>>, urd::index<Atom<GroundTag, DerivedTag>>>(),
+                nb::init<ygg::RowIndex<Axiom<LiftedTag>>, urd::index<ConjunctiveCondition<GroundTag>>, urd::index<Atom<GroundTag, DerivedTag>>>(),
                 "binding"_a,
                 "body"_a,
                 "head"_a);

@@ -25,7 +25,7 @@
 #include <urd/elements/concepts.hpp>
 #include <utility>
 #include <variant>
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/interning.hpp>
 
@@ -37,14 +37,14 @@ namespace tyr::formalism
 
 /// A binding: its relation and its objects copied.
 template<typename Rel, typename S, typename B, typename R>
-std::pair<ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Rel, ObjectTag>, R>, bool>
-copy(ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Rel, ObjectTag>, S> element, WriteContext<B, R>& context)
+std::pair<ygg::RowView<Rel, R>, bool>
+copy(ygg::RowView<Rel, S> element, WriteContext<B, R>& context)
 {
-    auto binding = ygg::formalism::checkout<RelationBinding<Rel>>(context.builder());
+    auto binding = ygg::formalism::checkout<ygg::Row<Rel>>(context.builder());
 
     binding->relation = copy(element.get_relation(), context).first.index();
     for (const auto object : element.get_objects())
-        binding->objects.push_back(copy(object, context).first.index());
+        binding->values.push_back(copy(object, context).first.index());
 
     return ygg::formalism::insert(context.destination(), *binding);
 }
@@ -61,8 +61,8 @@ std::pair<urd::index_view<T, R>, bool> copy(urd::index_view<T, S> element, Write
     *record = urd::map_children<typename B::Types, T>(std::move(*record),
                                                       element.context(),
                                                       [&](auto child) { return copy(child, context).first.index(); });
-    if constexpr (requires { record->binding; })
-        record->binding = copy(element.context().view(record->binding), context).first.data();
+    if constexpr (requires { record->row; })
+        record->row = copy(element.context().view(record->row), context).first.data();
 
     return ygg::formalism::insert(context.destination(), *record);
 }

@@ -70,7 +70,7 @@ public:
 /// Successors are registered and immediately packed; no unpacked builders are retained in the plan.
 template<TaskKind Kind>
 PackedPlan<Kind> replay_plan(const PackedNode<Kind>& initial,
-                             std::span<const formalism::planning::ActionBindingView> actions,
+                             std::span<const formalism::planning::ActionRowView> actions,
                              SuccessorGenerator<Kind>& generator,
                              StateRepository<Kind>& states,
                              AxiomEvaluator<Kind>& axioms);

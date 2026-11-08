@@ -89,8 +89,8 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
                      ++result;
                  return result;
              })
-        .def("contains", nb::overload_cast<formalism::datalog::PredicateBindingIndex<T>>(&Set::contains, nb::const_), "binding"_a)
-        .def("contains", nb::overload_cast<formalism::datalog::PredicateBindingView<T>>(&Set::contains, nb::const_), "binding"_a);
+        .def("contains", nb::overload_cast<formalism::datalog::PredicateRowIndex<T>>(&Set::contains, nb::const_), "binding"_a)
+        .def("contains", nb::overload_cast<formalism::datalog::PredicateRowView<T>>(&Set::contains, nb::const_), "binding"_a);
 }
 
 template<formalism::FactKind T>
@@ -98,7 +98,7 @@ void bind_function_fact_set(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
     using Set = FunctionFactSet<T>;
-    using Binding = formalism::datalog::FunctionBindingView<T>;
+    using Binding = formalism::datalog::FunctionRowView<T>;
 
     nb::class_<Set>(m, name)
         .def("get_function", &Set::get_function)
@@ -162,15 +162,15 @@ template<typename H>
 H as_index(H index) noexcept
 { return index; }
 
-template<typename H, typename C>
-H as_index(const ::ygg::formalism::RelationBindingView<H, C>& view) noexcept
+template<typename F, typename C>
+ygg::RowIndex<F> as_index(const ygg::RowView<F, C>& view) noexcept
 { return view.data(); }
 
 inline void bind_numeric_support(nb::module_& m)
 {
     using namespace nb::literals;
-    using NumericKey = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
-    using NumericKeyView = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+    using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
+    using NumericKeyView = formalism::datalog::FunctionRowView<formalism::FluentTag>;
 
     auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
                    .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
@@ -209,14 +209,14 @@ inline void bind_annotations(nb::module_& m)
     using FunctionWitnessAnnotationT = WitnessAnnotation<formalism::FunctionTag>;
     using PredicateAnnotationStore = PredicateAnnotations<>;
     using FunctionAnnotationStore = FunctionAnnotations<>;
-    using RuleKey = formalism::datalog::RuleBindingIndex<formalism::PredicateTag>;
-    using RuleKeyView = formalism::datalog::RuleBindingView<formalism::PredicateTag>;
-    using FunctionRuleKey = formalism::datalog::RuleBindingIndex<formalism::FunctionTag>;
-    using FunctionRuleKeyView = formalism::datalog::RuleBindingView<formalism::FunctionTag>;
-    using NumericKey = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
-    using NumericKeyView = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
-    using PredicateKey = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
-    using PredicateKeyView = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
+    using RuleKey = formalism::datalog::RuleRowIndex<formalism::PredicateTag>;
+    using RuleKeyView = formalism::datalog::RuleRowView<formalism::PredicateTag>;
+    using FunctionRuleKey = formalism::datalog::RuleRowIndex<formalism::FunctionTag>;
+    using FunctionRuleKeyView = formalism::datalog::RuleRowView<formalism::FunctionTag>;
+    using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
+    using NumericKeyView = formalism::datalog::FunctionRowView<formalism::FluentTag>;
+    using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    using PredicateKeyView = formalism::datalog::PredicateRowView<formalism::FluentTag>;
 
     auto base_annotation_cls =
         nb::class_<BaseAnnotation>(m, "BaseAnnotation").def(nb::init<>()).def(nb::init<Cost>(), "cost"_a).def("get_cost", &BaseAnnotation::get_cost);
@@ -307,7 +307,7 @@ void bind_cost_policy(nb::module_& m, const char* name)
 
     // get_cost(rule) takes only views: the lifted action cost reads the binding's objects.
     const auto bind_rule_view_cost = [&]<formalism::RelationKind R>()
-    { cls.def("get_cost", [](const CostPolicy& self, formalism::datalog::RuleBindingView<R> rule) { return self.get_cost(rule); }, "rule"_a); };
+    { cls.def("get_cost", [](const CostPolicy& self, formalism::datalog::RuleRowView<R> rule) { return self.get_cost(rule); }, "rule"_a); };
     const auto bind_rule_costs = [&]<typename RuleKey, typename NumericKey>()
     {
         cls.def(
@@ -335,10 +335,10 @@ void bind_cost_policy(nb::module_& m, const char* name)
     using namespace formalism::datalog;
     bind_rule_view_cost.template operator()<PredicateTag>();
     bind_rule_view_cost.template operator()<FunctionTag>();
-    bind_rule_costs.template operator()<RuleBindingIndex<PredicateTag>, FunctionBindingIndex<FluentTag>>();
-    bind_rule_costs.template operator()<RuleBindingIndex<FunctionTag>, FunctionBindingIndex<FluentTag>>();
-    bind_rule_costs.template operator()<RuleBindingView<PredicateTag>, FunctionBindingView<FluentTag>>();
-    bind_rule_costs.template operator()<RuleBindingView<FunctionTag>, FunctionBindingView<FluentTag>>();
+    bind_rule_costs.template operator()<RuleRowIndex<PredicateTag>, FunctionRowIndex<FluentTag>>();
+    bind_rule_costs.template operator()<RuleRowIndex<FunctionTag>, FunctionRowIndex<FluentTag>>();
+    bind_rule_costs.template operator()<RuleRowView<PredicateTag>, FunctionRowView<FluentTag>>();
+    bind_rule_costs.template operator()<RuleRowView<FunctionTag>, FunctionRowView<FluentTag>>();
 }
 
 template<typename Aggregation>
@@ -371,7 +371,7 @@ inline void bind_policies(nb::module_& m)
         .def(
             "find_achievers",
             [](const MaxMinCostAnnotationWithAchievers& self,
-               formalism::datalog::PredicateBindingIndex<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
+               formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
@@ -380,7 +380,7 @@ inline void bind_policies(nb::module_& m)
         .def(
             "find_achievers",
             [](const MaxMinCostAnnotationWithAchievers& self,
-               formalism::datalog::PredicateBindingView<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
+               formalism::datalog::PredicateRowView<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding.data());
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
@@ -457,8 +457,8 @@ void bind_workspace(nb::module_& m, const std::string& name)
     else
     {
         using Atom = formalism::datalog::AtomView<GroundTag, formalism::FluentTag>;
-        using PredicateBinding = formalism::datalog::PredicateBindingView<formalism::FluentTag>;
-        using FunctionBinding = formalism::datalog::FunctionBindingView<formalism::FluentTag>;
+        using PredicateBinding = formalism::datalog::PredicateRowView<formalism::FluentTag>;
+        using FunctionBinding = formalism::datalog::FunctionRowView<formalism::FluentTag>;
 
         cls.def(
                "get_workspace_repository",

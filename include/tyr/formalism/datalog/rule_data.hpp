@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_RULE_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_RULE_DATA_HPP_
 
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include "tyr/formalism/binary_operator_data.hpp"
@@ -115,24 +115,24 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>> : ::tyr::forma
     using HeadView = typename ::tyr::formalism::datalog::RuleHeadMember<::tyr::GroundTag, R>::template HeadView<C>;
 
     urd::index<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>> index;
-    ygg::formalism::RelationBindingIndex<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, ::tyr::formalism::ObjectTag> binding;
+    ygg::RowIndex<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> row;
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body;
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
-    data(ygg::formalism::RelationBindingIndex<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, ::tyr::formalism::ObjectTag> binding_,
+    data(ygg::RowIndex<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> row_,
          urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body_,
          Head head_,
          ygg::float_t cost_ = 0) :
         index(),
-        binding(binding_),
+        row(row_),
         body(body_),
         cost(cost_)
     { this->head_member() = std::move(head_); }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::binding, &data::body, data::head_pointer(), &data::cost> {}; }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::binding> {}; }
+    { return urd::Members<&data::index, &data::row, &data::body, data::head_pointer(), &data::cost> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
 };
 
 }

@@ -91,7 +91,7 @@ try
     auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
     auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     const auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
-    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>>();
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionRowView>>();
 
     for ([[maybe_unused]] auto _ : state)
     {

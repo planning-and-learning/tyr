@@ -37,7 +37,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -62,7 +62,7 @@ class NumericSupportSelectorWorkspace
 public:
     struct SelectionEntry
     {
-        formalism::datalog::FunctionBindingIndex<formalism::FluentTag> key;
+        formalism::datalog::FunctionRowIndex<formalism::FluentTag> key;
         ygg::ClosedInterval<ygg::float_t> interval;
         const NumericIntervalAnnotation* annotation;
         Cost cost;
@@ -79,7 +79,7 @@ public:
 /// cost-sorted per-fluent interval annotations.
 class NumericSupportSelector
 {
-    using Key = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
+    using Key = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
     using SelectionEntry = NumericSupportSelectorWorkspace::SelectionEntry;
     using Selection = urd::Store<urd::sequence<SelectionEntry>>;
 

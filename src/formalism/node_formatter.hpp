@@ -82,7 +82,7 @@ std::string format(urd::index_view<Atom<LiftedTag, F>, C> value)
 
 template<FactKind F>
 std::string format(const urd::data<Atom<GroundTag, F>>& value)
-{ return fmt::format("({})", value.binding); }
+{ return fmt::format("({})", value.row); }
 
 template<FactKind F, typename C>
 std::string format(urd::index_view<Atom<GroundTag, F>, C> value)
@@ -106,7 +106,7 @@ std::string format(urd::index_view<FunctionTerm<LiftedTag, F>, C> value)
 
 template<FactKind F>
 std::string format(const urd::data<FunctionTerm<GroundTag, F>>& value)
-{ return fmt::format("({})", value.binding); }
+{ return fmt::format("({})", value.row); }
 
 template<FactKind F, typename C>
 std::string format(urd::index_view<FunctionTerm<GroundTag, F>, C> value)
@@ -136,7 +136,7 @@ std::string format(urd::index_view<NumericEffect<T, F>, C> value)
 #define TYR_VIEW_TO_STRING_AT(z, I, List) template std::string to_string(urd::index_view<boost::mp11::mp_at_c<List, I>, Repository>);
 #define TYR_BINDING_VIEW_TO_STRING_AT(z, I, List) \
     template std::string to_string(                \
-        ::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<boost::mp11::mp_at_c<List, I>, ::tyr::formalism::ObjectTag>, Repository>);
+        ygg::RowView<boost::mp11::mp_at_c<List, I>, Repository>);
 
 /// All of them, in the namespace that defines the templates; the counts are checked against the lists.
 #define TYR_VIEW_TO_STRINGS(SymbolCount, RelationCount)                                                              \

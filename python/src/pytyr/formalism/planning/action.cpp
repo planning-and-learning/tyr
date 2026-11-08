@@ -79,8 +79,8 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
         }
         else
         {
-            cls.def(urd::python::init_from_views<ActionBindingView, ConjunctiveConditionView<T>, const ConditionalEffectViewList<T>&>(), "binding"_a, "condition"_a, "effects"_a);
-            cls.def(nb::init<ygg::formalism::RelationBindingIndex<Action<LiftedTag>, ::tyr::formalism::ObjectTag>,
+            cls.def(urd::python::init_from_views<ActionRowView, ConjunctiveConditionView<T>, const ConditionalEffectViewList<T>&>(), "binding"_a, "condition"_a, "effects"_a);
+            cls.def(nb::init<ygg::RowIndex<Action<LiftedTag>>,
                              urd::index<ConjunctiveCondition<GroundTag>>,
                              urd::flat_vector<urd::index<ConditionalEffect<GroundTag>>>>(),
                     "binding"_a,

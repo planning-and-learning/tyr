@@ -72,7 +72,7 @@ struct GroundSchedulerScratch
     PredicateHeadUpdates predicate_updates;
     FunctionHeadUpdates function_updates { urd::layer { 0 } };
     StagedPredicateAnnotation delta_annotations;
-    urd::Store<urd::sequence<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>>> head_bindings;
+    urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<formalism::FluentTag>>> head_bindings;
     StagedFunctionAnnotation delta_numeric_annotations;
     urd::Store<urd::sequence<CostBuckets::PredicateKey>> changed_facts;
     urd::Store<urd::sequence<CostBuckets::FunctionKey>> changed_terms;
@@ -178,7 +178,7 @@ public:
     void finish_iteration(SchedulerIterationTrigger) noexcept {}
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_numeric_changed(formalism::datalog::FunctionRowIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
@@ -201,7 +201,7 @@ private:
     void schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R>
     void initialize_rule_states(const FactSets& fact_sets)
@@ -231,11 +231,11 @@ private:
     void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated_for(formalism::datalog::PredicateBindingIndex<formalism::FluentTag> fact,
+    void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact,
                                         ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed_for(formalism::datalog::FunctionBindingIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_numeric_changed_for(formalism::datalog::FunctionRowIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<typename R>
     using Queue = urd::Store<urd::queue<GroundQueueEntry<R>>, urd::by_priority>;

@@ -43,7 +43,7 @@
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_data.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -236,19 +236,19 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
 
 struct LiftedNumericProgram
 {
-    tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag> goal;
+    tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal;
     tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals;
-    tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> source;
-    tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> target;
+    tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> source;
+    tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> target;
     tyr::formalism::datalog::RepositoryPtr repository;
     tyr::datalog::Program<LiftedTag> program;
 
     LiftedNumericProgram(tyr::formalism::datalog::RepositoryPtr repository_,
                          tyr::formalism::datalog::ProgramView<LiftedTag> program_view,
-                         tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag> goal_,
+                         tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal_,
                          tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals_,
-                         tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> source_,
-                         tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> target_) :
+                         tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> source_,
+                         tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> target_) :
         goal(goal_),
         goals(goals_),
         source(source_),
@@ -266,7 +266,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
     const auto bind_function = [&](auto function)
     {
-        auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
+        auto data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
         data.relation = function.index();
         return intern(std::move(data));
     };
@@ -317,7 +317,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     const auto source_rule = intern(std::move(source_rule_data));
 
     const auto goal_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
-    auto goal_binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+    auto goal_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     goal_binding_data.relation = goal_predicate.index();
     const auto goal = intern(std::move(goal_binding_data));
     auto goal_atom_data = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
@@ -342,9 +342,9 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     seed_body_data.fluent_literals.push_back(seed_literal.index());
     add_source_constraint(seed_body_data);
     const auto seed_body = intern(std::move(seed_body_data));
-    auto seed_binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+    auto seed_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     seed_binding_data.relation = seed_predicate.index();
-    seed_binding_data.objects.push_back(object.index());
+    seed_binding_data.values.push_back(object.index());
     const auto seed_binding = intern(std::move(seed_binding_data));
     const auto ground_seed = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(seed_binding.data()));
 
@@ -385,18 +385,18 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
 struct LiftedPredicateProgram
 {
     tyr::formalism::datalog::RepositoryPtr repository;
-    tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag> goal;
+    tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal;
     tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals;
-    tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> first_binding;
-    tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> second_binding;
+    tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> first_binding;
+    tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> second_binding;
     tyr::datalog::Program<LiftedTag> program;
 
     LiftedPredicateProgram(tyr::formalism::datalog::RepositoryPtr repository_,
                            tyr::formalism::datalog::ProgramView<LiftedTag> program_view,
-                           tyr::formalism::datalog::PredicateBindingView<tyr::formalism::FluentTag> goal_,
+                           tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal_,
                            tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals_,
-                           tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> first_binding_,
-                           tyr::formalism::datalog::RuleBindingView<tyr::formalism::PredicateTag> second_binding_) :
+                           tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> first_binding_,
+                           tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> second_binding_) :
         repository(std::move(repository_)),
         goal(goal_),
         goals(goals_),
@@ -453,9 +453,9 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
 
     const auto bind_rule = [&](auto object)
     {
-        auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
+        auto data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
         data.relation = rule.index();
-        data.objects.push_back(object.index());
+        data.values.push_back(object.index());
         return intern(std::move(data));
     };
     const auto first_binding = bind_rule(first_object);
@@ -463,16 +463,16 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
 
     const auto bind_source = [&](auto object)
     {
-        auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+        auto data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         data.relation = source_predicate.index();
-        data.objects.push_back(object.index());
+        data.values.push_back(object.index());
         return intern(std::move(data));
     };
     const auto ground_first_source =
         intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(first_object).data()));
     const auto ground_second_source =
         intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(second_object).data()));
-    auto goal_binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
+    auto goal_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     goal_binding_data.relation = goal_predicate.index();
     const auto goal = intern(std::move(goal_binding_data));
     const auto ground_goal = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(goal.data()));
@@ -488,9 +488,9 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
     {
         const auto bind_value = [&](auto object)
         {
-            auto data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
+            auto data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
             data.relation = value_function.index();
-            data.objects.push_back(object.index());
+            data.values.push_back(object.index());
             return intern(urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(data)).data()));
         };
         program_data.fluent_functions = { value_function.index() };

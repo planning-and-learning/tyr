@@ -23,7 +23,7 @@ from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import TypeIs
 
 from pytyr import datalog
-from pytyr.formalism.datalog import FluentPredicateBinding
+from pytyr.formalism.datalog import FluentPredicateRow
 from pytyr.formalism.planning import LiftedPlanningTask, Parser
 from pytyr.planning import lifted as planning
 
@@ -69,13 +69,13 @@ def _is_iterable(value: object) -> TypeIs[Iterable[object]]:
     return isinstance(value, Iterable)
 
 
-def fluent_bindings(fact_set: datalog.FluentPredicateFactSet) -> list[FluentPredicateBinding]:
+def fluent_bindings(fact_set: datalog.FluentPredicateFactSet) -> list[FluentPredicateRow]:
     # The binding iterator is untyped in the stubs; check each element instead.
     bindings = fact_set.get_bindings()
     assert _is_iterable(bindings)
-    result: list[FluentPredicateBinding] = []
+    result: list[FluentPredicateRow] = []
     for binding in bindings:
-        assert isinstance(binding, FluentPredicateBinding)
+        assert isinstance(binding, FluentPredicateRow)
         result.append(binding)
     return result
 

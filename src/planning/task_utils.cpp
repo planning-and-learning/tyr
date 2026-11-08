@@ -36,7 +36,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -128,7 +128,7 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
                                       const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,
                                       const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                                      urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>>& derived_bindings)
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>>& derived_bindings)
 {
     derived_bindings.clear();
     for (const auto& set : fact_sets.predicate.get_sets())

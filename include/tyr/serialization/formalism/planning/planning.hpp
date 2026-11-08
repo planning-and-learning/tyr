@@ -3,7 +3,7 @@
 #define TYR_SERIALIZATION_FORMALISM_PLANNING_PLANNING_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -74,7 +74,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 }
 
 template<class Archive, typename T>
-void describe_fields(Archive& ar, std::type_identity<::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<T, ::tyr::formalism::ObjectTag>, ::tyr::formalism::planning::Repository>>)
+void describe_fields(Archive& ar, std::type_identity<ygg::RowView<T, ::tyr::formalism::planning::Repository>>)
 {
     ar.field("relation", [](const auto& value) -> decltype(auto) { return (value.get_relation()); });
     ar.field("objects", [](const auto& value) -> decltype(auto) { return (value.get_objects()); });
@@ -94,7 +94,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ActionView<::tyr::GroundTag>>)
 {
-    ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+    ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
     ar.field("condition", [](const auto& value) -> decltype(auto) { return (value.get_condition()); });
     ar.field("effects", [](const auto& value) -> decltype(auto) { return (value.get_effects()); });
 }
@@ -108,7 +108,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 
 template<class Archive, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<::tyr::GroundTag, F>>)
-{ ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
+{ ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<::tyr::LiftedTag>>)
@@ -121,7 +121,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<::tyr::GroundTag>>)
 {
-    ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+    ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
     ar.field("body", [](const auto& value) -> decltype(auto) { return (value.get_body()); });
     ar.field("head", [](const auto& value) -> decltype(auto) { return (value.get_head()); });
 }
@@ -228,7 +228,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 
 template<class Archive, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, F>>)
-{ ar.field("binding", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
+{ ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::InvariantView>)

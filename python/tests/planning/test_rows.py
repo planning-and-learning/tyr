@@ -571,11 +571,11 @@ def _make_components_lifted(
 
 
 def _check_lazy_gbfs_relaxed_plan_requests_ground(task: planning.ground.Task) -> None:
-    relaxed_plans: tuple[set[formalism_planning.ActionBinding] | None, ...] = (set(), None)
+    relaxed_plans: tuple[set[formalism_planning.ActionRow] | None, ...] = (set(), None)
     for plan in relaxed_plans:
 
         class RelaxedPlanHeuristic(planning.ground.Heuristic):
-            def __init__(self, plan: set[formalism_planning.ActionBinding] | None) -> None:
+            def __init__(self, plan: set[formalism_planning.ActionRow] | None) -> None:
                 super().__init__()
                 self.plan = plan
                 self.num_plan_requests = 0
@@ -592,7 +592,7 @@ def _check_lazy_gbfs_relaxed_plan_requests_ground(task: planning.ground.Task) ->
                 return self
 
             @override
-            def get_relaxed_plan(self) -> set[formalism_planning.ActionBinding] | None:
+            def get_relaxed_plan(self) -> set[formalism_planning.ActionRow] | None:
                 self.num_plan_requests += 1
                 return self.plan
 
@@ -612,11 +612,11 @@ def _check_lazy_gbfs_relaxed_plan_requests_ground(task: planning.ground.Task) ->
 
 
 def _check_lazy_gbfs_relaxed_plan_requests_lifted(task: planning.lifted.Task) -> None:
-    relaxed_plans: tuple[set[formalism_planning.ActionBinding] | None, ...] = (set(), None)
+    relaxed_plans: tuple[set[formalism_planning.ActionRow] | None, ...] = (set(), None)
     for plan in relaxed_plans:
 
         class RelaxedPlanHeuristic(planning.lifted.Heuristic):
-            def __init__(self, plan: set[formalism_planning.ActionBinding] | None) -> None:
+            def __init__(self, plan: set[formalism_planning.ActionRow] | None) -> None:
                 super().__init__()
                 self.plan = plan
                 self.num_plan_requests = 0
@@ -633,7 +633,7 @@ def _check_lazy_gbfs_relaxed_plan_requests_lifted(task: planning.lifted.Task) ->
                 return self
 
             @override
-            def get_relaxed_plan(self) -> set[formalism_planning.ActionBinding] | None:
+            def get_relaxed_plan(self) -> set[formalism_planning.ActionRow] | None:
                 self.num_plan_requests += 1
                 return self.plan
 
@@ -1469,7 +1469,7 @@ def test_packed_node_keeps_its_state_repository_alive() -> None:
 
 def _first_successor_label_ground(
     task: planning.ground.Task, *, packed: bool
-) -> tuple[formalism_planning.ActionBinding, str]:
+) -> tuple[formalism_planning.ActionRow, str]:
     state_repository, axiom_evaluator, successor_generator = _make_components_ground(task)
     initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
     labeled = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator)[0]
@@ -1479,7 +1479,7 @@ def _first_successor_label_ground(
 
 def _first_successor_label_lifted(
     task: planning.lifted.Task, *, packed: bool
-) -> tuple[formalism_planning.ActionBinding, str]:
+) -> tuple[formalism_planning.ActionRow, str]:
     state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task)
     initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator)
     labeled = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator)[0]
@@ -1490,7 +1490,7 @@ def _first_successor_label_lifted(
 @pytest.mark.parametrize("family", ["ground", "lifted"])
 @pytest.mark.parametrize("packed", [False, True])
 def test_labeled_node_label_keeps_owning_node_alive(family: str, packed: bool) -> None:
-    def make_label() -> tuple[formalism_planning.ActionBinding, str]:
+    def make_label() -> tuple[formalism_planning.ActionRow, str]:
         ground_task, lifted_task = _make_gripper_tasks()
         if family == "ground":
             return _first_successor_label_ground(ground_task, packed=packed)
@@ -1692,7 +1692,7 @@ def _check_action_binding_api_ground(task: planning.ground.Task) -> None:
         start_node, ground_action, state_repository, axiom_evaluator
     )
 
-    assert type(binding) is formalism_planning.ActionBinding
+    assert type(binding) is formalism_planning.ActionRow
     assert successor_generator.ground_action(binding) == ground_action
     assert ground_action.get_action().get_arity() == len(list(ground_action.get_objects()))
     assert binding_successor == ground_action_successor
@@ -1729,7 +1729,7 @@ def _check_action_binding_api_lifted(task: planning.lifted.Task) -> None:
         start_node, ground_action, state_repository, axiom_evaluator
     )
 
-    assert type(binding) is formalism_planning.ActionBinding
+    assert type(binding) is formalism_planning.ActionRow
     assert successor_generator.ground_action(binding) == ground_action
     assert ground_action.get_action().get_arity() == len(list(ground_action.get_objects()))
     assert binding_successor == ground_action_successor
@@ -2109,7 +2109,7 @@ def _check_labeled_node_plan_construction_ground(task: planning.ground.Task) -> 
 
     assert labeled_successor_nodes
     first_labeled_successor = labeled_successor_nodes[0]
-    assert type(first_labeled_successor.label) is formalism_planning.ActionBinding
+    assert type(first_labeled_successor.label) is formalism_planning.ActionRow
     assert (
         successor_generator.get_successor_node(
             start_node,
@@ -2152,7 +2152,7 @@ def _check_labeled_node_plan_construction_lifted(task: planning.lifted.Task) -> 
 
     assert labeled_successor_nodes
     first_labeled_successor = labeled_successor_nodes[0]
-    assert type(first_labeled_successor.label) is formalism_planning.ActionBinding
+    assert type(first_labeled_successor.label) is formalism_planning.ActionRow
     assert (
         successor_generator.get_successor_node(
             start_node,

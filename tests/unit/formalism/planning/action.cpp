@@ -84,9 +84,9 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
-    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::planning::Action<::tyr::LiftedTag>>> {};
+    auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<::tyr::LiftedTag>>> {};
     binding_data.relation = action.index();
-    binding_data.objects.push_back(object.index());
+    binding_data.values.push_back(object.index());
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
@@ -121,9 +121,9 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     (void) tyr::formalism::planning::insert(destination, predicate_data);
     auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?padding"));
     (void) tyr::formalism::planning::insert(destination, variable_data);
-    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::planning::Action<tyr::LiftedTag>>> {};
+    auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<tyr::LiftedTag>>> {};
     binding_data.relation = source_action.index();
-    binding_data.objects.push_back(source_object.index());
+    binding_data.values.push_back(source_object.index());
     const auto binding = tyr::formalism::planning::insert(source, binding_data).first;
 
     auto builder = tyr::formalism::planning::Builder {};
@@ -158,7 +158,7 @@ static_assert(std::totally_ordered<GroundActionView>);
 static_assert(std::same_as<GroundActionView, tyr::formalism::planning::ActionView<::tyr::GroundTag>>);
 static_assert(requires(GroundActionData& data) {
     data.index;
-    data.binding;
+    data.row;
     data.condition;
     data.effects;
     { data == data } -> std::same_as<bool>;

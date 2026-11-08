@@ -42,7 +42,7 @@ inline void canonicalize(urd::data<Object>&)
 }
 
 template<typename Tag>
-void canonicalize(urd::data<RelationBinding<Tag>>&)
+void canonicalize(urd::data<ygg::Row<Tag>>&)
 {
     // Trivially canonical
 }

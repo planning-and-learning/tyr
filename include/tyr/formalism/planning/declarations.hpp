@@ -34,7 +34,7 @@
 #include <yggdrasil/core/config.hpp>
 #include <urd/elements/flat.hpp>
 #include <boost/mp11.hpp>
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 
 namespace tyr::formalism::planning
@@ -70,11 +70,13 @@ struct ConjunctiveEffect
 template<TaskKind T>
 struct Action
 {
+    using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>
 struct Axiom
 {
+    using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 struct Metric
@@ -176,7 +178,7 @@ using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
                                                     ConditionTypes>;
 
 using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, StructureTypes>;
-using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<RelationBinding, RelationRepositoryTypes>>;
+using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
 using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, BuilderTypes>;
 
 using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
@@ -215,12 +217,12 @@ template<TaskKind T, OperatorKind O>
 using BinaryOperatorView = urd::index_view<BinaryOperator<T, O>, Repository>;
 
 template<FactKind T>
-using PredicateBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Predicate<T>, ::tyr::formalism::ObjectTag>, Repository>;
+using PredicateRowView = ygg::RowView<Predicate<T>, Repository>;
 template<FactKind T>
-using FunctionBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Function<T>, ::tyr::formalism::ObjectTag>, Repository>;
-using ActionBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Action<LiftedTag>, ::tyr::formalism::ObjectTag>, Repository>;
-using ActionBindingDataView = urd::borrowed_view<RelationBinding<Action<LiftedTag>>, Repository>;
-using AxiomBindingView = ::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Axiom<LiftedTag>, ::tyr::formalism::ObjectTag>, Repository>;
+using FunctionRowView = ygg::RowView<Function<T>, Repository>;
+using ActionRowView = ygg::RowView<Action<LiftedTag>, Repository>;
+using ActionRowDataView = urd::borrowed_view<ygg::Row<Action<LiftedTag>>, Repository>;
+using AxiomRowView = ygg::RowView<Axiom<LiftedTag>, Repository>;
 
 template<TaskKind T>
 using BooleanOperatorView = urd::index_view<BinaryOperator<T, ::tyr::formalism::BooleanOperatorKind>, Repository>;

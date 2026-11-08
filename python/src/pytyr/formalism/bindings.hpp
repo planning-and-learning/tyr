@@ -26,10 +26,9 @@ namespace tyr::formalism
 void bind_formalism(nb::module_& m);
 
 void bind_parameter(nb::module_& m);
-void bind_row(nb::module_& m);
 void bind_object(nb::module_& m);
 void bind_variable(nb::module_& m);
-void bind_binding(nb::module_& m);
+void bind_row(nb::module_& m);
 void bind_predicate(nb::module_& m);
 void bind_function(nb::module_& m);
 void bind_atom(nb::module_& m);

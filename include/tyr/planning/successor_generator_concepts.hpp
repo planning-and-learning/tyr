@@ -53,8 +53,8 @@ struct ActionBindingResult;
 
 /// Ground enumeration borrows compiled bindings; lifted enumeration borrows reusable binding data.
 template<TaskKind Kind>
-using BorrowedActionBindingView =
-    std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionBindingView, formalism::planning::ActionBindingDataView>;
+using BorrowedActionRowView =
+    std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionRowView, formalism::planning::ActionRowDataView>;
 
 /// Borrowed lists append distinct builders without invalidating previous outputs or the source.
 /// Callers keep those builders alive and unchanged for as long as their views are used.

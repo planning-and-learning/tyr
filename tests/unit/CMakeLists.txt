@@ -14,7 +14,7 @@ endfunction()
 
 add_gtest(
     formalism_core_types
-    "formalism/binding.cpp"
+    "formalism/row.cpp"
     "formalism/function.cpp"
     "formalism/object.cpp"
     "formalism/parameter.cpp"

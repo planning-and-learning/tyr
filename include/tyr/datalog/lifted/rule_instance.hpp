@@ -64,7 +64,7 @@ public:
 private:
     const ConstRuleWorkspace<LiftedTag, R>* m_workspace;
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_grounder;
-    mutable std::optional<formalism::datalog::RuleBindingView<R>> m_witness_key;
+    mutable std::optional<formalism::datalog::RuleRowView<R>> m_witness_key;
 };
 
 }

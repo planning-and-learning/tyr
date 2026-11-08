@@ -53,13 +53,13 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         }
         else
         {
-            cls.def(urd::python::init_from_views<RuleBindingView<R>, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
+            cls.def(urd::python::init_from_views<RuleRowView<R>, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
                     "binding"_a,
                     "body"_a,
                     std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
                     "cost"_a = static_cast<ygg::float_t>(0));
             cls.def(
-                nb::init<ygg::formalism::RelationBindingIndex<Rule<LiftedTag, R>, ::tyr::formalism::ObjectTag>, urd::index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::float_t>(),
+                nb::init<ygg::RowIndex<Rule<LiftedTag, R>>, urd::index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::float_t>(),
                 "binding"_a,
                 "body"_a,
                 std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,

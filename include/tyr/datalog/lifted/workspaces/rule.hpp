@@ -24,7 +24,7 @@
 #include "tyr/datalog/lifted/consistency_graph.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
@@ -40,7 +40,7 @@
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -119,7 +119,7 @@ struct RuleWorkspace<LiftedTag, R>
         urd::Store<urd::sequence<kckp::Vertex>> anchor_vertices;
 
         /// Heads of the current binding that the rule updates
-        urd::Store<urd::sequence<formalism::datalog::PredicateBindingIndex<formalism::FluentTag>>> head_bindings;
+        urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<formalism::FluentTag>>> head_bindings;
     };
 
     struct Solve

@@ -87,8 +87,8 @@ void EffectAtomIndex::rebuild(Groups& groups,
 std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
                                                      std::span<const urd::index<formalism::Object>> binding)
 {
-    m_lookup.objects.clear();
-    m_lookup.objects.insert(m_lookup.objects.end(), binding.begin(), binding.end());
+    m_lookup.values.clear();
+    m_lookup.values.insert(m_lookup.values.end(), binding.begin(), binding.end());
     m_lookup.relation = applicability_predicate.index();
     const auto atom = m_repository->find(m_lookup);
     if (!atom)

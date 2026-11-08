@@ -37,8 +37,8 @@ namespace tyr::datalog
 /// Zero-cost conservative reachability: solvers ignore annotation-only metric effects and cost credits.
 class NoAnnotationPolicy
 {
-    using PredicateHead = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
-    using FunctionBinding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    using FunctionBinding = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
 
 public:
     static constexpr bool stores_annotations = false;
@@ -59,8 +59,8 @@ public:
     using Aggregation = AggregationFunction;
 
 private:
-    using PredicateHead = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
-    using FunctionBinding = formalism::datalog::FunctionBindingIndex<formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    using FunctionBinding = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
     using FunctionWitness = WitnessAnnotation<formalism::FunctionTag>;
 
@@ -138,7 +138,7 @@ public:
 template<typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy : public MinCostAnnotationPolicy<AggregationFunction>
 {
-    using PredicateHead = formalism::datalog::PredicateBindingIndex<formalism::FluentTag>;
+    using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
     using PredicateWitness = WitnessAnnotation<formalism::PredicateTag>;
 
 public:
@@ -155,12 +155,12 @@ public:
     void record_achiever(PredicateHead head, PredicateWitness witness);
 
 private:
-    using RuleBinding = formalism::datalog::RuleBindingIndex<formalism::PredicateTag>;
+    using RuleRow = formalism::datalog::RuleRowIndex<formalism::PredicateTag>;
 
     struct IndexedAchievers
     {
         Achievers achievers;
-        urd::Store<urd::map<RuleBinding, size_t>> indices;
+        urd::Store<urd::map<RuleRow, size_t>> indices;
     };
 
     DenseRelationMap<formalism::PredicateTag, IndexedAchievers> m_achievers;

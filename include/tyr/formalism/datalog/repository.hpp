@@ -31,14 +31,14 @@
 #include "tyr/formalism/datalog/rule_data.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/binding_data.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
@@ -51,7 +51,7 @@
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -75,15 +75,15 @@ namespace tyr::formalism::datalog
 using ygg::formalism::checkout;
 
 template<RelationKind R>
-std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingIndex<R> binding, const Repository& repository)
+std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleRowIndex<R> binding, const Repository& repository)
 {
     auto rule = urd::data<Rule<GroundTag, R>> {};
-    rule.binding = binding;
+    rule.row = binding;
     return repository.find(rule);
 }
 
 template<RelationKind R>
-std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingView<R> binding)
+std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleRowView<R> binding)
 { return find_ground_rule(binding.data(), binding.context()); }
 
 }

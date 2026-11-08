@@ -30,7 +30,7 @@
 #include <type_traits>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -38,12 +38,12 @@ namespace tyr::planning
 template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
 class Node;
 
-/// A node and the action binding that reached it: by default an interned binding; a borrowed one (BorrowedActionBindingView,
+/// A node and the action binding that reached it: by default an interned binding; a borrowed one (BorrowedActionRowView,
 /// runir's rule evaluation) before it is materialized.
 template<TaskKind Kind,
          StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding =
-             formalism::planning::ActionBindingView>
+         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding =
+             formalism::planning::ActionRowView>
 struct LabeledNode;
 
 template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
@@ -54,8 +54,8 @@ using PackedNodeList = urd::Store<urd::sequence<PackedNode<Kind>>>;
 
 template<TaskKind Kind,
          StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding =
-             formalism::planning::ActionBindingView>
+         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding =
+             formalism::planning::ActionRowView>
 using LabeledNodeList = urd::Store<urd::sequence<LabeledNode<Kind, State, Binding>>>;
 
 template<TaskKind Kind>

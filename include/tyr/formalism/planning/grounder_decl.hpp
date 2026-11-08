@@ -35,7 +35,7 @@ struct GrounderCacheEntry;
 template<>
 struct GrounderCacheEntry<Axiom<LiftedTag>>
 {
-    urd::Store<urd::map<ygg::formalism::RelationBindingIndex<Axiom<LiftedTag>, ::tyr::formalism::ObjectTag>, urd::index<Axiom<GroundTag>>>> container;
+    urd::Store<urd::map<ygg::RowIndex<Axiom<LiftedTag>>, urd::index<Axiom<GroundTag>>>> container;
 };
 
 }

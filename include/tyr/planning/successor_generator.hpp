@@ -31,7 +31,7 @@
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/binding_view.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -40,7 +40,7 @@ namespace tyr::planning
 struct ActionBindingResult
 {
     ActionBindingStatus status = ActionBindingStatus::INAPPLICABLE;
-    std::optional<formalism::planning::ActionBindingView> binding;
+    std::optional<formalism::planning::ActionRowView> binding;
 };
 
 /// The node successors are generated from, borrowed for one call: a registered node, or a node over a state builder.

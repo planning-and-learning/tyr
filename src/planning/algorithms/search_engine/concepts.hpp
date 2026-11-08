@@ -75,7 +75,7 @@ concept SearchPolicyConcept =
     && requires {
            typename std::bool_constant<T::supports_priority_layer_synchronization>;
            requires SearchKind<SearchTagT<T>>;
-       } && std::constructible_from<T, Heuristic<Kind>&, const OptionsT<T>&> && requires(T& policy, const T& const_policy, urd::index<Worker> worker, urd::index<State<Kind>> state, ygg::float_t value, const SearchNodeT<T>& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionBindingView action, const EventHandlerPtrT<T>& event_handler) {
+       } && std::constructible_from<T, Heuristic<Kind>&, const OptionsT<T>&> && requires(T& policy, const T& const_policy, urd::index<Worker> worker, urd::index<State<Kind>> state, ygg::float_t value, const SearchNodeT<T>& const_search_node, const Node<Kind>& node, const typename T::PoppedEntry& entry, formalism::planning::ActionRowView action, const EventHandlerPtrT<T>& event_handler) {
            { T::terminate_on_goal } -> std::convertible_to<bool>;
            { policy.initialize_start(state, value, value) } -> std::same_as<SearchNodeT<T>&>;
            { const_policy.get_start_priority() } -> std::same_as<ygg::float_t>;

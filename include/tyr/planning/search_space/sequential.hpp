@@ -67,7 +67,7 @@ LabeledNodeList<Kind> extract_labeled_node_trajectory(const NodeList<Kind>& node
 
     auto labeled_node_trajectory = LabeledNodeList<Kind> {};
     auto cur_node = node_trajectory.front();
-    auto applicable_actions = urd::Store<urd::sequence<formalism::planning::ActionBindingView>> {};
+    auto applicable_actions = urd::Store<urd::sequence<formalism::planning::ActionRowView>> {};
 
     for (size_t i = 1; i < node_trajectory.size(); ++i)
     {

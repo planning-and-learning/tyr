@@ -50,7 +50,7 @@ static_assert(std::totally_ordered<GroundAxiomView>);
 static_assert(std::same_as<GroundAxiomView, tyr::formalism::planning::AxiomView<::tyr::GroundTag>>);
 static_assert(requires(GroundAxiomData& data) {
     data.index;
-    data.binding;
+    data.row;
     data.body;
     data.head;
     { data == data } -> std::same_as<bool>;

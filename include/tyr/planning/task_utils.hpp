@@ -76,7 +76,7 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
                                       const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,
                                       const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                                      urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>>& derived_bindings);
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>>& derived_bindings);
 
 }
 
@@ -122,7 +122,7 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>& translation_context,
                                       datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace,
-                                      urd::Store<urd::sequence<formalism::datalog::PredicateBindingView<formalism::FluentTag>>>& derived_bindings)
+                                      urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>>& derived_bindings)
 {
     detail::read_derived_atoms_from_fact_set(state,
                                              repository,

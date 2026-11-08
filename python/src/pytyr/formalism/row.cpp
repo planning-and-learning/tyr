@@ -19,9 +19,77 @@
 #include "pytyr/module.hpp"
 #include "bindings.hpp"
 
+#include <tyr/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
+#include <tyr/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
+
 namespace tyr::formalism
 {
 
-void bind_row(nb::module_& m) { urd::python::bind_index<urd::index<Row>>(m, "RowIndex"); }
+namespace
+{
+template<typename Relation>
+void bind_row_data(nb::module_& m, const char* name)
+{
+    using namespace nb::literals;
+    using V = urd::data<ygg::Row<Relation>>;
+    auto cls = nb::class_<V>(m, name)
+                   .def(urd::python::init_from_views<urd::index_view<Relation, planning::Repository>, const planning::ObjectViewList&>(), "relation"_a, "objects"_a)
+                   .def(urd::python::init_from_views<urd::index_view<Relation, datalog::Repository>, const datalog::ObjectViewList&>(), "relation"_a, "objects"_a);
+    ygg::add_print(cls);
+    urd::python::add_comparison(cls);
+    urd::python::add_hash(cls);
+}
+}  // namespace
+
+void bind_row(nb::module_& m)
+{
+    {
+        using V = ygg::RowIndex<Predicate<StaticTag>>;
+        auto cls = nb::class_<V>(m, "StaticPredicateRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
+        ygg::add_print(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
+    }
+
+    {
+        using V = ygg::RowIndex<Predicate<FluentTag>>;
+        auto cls = nb::class_<V>(m, "FluentPredicateRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
+        ygg::add_print(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
+    }
+
+    {
+        using V = ygg::RowIndex<Function<StaticTag>>;
+        auto cls = nb::class_<V>(m, "StaticFunctionRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
+        ygg::add_print(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
+    }
+
+    {
+        using V = ygg::RowIndex<Function<FluentTag>>;
+        auto cls = nb::class_<V>(m, "FluentFunctionRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
+        ygg::add_print(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
+    }
+
+    {
+        using V = ygg::RowIndex<Function<AuxiliaryTag>>;
+        auto cls = nb::class_<V>(m, "AuxiliaryFunctionRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
+        ygg::add_print(cls);
+        urd::python::add_comparison(cls);
+        urd::python::add_hash(cls);
+    }
+
+    bind_row_data<Predicate<StaticTag>>(m, "StaticPredicateRowData");
+    bind_row_data<Predicate<FluentTag>>(m, "FluentPredicateRowData");
+    bind_row_data<Function<StaticTag>>(m, "StaticFunctionRowData");
+    bind_row_data<Function<FluentTag>>(m, "FluentFunctionRowData");
+    bind_row_data<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionRowData");
+}
 
 }  // namespace tyr::formalism

@@ -112,7 +112,7 @@ concept GroundAtomContract =
     && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
     && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
            data.index;
-           data.binding;
+           data.row;
            { data == data } -> std::same_as<bool>;
            view.index();
            view.get_predicate();
@@ -148,10 +148,10 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
     ASSERT_TRUE(object_created);
 
-    auto binding_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
+    auto binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     binding_data.relation = predicate.index();
-    binding_data.objects.push_back(object.index());
-    binding_data.objects.push_back(object.index());
+    binding_data.values.push_back(object.index());
+    binding_data.values.push_back(object.index());
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 

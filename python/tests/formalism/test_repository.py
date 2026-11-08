@@ -20,12 +20,12 @@ def test_ground_facts_expose_their_bindings() -> None:
     repository = datalog.Repository()
 
     predicate = repository.insert(datalog.FluentPredicateData("predicate", 0))[0]
-    predicate_binding = repository.insert(datalog.FluentPredicateBindingData(predicate, []))[0]
+    predicate_binding = repository.insert(datalog.FluentPredicateRowData(predicate, []))[0]
     atom = repository.insert(datalog.FluentGroundAtomData(predicate_binding))[0]
     assert atom.get_row() == predicate_binding
 
     function = repository.insert(datalog.FluentFunctionData("function", 0))[0]
-    function_binding = repository.insert(datalog.FluentFunctionBindingData(function, []))[0]
+    function_binding = repository.insert(datalog.FluentFunctionRowData(function, []))[0]
     term = repository.insert(datalog.FluentGroundFunctionTermData(function_binding))[0]
     assert term.get_row() == function_binding
 
@@ -38,12 +38,12 @@ def test_repository_accepts_object_counts(module: ModuleType) -> None:
     parent.insert(module.ObjectData("first"))[0]
     second = parent.insert(module.ObjectData("second"))[0]
     predicate = parent.insert(module.StaticPredicateData("predicate", 1))[0]
-    binding = parent.insert(module.StaticPredicateBindingData(predicate, [second]))[0]
+    binding = parent.insert(module.StaticPredicateRowData(predicate, [second]))[0]
     assert list(binding.get_objects()) == [second]
 
     child = module.Repository(parent, num_objects=3)
     third = child.insert(module.ObjectData("third"))[0]
-    binding = child.insert(module.StaticPredicateBindingData(predicate, [third]))[0]
+    binding = child.insert(module.StaticPredicateRowData(predicate, [third]))[0]
     assert list(binding.get_objects()) == [third]
 
 
@@ -68,9 +68,9 @@ def test_inserted_binding_children_retain_repository(module: ModuleType) -> None
     repository = module.Repository()
     obj, _ = repository.insert(module.ObjectData("retained"))
     predicate, _ = repository.insert(module.StaticPredicateData("p", 1))
-    binding, inserted = repository.insert(module.StaticPredicateBindingData(predicate, [obj]))
+    binding, inserted = repository.insert(module.StaticPredicateRowData(predicate, [obj]))
     assert inserted is True
-    duplicate, inserted = repository.insert(module.StaticPredicateBindingData(predicate, [obj]))
+    duplicate, inserted = repository.insert(module.StaticPredicateRowData(predicate, [obj]))
     assert inserted is False
     assert duplicate == binding
     child = next(iter(binding.get_objects()))

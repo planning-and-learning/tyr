@@ -39,7 +39,7 @@ struct D2PTranslationContext<GroundTag>
 {
     urd::Store<urd::map<formalism::datalog::AtomView<GroundTag, formalism::StaticTag>, formalism::planning::AtomView<GroundTag, formalism::StaticTag>>>
         static_to_static_atom;
-    urd::Store<urd::map<formalism::datalog::PredicateBindingView<formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>
+    urd::Store<urd::map<formalism::datalog::PredicateRowView<formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::FluentTag>>>
         fluent_to_fluent_atom;
     urd::Store<urd::map<formalism::datalog::AtomView<GroundTag, formalism::FluentTag>, formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>>
         fluent_to_derived_atom;

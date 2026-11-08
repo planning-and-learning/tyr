@@ -121,7 +121,7 @@ try
     std::erase_if(expected_bindings, reject_binding);
     state.counters["num_selected_bindings"] = static_cast<double>(expected_bindings.size());
 
-    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionBindingView>> {};
+    auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionRowView>> {};
     auto successors = tyr::planning::LabeledNodeList<LiftedTag> {};
     const auto generate = [&]
     {

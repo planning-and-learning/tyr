@@ -114,7 +114,7 @@ Plan<Kind> PackedPlan<Kind>::unpack() const
 
 template<TaskKind Kind>
 PackedPlan<Kind> replay_plan(const PackedNode<Kind>& initial,
-                             std::span<const formalism::planning::ActionBindingView> actions,
+                             std::span<const formalism::planning::ActionRowView> actions,
                              SuccessorGenerator<Kind>& generator,
                              StateRepository<Kind>& states,
                              AxiomEvaluator<Kind>& axioms)
@@ -131,12 +131,12 @@ PackedPlan<Kind> replay_plan(const PackedNode<Kind>& initial,
 }
 
 template PackedPlan<GroundTag> replay_plan(const PackedNode<GroundTag>& initial,
-                                           std::span<const formalism::planning::ActionBindingView> actions,
+                                           std::span<const formalism::planning::ActionRowView> actions,
                                            SuccessorGenerator<GroundTag>& generator,
                                            StateRepository<GroundTag>& states,
                                            AxiomEvaluator<GroundTag>& axioms);
 template PackedPlan<LiftedTag> replay_plan(const PackedNode<LiftedTag>& initial,
-                                           std::span<const formalism::planning::ActionBindingView> actions,
+                                           std::span<const formalism::planning::ActionRowView> actions,
                                            SuccessorGenerator<LiftedTag>& generator,
                                            StateRepository<LiftedTag>& states,
                                            AxiomEvaluator<LiftedTag>& axioms);

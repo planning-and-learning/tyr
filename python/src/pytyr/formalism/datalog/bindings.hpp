@@ -29,7 +29,7 @@ using RepositoryBinding = nb::class_<Repository>;
 
 void bind_formalism(nb::module_& m);
 
-void bind_binding(nb::module_& m, RepositoryBinding& repository);
+void bind_row(nb::module_& m, RepositoryBinding& repository);
 void bind_predicate(nb::module_& m, RepositoryBinding& repository);
 void bind_function(nb::module_& m, RepositoryBinding& repository);
 void bind_object(nb::module_& m, RepositoryBinding& repository);

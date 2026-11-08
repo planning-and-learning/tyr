@@ -62,9 +62,9 @@ def _rows(value: object) -> list[Row]:
 
 
 def test_default_fields_need_no_live_entity() -> None:
-    assert list(fp.ActionBinding.Fields.__members__) == ["relation", "objects"]
+    assert list(fp.ActionRow.Fields.__members__) == ["relation", "objects"]
     assert list(fp.FluentAtom.Fields.__members__) == ["predicate", "terms"]
-    assert list(fp.FluentGroundAtom.Fields.__members__) == ["binding"]
+    assert list(fp.FluentGroundAtom.Fields.__members__) == ["row"]
     assert fp.Object.Fields.name.name == "name"
     assert fp.Object.Fields.name.value == "name"
     assert fp.FluentFDRFact.Fields.value.name == "value"
@@ -77,19 +77,19 @@ def test_field_enum_selection_validates_the_native_type_before_registration() ->
     (atom,) = task.get_task().get_static_atoms()
     dictionaries = Dictionaries()
     with pytest.raises(TypeError):
-        register_table(dictionaries, fp.StaticPredicateBinding, "bindings", "b", fields="relation")
+        register_table(dictionaries, fp.StaticPredicateRow, "bindings", "b", fields="relation")
     register_table(
         dictionaries,
-        fp.StaticPredicateBinding,
+        fp.StaticPredicateRow,
         "bindings",
         "b",
-        fields=[fp.StaticPredicateBinding.Fields.relation],
+        fields=[fp.StaticPredicateRow.Fields.relation],
     )
     register_table(dictionaries, fp.StaticPredicate, "predicates", "p", fields=[fp.StaticPredicate.Fields.name])
     register_table(dictionaries, fp.StaticGroundAtom, "atoms", "a")
     assert serialize(dictionaries, atom) == "a0"
-    assert table(dictionaries, fp.StaticGroundAtom) == [{"binding": "b0"}]
-    assert table(dictionaries, fp.StaticPredicateBinding) == [{"relation": "p0"}]
+    assert table(dictionaries, fp.StaticGroundAtom) == [{"row": "b0"}]
+    assert table(dictionaries, fp.StaticPredicateRow) == [{"relation": "p0"}]
     assert table(dictionaries, fp.StaticPredicate) == [{"name": "ready"}]
 
 
@@ -127,7 +127,7 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     dictionaries = Dictionaries()
     register_table(dictionaries, state_type, "visited", "s")
     register_table(dictionaries, node_type, "nodes", "v")
-    register_table(dictionaries, fp.ActionBinding, "actions", "a")
+    register_table(dictionaries, fp.ActionRow, "actions", "a")
     register_table(dictionaries, fp.Action, "action_schemas", "A", fields=["name"])
     register_table(dictionaries, fp.FluentGroundFunctionTerm, "functions", "n", fields=[])
     register_table(dictionaries, fp.FluentGroundAtom, "atoms", "p", fields=[])
@@ -142,9 +142,9 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
     assert [atom.get_predicate().get_name() for atom in step.node.get_state().fluent_atoms()] == ["done"]
     assert serialize(dictionaries, step.node) == "v1"
     assert serialize(dictionaries, step.label) == "a0"
-    assert table(dictionaries, fp.ActionBinding) == [{"relation": "A0", "objects": []}]
+    assert table(dictionaries, fp.ActionRow) == [{"relation": "A0", "objects": []}]
     assert table(dictionaries, fp.Action) == [{"name": step.label.get_relation().get_name()}]
-    assert list(fp.ActionBinding.Fields.__members__) == list(_rows(table(dictionaries, fp.ActionBinding))[0])
+    assert list(fp.ActionRow.Fields.__members__) == list(_rows(table(dictionaries, fp.ActionRow))[0])
     assert [row["state"] for row in _rows(table(dictionaries, node_type))] == ["s0", "s1"]
     assert serialize(dictionaries, start) == "v0"
     states = _rows(table(dictionaries, state_type))
@@ -199,7 +199,7 @@ def test_unregistered_entities_name_the_missing_type_and_invalidate_registry(nes
     dictionaries = Dictionaries()
     if nested:
         register_table(dictionaries, fp.StaticGroundFunctionTerm, "terms", "t")
-    missing = "RelationBinding" if nested else "FunctionTerm"
+    missing = "RowIndex" if nested else "FunctionTerm"
     with pytest.raises(ValueError, match=f"^Unregistered serialization type: .*{missing}"):
         serialize(dictionaries, term)
     with pytest.raises(RuntimeError, match="Serialization failed"):
@@ -215,7 +215,7 @@ def test_task_field_selection_limits_collected_descendants(fields: list[str]) ->
     dictionaries = Dictionaries()
     register_table(dictionaries, fp.LiftedTask, "tasks", "t", fields=fields)
     register_table(dictionaries, fp.StaticGroundAtom, "static_atoms", "a")
-    register_table(dictionaries, fp.StaticPredicateBinding, "bindings", "b")
+    register_table(dictionaries, fp.StaticPredicateRow, "bindings", "b")
     register_table(dictionaries, fp.StaticPredicate, "predicates", "p")
     register_table(dictionaries, fp.FluentGroundAtom, "fluent_atoms", "f")
 
@@ -227,8 +227,8 @@ def test_task_field_selection_limits_collected_descendants(fields: list[str]) ->
     else:
         assert row["name"] == "serialize-1"
         assert row["static_ground_atoms"] == ["a0"]
-        assert table(dictionaries, fp.StaticGroundAtom) == [{"binding": "b0"}]
-        assert table(dictionaries, fp.StaticPredicateBinding) == [{"relation": "p0", "objects": []}]
+        assert table(dictionaries, fp.StaticGroundAtom) == [{"row": "b0"}]
+        assert table(dictionaries, fp.StaticPredicateRow) == [{"relation": "p0", "objects": []}]
         assert [predicate["name"] for predicate in _rows(table(dictionaries, fp.StaticPredicate))] == ["ready"]
         assert list(row) == ["name", "static_ground_atoms"]
         assert table(dictionaries, fp.FluentGroundAtom) == []
@@ -253,19 +253,19 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
     )
     (action,) = parser.get_domain().get_domain().get_actions()
     (item,) = task.get_task().get_objects()
-    binding = task.get_repository().insert(fp.ActionBindingData(action, [item]))[0]
-    calls: list[fp.ActionBinding] = []
+    binding = task.get_repository().insert(fp.ActionRowData(action, [item]))[0]
+    calls: list[fp.ActionRow] = []
     payload: dict[str, object] = {
         "scalars": [None, True, False, -(2**63), 2**63 - 1, 2**64 - 1, 1.25],
         "nested": [{"key\0é": "value\0雪"}, []],
     }
 
-    def project(value: fp.ActionBinding) -> dict[str, object]:
+    def project(value: fp.ActionRow) -> dict[str, object]:
         calls.append(value)
         return {"name": value.get_relation().get_name(), "objects": value.get_objects(), "details\0": payload}
 
     dictionaries = Dictionaries()
-    register_table(dictionaries, fp.ActionBinding, "bindings", "b", fields=fields, project=project)
+    register_table(dictionaries, fp.ActionRow, "bindings", "b", fields=fields, project=project)
     register_table(dictionaries, fp.Object, "objects", "o")
     register_table(dictionaries, fp.Action, "actions", "a")
     assert serialize(dictionaries, binding) == "b0"
@@ -274,13 +274,13 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
     assert table(dictionaries, fp.Action) == []
     if fields is None:
         expected = [{"name": "finish", "objects": ["o0"], "details\0": payload}]
-        assert table(dictionaries, fp.ActionBinding) == expected
+        assert table(dictionaries, fp.ActionRow) == expected
         assert json.dumps(dictionaries.tables()["bindings"]["rows"], ensure_ascii=False) == json.dumps(
             expected, ensure_ascii=False
         )
         assert [row["name"] for row in _rows(table(dictionaries, fp.Object))] == ["item"]
     else:
-        assert table(dictionaries, fp.ActionBinding) == [{"name": "finish"}]
+        assert table(dictionaries, fp.ActionRow) == [{"name": "finish"}]
         assert table(dictionaries, fp.Object) == []
 
 
