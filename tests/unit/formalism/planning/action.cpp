@@ -66,7 +66,7 @@ TEST(TyrFormalismPlanningAction, PreservesOriginalArityAfterNormalization)
 
 TEST(TyrFormalismPlanningAction, FormatsBinding)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
 
     auto variable_data = urd::data<tyr::formalism::Variable>(std::string("?internal"));
     const auto [variable, variable_created] = ygg::formalism::insert(repository, variable_data);
@@ -109,9 +109,8 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
                                                          std::nullopt);
     const auto domain = parser.get_domain();
     const auto source_action = domain.get_domain().get_actions().front();
-    auto factory = tyr::formalism::planning::RepositoryFactory {};
-    auto source = factory.create(&source_action.context());
-    auto destination = factory.create();
+    auto source = tyr::formalism::planning::Repository(&source_action.context());
+    auto destination = tyr::formalism::planning::Repository();
     auto object_data = urd::data<tyr::formalism::Object>(std::string("truck"));
     const auto source_object = tyr::formalism::planning::insert(source, object_data).first;
     object_data.name = "padding";

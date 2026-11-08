@@ -49,7 +49,7 @@ TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
 
 TEST(TyrFormalismPlanningMultiOperator, PreservesRepeatedOperands)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
 
     for (const auto op : { tyr::formalism::ArithmeticOperatorKind::Add, tyr::formalism::ArithmeticOperatorKind::Mul })
     {

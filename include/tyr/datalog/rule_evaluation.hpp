@@ -370,7 +370,7 @@ Cost get_transition_credit(const CP& policy,
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return static_cast<Cost>(0);
     else
-        return policy.get_cost(instance.witness_key().index(), head, interval);
+        return policy.get_cost(instance.witness_key().data(), head, interval);
 }
 
 template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
@@ -396,7 +396,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
             continue;
 
         const auto binding = instance.resolve(literal.get_atom());
-        const auto* annotation = input.predicate_annotations().find(binding.index());
+        const auto* annotation = input.predicate_annotations().find(binding.data());
         if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
             return std::nullopt;
 
@@ -645,7 +645,7 @@ template<TaskKind Kind, formalism::RelationKind R, typename Candidate>
 WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
 {
     assert(candidate.evidence);
-    return WitnessAnnotation<R>(instance.witness_key().index(), candidate.cost, candidate.evidence->numeric_supports);
+    return WitnessAnnotation<R>(instance.witness_key().data(), candidate.cost, candidate.evidence->numeric_supports);
 }
 
 /// Evaluates the rule instance once and updates each of its heads with the shared witness.

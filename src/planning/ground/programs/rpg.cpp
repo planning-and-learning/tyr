@@ -154,7 +154,7 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
     const auto new_binding = formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 
     auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(context.builder);
-    atom->binding = new_binding.index();
+    atom->binding = new_binding.data();
     return formalism::datalog::insert(context.merge_context.destination(), *atom).first;
 }
 
@@ -234,7 +234,7 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
                                                                      atoms.push_back(atom.index());
                                                                      return atoms;
                                                                  })
-                        .index();
+                        .data();
     rule->body = body.index();
     rule->heads = heads;
     rule->cost = cost;
@@ -248,7 +248,7 @@ create_ground_numeric_effect_rule(formalism::datalog::ConjunctiveConditionView<G
 {
     const auto datalog_head = formalism::planning::merge_p2d(std::move(head), context.merge_context).first.index();
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag, formalism::FunctionTag>>(context.builder);
-    rule->binding = create_rule_binding<formalism::FunctionTag>(context, [&](auto) { return create_rule_binding_numeric_head(context); }).index();
+    rule->binding = create_rule_binding<formalism::FunctionTag>(context, [&](auto) { return create_rule_binding_numeric_head(context); }).data();
     rule->body = body.index();
     rule->head = datalog_head;
     rule->cost = 1;
@@ -292,7 +292,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
         {
             const auto rule = create_ground_atom_rule(body, heads, context, 1);
             program.predicate_rules.push_back(rule.index());
-            rule_to_action.predicate.emplace(rule.get_row().index(), action);
+            rule_to_action.predicate.emplace(rule.get_row().data(), action);
         }
 
         const auto numeric_body = create_delete_free_numeric_effect_condition(action.get_condition(), cond_eff.get_condition(), translation_context, context);
@@ -300,7 +300,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
         {
             const auto rule = create_ground_numeric_effect_rule(numeric_body, numeric_effect, context);
             program.function_rules.push_back(rule.index());
-            rule_to_action.function.emplace(rule.get_row().index(), action);
+            rule_to_action.function.emplace(rule.get_row().data(), action);
         }
     }
 }
@@ -430,7 +430,7 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& s
         const auto [result_rule, inserted] = formalism::copy(*source_rule, context);
         if (inserted)
             throw std::logic_error("Static rule filtering omitted a retained rule");
-        result_mapping.emplace(result_rule.get_row().index(), action);
+        result_mapping.emplace(result_rule.get_row().data(), action);
     }
 }
 
@@ -441,9 +441,8 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
 {
     require_unit_cost(cost_mode);
 
-    auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
     const auto num_objects = task.get_num_objects();
-    auto source_repository = factory->create(num_objects);
+    auto source_repository = formalism::datalog::Repository(num_objects);
     auto source_translation_context = TranslationContext<GroundTag> {};
     auto source_mapping = RPGProgram<GroundTag>::RuleToActionMappings {};
     const auto source_program = create_rpg_ground_program(task, source_translation_context, source_mapping, source_repository);
@@ -459,14 +458,14 @@ datalog::Program<GroundTag> create_rpg_datalog_program(formalism::planning::Task
                                                                                        source_program.context());
     const auto source_fact_sets = datalog::FactSets { source_static_fact_sets, source_fluent_fact_sets };
 
-    auto repository = factory->create_shared(num_objects);
+    auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     const auto program = datalog::remove_statically_inapplicable_rules(source_program, *repository);
     auto builder = formalism::datalog::Builder {};
     auto merge_context = formalism::WriteContext { builder, *repository };
     translation_context = remap_translation_context(source_translation_context, merge_context);
     remap_rule_to_action<formalism::PredicateTag>(source_mapping.predicate, mapping.predicate, source_program.context(), merge_context, source_fact_sets);
     remap_rule_to_action<formalism::FunctionTag>(source_mapping.function, mapping.function, source_program.context(), merge_context, source_fact_sets);
-    return datalog::Program<GroundTag>(program, std::move(repository), std::move(factory));
+    return datalog::Program<GroundTag>(program, std::move(repository));
 }
 
 }  // namespace

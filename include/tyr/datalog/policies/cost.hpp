@@ -46,8 +46,9 @@ struct ActionCostLookup
 
     [[nodiscard]] auto get_key() const
     {
-        assert(rule_binding.data().objects.size() >= action.get_arity());
-        return std::make_pair(action.index(), std::views::take(rule_binding.data().objects, action.get_arity()));
+        const auto objects = rule_binding.get_key().second;
+        assert(objects.size() >= action.get_arity());
+        return std::make_pair(action.index(), std::views::take(objects, action.get_arity()));
     }
 };
 
@@ -175,7 +176,7 @@ public:
     [[nodiscard]] Cost get_cost(formalism::datalog::RuleBindingView<R> rule_key) const
     {
         const auto& costs = storage(R {}).get_costs();
-        if (const auto it = costs.find(rule_key.index()); it != costs.end())
+        if (const auto it = costs.find(rule_key.data()); it != costs.end())
             return it->second;
         return get_action_cost(rule_key);
     }
@@ -223,7 +224,7 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto action = rule_to_action->find(rule_binding.index());
+        const auto action = rule_to_action->find(rule_binding.data());
         if (action == rule_to_action->end())
             return static_cast<Cost>(0);
         const auto cost = m_action_costs.find(action->second.get_row());
@@ -238,8 +239,8 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto action = rule_to_action->find(rule_binding.index().relation);
-        if (action == rule_to_action->end() || rule_binding.data().objects.size() < action->second.get_arity())
+        const auto action = rule_to_action->find(rule_binding.data().relation);
+        if (action == rule_to_action->end() || rule_binding.get_objects().size() < action->second.get_arity())
             return static_cast<Cost>(0);
         const auto cost = m_action_costs.find(ActionCostLookup<R> { action->second, rule_binding });
         return cost == m_action_costs.end() ? static_cast<Cost>(0) : cost->second;

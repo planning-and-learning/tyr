@@ -118,7 +118,6 @@ from pytyr._pytyr.formalism.datalog import (
     ProgramData as ProgramData,
     ProgramIndex as ProgramIndex,
     Repository as Repository,
-    RepositoryFactory as RepositoryFactory,
     RowIndex as RowIndex,
     Rule as Rule,
     RuleBinding as RuleBinding,

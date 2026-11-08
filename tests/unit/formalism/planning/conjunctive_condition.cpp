@@ -96,8 +96,7 @@ namespace
 template<tyr::TaskKind Kind>
 void expect_condition_atom_projection()
 {
-    auto factory = tyr::formalism::planning::RepositoryFactory();
-    auto repository = factory.create();
+    auto repository = tyr::formalism::planning::Repository();
     const auto intern = [&](auto data) { return tyr::formalism::planning::insert(repository, data).first; };
     const auto atoms = [&]<tyr::formalism::FactKind F>()
     {
@@ -108,7 +107,7 @@ void expect_condition_atom_projection()
             {
                 auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<F>>> {};
                 binding.relation = predicate.index();
-                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(std::move(binding)).index()));
+                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(std::move(binding)).data()));
             }
             else
                 return intern(urd::data<tyr::formalism::Atom<Kind, F>>(predicate.index(), {}));
@@ -157,7 +156,7 @@ void expect_condition_atom_projection()
         EXPECT_TRUE(std::ranges::equal(filtered_negative, std::array { pair.second }));
         auto opposite = condition.template get_atoms_view<F>(true, pair.second.get_predicate());
         EXPECT_TRUE(opposite.begin() == opposite.end());
-        auto foreign_repository = factory.create();
+        auto foreign_repository = tyr::formalism::planning::Repository();
         auto foreign_data = urd::data<tyr::formalism::Predicate<F>>(std::string("positive"), 0);
         const auto foreign = tyr::formalism::planning::insert(foreign_repository, foreign_data).first;
         ASSERT_EQ(foreign.index(), pair.first.get_predicate().index());

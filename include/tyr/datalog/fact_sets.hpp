@@ -80,11 +80,11 @@ public:
     bool insert(const PredicateFactSet<T>& other);
     bool insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
     bool insert(formalism::datalog::PredicateBindingIndex<T> binding);
-    bool insert(formalism::datalog::PredicateBindingView<T> binding) { return insert(binding.index()); }
+    bool insert(formalism::datalog::PredicateBindingView<T> binding) { return insert(binding.data()); }
     bool insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
 
     [[nodiscard]] bool contains(formalism::datalog::PredicateBindingIndex<T> binding) const noexcept;
-    [[nodiscard]] bool contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept { return contains(binding.index()); }
+    [[nodiscard]] bool contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept { return contains(binding.data()); }
 
     [[nodiscard]] PredicateBindingViewRange<T> get_bindings() const noexcept;
 };
@@ -103,11 +103,11 @@ public:
     bool insert(const PredicateFactSets<T>& other);
     bool insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
     bool insert(formalism::datalog::PredicateBindingIndex<T> binding);
-    bool insert(formalism::datalog::PredicateBindingView<T> binding) { return insert(binding.index()); }
+    bool insert(formalism::datalog::PredicateBindingView<T> binding) { return insert(binding.data()); }
     bool insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
 
     [[nodiscard]] bool contains(formalism::datalog::PredicateBindingIndex<T> binding) const noexcept;
-    [[nodiscard]] bool contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept { return contains(binding.index()); }
+    [[nodiscard]] bool contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept { return contains(binding.data()); }
 
     [[nodiscard]] const urd::Store<urd::sequence<PredicateFactSet<T>>>& get_sets() const noexcept;
 };
@@ -134,7 +134,7 @@ public:
     bool insert(const FunctionFactSet& other);
     bool insert(formalism::datalog::FunctionBindingIndex<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
     bool insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return insert(binding.index(), std::move(interval)); }
+    { return insert(binding.data(), std::move(interval)); }
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
     bool insert(formalism::datalog::FunctionBindingRandomAccessRangeView<T> bindings, const urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>>& intervals);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, const ygg::ClosedInterval<ygg::float_t>& interval);
@@ -143,7 +143,7 @@ public:
     bool insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
 
     ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingIndex<T> binding) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept { return (*this)[binding.index()]; }
+    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept { return (*this)[binding.data()]; }
     ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionTermView<GroundTag, T> fterm) const noexcept;
 
     [[nodiscard]] formalism::datalog::FunctionBindingRandomAccessRangeView<T> get_bindings() const noexcept;
@@ -164,7 +164,7 @@ public:
     bool insert(const FunctionFactSets& other);
     bool insert(formalism::datalog::FunctionBindingIndex<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
     bool insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return insert(binding.index(), interval); }
+    { return insert(binding.data(), interval); }
     bool insert(formalism::datalog::FunctionBindingView<T> binding, ygg::float_t value);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval);
     bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);
@@ -173,7 +173,7 @@ public:
     bool insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
 
     ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingIndex<T> binding) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept { return (*this)[binding.index()]; }
+    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionBindingView<T> binding) const noexcept { return (*this)[binding.data()]; }
     ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionTermView<GroundTag, T> fterm) const noexcept;
 
     [[nodiscard]] const urd::Store<urd::sequence<FunctionFactSet<T>>>& get_sets() const noexcept;

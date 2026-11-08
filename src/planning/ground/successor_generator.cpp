@@ -662,10 +662,10 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     const auto indices = objects.base();
     const auto& source_repository = objects.context();
     const auto& target_repository = *task->get_repository();
-    if (!std::ranges::all_of(indices, [&](const auto& value) { return source_repository.contains(value); })
-        || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.contains(value); }))
+    if (!std::ranges::all_of(indices, [&](const auto& value) { return source_repository.symbols().contains(value); })
+        || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.symbols().contains(value); }))
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
-    if (!std::ranges::all_of(objects, [&](const auto& value) { return target_repository.contains(value); }))
+    if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(target_repository, value); }))
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
 
     const auto& constants = task->get_task().get_domain().data().constants;
@@ -694,8 +694,8 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
 template<ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
 ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, Binding binding)
 {
-    if constexpr (requires { binding.index(); })
-        if (!binding.context().contains(binding.index()))
+    if constexpr (requires { binding.context().owner(binding.data()); })
+        if (binding.context().owner(binding.data()) == nullptr)
             throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
     return m_impl->try_get_applicable_action_binding(node, binding.get_relation(), binding.get_objects());
 }
@@ -719,7 +719,7 @@ formalism::planning::ActionBindingView SuccessorGenerator<GroundTag>::materializ
     const auto objects = binding.get_objects();
     if (objects.size() != action.get_arity())
         throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
-    if (!std::ranges::all_of(objects, [&](const auto& value) { return repository.contains(value); }))
+    if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(repository, value); }))
         throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
     return binding;
 }

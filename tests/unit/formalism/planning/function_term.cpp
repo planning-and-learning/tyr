@@ -76,7 +76,7 @@ static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTerm<::tyr::G
 
 TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
 
     auto function_data = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("fuel"), 1);
     const auto [function, function_created] = ygg::formalism::insert(repository, function_data);
@@ -92,7 +92,7 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
-    auto ground_function_term_data = urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
+    auto ground_function_term_data = urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.data());
     const auto [ground_function_term, ground_function_term_created] = ygg::formalism::insert(repository, ground_function_term_data);
     ASSERT_TRUE(ground_function_term_created);
 
@@ -108,9 +108,8 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
 
 TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
 {
-    auto factory = tyr::formalism::planning::RepositoryFactory {};
-    auto source = factory.create();
-    auto destination = factory.create();
+    auto source = tyr::formalism::planning::Repository();
+    auto destination = tyr::formalism::planning::Repository();
     using Function = tyr::formalism::Function<tyr::formalism::FluentTag>;
     auto function_data = urd::data<Function>(std::string("fuel"), 1);
     const auto function = tyr::formalism::planning::insert(source, function_data).first;

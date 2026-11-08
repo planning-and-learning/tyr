@@ -242,7 +242,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderTakesFewestStolenPredicatesFirs
 {
     namespace planning = tyr::formalism::planning;
     namespace invariant = planning::invariant;
-    auto repository = planning::RepositoryFactory().create();
+    auto repository = planning::Repository();
     const auto s1 = atom(repository, "s1", { 0, 1 });
     const auto s2 = atom(repository, "s2", { 0, 1 });
     // greedy steals s1 and s2, each of the others only one of them.
@@ -262,7 +262,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderPrefersMoreResidualAtomsOnStole
     namespace planning = tyr::formalism::planning;
     namespace invariant = planning::invariant;
     using Criterion = invariant::InvariantOrderCriterion;
-    auto repository = planning::RepositoryFactory().create();
+    auto repository = planning::Repository();
     const auto free = atom(repository, "free", { 0 });
     const auto alone = intern_invariant(repository, planning::MutableInvariant(0, 1, { free }));
     const auto pair = intern_invariant(repository, planning::MutableInvariant(0, 1, { free, atom(repository, "loaded", { 0 }) }));
@@ -279,7 +279,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderDropsResidualsWithoutMutexInfor
 {
     namespace planning = tyr::formalism::planning;
     namespace invariant = planning::invariant;
-    auto repository = planning::RepositoryFactory().create();
+    auto repository = planning::Repository();
     const auto shared = atom(repository, "shared", { 0, 1 });
     const auto taker = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "pair", { 0, 1 }) }));
     // Once taker takes shared, singleton keeps one atom without counted variables, residual one with them.
@@ -295,7 +295,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderCriteriaCompose)
     namespace planning = tyr::formalism::planning;
     namespace invariant = planning::invariant;
     using Criterion = invariant::InvariantOrderCriterion;
-    auto repository = planning::RepositoryFactory().create();
+    auto repository = planning::Repository();
     const auto p = intern_invariant(repository, planning::MutableInvariant(0, 1, { atom(repository, "p", { 0 }), atom(repository, "q", { 0 }) }));
     const auto r = intern_invariant(repository, planning::MutableInvariant(0, 1, { atom(repository, "r", { 0 }), atom(repository, "s", { 0 }) }));
 

@@ -154,16 +154,15 @@ struct AxiomTables
 
 auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
 {
-    auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
     const auto num_objects = task.get_num_objects();
-    auto repository = factory->create_shared(num_objects);
+    auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     auto tables = AxiomTables {};
     const auto program = create_program(task, tables.translation_context, *repository);
     auto source = TranslatedProgram<AxiomTables> { program, std::move(repository), std::move(tables) };
 
-    auto result = transform(source, *factory, num_objects, decompose_static_literals_pass());
+    auto result = transform(source, num_objects, decompose_static_literals_pass());
     translation_context = std::move(result.tables.translation_context);
-    return datalog::Program<LiftedTag>(result.program, std::move(result.repository), std::move(factory));
+    return datalog::Program<LiftedTag>(result.program, std::move(result.repository));
 }
 }
 

@@ -33,10 +33,8 @@ class PlanningDomain
 public:
     PlanningDomain(DomainView domain,
                    RepositoryPtr repository,
-                   RepositoryFactoryPtr repository_factory,
                    std::optional<std::filesystem::path> path = std::nullopt) :
         m_repository(std::move(repository)),
-        m_repository_factory(std::move(repository_factory)),
         m_domain(domain),
         m_path(std::move(path))
     {
@@ -46,12 +44,10 @@ public:
 
     [[nodiscard]] auto get_domain() const noexcept { return m_domain; }
     [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
-    [[nodiscard]] const auto& get_repository_factory() const noexcept { return m_repository_factory; }
     [[nodiscard]] const auto& get_path() const noexcept { return m_path; }
 
 private:
     RepositoryPtr m_repository;
-    RepositoryFactoryPtr m_repository_factory;
     DomainView m_domain;
     std::optional<std::filesystem::path> m_path;
 };

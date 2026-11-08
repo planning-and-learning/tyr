@@ -188,7 +188,7 @@ CMake options:
 | `TYR_STATE_STORAGE_POLICY` | `TreeBitset` | State storage backend; accepted values are `TreeVector`, `TreeBitset`, and `Hashset`. `TreeBitset` stores fluent facts and derived atoms as position-stable bitset trees and inserts successors as deltas to their parent. `TreeVector` and `Hashset` store them as vectors, as trees with shared structure or whole in hash tables. |
 | `TYR_RELATION_STORAGE_POLICY` | `Word` | Relation storage backend; accepted values are `Word` and `Bit`. Bit packing uses `num_objects` supplied when creating repositories. |
 
-`RepositoryFactory.create_repository(parent_repository=None, num_objects=None)` accepts the total object count for the repository. `None` keeps the full object-index width; child counts include the parent object universe.
+`Repository(parent_repository=None, num_objects=None)` accepts the total object count for the repository. `None` keeps the full object-index width; child counts include the parent object universe.
 
 Single-config CMake builds default to Release. On GCC and Clang, Debug builds
 use `-Og` with debug symbols, RelWithDebInfo keeps frame pointers and disables

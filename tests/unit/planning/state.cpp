@@ -456,7 +456,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
             EXPECT_TRUE(std::ranges::equal(borrowed, expected));
             EXPECT_TRUE(std::ranges::equal(indexed, expected));
         }
-        auto foreign_repository = task->get_domain().get_repository_factory()->create();
+        auto foreign_repository = tyr::formalism::planning::Repository();
         auto foreign_data = urd::data<formalism::Predicate<F>>(std::string("foreign"), 0);
         const auto foreign = tyr::formalism::planning::insert(foreign_repository, foreign_data).first;
         auto absent = state.get_atoms_view(foreign);
@@ -508,7 +508,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     auto atom_binding_data = urd::data<formalism::RelationBinding<formalism::Predicate<formalism::FluentTag>>> {};
     atom_binding_data.relation = tyr::formalism::planning::insert(*task->get_repository(), predicate_data).first.index();
     auto atom_data = urd::data<tyr::formalism::Atom<GroundTag, formalism::FluentTag>>(
-        tyr::formalism::planning::insert(*task->get_repository(), atom_binding_data).first.index());
+        tyr::formalism::planning::insert(*task->get_repository(), atom_binding_data).first.data());
     const auto absent_atom = tyr::formalism::planning::insert(*task->get_repository(), atom_data).first;
     EXPECT_FALSE(state.test(absent_atom));
     EXPECT_FALSE(registered.test(absent_atom));

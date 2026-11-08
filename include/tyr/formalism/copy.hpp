@@ -62,7 +62,7 @@ std::pair<urd::index_view<T, R>, bool> copy(urd::index_view<T, S> element, Write
                                                       element.context(),
                                                       [&](auto child) { return copy(child, context).first.index(); });
     if constexpr (requires { record->binding; })
-        record->binding = copy(element.context().view(record->binding), context).first.index();
+        record->binding = copy(element.context().view(record->binding), context).first.data();
 
     return ygg::formalism::insert(context.destination(), *record);
 }

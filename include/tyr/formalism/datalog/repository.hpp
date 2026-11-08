@@ -67,7 +67,6 @@
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/relation_repository.hpp>
 #include <yggdrasil/formalism/repository.hpp>
-#include <yggdrasil/formalism/repository_factory.hpp>
 #include <yggdrasil/formalism/symbol_repository.hpp>
 
 namespace tyr::formalism::datalog
@@ -85,7 +84,7 @@ std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingIndex<R> bindi
 
 template<RelationKind R>
 std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleBindingView<R> binding)
-{ return find_ground_rule(binding.index(), binding.context()); }
+{ return find_ground_rule(binding.data(), binding.context()); }
 
 }
 

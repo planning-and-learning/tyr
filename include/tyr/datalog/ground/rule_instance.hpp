@@ -41,7 +41,7 @@ public:
     [[nodiscard]] auto resolve(formalism::datalog::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
 
     [[nodiscard]] ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<GroundTag, formalism::FluentTag> effect) const noexcept
-    { return { effect.get_operator(), effect.get_fterm().get_row().index(), effect.get_fexpr() }; }
+    { return { effect.get_operator(), effect.get_fterm().get_row().data(), effect.get_fexpr() }; }
 
     [[nodiscard]] auto witness_key() const noexcept { return m_rule.get_row(); }
 

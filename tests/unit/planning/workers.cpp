@@ -47,7 +47,7 @@
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 
-static_assert(tyr::formalism::planning::Repository::thread_safe);
+static_assert(tyr::formalism::planning::SymbolRepository::thread_safe && tyr::formalism::planning::RelationRepository::thread_safe);
 
 namespace tyr::tests
 {

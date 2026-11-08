@@ -211,7 +211,7 @@ protected:
 
     [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateBindingView<formalism::FluentTag> head) const noexcept
     {
-        const auto* annotation = m_workspace.annotations.find(head.index());
+        const auto* annotation = m_workspace.annotations.find(head.data());
         return annotation ? datalog::get_cost(*annotation) : static_cast<datalog::Cost>(0);
     }
 
@@ -263,7 +263,7 @@ protected:
     void for_each_achiever(formalism::datalog::PredicateBindingView<formalism::FluentTag> head, Callback callback)
         requires AP::records_propositional_achievers
     {
-        const auto* achievers = m_workspace.annotation_policy.find_achievers(head.index());
+        const auto* achievers = m_workspace.annotation_policy.find_achievers(head.data());
         if (!achievers)
             return;
 

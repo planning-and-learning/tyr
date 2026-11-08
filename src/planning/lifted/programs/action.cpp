@@ -215,14 +215,13 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
                             ApplicableActionProgram::SchemaPrograms& schema_programs,
                             ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
-    auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
     const auto num_objects = task.get_num_objects();
-    auto source_repository = factory->create_shared(num_objects);
+    auto source_repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     auto tables = ActionTables {};
     const auto source_program = create_program(task, tables.translation_context, tables.predicate_to_actions, tables.effect_to_predicate, *source_repository);
     auto source = TranslatedProgram<ActionTables> { source_program, std::move(source_repository), std::move(tables) };
 
-    auto result = transform(source, *factory, num_objects, decompose_static_literals_pass());
+    auto result = transform(source, num_objects, decompose_static_literals_pass());
     const auto program = result.program;
     auto repository = std::move(result.repository);
     translation_context = std::move(result.tables.translation_context);
@@ -247,7 +246,7 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
                 schema->predicate_rules.push_back(rule_of.at(it->second));
         schema_programs.try_emplace(action, formalism::datalog::insert(*repository, *schema).first, translation_context.p2d);
     }
-    return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
+    return datalog::Program<LiftedTag>(program, std::move(repository));
 }
 }
 

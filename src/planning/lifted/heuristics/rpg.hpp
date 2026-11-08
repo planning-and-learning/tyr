@@ -128,7 +128,7 @@ struct RPGPolicy<LiftedTag>
                                         {
                                             if (!projection_rules.contains(literal.get_atom().get_predicate().index()))
                                                 continue;
-                                            const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).index());
+                                            const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).data());
                                             const auto* projection =
                                                 annotation ? std::get_if<datalog::WitnessAnnotation<formalism::PredicateTag>>(annotation) : nullptr;
                                             assert(projection && "A derived projection atom has a witness.");

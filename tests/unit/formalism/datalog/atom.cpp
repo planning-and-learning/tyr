@@ -70,7 +70,7 @@ static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
 
 TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
 {
-    auto repository = tyr::formalism::datalog::RepositoryFactory().create();
+    auto repository = tyr::formalism::datalog::Repository();
 
     auto predicate_data = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("at"), 2);
     const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
@@ -87,7 +87,7 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
-    auto ground_atom_data = urd::data<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
+    auto ground_atom_data = urd::data<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.data());
     const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 

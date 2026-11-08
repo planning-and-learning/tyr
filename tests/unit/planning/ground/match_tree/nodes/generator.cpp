@@ -43,7 +43,7 @@ static_assert(noexcept(std::declval<const tyr::planning::match_tree::Repository<
 
 TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
 {
-    auto formalism_repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto formalism_repository = tyr::formalism::planning::Repository();
     auto repository = tyr::planning::match_tree::Repository<Action>(0, formalism_repository);
     auto builder = tyr::planning::match_tree::GroundActionBuilder {};
     auto data = tyr::planning::match_tree::checkout<Generator>(builder);

@@ -76,16 +76,6 @@ void bind_module_definitions(nb::module_& m)
 
     bind_formalism(m);
 
-    nb::class_<RepositoryFactory>(m, "RepositoryFactory")  //
-        .def(nb::new_([]() { return std::make_shared<RepositoryFactory>(); }))
-        .def(
-            "create_repository",
-            [](RepositoryFactory& factory, const Repository* parent_repository, std::optional<std::size_t> num_objects)
-            { return num_objects ? factory.create_shared(*num_objects, parent_repository) : factory.create_shared(parent_repository); },
-            "parent_repository"_a = nullptr,
-            "num_objects"_a = nb::none(),
-            nb::keep_alive<0, 2>());
-
     /**
      * FDRContext
      */
@@ -105,14 +95,9 @@ void bind_module_definitions(nb::module_& m)
 
     {
         auto cls = nb::class_<PlanningDomain>(m, "PlanningDomain")  //
-                       .def(nb::init<DomainView, RepositoryPtr, RepositoryFactoryPtr, std::optional<std::filesystem::path>>(),
-                            "domain"_a,
-                            "repository"_a,
-                            "repository_factory"_a,
-                            "path"_a = nb::none())
+                       .def(nb::init<DomainView, RepositoryPtr, std::optional<std::filesystem::path>>(), "domain"_a, "repository"_a, "path"_a = nb::none())
                        .def("get_domain", &PlanningDomain::get_domain)
                        .def("get_repository", &PlanningDomain::get_repository)
-                       .def("get_repository_factory", &PlanningDomain::get_repository_factory)
                        .def("get_path", &PlanningDomain::get_path);
         ygg::add_print(cls);
     }

@@ -33,7 +33,7 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
 {
     auto context = create_search_context<Kind>(test_case.domain_file, test_case.task_file);
     // Read only for lifted tasks, whose search must not intern ground actions.
-    [[maybe_unused]] const auto num_ground_actions_before = context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>();
+    [[maybe_unused]] const auto num_ground_actions_before = context.task->get_repository()->symbols().template size<formalism::planning::Action<GroundTag>>();
     auto heuristic = create_search_heuristic<Kind>(heuristic_name, context, cost_mode);
 
     auto options = tyr::planning::gbfs_lazy::Options<Kind>();
@@ -49,7 +49,7 @@ void check_statistics(const SearchStatistics& expected, const SearchCase& test_c
     expect_repository_statistics(context, result.statistics);
     if constexpr (std::is_same_v<Kind, LiftedTag>)
     {
-        EXPECT_EQ(context.task->get_repository()->template size<formalism::planning::Action<GroundTag>>(), num_ground_actions_before);
+        EXPECT_EQ(context.task->get_repository()->symbols().template size<formalism::planning::Action<GroundTag>>(), num_ground_actions_before);
     }
 }
 }

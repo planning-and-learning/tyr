@@ -42,7 +42,6 @@ from pytyr.formalism.planning import (
     ParameterIndex,
     PlanningDomain,
     Repository,
-    RepositoryFactory,
     StaticAtom,
     StaticAtomData,
     StaticGroundAtom,
@@ -148,14 +147,12 @@ def make_fluent_ground_atom(
 
 def main() -> None:
     """Build the gripper domain and a task over it, then instantiate and print the ground task."""
-    factory = RepositoryFactory()
-
     # --------------------------------------------------------------------------
     # 1. Build the domain
     # --------------------------------------------------------------------------
 
     # Create a root repository
-    domain_repository = factory.create_repository()
+    domain_repository = Repository()
 
     # Static predicates
     room = domain_repository.insert(StaticPredicateData("room", 1))[0]
@@ -342,7 +339,7 @@ def main() -> None:
 
     # Create a child repository, effectively inheriting all domain structures.
     #
-    task_repository = factory.create_repository(domain_repository)
+    task_repository = Repository(domain_repository)
 
     fdr_context = FDRContext(task_repository)
 
@@ -418,8 +415,8 @@ def main() -> None:
     # and instantiate the fully grounded representation used for search.
     # --------------------------------------------------------------------------
 
-    # Combine the lifted domain with its repository and factory.
-    planning_domain = PlanningDomain(domain, domain_repository, factory)
+    # Combine the lifted domain with its repository.
+    planning_domain = PlanningDomain(domain, domain_repository)
 
     # Combine the lifted task with the FDR context, task repository, and domain.
     planning_task = LiftedPlanningTask(task, fdr_context, task_repository, planning_domain)

@@ -39,7 +39,7 @@ static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::datalog::Repo
 
 TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
 {
-    auto repository = tyr::formalism::datalog::RepositoryFactory().create();
+    auto repository = tyr::formalism::datalog::Repository();
 
     for (const auto op : { tyr::formalism::ArithmeticOperatorKind::Add, tyr::formalism::ArithmeticOperatorKind::Mul })
     {

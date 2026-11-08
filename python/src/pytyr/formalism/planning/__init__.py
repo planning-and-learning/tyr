@@ -200,7 +200,6 @@ from pytyr._pytyr.formalism.planning import (
     Parser as Parser,
     PlanningDomain as PlanningDomain,
     Repository as Repository,
-    RepositoryFactory as RepositoryFactory,
     RowIndex as RowIndex,
     StaticAtom as StaticAtom,
     StaticAtomData as StaticAtomData,

@@ -387,7 +387,7 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
     auto action = formalism::planning::checkout<formalism::planning::Action<GroundTag>>(context.builder());
 
     // Fill data
-    action->binding = ground(element, context).first.index();
+    action->binding = ground(element, context).first.data();
 
     const auto new_condition_or_nullopt = ground_pruned(element.get_condition(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_condition_or_nullopt)
@@ -424,7 +424,7 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
     auto axiom = formalism::planning::checkout<formalism::planning::Axiom<GroundTag>>(context.builder());
 
     // Fill data
-    axiom->binding = ground(element, context).first.index();
+    axiom->binding = ground(element, context).first.data();
 
     const auto new_body_or_nullopt = ground_pruned(element.get_body(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_body_or_nullopt.has_value())
@@ -522,7 +522,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     const auto& planning_domain = planning_task.get_domain();
 
     auto task = planning_task.get_task();
-    auto repository = planning_domain.get_repository_factory()->create_shared(task.get_num_objects(), planning_domain.get_repository().get());
+    auto repository = std::make_shared<formalism::planning::Repository>(task.get_num_objects(), planning_domain.get_repository().get());
     auto builder = formalism::planning::Builder();
 
     auto ground_task = formalism::planning::checkout<formalism::planning::Task<GroundTag>>(builder);
@@ -564,7 +564,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                                binding,
                                                ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
                                                merge_planning_context)
-                                               .first.index();
+                                               .first.data();
                     fluent_atoms.push_back(formalism::planning::insert(*repository, *fluent_atom).first);
                 }
                 else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
@@ -574,7 +574,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                                 binding,
                                                 ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
                                                 merge_planning_context)
-                                                .first.index();
+                                                .first.data();
                     derived_atoms.push_back(formalism::planning::insert(*repository, *derived_atom).first);
                 }
             });

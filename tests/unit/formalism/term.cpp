@@ -24,11 +24,10 @@ TEST(TyrFormalismTerm, PreservesParameterAlternative)
 
 TEST(TyrFormalismTerm, ReadoutFollowsReferencedObjectsToTheirLayer)
 {
-    auto factory = tyr::formalism::planning::RepositoryFactory {};
-    auto parent = factory.create();
+    auto parent = tyr::formalism::planning::Repository();
     auto object_data = urd::data<tyr::formalism::Object>(std::string("parent"));
     const auto object = tyr::formalism::planning::insert(parent, object_data).first;
-    auto child = factory.create(&parent);
+    auto child = tyr::formalism::planning::Repository(&parent);
     object_data.name = "child";
     const auto child_object = tyr::formalism::planning::insert(child, object_data).first;
 

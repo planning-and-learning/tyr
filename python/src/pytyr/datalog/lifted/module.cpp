@@ -38,10 +38,7 @@ void bind_lifted_module_definitions(nb::module_& m)
             nb::rv_policy::reference_internal);
 
     nb::class_<ProgramT>(m, "Program")
-        .def(nb::init<formalism::datalog::ProgramView<LiftedTag>, formalism::datalog::RepositoryPtr, formalism::datalog::RepositoryFactoryPtr>(),
-             "program"_a,
-             "repository"_a,
-             "repository_factory"_a)
+        .def(nb::init<formalism::datalog::ProgramView<LiftedTag>, formalism::datalog::RepositoryPtr>(), "program"_a, "repository"_a)
         .def("get_program", &ProgramT::get_program)
         .def("get_program_repository", nb::overload_cast<>(&ProgramT::get_program_repository, nb::const_), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &ProgramT::get_const_program_workspace, nb::rv_policy::reference_internal);

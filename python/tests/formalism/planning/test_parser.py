@@ -79,7 +79,6 @@ def test_programmatic_wrappers_default_to_no_path() -> None:
     domain = PlanningDomain(
         parsed_domain.get_domain(),
         parsed_domain.get_repository(),
-        parsed_domain.get_repository_factory(),
     )
     task = LiftedPlanningTask(
         parsed_task.get_task(),
@@ -289,7 +288,7 @@ def test_fdr_context_view_accessors_keep_temporary_owners_alive() -> None:
     assert fact.get_variable() in variables
 
 
-def test_views_from_independent_parsers_use_deterministic_factory_local_identity() -> None:
+def test_views_from_independent_parsers_are_distinct() -> None:
     first_parser = Parser(
         str(GRIPPER.domain_path),
         ParserOptions(),
@@ -304,5 +303,4 @@ def test_views_from_independent_parsers_use_deterministic_factory_local_identity
 
     assert int(first_predicate.index()) == int(second_predicate.index())
     assert first_predicate.get_name() == second_predicate.get_name()
-    assert first_predicate == second_predicate
-    assert hash(first_predicate) == hash(second_predicate)
+    assert first_predicate != second_predicate

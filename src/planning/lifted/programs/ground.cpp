@@ -362,10 +362,9 @@ static auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task
                                    GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
                                    ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
-    auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
-    auto repository = factory->create_shared(task.get_num_objects());
+    auto repository = std::make_shared<formalism::datalog::Repository>(task.get_num_objects());
     auto program = create_program(task, translation_context, predicate_to_actions, predicate_to_axioms, effect_to_predicate, *repository);
-    return datalog::Program<LiftedTag>(program, std::move(repository), std::move(factory));
+    return datalog::Program<LiftedTag>(program, std::move(repository));
 }
 
 }

@@ -96,7 +96,7 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
 
 TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndependent)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     const auto atom = make_atom(repository, "truck");
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a");
@@ -129,7 +129,7 @@ TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndep
 
 TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     const auto binding = make_atom(repository, "truck").get_row();
     for (const auto& fields : { urd::Store<urd::sequence<std::string>> { "objects" }, urd::Store<urd::sequence<std::string>> {} })
     {
@@ -154,7 +154,7 @@ TEST(TyrSerialization, FieldSelectionSkipsDescendantsBeforeSerialization)
 
 TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     const auto binding = make_atom(repository, "truck").get_row();
     auto dictionaries = ygg::serialization::Dictionaries {};
     size_t calls = 0;
@@ -183,9 +183,8 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
 
 TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
 {
-    auto factory = tyr::formalism::planning::RepositoryFactory();
-    auto first_repository = factory.create();
-    auto second_repository = factory.create();
+    auto first_repository = tyr::formalism::planning::Repository();
+    auto second_repository = tyr::formalism::planning::Repository();
     const auto first = make_atom(first_repository, "truck");
     const auto second = make_atom(second_repository, "truck");
     ASSERT_EQ(first.index(), second.index());
@@ -219,7 +218,7 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
 
 TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     const auto atom = make_atom(repository, "truck");
     auto variable_data = urd::data<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>> {};
     variable_data.atoms.push_back(atom.index());
@@ -242,7 +241,7 @@ TEST(TyrSerialization, ExpressionsKeepConstantsInline)
 {
     using Binary = tyr::formalism::BinaryOperator<LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
     using BinaryView = urd::index_view<Binary, tyr::formalism::planning::Repository>;
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     const auto constant = tyr::formalism::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3));
     auto binary_data = urd::data<Binary>(tyr::formalism::ArithmeticOperatorKind::Sub, constant, constant);
     const auto binary = ygg::formalism::insert(repository, binary_data).first;
@@ -277,7 +276,7 @@ TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSeriali
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::ObjectView>("other", "x"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("objects", "p"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "o"), std::invalid_argument);
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     dictionaries.serialize(make_atom(repository, "truck").get_objects()[0]);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p"), std::logic_error);
 }

@@ -57,7 +57,7 @@ static_assert(!ygg::formalism::SymbolContextFor<int, tyr::formalism::Object>);
 
 TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     auto data = ObjectData(std::string("truck"));
     const auto object = tyr::formalism::planning::insert(repository, data).first;
     const auto view = repository.view(object.index());

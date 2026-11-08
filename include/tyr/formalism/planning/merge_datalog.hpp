@@ -196,7 +196,7 @@ std::pair<datalog::AtomView<GroundTag, T_DST>, bool> merge_p2d(AtomView<GroundTa
 {
     auto atom = datalog::checkout<Atom<GroundTag, T_DST>>(context.builder());
 
-    atom->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.index();
+    atom->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.data();
 
     return datalog::insert(context.destination(), *atom);
 }
@@ -311,7 +311,7 @@ std::pair<datalog::FunctionTermView<GroundTag, T_DST>, bool> merge_p2d(FunctionT
 {
     auto fterm = datalog::checkout<FunctionTerm<GroundTag, T_DST>>(context.builder());
 
-    fterm->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), context).first.index();
+    fterm->binding = merge_p2d<T_SRC, T_DST>(element.get_row(), context).first.data();
 
     return datalog::insert(context.destination(), *fterm);
 }

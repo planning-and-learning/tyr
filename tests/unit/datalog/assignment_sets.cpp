@@ -88,7 +88,7 @@ auto intern(tyr::formalism::datalog::Repository& repository, urd::data<T> data)
 
 struct Fixture
 {
-    tyr::formalism::datalog::Repository repository = tyr::formalism::datalog::RepositoryFactory().create();
+    tyr::formalism::datalog::Repository repository = tyr::formalism::datalog::Repository();
     urd::Store<urd::sequence<tyr::formalism::datalog::ObjectView>> objects;
 
     Fixture()

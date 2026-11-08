@@ -115,14 +115,13 @@ static_assert(requires(Data& data, const View& view) {
 
 TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
 {
-    auto factory = tyr::formalism::datalog::RepositoryFactory {};
-    auto destination = factory.create();
+    auto destination = tyr::formalism::datalog::Repository();
 
     auto filtered = std::optional<tyr::formalism::datalog::ProgramView<::tyr::GroundTag>> {};
     auto retained_predicate_source_index = static_cast<ygg::uint_t>(0);
     auto retained_function_source_index = static_cast<ygg::uint_t>(0);
     {
-        auto source = factory.create();
+        auto source = tyr::formalism::datalog::Repository();
         const auto intern = [&](auto data)
         {
             return ygg::formalism::insert(source, data).first;
@@ -136,14 +135,14 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<T>>> {};
             binding.relation = predicate_.index();
             const auto binding_view = intern(std::move(binding));
-            return intern(urd::data<tyr::formalism::Atom<::tyr::GroundTag, T>> { binding_view.index() });
+            return intern(urd::data<tyr::formalism::Atom<::tyr::GroundTag, T>> { binding_view.data() });
         };
         const auto ground_fterm = [&]<tyr::formalism::FactKind T>(tyr::formalism::datalog::FunctionView<T> function_)
         {
             auto binding = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Function<T>>> {};
             binding.relation = function_.index();
             const auto binding_view = intern(std::move(binding));
-            return intern(urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>> { binding_view.index() });
+            return intern(urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>> { binding_view.data() });
         };
         const auto static_literal = [&](tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag> atom, bool polarity)
         { return intern(urd::data<tyr::formalism::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>> { atom.index(), polarity }); };
@@ -187,7 +186,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             const auto binding = intern(std::move(binding_data));
 
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>> {};
-            rule_data.binding = binding.index();
+            rule_data.binding = binding.data();
             rule_data.body = body.index();
             rule_data.heads.push_back(head.index());
             return intern(std::move(rule_data));
@@ -214,7 +213,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
                 tyr::formalism::FunctionExpression<::tyr::GroundTag> { 1.0 } });
 
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>> {};
-            rule_data.binding = binding.index();
+            rule_data.binding = binding.data();
             rule_data.body = body.index();
             rule_data.head = effect.index();
             return intern(std::move(rule_data));
@@ -277,8 +276,8 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());
     EXPECT_EQ(filtered->get_goal().value().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_name().str(), "retained-predicate");
-    EXPECT_EQ((destination.size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>>()), 1);
-    EXPECT_EQ((destination.size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>>()), 1);
+    EXPECT_EQ((destination.symbols().size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>>()), 1);
+    EXPECT_EQ((destination.symbols().size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>>()), 1);
 }
 
 }

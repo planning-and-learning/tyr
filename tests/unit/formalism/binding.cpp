@@ -65,7 +65,6 @@ struct BindingPublicView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, tyr:
 template<typename Relation, typename Repository>
 concept BindingContract =
     requires(const Repository& repository, ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag> index) { repository.view(index); }
-    && tyr::formalism::RelationBindingConcept<tyr::formalism::RelationBinding<Relation>>
     && std::totally_ordered<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>> && std::totally_ordered<urd::data<tyr::formalism::RelationBinding<Relation>>>
     && std::totally_ordered<::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>>
     && std::same_as<::ygg::formalism::RelationBindingView<ygg::formalism::RelationBindingIndex<Relation, ::tyr::formalism::ObjectTag>, Repository>, typename BindingPublicView<Relation, Repository>::type>
@@ -76,7 +75,7 @@ concept BindingContract =
            index.row;
            data.relation;
            data.objects;
-           view.index();
+           view.data();
            view.get_relation();
            view.get_objects();
            view.get_key();
@@ -100,11 +99,11 @@ static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr
 
 namespace
 {
-template<typename Factory, typename Builder, typename Context>
+template<typename Repository, typename Builder, typename Context>
 void check_binding_copy()
 {
-    auto source = Factory().create();
-    auto destination = Factory().create();
+    auto source = Repository();
+    auto destination = Repository();
 
     const auto intern = []<typename T>(auto& repository, urd::data<T> data) { return ygg::formalism::insert(repository, data).first; };
 
@@ -156,14 +155,14 @@ void check_binding_copy()
 }  // namespace
 
 TEST(TyrFormalismDatalogCopy, RemapsBindingRelationsAndObjects)
-{ check_binding_copy<tyr::formalism::datalog::RepositoryFactory, tyr::formalism::datalog::Builder, tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>>(); }
+{ check_binding_copy<tyr::formalism::datalog::Repository, tyr::formalism::datalog::Builder, tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>>(); }
 
 TEST(TyrFormalismPlanningCopy, RemapsBindingRelationsAndObjects)
-{ check_binding_copy<tyr::formalism::planning::RepositoryFactory, tyr::formalism::planning::Builder, tyr::formalism::WriteContext<tyr::formalism::planning::Builder, tyr::formalism::planning::Repository>>(); }
+{ check_binding_copy<tyr::formalism::planning::Repository, tyr::formalism::planning::Builder, tyr::formalism::WriteContext<tyr::formalism::planning::Builder, tyr::formalism::planning::Repository>>(); }
 
 TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
 {
-    auto repository = tyr::formalism::planning::RepositoryFactory().create();
+    auto repository = tyr::formalism::planning::Repository();
     auto builder = tyr::formalism::planning::Builder {};
     auto a_data = urd::data<tyr::formalism::Object>(std::string("a"));
     auto b_data = urd::data<tyr::formalism::Object>(std::string("b"));

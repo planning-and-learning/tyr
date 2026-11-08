@@ -23,11 +23,9 @@ namespace tyr::datalog
 {
 
 Program<LiftedTag>::Program(formalism::datalog::ProgramView<LiftedTag> program,
-                            formalism::datalog::RepositoryPtr program_repository,
-                            formalism::datalog::RepositoryFactoryPtr repository_factory) :
+                            formalism::datalog::RepositoryPtr program_repository) :
     m_program(program),
     m_program_repository(std::move(program_repository)),
-    m_repository_factory(std::move(repository_factory)),
     m_analysis(analysis::analyze_program(m_program)),
     m_strata(analysis::compute_rule_stratification(m_program)),
     m_listeners(analysis::compute_listeners(m_strata, *m_program_repository)),

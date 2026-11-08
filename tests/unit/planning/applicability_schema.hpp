@@ -159,7 +159,7 @@ void expect_schema_queries_match_filtered_successors()
     {
         auto count = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            count += task->get_repository()->size(action.index());
+            count += task->get_repository()->relations().size(action.index());
         return count;
     };
     auto execution_context = ygg::ExecutionContext::create(1);
@@ -267,7 +267,7 @@ void expect_schema_queries_match_filtered_successors()
             ASSERT_EQ(result.status, tyr::planning::ActionBindingStatus::APPLICABLE);
             ASSERT_TRUE(result.binding);
             EXPECT_EQ(result.binding.value().get_relation(), action);
-            EXPECT_TRUE(std::ranges::equal(result.binding.value().data().objects, objects));
+            EXPECT_TRUE(std::ranges::equal(result.binding.value().get_key().second, objects));
             const auto published = count_action_bindings(task);
             EXPECT_EQ(published, before + (std::same_as<Kind, LiftedTag> && generator == source.get() ? 1 : 0));
             const auto repeated = generator->try_get_applicable_action_binding(initial_node, urd::resolve(offer(action, objects), object_repository));

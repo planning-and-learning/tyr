@@ -18,6 +18,9 @@
 #include "bindings.hpp"
 #include "pytyr/module.hpp"
 
+#include <nanobind/stl/optional.h>
+#include <new>
+#include <optional>
 #include <tyr/formalism/planning/repository.hpp>
 
 namespace tyr::formalism::planning
@@ -26,6 +29,19 @@ namespace tyr::formalism::planning
 void bind_formalism(nb::module_& m)
 {
     auto repository = RepositoryBinding(m, "Repository");
+    // A layer over `parent_repository` (kept alive by it), its bindings storing object indices below `num_objects`.
+    repository.def(
+        "__init__",
+        [](Repository* self, const Repository* parent_repository, std::optional<std::size_t> num_objects)
+        {
+            if (num_objects)
+                new (self) Repository(*num_objects, parent_repository);
+            else
+                new (self) Repository(parent_repository);
+        },
+        nb::arg("parent_repository") = nullptr,
+        nb::arg("num_objects") = nb::none(),
+        nb::keep_alive<1, 2>());
     bind_binding(m, repository);
     bind_predicate(m, repository);
     bind_atom(m, repository);

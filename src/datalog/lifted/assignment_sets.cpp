@@ -237,7 +237,7 @@ void PredicateAssignmentSet<T>::reset() noexcept
 template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
 {
-    assert(binding.index().relation == m_predicate_index);
+    assert(binding.data().relation == m_predicate_index);
     for_each_assignment_rank(m_hash,
                              binding.get_objects().base(),
                              m_remapped_objects,
@@ -316,7 +316,7 @@ void PredicateAssignmentSets<T>::insert(formalism::datalog::AtomView<GroundTag, 
 
 template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateBindingView<T> binding)
-{ m_sets[static_cast<ygg::uint_t>(binding.index().relation.value)].insert(binding); }
+{ m_sets[static_cast<ygg::uint_t>(binding.data().relation.value)].insert(binding); }
 
 template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings)
@@ -364,7 +364,7 @@ void FunctionAssignmentSet<T>::reset() noexcept
 template<formalism::FactKind T>
 bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
-    assert(binding.index().relation == m_function_index);
+    assert(binding.data().relation == m_function_index);
     auto changed = update_interval(m_set[EmptyAssignment::rank], interval);
     for_each_assignment_rank(m_hash,
                              binding.get_objects().base(),

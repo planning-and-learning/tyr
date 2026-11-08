@@ -17,7 +17,7 @@ def test_ground_program_rule_accessors() -> None:
 
 
 def test_ground_facts_expose_their_bindings() -> None:
-    repository = datalog.RepositoryFactory().create_repository()
+    repository = datalog.Repository()
 
     predicate = repository.insert(datalog.FluentPredicateData("predicate", 0))[0]
     predicate_binding = repository.insert(datalog.FluentPredicateBindingData(predicate, []))[0]
@@ -31,18 +31,17 @@ def test_ground_facts_expose_their_bindings() -> None:
 
 
 @pytest.mark.parametrize("module", [datalog, planning])
-def test_repository_factory_accepts_object_counts(module: ModuleType) -> None:
-    factory = module.RepositoryFactory()
-    assert factory.create_repository(num_objects=None) is not None
+def test_repository_accepts_object_counts(module: ModuleType) -> None:
+    assert module.Repository(num_objects=None) is not None
 
-    parent = factory.create_repository(num_objects=2)
+    parent = module.Repository(num_objects=2)
     parent.insert(module.ObjectData("first"))[0]
     second = parent.insert(module.ObjectData("second"))[0]
     predicate = parent.insert(module.StaticPredicateData("predicate", 1))[0]
     binding = parent.insert(module.StaticPredicateBindingData(predicate, [second]))[0]
     assert list(binding.get_objects()) == [second]
 
-    child = factory.create_repository(parent, num_objects=3)
+    child = module.Repository(parent, num_objects=3)
     third = child.insert(module.ObjectData("third"))[0]
     binding = child.insert(module.StaticPredicateBindingData(predicate, [third]))[0]
     assert list(binding.get_objects()) == [third]
@@ -50,8 +49,7 @@ def test_repository_factory_accepts_object_counts(module: ModuleType) -> None:
 
 @pytest.mark.parametrize("module", [datalog, planning])
 def test_insert_reports_deduplication_and_retains_repository(module: ModuleType) -> None:
-    factory = module.RepositoryFactory()
-    repository = factory.create_repository()
+    repository = module.Repository()
     data = module.ObjectData("retained")
     value, inserted = repository.insert(data)
     assert inserted is True
@@ -60,14 +58,14 @@ def test_insert_reports_deduplication_and_retains_repository(module: ModuleType)
     assert duplicate == value
     assert not hasattr(repository, "get_or_create")
 
-    del duplicate, data, repository, factory
+    del duplicate, data, repository
     gc.collect()
     assert value.get_name() == "retained"
 
 
 @pytest.mark.parametrize("module", [datalog, planning])
 def test_inserted_binding_children_retain_repository(module: ModuleType) -> None:
-    repository = module.RepositoryFactory().create_repository()
+    repository = module.Repository()
     obj, _ = repository.insert(module.ObjectData("retained"))
     predicate, _ = repository.insert(module.StaticPredicateData("p", 1))
     binding, inserted = repository.insert(module.StaticPredicateBindingData(predicate, [obj]))

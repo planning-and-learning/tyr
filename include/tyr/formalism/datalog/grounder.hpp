@@ -151,7 +151,7 @@ std::pair<FunctionTermView<GroundTag, F>, bool> ground(FunctionTermView<LiftedTa
     auto fterm = datalog::checkout<FunctionTerm<GroundTag, F>>(context.builder());
 
     // Fill data
-    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.index();
+    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.data();
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *fterm);
@@ -231,7 +231,7 @@ std::pair<AtomView<GroundTag, F>, bool> ground(AtomView<LiftedTag, F> element, W
     auto atom = datalog::checkout<Atom<GroundTag, F>>(context.builder());
 
     // Fill data
-    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.index();
+    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.data();
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *atom);
@@ -287,7 +287,7 @@ std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, W
     auto rule = datalog::checkout<Rule<GroundTag, R>>(context.builder());
 
     // Fill data
-    rule->binding = ground_binding(element, context).first.index();
+    rule->binding = ground_binding(element, context).first.data();
     rule->body = ground(element.get_body(), context).first.index();
     if constexpr (std::same_as<R, PredicateTag>)
         for (const auto head : element.get_heads())

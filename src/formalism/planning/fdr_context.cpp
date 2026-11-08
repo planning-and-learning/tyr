@@ -147,7 +147,7 @@ std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(AtomView<GroundTag, F
 
 std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(AtomView<GroundTag, FluentTag> atom) const
 {
-    assert(&m_context->get_canonical_context(atom.index()) == &atom.context());
+    assert(m_context->owner(atom.index()) == &atom.context());
     const auto index = static_cast<ygg::uint_t>(atom.index().value);
     if (index >= m_facts.size())
         return std::nullopt;

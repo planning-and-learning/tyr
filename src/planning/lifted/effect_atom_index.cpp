@@ -77,7 +77,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
             m_prefix.push_back(objects[i].index());
         const auto row = find_row(applicability_predicate, std::span<const urd::index<formalism::Object>>(m_prefix.data(), m_prefix.size()));
         assert(row && "An effect atom's action binding is applicable.");
-        groups.rows.emplace_back(*row, atom.index());
+        groups.rows.emplace_back(*row, atom.data());
     }
     groups.atoms.assign(groups.rows.begin(), groups.rows.end());
 
@@ -93,7 +93,7 @@ std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::datalog::Predica
     const auto atom = m_repository->find(m_lookup);
     if (!atom)
         return std::nullopt;
-    return static_cast<ygg::uint_t>(atom->index().row.value);
+    return static_cast<ygg::uint_t>(atom->data().row.value);
 }
 
 }

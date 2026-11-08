@@ -164,7 +164,7 @@ H as_index(H index) noexcept
 
 template<typename H, typename C>
 H as_index(const ::ygg::formalism::RelationBindingView<H, C>& view) noexcept
-{ return view.index(); }
+{ return view.data(); }
 
 inline void bind_numeric_support(nb::module_& m)
 {
@@ -177,7 +177,7 @@ inline void bind_numeric_support(nb::module_& m)
                    .def(
                        "__init__",
                        [](NumericSupport* self, NumericKeyView key, Interval interval, Cost cost)
-                       { new (self) NumericSupport(key.index(), std::move(std::move(std::move(interval))), cost); },
+                       { new (self) NumericSupport(key.data(), std::move(std::move(std::move(interval))), cost); },
                        "key"_a,
                        "interval"_a,
                        "cost"_a)
@@ -228,13 +228,13 @@ inline void bind_annotations(nb::module_& m)
             .def(nb::init<RuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
             .def(
                 "__init__",
-                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost) { new (self) WitnessAnnotationT(rule_key.index(), cost); },
+                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost) { new (self) WitnessAnnotationT(rule_key.data(), cost); },
                 "rule_key"_a,
                 "cost"_a)
             .def(
                 "__init__",
                 [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost, urd::Store<urd::sequence<NumericSupport>> numeric_supports)
-                { new (self) WitnessAnnotationT(rule_key.index(), cost, std::move(numeric_supports)); },
+                { new (self) WitnessAnnotationT(rule_key.data(), cost, std::move(numeric_supports)); },
                 "rule_key"_a,
                 "cost"_a,
                 "numeric_supports"_a)
@@ -250,13 +250,13 @@ inline void bind_annotations(nb::module_& m)
             .def(
                 "__init__",
                 [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost)
-                { new (self) FunctionWitnessAnnotationT(rule_key.index(), cost); },
+                { new (self) FunctionWitnessAnnotationT(rule_key.data(), cost); },
                 "rule_key"_a,
                 "cost"_a)
             .def(
                 "__init__",
                 [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost, urd::Store<urd::sequence<NumericSupport>> numeric_supports)
-                { new (self) FunctionWitnessAnnotationT(rule_key.index(), cost, std::move(numeric_supports)); },
+                { new (self) FunctionWitnessAnnotationT(rule_key.data(), cost, std::move(numeric_supports)); },
                 "rule_key"_a,
                 "cost"_a,
                 "numeric_supports"_a)
@@ -382,7 +382,7 @@ inline void bind_policies(nb::module_& m)
             [](const MaxMinCostAnnotationWithAchievers& self,
                formalism::datalog::PredicateBindingView<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
-                const auto* achievers = self.find_achievers(binding.index());
+                const auto* achievers = self.find_achievers(binding.data());
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
             },
             "binding"_a);

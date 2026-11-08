@@ -220,17 +220,17 @@ struct SuccessorGenerator<LiftedTag>::Impl
             throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
         const auto indices = objects.base();
         const auto& target_repository = *definition->task->get_repository();
-        if (!std::ranges::all_of(indices, [&](const auto& value) { return objects.context().contains(value); })
-            || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.contains(value); }))
+        if (!std::ranges::all_of(indices, [&](const auto& value) { return objects.context().symbols().contains(value); })
+            || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.symbols().contains(value); }))
             return false;
-        if (!std::ranges::all_of(objects, [&](const auto& value) { return target_repository.contains(value); }))
+        if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(target_repository, value); }))
             throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
         return true;
     }
 
     void validate_binding(formalism::planning::ActionBindingDataView binding)
     {
-        if (!binding.context().contains(binding.data().relation))
+        if (!binding.context().symbols().contains(binding.data().relation))
             throw std::invalid_argument("SuccessorGenerator: action schema does not belong to its source repository.");
         if (!validate_binding_objects(binding.get_relation(), binding.get_objects()))
             throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
@@ -986,8 +986,8 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Source& node, fo
 template<ygg::formalism::RelationBindingViewConcept<formalism::planning::Action<LiftedTag>, formalism::ObjectTag> Binding>
 ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Source& node, Binding binding)
 {
-    if constexpr (requires { binding.index(); })
-        if (!binding.context().contains(binding.index()))
+    if constexpr (requires { binding.context().owner(binding.data()); })
+        if (binding.context().owner(binding.data()) == nullptr)
             throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
     return m_impl->check_action_binding(node, binding.get_relation(), binding.get_objects());
 }

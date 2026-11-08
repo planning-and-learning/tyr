@@ -72,7 +72,7 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
     {
         auto result = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            result += task->get_repository()->size(action.index());
+            result += task->get_repository()->relations().size(action.index());
         return result;
     };
     const auto num_action_bindings = count_action_bindings();
@@ -286,8 +286,8 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
     for (const auto binding : bindings)
     {
         EXPECT_EQ(binding.get_relation().get_name().str(), "drive");
-        ASSERT_EQ(binding.data().objects.size(), 3);
-        EXPECT_NE(binding.data().objects[1], binding.data().objects[2]);
+        ASSERT_EQ(binding.get_key().second.size(), 3);
+        EXPECT_NE(binding.get_key().second[1], binding.get_key().second[2]);
     }
 }
 
@@ -307,7 +307,7 @@ TEST(TyrPlanningApplicabilityTest, StaticApplicabilityUsesCopiedAtomIndices)
   (:goal (not (absent))))
 )",
                                                                                "static-copy-problem.pddl"));
-    auto destination = source->get_domain().get_repository_factory()->create_shared(source->get_domain().get_repository().get());
+    auto destination = std::make_shared<tyr::formalism::planning::Repository>(source->get_domain().get_repository().get());
     auto builder = tyr::formalism::planning::Builder {};
     auto context = tyr::formalism::WriteContext { builder, *destination };
     ASSERT_EQ(source->get_task().get_atoms<formalism::StaticTag>().size(), 1);

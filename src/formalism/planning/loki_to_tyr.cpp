@@ -858,7 +858,7 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
             auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
             atom->binding =
                 to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
-                    .first.index();
+                    .first.data();
             return planning::insert(context, *atom).first;
         },
         predicate_view_variant);
@@ -1001,7 +1001,7 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
             auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
             fterm->binding =
                 to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
-                    .first.index();
+                    .first.data();
             return planning::insert(context, *fterm).first;
         },
         function_view_variant);
@@ -1152,8 +1152,7 @@ urd::index<Metric> LokiToTyrTranslator::translate_grounded(loki::formalism::Metr
 PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView& element, std::optional<std::filesystem::path> path)
 {
     auto builder = Builder();
-    auto factory = std::make_shared<RepositoryFactory>();
-    auto context = factory->create_shared(element.get_constants().size());
+    auto context = std::make_shared<Repository>(element.get_constants().size());
 
     /* Perform static type analysis */
     prepare(element);
@@ -1190,7 +1189,7 @@ PlanningDomain LokiToTyrTranslator::translate(const loki::formalism::DomainView&
     translate_lifted(element.get_actions(), builder, *context, domain->actions);
     translate_lifted(element.get_axioms(), builder, *context, domain->axioms);
 
-    return PlanningDomain(planning::insert(*context, *domain).first, context, std::move(factory), std::move(path));
+    return PlanningDomain(planning::insert(*context, *domain).first, context, std::move(path));
 }
 
 PlanningTask<LiftedTag>
@@ -1203,8 +1202,8 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
 
     auto task = planning::checkout<planning::Task<LiftedTag>>(builder);
 
-    const auto& factory = domain.get_repository_factory();
-    auto task_context = factory->create_shared(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
+    auto task_context =
+        std::make_shared<Repository>(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
 
     auto fdr_context = std::make_shared<FDRContext>(task_context);
 

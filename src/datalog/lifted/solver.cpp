@@ -144,8 +144,8 @@ private:
             m_goal_atoms.clear();
             m_goal_positions.clear();
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-                if (m_goal_positions.emplace(literal.get_atom().get_row().index(), m_goal_atoms.size()).second)
-                    m_goal_atoms.push_back(literal.get_atom().get_row().index());
+                if (m_goal_positions.emplace(literal.get_atom().get_row().data(), m_goal_atoms.size()).second)
+                    m_goal_atoms.push_back(literal.get_atom().get_row().data());
             m_goal_final.clear();
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? static_cast<Cost>(0) : min_edge_cost;
             m_goal_cutoff_enabled = !m_goal_atoms.empty();
@@ -159,7 +159,7 @@ private:
         const auto& program_out = ctx.out().program();
         for (const auto& set : program_out.facts().delta_fact_sets.predicate.get_sets())
             for (const auto atom : set.get_bindings())
-                if (const auto* annotation = program_out.annotations().find(atom.index()))
+                if (const auto* annotation = program_out.annotations().find(atom.data()))
                     return get_cost(*annotation);
         return static_cast<Cost>(0);
     }
@@ -232,7 +232,7 @@ private:
         auto& heads = out.head_bindings();
         heads.clear();
         for (const auto head_atom : ctx.in().cws_rule().get_rule().get_heads())
-            heads.push_back(formalism::datalog::ground_binding(head_atom, out.ground_context()).first.index());
+            heads.push_back(formalism::datalog::ground_binding(head_atom, out.ground_context()).first.data());
         insert_propositional_update(std::span(std::as_const(heads)), input, out.head_updates(), out.delta_annotations());
     }
 
@@ -399,7 +399,7 @@ private:
             }
             if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
                 continue;
-            heads.push_back(head->index());
+            heads.push_back(head->data());
         }
         return missing;
     }

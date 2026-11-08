@@ -213,7 +213,7 @@ private:
             for (const auto object : tuple)
                 binding->objects.push_back(urd::index<formalism::Object>(object));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.index();
+            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.data();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
@@ -244,7 +244,7 @@ private:
             binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
             binding->objects.push_back(urd::index<formalism::Object>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.index();
+            atom->binding = formalism::datalog::insert(m_context->destination(), *binding).first.data();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 

@@ -41,13 +41,13 @@ TEST(TyrDatalogLiftedBottomUpTest, FullEnumerationIsLimitedToNumericListeners)
 
     scheduler.on_start_iteration();
     scheduler.on_generate(seed);
-    scheduler.on_generate(fixture.target.index().relation);
+    scheduler.on_generate(fixture.target.data().relation);
     scheduler.on_finish_iteration();
     EXPECT_NE(std::ranges::find(scheduler.get_active_rules(), rule.index()), scheduler.get_active_rules().end());
     EXPECT_FALSE(scheduler.requires_full_enumeration(rule.index()));
 
     scheduler.on_start_iteration();
-    scheduler.on_generate(fixture.source.index().relation);
+    scheduler.on_generate(fixture.source.data().relation);
     scheduler.on_finish_iteration();
     EXPECT_TRUE(scheduler.requires_full_enumeration(rule.index()));
 }
@@ -61,7 +61,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     auto initial = Context(workspace);
     tyr::datalog::compute_model(initial);
     const auto expected_atoms = collect_atoms_by_predicate(workspace);
-    const auto* expected_annotation = workspace.annotations.find(fixture.goal.index());
+    const auto* expected_annotation = workspace.annotations.find(fixture.goal.data());
     ASSERT_NE(expected_annotation, nullptr);
     const auto expected_cost = tyr::datalog::get_cost(*expected_annotation);
 
@@ -73,14 +73,14 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     };
     for (size_t iteration = 0; iteration < 2; ++iteration)
     {
-        workspace.cost_buckets.insert(99, fixture.goal.index());
+        workspace.cost_buckets.insert(99, fixture.goal.data());
         workspace.reset_evaluation();
         EXPECT_TRUE(workspace.cost_buckets.is_empty());
         insert_inputs();
         auto prepared = Context::from_reset_workspace(workspace, workspace.schedulers);
         tyr::datalog::compute_model(prepared);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        const auto* annotation = workspace.annotations.find(fixture.goal.index());
+        const auto* annotation = workspace.annotations.find(fixture.goal.data());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
 
@@ -90,7 +90,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
         auto ordinary = Context(workspace);
         tyr::datalog::compute_model(ordinary);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        annotation = workspace.annotations.find(fixture.goal.index());
+        annotation = workspace.annotations.find(fixture.goal.data());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
     }

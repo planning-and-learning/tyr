@@ -235,18 +235,16 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
 {
     require_unit_cost(cost_mode);
 
-    auto factory = std::make_shared<formalism::datalog::RepositoryFactory>();
     const auto num_objects = task.get_num_objects();
-    auto repository = factory->create_shared(num_objects);
+    auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     auto tables = RPGTables {};
     const auto program = create_program(task, tables.translation_context, tables.rule_to_action, *repository);
     auto result = TranslatedProgram<RPGTables> { program, std::move(repository), std::move(tables) };
 
     if (split_rules)
     {
-        result = transform(result, *factory, num_objects, decompose_static_literals_pass());
+        result = transform(result, num_objects, decompose_static_literals_pass());
         result = transform(result,
-                           *factory,
                            num_objects,
                            [&](formalism::datalog::ProgramView<LiftedTag> source, formalism::datalog::Repository& destination, datalog::RuleMapping& rules)
                            {
@@ -258,7 +256,7 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
 
     translation_context = std::move(result.tables.translation_context);
     rule_to_action = std::move(result.tables.rule_to_action);
-    return datalog::Program<LiftedTag>(result.program, std::move(result.repository), std::move(factory));
+    return datalog::Program<LiftedTag>(result.program, std::move(result.repository));
 }
 
 }

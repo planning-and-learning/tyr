@@ -102,7 +102,7 @@ tyr::formalism::datalog::FunctionBindingView<tyr::formalism::FluentTag> make_nul
 
 TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
 {
-    auto repository = tyr::formalism::datalog::RepositoryFactory().create();
+    auto repository = tyr::formalism::datalog::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
     auto predicate_data = urd::data<tyr::formalism::RelationBinding<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     predicate_data.relation = fixture.rule.get_heads().front().get_predicate().index();
@@ -110,14 +110,14 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     const auto function = make_nullary_function_binding(repository, "value");
     auto buckets = tyr::datalog::CostBuckets {};
 
-    EXPECT_TRUE(buckets.insert(3, predicate.index()));
-    EXPECT_FALSE(buckets.insert(3, predicate.index()));
-    EXPECT_TRUE(buckets.insert(3, function.index(), { 2, 4 }));
-    EXPECT_TRUE(buckets.insert(3, function.index(), { 1, 3 }));
-    EXPECT_FALSE(buckets.insert(3, function.index(), { 2, 3 }));
+    EXPECT_TRUE(buckets.insert(3, predicate.data()));
+    EXPECT_FALSE(buckets.insert(3, predicate.data()));
+    EXPECT_TRUE(buckets.insert(3, function.data(), { 2, 4 }));
+    EXPECT_TRUE(buckets.insert(3, function.data(), { 1, 3 }));
+    EXPECT_FALSE(buckets.insert(3, function.data(), { 2, 3 }));
     EXPECT_EQ(buckets.min_cost(), 3);
 
-    EXPECT_EQ(buckets.at(3).function.at(function.index()), (ygg::ClosedInterval<ygg::float_t> { 1, 4 }));
+    EXPECT_EQ(buckets.at(3).function.at(function.data()), (ygg::ClosedInterval<ygg::float_t> { 1, 4 }));
     const auto* address = &buckets.at(3);
     const auto predicate_capacity = urd::memory_usage(buckets.at(3).predicate);
     const auto function_capacity = urd::memory_usage(buckets.at(3).function);
@@ -125,7 +125,7 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     EXPECT_TRUE(buckets.is_empty());
     EXPECT_FALSE(buckets.erase(3));
 
-    EXPECT_TRUE(buckets.insert(5, predicate.index()));
+    EXPECT_TRUE(buckets.insert(5, predicate.data()));
     auto& bucket = buckets.at(5);
     EXPECT_EQ(&bucket, address);
     EXPECT_EQ(urd::memory_usage(bucket.predicate), predicate_capacity);
@@ -134,22 +134,22 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     bucket.predicate.clear();
     EXPECT_TRUE(buckets.erase(5));
 
-    buckets.insert(7, predicate.index());
-    buckets.insert(2, function.index(), { 8, 9 });
+    buckets.insert(7, predicate.data());
+    buckets.insert(2, function.data(), { 8, 9 });
     EXPECT_EQ(buckets.min_cost(), 2);
     buckets.clear();
     EXPECT_TRUE(buckets.is_empty());
-    EXPECT_TRUE(buckets.insert(2, function.index(), { 1, 1 }));
+    EXPECT_TRUE(buckets.insert(2, function.data(), { 1, 1 }));
     EXPECT_TRUE(buckets.at(2).predicate.empty());
-    EXPECT_EQ(buckets.at(2).function.at(function.index()), (ygg::ClosedInterval<ygg::float_t> { 1, 1 }));
+    EXPECT_EQ(buckets.at(2).function.at(function.data()), (ygg::ClosedInterval<ygg::float_t> { 1, 1 }));
     EXPECT_TRUE(buckets.erase(2));
     buckets.clear();
 
-    buckets.insert(1, predicate.index());
-    EXPECT_TRUE(buckets.erase(1, predicate.index()));
+    buckets.insert(1, predicate.data());
+    EXPECT_TRUE(buckets.erase(1, predicate.data()));
     EXPECT_TRUE(buckets.is_empty());
-    EXPECT_FALSE(buckets.erase(1, predicate.index()));
-    EXPECT_TRUE(buckets.insert(1, predicate.index()));
+    EXPECT_FALSE(buckets.erase(1, predicate.data()));
+    EXPECT_TRUE(buckets.insert(1, predicate.data()));
 }
 
 TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
@@ -161,8 +161,7 @@ TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
 
 TEST(TyrDatalogCostPolicyTest, RuleCostPolicyDefaultsToZero)
 {
-    auto factory = tyr::formalism::datalog::RepositoryFactory();
-    auto repository = factory.create();
+    auto repository = tyr::formalism::datalog::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
     const auto policy = tyr::datalog::RuleCostPolicy();
@@ -172,8 +171,7 @@ TEST(TyrDatalogCostPolicyTest, RuleCostPolicyDefaultsToZero)
 
 TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedDefaultsToZero)
 {
-    auto factory = tyr::formalism::datalog::RepositoryFactory();
-    auto repository = factory.create();
+    auto repository = tyr::formalism::datalog::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
     const auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
@@ -183,12 +181,11 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedDefaultsToZero)
 
 TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
 {
-    auto factory = tyr::formalism::datalog::RepositoryFactory();
-    auto repository = factory.create();
+    auto repository = tyr::formalism::datalog::Repository();
     const auto fixture = make_nullary_rule_binding(repository);
 
     auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
-    policy.set_cost(fixture.binding.index(), 3);
+    policy.set_cost(fixture.binding.data(), 3);
 
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
 }

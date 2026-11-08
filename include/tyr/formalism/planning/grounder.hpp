@@ -158,7 +158,7 @@ std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTa
     auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
     // Fill data
-    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.index();
+    fterm->binding = ground(element.get_terms(), element.get_function(), context).first.data();
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *fterm);
@@ -251,7 +251,7 @@ std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, W
     auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
 
     // Fill data
-    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.index();
+    atom->binding = ground(element.get_terms(), element.get_predicate(), context).first.data();
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *atom);
@@ -373,7 +373,7 @@ template<typename ForEachEffectBinding>
 std::pair<ActionView<GroundTag>, bool>
 ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr, ForEachEffectBinding for_each_effect_binding)
 {
-    const auto binding = ground(element, context).first.index();
+    const auto binding = ground(element, context).first.data();
 
     auto action = planning::checkout<Action<GroundTag>>(context.builder());
 
@@ -401,7 +401,7 @@ inline std::pair<AxiomBindingView, bool> ground(AxiomView<LiftedTag> axiom, Writ
 inline std::pair<AxiomView<GroundTag>, bool>
 ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr)
 {
-    const auto binding = ground(element, context).first.index();
+    const auto binding = ground(element, context).first.data();
 
     auto& axiom_cache = cache.container;
     if (auto it = axiom_cache.find(binding); it != axiom_cache.end())
@@ -451,7 +451,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 
     auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
-    fterm->binding = binding_or_nullopt->index();
+    fterm->binding = binding_or_nullopt->data();
 
     return context.destination().find(*fterm);
 }
@@ -483,7 +483,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
     auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
 
-    atom->binding = binding_or_nullopt->index();
+    atom->binding = binding_or_nullopt->data();
 
     return context.destination().find(*atom);
 }

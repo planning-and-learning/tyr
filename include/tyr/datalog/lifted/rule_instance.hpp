@@ -50,7 +50,7 @@ public:
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> effect) const
     {
         return { effect.get_operator(),
-                 formalism::datalog::ground_binding(effect.get_fterm(), *m_grounder).first.index(),
+                 formalism::datalog::ground_binding(effect.get_fterm(), *m_grounder).first.data(),
                  formalism::datalog::ground(effect.get_fexpr(), *m_grounder) };
     }
 

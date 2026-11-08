@@ -78,7 +78,7 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy_, TP tp_, CP cost_policy_) :
     const_workspace(&program.get_const_program_workspace()),
     program_repository(&program.get_program_repository()),
-    workspace_repository(program.get_repository_factory().create_shared(program.get_program().get_objects().size(), program_repository)),
+    workspace_repository(std::make_shared<formalism::datalog::Repository>(program.get_program().get_objects().size(), program_repository)),
     facts(program.get_program().get_predicates<formalism::FluentTag>(),
           program.get_program().get_functions<formalism::FluentTag>(),
           program.get_domains().fluent_predicate_domains,
@@ -133,7 +133,8 @@ void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
     delta_numeric_annotations.clear();
     annotation_policy.clear_achievers();
     facts.reset();
-    workspace_repository->clear();
+    workspace_repository->symbols().clear();
+    workspace_repository->relations().clear();
 }
 
 template struct ProgramWorkspace<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>;

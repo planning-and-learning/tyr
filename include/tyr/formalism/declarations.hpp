@@ -55,9 +55,6 @@ struct RelationRepositoryTraits;
 
 template<typename SymbolRepo, typename RelationRepo>
 class Repository;
-
-template<typename SymbolRepo, typename RelationRepo>
-class RepositoryFactory;
 }
 
 namespace tyr::formalism
@@ -137,9 +134,6 @@ using TermList = urd::flat_vector<Term>;
 
 template<typename T>
 using RelationBinding = ::ygg::formalism::RelationBinding<T, ObjectTag>;
-
-template<typename T>
-concept RelationBindingConcept = ::ygg::formalism::RelationBindingConcept<T>;
 
 template<FactKind T>
 struct Predicate

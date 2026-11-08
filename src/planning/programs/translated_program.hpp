@@ -85,12 +85,12 @@ struct TranslatedProgram
     Tables tables;
 };
 
-/// Applies a program transformation, `pass(program, destination, rules) -> program` that writes into a new repository of the
-/// factory and maps every source rule in `rules`, and remaps the tables to its output.
+/// Applies a program transformation, `pass(program, destination, rules) -> program` that writes into a new repository
+/// and maps every source rule in `rules`, and remaps the tables to its output.
 template<typename Tables, typename Pass>
-TranslatedProgram<Tables> transform(const TranslatedProgram<Tables>& source, formalism::datalog::RepositoryFactory& factory, size_t num_objects, Pass&& pass)
+TranslatedProgram<Tables> transform(const TranslatedProgram<Tables>& source, size_t num_objects, Pass&& pass)
 {
-    auto repository = factory.create_shared(num_objects);
+    auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     auto rules = datalog::RuleMapping {};
     const auto program = std::forward<Pass>(pass)(source.program, *repository, rules);
     auto remapper = SymbolRemapper(*repository, rules);

@@ -406,7 +406,7 @@ void LMCutImplementation<Kind>::explore_before_goal_zone(Precondition node, urd:
             if constexpr (std::same_as<std::remove_cvref_t<decltype(key)>, PredicateHead>)
             {
                 // Facts of the state start the justification graph, whether or not a rule derives them again.
-                if (const auto* annotation = this->workspace().annotations.find(key.index());
+                if (const auto* annotation = this->workspace().annotations.find(key.data());
                     annotation && std::holds_alternative<datalog::BaseAnnotation>(*annotation))
                 {
                     is_base = true;

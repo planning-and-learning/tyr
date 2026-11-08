@@ -268,7 +268,7 @@ private:
                     domain_binding->relation = new_predicate;
                     domain_binding->objects.push_back(object);
                     auto ground_atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-                    ground_atom->binding = formalism::datalog::insert(m_context->destination(), *domain_binding).first.index();
+                    ground_atom->binding = formalism::datalog::insert(m_context->destination(), *domain_binding).first.data();
                     m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *ground_atom).first.index());
                 }
             }
