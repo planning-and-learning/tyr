@@ -432,8 +432,8 @@ def test_serialize_time_per_call_does_not_grow_with_the_tables() -> None:
     # see (Dictionaries itself takes no weak references).
     this = weakref.proxy(holder)
 
-    def project(atom: fp.StaticGroundAtom) -> Row:
-        return {"objects": [cast("str", serialize(this.dictionaries, item)) for item in atom.get_objects()]}
+    def project(atom: fp.StaticGroundAtom) -> dict[str, object]:
+        return {"objects": [serialize(this.dictionaries, item) for item in atom.get_objects()]}
 
     register_table(dictionaries, fp.StaticGroundAtom, "atoms", "a", project=project)
     register_table(dictionaries, fp.Object, "objects", "o")
@@ -446,5 +446,5 @@ def test_serialize_time_per_call_does_not_grow_with_the_tables() -> None:
     for atom in atoms[half:]:
         serialize(dictionaries, atom)
     second = time.perf_counter() - start
-    assert len(table(dictionaries, fp.StaticGroundAtom)) == len(atoms)
+    assert len(_rows(table(dictionaries, fp.StaticGroundAtom))) == len(atoms)
     assert second < 2.5 * first + 0.05, (first, second)
