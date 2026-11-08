@@ -16,6 +16,7 @@
  */
 
 #include "tyr/formalism/planning/parser.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include "loki_to_tyr.hpp"
 

@@ -36,6 +36,8 @@
 #include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
 
+#include <boost/mp11/algorithm.hpp>
+#include <boost/preprocessor/repetition/repeat.hpp>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <string>
@@ -127,5 +129,22 @@ std::string format(urd::index_view<NumericEffect<T, F>, C> value)
 { return fmt::format("({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr()); }
 
 }
+
+
+/// Explicit instantiations of a namespace's view to_string templates (formalism/<namespace>/formatter.hpp) for the I-th
+/// type of its SymbolRepositoryTypes, or of its RelationRepositoryTypes (the relation's binding view).
+#define TYR_VIEW_TO_STRING_AT(z, I, List) template std::string to_string(urd::index_view<boost::mp11::mp_at_c<List, I>, Repository>);
+#define TYR_BINDING_VIEW_TO_STRING_AT(z, I, List) \
+    template std::string to_string(                \
+        ::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<boost::mp11::mp_at_c<List, I>, ::tyr::formalism::ObjectTag>, Repository>);
+
+/// All of them, in the namespace that defines the templates; the counts are checked against the lists.
+#define TYR_VIEW_TO_STRINGS(SymbolCount, RelationCount)                                                              \
+    static_assert(boost::mp11::mp_size<SymbolRepositoryTypes>::value == (SymbolCount),                                \
+                  "TYR_VIEW_TO_STRINGS: SymbolCount must be the number of SymbolRepositoryTypes");                   \
+    BOOST_PP_REPEAT(SymbolCount, TYR_VIEW_TO_STRING_AT, SymbolRepositoryTypes)                                        \
+    static_assert(boost::mp11::mp_size<RelationRepositoryTypes>::value == (RelationCount),                            \
+                  "TYR_VIEW_TO_STRINGS: RelationCount must be the number of RelationRepositoryTypes");               \
+    BOOST_PP_REPEAT(RelationCount, TYR_BINDING_VIEW_TO_STRING_AT, RelationRepositoryTypes)
 
 #endif

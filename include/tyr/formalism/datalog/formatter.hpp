@@ -49,8 +49,6 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
 namespace tyr::formalism::datalog
 {
 
-
-
 std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value);
 std::string to_string(const urd::data<ConjunctiveEffect<LiftedTag>>& value);
 std::string to_string(const urd::data<Rule<LiftedTag, PredicateTag>>& value);
@@ -64,61 +62,15 @@ std::string to_string(const urd::data<Program<GroundTag>>& value);
 std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, PredicateTag>>>& value);
 std::string to_string(const urd::data<RelationBinding<Rule<LiftedTag, FunctionTag>>>& value);
 
-std::string to_string(VariableView value);
-std::string to_string(ObjectView value);
+/// Each symbol type's view (SymbolRepositoryTypes) and each relation's binding view (RelationRepositoryTypes) as text;
+/// instantiated for these lists in formatter.cpp.
+template<typename T>
+    requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value
+std::string to_string(urd::index_view<T, Repository> value);
+template<typename R>
+    requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
+std::string to_string(::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<R, ::tyr::formalism::ObjectTag>, Repository> value);
 std::string to_string(TermView value);
-std::string to_string(PredicateView<StaticTag> value);
-std::string to_string(PredicateView<FluentTag> value);
-std::string to_string(FunctionView<StaticTag> value);
-std::string to_string(FunctionView<FluentTag> value);
-std::string to_string(FunctionView<AuxiliaryTag> value);
-std::string to_string(PredicateBindingView<StaticTag> value);
-std::string to_string(PredicateBindingView<FluentTag> value);
-std::string to_string(FunctionBindingView<StaticTag> value);
-std::string to_string(FunctionBindingView<FluentTag> value);
-std::string to_string(FunctionBindingView<AuxiliaryTag> value);
-std::string to_string(RuleBindingView<PredicateTag> value);
-std::string to_string(RuleBindingView<FunctionTag> value);
-
-std::string to_string(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value);
-std::string to_string(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value);
-std::string to_string(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value);
-std::string to_string(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value);
-std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value);
-std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value);
-std::string to_string(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value);
-std::string to_string(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value);
-
-std::string to_string(AtomView<LiftedTag, StaticTag> value);
-std::string to_string(AtomView<LiftedTag, FluentTag> value);
-std::string to_string(LiteralView<LiftedTag, StaticTag> value);
-std::string to_string(LiteralView<LiftedTag, FluentTag> value);
-std::string to_string(AtomView<GroundTag, StaticTag> value);
-std::string to_string(AtomView<GroundTag, FluentTag> value);
-std::string to_string(LiteralView<GroundTag, StaticTag> value);
-std::string to_string(LiteralView<GroundTag, FluentTag> value);
-std::string to_string(FunctionTermView<LiftedTag, StaticTag> value);
-std::string to_string(FunctionTermView<LiftedTag, FluentTag> value);
-std::string to_string(FunctionTermView<LiftedTag, AuxiliaryTag> value);
-std::string to_string(FunctionTermView<GroundTag, StaticTag> value);
-std::string to_string(FunctionTermView<GroundTag, FluentTag> value);
-std::string to_string(FunctionTermView<GroundTag, AuxiliaryTag> value);
-std::string to_string(FunctionTermValueView<GroundTag, StaticTag> value);
-std::string to_string(FunctionTermValueView<GroundTag, FluentTag> value);
-std::string to_string(FunctionTermValueView<GroundTag, AuxiliaryTag> value);
-std::string to_string(NumericEffectView<LiftedTag, FluentTag> value);
-std::string to_string(NumericEffectView<GroundTag, FluentTag> value);
-
-std::string to_string(ConjunctiveConditionView<LiftedTag> value);
-std::string to_string(ConjunctiveEffectView<LiftedTag> value);
-std::string to_string(RuleView<LiftedTag, PredicateTag> value);
-std::string to_string(RuleView<LiftedTag, FunctionTag> value);
-std::string to_string(ConjunctiveConditionView<GroundTag> value);
-std::string to_string(ConjunctiveEffectView<GroundTag> value);
-std::string to_string(RuleView<GroundTag, PredicateTag> value);
-std::string to_string(RuleView<GroundTag, FunctionTag> value);
-std::string to_string(ProgramView<LiftedTag> value);
-std::string to_string(ProgramView<GroundTag> value);
 
 }  // namespace tyr::formalism::datalog
 

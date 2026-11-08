@@ -65,9 +65,9 @@ public:
     [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return *m_context; }
     [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_rules() const noexcept { return *m_rules; }
 
-    /// Active rules in sorted index order: hash-set iteration order is platform-unspecified, but the
-    /// rule processing order assigns program-repository rows (first-derivation order) that delta
-    /// bitsets are indexed by, so it must be identical on every platform.
+    /// Active rules in index order (the dense set iterates in it): the rule processing order assigns
+    /// program-repository rows (first-derivation order) that delta bitsets are indexed by, so it must
+    /// be identical on every platform.
     [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
     [[nodiscard]] bool requires_full_enumeration(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept
@@ -82,8 +82,8 @@ private:
 
     urd::Store<urd::set<urd::index<formalism::Predicate<formalism::FluentTag>>>, urd::dense> m_active_predicates;
     urd::Store<urd::set<urd::index<formalism::Function<formalism::FluentTag>>>, urd::dense> m_active_functions;
-    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>> m_active_rules;
-    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>> m_full_enumeration_rules;
+    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>, urd::dense> m_active_rules;
+    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>, urd::dense> m_full_enumeration_rules;
     urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>> m_sorted_active_rules;
 };
 

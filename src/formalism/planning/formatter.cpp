@@ -356,69 +356,69 @@ std::string to_string(const urd::data<Task<GroundTag>>& value)
 std::string to_string(const urd::data<RelationBinding<Action<LiftedTag>>>& value) { return detail::relation_binding(value); }
 std::string to_string(const urd::data<RelationBinding<Axiom<LiftedTag>>>& value) { return detail::relation_binding(value); }
 
-std::string to_string(VariableView value) { return detail::named(value); }
-std::string to_string(ObjectView value) { return detail::named(value); }
+static std::string as_text(VariableView value) { return detail::named(value); }
+static std::string as_text(ObjectView value) { return detail::named(value); }
 std::string to_string(TermView value) { return fmt::format("{}", value); }
-std::string to_string(PredicateView<StaticTag> value) { return detail::symbol(value); }
-std::string to_string(PredicateView<FluentTag> value) { return detail::symbol(value); }
-std::string to_string(PredicateView<DerivedTag> value) { return detail::symbol(value); }
-std::string to_string(FunctionView<StaticTag> value) { return detail::symbol(value); }
-std::string to_string(FunctionView<FluentTag> value) { return detail::symbol(value); }
-std::string to_string(FunctionView<AuxiliaryTag> value) { return detail::symbol(value); }
-std::string to_string(PredicateBindingView<StaticTag> value) { return detail::relation_binding(value); }
-std::string to_string(PredicateBindingView<FluentTag> value) { return detail::relation_binding(value); }
-std::string to_string(PredicateBindingView<DerivedTag> value) { return detail::relation_binding(value); }
-std::string to_string(FunctionBindingView<StaticTag> value) { return detail::relation_binding(value); }
-std::string to_string(FunctionBindingView<FluentTag> value) { return detail::relation_binding(value); }
-std::string to_string(FunctionBindingView<AuxiliaryTag> value) { return detail::relation_binding(value); }
+static std::string as_text(PredicateView<StaticTag> value) { return detail::symbol(value); }
+static std::string as_text(PredicateView<FluentTag> value) { return detail::symbol(value); }
+static std::string as_text(PredicateView<DerivedTag> value) { return detail::symbol(value); }
+static std::string as_text(FunctionView<StaticTag> value) { return detail::symbol(value); }
+static std::string as_text(FunctionView<FluentTag> value) { return detail::symbol(value); }
+static std::string as_text(FunctionView<AuxiliaryTag> value) { return detail::symbol(value); }
+static std::string as_text(PredicateBindingView<StaticTag> value) { return detail::relation_binding(value); }
+static std::string as_text(PredicateBindingView<FluentTag> value) { return detail::relation_binding(value); }
+static std::string as_text(PredicateBindingView<DerivedTag> value) { return detail::relation_binding(value); }
+static std::string as_text(FunctionBindingView<StaticTag> value) { return detail::relation_binding(value); }
+static std::string as_text(FunctionBindingView<FluentTag> value) { return detail::relation_binding(value); }
+static std::string as_text(FunctionBindingView<AuxiliaryTag> value) { return detail::relation_binding(value); }
 
-std::string to_string(ActionBindingView value) { return detail::relation_binding(value); }
+static std::string as_text(ActionBindingView value) { return detail::relation_binding(value); }
 std::string to_string(ActionBindingDataView value) { return detail::relation_binding(value); }
 
-std::string to_string(AxiomBindingView value) { return fmt::format("{}", fmt::join(ygg::to_strings(value.get_objects()), " ")); }
+static std::string as_text(AxiomBindingView value) { return fmt::format("{}", fmt::join(ygg::to_strings(value.get_objects()), " ")); }
 
-std::string to_string(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-std::string to_string(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-std::string to_string(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-std::string to_string(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value) { return node_format::format(value); }
-std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return node_format::format(value); }
-std::string to_string(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-std::string to_string(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
+static std::string as_text(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
 
-std::string to_string(AtomView<LiftedTag, StaticTag> value) { return node_format::format(value); }
-std::string to_string(AtomView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(AtomView<LiftedTag, DerivedTag> value) { return node_format::format(value); }
-std::string to_string(LiteralView<LiftedTag, StaticTag> value) { return node_format::format(value); }
-std::string to_string(LiteralView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(LiteralView<LiftedTag, DerivedTag> value) { return node_format::format(value); }
-std::string to_string(AtomView<GroundTag, StaticTag> value) { return node_format::format(value); }
-std::string to_string(AtomView<GroundTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(AtomView<GroundTag, DerivedTag> value) { return node_format::format(value); }
-std::string to_string(LiteralView<GroundTag, StaticTag> value) { return node_format::format(value); }
-std::string to_string(LiteralView<GroundTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(LiteralView<GroundTag, DerivedTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermView<LiftedTag, StaticTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermView<LiftedTag, AuxiliaryTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermView<GroundTag, StaticTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermView<GroundTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermValueView<GroundTag, StaticTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermValueView<GroundTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(FunctionTermValueView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
-std::string to_string(NumericEffectView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(NumericEffectView<LiftedTag, AuxiliaryTag> value) { return node_format::format(value); }
-std::string to_string(NumericEffectView<GroundTag, FluentTag> value) { return node_format::format(value); }
-std::string to_string(NumericEffectView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
-std::string to_string(FDRVariableView<FluentTag> value) { return detail::fdr_variable(value); }
+static std::string as_text(AtomView<LiftedTag, StaticTag> value) { return node_format::format(value); }
+static std::string as_text(AtomView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(AtomView<LiftedTag, DerivedTag> value) { return node_format::format(value); }
+static std::string as_text(LiteralView<LiftedTag, StaticTag> value) { return node_format::format(value); }
+static std::string as_text(LiteralView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(LiteralView<LiftedTag, DerivedTag> value) { return node_format::format(value); }
+static std::string as_text(AtomView<GroundTag, StaticTag> value) { return node_format::format(value); }
+static std::string as_text(AtomView<GroundTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(AtomView<GroundTag, DerivedTag> value) { return node_format::format(value); }
+static std::string as_text(LiteralView<GroundTag, StaticTag> value) { return node_format::format(value); }
+static std::string as_text(LiteralView<GroundTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(LiteralView<GroundTag, DerivedTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermView<LiftedTag, StaticTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermView<LiftedTag, AuxiliaryTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermView<GroundTag, StaticTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermView<GroundTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermValueView<GroundTag, StaticTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermValueView<GroundTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(FunctionTermValueView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
+static std::string as_text(NumericEffectView<LiftedTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(NumericEffectView<LiftedTag, AuxiliaryTag> value) { return node_format::format(value); }
+static std::string as_text(NumericEffectView<GroundTag, FluentTag> value) { return node_format::format(value); }
+static std::string as_text(NumericEffectView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
+static std::string as_text(FDRVariableView<FluentTag> value) { return detail::fdr_variable(value); }
 
-std::string to_string(InvariantView value) { return detail::invariant(value); }
+static std::string as_text(InvariantView value) { return detail::invariant(value); }
 std::string to_string(FDRFactView<FluentTag> value) { return detail::fdr_fact_view(value); }
 std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value) { return detail::fdr_fact_view(value); }
 
 
-std::string to_string(ConjunctiveConditionView<LiftedTag> value)
+static std::string as_text(ConjunctiveConditionView<LiftedTag> value)
 {
     return detail::structured("ConjunctiveCondition",
                               [&](auto& os)
@@ -432,7 +432,7 @@ std::string to_string(ConjunctiveConditionView<LiftedTag> value)
                               });
 }
 
-std::string to_string(ConjunctiveConditionView<GroundTag> value)
+static std::string as_text(ConjunctiveConditionView<GroundTag> value)
 {
     return detail::structured("GroundConjunctiveCondition",
                               [&](auto& os)
@@ -446,7 +446,7 @@ std::string to_string(ConjunctiveConditionView<GroundTag> value)
                               });
 }
 
-std::string to_string(ConditionalEffectView<LiftedTag> value)
+static std::string as_text(ConditionalEffectView<LiftedTag> value)
 {
     return detail::structured("ConditionalEffect",
                               [&](auto& os)
@@ -458,7 +458,7 @@ std::string to_string(ConditionalEffectView<LiftedTag> value)
                               });
 }
 
-std::string to_string(ConditionalEffectView<GroundTag> value)
+static std::string as_text(ConditionalEffectView<GroundTag> value)
 {
     return detail::structured("GroundConditionalEffect",
                               [&](auto& os)
@@ -469,7 +469,7 @@ std::string to_string(ConditionalEffectView<GroundTag> value)
                               });
 }
 
-std::string to_string(ConjunctiveEffectView<LiftedTag> value)
+static std::string as_text(ConjunctiveEffectView<LiftedTag> value)
 {
     return detail::structured("ConjunctiveEffect",
                               [&](auto& os)
@@ -481,7 +481,7 @@ std::string to_string(ConjunctiveEffectView<LiftedTag> value)
                               });
 }
 
-std::string to_string(ConjunctiveEffectView<GroundTag> value)
+static std::string as_text(ConjunctiveEffectView<GroundTag> value)
 {
     return detail::structured("GroundConjunctiveEffect",
                               [&](auto& os)
@@ -494,7 +494,7 @@ std::string to_string(ConjunctiveEffectView<GroundTag> value)
                               });
 }
 
-std::string to_string(ActionView<LiftedTag> value)
+static std::string as_text(ActionView<LiftedTag> value)
 {
     return detail::structured("Action",
                               [&](auto& os)
@@ -508,7 +508,7 @@ std::string to_string(ActionView<LiftedTag> value)
                               });
 }
 
-std::string to_string(ActionView<GroundTag> value)
+static std::string as_text(ActionView<GroundTag> value)
 {
     return detail::structured("GroundAction",
                               [&](auto& os)
@@ -521,7 +521,7 @@ std::string to_string(ActionView<GroundTag> value)
                               });
 }
 
-std::string to_string(AxiomView<LiftedTag> value)
+static std::string as_text(AxiomView<LiftedTag> value)
 {
     return detail::structured("Axiom",
                               [&](auto& os)
@@ -533,7 +533,7 @@ std::string to_string(AxiomView<LiftedTag> value)
                               });
 }
 
-std::string to_string(AxiomView<GroundTag> value)
+static std::string as_text(AxiomView<GroundTag> value)
 {
     return detail::structured("GroundAxiom",
                               [&](auto& os)
@@ -546,9 +546,9 @@ std::string to_string(AxiomView<GroundTag> value)
                               });
 }
 
-std::string to_string(MetricView value) { return fmt::format("({} {})", value.get_optimization_direction(), value.get_fexpr()); }
+static std::string as_text(MetricView value) { return fmt::format("({} {})", value.get_optimization_direction(), value.get_fexpr()); }
 
-std::string to_string(TaskView<LiftedTag> value)
+static std::string as_text(TaskView<LiftedTag> value)
 {
     return detail::structured("LiftedTask",
                               [&](auto& os)
@@ -568,7 +568,7 @@ std::string to_string(TaskView<LiftedTag> value)
                               });
 }
 
-std::string to_string(DomainView value)
+static std::string as_text(DomainView value)
 {
     return detail::structured("Domain",
                               [&](auto& os)
@@ -587,7 +587,7 @@ std::string to_string(DomainView value)
                               });
 }
 
-std::string to_string(TaskView<GroundTag> value)
+static std::string as_text(TaskView<GroundTag> value)
 {
     return detail::structured("GroundTask",
                               [&](auto& os)
@@ -628,5 +628,18 @@ std::string to_string(const std::pair<ActionBindingView, PlanFormatting>& value)
 
 std::string to_string(const std::pair<ActionView<GroundTag>, PlanFormatting>& value)
 { return fmt::format("{}", std::make_pair(value.first.get_row(), value.second)); }
+
+
+template<typename T>
+    requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value
+std::string to_string(urd::index_view<T, Repository> value)
+{ return as_text(value); }
+
+template<typename R>
+    requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
+std::string to_string(::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<R, ::tyr::formalism::ObjectTag>, Repository> value)
+{ return as_text(value); }
+
+TYR_VIEW_TO_STRINGS(57, 8)
 
 }  // namespace tyr::formalism::planning

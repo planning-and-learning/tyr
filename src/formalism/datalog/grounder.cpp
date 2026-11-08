@@ -16,6 +16,7 @@
  */
 
 #include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #ifndef TYR_HEADER_INSTANTIATION
 

@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
+#include "tyr/planning/ground/match_tree/detail/repository_instantiations.hpp"
 #include <urd/repr/queues/queue.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -857,3 +858,4 @@ template class MatchTree<formalism::planning::Axiom<GroundTag>>;
 
 }
 
+TYR_MATCH_TREE_INTERNS()

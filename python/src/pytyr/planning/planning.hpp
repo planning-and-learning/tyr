@@ -446,120 +446,162 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
         .def("get_packed_initial_node", &T::get_packed_initial_node, nb::rv_policy::move, "state_repository"_a, "axiom_evaluator"_a)
         .def("get_packed_node", &T::get_packed_node, nb::rv_policy::move, "state_repository"_a, "state_index"_a);
 
-    cls.def("get_applicable_action_bindings",
-            nb::overload_cast<const Node<Kind>&>(&T::template get_applicable_action_bindings<StateView<Kind>>),
+    cls.def(
+           "get_applicable_action_bindings",
+           [](T& self, const Node<Kind>& node) { return self.get_applicable_action_bindings(node); },
+           nb::rv_policy::move,
+           "node"_a,
+           nb::call_guard<nb::gil_scoped_release>())
+        .def(
+            "get_applicable_action_bindings",
+            [](T& self, const Node<Kind>& node, formalism::planning::ActionView<LiftedTag> action)
+            { return self.get_applicable_action_bindings(node, action); },
             nb::rv_policy::move,
             "node"_a,
-            nb::call_guard<nb::gil_scoped_release>())
-        .def("get_applicable_action_bindings",
-             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>>(&T::template get_applicable_action_bindings<StateView<Kind>>),
-             nb::rv_policy::move,
-             "node"_a,
-             "action"_a,
-             nb::call_guard<nb::gil_scoped_release>());
+            "action"_a,
+            nb::call_guard<nb::gil_scoped_release>());
 
     cls.def("ground_action", &T::ground_action, "binding"_a);
 
-    cls.def("get_successor_node",
-            nb::overload_cast<const Node<Kind>&, formalism::planning::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                &T::template get_successor_node<StateView<Kind>>),
+    cls.def(
+           "get_successor_node",
+           [](T& self,
+              const Node<Kind>& node,
+              formalism::planning::ActionBindingView binding,
+              StateRepository<Kind>& state_repository,
+              AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_successor_node(node, binding, state_repository, axiom_evaluator); },
+           "node"_a,
+           "binding"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           nb::keep_alive<0, 4>())
+        .def(
+            "get_successor_node",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<GroundTag> action,
+               StateRepository<Kind>& state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_successor_node(node, action, state_repository, axiom_evaluator); },
             "node"_a,
-            "binding"_a,
+            "action"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            nb::keep_alive<0, 4>())
-        .def("get_successor_node",
-             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                 &T::template get_successor_node<StateView<Kind>>),
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a,
-             nb::keep_alive<0, 4>());
+            nb::keep_alive<0, 4>());
 
-    cls.def("get_successor_nodes",
-            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_successor_nodes<StateView<Kind>>),
+    cls.def(
+           "get_successor_nodes",
+           [](T& self, const Node<Kind>& node, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+           { return self.get_successor_nodes(node, state_repository, axiom_evaluator); },
+           nb::rv_policy::move,
+           "node"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           nb::call_guard<nb::gil_scoped_release>())
+        .def(
+            "get_successor_nodes",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<LiftedTag> action,
+               StateRepository<Kind>& state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
             "node"_a,
+            "action"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            nb::call_guard<nb::gil_scoped_release>())
-        .def("get_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                 &T::template get_successor_nodes<StateView<Kind>>),
-             nb::rv_policy::move,
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a,
-             nb::call_guard<nb::gil_scoped_release>());
+            nb::call_guard<nb::gil_scoped_release>());
 
-    cls.def("get_labeled_successor_nodes",
-            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_labeled_successor_nodes<StateView<Kind>>),
+    cls.def(
+           "get_labeled_successor_nodes",
+           [](T& self, const Node<Kind>& node, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+           { return self.get_labeled_successor_nodes(node, state_repository, axiom_evaluator); },
+           nb::rv_policy::move,
+           "node"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           nb::call_guard<nb::gil_scoped_release>())
+        .def(
+            "get_labeled_successor_nodes",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<LiftedTag> action,
+               StateRepository<Kind>& state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_labeled_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
             "node"_a,
+            "action"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            nb::call_guard<nb::gil_scoped_release>())
-        .def("get_labeled_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                 &T::template get_labeled_successor_nodes<StateView<Kind>>),
-             nb::rv_policy::move,
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a,
-             nb::call_guard<nb::gil_scoped_release>());
+            nb::call_guard<nb::gil_scoped_release>());
 
-    cls.def("get_packed_successor_node",
-            nb::overload_cast<const Node<Kind>&, formalism::planning::ActionBindingView, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                &T::template get_packed_successor_node<StateView<Kind>>),
+    cls.def(
+           "get_packed_successor_node",
+           [](T& self,
+              const Node<Kind>& node,
+              formalism::planning::ActionBindingView binding,
+              StateRepository<Kind>& state_repository,
+              AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_successor_node(node, binding, state_repository, axiom_evaluator); },
+           "node"_a,
+           "binding"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a)
+        .def(
+            "get_packed_successor_node",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<GroundTag> action,
+               StateRepository<Kind>& state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_successor_node(node, action, state_repository, axiom_evaluator); },
             "node"_a,
-            "binding"_a,
+            "action"_a,
             "state_repository"_a,
-            "axiom_evaluator"_a)
-        .def("get_packed_successor_node",
-             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<GroundTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                 &T::template get_packed_successor_node<StateView<Kind>>),
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a);
+            "axiom_evaluator"_a);
 
-    cls.def("get_packed_successor_nodes",
-            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(&T::template get_packed_successor_nodes<StateView<Kind>>),
+    cls.def(
+           "get_packed_successor_nodes",
+           [](T& self, const Node<Kind>& node, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+           { return self.get_packed_successor_nodes(node, state_repository, axiom_evaluator); },
+           nb::rv_policy::move,
+           "node"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           nb::call_guard<nb::gil_scoped_release>())
+        .def(
+            "get_packed_successor_nodes",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<LiftedTag> action,
+               StateRepository<Kind>& state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
             "node"_a,
+            "action"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            nb::call_guard<nb::gil_scoped_release>())
-        .def("get_packed_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                 &T::template get_packed_successor_nodes<StateView<Kind>>),
-             nb::rv_policy::move,
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a,
-             nb::call_guard<nb::gil_scoped_release>());
+            nb::call_guard<nb::gil_scoped_release>());
 
-    cls.def("get_packed_labeled_successor_nodes",
-            nb::overload_cast<const Node<Kind>&, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                &T::template get_packed_labeled_successor_nodes<StateView<Kind>>),
+    cls.def(
+           "get_packed_labeled_successor_nodes",
+           [](T& self, const Node<Kind>& node, StateRepository<Kind>& state_repository, AxiomEvaluator<Kind>& axiom_evaluator)
+           { return self.get_packed_labeled_successor_nodes(node, state_repository, axiom_evaluator); },
+           nb::rv_policy::move,
+           "node"_a,
+           "state_repository"_a,
+           "axiom_evaluator"_a,
+           nb::call_guard<nb::gil_scoped_release>())
+        .def(
+            "get_packed_labeled_successor_nodes",
+            [](T& self,
+               const Node<Kind>& node,
+               formalism::planning::ActionView<LiftedTag> action,
+               StateRepository<Kind>& state_repository,
+               AxiomEvaluator<Kind>& axiom_evaluator) { return self.get_packed_labeled_successor_nodes(node, action, state_repository, axiom_evaluator); },
             nb::rv_policy::move,
             "node"_a,
+            "action"_a,
             "state_repository"_a,
             "axiom_evaluator"_a,
-            nb::call_guard<nb::gil_scoped_release>())
-        .def("get_packed_labeled_successor_nodes",
-             nb::overload_cast<const Node<Kind>&, formalism::planning::ActionView<LiftedTag>, StateRepository<Kind>&, AxiomEvaluator<Kind>&>(
-                 &T::template get_packed_labeled_successor_nodes<StateView<Kind>>),
-             nb::rv_policy::move,
-             "node"_a,
-             "action"_a,
-             "state_repository"_a,
-             "axiom_evaluator"_a,
-             nb::call_guard<nb::gil_scoped_release>());
+            nb::call_guard<nb::gil_scoped_release>());
 
     cls.def(
            "for_each_successor_node",

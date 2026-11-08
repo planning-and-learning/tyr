@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/lifted/task_grounder.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include "effect_atom_index.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"

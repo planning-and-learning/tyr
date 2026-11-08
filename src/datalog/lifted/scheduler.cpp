@@ -40,7 +40,6 @@
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
-#include <algorithm>
 #include <assert.h>
 #include <gtl/phmap.hpp>
 #include <type_traits>
@@ -54,7 +53,7 @@ namespace
 template<typename Relation, formalism::RelationKind R>
 void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::dense>& relations,
                           const urd::Store<urd::map<urd::index<Relation>, analysis::RuleIndexSet<R>>>& listeners,
-                          urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>>& active_rules)
+                          urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>, urd::dense>& active_rules)
 {
     for (const auto relation : relations)
         if (const auto it = listeners.find(relation); it != listeners.end())
@@ -92,7 +91,6 @@ template<formalism::RelationKind R>
 void TypedRuleSchedulerStratum<R>::rebuild_sorted_active_rules()
 {
     m_sorted_active_rules.set(m_active_rules.begin(), m_active_rules.end());
-    std::sort(m_sorted_active_rules.begin(), m_sorted_active_rules.end());
 }
 
 template<formalism::RelationKind R>

@@ -30,6 +30,7 @@ add_library(
     analysis/domains_translation.cpp
 
     formalism/formatter.cpp
+    formalism/repository.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
     formalism/datalog/variable_dependency_graph.cpp

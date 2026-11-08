@@ -56,14 +56,10 @@ template<TaskKind Kind>
 using BorrowedActionBindingView =
     std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionBindingView, formalism::planning::ActionBindingDataView>;
 
-/// Indexed outputs live in a repository; borrowed single/callback outputs use caller-owned scratch.
-template<TaskKind Kind, StateViewConcept<Kind> S>
-using SuccessorStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, urd::builder<State<Kind>>>;
-
 /// Borrowed lists append distinct builders without invalidating previous outputs or the source.
 /// Callers keep those builders alive and unchanged for as long as their views are used.
-template<TaskKind Kind, StateViewConcept<Kind> S>
-using SuccessorListStorage = std::conditional_t<std::same_as<S, StateView<Kind>>, StateRepository<Kind>, urd::Store<urd::sequence<urd::builder<State<Kind>>>, urd::stable_refs>>;
+template<TaskKind Kind>
+using SuccessorBuilders = urd::Store<urd::sequence<urd::builder<State<Kind>>>, urd::stable_refs>;
 
 }
 

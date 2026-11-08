@@ -16,6 +16,7 @@
  */
 
 #include "loki_to_tyr.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"

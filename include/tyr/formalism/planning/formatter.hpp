@@ -66,7 +66,6 @@ struct formatter<tyr::formalism::planning::PlanningTask<T>, char>
 namespace tyr::formalism::planning
 {
 
-
 std::string to_string(const urd::data<FDRVariable<FluentTag>>& value);
 
 std::string to_string(const urd::data<Invariant>& value);
@@ -89,79 +88,19 @@ std::string to_string(const urd::data<Task<GroundTag>>& value);
 std::string to_string(const urd::data<RelationBinding<Action<LiftedTag>>>& value);
 std::string to_string(const urd::data<RelationBinding<Axiom<LiftedTag>>>& value);
 
-std::string to_string(VariableView value);
-std::string to_string(ObjectView value);
+/// Each symbol type's view (SymbolRepositoryTypes) and each relation's binding view (RelationRepositoryTypes) as text;
+/// instantiated for these lists in formatter.cpp.
+template<typename T>
+    requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value
+std::string to_string(urd::index_view<T, Repository> value);
+template<typename R>
+    requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
+std::string to_string(::ygg::formalism::RelationBindingView<::ygg::formalism::RelationBindingIndex<R, ::tyr::formalism::ObjectTag>, Repository> value);
 std::string to_string(TermView value);
-std::string to_string(PredicateView<StaticTag> value);
-std::string to_string(PredicateView<FluentTag> value);
-std::string to_string(PredicateView<DerivedTag> value);
-std::string to_string(FunctionView<StaticTag> value);
-std::string to_string(FunctionView<FluentTag> value);
-std::string to_string(FunctionView<AuxiliaryTag> value);
-std::string to_string(PredicateBindingView<StaticTag> value);
-std::string to_string(PredicateBindingView<FluentTag> value);
-std::string to_string(PredicateBindingView<DerivedTag> value);
-std::string to_string(FunctionBindingView<StaticTag> value);
-std::string to_string(FunctionBindingView<FluentTag> value);
-std::string to_string(FunctionBindingView<AuxiliaryTag> value);
-std::string to_string(ActionBindingView value);
 std::string to_string(ActionBindingDataView value);
-std::string to_string(AxiomBindingView value);
 
-std::string to_string(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value);
-std::string to_string(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value);
-std::string to_string(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value);
-std::string to_string(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value);
-std::string to_string(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value);
-std::string to_string(BinaryOperatorView<GroundTag, BooleanOperatorKind> value);
-std::string to_string(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value);
-std::string to_string(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value);
-
-std::string to_string(AtomView<LiftedTag, StaticTag> value);
-std::string to_string(AtomView<LiftedTag, FluentTag> value);
-std::string to_string(AtomView<LiftedTag, DerivedTag> value);
-std::string to_string(LiteralView<LiftedTag, StaticTag> value);
-std::string to_string(LiteralView<LiftedTag, FluentTag> value);
-std::string to_string(LiteralView<LiftedTag, DerivedTag> value);
-std::string to_string(AtomView<GroundTag, StaticTag> value);
-std::string to_string(AtomView<GroundTag, FluentTag> value);
-std::string to_string(AtomView<GroundTag, DerivedTag> value);
-std::string to_string(LiteralView<GroundTag, StaticTag> value);
-std::string to_string(LiteralView<GroundTag, FluentTag> value);
-std::string to_string(LiteralView<GroundTag, DerivedTag> value);
-std::string to_string(FunctionTermView<LiftedTag, StaticTag> value);
-std::string to_string(FunctionTermView<LiftedTag, FluentTag> value);
-std::string to_string(FunctionTermView<LiftedTag, AuxiliaryTag> value);
-std::string to_string(FunctionTermView<GroundTag, StaticTag> value);
-std::string to_string(FunctionTermView<GroundTag, FluentTag> value);
-std::string to_string(FunctionTermView<GroundTag, AuxiliaryTag> value);
-std::string to_string(FunctionTermValueView<GroundTag, StaticTag> value);
-std::string to_string(FunctionTermValueView<GroundTag, FluentTag> value);
-std::string to_string(FunctionTermValueView<GroundTag, AuxiliaryTag> value);
-std::string to_string(NumericEffectView<LiftedTag, FluentTag> value);
-std::string to_string(NumericEffectView<LiftedTag, AuxiliaryTag> value);
-std::string to_string(NumericEffectView<GroundTag, FluentTag> value);
-std::string to_string(NumericEffectView<GroundTag, AuxiliaryTag> value);
-std::string to_string(FDRVariableView<FluentTag> value);
-
-std::string to_string(InvariantView value);
 std::string to_string(FDRFactView<FluentTag> value);
 std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value);
-
-std::string to_string(ConjunctiveConditionView<LiftedTag> value);
-std::string to_string(ConjunctiveConditionView<GroundTag> value);
-std::string to_string(ConditionalEffectView<LiftedTag> value);
-std::string to_string(ConditionalEffectView<GroundTag> value);
-std::string to_string(ConjunctiveEffectView<LiftedTag> value);
-std::string to_string(ConjunctiveEffectView<GroundTag> value);
-std::string to_string(ActionView<LiftedTag> value);
-std::string to_string(ActionView<GroundTag> value);
-std::string to_string(AxiomView<LiftedTag> value);
-std::string to_string(AxiomView<GroundTag> value);
-std::string to_string(MetricView value);
-std::string to_string(TaskView<LiftedTag> value);
-std::string to_string(DomainView value);
-std::string to_string(TaskView<GroundTag> value);
 
 }  // namespace tyr::formalism::planning
 
