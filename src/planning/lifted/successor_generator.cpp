@@ -153,6 +153,9 @@ struct SuccessorGenerator<LiftedTag>::Impl
         urd::unique_slot_ptr<urd::data<ygg::Row<formalism::planning::Action<LiftedTag>>>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
         urd::data<ygg::Row<formalism::planning::Action<LiftedTag>>> checked_binding;
+        /// The objects of scratch_action_binding and checked_binding, as the grounder binds parameters to them.
+        urd::flat_vector<urd::index<formalism::Object>> scratch_objects;
+        urd::flat_vector<urd::index<formalism::Object>> checked_objects;
         datalog::ProgramWorkspace<LiftedTag> workspace;
         urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, SchemaEvaluator>> schema_evaluators;
         datalog::StaticExtensionWorkspace static_extension_workspace;
@@ -232,7 +235,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
     {
         if (!binding.context().symbols().contains(binding.data().relation))
             throw std::invalid_argument("SuccessorGenerator: action schema does not belong to its source repository.");
-        if (!validate_binding_objects(binding.get_relation(), binding.get_objects()))
+        // A borrowed binding's action may have no pool yet (no stored types): its values are read as objects directly.
+        if (!validate_binding_objects(binding.get_relation(), urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }), binding.context())))
             throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
     }
 
@@ -272,8 +276,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
         auto& data = evaluator.checked_binding;
         data.relation = binding.get_relation().index();
         data.values.clear();
-        for (const auto object : binding.get_objects())
-            data.values.push_back(urd::to_stored(object));
+        for (const auto value : binding.get_values())
+            data.values.push_back(value);
         return data;
     }
 
@@ -441,7 +445,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
     auto& scratch_binding = *evaluator.scratch_action_binding;
 
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.data(), node.get_metric());
-    auto grounder_context = formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), scratch_binding.values };
+    auto grounder_context = formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.scratch_objects };
     const auto& mapping = definition->action_program.get_predicate_to_action_mapping();
 
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
@@ -458,8 +462,12 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
                 return false;
             scratch_binding.relation = schema.index();
             scratch_binding.values.clear();
-            for (const auto object : binding.get_objects())
-                scratch_binding.values.push_back(urd::to_stored(object));
+            evaluator.scratch_objects.clear();
+            for (const auto object : binding.template get<urd::index<formalism::Object>>())
+            {
+                scratch_binding.values.push_back(object.value);
+                evaluator.scratch_objects.push_back(object);
+            }
             if (!accept(scratch_binding))
                 continue;
 
@@ -487,8 +495,8 @@ ygg::float_t SuccessorGenerator<LiftedTag>::Impl::generate(const Source& node,
                                                            StateDelta& out_delta)
 {
     evaluator.workspace.binding.clear();
-    for (const auto object : binding.values)
-        evaluator.workspace.binding.push_back(object);
+    for (const auto value : binding.values)
+        evaluator.workspace.binding.push_back(urd::index<formalism::Object>(static_cast<std::uint32_t>(value)));
 
     auto grounder_context = formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.workspace.binding };
     const auto state_context = StateContext<LiftedTag>(*definition->task, node.data(), node.get_metric());
@@ -966,9 +974,13 @@ SuccessorGenerator<LiftedTag>::Impl::check_action_binding(const Source& node, fo
     auto& binding = evaluator.checked_binding;
     binding.relation = action.index();
     binding.values.clear();
+    evaluator.checked_objects.clear();
     for (const auto object : indices)
-        binding.values.push_back(object);
-    auto grounder = formalism::WriteContext { workspace.planning_builder, *task->get_repository(), binding.values };
+    {
+        binding.values.push_back(object.value);
+        evaluator.checked_objects.push_back(object);
+    }
+    auto grounder = formalism::WriteContext { workspace.planning_builder, *task->get_repository(), evaluator.checked_objects };
     const auto state = StateContext<LiftedTag>(*task, node.data(), node.get_metric());
     if (!is_applicable(action.get_condition(), ApplicabilityContext { state, grounder, *task->get_fdr_context() }))
         return ActionBindingStatus::INAPPLICABLE;
@@ -989,7 +1001,8 @@ ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const So
     if constexpr (requires { binding.context().owner(binding.data()); })
         if (binding.context().owner(binding.data()) == nullptr)
             throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
-    return m_impl->check_action_binding(node, binding.get_relation(), binding.get_objects());
+    // A borrowed binding's action may have no pool yet (no stored types): its values are read as objects directly.
+    return m_impl->check_action_binding(node, binding.get_relation(), urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }), binding.context()));
 }
 
 formalism::planning::ActionRowView SuccessorGenerator<LiftedTag>::materialize_action_binding(BorrowedActionRowView<LiftedTag> binding)
@@ -1123,8 +1136,8 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
         return it->second;
 
     m_impl->evaluator.workspace.binding.clear();
-    for (const auto object : binding.get_objects())
-        m_impl->evaluator.workspace.binding.push_back(urd::to_stored(object));
+    for (const auto object : binding.get<urd::index<formalism::Object>>())
+        m_impl->evaluator.workspace.binding.push_back(object);
 
     auto grounder_context = formalism::WriteContext { m_impl->evaluator.workspace.planning_builder,
                                                       *m_impl->definition->task->get_repository(),

@@ -321,7 +321,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
         binding.relation = atom.get_predicate().index();
         for (const auto object : program_view.get_objects())
             if (object.get_name() == "loc-x0-y0")
-                binding.values.push_back(object.index());
+                binding.values.push_back(object.index().value);
         ASSERT_EQ(binding.values.size(), 1);
         assignments.predicate.insert(tyr::formalism::datalog::insert(*additional.workspace_repository, binding).first);
         break;
@@ -534,8 +534,8 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
             for (const auto binding : set.get_bindings())
             {
                 auto objects = urd::Store<urd::sequence<ygg::uint_t>> {};
-                for (const auto object : binding.get_objects())
-                    objects.push_back(ygg::uint_t(object.index()));
+                for (const auto object : binding.template get<urd::index<tyr::formalism::Object>>())
+                    objects.push_back(ygg::uint_t(object));
 
                 const auto* annotation = workspace.annotations.find(binding);
                 result.emplace_back(ygg::uint_t(binding.get_relation().index()),

@@ -45,8 +45,8 @@ std::pair<PredicateRowView<T_DST>, bool> merge_d2p(datalog::PredicateRowView<T_S
     auto binding = planning::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 
     binding->relation = predicate_mapping.at(element.get_relation()).index();
-    for (const auto object : element.get_objects())
-        binding->values.push_back(object.index());
+    for (const auto object : element.template get<urd::index<Object>>())
+        binding->values.push_back(object.value);
 
     return planning::insert(context.destination(), *binding);
 }

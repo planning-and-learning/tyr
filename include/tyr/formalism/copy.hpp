@@ -43,8 +43,8 @@ copy(ygg::RowView<Rel, S> element, WriteContext<B, R>& context)
     auto binding = ygg::formalism::checkout<ygg::Row<Rel>>(context.builder());
 
     binding->relation = copy(element.get_relation(), context).first.index();
-    for (const auto object : element.get_objects())
-        binding->values.push_back(copy(object, context).first.index());
+    for (const auto object : urd::resolve(element.template get<urd::index<Object>>(), element.context()))
+        binding->values.push_back(copy(object, context).first.index().value);
 
     return ygg::formalism::insert(context.destination(), *binding);
 }

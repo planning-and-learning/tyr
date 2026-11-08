@@ -36,11 +36,11 @@ private:
 public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template get<&urd::record_of<V>::variables>(); }
+    { return self().template member<&urd::record_of<V>::variables>(); }
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
     { return urd::resolve(self().data().template get_literals<F>(), self().context()); }
-    auto get_numeric_constraints() const noexcept { return self().template get<&urd::record_of<V>::numeric_constraints>(); }
+    auto get_numeric_constraints() const noexcept { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().data().variables.size(); }

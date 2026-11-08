@@ -141,7 +141,9 @@ template<typename View>
 std::string relation_binding(View value)
 {
     auto result = fmt::format("({}", value.get_relation().get_name());
-    for (const auto object : value.get_objects())
+    // A borrowed binding's action may have no pool yet (no stored types): its values are read as objects directly.
+    const auto objects = urd::transform(value.get_values(), [](ygg::Value v) { return urd::index<Object>(static_cast<std::uint32_t>(v)); });
+    for (const auto object : urd::resolve(objects, value.context()))
         fmt::format_to(std::back_inserter(result), " {}", object);
     result.push_back(')');
     return result;
@@ -375,7 +377,8 @@ static std::string as_text(FunctionRowView<AuxiliaryTag> value) { return detail:
 static std::string as_text(ActionRowView value) { return detail::relation_binding(value); }
 std::string to_string(ActionRowDataView value) { return detail::relation_binding(value); }
 
-static std::string as_text(AxiomRowView value) { return fmt::format("{}", fmt::join(ygg::to_strings(value.get_objects()), " ")); }
+static std::string as_text(AxiomRowView value)
+{ return fmt::format("{}", fmt::join(ygg::to_strings(urd::resolve(value.get<urd::index<Object>>(), value.context())), " ")); }
 
 static std::string as_text(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
 static std::string as_text(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
@@ -620,8 +623,9 @@ std::string to_string(const PlanningTask<GroundTag>& value) { return fmt::format
 std::string to_string(const std::pair<ActionRowView, PlanFormatting>& value)
 {
     auto result = fmt::format("({}", value.first.get_relation().get_original_name());
+    const auto objects = urd::resolve(value.first.get<urd::index<Object>>(), value.first.context());
     for (std::size_t i = 0; i < value.first.get_relation().get_original_arity(); ++i)
-        fmt::format_to(std::back_inserter(result), " {}", value.first.get_objects()[i]);
+        fmt::format_to(std::back_inserter(result), " {}", objects[i]);
     result.push_back(')');
     return result;
 }

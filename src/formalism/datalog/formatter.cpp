@@ -171,15 +171,16 @@ std::string format_view(RuleView<GroundTag, R> value)
 template<typename V>
 std::string format_binding(V value)
 {
+    const auto objects = urd::resolve(value.template get<urd::index<Object>>(), value.context());
     if constexpr (requires { value.get_relation().get_name(); })
     {
         auto result = fmt::format("({}", value.get_relation().get_name());
-        for (const auto object : value.get_objects())
+        for (const auto object : objects)
             fmt::format_to(std::back_inserter(result), " {}", object);
         result.push_back(')');
         return result;
     }
-    return fmt::format("({})", fmt::join(ygg::to_strings(value.get_objects()), " "));
+    return fmt::format("({})", fmt::join(ygg::to_strings(objects), " "));
 }
 
 }  // namespace

@@ -88,7 +88,7 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
 
     auto binding_data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>> {};
     binding_data.relation = function.index();
-    binding_data.values.push_back(object.index());
+    binding_data.values.push_back(object.index().value);
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 

@@ -183,10 +183,10 @@ void set_common_options(Options& options, const Arguments& arguments, const Sear
 
 inline void print_summary(const formalism::planning::Repository& repository, const planning::Statistics& statistics)
 {
-    std::cout << "[Total] Number of objects: " << repository.template size<formalism::Object>() << '\n';
-    std::cout << "[Total] Number of fluent atoms: " << repository.template size<formalism::Atom<GroundTag, formalism::FluentTag>>() << '\n';
-    std::cout << "[Total] Number of derived atoms: " << repository.template size<formalism::Atom<GroundTag, formalism::DerivedTag>>() << '\n';
-    std::cout << "[Total] Number of fluent fterms: " << repository.template size<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>() << '\n';
+    std::cout << "[Total] Number of objects: " << repository.symbols().template size<formalism::Object>() << '\n';
+    std::cout << "[Total] Number of fluent atoms: " << repository.symbols().template size<formalism::Atom<GroundTag, formalism::FluentTag>>() << '\n';
+    std::cout << "[Total] Number of derived atoms: " << repository.symbols().template size<formalism::Atom<GroundTag, formalism::DerivedTag>>() << '\n';
+    std::cout << "[Total] Number of fluent fterms: " << repository.symbols().template size<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>() << '\n';
     std::cout << "[Total] Action bindings memory usage: " << statistics.get_action_bindings_memory_usage() << " bytes" << '\n';
     std::cout << "[Total] Predicate bindings memory usage: " << statistics.get_predicate_bindings_memory_usage() << " bytes" << '\n';
     std::cout << "[Total] Axiom bindings memory usage: " << statistics.get_axiom_bindings_memory_usage() << " bytes" << '\n';

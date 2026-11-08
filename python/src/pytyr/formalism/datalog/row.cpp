@@ -29,12 +29,22 @@ namespace tyr::formalism::datalog
 
 namespace
 {
+/// A row's record from its relation and objects (each object as its canonical Value).
+template<typename V, typename R, typename Objects>
+void init_row_data(V* self, R relation, const Objects& objects)
+{
+    new (self) V();
+    self->relation = relation.index();
+    for (const auto object : objects)
+        self->values.push_back(object.index().value);
+}
+
 template<typename Relation>
 void bind_row_data(nb::module_& m, const char* name)
 {
     using namespace nb::literals;
     using V = urd::data<ygg::Row<Relation>>;
-    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<urd::index_view<Relation, Repository>, const ObjectViewList&>(), "relation"_a, "objects"_a);
+    auto cls = nb::class_<V>(m, name).def("__init__", &init_row_data<V, urd::index_view<Relation, Repository>, ObjectViewList>, "relation"_a, "objects"_a);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
@@ -47,7 +57,7 @@ void bind_row_view(nb::module_& m, const char* name)
     auto cls = nb::class_<V>(m, name)
                    .def("index", [](const V& self) { return self.data(); })
                    .def("get_relation", &V::get_relation)
-                   .def("get_objects", [](const V& self) { return self.get_objects(); });
+                   .def("get_objects", [](const V& self) { return urd::resolve(self.template get<urd::index<Object>>(), self.context()); });
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

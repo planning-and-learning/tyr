@@ -112,11 +112,11 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
 
     indices[0] = objects[1].index();
     const auto nested = tyr::formalism::datalog::ground_binding(atom, context).first;
-    EXPECT_EQ(nested.get_objects()[0], objects[1]);
+    EXPECT_EQ(nested.get<urd::index<tyr::formalism::Object>>(0), objects[1].index());
     ASSERT_EQ(prepared->values.size(), 1);
-    EXPECT_EQ(prepared->values[0], objects[0].index());
+    EXPECT_EQ(prepared->values[0], objects[0].index().value);
     const auto retained = tyr::formalism::datalog::insert(*fixture.repository, *prepared).first;
-    EXPECT_EQ(retained.get_objects()[0], objects[0]);
+    EXPECT_EQ(retained.get<urd::index<tyr::formalism::Object>>(0), objects[0].index());
 }
 
 class BottomUpFixtureTest : public ::testing::TestWithParam<BottomUpCase>

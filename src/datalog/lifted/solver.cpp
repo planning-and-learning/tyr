@@ -562,7 +562,7 @@ private:
         {
             for (const auto atom : delta_fact_sets.predicate.get_sets()[ygg::uint_t(infos[i].predicate.value)].get_bindings())
             {
-                if (!match_anchor(graph.get_graph_layout(), infos[i], atom.get_objects(), out.anchor_vertices()))
+                if (!match_anchor(graph.get_graph_layout(), infos[i], atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
                     continue;
 
                 kckp_algorithm.for_each_hyperedge_clique(
@@ -590,7 +590,7 @@ private:
                              urd::Store<urd::sequence<kckp::Vertex>>& vertices)
     {
         for (const auto& [position, object] : info.position_mappings.constant_positions)
-            if (objects[position].index() != object)
+            if (objects[position] != object)
                 return false;
 
         vertices.clear();
@@ -600,8 +600,8 @@ private:
             const auto& positions = parameter_to_positions[parameter];
             if (positions.empty())
                 continue;
-            const auto object = objects[positions.front()].index();
-            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position].index() == object; }))
+            const auto object = objects[positions.front()];
+            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position] == object; }))
                 return false;
             const auto vertex = layout.find_vertex(parameter, ygg::uint_t(object.value));
             if (!vertex)

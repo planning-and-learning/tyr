@@ -51,7 +51,7 @@ inline tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag> 
     const auto object = ygg::formalism::insert(repository, object_data).first;
     auto binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>> {};
     binding_data.relation = predicate.index();
-    binding_data.values.push_back(object.index());
+    binding_data.values.push_back(object.index().value);
     const auto binding = ygg::formalism::insert(repository, binding_data).first;
     auto atom_data = urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(binding.data());
     return ygg::formalism::insert(repository, atom_data).first;

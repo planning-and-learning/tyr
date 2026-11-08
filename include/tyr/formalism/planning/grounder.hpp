@@ -138,9 +138,9 @@ std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> f
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->values.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value].value);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->values.push_back(arg.index());
+                    binding->values.push_back(arg.index().value);
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -231,9 +231,9 @@ std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T>
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->values.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value].value);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->values.push_back(arg.index());
+                    binding->values.push_back(arg.index().value);
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -363,7 +363,7 @@ inline std::pair<ActionRowView, bool> ground(ActionView<LiftedTag> action, Write
 
     binding->relation = action.index();
     for (ygg::uint_t i = 0; i < action.get_arity(); ++i)
-        binding->values.push_back(context.binding()[i]);
+        binding->values.push_back(context.binding()[i].value);
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *binding);
@@ -392,7 +392,7 @@ inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteCon
 
     binding->relation = axiom.index();
     for (ygg::uint_t i = 0; i < axiom.get_arity(); ++i)
-        binding->values.push_back(context.binding()[i]);
+        binding->values.push_back(context.binding()[i].value);
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *binding);
@@ -436,9 +436,9 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->values.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value].value);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->values.push_back(arg.index());
+                    binding->values.push_back(arg.index().value);
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -468,9 +468,9 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    binding->values.push_back(context.binding()[arg.value]);
+                    binding->values.push_back(context.binding()[arg.value].value);
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
-                    binding->values.push_back(arg.index());
+                    binding->values.push_back(arg.index().value);
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },

@@ -32,7 +32,7 @@ private:
 public:
     auto get_num_rigid_variables() const noexcept { return self().data().num_rigid_variables; }
     auto get_num_counted_variables() const noexcept { return self().data().num_counted_variables; }
-    auto get_atoms() const noexcept { return self().template get<&urd::record_of<V>::atoms>(); }
+    auto get_atoms() const noexcept { return self().template member<&urd::record_of<V>::atoms>(); }
 };
 }  // namespace urd
 

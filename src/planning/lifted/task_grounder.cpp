@@ -661,8 +661,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 const auto action = it->second;
 
                 workspace.binding.clear();
-                for (const auto object : binding.get_objects())
-                    workspace.binding.push_back(urd::to_stored(object));
+                for (const auto object : binding.template get<urd::index<formalism::Object>>())
+                    workspace.binding.push_back(object);
 
                 auto grounder_context = formalism::WriteContext { workspace.planning_builder, *repository, workspace.binding };
 
@@ -699,8 +699,8 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
             if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
             {
                 workspace.binding.clear();
-                for (const auto object : binding.get_objects())
-                    workspace.binding.push_back(urd::to_stored(object));
+                for (const auto object : binding.template get<urd::index<formalism::Object>>())
+                    workspace.binding.push_back(object);
 
                 auto grounder_context = formalism::WriteContext { workspace.planning_builder, *repository, workspace.binding };
 

@@ -385,8 +385,8 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
 
     auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<LiftedTag>>> {};
     binding_data.relation = label.get_relation().index();
-    for (const auto object : label.get_objects())
-        binding_data.values.push_back(object.index());
+    for (const auto object : label.template get<urd::index<tyr::formalism::Object>>())
+        binding_data.values.push_back(object.value);
     const auto borrowed_label = urd::resolve(binding_data, label.context());
     const auto borrowed_labeled =
         tyr::planning::LabeledNode<Kind, tyr::planning::BuilderStateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label, node };

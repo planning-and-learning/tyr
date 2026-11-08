@@ -166,7 +166,7 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
                                                                                                                ++calls;
                                                                                                                ar.field("predicate_name",
                                                                                                                         value.get_relation().get_name());
-                                                                                                               ar.field("arguments", value.get_objects());
+                                                                                                               ar.field("arguments", urd::resolve(value.template get<urd::index<tyr::formalism::Object>>(), value.context()));
                                                                                                                ar.field("text", ygg::to_string(value));
                                                                                                            });
     dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p");

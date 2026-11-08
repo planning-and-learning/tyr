@@ -39,14 +39,14 @@ public:
     template<::tyr::formalism::FactKind F>
     auto get_functions() const noexcept
     { return urd::resolve(self().data().template get_functions<F>(), self().context()); }
-    auto get_objects() const noexcept { return self().template get<&urd::record_of<V>::objects>(); }
+    auto get_objects() const noexcept { return self().template member<&urd::record_of<V>::objects>(); }
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept
     { return urd::resolve(self().data().template get_atoms<F>(), self().context()); }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values() const noexcept
     { return urd::resolve(self().data().template get_fterm_values<F>(), self().context()); }
-    auto get_goal() const noexcept { return self().template get<&urd::record_of<V>::goal>(); }
+    auto get_goal() const noexcept { return self().template member<&urd::record_of<V>::goal>(); }
     template<::tyr::formalism::RelationKind R>
     auto get_rules() const noexcept
     { return urd::resolve(self().data().template get_rules<R>(), self().context()); }

@@ -57,7 +57,7 @@ auto make_binding(tyr::formalism::datalog::Repository& repository,
     auto data = urd::data<ygg::Row<Relation>> {};
     data.relation = relation.index();
     for (const auto object : objects)
-        data.values.push_back(object);
+        data.values.push_back(object.value);
     return ygg::formalism::insert(repository, data).first;
 }
 
@@ -65,17 +65,17 @@ auto make_binding(tyr::formalism::datalog::Repository& repository,
 template<typename Set, typename Binding>
 ygg::ClosedInterval<ygg::float_t> interval_of(const Set& set, Binding binding)
 {
-    const auto objects = binding.get_objects();
+    const auto objects = binding.template get<ObjectIndex>();
     auto result = set[tyr::datalog::EmptyAssignment {}];
     for (ygg::uint_t i = 0; i < objects.size(); ++i)
     {
-        result = intersect(result, set[tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(i), objects[i].index())]);
+        result = intersect(result, set[tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(i), objects[i])]);
         for (ygg::uint_t j = i + 1; j < objects.size(); ++j)
             result = intersect(result,
                                set[tyr::datalog::EdgeAssignment(tyr::formalism::ParameterIndex(i),
-                                                                objects[i].index(),
+                                                                objects[i],
                                                                 tyr::formalism::ParameterIndex(j),
-                                                                objects[j].index())]);
+                                                                objects[j])]);
     }
     return result;
 }

@@ -43,10 +43,10 @@ public:
     template<::tyr::formalism::FactKind T>
     auto get_functions() const noexcept
     { return urd::resolve(self().data().template get_functions<T>(), self().context()); }
-    auto get_auxiliary_function() const noexcept { return self().template get<&urd::record_of<V>::auxiliary_function>(); }
-    auto get_constants() const noexcept { return self().template get<&urd::record_of<V>::constants>(); }
-    auto get_actions() const noexcept { return self().template get<&urd::record_of<V>::actions>(); }
-    auto get_axioms() const noexcept { return self().template get<&urd::record_of<V>::axioms>(); }
+    auto get_auxiliary_function() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_function>(); }
+    auto get_constants() const noexcept { return self().template member<&urd::record_of<V>::constants>(); }
+    auto get_actions() const noexcept { return self().template member<&urd::record_of<V>::actions>(); }
+    auto get_axioms() const noexcept { return self().template member<&urd::record_of<V>::axioms>(); }
 };
 }  // namespace urd
 

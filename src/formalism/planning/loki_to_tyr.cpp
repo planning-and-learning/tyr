@@ -322,7 +322,7 @@ auto to_binding(urd::index_view<T, Repository> element, const Range& terms, Buil
     binding->relation = element.index();
     binding->values.reserve(std::ranges::size(terms));
     for (const auto term : terms)
-        binding->values.push_back(translate(term));
+        binding->values.push_back(translate(term).value);
     return planning::insert(context, *binding);
 }
 

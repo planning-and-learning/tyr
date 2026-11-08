@@ -32,7 +32,7 @@ private:
 
 public:
     auto get_domain_size() const noexcept { return get_atoms().size() + 1; }
-    auto get_atoms() const noexcept { return self().template get<&urd::record_of<V>::atoms>(); }
+    auto get_atoms() const noexcept { return self().template member<&urd::record_of<V>::atoms>(); }
 };
 }  // namespace urd
 

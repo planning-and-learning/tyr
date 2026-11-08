@@ -41,19 +41,24 @@ public:
     { return get_body().get_arity(); }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template get<&urd::record_of<V>::variables>(); }
-    auto get_body() const noexcept { return self().template get<&urd::record_of<V>::body>(); }
-    auto get_head() const noexcept { return self().template get<&urd::record_of<V>::head>(); }
+    { return self().template member<&urd::record_of<V>::variables>(); }
+    auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
+    auto get_head() const noexcept { return self().template member<&urd::record_of<V>::head>(); }
 
     auto get_axiom() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_relation(); }
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::row>(); }
-    auto get_objects() const noexcept
+    { return self().template member<&urd::record_of<V>::row>(); }
+    /// Its objects: its row's columns read as objects (checked against its pool's types), resolved through the row's
+    /// context.
+    auto get_objects() const
         requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_objects(); }
+    {
+        const auto row = get_row();
+        return urd::resolve(row.template get<urd::index<::tyr::formalism::Object>>(), row.context());
+    }
     auto get_key() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_key(); }

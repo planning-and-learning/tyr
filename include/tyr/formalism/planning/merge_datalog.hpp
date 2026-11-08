@@ -183,8 +183,8 @@ merge_p2d(PredicateRowView<T_SRC> element, datalog::PredicateView<T_DST> predica
     auto binding = datalog::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 
     binding->relation = predicate.index();
-    for (const auto object : element.get_objects())
-        binding->values.push_back(object.index());
+    for (const auto object : element.template get<urd::index<Object>>())
+        binding->values.push_back(object.value);
 
     return datalog::insert(context.destination(), *binding);
 }
@@ -300,8 +300,8 @@ merge_p2d(FunctionRowView<T_SRC> element, datalog::FunctionView<T_DST> function,
     auto binding = datalog::checkout<ygg::Row<Function<T_DST>>>(context.builder());
 
     binding->relation = function.index();
-    for (const auto object : element.get_objects())
-        binding->values.push_back(object.index());
+    for (const auto object : element.template get<urd::index<Object>>())
+        binding->values.push_back(object.value);
 
     return datalog::insert(context.destination(), *binding);
 }

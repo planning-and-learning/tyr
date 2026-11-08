@@ -42,19 +42,24 @@ public:
         }
         else
         {
-            return self().template get<&urd::record_of<V>::predicate>();
+            return self().template member<&urd::record_of<V>::predicate>();
         }
     }
     auto get_terms() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template get<&urd::record_of<V>::terms>(); }
+    { return self().template member<&urd::record_of<V>::terms>(); }
 
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::row>(); }
-    auto get_objects() const noexcept
+    { return self().template member<&urd::record_of<V>::row>(); }
+    /// Its objects: its row's columns read as objects (checked against its pool's types), resolved through the row's
+    /// context.
+    auto get_objects() const
         requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_objects(); }
+    {
+        const auto row = get_row();
+        return urd::resolve(row.template get<urd::index<::tyr::formalism::Object>>(), row.context());
+    }
     auto get_key() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_key(); }

@@ -33,7 +33,7 @@ private:
 
 public:
     auto get_optimization_direction() const noexcept { return self().data().optimization_direction; }
-    auto get_fexpr() const noexcept { return self().template get<&urd::record_of<V>::fexpr>(); }
+    auto get_fexpr() const noexcept { return self().template member<&urd::record_of<V>::fexpr>(); }
 };
 }  // namespace urd
 

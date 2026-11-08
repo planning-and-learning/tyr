@@ -48,7 +48,8 @@ struct ActionCostLookup
     {
         const auto objects = rule_binding.get_key().second;
         assert(objects.size() >= action.get_arity());
-        return std::make_pair(action.index(), std::views::take(objects, action.get_arity()));
+        // A subrange of the stored row's iterators, which hold the row: it outlives `objects`.
+        return std::make_pair(action.index(), std::ranges::subrange(objects.begin(), objects.begin() + action.get_arity()));
     }
 };
 
@@ -240,7 +241,7 @@ private:
             return static_cast<Cost>(0);
 
         const auto action = rule_to_action->find(rule_binding.data().relation);
-        if (action == rule_to_action->end() || rule_binding.get_objects().size() < action->second.get_arity())
+        if (action == rule_to_action->end() || rule_binding.size() < action->second.get_arity())
             return static_cast<Cost>(0);
         const auto cost = m_action_costs.find(ActionCostLookup<R> { action->second, rule_binding });
         return cost == m_action_costs.end() ? static_cast<Cost>(0) : cost->second;

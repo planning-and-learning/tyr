@@ -36,9 +36,9 @@ private:
 public:
     auto get_literals() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template get<&urd::record_of<V>::literals>(); }
-    auto get_numeric_effects() const noexcept { return self().template get<&urd::record_of<V>::numeric_effects>(); }
-    auto get_auxiliary_numeric_effect() const noexcept { return self().template get<&urd::record_of<V>::auxiliary_numeric_effect>(); }
+    { return self().template member<&urd::record_of<V>::literals>(); }
+    auto get_numeric_effects() const noexcept { return self().template member<&urd::record_of<V>::numeric_effects>(); }
+    auto get_auxiliary_numeric_effect() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_numeric_effect>(); }
 
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept

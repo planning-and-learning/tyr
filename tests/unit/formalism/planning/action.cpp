@@ -86,7 +86,7 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
 
     auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<::tyr::LiftedTag>>> {};
     binding_data.relation = action.index();
-    binding_data.values.push_back(object.index());
+    binding_data.values.push_back(object.index().value);
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
@@ -123,7 +123,7 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     (void) tyr::formalism::planning::insert(destination, variable_data);
     auto binding_data = urd::data<ygg::Row<tyr::formalism::planning::Action<tyr::LiftedTag>>> {};
     binding_data.relation = source_action.index();
-    binding_data.values.push_back(source_object.index());
+    binding_data.values.push_back(source_object.index().value);
     const auto binding = tyr::formalism::planning::insert(source, binding_data).first;
 
     auto builder = tyr::formalism::planning::Builder {};
@@ -136,9 +136,10 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     EXPECT_EQ(copied.get_original_arity(), source_action.get_original_arity());
     EXPECT_EQ(tyr::formalism::planning::to_string(copied), tyr::formalism::planning::to_string(source_action));
     EXPECT_NE(copied.get_variables().front().index(), source_action.get_variables().front().index());
-    ASSERT_EQ(copied_binding.get_objects().size(), 1);
-    EXPECT_EQ(copied_binding.get_objects()[0].get_name(), "truck");
-    EXPECT_NE(copied_binding.get_objects()[0].index(), source_object.index());
+    const auto copied_objects = urd::resolve(copied_binding.get<urd::index<tyr::formalism::Object>>(), copied_binding.context());
+    ASSERT_EQ(copied_objects.size(), 1);
+    EXPECT_EQ(copied_objects[0].get_name(), "truck");
+    EXPECT_NE(copied_objects[0].index(), source_object.index());
     EXPECT_FALSE(tyr::formalism::copy(binding, context).second);
 }
 

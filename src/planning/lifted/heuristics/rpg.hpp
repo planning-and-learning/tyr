@@ -102,8 +102,8 @@ struct RPGPolicy<LiftedTag>
             }
         }
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
-        for (const auto object : rule_binding.get_objects())
-            workspace.binding.push_back(urd::to_stored(object));
+        for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
+            workspace.binding.push_back(object);
         return formalism::planning::ground(it->second, grounder_context).first;
     }
 
@@ -116,8 +116,8 @@ struct RPGPolicy<LiftedTag>
         const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().relation);
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
         auto position = static_cast<size_t>(0);
-        for (const auto object : rule_binding.get_objects())
-            workspace.binding[origin.source_positions[position++]] = object.index();
+        for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
+            workspace.binding[origin.source_positions[position++]] = object;
 
         const auto& projection_rules = definition.rpg_program.get_rule_splitting().projection_rules;
         visit_witness_rule_instance(workspace,
@@ -144,8 +144,8 @@ struct RPGPolicy<LiftedTag>
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
         const auto& const_rule_workspace = *workspace.const_workspace->rules.template get<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
         auto binding = urd::flat_vector<urd::index<formalism::Object>> {};
-        for (const auto object : rule_binding.get_objects())
-            binding.push_back(urd::to_stored(object));
+        for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
+            binding.push_back(object);
         auto grounder_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
         const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace, grounder_context);
         std::forward<Callback>(callback)(instance);

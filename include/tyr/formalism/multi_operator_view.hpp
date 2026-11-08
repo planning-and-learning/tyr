@@ -34,7 +34,7 @@ public:
     using OperatorType = O;
 
     auto get_operator() const noexcept { return self().data().operator_kind; }
-    auto get_args() const noexcept { return self().template get<&urd::record_of<V>::args>(); }
+    auto get_args() const noexcept { return self().template member<&urd::record_of<V>::args>(); }
 };
 }  // namespace urd
 

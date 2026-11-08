@@ -114,18 +114,18 @@ std::optional<PredicateRowView<F>> try_ground_binding(AtomView<LiftedTag, F> ele
  * ground
  */
 
-/// Substitute terms into retained object storage without interning a binding.
-inline void ground(TermListView terms, const WriteContext<Builder, Repository>& context, urd::flat_vector<urd::index<Object>>& objects)
+/// Substitute terms into retained row values (objects as their canonical Values) without interning a binding.
+inline void ground(TermListView terms, const WriteContext<Builder, Repository>& context, urd::flat_vector<ygg::Value>& values)
 {
-    objects.clear();
+    values.clear();
     for (const auto term : terms)
         visit(
             [&]<typename Alternative>(Alternative arg)
             {
                 if constexpr (std::same_as<Alternative, ParameterIndex>)
-                    objects.push_back(context.binding()[arg.value]);
+                    values.push_back(context.binding()[arg.value].value);
                 else if constexpr (std::same_as<Alternative, ObjectView>)
-                    objects.push_back(arg.index());
+                    values.push_back(arg.index().value);
                 else
                     static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
             },
@@ -327,7 +327,7 @@ std::pair<RuleRowView<R>, bool> ground_binding(RuleView<LiftedTag, R> element, W
 
     binding->relation = element.index();
     for (const auto object : context.binding())
-        binding->values.push_back(object);
+        binding->values.push_back(object.value);
 
     return datalog::insert(context.destination(), *binding);
 }

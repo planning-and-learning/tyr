@@ -38,8 +38,8 @@ public:
 public:
 
     auto get_operator() const noexcept { return self().data().operator_kind; }
-    auto get_fterm() const noexcept { return self().template get<&urd::record_of<V>::fterm>(); }
-    auto get_fexpr() const noexcept { return self().template get<&urd::record_of<V>::fexpr>(); }
+    auto get_fterm() const noexcept { return self().template member<&urd::record_of<V>::fterm>(); }
+    auto get_fexpr() const noexcept { return self().template member<&urd::record_of<V>::fexpr>(); }
 };
 }  // namespace urd
 

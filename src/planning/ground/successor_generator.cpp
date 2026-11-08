@@ -678,7 +678,7 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     scratch.relation = action.index();
     scratch.values.clear();
     for (const auto object : indices)
-        scratch.values.push_back(object);
+        scratch.values.push_back(object.value);
     const auto binding = task->get_repository()->find(scratch);
     if (!binding)
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
@@ -697,7 +697,7 @@ ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_bin
     if constexpr (requires { binding.context().owner(binding.data()); })
         if (binding.context().owner(binding.data()) == nullptr)
             throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
-    return m_impl->try_get_applicable_action_binding(node, binding.get_relation(), binding.get_objects());
+    return m_impl->try_get_applicable_action_binding(node, binding.get_relation(), urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }), binding.context()));
 }
 
 template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
@@ -716,7 +716,7 @@ formalism::planning::ActionRowView SuccessorGenerator<GroundTag>::materialize_ac
         return binding;
     const auto action = binding.get_relation();
     m_impl->get_schema_match_tree(action);
-    const auto objects = binding.get_objects();
+    const auto objects = urd::resolve(binding.get<urd::index<formalism::Object>>(), binding.context());
     if (objects.size() != action.get_arity())
         throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
     if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(repository, value); }))

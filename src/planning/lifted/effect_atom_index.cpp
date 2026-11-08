@@ -71,10 +71,10 @@ void EffectAtomIndex::rebuild(Groups& groups,
     groups.rows.clear();
     for (const auto atom : atoms)
     {
-        const auto objects = atom.get_objects();
+        const auto objects = atom.template get<urd::index<formalism::Object>>();
         m_prefix.clear();
         for (size_t i = 0; i < action_arity; ++i)
-            m_prefix.push_back(objects[i].index());
+            m_prefix.push_back(objects[i]);
         const auto row = find_row(applicability_predicate, std::span<const urd::index<formalism::Object>>(m_prefix.data(), m_prefix.size()));
         assert(row && "An effect atom's action binding is applicable.");
         groups.rows.emplace_back(*row, atom.data());
@@ -88,7 +88,8 @@ std::optional<ygg::uint_t> EffectAtomIndex::find_row(formalism::datalog::Predica
                                                      std::span<const urd::index<formalism::Object>> binding)
 {
     m_lookup.values.clear();
-    m_lookup.values.insert(m_lookup.values.end(), binding.begin(), binding.end());
+    for (const auto object : binding)
+        m_lookup.values.push_back(object.value);
     m_lookup.relation = applicability_predicate.index();
     const auto atom = m_repository->find(m_lookup);
     if (!atom)

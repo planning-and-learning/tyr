@@ -218,7 +218,7 @@ BottomUpCase parse_case(const boost::json::object& object)
     {
         auto bindings = urd::Store<urd::sequence<AtomBinding>> {};
         for (const auto binding : set.get_bindings())
-            bindings.push_back(AtomBinding { ygg::to_string(binding.get_objects()) });
+            bindings.push_back(AtomBinding { ygg::to_string(urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context())) });
         std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
         const auto predicate = set.get_predicate();
@@ -344,7 +344,7 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
     const auto seed_body = intern(std::move(seed_body_data));
     auto seed_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     seed_binding_data.relation = seed_predicate.index();
-    seed_binding_data.values.push_back(object.index());
+    seed_binding_data.values.push_back(object.index().value);
     const auto seed_binding = intern(std::move(seed_binding_data));
     const auto ground_seed = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(seed_binding.data()));
 
@@ -455,7 +455,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
     {
         auto data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
         data.relation = rule.index();
-        data.values.push_back(object.index());
+        data.values.push_back(object.index().value);
         return intern(std::move(data));
     };
     const auto first_binding = bind_rule(first_object);
@@ -465,7 +465,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
     {
         auto data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
         data.relation = source_predicate.index();
-        data.values.push_back(object.index());
+        data.values.push_back(object.index().value);
         return intern(std::move(data));
     };
     const auto ground_first_source =
@@ -490,7 +490,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         {
             auto data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
             data.relation = value_function.index();
-            data.values.push_back(object.index());
+            data.values.push_back(object.index().value);
             return intern(urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(data)).data()));
         };
         program_data.fluent_functions = { value_function.index() };

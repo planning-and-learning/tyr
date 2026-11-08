@@ -150,7 +150,7 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
     auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::FluentTag>>>(context.builder);
     binding->relation = new_predicate.index();
     for (const auto object : action.get_objects())
-        binding->values.push_back(object.index());
+        binding->values.push_back(object.index().value);
     const auto new_binding = formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 
     auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(context.builder);

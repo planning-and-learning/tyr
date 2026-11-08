@@ -103,8 +103,8 @@ public:
         for (const auto atom : *atoms)
         {
             binding.clear();
-            for (const auto object : urd::resolve(atom, *m_repository).get_objects())
-                binding.push_back(urd::to_stored(object));
+            for (const auto object : urd::resolve(atom, *m_repository).template get<urd::index<formalism::Object>>())
+                binding.push_back(object);
             apply();
             binding.resize(action_arity);
         }

@@ -239,7 +239,7 @@ void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateRowView<T> b
 {
     assert(binding.data().relation == m_predicate_index);
     for_each_assignment_rank(m_hash,
-                             binding.get_objects().base(),
+                             binding.template get<urd::index<formalism::Object>>(),
                              m_remapped_objects,
                              [&](size_t rank) { m_ranks.insert(rank); });
 }
@@ -367,7 +367,7 @@ bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> bin
     assert(binding.data().relation == m_function_index);
     auto changed = update_interval(m_set[EmptyAssignment::rank], interval);
     for_each_assignment_rank(m_hash,
-                             binding.get_objects().base(),
+                             binding.template get<urd::index<formalism::Object>>(),
                              m_remapped_objects,
                              [&](size_t rank) { changed |= update_interval(m_set[rank], interval); });
 

@@ -254,8 +254,8 @@ private:
         for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(atom.get_predicate().index().value)].get_bindings())
         {
             auto element = urd::Store<urd::sequence<formalism::Term>> {};
-            for (const auto object : binding.get_objects())
-                element.emplace_back(object.index());
+            for (const auto object : binding.template get<urd::index<formalism::Object>>())
+                element.emplace_back(object);
             if (const auto match = formalism::unification::match(pattern, element, sigma))
             {
                 const auto& value = (*match)[variable];
@@ -266,7 +266,7 @@ private:
                     auto domain_binding =
                         formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
                     domain_binding->relation = new_predicate;
-                    domain_binding->values.push_back(object);
+                    domain_binding->values.push_back(object.value);
                     auto ground_atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
                     ground_atom->row = formalism::datalog::insert(m_context->destination(), *domain_binding).first.data();
                     m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *ground_atom).first.index());

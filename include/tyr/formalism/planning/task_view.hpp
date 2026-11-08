@@ -44,9 +44,9 @@ private:
 
 public:
     const auto& get_name() const noexcept { return self().data().name; }
-    auto get_domain() const noexcept { return self().template get<&urd::record_of<V>::domain>(); }
-    auto get_derived_predicates() const noexcept { return self().template get<&urd::record_of<V>::derived_predicates>(); }
-    auto get_objects() const noexcept { return self().template get<&urd::record_of<V>::objects>(); }
+    auto get_domain() const noexcept { return self().template member<&urd::record_of<V>::domain>(); }
+    auto get_derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
+    auto get_objects() const noexcept { return self().template member<&urd::record_of<V>::objects>(); }
     [[nodiscard]] size_t get_num_objects() const noexcept { return get_domain().get_constants().size() + get_objects().size(); }
     template<::tyr::formalism::FactKind T>
     auto get_atoms() const noexcept
@@ -54,23 +54,23 @@ public:
     template<::tyr::formalism::FactKind T>
     auto get_fterm_values() const noexcept
     { return urd::resolve(self().data().template get_fterm_values<T>(), self().context()); }
-    auto get_auxiliary_fterm_value() const noexcept { return self().template get<&urd::record_of<V>::auxiliary_fterm_value>(); }
-    auto get_goal() const noexcept { return self().template get<&urd::record_of<V>::goal>(); }
-    auto get_metric() const noexcept { return self().template get<&urd::record_of<V>::metric>(); }
-    auto get_axioms() const noexcept { return self().template get<&urd::record_of<V>::axioms>(); }
+    auto get_auxiliary_fterm_value() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_fterm_value>(); }
+    auto get_goal() const noexcept { return self().template member<&urd::record_of<V>::goal>(); }
+    auto get_metric() const noexcept { return self().template member<&urd::record_of<V>::metric>(); }
+    auto get_axioms() const noexcept { return self().template member<&urd::record_of<V>::axioms>(); }
 
     auto get_fluent_variables() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::fluent_variables>(); }
+    { return self().template member<&urd::record_of<V>::fluent_variables>(); }
     auto get_fluent_facts() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::fluent_facts>(); }
+    { return self().template member<&urd::record_of<V>::fluent_facts>(); }
     auto get_ground_actions() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::ground_actions>(); }
+    { return self().template member<&urd::record_of<V>::ground_actions>(); }
     auto get_ground_axioms() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { return self().template get<&urd::record_of<V>::ground_axioms>(); }
+    { return self().template member<&urd::record_of<V>::ground_axioms>(); }
 };
 }  // namespace urd
 
