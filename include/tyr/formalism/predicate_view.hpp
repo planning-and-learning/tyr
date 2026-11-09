@@ -20,6 +20,8 @@
 
 #include "tyr/formalism/declarations.hpp"
 
+#include <yggdrasil/formalism/values.hpp>
+#include <ranges>
 #include <urd/elements/flat.hpp>
 
 namespace urd
@@ -33,6 +35,9 @@ private:
 public:
     const auto& get_name() const noexcept { return self().data().name; }
     auto get_arity() const noexcept { return self().data().arity; }
+    /// Its rows' column types: one object per argument (a key of row pools, as the repository declares its pool).
+    auto get_column_types() const
+    { return std::views::iota(std::size_t { 0 }, std::size_t(get_arity())) | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; }); }
 };
 }  // namespace urd
 
