@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -641,8 +642,8 @@ TEST(YggdrasilTests, DatabaseJoinCacheIdentifiesBuildersByAddressAcrossPoolsAndR
 
     // Interned relations are identified by their layer and index: a rename is another relation.
     ygg::FreeRelationRepository layer;
-    const auto interned = layer.insert(*reused).first;
-    const auto renamed = layer.rename(interned, cols({ ColumnIndex(3) }));
+    const auto interned = tyr::datalog::tests::ops::intern(layer, *reused).first;
+    const auto renamed = tyr::datalog::tests::ops::rename(layer, interned, cols({ ColumnIndex(3) }));
     EXPECT_NE(interned.relation_identity(), renamed.relation_identity());
     EXPECT_NE(interned.relation_identity(), ygg::relation_identity(*reused));
     cache.get_or_create(interned, keys);
@@ -1051,20 +1052,20 @@ TEST(YggdrasilTests, DatabaseRelationInsertsTypedTuplesAndCanonicalBytesWithoutS
         EXPECT_EQ(borrow(relation).row(0).value(c), values[c]);
 }
 
-TEST(YggdrasilTests, DatabaseRelationViewsQueryTypedRowsWithinTheirOwnRowSet)
+TEST(YggdrasilTests, DatabaseRelationViewsQueryTypedRowsWithinTheirOwnRows)
 {
     ygg::FreeRelationRepository repository;
     auto relation = urd::builder<ygg::Relation<ygg::Schema>>(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
     const auto values = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }), ygg::encode_value(ygg::uint_t { 7 }) };
     relation.insert(values);
     const auto encoded = borrow(relation).row(0);
-    const auto indexed = repository.insert(relation).first;
+    const auto indexed = tyr::datalog::tests::ops::intern(repository, relation).first;
     const auto data_view = urd::resolve(indexed.data(), repository);
     const auto builder_view = urd::resolve(relation, repository);
     auto other = urd::builder<ygg::Relation<ygg::Schema>>(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
     const auto other_row = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }), ygg::encode_value(ygg::uint_t { 6 }) };
     other.insert(other_row);
-    const auto other_indexed = repository.insert(other).first;
+    const auto other_indexed = tyr::datalog::tests::ops::intern(repository, other).first;
     ASSERT_TRUE(other_indexed.contains(other_row));
     const auto missing = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }), ygg::encode_value(ygg::uint_t { 4 }) };
     const auto verify = [&](const auto& view)
@@ -1085,12 +1086,12 @@ TEST(YggdrasilTests, DatabaseRelationViewsQueryEmptyTypedRows)
     ygg::FreeRelationRepository repository;
     auto relation = urd::builder<ygg::Relation<ygg::Schema>>();
     const auto row = std::array<ygg::Value, 0> {};
-    const auto empty = repository.insert(relation).first;
+    const auto empty = tyr::datalog::tests::ops::intern(repository, relation).first;
     EXPECT_FALSE(urd::resolve(relation, repository).contains(row));
     EXPECT_FALSE(urd::resolve(empty.data(), repository).contains(row));
     EXPECT_FALSE(empty.contains(row));
     relation.insert(row);
-    const auto unit = repository.insert(relation).first;
+    const auto unit = tyr::datalog::tests::ops::intern(repository, relation).first;
     EXPECT_TRUE(urd::resolve(relation, repository).contains(row));
     EXPECT_TRUE(urd::resolve(unit.data(), repository).contains(row));
     EXPECT_TRUE(unit.contains(row));

@@ -375,7 +375,7 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinAcceptsInternedWideInputs)
     immutable.insert(std::array { ygg::encode_value(ygg::Value { 20 }), ygg::encode_value(ygg::Value { 200 }) });
     immutable.insert(std::array { ygg::encode_value(ygg::Value { 30 }), ygg::encode_value(ygg::Value { 300 }) });
     ygg::FreeRelationRepository repository;
-    const auto view = repository.insert(immutable).first;
+    const auto view = tyr::datalog::tests::ops::intern(repository, immutable).first;
     const database::JoinPlan plan(dynamic.columns(), immutable.columns());
     database::incremental::JoinEvaluator evaluator(layer(), plan);
     urd::builder<ygg::Relation<ygg::Schema>> unchanged(immutable.columns());

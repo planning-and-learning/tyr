@@ -11,6 +11,7 @@ import pytest
 import pytyr
 from pyyggdrasil import formalism
 from pytyr import database
+from relation_utils import intern, rename
 
 
 def columns(*labels: int) -> list[formalism.ColumnIndex]:
@@ -164,10 +165,10 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
     builder = formalism.Relation(columns(10, 20))
     builder.insert([3, 4])
     builder.insert([5, 6])
-    result = repository.insert(builder)
+    result = intern(repository, builder)
     assert isinstance(result, tuple)
     relation, created = result
-    duplicate, duplicate_created = repository.insert(builder)
+    duplicate, duplicate_created = intern(repository, builder)
     assert created is True
     assert duplicate_created is False
     del result
@@ -181,10 +182,8 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
     assert not hasattr(relation, "clear")
 
     other_repository = formalism.RelationRepository()
-    assert other_repository.insert(builder)[0] != relation
-    assert repository.rename(relation, columns(10, 20)) == relation
-    with pytest.raises(ValueError, match="Repository: rename requires a source in this repository"):
-        other_repository.rename(relation, columns(30, 40))
+    assert intern(other_repository, builder)[0] != relation
+    assert rename(repository, relation, columns(10, 20)) == relation
 
     builder.clear()
     builder.insert([8, 9])
@@ -199,15 +198,15 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
     with pytest.raises(IndexError):
         relation.at(2)
 
-    renamed = repository.rename(relation, columns(30, 40))
+    renamed = rename(repository, relation, columns(30, 40))
     assert tuple(renamed.columns()) == tuple(columns(30, 40))
     assert [tuple(row) for row in renamed] == [(3, 4), (5, 6)]
     assert renamed != relation
-    assert repository.rename(renamed, columns(10, 20)) == relation
+    assert rename(repository, renamed, columns(10, 20)) == relation
     with pytest.raises(ValueError, match="Columns: renaming must preserve arity"):
-        repository.rename(relation, columns(30))
-    with pytest.raises(ValueError, match="Repository: a rename gives distinct labels"):
-        repository.rename(relation, columns(30, 30))
+        rename(repository, relation, columns(30))
+    with pytest.raises(ValueError, match="Repository: a relation's column labels are distinct"):
+        rename(repository, relation, columns(30, 30))
 
     # Every borrowed layer must keep the repository alive, without keeping the
     # mutable builder alive or depending on its buffers.
@@ -231,9 +230,9 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
 def test_interned_nullary_relations_and_repository_reset() -> None:
     repository = formalism.RelationRepository()
     builder = formalism.Relation()
-    false = repository.insert(builder)[0]
+    false = intern(repository, builder)[0]
     builder.insert([])
-    true = repository.insert(builder)[0]
+    true = intern(repository, builder)[0]
     assert false.empty()
     assert list(false) == []
     assert [tuple(row) for row in true] == [()]
@@ -242,24 +241,24 @@ def test_interned_nullary_relations_and_repository_reset() -> None:
     del false, true
     repository.clear()
     assert len(repository) == 0
-    assert [tuple(row) for row in repository.insert(builder)[0]] == [()]
+    assert [tuple(row) for row in intern(repository, builder)[0]] == [()]
 
 
 def test_interning_ignores_row_insertion_order() -> None:
     repository = formalism.RelationRepository()
     seed = formalism.Relation(columns(10, 20))
     seed.insert([9, 8])
-    repository.insert(seed)[0]
+    intern(repository, seed)[0]
 
     builder = formalism.Relation(columns(10, 20))
     builder.insert([3, 4])
     builder.insert([9, 8])
-    forward = repository.insert(builder)[0]
+    forward = intern(repository, builder)[0]
     builder.clear()
     builder.insert([9, 8])
     builder.insert([3, 4])
     builder.insert([3, 4])
-    reverse = repository.insert(builder)[0]
+    reverse = intern(repository, builder)[0]
 
     assert forward == reverse
     assert forward.index() == reverse.index()
@@ -276,13 +275,13 @@ def test_copy_and_assign_remap_relations_and_retain_unpacked_owner() -> None:
     target_repository = formalism.RelationRepository()
     builder = formalism.Relation(columns(7, 3))
     builder.insert([4, 5])
-    source, created = source_repository.insert(builder)
+    source, created = intern(source_repository, builder)
     assert created is True
-    target_result = target_repository.copy(source)
+    target_result = intern(target_repository, source)
     target, copied = target_result
     assert copied is True
-    assert target_repository.copy(source) == (target, False)
-    assert target_repository.copy(target) == (target, False)
+    assert intern(target_repository, source) == (target, False)
+    assert intern(target_repository, target) == (target, False)
     assert tuple(target.columns()) == tuple(columns(7, 3))
     output = formalism.Relation(columns(3, 7))
     output.insert([99, 88])
@@ -319,8 +318,8 @@ def test_mixed_column_types_and_float_canonicalization() -> None:
     value = repository.view(relation)[nan][1]
     assert isinstance(value, float)
     assert math.isnan(value)
-    interned, _ = repository.insert(relation)
-    renamed = repository.rename(interned, columns(1, 2, 3))
+    interned, _ = intern(repository, relation)
+    renamed = rename(repository, interned, columns(1, 2, 3))
     assert [renamed.columns().type(i) for i in range(3)] == types
     output = formalism.Relation()
     database.assign(output, renamed)
@@ -339,7 +338,7 @@ def test_operations_take_plans_outputs_and_workspaces() -> None:
     for row in ([1, 2], [3, 4]):
         lhs.insert(row)
     rhs.insert([2, 5])
-    left, right = repository.view(lhs), repository.insert(rhs)[0]
+    left, right = repository.view(lhs), intern(repository, rhs)[0]
     workspace = database.Workspace()
 
     join = database.JoinPlan(left.columns(), right.columns())

@@ -8,6 +8,7 @@ from typing import Any, cast
 import pytest
 
 from pyyggdrasil import formalism
+from relation_utils import intern
 from pytyr import database as db
 
 QueryRecord = (
@@ -236,7 +237,7 @@ def test_triangle_and_self_join() -> None:
 def test_borrowed_and_interned_inputs_statistics_and_owners() -> None:
     original = relation([0], [(1,), (2,)])
     store = formalism.RelationRepository()
-    interned = store.insert(original)[0]
+    interned = intern(store, original)[0]
     repo = db.QueryRepository()
     root = inputs_of(repo, [original])[0]
     evaluator = db.QueryEvaluator(RELATIONS, db.compile([root]))

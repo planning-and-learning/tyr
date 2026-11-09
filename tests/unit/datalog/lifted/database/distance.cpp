@@ -157,9 +157,9 @@ TEST(YggdrasilTests, DatabaseDistanceAcceptsInternedViewsWithoutRetainingInputOw
     fill(targets, Vertices { 3 });
     const database::DistancePlan plan(sources.columns(), edges.columns(), targets.columns(), ColumnIndex(3));
     ygg::FreeRelationRepository repository;
-    const auto source_view = repository.insert(sources).first;
-    const auto edge_view = repository.insert(edges).first;
-    const auto target_view = repository.insert(targets).first;
+    const auto source_view = tyr::datalog::tests::ops::intern(repository, sources).first;
+    const auto edge_view = tyr::datalog::tests::ops::intern(repository, edges).first;
+    const auto target_view = tyr::datalog::tests::ops::intern(repository, targets).first;
     auto result = tyr::datalog::tests::ops::distances(source_view, edge_view, target_view, plan);
     EXPECT_EQ(rows(layer().view(result)), (Results { { 1, 3, 2 } }));
     database::incremental::DistanceEvaluator evaluator(layer(), plan);

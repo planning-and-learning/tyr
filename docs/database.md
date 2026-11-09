@@ -159,33 +159,43 @@ hands out builders as tyr's `get_state_builder` does: a `std::shared_ptr` from t
 urd slots Store of the family keyed by column widths (`urd::Store<urd::slots<builder<Relation<F>>>, urd::keyed<urd::column_widths>>`),
 whose control blocks come from the Store's pool; the slot goes back with its last owner under its widths and keeps its
 row storage, so it is reused only for columns of equal widths.
-`insert(builder)` interns one, as `register_state` does (a free relation's key is its column types, interned
-there, so builders of any layer, e.g. those of evaluators holding a const layer, intern alike). The layer must outlive its
-builders. Prepare a schema once and pass its layout span to avoid rebuilding it in the
+Builders are never interned: they are the non-interned form. The layer must outlive its builders. Prepare a schema once and pass its layout span to avoid rebuilding it in the
 update loop. Larger workloads may still grow storage. Each evaluator/thread needs its own
 mutable workspace; evaluators take the layer (`const Repository&`) their builders are read
 through, and return their results as `BuilderRelationView`s.
 
 `tyr::datalog::database::Repository` is a yggdrasil formalism repository layer
 (`formalism::Repository`) whose symbols are the relation model: `Schema` (the column
-types), `Columns` (labels and types), `RowSet<Schema>` (sorted row ids) and `Relation<Schema>`
-(`{pool, columns, row_set}`). Rows are interned per schema, in one pool of the
-layer each (row IDs are per pool). Relations with identical columns and row sets
+types), `Columns` (labels and types) and `Relation<Schema>`
+(`{pool, columns, rows}`, rows as sorted row ids). Rows are interned per schema, in one pool of the
+layer each (row IDs are per pool). Relations with identical columns and rows
 share identity regardless of insertion order. Relations of the same column types
-share rows; renaming keeps the schema and the row set. Iteration follows sorted
+share rows; renaming keeps the schema and the rows. Iteration follows sorted
 interned row IDs, not value order.
 
+A relation is interned as any record, from scratch records its user checks out of a `BuilderStorage` that lists
+`Row<Schema>`, `Columns` and `Relation<Schema>`: each row first (`insert(data<Row<Schema>>)` gives its id in the pool
+`repository.schema(types)` declares), then the columns, then the relation (`insert(data<Relation<Schema>>)` sorts its
+row ids and checks its columns against its pool):
+
 ```cpp
-tyr::datalog::database::Repository repository;
-auto [stored, created] = repository.insert(paths);
-paths.clear(); // stored retains its canonical rows
+auto relation = checkout<ygg::Relation<ygg::Schema>>(builder);
+relation->pool = repository.schema(types);
+auto row = checkout<ygg::Row<ygg::Schema>>(builder);
+row->relation = relation->pool;
+for (const auto& values : rows)
+{
+    row->values.set(values.begin(), values.end());
+    relation->rows.push_back(repository.insert(*row).first.data().row);
+}
+auto columns = checkout<ygg::Columns>(builder);
+columns->values.set(layouts.begin(), layouts.end());
+relation->columns = repository.insert(*columns).first.index();
+auto [stored, created] = repository.insert(*relation);
 ```
 
-`repository.insert(builder)` interns the builder's relation and returns `(view, created)`; nothing is cached in the
-builder.
-`repository.copy(view)` interns a relation of another repository.
-`repository.rename(view, columns)` keeps the schema and row set of a source of
-this repository: only labels change. Repository clear invalidates all its views
+Renaming is a record with the same pool and rows and new columns; copying from another repository interns the rows
+again. Repository clear invalidates all its views
 while retaining reusable storage. Reset caches borrowing those rows before
 clearing. A view's `relation_identity()` (an interned relation's layer number and
 index, a builder's address) is what alias checks and the join cache use.

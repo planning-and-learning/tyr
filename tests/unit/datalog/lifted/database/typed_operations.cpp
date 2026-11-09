@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/projection.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
@@ -208,8 +209,8 @@ TEST(YggdrasilTests, DatabaseTypedJoinCacheSeparatesRowsByTypeAndLayout)
     RelationBuilder float_input(float_columns);
     unsigned_input.insert(std::array { ygg::encode_value(static_cast<std::uint64_t>(0)) });
     float_input.insert(std::array { ygg::encode_value(0.0) });
-    const auto unsigned_view = repository.insert(unsigned_input).first;
-    const auto float_view = repository.insert(float_input).first;
+    const auto unsigned_view = tyr::datalog::tests::ops::intern(repository, unsigned_input).first;
+    const auto float_view = tyr::datalog::tests::ops::intern(repository, float_input).first;
     // Rows of other column types lie in other pools (schemas), even of equal widths: separate relations.
     ASSERT_NE(unsigned_view.relation_identity(), float_view.relation_identity());
     const database::ProjectionPlan unsigned_key(unsigned_columns, std::array { ColumnIndex(1) });
@@ -218,7 +219,7 @@ TEST(YggdrasilTests, DatabaseTypedJoinCacheSeparatesRowsByTypeAndLayout)
     cache.get_or_create(float_view, float_key.positions());
     EXPECT_EQ(cache.size(), 2);
     const std::vector<ygg::ColumnLayout> renamed_columns { { ColumnIndex(9), ygg::type_id<std::uint64_t> } };
-    const auto renamed = repository.rename(unsigned_view, renamed_columns);
+    const auto renamed = tyr::datalog::tests::ops::rename(repository, unsigned_view, renamed_columns);
     cache.get_or_create(renamed, unsigned_key.positions());
     EXPECT_EQ(cache.size(), 3);  // a renamed relation is another relation
 
@@ -228,8 +229,8 @@ TEST(YggdrasilTests, DatabaseTypedJoinCacheSeparatesRowsByTypeAndLayout)
     RelationBuilder after(after_columns);
     before.insert(std::array { ygg::encode_value(false), ygg::encode_value(static_cast<ygg::uint_t>(0)) });
     after.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(false) });
-    const auto before_view = repository.insert(before).first;
-    const auto after_view = repository.insert(after).first;
+    const auto before_view = tyr::datalog::tests::ops::intern(repository, before).first;
+    const auto after_view = tyr::datalog::tests::ops::intern(repository, after).first;
     ASSERT_NE(before_view.relation_identity(), after_view.relation_identity());
     const database::ProjectionPlan before_key(before_columns, std::array { ColumnIndex(1) });
     const database::ProjectionPlan after_key(after_columns, std::array { ColumnIndex(1) });

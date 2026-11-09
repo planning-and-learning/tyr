@@ -16,7 +16,7 @@
 
 /// The instantiations (PREFIX extern: declarations).
 #define TYR_DATABASE_INTERNS(PREFIX) \
-    YGG_FORMALISM_INTERNS(PREFIX, 17, false, boost::mp11::mp_append<tyr::datalog::database::QuerySymbolTypes, ygg::FreeRelationRepository::SymbolTypes>)
+    YGG_FORMALISM_INTERNS(PREFIX, 16, false, boost::mp11::mp_append<tyr::datalog::database::QuerySymbolTypes, ygg::FreeRelationRepository::SymbolTypes>)
 
 TYR_DATABASE_INTERNS(extern)
 
