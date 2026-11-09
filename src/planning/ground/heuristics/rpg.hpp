@@ -57,12 +57,18 @@ struct RPGPolicy<GroundTag>
     static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
     { workspace.clear_costs(); }
 
-    template<formalism::RelationKind R, typename Workspace>
-    static std::optional<Action> get_action(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness)
+    template<formalism::RelationKind R>
+    static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation<R>& witness)
+    { return definition.rpg_program.template get_rule_to_action_mapping<R>().contains(witness.get_rule_key()); }
+
+    template<formalism::RelationKind R, typename Workspace, typename Callback>
+    static void
+    for_each_action_binding(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness, Callback callback)
     {
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
-        const auto it = mapping.find(witness.get_rule_key());
-        return it == mapping.end() ? std::nullopt : std::optional(it->second);
+        if (const auto it = mapping.find(witness.get_rule_key()); it != mapping.end())
+            for (const auto action : it->second)
+                callback(detail::to_action_binding(action));
     }
 
     template<formalism::RelationKind R, typename Workspace, typename Callback>

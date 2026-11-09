@@ -266,7 +266,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
         {
             const auto rule = create_ground_atom_rule(body, heads, context, 1);
             program.predicate_rules.push_back(rule.get_index());
-            rule_to_action.predicate.emplace(rule.get_row().get_index(), action);
+            rule_to_action.predicate[rule.get_row().get_index()].push_back(action);
         }
 
         const auto numeric_body = create_delete_free_numeric_effect_condition(action.get_condition(), cond_eff.get_condition(), translation_context, context);
@@ -274,7 +274,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
         {
             const auto rule = create_ground_numeric_effect_rule(numeric_body, numeric_effect, context);
             program.function_rules.push_back(rule.get_index());
-            rule_to_action.function.emplace(rule.get_row().get_index(), action);
+            rule_to_action.function[rule.get_row().get_index()].push_back(action);
         }
     }
 }
@@ -393,7 +393,7 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& s
                           formalism::datalog::CopyContext& context,
                           const datalog::FactSets& fact_sets)
 {
-    for (const auto& [source_binding, action] : source_mapping)
+    for (const auto& [source_binding, actions] : source_mapping)
     {
         const auto source_rule = formalism::datalog::find_ground_rule(source_binding, source_repository);
         if (!source_rule)
@@ -404,7 +404,8 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping<R>& s
         const auto [result_rule, inserted] = formalism::datalog::copy(*source_rule, context);
         if (inserted)
             throw std::logic_error("Static rule filtering omitted a retained rule");
-        result_mapping.emplace(result_rule.get_row().get_index(), action);
+        auto& result_actions = result_mapping[result_rule.get_row().get_index()];
+        result_actions.insert(result_actions.end(), actions.begin(), actions.end());
     }
 }
 

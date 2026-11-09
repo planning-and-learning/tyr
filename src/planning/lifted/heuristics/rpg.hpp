@@ -75,16 +75,23 @@ struct RPGPolicy<LiftedTag>
         materialize_goal(definition, workspace, source_goal);
     }
 
-    template<formalism::RelationKind R, typename Workspace>
-    static std::optional<Action> get_action(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<R>& witness)
+    template<formalism::RelationKind R>
+    static bool is_action_witness(const RPGDefinition<LiftedTag>& definition, const datalog::WitnessAnnotation<R>& witness)
+    { return definition.rpg_program.template get_rule_to_action_mapping<R>().contains(witness.get_rule_key().relation); }
+
+    /// Grounds every action of the witness's rule with the binding the witness recovers.
+    template<formalism::RelationKind R, typename Workspace, typename Callback>
+    static void
+    for_each_action_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback callback)
     {
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
         const auto it = mapping.find(witness.get_rule_key().relation);
         if (it == mapping.end())
-            return std::nullopt;
+            return;
 
         auto grounder_context = formalism::planning::GrounderContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
+        auto recovered = false;
         if constexpr (std::same_as<R, formalism::PredicateTag>)
         {
             const auto& origins = definition.rpg_program.get_rule_splitting().origins;
@@ -92,12 +99,16 @@ struct RPGPolicy<LiftedTag>
             {
                 workspace.binding.resize(origin->second.num_source_variables);
                 recover_split_binding(definition, workspace, witness);
-                return formalism::planning::ground(it->second, grounder_context).first;
+                recovered = true;
             }
         }
-        const auto rule_binding = ygg::make_view(witness.get_rule_key(), *workspace.workspace_repository);
-        ygg::extend(rule_binding.get_objects(), workspace.binding);
-        return formalism::planning::ground(it->second, grounder_context).first;
+        if (!recovered)
+        {
+            const auto rule_binding = ygg::make_view(witness.get_rule_key(), *workspace.workspace_repository);
+            ygg::extend(rule_binding.get_objects(), workspace.binding);
+        }
+        for (const auto action : it->second)
+            callback(formalism::planning::ground(action, grounder_context).first);
     }
 
     /// Writes the objects that the witness of a split rule binds to its variables' positions among the source rule's variables,

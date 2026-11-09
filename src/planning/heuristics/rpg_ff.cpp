@@ -146,8 +146,8 @@ private:
     template<formalism::RelationKind R>
     void extract_relaxed_plan(const datalog::WitnessAnnotation<R>& witness)
     {
-        if (const auto action = this->get_action(witness))
-            m_relaxed_plan.insert(this->get_action_binding(*action));
+        if (const auto action_binding = this->get_action_binding(witness))
+            m_relaxed_plan.insert(*action_binding);
 
         this->for_each_witness_precondition(witness, [&](const auto precondition) { extract_relaxed_plan(precondition); });
         for (const auto& support : witness.get_numeric_supports())

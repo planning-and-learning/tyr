@@ -131,8 +131,9 @@ should not be used further.
                  const auto& repository = self.get_datalog_program().get_program_repository();
                  using Entry = std::pair<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>, formalism::planning::ActionView<LiftedTag>>;
                  auto result = std::vector<Entry> {};
-                 for (const auto& [rule, action] : self.get_rule_to_action_mapping<formalism::PredicateTag>())
-                     result.emplace_back(ygg::make_view(rule, repository), action);
+                 for (const auto& [rule, actions] : self.get_rule_to_action_mapping<formalism::PredicateTag>())
+                     for (const auto action : actions)
+                         result.emplace_back(ygg::make_view(rule, repository), action);
                  return ygg::python::cast_with_owner(std::move(result), owner, retain_owner);
              });
 

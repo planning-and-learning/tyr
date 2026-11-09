@@ -29,6 +29,7 @@
 
 #include <concepts>
 #include <type_traits>
+#include <vector>
 #include <yggdrasil/containers/associative_containers.hpp>
 #include <yggdrasil/semantics/equal_to.hpp>
 #include <yggdrasil/semantics/hash.hpp>
@@ -44,8 +45,10 @@ public:
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
     template<formalism::RelationKind R>
     using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleBindingIndex<R>, ygg::Index<formalism::datalog::Rule<LiftedTag, R>>>;
+    /// Rules are hash-consed, so actions with identical relaxed rules share one rule.
+    using Actions = std::vector<Action>;
     template<formalism::RelationKind R>
-    using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Action>;
+    using RuleToActionMapping = ygg::UnorderedMap<Rule<R>, Actions>;
 
     struct RuleToActionMappings
     {
