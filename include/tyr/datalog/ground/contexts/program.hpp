@@ -66,6 +66,10 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
 
         auto& facts() noexcept { return m_ws->facts; }
         [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
+        /// Commits a fact. Whether it was new.
+        bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact) { return m_ws->facts.insert(fact); }
+        bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
+        { return m_ws->facts.insert(fact, interval); }
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
         [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
         auto& annotations() noexcept { return m_ws->annotations; }

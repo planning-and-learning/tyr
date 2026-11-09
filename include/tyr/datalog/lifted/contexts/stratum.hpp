@@ -19,7 +19,6 @@
 #define TYR_DATALOG_LIFTED_CONTEXTS_STRATUM_HPP_
 
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/lifted/contexts/rule.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
@@ -57,10 +56,6 @@ struct StratumExecutionContext
     };
 
     StratumExecutionContext(Scheduler<LiftedTag>& scheduler, ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx) : m_in(ctx), m_out(scheduler, ctx) {}
-
-    template<formalism::RelationKind R>
-    auto get_rule_execution_context(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule)
-    { return RuleExecutionContext<R, AP, TP, CP> { rule, *this }; }
 
     [[nodiscard]] const auto& in() const noexcept { return m_in; }
     auto& out() noexcept { return m_out; }

@@ -20,7 +20,6 @@
 
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/lifted/assignment_sets.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -32,14 +31,10 @@ template<>
 struct FactsWorkspace<LiftedTag>
 {
     TaggedFactSets<formalism::FluentTag> fact_sets;
-    TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
     TaggedFactSets<formalism::FluentTag> delta_fact_sets;  ///< Facts committed since the rules last ran.
 
     explicit FactsWorkspace(formalism::datalog::PredicateListView<formalism::FluentTag> predicates,
                             formalism::datalog::FunctionListView<formalism::FluentTag> functions,
-                            const analysis::PredicateDomainMap<formalism::FluentTag>& predicate_domains,
-                            const analysis::FunctionDomainMap<formalism::FluentTag>& function_domains,
-                            size_t num_objects,
                             formalism::datalog::AtomListView<GroundTag, formalism::FluentTag> atoms,
                             formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
                             const formalism::datalog::Repository& workspace_repository);
@@ -48,18 +43,12 @@ struct FactsWorkspace<LiftedTag>
     {
         if (!fact_sets.predicate.insert(binding))
             return false;
-        assignment_sets.predicate.insert(urd::resolve(binding, *repository));
         delta_fact_sets.predicate.insert(binding);
         return true;
     }
 
     bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    {
-        if (!fact_sets.function.insert(binding, interval))
-            return false;
-        assignment_sets.function.insert(urd::resolve(binding, *repository), interval);
-        return true;
-    }
+    { return fact_sets.function.insert(binding, interval); }
 
     void reset();
 
@@ -70,13 +59,9 @@ template<>
 struct ConstFactsWorkspace<LiftedTag>
 {
     TaggedFactSets<formalism::StaticTag> fact_sets;
-    TaggedAssignmentSets<formalism::StaticTag> assignment_sets;
 
     explicit ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
                                  formalism::datalog::FunctionListView<formalism::StaticTag> functions,
-                                 const analysis::PredicateDomainMap<formalism::StaticTag>& predicate_domains,
-                                 const analysis::FunctionDomainMap<formalism::StaticTag>& function_domains,
-                                 size_t num_objects,
                                  formalism::datalog::AtomListView<GroundTag, formalism::StaticTag> atoms,
                                  formalism::datalog::FunctionTermValueListView<GroundTag, formalism::StaticTag> fterm_values,
                                  const formalism::datalog::Repository& program_repository);

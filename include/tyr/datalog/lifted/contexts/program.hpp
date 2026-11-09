@@ -23,7 +23,6 @@
 #include <urd/store.hpp>
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
-#include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
@@ -45,9 +44,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         explicit In(const ConstProgramWorkspace<LiftedTag>& cws) : m_cws(&cws) {}
 
         [[nodiscard]] const auto& facts() const noexcept { return m_cws->facts; }
-        template<formalism::RelationKind R>
-        [[nodiscard]] const auto& get_rules() const noexcept
-        { return m_cws->rules.template get<R>(); }
+        [[nodiscard]] const auto& engine() const noexcept { return m_cws->engine; }
 
     private:
         const ConstProgramWorkspace<LiftedTag>* m_cws;
@@ -60,6 +57,23 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
 
         auto& facts() noexcept { return m_ws->facts; }
         [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
+        auto& engine() noexcept { return m_ws->engine; }
+        [[nodiscard]] const auto& engine() const noexcept { return m_ws->engine; }
+        /// Commits a fact: into the facts, then into the engine's index over them. Whether it was new.
+        bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact)
+        {
+            if (!m_ws->facts.insert(fact))
+                return false;
+            m_ws->engine.assignment_sets.predicate.insert(urd::resolve(fact, *m_ws->workspace_repository));
+            return true;
+        }
+        bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
+        {
+            if (!m_ws->facts.insert(fact, interval))
+                return false;
+            m_ws->engine.assignment_sets.function.insert(urd::resolve(fact, *m_ws->workspace_repository), interval);
+            return true;
+        }
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
         [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
         auto& annotations() noexcept { return m_ws->annotations; }
@@ -80,12 +94,6 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws->cost_policy; }
         auto& cost_buckets() noexcept { return m_ws->cost_buckets; }
         auto& pending_achievers() noexcept { return m_ws->pending_achievers; }
-        template<formalism::RelationKind R>
-        auto& get_rules() noexcept
-        { return m_ws->rules.template get<R>(); }
-        template<formalism::RelationKind R>
-        [[nodiscard]] const auto& get_rules() const noexcept
-        { return m_ws->rules.template get<R>(); }
         auto& datalog_builder() noexcept { return m_ws->datalog_builder; }
         [[nodiscard]] const auto& datalog_builder() const noexcept { return m_ws->datalog_builder; }
         auto& workspace_repository() noexcept { return *m_ws->workspace_repository; }
@@ -126,15 +134,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     {
         auto& out = this->out();
 
-        const auto clear_rules = [](auto& rules)
-        {
-            for (auto& rule : rules)
-                if (rule)
-                    rule->clear();
-        };
-        clear_rules(out.template get_rules<formalism::PredicateTag>());
-        clear_rules(out.template get_rules<formalism::FunctionTag>());
-
+        out.engine().clear();
         out.cost_buckets().clear();
         out.pending_achievers().clear();
         out.facts().delta_fact_sets.reset();
@@ -165,12 +165,14 @@ private:
     {
         auto& out = this->out();
         out.tp().reset();
+        // The engine's index is rebuilt from the facts the evaluation starts with.
+        out.engine().assignment_sets.reset();
         for (const auto& set : out.facts().fact_sets.predicate.get_sets())
         {
             for (const auto binding : set.get_bindings())
             {
                 out.annotation_policy().initialize_annotation(binding.data(), out.annotations());
-                out.facts().assignment_sets.predicate.insert(binding);
+                out.engine().assignment_sets.predicate.insert(binding);
             }
         }
 
@@ -182,7 +184,7 @@ private:
             for (size_t i = 0; i < bindings.size(); ++i)
             {
                 out.annotation_policy().initialize_annotation(bindings[i].data(), values[i], out.numeric_annotations());
-                out.facts().assignment_sets.function.insert(bindings[i], values[i]);
+                out.engine().assignment_sets.function.insert(bindings[i], values[i]);
             }
         }
 

@@ -21,6 +21,24 @@ nanobind_add_module(
     module.cpp
     pytyr/module.cpp
     pytyr/serialization/module.cpp
+    pytyr/database/distance.cpp
+    pytyr/database/evaluation.cpp
+    pytyr/database/module.cpp
+    pytyr/database/optimization.cpp
+    pytyr/database/query/antijoin.cpp
+    pytyr/database/query/difference.cpp
+    pytyr/database/query/distance.cpp
+    pytyr/database/query/empty.cpp
+    pytyr/database/query/generic_join.cpp
+    pytyr/database/query/input.cpp
+    pytyr/database/query/join.cpp
+    pytyr/database/query/project.cpp
+    pytyr/database/query/query.cpp
+    pytyr/database/query/rename.cpp
+    pytyr/database/query/select_equal.cpp
+    pytyr/database/query/select_value.cpp
+    pytyr/database/query/semijoin.cpp
+    pytyr/database/query/union.cpp
     ${PYTYR_FORMALISM_SOURCES}
     pytyr/datalog/module.cpp
     pytyr/datalog/ground/module.cpp
@@ -87,6 +105,7 @@ brokkr_install_python_files(
         pytyr/formalism/__init__.py
         pytyr/formalism/datalog/__init__.py
         pytyr/formalism/planning/__init__.py
+        pytyr/database/__init__.py
         pytyr/datalog/__init__.py
         pytyr/datalog/ground/__init__.py
         pytyr/datalog/lifted/__init__.py

@@ -20,7 +20,7 @@
 #include <urd/store.hpp>
 
 #include "planning/parser.hpp"
-#include "tyr/datalog/lifted/consistency_graph.hpp"
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
@@ -80,7 +80,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     const auto program_view = program.get_program();
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* pick_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>();
+    const auto& rules = program.get_const_program_workspace().engine.rules.get<tyr::formalism::PredicateTag>();
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto is_pick = action_program.get_predicate_to_action_mapping()
@@ -114,7 +114,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     for (const auto atom : program_view.get_atoms<tyr::formalism::FluentTag>())
         initial_assignments.predicate.insert(atom);
 
-    const auto& static_assignments = program.get_const_program_workspace().facts.assignment_sets;
+    const auto& static_assignments = program.get_const_program_workspace().engine.assignment_sets;
     const auto& static_graph = pick_workspace->get_static_consistency_graph();
     const auto& graph_layout = static_graph.get_graph_layout();
     const auto& adjacency_layout = static_graph.get_partitioned_adjacency_layout();
@@ -222,7 +222,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     const auto program_view = program.get_program();
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* move_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>();
+    const auto& rules = program.get_const_program_workspace().engine.rules.get<tyr::formalism::PredicateTag>();
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];
@@ -253,7 +253,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     }
     ASSERT_EQ(num_at_robot_atoms, 1);
 
-    const auto& static_assignments = program.get_const_program_workspace().facts.assignment_sets;
+    const auto& static_assignments = program.get_const_program_workspace().engine.assignment_sets;
     const auto& static_graph = move_workspace->get_static_consistency_graph();
     const auto& binary = static_graph.get_variable_dependeny_graph().binary();
     ASSERT_EQ(static_graph.get_graph_layout().num_partitions, 2);
@@ -349,7 +349,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     const auto program_view = program.get_program();
 
     const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* drive_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>();
+    const auto& rules = program.get_const_program_workspace().engine.rules.get<tyr::formalism::PredicateTag>();
     for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
     {
         const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];
@@ -398,7 +398,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     ASSERT_TRUE(found_truck_1);
     ASSERT_TRUE(found_truck_2);
 
-    const auto& static_assignments = program.get_const_program_workspace().facts.assignment_sets;
+    const auto& static_assignments = program.get_const_program_workspace().engine.assignment_sets;
     const auto& static_graph = drive_workspace->get_static_consistency_graph();
     const auto& layout = static_graph.get_graph_layout();
     const auto& adjacency_layout = static_graph.get_partitioned_adjacency_layout();
@@ -554,7 +554,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
 
     const auto used_inner_parallelism = [](const auto& workspace)
     {
-        return std::ranges::any_of(workspace.template get_rules<tyr::formalism::PredicateTag>(),
+        return std::ranges::any_of(workspace.engine.rules.template get<tyr::formalism::PredicateTag>(),
                                    [](const auto& rule) { return rule && rule->worker.size() == 2 && rule->worker[1].solve.statistics.num_executions > 0; });
     };
     EXPECT_FALSE(used_inner_parallelism(sequential));

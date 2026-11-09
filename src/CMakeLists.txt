@@ -64,18 +64,45 @@ add_library(
     datalog/lifted/programs/program.cpp
     datalog/lifted/workspaces/facts.cpp
     datalog/lifted/workspaces/program.cpp
-    datalog/lifted/workspaces/rule.cpp
+    datalog/lifted/kckp/workspaces/rule.cpp
+    datalog/lifted/kckp/workspaces/program.cpp
     datalog/lifted/applicability.cpp
     datalog/lifted/applicability_lifted.cpp
-    datalog/lifted/assignment_sets.cpp
+    datalog/lifted/kckp/assignment_sets.cpp
     datalog/lifted/solver.cpp
-    datalog/lifted/consistency_graph.cpp
+    datalog/lifted/kckp/consistency_graph.cpp
     datalog/fact_set.cpp
     datalog/ground/programs/program.cpp
     datalog/ground/workspaces/facts.cpp
     datalog/ground/workspaces/program.cpp
     datalog/ground/solver.cpp
     datalog/lifted/scheduler.cpp
+    datalog/lifted/database/optimization/details/cost.cpp
+    datalog/lifted/database/optimization/details/estimation.cpp
+    datalog/lifted/database/optimization/details/join_block.cpp
+    datalog/lifted/database/optimization/details/normalization.cpp
+    datalog/lifted/database/optimization/details/optimization.cpp
+    datalog/lifted/database/optimization/details/structural.cpp
+    datalog/lifted/database/semantics/bound/query_evaluation.cpp
+    datalog/lifted/database/semantics/bound/union_normal_form.cpp
+    datalog/lifted/database/semantics/details/distance.cpp
+    datalog/lifted/database/semantics/details/min_distance.cpp
+    datalog/lifted/database/semantics/details/plans.cpp
+    datalog/lifted/database/semantics/generic_join.cpp
+    datalog/lifted/database/semantics/incremental/delta.cpp
+    datalog/lifted/database/semantics/incremental/details/distance_repair.cpp
+    datalog/lifted/database/semantics/incremental/distance.cpp
+    datalog/lifted/database/semantics/incremental/join.cpp
+    datalog/lifted/database/semantics/incremental/projection.cpp
+    datalog/lifted/database/semantics/incremental/semijoin.cpp
+    datalog/lifted/database/semantics/query_evaluation.cpp
+    datalog/lifted/database/semantics/search/backward_frontier.cpp
+    datalog/lifted/database/syntax/copy.cpp
+    datalog/lifted/database/syntax/formatter.cpp
+    datalog/lifted/database/syntax/operator_builder.cpp
+    datalog/lifted/database/syntax/query.cpp
+    datalog/lifted/database/syntax/query_construction.cpp
+    datalog/lifted/database/syntax/query_repository.cpp
 
     planning/state_storage/numeric.cpp
     planning/state_storage/tree_bitset/atom.cpp

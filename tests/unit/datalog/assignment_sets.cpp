@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/lifted/assignment_sets.hpp"
+#include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

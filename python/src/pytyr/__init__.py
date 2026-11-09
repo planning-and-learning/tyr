@@ -12,6 +12,7 @@ _import_module("pypddl")
 _import_module("pyyggdrasil")
 
 from pytyr import (
+    database as database,
     datalog as datalog,
     formalism as formalism,
     planning as planning,

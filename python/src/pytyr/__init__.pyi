@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from . import (
+    database as database,
     datalog as datalog,
     formalism as formalism,
     planning as planning,

@@ -19,8 +19,8 @@
 #define TYR_DATALOG_FORMATTER_HPP_
 
 #include "tyr/algorithms/kckp/formatter.hpp"
-#include "tyr/datalog/lifted/assignment.hpp"
-#include "tyr/datalog/lifted/consistency_graph.hpp"
+#include "tyr/datalog/lifted/kckp/assignment.hpp"
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/statistics/program.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 

@@ -1,0 +1,1166 @@
+/*
+ * Copyright (C) 2025-2026 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+
+#include "tyr/analysis/declarations.hpp"
+#include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/formatter.hpp"
+#include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
+#include "tyr/formalism/arithmetic_operator_utils.hpp"
+#include "tyr/formalism/boolean_operator_utils.hpp"
+#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/expression_arity.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include <yggdrasil/formalism/row_view.hpp>
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
+
+#include <boost/dynamic_bitset/dynamic_bitset.hpp>
+#include <cassert>
+#include <optional>
+#include <stdexcept>
+#include <type_traits>
+#include <urd/repr/containers/bitset_span.hpp>
+#include <vector>
+#include <yggdrasil/core/closed_interval.hpp>
+
+namespace tyr::datalog
+{
+namespace details
+{
+namespace
+{
+
+/**
+ * Vertex
+ */
+
+template<formalism::FactKind T>
+inline bool consistent_literals(const Vertex& vertex,
+                                const TaggedRuleToLiteralInfos<T>& indexed_literals,
+                                const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+{
+    const auto object_index = vertex.get_object_index();
+    const auto parameter_index = vertex.get_parameter_index();
+
+    // std::cout << "Vertex: " << *this << std::endl;
+
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos[parameter_index.value])
+    {
+        const auto& info = indexed_literals.infos[lit_id];
+        const auto predicate = info.predicate;
+        const auto polarity = info.polarity;
+
+        assert(polarity || info.kckp_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
+
+        const auto& pred_set = predicate_assignment_sets.get_set(predicate);
+
+        for (const auto position : info.position_mappings.parameter_to_positions[parameter_index.value])
+        {
+            {
+                auto assignment = VertexAssignment(formalism::ParameterIndex(position), object_index);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                const auto true_assignment = pred_set.at(assignment);
+
+                if (polarity != true_assignment)
+                    return false;
+            }
+
+            {
+                /// constant c with position pos_c < pos_p or pos_c > pos_p
+                /// E.g. (category_round V0 tharvest)
+                for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+                {
+                    assert(position != pos_c);
+
+                    auto first_pos = position;
+                    auto second_pos = pos_c;
+                    auto first_obj = object_index;
+                    auto second_obj = obj_c;
+
+                    if (first_pos > second_pos)
+                    {
+                        std::swap(first_pos, second_pos);
+                        std::swap(first_obj, second_obj);
+                    }
+
+                    auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                    assert(assignment.is_valid());
+
+                    // std::cout << assignment << std::endl;
+
+                    if (polarity != pred_set.at(assignment))
+                        return false;
+                }
+            }
+        }
+
+        /// constants c,c' with position pos_c < pos_c'
+        if (info.num_constants >= 1)
+        {
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+            {
+                auto assignment = VertexAssignment(formalism::ParameterIndex(pos_c), obj_c);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                if (polarity != pred_set.at(assignment))
+                    return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+template<formalism::FactKind T>
+ygg::ClosedInterval<ygg::float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
+
+template<formalism::FactKind T>
+ygg::ClosedInterval<ygg::float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
+
+template<typename GraphStructure>
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+                                                      const GraphStructure& structure,
+                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const AssignmentSets& assignment_sets);
+
+template<typename GraphStructure>
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+                                                      const GraphStructure& structure,
+                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const AssignmentSets& assignment_sets);
+
+template<typename GraphStructure>
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+                                                      const GraphStructure& structure,
+                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const AssignmentSets& assignment_sets);
+
+template<typename GraphStructure>
+ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
+                                                      const GraphStructure& structure,
+                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const AssignmentSets& assignment_sets);
+
+template<typename GraphStructure>
+bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
+                                   const GraphStructure& structure,
+                                   const RuleToConstraintInfo& constraint_info,
+                                   const AssignmentSets& assignment_sets);
+
+template<formalism::FactKind T>
+inline ygg::ClosedInterval<ygg::float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
+{
+    const auto object_index = vertex.get_object_index();
+    const auto parameter_index = vertex.get_parameter_index();
+
+    const auto function = info.function;
+    const auto& func_set = function_assignment_sets.get_set(function);
+
+    auto bounds = func_set.at(EmptyAssignment());
+    if (empty(bounds))
+        return bounds;  // early exit
+
+    if (info.num_parameters >= 1)
+    {
+        for (const auto position : info.position_mappings.parameter_to_positions[parameter_index.value])
+        {
+            auto assignment = VertexAssignment(formalism::ParameterIndex(position), object_index);
+            assert(assignment.is_valid());
+
+            // std::cout << assignment << std::endl;
+
+            bounds = intersect(bounds, func_set.at(assignment));
+            if (empty(bounds))
+                return bounds;  // early exit
+
+            if (info.num_constants >= 1)
+            {
+                for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+                {
+                    assert(position != pos_c);
+
+                    auto first_pos = position;
+                    auto second_pos = pos_c;
+                    auto first_obj = object_index;
+                    auto second_obj = obj_c;
+
+                    if (first_pos > second_pos)
+                    {
+                        std::swap(first_pos, second_pos);
+                        std::swap(first_obj, second_obj);
+                    }
+
+                    auto edge_assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                    assert(edge_assignment.is_valid());
+
+                    // std::cout << edge_assignment << std::endl;
+
+                    bounds = intersect(bounds, func_set.at(edge_assignment));
+                    if (empty(bounds))
+                        return bounds;  // early exit
+                }
+            }
+        }
+    }
+
+    if (info.num_constants >= 1)
+    {
+        for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+        {
+            auto assignment = VertexAssignment(formalism::ParameterIndex(pos_c), obj_c);
+            assert(assignment.is_valid());
+
+            // std::cout << assignment << std::endl;
+
+            bounds = intersect(bounds, func_set.at(assignment));
+            if (empty(bounds))
+                return bounds;  // early exit
+        }
+    }
+
+    return bounds;
+}
+
+template<formalism::FactKind T>
+inline ygg::ClosedInterval<ygg::float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
+{
+    auto p = edge.vi().get_parameter_index().value;
+    auto q = edge.vj().get_parameter_index().value;
+    auto obj_p = edge.vi().get_object_index();
+    auto obj_q = edge.vj().get_object_index();
+
+    if (p > q)
+    {
+        std::swap(p, q);
+        std::swap(obj_p, obj_q);
+    }
+
+    // std::cout << "Edge: " << p << " " << q << std::endl;
+
+    const auto& func_set = function_assignment_sets.get_set(info.function);
+
+    auto bounds = func_set.at(EmptyAssignment());
+    if (empty(bounds))
+        return bounds;  // early exit
+
+    bounds = intersect(bounds, consistent_interval(info, edge.vi(), function_assignment_sets));
+    if (empty(bounds))
+        return bounds;  // early exit
+
+    bounds = intersect(bounds, consistent_interval(info, edge.vj(), function_assignment_sets));
+    if (empty(bounds))
+        return bounds;  // early exit
+
+    /// positions where p/q occur in that literal
+    if (info.num_parameters >= 2)
+    {
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
+        {
+            for (auto pos_q : info.position_mappings.parameter_to_positions[q])
+            {
+                assert(pos_p != pos_q);
+
+                auto first_pos = pos_p;
+                auto second_pos = pos_q;
+                auto first_obj = obj_p;
+                auto second_obj = obj_q;
+
+                if (first_pos > second_pos)
+                {
+                    std::swap(first_pos, second_pos);
+                    std::swap(first_obj, second_obj);
+                }
+
+                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                bounds = intersect(bounds, func_set.at(assignment));
+                if (empty(bounds))
+                    return bounds;  // early exit
+            }
+        }
+    }
+
+    /// constant c with position pos_c < pos_p or pos_c > pos_p
+    if (info.num_parameters >= 1 && info.num_constants >= 1)
+    {
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
+        {
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+            {
+                assert(pos_p != pos_c);
+
+                auto first_pos = pos_p;
+                auto second_pos = pos_c;
+                auto first_obj = obj_p;
+                auto second_obj = obj_c;
+
+                if (first_pos > second_pos)
+                {
+                    std::swap(first_pos, second_pos);
+                    std::swap(first_obj, second_obj);
+                }
+
+                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                bounds = intersect(bounds, func_set.at(assignment));
+                if (empty(bounds))
+                    return bounds;  // early exit
+            }
+        }
+    }
+
+    /// constant c with position pos_c < pos_q or pos_c > pos_q
+    if (info.num_parameters >= 1 && info.num_constants >= 1)
+    {
+        for (auto pos_q : info.position_mappings.parameter_to_positions[q])
+        {
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+            {
+                assert(pos_q != pos_c);
+
+                auto first_pos = pos_q;
+                auto second_pos = pos_c;
+                auto first_obj = obj_q;
+                auto second_obj = obj_c;
+
+                if (first_pos > second_pos)
+                {
+                    std::swap(first_pos, second_pos);
+                    std::swap(first_obj, second_obj);
+                }
+
+                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                bounds = intersect(bounds, func_set.at(assignment));
+                if (empty(bounds))
+                    return bounds;  // early exit
+            }
+        }
+    }
+
+    /// constants c,c' with position pos_c < pos_c'
+    if (info.num_constants >= 2)
+    {
+        for (ygg::uint_t i = 0; i < info.position_mappings.constant_positions.size(); ++i)
+        {
+            const auto& [first_pos_c, first_obj_c] = info.position_mappings.constant_positions[i];
+
+            for (ygg::uint_t j = i + 1; j < info.position_mappings.constant_positions.size(); ++j)
+            {
+                const auto& [second_pos_c, second_obj_c] = info.position_mappings.constant_positions[j];
+                assert(first_pos_c < second_pos_c);
+
+                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos_c), first_obj_c, formalism::ParameterIndex(second_pos_c), second_obj_c);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                bounds = intersect(bounds, func_set.at(assignment));
+                if (empty(bounds))
+                    return bounds;  // early exit
+            }
+        }
+    }
+
+    return bounds;
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{ return apply(element.get_operator(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets)); }
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{
+    return apply(element.get_operator(),
+                 consistent_interval(element.get_lhs(), structure, constraint_info, assignment_sets),
+                 consistent_interval(element.get_rhs(), structure, constraint_info, assignment_sets));
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{
+    const auto child_fexprs = element.get_args();
+
+    return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
+                           child_fexprs.end(),
+                           consistent_interval(child_fexprs.front(), structure, constraint_info, assignment_sets),
+                           [&](const auto& value, const auto& child_expr)
+                           { return apply(element.get_operator(), value, consistent_interval(child_expr, structure, constraint_info, assignment_sets)); });
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(ygg::float_t value, const GraphStructure&, const RuleToConstraintInfo&, const AssignmentSets&)
+{
+    return ygg::ClosedInterval<ygg::float_t>(value, value);
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{
+    return consistent_interval(constraint_info.static_infos.infos.at(element.index()), structure, assignment_sets.static_sets().function);
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{
+    return consistent_interval(constraint_info.fluent_infos.infos.at(element.index()), structure, assignment_sets.fluent_sets().function);
+}
+
+template<typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
+                                                             const GraphStructure& structure,
+                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const AssignmentSets& assignment_sets)
+{
+    return visit([&](const auto& arg) { return consistent_interval(arg, structure, constraint_info, assignment_sets); }, element);
+}
+
+template<typename GraphStructure>
+inline bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
+                                          const GraphStructure& structure,
+                                          const RuleToConstraintInfo& constraint_info,
+                                          const AssignmentSets& assignment_sets)
+{
+    return apply_existential(element.get_operator(),
+                             consistent_interval(element.get_lhs(), structure, constraint_info, assignment_sets),
+                             consistent_interval(element.get_rhs(), structure, constraint_info, assignment_sets));
+}
+
+inline bool consistent_numeric_constraints(const Vertex& vertex,
+                                           formalism::datalog::BooleanOperatorListView<LiftedTag> numeric_constraints,
+                                           const RuleToRuleToConstraintInfos& indexed_constraints,
+                                           const AssignmentSets& assignment_sets)
+{
+    assert(numeric_constraints.size() == indexed_constraints.infos.size());
+
+    for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
+    {
+        const auto numeric_constraint = numeric_constraints[i];
+        const auto& info = indexed_constraints.infos[i];
+
+        assert(kckp_arity(numeric_constraint) > 0);  ///< We test nullary constraints separately.
+
+        if (!consistent_numeric_constraint(numeric_constraint, vertex, info, assignment_sets))
+            return false;
+    }
+
+    return true;
+}
+
+/**
+ * Edge
+ */
+
+template<formalism::FactKind T>
+inline bool
+consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+{
+    auto p = edge.vi().get_parameter_index().value;
+    auto q = edge.vj().get_parameter_index().value;
+    auto obj_p = edge.vi().get_object_index();
+    auto obj_q = edge.vj().get_object_index();
+
+    if (p > q)
+    {
+        std::swap(p, q);
+        std::swap(obj_p, obj_q);
+    }
+
+    // std::cout << "Edge: " << p << " " << q << std::endl;
+
+    /// positions where p/q occur in that literal
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_pairs_to_infos[p][q])
+    {
+        const auto& info = indexed_literals.infos[lit_id];
+        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
+        const auto polarity = info.polarity;
+
+        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
+
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
+        {
+            for (auto pos_q : info.position_mappings.parameter_to_positions[q])
+            {
+                assert(pos_p != pos_q);
+
+                auto first_pos = pos_p;
+                auto second_pos = pos_q;
+                auto first_obj = obj_p;
+                auto second_obj = obj_q;
+
+                if (first_pos > second_pos)
+                {
+                    std::swap(first_pos, second_pos);
+                    std::swap(first_obj, second_obj);
+                }
+
+                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                const auto true_assignment = pred_set.at(assignment);
+                if (polarity != true_assignment)
+                    return false;
+            }
+        }
+    }
+
+    /// constant c with position pos_c < pos_p or pos_c > pos_p
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[p])
+    {
+        const auto& info = indexed_literals.infos[lit_id];
+        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
+        const auto polarity = info.polarity;
+
+        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
+
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
+        {
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+            {
+                assert(pos_p != pos_c);
+
+                auto first_pos = pos_p;
+                auto second_pos = pos_c;
+                auto first_obj = obj_p;
+                auto second_obj = obj_c;
+
+                if (first_pos > second_pos)
+                {
+                    std::swap(first_pos, second_pos);
+                    std::swap(first_obj, second_obj);
+                }
+
+                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                if (polarity != pred_set.at(assignment))
+                    return false;
+            }
+        }
+    }
+
+    /// constant c with position pos_c < pos_q or pos_c > pos_q
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[q])
+    {
+        const auto& info = indexed_literals.infos[lit_id];
+        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
+        const auto polarity = info.polarity;
+
+        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
+
+        for (auto pos_q : info.position_mappings.parameter_to_positions[q])
+        {
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+            {
+                assert(pos_q != pos_c);
+
+                auto first_pos = pos_q;
+                auto second_pos = pos_c;
+                auto first_obj = obj_q;
+                auto second_obj = obj_c;
+
+                if (first_pos > second_pos)
+                {
+                    std::swap(first_pos, second_pos);
+                    std::swap(first_obj, second_obj);
+                }
+
+                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
+                assert(assignment.is_valid());
+
+                // std::cout << assignment << std::endl;
+
+                if (polarity != pred_set.at(assignment))
+                    return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+inline bool consistent_numeric_constraints(const Edge& edge,
+                                           formalism::datalog::BooleanOperatorListView<LiftedTag> numeric_constraints,
+                                           const RuleToRuleToConstraintInfos& indexed_constraints,
+                                           const AssignmentSets& assignment_sets)
+{
+    assert(numeric_constraints.size() == indexed_constraints.infos.size());
+
+    for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
+    {
+        const auto numeric_constraint = numeric_constraints[i];
+        const auto& info = indexed_constraints.infos[i];
+
+        assert(kckp_arity(numeric_constraint) > 1);  ///< We test nullary constraints separately.
+
+        if (!consistent_numeric_constraint(numeric_constraint, edge, info, assignment_sets))
+            return false;
+    }
+
+    return true;
+}
+
+}
+}
+
+template<typename Mappings>
+static void initialize_info_mappings(Mappings& mappings, size_t arity)
+{
+    mappings.parameter_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
+    mappings.parameter_pairs_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>(arity, urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity));
+    mappings.parameter_to_infos_with_constants = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
+    mappings.infos_with_constants = urd::Store<urd::sequence<ygg::uint_t>> {};
+    mappings.infos_with_constant_pairs = urd::Store<urd::sequence<ygg::uint_t>> {};
+}
+
+/// Records where info's element (a literal's atom or a function term) has parameters and constants among its terms,
+/// and files the element under `index` in mappings by the parameters it has and by whether it has constants.
+template<typename Terms, typename Parameters, typename Info, typename Mappings>
+static void index_terms(const Terms& terms, const Parameters& parameters, ygg::uint_t index, size_t arity, Info& info, Mappings& mappings)
+{
+    info.num_parameters = static_cast<ygg::uint_t>(0);
+    info.num_constants = static_cast<ygg::uint_t>(0);
+    info.position_mappings.constant_positions = urd::Store<urd::sequence<std::pair<ygg::uint_t, urd::index<formalism::Object>>>> {};
+    info.position_mappings.parameter_to_positions = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
+
+    for (ygg::uint_t position = 0; position < terms.size(); ++position)
+    {
+        visit(
+            [&]<typename Alternative>(const Alternative& arg)
+            {
+                if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
+                {
+                    info.position_mappings.parameter_to_positions[arg.value].push_back(position);
+                    ++info.num_parameters;
+                }
+                else  // formalism::datalog::ObjectView
+                {
+                    info.position_mappings.constant_positions.emplace_back(position, arg.index());
+                    ++info.num_constants;
+                }
+            },
+            terms[position]);
+    }
+
+    for (const auto param1 : parameters)
+    {
+        mappings.parameter_to_infos[param1.value].push_back(index);
+
+        for (const auto param2 : parameters)
+        {
+            if (param1 >= param2)
+                continue;
+
+            mappings.parameter_pairs_to_infos[param1.value][param2.value].push_back(index);
+        }
+    }
+
+    if (info.num_constants > 0)
+    {
+        mappings.infos_with_constants.push_back(index);
+        if (info.num_constants > 1)
+            mappings.infos_with_constant_pairs.push_back(index);
+
+        if (info.num_parameters > 0)
+        {
+            for (ygg::uint_t param = 0; param < arity; ++param)
+            {
+                if (!info.position_mappings.parameter_to_positions[param].empty())
+                    mappings.parameter_to_infos_with_constants[param].push_back(index);
+            }
+        }
+    }
+}
+
+template<formalism::FactKind T>
+static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<LiftedTag, T> literals, size_t arity)
+{
+    auto result = details::TaggedRuleToLiteralInfos<T> {};
+
+    initialize_info_mappings(result.info_mappings, arity);
+
+    for (const auto literal : literals)
+    {
+        auto info = details::RuleToLiteralInfo<T> {};
+        info.predicate = literal.get_atom().get_predicate().index();
+        info.polarity = literal.get_polarity();
+        info.kckp_arity = kckp_arity(literal);
+        index_terms(literal.get_atom().get_terms(), formalism::datalog::collect_parameters(literal), result.infos.size(), arity, info, result.info_mappings);
+
+        result.infos.push_back(std::move(info));
+    }
+
+    return result;
+}
+
+template<formalism::FactKind T>
+static auto compute_tagged_indexed_fterms(const urd::Store<urd::sequence<formalism::datalog::FunctionTermView<LiftedTag, T>>>& fterms, size_t arity)
+{
+    auto result = details::TaggedRuleToFunctionTermInfos<T> {};
+
+    initialize_info_mappings(result.info_mappings, arity);
+
+    for (const auto fterm : fterms)
+    {
+        auto info = details::RuleToFunctionTermInfo<T> {};
+        info.function = fterm.get_function().index();
+        info.kckp_arity = kckp_arity(fterm);
+        index_terms(fterm.get_terms(), formalism::datalog::collect_parameters(fterm), static_cast<ygg::uint_t>(fterm.index().value), arity, info, result.info_mappings);
+
+        result.infos.emplace(fterm.index(), std::move(info));
+    }
+
+    return result;
+}
+
+static auto compute_constraint_info(formalism::datalog::BooleanOperatorView<LiftedTag> element, size_t arity)
+{
+    auto result = details::RuleToConstraintInfo {};
+
+    auto static_fterms = formalism::datalog::collect_fterms<LiftedTag, formalism::StaticTag>(element);
+    auto fluent_fterms = formalism::datalog::collect_fterms<LiftedTag, formalism::FluentTag>(element);
+
+    result.static_infos = compute_tagged_indexed_fterms(static_fterms, arity);
+    result.fluent_infos = compute_tagged_indexed_fterms(fluent_fterms, arity);
+
+    result.kckp_arity = kckp_arity(element);
+
+    return result;
+}
+
+static auto compute_indexed_constraints(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
+{
+    auto result = details::RuleToRuleToConstraintInfos {};
+    result.infos = urd::Store<urd::sequence<details::RuleToConstraintInfo>> {};
+    for (const auto constraint : element.get_numeric_constraints())
+        result.infos.push_back(compute_constraint_info(constraint, element.get_arity()));
+    return result;
+}
+
+static auto compute_indexed_literals(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
+{ return compute_tagged_indexed_literals(element.get_literals<formalism::FluentTag>(), element.get_arity()); }
+
+static auto classify_adjacency(const kckp::GraphLayout& layout, const formalism::datalog::VariableDependencyGraph& dependency_graph)
+{
+    assert(layout.num_partitions == dependency_graph.k());
+    auto result = urd::Store<urd::sequence<kckp::AdjacencyKind>> {};
+    if (layout.num_partitions != 0 && layout.num_partitions > result.max_size() / layout.num_partitions)
+        throw std::overflow_error("StaticConsistencyGraph: partition-pair table size overflow");
+    result.assign(layout.num_partitions * layout.num_partitions, kckp::AdjacencyKind::IMPLICIT);
+    const auto& dependencies = dependency_graph.binary();
+
+    for (ygg::uint_t pi = 0; pi < layout.num_partitions; ++pi)
+        for (ygg::uint_t pj = 0; pj < layout.num_partitions; ++pj)
+        {
+            if (!dependencies.has_dependency(pi, pj))
+                continue;
+
+            const auto has_runtime_dependency = dependencies.has_literal_dependency<formalism::FluentTag, formalism::PositiveTag>(pi, pj)
+                                                || dependencies.has_literal_dependency<formalism::FluentTag, formalism::NegativeTag>(pi, pj)
+                                                || dependencies.has_numeric_dependency(pi, pj);
+            result[pi * layout.num_partitions + pj] = has_runtime_dependency ? kckp::AdjacencyKind::RUNTIME : kckp::AdjacencyKind::STATIC_ONLY;
+        }
+
+    return result;
+}
+
+StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition,
+                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition,
+                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition,
+                                               kckp::Graph compatibility_graph) :
+    m_unary_overapproximation_condition(unary_overapproximation_condition),
+    m_binary_overapproximation_condition(binary_overapproximation_condition),
+    m_unary_overapproximation_vdg(unary_overapproximation_condition),
+    m_binary_overapproximation_vdg(binary_overapproximation_condition),
+    m_compatibility_graph(std::move(compatibility_graph)),
+    m_partitioned_adjacency_layout(m_compatibility_graph.get_layout(), classify_adjacency(m_compatibility_graph.get_layout(), m_binary_overapproximation_vdg)),
+    m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
+    m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
+    m_hyperedge_indexed_literals(compute_indexed_literals(hyperedge_condition)),
+    m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
+    m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition))
+{
+}
+
+void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
+                                                                   const kckp::GraphLayout& layout,
+                                                                   kckp::DeltaGraph& delta_graph,
+                                                                   kckp::FullGraph& full_graph) const
+{
+    /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
+
+    /// 2. Monotonically update full consistent vertices partition
+
+    {
+        const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.get_numeric_constraints();
+
+        for (ygg::uint_t p = 0; p < layout.num_partitions; ++p)
+        {
+            const auto& info = layout.info.infos[p];
+            auto full_affected_partition = full_graph.affected_partitions.get_bitset(info);
+            auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(info);
+            auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(info);
+
+            // Implicit case doesnt exist for vertices, so we dont need to check for that here.
+
+            const auto has_runtime_dependency = m_unary_overapproximation_vdg.unary().has_literal_dependency<formalism::FluentTag, formalism::PositiveTag>(p)
+                                                || m_unary_overapproximation_vdg.unary().has_literal_dependency<formalism::FluentTag, formalism::NegativeTag>(p)
+                                                || m_unary_overapproximation_vdg.unary().has_numeric_dependency(p);
+
+            // Static-only case.
+            if (!has_runtime_dependency)
+            {
+                delta_affected_partition.set();
+                delta_delta_partition.set();
+                delta_affected_partition -= full_affected_partition;
+                delta_delta_partition -= full_affected_partition;
+                full_affected_partition.set();
+            }
+            else
+            {
+                // Runtime-filtered case.
+                for_each_bit(
+                    [&](auto&& bit)
+                    {
+                        const auto v = info.bit_offset + bit;
+                        const auto vertex = details::Vertex(formalism::ParameterIndex(p), urd::index<formalism::Object>(layout.vertex_labels[v]));
+
+                        if (details::consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                            && details::consistent_numeric_constraints(vertex,
+                                                                       unary_overapproximation_constraints,
+                                                                       m_unary_overapproximation_indexed_constraints,
+                                                                       assignment_sets))
+                        {
+                            /// Process delta consistent vertex.
+                            full_affected_partition.set(bit);
+                            delta_affected_partition.set(bit);
+                            delta_delta_partition.set(bit);
+                        }
+                    },
+                    [](auto&& a) noexcept { return ~a; },
+                    full_affected_partition);
+            }
+        }
+    }
+
+    /// 3. Monotonically update full explicitly consistent edges
+
+    {
+        const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
+        for (ygg::uint_t pi = 0; pi < layout.num_partitions; ++pi)
+        {
+            const auto& info_i = layout.info.infos[pi];
+            auto offset_i = info_i.bit_offset;
+
+            const auto full_affected_partition_i = full_graph.affected_partitions.get_bitset(info_i);
+            auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
+            const auto delta_delta_partition_i = delta_graph.delta_partitions.get_bitset(info_i);
+
+            for (ygg::uint_t pj = pi + 1; pj < layout.num_partitions; ++pj)
+            {
+                const auto& info_j = layout.info.infos[pj];
+                auto offset_j = info_j.bit_offset;
+
+                const auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
+                auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
+                const auto delta_delta_partition_j = delta_graph.delta_partitions.get_bitset(info_j);
+
+                if (m_partitioned_adjacency_layout.is_implicit(pi, pj))
+                {
+                    if (delta_delta_partition_i.any())
+                        delta_affected_partition_j |= full_affected_partition_j;
+
+                    if (delta_delta_partition_j.any())
+                        delta_affected_partition_i |= full_affected_partition_i;
+
+                    continue;
+                }
+
+                if (m_partitioned_adjacency_layout.is_static_only(pi, pj))
+                {
+                    const auto target_changed = delta_delta_partition_j.any();
+                    if (!target_changed && !delta_delta_partition_i.any())
+                        continue;
+                    const auto sources = target_changed ? full_affected_partition_i : delta_delta_partition_i;
+                    for (auto bi = sources.find_first(); bi != urd::repr::BitsetSpan<const uint64_t>::npos; bi = sources.find_next(bi))
+                    {
+                        const auto vi = offset_i + bi;
+                        const auto static_blocks = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj).blocks();
+                        const auto target_blocks = (delta_delta_partition_i.test(bi) ? full_affected_partition_j : delta_delta_partition_j).blocks();
+                        auto affected_blocks = delta_affected_partition_j.blocks();
+                        auto source_is_affected = false;
+                        for (size_t block = 0; block < static_blocks.size(); ++block)
+                        {
+                            const auto new_edges = static_blocks[block] & target_blocks[block];
+                            affected_blocks[block] |= new_edges;
+                            source_is_affected |= new_edges != 0;
+                        }
+                        if (source_is_affected)
+                            delta_affected_partition_i.set(bi);
+                    }
+                    continue;
+                }
+
+                assert(m_partitioned_adjacency_layout.is_runtime(pi, pj));
+
+                for (auto bi = full_affected_partition_i.find_first(); bi != urd::repr::BitsetSpan<const uint64_t>::npos;
+                     bi = full_affected_partition_i.find_next(bi))
+                {
+                    const auto vi = offset_i + bi;  ///< vi is consistent + delta
+
+                    const auto static_edges = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj);
+                    auto full_edges_i = full_graph.matrix.get_runtime_bitset(vi, pj);
+                    auto delta_edges_i = delta_graph.matrix.get_runtime_bitset(vi, pj);
+                    auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
+                    auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
+
+                    auto process_delta_edge = [&](auto&& bj)
+                    {
+                        const auto vj = offset_j + bj;
+
+                        // Set edges
+                        full_edges_i.set(bj);
+                        full_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
+
+                        delta_edges_i.set(bj);
+                        delta_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
+
+                        // Set/test affected partitions
+                        assert(full_affected_partition_i.test(bi));
+                        assert(full_affected_partition_j.test(bj));
+                        delta_affected_partition_i.set(bi);
+                        delta_affected_partition_j.set(bj);
+
+                        // Set touched partitions
+                        delta_touched_i = true;
+                        full_touched_i = true;
+                        delta_graph.matrix.touched_partitions(vj, pi) = true;
+                        full_graph.matrix.touched_partitions(vj, pi) = true;
+                    };
+
+                    const auto vertex_i = details::Vertex(formalism::ParameterIndex(pi), urd::index<formalism::Object>(layout.vertex_labels[vi]));
+
+                    for_each_bit(
+                        [&](auto&& bj)
+                        {
+                            const auto vj = offset_j + bj;
+
+                            const auto vertex_j = details::Vertex(formalism::ParameterIndex(pj), urd::index<formalism::Object>(layout.vertex_labels[vj]));
+
+                            const auto edge = details::Edge(vertex_i, vertex_j);
+
+                            if (details::consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                                && details::consistent_numeric_constraints(edge,
+                                                                           binary_overapproximation_constraints,
+                                                                           m_binary_overapproximation_indexed_constraints,
+                                                                           assignment_sets))
+                            {
+                                /// Process delta consistent edge.
+                                process_delta_edge(bj);
+                            }
+                        },
+                        [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
+                        static_edges,
+                        full_affected_partition_j,
+                        full_edges_i);
+                }
+            }
+        }
+    }
+}
+
+const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept
+{ return m_binary_overapproximation_vdg; }
+
+const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m_compatibility_graph; }
+
+const kckp::GraphLayout& StaticConsistencyGraph::get_graph_layout() const noexcept { return m_compatibility_graph.get_layout(); }
+
+const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_adjacency_layout() const noexcept { return m_partitioned_adjacency_layout; }
+
+const kckp::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_compatibility_graph.get_adjacency_matrix(); }
+
+const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& StaticConsistencyGraph::get_hyperedge_indexed_literals() const noexcept
+{ return m_hyperedge_indexed_literals; }
+
+std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
+create_overapproximation_conjunctive_condition(size_t k,
+                                               formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                               formalism::datalog::Repository& context)
+{
+    auto builder = formalism::datalog::Builder {};
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+
+    for (const auto variable : condition.get_variables())
+        conj_cond->variables.push_back(variable.index());
+
+    const auto literal_belongs_to_k_overapproximation = [k](const auto literal)
+    { return literal.get_polarity() ? kckp_arity(literal) >= k : kckp_arity(literal) == k; };
+    const auto numeric_constraint_belongs_to_k_overapproximation = [k](const auto& numeric_constraint) { return kckp_arity(numeric_constraint) >= k; };
+
+    for (const auto literal : condition.get_literals<formalism::StaticTag>())
+        if (literal_belongs_to_k_overapproximation(literal))
+            conj_cond->static_literals.push_back(literal.index());
+
+    for (const auto literal : condition.get_literals<formalism::FluentTag>())
+        if (literal_belongs_to_k_overapproximation(literal))
+            conj_cond->fluent_literals.push_back(literal.index());
+
+    for (const auto numeric_constraint : condition.get_numeric_constraints())
+        if (numeric_constraint_belongs_to_k_overapproximation(numeric_constraint))
+            conj_cond->numeric_constraints.push_back(numeric_constraint.index());
+
+    return formalism::datalog::insert(context, *conj_cond);
+}
+
+std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
+create_overapproximation_conflicting_conjunctive_condition(size_t k,
+                                                           formalism::datalog::ConjunctiveConditionView<LiftedTag> condition,
+                                                           formalism::datalog::Repository& context)
+{
+    auto builder = formalism::datalog::Builder {};
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+
+    for (const auto variable : condition.get_variables())
+        conj_cond->variables.push_back(variable.index());
+
+    // Binary KCKP edges join distinct rule parameters, so a one-parameter literal such as p(x,x) still needs an exact check.
+    const auto requires_exact_literal_check = [k](const auto literal)
+    { return kckp_arity(literal) > k || (k == 2 && kckp_arity(literal) == 2 && parameter_arity(literal) == 1); };
+    const auto requires_exact_numeric_check = [k](const auto& numeric_constraint)
+    { return kckp_arity(numeric_constraint) > k || (k == 2 && kckp_arity(numeric_constraint) == 2); };
+
+    for (const auto literal : condition.get_literals<formalism::StaticTag>())
+        if (requires_exact_literal_check(literal))
+            conj_cond->static_literals.push_back(literal.index());
+
+    for (const auto literal : condition.get_literals<formalism::FluentTag>())
+        if (requires_exact_literal_check(literal))
+            conj_cond->fluent_literals.push_back(literal.index());
+
+    for (const auto numeric_constraint : condition.get_numeric_constraints())
+        if (requires_exact_numeric_check(numeric_constraint))
+            conj_cond->numeric_constraints.push_back(numeric_constraint.index());
+
+    return formalism::datalog::insert(context, *conj_cond);
+}
+
+std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
+create_hyperedge_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> conflicting_condition, formalism::datalog::Repository& context)
+{
+    auto builder = formalism::datalog::Builder {};
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
+
+    for (const auto variable : conflicting_condition.get_variables())
+        conj_cond->variables.push_back(variable.index());
+
+    for (const auto literal : conflicting_condition.get_literals<formalism::FluentTag>())
+        if (literal.get_polarity())
+            conj_cond->fluent_literals.push_back(literal.index());
+
+    return formalism::datalog::insert(context, *conj_cond);
+}
+
+std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>
+create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveConditionView<LiftedTag> condition, formalism::datalog::Repository& context)
+{
+    auto builder = formalism::datalog::Builder {};
+    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(builder);
+
+    auto binding_empty = urd::flat_vector<urd::index<formalism::Object>> {};
+    auto grounder_context = formalism::WriteContext { builder, context, binding_empty };
+
+    const auto is_nullary = [](const auto& element) { return parameter_arity(element) == 0; };
+
+    for (const auto literal : condition.get_literals<formalism::StaticTag>())
+        if (is_nullary(literal))
+            conj_cond->static_literals.push_back(ground(literal, grounder_context).first.index());
+
+    for (const auto literal : condition.get_literals<formalism::FluentTag>())
+        if (is_nullary(literal))
+            conj_cond->fluent_literals.push_back(ground(literal, grounder_context).first.index());
+
+    for (const auto numeric_constraint : condition.get_numeric_constraints())
+        if (is_nullary(numeric_constraint))
+            conj_cond->numeric_constraints.push_back(ground(numeric_constraint, grounder_context).first.index());
+
+    return formalism::datalog::insert(context, *conj_cond);
+}
+}

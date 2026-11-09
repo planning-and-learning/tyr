@@ -18,9 +18,10 @@
 #ifndef TYR_DATALOG_LIFTED_RULE_INSTANCE_HPP_
 #define TYR_DATALOG_LIFTED_RULE_INSTANCE_HPP_
 
-#include "tyr/datalog/lifted/workspaces/rule.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
 
 #include <optional>
 #include <utility>
@@ -32,13 +33,13 @@ template<formalism::RelationKind R>
 class RuleInstance<LiftedTag, R>
 {
 public:
-    RuleInstance(const ConstRuleWorkspace<LiftedTag, R>& workspace, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) :
-        m_workspace(&workspace),
+    RuleInstance(formalism::datalog::RuleView<LiftedTag, R> rule, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) :
+        m_rule(rule),
         m_grounder(&grounder)
     {
     }
 
-    formalism::datalog::RuleView<LiftedTag, R> get_rule() const noexcept { return m_workspace->get_rule(); }
+    formalism::datalog::RuleView<LiftedTag, R> get_rule() const noexcept { return m_rule; }
     auto get_body() const noexcept { return get_rule().get_body(); }
     auto get_head() const noexcept { return get_rule().get_head(); }
 
@@ -62,7 +63,7 @@ public:
     }
 
 private:
-    const ConstRuleWorkspace<LiftedTag, R>* m_workspace;
+    formalism::datalog::RuleView<LiftedTag, R> m_rule;
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_grounder;
     mutable std::optional<formalism::datalog::RuleRowView<R>> m_witness_key;
 };

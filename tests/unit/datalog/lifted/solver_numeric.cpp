@@ -495,7 +495,7 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
         EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(other.data()));
 
     // The h rule rejected (a,b,c) before t(a,b,c) existed, so the new atom, not a delta edge, generated it.
-    const auto& h_rule = workspace.rules.get<tyr::formalism::PredicateTag>()[static_cast<ygg::uint_t>(derive_h.index().value)];
+    const auto& h_rule = workspace.engine.rules.get<tyr::formalism::PredicateTag>()[static_cast<ygg::uint_t>(derive_h.index().value)];
     ASSERT_NE(h_rule, nullptr);
     EXPECT_GT(h_rule->worker.front().solve.statistics.num_rejected_rules, 0);
 }
@@ -549,7 +549,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RejectedCanonicalTiesDoNotInternUnneededBindi
     const auto program_view = intern(std::move(program_data));
 
     auto program = tyr::datalog::Program<LiftedTag>(program_view, repository);
-    const auto& const_rule_workspace = program.get_const_program_workspace().rules.get<tyr::formalism::PredicateTag>().front().value();
+    const auto& const_rule_workspace = program.get_const_program_workspace().engine.rules.get<tyr::formalism::PredicateTag>().front().value();
     EXPECT_EQ(&const_rule_workspace.get_nullary_condition().context(), &program.get_program_repository());
 
     using AnnotationPolicy = tyr::datalog::MinCostAnnotationPolicy<tyr::datalog::SumAggregation>;

@@ -38,12 +38,12 @@
 #include <tyr/datalog/fact_sets.hpp>
 #include <tyr/datalog/formatter.hpp>
 #include <tyr/datalog/ground/program.hpp>
-#include <tyr/datalog/lifted/assignment.hpp>
-#include <tyr/datalog/lifted/assignment_sets.hpp>
-#include <tyr/datalog/lifted/consistency_graph.hpp>
+#include <tyr/datalog/lifted/kckp/assignment.hpp>
+#include <tyr/datalog/lifted/kckp/assignment_sets.hpp>
+#include <tyr/datalog/lifted/kckp/consistency_graph.hpp>
 #include <tyr/datalog/lifted/program.hpp>
 #include <tyr/datalog/lifted/workspaces/facts.hpp>
-#include <tyr/datalog/lifted/workspaces/rule.hpp>
+#include <tyr/datalog/lifted/kckp/workspaces/rule.hpp>
 #include <tyr/datalog/solver.hpp>
 #include <tyr/datalog/static_rule_filter.hpp>
 #include <tyr/datalog/statistics/program.hpp>

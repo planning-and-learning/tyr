@@ -142,12 +142,12 @@ struct RPGPolicy<LiftedTag>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
-        const auto& const_rule_workspace = *workspace.const_workspace->rules.template get<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
+        const auto& const_rule_workspace = *workspace.const_workspace->engine.rules.template get<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
         auto binding = urd::flat_vector<urd::index<formalism::Object>> {};
         for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
             binding.push_back(object);
         auto grounder_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
-        const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace, grounder_context);
+        const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace.get_rule(), grounder_context);
         std::forward<Callback>(callback)(instance);
     }
 
@@ -159,7 +159,7 @@ struct RPGPolicy<LiftedTag>
 
         std::cout << "[RPGHeuristic] Summary" << '\n';
         fmt::print(std::cout, "{}\n", workspace.statistics);
-        datalog::print_rule_statistics(workspace.rules);
+        datalog::print_rule_statistics(workspace.engine.rules);
     }
 };
 

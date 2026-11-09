@@ -23,7 +23,7 @@
 #include <urd/store.hpp>
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/ground/program.hpp"
-#include "tyr/datalog/lifted/consistency_graph.hpp"
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"

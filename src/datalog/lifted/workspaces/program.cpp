@@ -25,55 +25,9 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 
-#include <fmt/ostream.h>
-#include <iostream>
 
 namespace tyr::datalog
 {
-namespace
-{
-template<formalism::RelationKind R>
-void initialize_rule_workspaces(const ConstProgramWorkspace<LiftedTag>& const_workspace, RuleWorkspaces<R>& workspaces)
-{
-    const auto& const_workspaces = const_workspace.rules.template get<R>();
-    workspaces.reserve(const_workspaces.size());
-    for (const auto& workspace : const_workspaces)
-        workspaces.emplace_back(workspace ? std::make_unique<RuleWorkspace<LiftedTag, R>>(*workspace) : nullptr);
-}
-
-template<formalism::RelationKind R>
-void initialize_const_rule_workspaces(Program<LiftedTag>& program,
-                                      formalism::datalog::Repository& program_repository,
-                                      analysis::RuleCompatibilityGraphMap<R>& graphs,
-                                      ConstRuleWorkspaces<R>& workspaces)
-{
-    const auto rules = program.get_program().template get_rules<R>();
-    workspaces.resize(rules.size());
-    for (const auto rule : rules)
-        workspaces[ygg::uint_t(rule.index().value)].emplace(rule, program_repository, std::move(graphs.at(rule.index())));
-}
-}
-
-void print_rule_statistics(const urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules)
-{
-    auto rule_statistics = urd::Store<urd::sequence<RuleStatistics>> {};
-    auto rule_worker_statistics = urd::Store<urd::sequence<RuleWorkerStatistics>> {};
-    rules.for_each(
-        [&](const auto& workspaces)
-        {
-            for (const auto& ws_rule : workspaces)
-            {
-                if (!ws_rule)
-                    continue;
-                rule_statistics.push_back(ws_rule->common.statistics);
-                for (const auto& worker : ws_rule->worker)
-                    rule_worker_statistics.push_back(worker.solve.statistics);
-            }
-        });
-    fmt::print(std::cout, "{}\n", compute_aggregated_rule_statistics(rule_statistics));
-    fmt::print(std::cout, "{}\n", compute_aggregated_rule_worker_statistics(rule_worker_statistics));
-}
-
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTag>& program, AP annotation_policy_, TP tp_, CP cost_policy_) :
     const_workspace(&program.get_const_program_workspace()),
@@ -81,9 +35,6 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     workspace_repository(std::make_shared<formalism::datalog::Repository>(program.get_program().get_objects().size(), program_repository)),
     facts(program.get_program().get_predicates<formalism::FluentTag>(),
           program.get_program().get_functions<formalism::FluentTag>(),
-          program.get_domains().fluent_predicate_domains,
-          program.get_domains().fluent_function_domains,
-          program.get_program().get_objects().size(),
           program.get_program().get_atoms<formalism::FluentTag>(),
           program.get_program().get_fterm_values<formalism::FluentTag>(),
           *workspace_repository),
@@ -95,7 +46,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
     numeric_support_selector(),
     tp(std::move(tp_)),
     cost_policy(std::move(cost_policy_)),
-    rules(),
+    engine(const_workspace->engine, program.get_program(), program.get_domains(), facts.fact_sets),
     planning_builder(),
     datalog_builder(),
     schedulers(create_schedulers(program.get_strata(),
@@ -107,22 +58,12 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
 {
     if constexpr (AP::records_propositional_achievers)
         this->annotation_policy.initialize(program.get_program().get_predicates<formalism::FluentTag>().size());
-
-    initialize_rule_workspaces<formalism::PredicateTag>(*const_workspace, rules.template get<formalism::PredicateTag>());
-    initialize_rule_workspaces<formalism::FunctionTag>(*const_workspace, rules.template get<formalism::FunctionTag>());
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
 {
-    rules.for_each(
-        [](auto& workspaces)
-        {
-            for (auto& rule : workspaces)
-                if (rule)
-                    rule->clear();
-        });
-
+    engine.clear();
     cost_buckets.clear();
     tp.clear();
     cost_policy.clear();
@@ -155,22 +96,11 @@ template struct ProgramWorkspace<LiftedTag,
 ConstProgramWorkspace<LiftedTag>::ConstProgramWorkspace(Program<LiftedTag>& program) :
     facts(program.get_program().get_predicates<formalism::StaticTag>(),
           program.get_program().get_functions<formalism::StaticTag>(),
-          program.get_domains().static_predicate_domains,
-          program.get_domains().static_function_domains,
-          program.get_program().get_objects().size(),
           program.get_program().get_atoms<formalism::StaticTag>(),
           program.get_program().get_fterm_values<formalism::StaticTag>(),
           *program.m_program_repository),
-    rules()
+    engine(program.get_program(), *program.m_program_repository, program.m_analysis, facts.fact_sets)
 {
-    initialize_const_rule_workspaces<formalism::PredicateTag>(program,
-                                                              *program.m_program_repository,
-                                                              program.m_analysis.compatibility_graphs.get<formalism::PredicateTag>(),
-                                                              rules.get<formalism::PredicateTag>());
-    initialize_const_rule_workspaces<formalism::FunctionTag>(program,
-                                                             *program.m_program_repository,
-                                                             program.m_analysis.compatibility_graphs.get<formalism::FunctionTag>(),
-                                                             rules.get<formalism::FunctionTag>());
 }
 
 }

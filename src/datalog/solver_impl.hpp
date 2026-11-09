@@ -61,8 +61,8 @@ template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP,
 bool commit_head_bucket(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, Scheduler<Kind>& scheduler, CostBuckets& cost_buckets, Cost cost)
 {
     auto& bucket = cost_buckets.at(cost);
-    erase_if(bucket.predicate, [&](const auto fact) { return !ctx.out().facts().insert(fact); });
-    erase_if(bucket.function, [&](const auto& entry) { return !ctx.out().facts().insert(entry.first, entry.second); });
+    erase_if(bucket.predicate, [&](const auto fact) { return !ctx.out().insert(fact); });
+    erase_if(bucket.function, [&](const auto& entry) { return !ctx.out().insert(entry.first, entry.second); });
 
     // Install the entire bucket before notifying rules. The scheduler controls the representation-specific
     // notification order.

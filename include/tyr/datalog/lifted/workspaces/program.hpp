@@ -24,7 +24,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/lifted/scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
-#include "tyr/datalog/lifted/workspaces/rule.hpp"
+#include "tyr/datalog/lifted/kckp/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
@@ -45,13 +45,6 @@
 
 namespace tyr::datalog
 {
-
-/// The workspaces of the rules of relation kind R, by rule index (none for a rule without one).
-template<typename R>
-using RuleWorkspaces = urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>>;
-
-template<typename R>
-using ConstRuleWorkspaces = urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, R>>>>;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 struct ProgramWorkspace<LiftedTag, AP, TP, CP>
@@ -75,7 +68,8 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     CostBuckets cost_buckets;
     PendingPredicateAchievers pending_achievers;
 
-    urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
+    /// The evaluation engine's own state (KCKP: assignment sets and rule workspaces).
+    KCKPWorkspace engine;
 
     formalism::planning::Builder planning_builder;
     formalism::datalog::Builder datalog_builder;
@@ -102,15 +96,12 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     }
 };
 
-/// Prints the aggregated statistics of the rules and of their workers.
-void print_rule_statistics(const urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules);
-
 template<>
 struct ConstProgramWorkspace<LiftedTag>
 {
     ConstFactsWorkspace<LiftedTag> facts;
-
-    urd::utils::Family<ConstRuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
+    /// The evaluation engine's shared state (KCKP: static assignment sets and const rule workspaces).
+    ConstKCKPWorkspace engine;
 
     explicit ConstProgramWorkspace(Program<LiftedTag>& program);
 };

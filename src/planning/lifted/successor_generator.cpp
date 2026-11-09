@@ -22,7 +22,7 @@
 #include "effect_atom_index.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/datalog/lifted/static_extensions.hpp"
+#include "tyr/datalog/lifted/kckp/static_extensions.hpp"
 #include "tyr/datalog/solver.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/interning.hpp"
@@ -1147,7 +1147,7 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
     const auto objects =
         urd::flat_vector<urd::index<formalism::Object>>(m_impl->evaluator.workspace.binding.begin(), m_impl->evaluator.workspace.binding.end());
     const auto& mapping = m_impl->definition->action_program.get_conditional_effect_to_predicate_mapping();
-    const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().rules.get<formalism::PredicateTag>();
+    const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().engine.rules.get<formalism::PredicateTag>();
     const auto schema_rules = m_impl->get_schema_evaluator(action).program.get_rules<formalism::PredicateTag>();
     const auto ground_action =
         formalism::planning::ground(
@@ -1227,7 +1227,7 @@ void SuccessorGenerator<LiftedTag>::print_summary(size_t verbosity) const
 
     std::cout << "[Successor generator] Summary" << '\n';
     fmt::print(std::cout, "{}\n", m_impl->evaluator.workspace.statistics);
-    datalog::print_rule_statistics(m_impl->evaluator.workspace.rules);
+    datalog::print_rule_statistics(m_impl->evaluator.workspace.engine.rules);
 }
 
 template ActionBindingStatus SuccessorGenerator<LiftedTag>::check_action_binding(const Source& node, formalism::planning::ActionRowView binding);

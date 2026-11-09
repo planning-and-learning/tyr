@@ -142,7 +142,7 @@ void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
     const auto& workspace = *m_impl->evaluator.workspace;
     std::cout << "[Axiom evaluator] Summary" << '\n';
     fmt::print(std::cout, "{}\n", workspace.statistics);
-    datalog::print_rule_statistics(workspace.rules);
+    datalog::print_rule_statistics(workspace.engine.rules);
 }
 
 template class AxiomEvaluator<LiftedTag>;

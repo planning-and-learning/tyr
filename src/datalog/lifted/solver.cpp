@@ -23,16 +23,16 @@
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/lifted/assignment_sets.hpp"
-#include "tyr/datalog/lifted/consistency_graph.hpp"
+#include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
-#include "tyr/datalog/lifted/contexts/rule.hpp"
+#include "tyr/datalog/lifted/kckp/contexts/rule.hpp"
 #include "tyr/datalog/lifted/contexts/stratum.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/lifted/scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
-#include "tyr/datalog/lifted/workspaces/rule.hpp"
+#include "tyr/datalog/lifted/kckp/workspaces/rule.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
@@ -130,14 +130,14 @@ private:
         {
             const auto& goal = m_ctx->out().tp().get_goal();
             if (!goal || !goal->get_numeric_constraints().empty() || m_ctx->out().schedulers().size() != 1
-                || !m_ctx->in().template get_rules<formalism::FunctionTag>().empty())
+                || !m_ctx->in().engine().rules.template get<formalism::FunctionTag>().empty())
                 return;
             const auto fact_sets = FactSets { m_ctx->in().facts().fact_sets, m_ctx->out().facts().fact_sets };
             if (!is_applicable(goal->template get_literals<formalism::StaticTag>(), fact_sets))
                 return;
 
             auto min_edge_cost = std::numeric_limits<Cost>::max();
-            for (const auto& rule : m_ctx->in().template get_rules<formalism::PredicateTag>())
+            for (const auto& rule : m_ctx->in().engine().rules.template get<formalism::PredicateTag>())
                 if (rule)
                     min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
@@ -253,7 +253,7 @@ private:
 
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule(), out.ground_context() },
+        auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule().get_rule(), out.ground_context() },
                                             in.numeric_support_selector(),
                                             in.annotations(),
                                             out.rule_evaluation_workspace(),
@@ -458,7 +458,7 @@ private:
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule(), out.ground_context() },
+        auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule().get_rule(), out.ground_context() },
                                             in.numeric_support_selector(),
                                             in.annotations(),
                                             out.rule_evaluation_workspace(),
@@ -626,7 +626,7 @@ private:
         {
             // Numeric effects and state-dependent costs are non-idempotent as the numeric envelope evolves.
             const auto enumerate_all = std::same_as<R, formalism::FunctionTag> || rule_scheduler.requires_full_enumeration(rule_index);
-            auto rctx = ctx.get_rule_execution_context(rule_index);
+            auto rctx = RuleExecutionContext<R, AP, TP, CP> { rule_index, ctx };
             auto& rule_out = rctx.out();
 
             const auto total_time = ygg::StopwatchScope(rule_out.statistics().total_time);
@@ -690,7 +690,7 @@ private:
         for (const auto rule_index : ctx.out().scheduler().template get<R>().get_active_rules())
         {
             const auto i = ygg::uint_t(rule_index.value);
-            const auto& ws_rule = program_out.template get_rules<R>()[i];
+            const auto& ws_rule = program_out.engine().rules.template get<R>()[i];
 
             for (auto& worker : ws_rule->worker)
             {
