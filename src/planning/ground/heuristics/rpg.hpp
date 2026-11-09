@@ -62,8 +62,7 @@ struct RPGPolicy<GroundTag>
     { return definition.rpg_program.template get_rule_to_action_mapping<R>().contains(witness.get_rule_key()); }
 
     template<formalism::RelationKind R, typename Workspace, typename Callback>
-    static void
-    for_each_action_binding(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness, Callback callback)
+    static void for_each_action_binding(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness, Callback callback)
     {
         const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
         if (const auto it = mapping.find(witness.get_rule_key()); it != mapping.end())

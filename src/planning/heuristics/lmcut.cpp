@@ -106,7 +106,7 @@ struct LMCutImplementation :
     /// The arcs of an achiever: their residual cost and their sources, empty for a rule without preconditions.
     struct Arc
     {
-        datalog::Cost cost;
+        datalog::Cost cost { 0 };
         std::vector<Node> sources;
     };
 
@@ -119,7 +119,7 @@ private:
     const Arc& get_arc(const datalog::WitnessAnnotation<R>& witness);
     template<typename Callback>
     void for_each_arc(const Node& head, Callback callback);
-    [[nodiscard]] bool is_state_node(const Node& node) const noexcept;
+    [[nodiscard]] bool is_state_node(const Node& node) const;
     [[nodiscard]] const datalog::WitnessAnnotation<formalism::FunctionTag>* get_numeric_witness(const NumericNode& node) const noexcept;
     void seed_goal_zone();
     void mark_goal_zone();
@@ -276,7 +276,7 @@ void LMCutImplementation<Kind>::for_each_arc(const Node& head, Callback callback
 
 /// A node of the state: a state fact or a numeric node without a derivation. Every path of the justification graph starts here.
 template<TaskKind Kind>
-bool LMCutImplementation<Kind>::is_state_node(const Node& node) const noexcept
+bool LMCutImplementation<Kind>::is_state_node(const Node& node) const
 {
     return std::visit(
         [&](const auto& key)
@@ -451,8 +451,8 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
                          if (!this->is_action_witness(witness))
                              return;
                          const auto& arc = get_arc(witness);
-                         const auto crosses = arc.sources.empty()
-                                              || std::ranges::any_of(arc.sources, [&](const auto& source) { return m_before_goal_zone.contains(source); });
+                         const auto crosses =
+                             arc.sources.empty() || std::ranges::any_of(arc.sources, [&](const auto& source) { return m_before_goal_zone.contains(source); });
                          if (arc.cost == 0 || !crosses)
                              return;
 
