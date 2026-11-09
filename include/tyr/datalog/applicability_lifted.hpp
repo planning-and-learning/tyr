@@ -93,7 +93,7 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<
     if (!binding)
         return {};
 
-    return context.fact_sets().template get<T>().function[*binding];
+    return value(context.fact_sets().template get<T>(), (*binding).data());
 }
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
@@ -123,7 +123,7 @@ bool is_applicable(formalism::datalog::LiteralView<LiftedTag, T> element, const 
     if (!binding)
         return !element.get_polarity();
 
-    return context.fact_sets().template get<T>().predicate.contains(*binding) == element.get_polarity();
+    return contains(context.fact_sets().template get<T>(), (*binding).data()) == element.get_polarity();
 }
 
 template<formalism::FactKind T>

@@ -529,9 +529,9 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     const auto normalize = [](const Workspace& workspace)
     {
         auto result = urd::Store<urd::sequence<NormalizedFact>> {};
-        for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
+        for (ygg::uint_t set = 0; set < workspace.facts.fact_sets.predicate.size(); ++set)
         {
-            for (const auto binding : set.get_bindings())
+            for (const auto binding : tyr::datalog::rows(workspace.facts.fact_sets, set))
             {
                 auto objects = urd::Store<urd::sequence<ygg::uint_t>> {};
                 for (const auto object : binding.template get<urd::index<tyr::formalism::Object>>())

@@ -35,8 +35,8 @@ FactsWorkspace<LiftedTag>::FactsWorkspace(formalism::datalog::PredicateListView<
 
 void FactsWorkspace<LiftedTag>::reset()
 {
-    fact_sets.reset();
-    delta_fact_sets.reset();
+    clear(fact_sets);
+    clear(delta_fact_sets);
 }
 
 ConstFactsWorkspace<LiftedTag>::ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,

@@ -65,6 +65,22 @@ namespace tyr::datalog
 
 using Interval = ygg::ClosedInterval<ygg::float_t>;
 
+/// One predicate's facts as Python reads them: the fact sets and the predicate's index.
+template<formalism::FactKind T>
+struct PredicateFactSet
+{
+    const TaggedFactSets<T>* facts;
+    ygg::uint_t index;
+};
+
+/// One function's facts as Python reads them: the fact sets and the function's index.
+template<formalism::FactKind T>
+struct FunctionFactSet
+{
+    const TaggedFactSets<T>* facts;
+    ygg::uint_t index;
+};
+
 template<formalism::FactKind T>
 void bind_predicate_fact_set(nb::module_& m, const char* name)
 {
@@ -72,25 +88,18 @@ void bind_predicate_fact_set(nb::module_& m, const char* name)
     using Set = PredicateFactSet<T>;
 
     nb::class_<Set>(m, name)
-        .def("get_predicate", &Set::get_predicate)
+        .def("get_predicate", [](const Set& self) { return self.facts->repository->view(urd::index<formalism::Predicate<T>>(self.index)); })
         .def(
             "get_bindings",
             [](const Set& self)
             {
-                const auto bindings = self.get_bindings();
+                const auto bindings = rows(*self.facts, self.index);
                 return nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end());
             },
             nb::keep_alive<0, 1>())
-        .def("count",
-             [](const Set& self)
-             {
-                 auto result = static_cast<size_t>(0);
-                 for ([[maybe_unused]] const auto binding : self.get_bindings())
-                     ++result;
-                 return result;
-             })
-        .def("contains", nb::overload_cast<formalism::datalog::PredicateRowIndex<T>>(&Set::contains, nb::const_), "binding"_a)
-        .def("contains", nb::overload_cast<formalism::datalog::PredicateRowView<T>>(&Set::contains, nb::const_), "binding"_a);
+        .def("count", [](const Set& self) { return self.facts->predicate[self.index].size(); })
+        .def("contains", [](const Set& self, formalism::datalog::PredicateRowIndex<T> binding) { return contains(*self.facts, binding); }, "binding"_a)
+        .def("contains", [](const Set& self, formalism::datalog::PredicateRowView<T> binding) { return contains(*self.facts, binding.data()); }, "binding"_a);
 }
 
 template<formalism::FactKind T>
@@ -101,22 +110,19 @@ void bind_function_fact_set(nb::module_& m, const char* name)
     using Binding = formalism::datalog::FunctionRowView<T>;
 
     nb::class_<Set>(m, name)
-        .def("get_function", &Set::get_function)
+        .def("get_function", [](const Set& self) { return self.facts->repository->view(urd::index<formalism::Function<T>>(self.index)); })
         .def(
             "get_binding_values",
             [](const Set& self)
             {
-                struct ValueOf
-                {
-                    const Set* set = nullptr;
-                    auto operator()(const Binding binding) const { return std::pair(binding, (*set)[binding]); }
-                };
-                const auto values = urd::transform(self.get_bindings(), ValueOf { &self });
-                return nb::make_iterator(nb::type<Set>(), "BindingValueIterator", values.begin(), values.end());
+                auto result = std::vector<std::pair<Binding, Interval>> {};
+                for (const auto& [id, interval] : self.facts->function[self.index])
+                    result.emplace_back(row(*self.facts, self.index, id), interval);
+                return result;
             },
             nb::keep_alive<0, 1>())
-        .def("count", [](const Set& self) { return self.get_values().size(); })
-        .def("get", [](const Set& self, Binding binding) { return self[binding]; }, "binding"_a);
+        .def("count", [](const Set& self) { return self.facts->function[self.index].size(); })
+        .def("get", [](const Set& self, Binding binding) { return value(*self.facts, binding.data()); }, "binding"_a);
 }
 
 template<formalism::FactKind T>
@@ -129,22 +135,22 @@ void bind_tagged_fact_sets(nb::module_& m, const char* name)
             "get_predicate_sets",
             [](const Sets& self)
             {
-                auto result = urd::Store<urd::sequence<const PredicateFactSet<T>*>> {};
-                for (const auto& set : self.predicate.get_sets())
-                    result.push_back(&set);
+                auto result = std::vector<PredicateFactSet<T>> {};
+                for (ygg::uint_t i = 0; i < self.predicate.size(); ++i)
+                    result.push_back({ &self, i });
                 return result;
             },
-            nb::rv_policy::reference_internal)
+            nb::keep_alive<0, 1>())
         .def(
             "get_function_sets",
             [](const Sets& self)
             {
-                auto result = urd::Store<urd::sequence<const FunctionFactSet<T>*>> {};
-                for (const auto& set : self.function.get_sets())
-                    result.push_back(&set);
+                auto result = std::vector<FunctionFactSet<T>> {};
+                for (ygg::uint_t i = 0; i < self.function.size(); ++i)
+                    result.push_back({ &self, i });
                 return result;
             },
-            nb::rv_policy::reference_internal);
+            nb::keep_alive<0, 1>());
 }
 
 inline void bind_fact_sets(nb::module_& m)
@@ -446,11 +452,11 @@ void bind_workspace(nb::module_& m, const std::string& name)
         cls.def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
-                [](Workspace& self, Atom atom) { return self.facts.fact_sets.predicate.insert(atom); },
+                [](Workspace& self, Atom atom) { return tyr::datalog::insert(self.facts.fact_sets, atom.get_row().data()); },
                 "atom"_a)
             .def(
                 "set_fluent_function",
-                [](Workspace& self, FunctionTerm term, const Interval& interval) { return self.facts.fact_sets.function.insert(term, interval); },
+                [](Workspace& self, FunctionTerm term, const Interval& interval) { return tyr::datalog::insert(self.facts.fact_sets, term.get_row().data(), interval); },
                 "function_term"_a,
                 "interval"_a);
     }
@@ -471,7 +477,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 [](Workspace& self, Atom atom)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(formalism::copy(atom, context).first);
+                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(atom, context).first.get_row().data());
                 },
                 "atom"_a)
             .def(
@@ -479,7 +485,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 [](Workspace& self, PredicateBinding binding)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return self.facts.fact_sets.predicate.insert(formalism::copy(binding, context).first);
+                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.data());
                 },
                 "binding"_a)
             .def(
@@ -487,7 +493,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return self.facts.fact_sets.function.insert(formalism::copy(binding, context).first, interval);
+                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.data(), interval);
                 },
                 "binding"_a,
                 "interval"_a)

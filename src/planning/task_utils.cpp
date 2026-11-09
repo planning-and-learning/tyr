@@ -68,7 +68,7 @@ void insert_fluent_atoms_to_fact_set(const urd::data<State<GroundTag>>& state,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
     for (const auto atom : state.get_atoms<formalism::FluentTag>(repository))
-        fact_sets.predicate.insert(fluent_to_fluent_atom.at(urd::resolve(atom, repository)));
+        datalog::insert(fact_sets, fluent_to_fluent_atom.at(urd::resolve(atom, repository)).get_row().data());
 }
 
 void insert_numeric_variables_to_fact_set(const urd::data<State<GroundTag>>& state,
@@ -78,7 +78,7 @@ void insert_numeric_variables_to_fact_set(const urd::data<State<GroundTag>>& sta
 {
     for (const auto& [fterm, value] : state.get_fterm_values<formalism::FluentTag>())
         if (const auto it = fluent_to_fluent_fterm.find(urd::resolve(fterm, repository)); it != fluent_to_fluent_fterm.end())
-            fact_sets.function.insert(it->second, value);
+            datalog::insert(fact_sets, it->second.get_row().data(), ygg::ClosedInterval<ygg::float_t>(value, value));
 }
 
 void insert_fluent_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
@@ -91,7 +91,7 @@ void insert_fluent_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
     {
         const auto atom = urd::resolve(atom_index, repository);
         if (const auto it = fluent_to_fluent_predicate.find(atom.get_predicate()); it != fluent_to_fluent_predicate.end())
-            fact_sets.predicate.insert(formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first);
+            datalog::insert(fact_sets, formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first.data());
     }
 }
 
@@ -105,7 +105,7 @@ void insert_derived_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
     {
         const auto atom = urd::resolve(atom_index, repository);
         if (const auto it = derived_to_fluent_predicate.find(atom.get_predicate()); it != derived_to_fluent_predicate.end())
-            fact_sets.predicate.insert(formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first);
+            datalog::insert(fact_sets, formalism::planning::merge_p2d(atom.get_row(), it->second, merge_context).first.data());
     }
 }
 
@@ -119,7 +119,7 @@ void insert_numeric_variables_to_fact_set(const urd::data<State<LiftedTag>>& sta
     {
         const auto fterm = urd::resolve(fterm_index, repository);
         if (const auto it = fluent_to_fluent_function.find(fterm.get_function()); it != fluent_to_fluent_function.end())
-            fact_sets.function.insert(formalism::planning::merge_p2d(fterm.get_row(), it->second, merge_context).first, value);
+            datalog::insert(fact_sets, formalism::planning::merge_p2d(fterm.get_row(), it->second, merge_context).first.data(), ygg::ClosedInterval<ygg::float_t>(value, value));
     }
 }
 
@@ -131,8 +131,8 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
                                       urd::Store<urd::sequence<formalism::datalog::PredicateRowView<formalism::FluentTag>>>& derived_bindings)
 {
     derived_bindings.clear();
-    for (const auto& set : fact_sets.predicate.get_sets())
-        for (const auto binding : set.get_bindings())
+    for (ygg::uint_t i = 0; i < fact_sets.predicate.size(); ++i)
+        for (const auto binding : datalog::rows(fact_sets, i))
             if (fluent_to_derived_predicate.contains(binding.get_relation()))
                 derived_bindings.push_back(binding);
 

@@ -39,7 +39,7 @@ struct RuleState
     urd::Store<urd::set<ygg::uint_t>, urd::dense> numeric_constraint_satisfied;
 };
 
-/// The states of the ground rules of relation kind R, by rule index (an urd::utils::Family member).
+/// The states of the ground rules of relation kind R, by rule index (an ygg::Family member).
 template<typename R>
 using RuleStates = urd::Store<urd::sequence<RuleState>>;
 

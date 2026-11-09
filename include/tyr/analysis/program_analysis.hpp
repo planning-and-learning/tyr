@@ -19,7 +19,7 @@ namespace tyr::analysis
 template<typename R>
 using RuleCompatibilityGraphMap = urd::Store<urd::map<urd::index<formalism::datalog::Rule<LiftedTag, R>>, kckp::Graph>>;
 
-using ProgramCompatibilityGraphs = urd::utils::Family<RuleCompatibilityGraphMap, formalism::PredicateTag, formalism::FunctionTag>;
+using ProgramCompatibilityGraphs = ygg::Family<RuleCompatibilityGraphMap, formalism::PredicateTag, formalism::FunctionTag>;
 
 struct ProgramAnalysis
 {

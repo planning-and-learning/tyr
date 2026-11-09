@@ -369,7 +369,7 @@ SuccessorGenerator<LiftedTag>::Impl::Evaluator::Evaluator(const Definition& defi
     static_extension_workspace(),
     effect_atom_index(definition.action_program.get_predicate_to_action_mapping(),
                       definition.action_program.get_conditional_effect_to_predicate_mapping(),
-                      workspace.facts.fact_sets.predicate,
+                      workspace.facts.fact_sets,
                       *workspace.workspace_repository),
     executor()
 {
@@ -455,8 +455,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         if (it == mapping.end())
             continue;  // A conditional effect's rule.
         const auto schema = it->second;
-        const auto& set = evaluator.workspace.facts.fact_sets.predicate.get_sets()[static_cast<ygg::uint_t>(predicate.index().value)];
-        for (const auto& binding : set.get_bindings())
+        for (const auto& binding : datalog::rows(evaluator.workspace.facts.fact_sets, predicate.index().value))
         {
             if (stop())
                 return false;

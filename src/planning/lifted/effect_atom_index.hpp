@@ -79,7 +79,7 @@ public:
     /// Indexes the atoms of `facts`, interned in `repository`, of the program with the given mappings.
     EffectAtomIndex(const AppPredicateToActionMapping& predicate_to_action,
                     const ConditionalEffectToPredicateMapping& effect_to_predicate,
-                    const datalog::PredicateFactSets<formalism::FluentTag>& facts,
+                    const datalog::TaggedFactSets<formalism::FluentTag>& facts,
                     const formalism::datalog::Repository& repository);
 
     /// Forgets the grouping after the facts changed; the storage is kept.
@@ -137,7 +137,7 @@ private:
                                         std::span<const urd::index<formalism::Object>> binding);
 
     const ConditionalEffectToPredicateMapping* m_effect_to_predicate;
-    const datalog::PredicateFactSets<formalism::FluentTag>* m_facts;
+    const datalog::TaggedFactSets<formalism::FluentTag>* m_facts;
     const formalism::datalog::Repository* m_repository;
     urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>> m_applicability_predicates;
     urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, Groups>> m_groups;

@@ -214,14 +214,14 @@ BottomUpCase parse_case(const boost::json::object& object)
 
 [[maybe_unused]] void append_atoms_by_predicate(const tyr::datalog::TaggedFactSets<tyr::formalism::FluentTag>& fact_sets, AtomsByPredicate& result)
 {
-    for (const auto& set : fact_sets.predicate.get_sets())
+    for (ygg::uint_t set = 0; set < fact_sets.predicate.size(); ++set)
     {
         auto bindings = urd::Store<urd::sequence<AtomBinding>> {};
-        for (const auto binding : set.get_bindings())
+        for (const auto binding : tyr::datalog::rows(fact_sets, set))
             bindings.push_back(AtomBinding { ygg::to_string(urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context())) });
         std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
-        const auto predicate = set.get_predicate();
+        const auto predicate = fact_sets.repository->view(urd::index<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(set));
         result.push_back(PredicateAtoms { predicate.get_name().str(), predicate.get_arity(), std::move(bindings) });
     }
 }

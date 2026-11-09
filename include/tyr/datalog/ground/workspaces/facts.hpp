@@ -43,10 +43,10 @@ struct FactsWorkspace<GroundTag>
                             formalism::datalog::FunctionTermValueListView<GroundTag, formalism::FluentTag> fterm_values,
                             const formalism::datalog::Repository& workspace_repository);
 
-    bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding) { return fact_sets.predicate.insert(binding); }
+    bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding) { return tyr::datalog::insert(fact_sets, binding); }
 
     bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return fact_sets.function.insert(binding, interval); }
+    { return tyr::datalog::insert(fact_sets, binding, interval); }
 
     void reset();
 };

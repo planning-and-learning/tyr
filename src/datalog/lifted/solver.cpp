@@ -111,7 +111,7 @@ public:
         run_active_rules<formalism::PredicateTag>(ctx);
         run_active_rules<formalism::FunctionTag>(ctx);
         // The rules consumed the facts committed since they last ran; the commit phase collects the next ones.
-        ctx.out().program().facts().delta_fact_sets.reset();
+        clear(ctx.out().program().facts().delta_fact_sets);
         reduce_worker_results<formalism::PredicateTag>(ctx, cost_buckets, pending_achievers);
         return reduce_worker_results<formalism::FunctionTag>(ctx, cost_buckets, pending_achievers);
     }
@@ -157,8 +157,9 @@ private:
     Cost get_delta_cost(StratumExecutionContext<AP, TP, CP>& ctx) const
     {
         const auto& program_out = ctx.out().program();
-        for (const auto& set : program_out.facts().delta_fact_sets.predicate.get_sets())
-            for (const auto atom : set.get_bindings())
+        const auto& delta = program_out.facts().delta_fact_sets;
+        for (ygg::uint_t i = 0; i < delta.predicate.size(); ++i)
+            for (const auto atom : rows(delta, i))
                 if (const auto* annotation = program_out.annotations().find(atom.data()))
                     return get_cost(*annotation);
         return static_cast<Cost>(0);
@@ -183,10 +184,10 @@ private:
         m_goal_cutoff_bound = get_delta_cost(ctx) + m_min_edge_cost;
         m_goal_final.clear();
         const auto& program_out = ctx.out().program();
-        const auto& facts = program_out.facts().fact_sets.predicate;
+        const auto& facts = program_out.facts().fact_sets;
         for (size_t i = 0; i < m_goal_atoms.size(); ++i)
         {
-            if (facts.contains(m_goal_atoms[i]))
+            if (contains(facts, m_goal_atoms[i]))
                 observe_goal_atom(i, static_cast<Cost>(0));
             else if (const auto* annotation = program_out.annotations().find(m_goal_atoms[i]))
                 observe_goal_atom(i, get_cost(*annotation));
@@ -390,7 +391,7 @@ private:
             binding->relation = head_atom.get_predicate().index();
             formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->values);
             const auto head = formalism::datalog::insert(ground_context.destination(), *binding).first;
-            if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(head))
+            if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<formalism::FluentTag>(), head.data()))
                 continue;
             heads.push_back(head.data());
         }
@@ -550,7 +551,7 @@ private:
 
         for (size_t i = 0; i < literals.size(); ++i)
         {
-            for (const auto atom : delta_fact_sets.predicate.get_sets()[ygg::uint_t(infos[i].predicate.value)].get_bindings())
+            for (const auto atom : rows(delta_fact_sets, infos[i].predicate.value))
             {
                 if (!match_anchor(graph.get_graph_layout(), infos[i], atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
                     continue;
@@ -697,7 +698,7 @@ private:
                 if constexpr (std::same_as<R, formalism::PredicateTag>)
                     reduce_predicate_head_updates(worker.iteration.head_updates,
                                                   annotation_policy,
-                                                  program_out.facts().fact_sets.predicate,
+                                                  program_out.facts().fact_sets,
                                                   program_out.delta_annotations(),
                                                   program_out.annotations(),
                                                   cost_buckets,

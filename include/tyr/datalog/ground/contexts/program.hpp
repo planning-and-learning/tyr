@@ -100,9 +100,11 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     void initialize(const Range& fluent_atoms)
     {
         m_out.facts().reset();
-        m_out.facts().fact_sets.function.insert(m_in.program().template get_fterm_values<formalism::FluentTag>());
+        auto& facts = m_out.facts().fact_sets;
+        for (const auto fterm_value : m_in.program().template get_fterm_values<formalism::FluentTag>())
+            insert(facts, fterm_value.get_fterm().get_row().data(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
         for (const auto atom : fluent_atoms)
-            m_out.facts().fact_sets.predicate.insert(atom);
+            insert(facts, atom.get_row().data());
         initialize();
     }
 
@@ -118,18 +120,17 @@ private:
         m_out.annotation_policy().clear_achievers();
         m_out.tp().reset();
 
-        for (const auto& set : m_out.facts().fact_sets.predicate.get_sets())
-            for (const auto binding : set.get_bindings())
-                m_out.annotation_policy().initialize_annotation(binding.data(), m_out.annotations());
+        const auto& facts = m_out.facts().fact_sets;
+        for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
+            for (const auto id : facts.predicate[i])
+                m_out.annotation_policy().initialize_annotation(formalism::datalog::PredicateRowIndex<formalism::FluentTag> { urd::index<formalism::Predicate<formalism::FluentTag>>(i), id },
+                                                                m_out.annotations());
 
-        for (const auto& set : m_out.facts().fact_sets.function.get_sets())
-        {
-            const auto bindings = set.get_bindings();
-            const auto& values = set.get_values();
-            assert(bindings.size() == values.size());
-            for (size_t i = 0; i < bindings.size(); ++i)
-                m_out.annotation_policy().initialize_annotation(bindings[i].data(), values[i], m_out.numeric_annotations());
-        }
+        for (ygg::uint_t i = 0; i < facts.function.size(); ++i)
+            for (const auto& [id, interval] : facts.function[i])
+                m_out.annotation_policy().initialize_annotation(formalism::datalog::FunctionRowIndex<formalism::FluentTag> { urd::index<formalism::Function<formalism::FluentTag>>(i), id },
+                                                                interval,
+                                                                m_out.numeric_annotations());
     }
 
     void reset_from_current_facts()

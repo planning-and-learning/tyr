@@ -25,7 +25,7 @@
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
-#include <urd/utils/family.hpp>
+#include <yggdrasil/core/family.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
@@ -98,7 +98,7 @@ struct ProgramVariableDomains
     PredicateDomainMap<formalism::FluentTag> fluent_predicate_domains;
     FunctionDomainMap<formalism::StaticTag> static_function_domains;
     FunctionDomainMap<formalism::FluentTag> fluent_function_domains;
-    urd::utils::Family<RuleDomainMap, formalism::PredicateTag, formalism::FunctionTag> rule_domains;
+    ygg::Family<RuleDomainMap, formalism::PredicateTag, formalism::FunctionTag> rule_domains;
 };
 
 struct TaskVariableDomains

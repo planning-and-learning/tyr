@@ -527,21 +527,13 @@ TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListV
 template<formalism::FactKind T>
 void TaggedAssignmentSets<T>::insert(const TaggedFactSets<T>& fact_sets)
 {
-    for (const auto& set : fact_sets.predicate.get_sets())
-        for (const auto binding : set.get_bindings())
+    for (ygg::uint_t i = 0; i < fact_sets.predicate.size(); ++i)
+        for (const auto binding : rows(fact_sets, i))
             predicate.insert(binding);
 
-    for (ygg::uint_t i = 0; i < fact_sets.function.get_sets().size(); ++i)
-    {
-        auto& self = function.get_sets()[i];
-        const auto& other = fact_sets.function.get_sets()[i];
-        const auto bindings = other.get_bindings();
-        const auto& values = other.get_values();
-
-        assert(bindings.size() == values.size());
-        for (size_t j = 0; j < bindings.size(); ++j)
-            self.insert(bindings[j], values[j]);
-    }
+    for (ygg::uint_t i = 0; i < fact_sets.function.size(); ++i)
+        for (const auto& [id, interval] : fact_sets.function[i])
+            function.get_sets()[i].insert(row(fact_sets, i, id), interval);
 }
 
 template<formalism::FactKind T>

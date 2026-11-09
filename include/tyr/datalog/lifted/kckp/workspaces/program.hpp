@@ -29,7 +29,7 @@
 #include <optional>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <urd/utils/family.hpp>
+#include <yggdrasil/core/family.hpp>
 
 namespace tyr::datalog
 {
@@ -46,7 +46,7 @@ using ConstRuleWorkspaces = urd::Store<urd::sequence<std::optional<ConstRuleWork
 struct ConstKCKPWorkspace
 {
     TaggedAssignmentSets<formalism::StaticTag> assignment_sets;
-    urd::utils::Family<ConstRuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
+    ygg::Family<ConstRuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
 
     ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag> program,
                        formalism::datalog::Repository& program_repository,
@@ -59,7 +59,7 @@ struct ConstKCKPWorkspace
 struct KCKPWorkspace
 {
     TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
-    urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
+    ygg::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
 
     KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                   formalism::datalog::ProgramView<LiftedTag> program,
@@ -71,7 +71,7 @@ struct KCKPWorkspace
 };
 
 /// Prints the aggregated statistics of the rules and of their workers.
-void print_rule_statistics(const urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules);
+void print_rule_statistics(const ygg::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules);
 
 }
 

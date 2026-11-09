@@ -44,8 +44,8 @@ template<typename Context>
 PredicateRowViews binding_views(const Context& ctx)
 {
     auto result = PredicateRowViews {};
-    for (const auto& set : ctx.out().facts().fact_sets.predicate.get_sets())
-        for (const auto binding : set.get_bindings())
+    for (ygg::uint_t set = 0; set < ctx.out().facts().fact_sets.predicate.size(); ++set)
+        for (const auto binding : tyr::datalog::rows(ctx.out().facts().fact_sets, set))
             result.push_back(binding);
     return result;
 }
@@ -362,8 +362,8 @@ TEST(TyrDatalogGroundQueueTest, NoAnnotationPolicyDerivesFactsWithoutStoringAnno
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(atom.get_row()));
-    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, atom.get_row().data()));
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().data()), ygg::ClosedInterval<ygg::float_t>(3, 3));
     EXPECT_EQ(ctx.out().annotations().find(atom.get_row().data()), nullptr);
     EXPECT_EQ(ctx.out().numeric_annotations().size(), 0);
 }
@@ -645,9 +645,9 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationCommitsMixedLowestCostBucket)
     ctx.out().annotations().insert_or_assign(expensive_source.get_row().data(), datalog::BaseAnnotation(static_cast<datalog::Cost>(2)));
     tyr::datalog::compute_model(ctx);
 
-    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(goal_atom.get_row()));
-    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(peer_atom.get_row()));
-    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, goal_atom.get_row().data()));
+    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, peer_atom.get_row().data()));
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().data()), ygg::ClosedInterval<ygg::float_t>(3, 3));
     const auto* goal_annotation = ctx.out().annotations().find(goal_atom.get_row().data());
     ASSERT_NE(goal_annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*goal_annotation), 0);
@@ -784,8 +784,8 @@ TEST(TyrDatalogGroundQueueTest, DerivedNumericIntervalUnblocksRuleAndRecordsSupp
 
     tyr::datalog::compute_model(ctx);
 
-    EXPECT_TRUE(ctx.out().facts().fact_sets.predicate.contains(head.get_row()));
-    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_TRUE(tyr::datalog::contains(ctx.out().facts().fact_sets, head.get_row().data()));
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().data()), ygg::ClosedInterval<ygg::float_t>(3, 3));
     const auto* achievers = ctx.out().annotation_policy().find_achievers(head.get_row().data());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
@@ -817,7 +817,7 @@ TEST(TyrDatalogGroundQueueTest, SameCostBroadAndContainedNumericIntervalsRetainE
 
     const auto broad = ygg::ClosedInterval<ygg::float_t>(0, 4);
     const auto contained = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], broad);
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().data()), broad);
     EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row().data(), broad), nullptr);
     EXPECT_NE(ctx.out().numeric_annotations().find(term.get_row().data(), contained), nullptr);
 }
@@ -930,7 +930,7 @@ TEST(TyrDatalogGroundQueueTest, NumericTransitionCreditOnlyReducesTheLocalEdge)
 
     tyr::datalog::compute_model(ctx);
 
-    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], interval);
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().data()), interval);
     const auto* annotation = ctx.out().numeric_annotations().find(term.get_row().data(), interval);
     ASSERT_NE(annotation, nullptr);
     EXPECT_EQ(datalog::get_cost(*annotation), 5);
@@ -960,7 +960,7 @@ TEST(TyrDatalogGroundQueueTest, TransitionCreditDoesNotTurnRawPositiveEdgeIntoFr
     ctx.initialize(fixture.initial_fluent_atoms);
     tyr::datalog::compute_model(ctx);
 
-    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(0, 1));
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().data()), ygg::ClosedInterval<ygg::float_t>(0, 1));
     EXPECT_TRUE(ctx.out().tp().check(datalog::FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }));
 }
 
@@ -1018,11 +1018,11 @@ TEST(TyrDatalogGroundQueueTest, ExplicitFluentAtomsRestoreDeclaredInitialFunctio
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     auto workspace = datalog::ProgramWorkspace<GroundTag>(const_workspace);
     auto ctx = datalog::ProgramExecutionContext(workspace);
-    ctx.out().facts().fact_sets.function.insert(term, 9);
+    tyr::datalog::insert(ctx.out().facts().fact_sets, term.get_row().data(), ygg::ClosedInterval<ygg::float_t>(9, 9));
 
     ctx.initialize(fixture.initial_fluent_atoms);
 
-    EXPECT_EQ(ctx.out().facts().fact_sets.function[term], ygg::ClosedInterval<ygg::float_t>(3, 3));
+    EXPECT_EQ(tyr::datalog::value(ctx.out().facts().fact_sets, term.get_row().data()), ygg::ClosedInterval<ygg::float_t>(3, 3));
 }
 
 TEST(TyrDatalogGroundQueueTest, PredicateRuleWithNegativeFluentLiteralIsRejected)

@@ -33,7 +33,7 @@
 #include <urd/store.hpp>
 #include <vector>
 #include <urd/elements/flat.hpp>
-#include <urd/utils/family.hpp>
+#include <yggdrasil/core/family.hpp>
 
 namespace tyr::analysis
 {
@@ -48,7 +48,7 @@ struct TypedListenerStratum
     urd::Store<urd::map<urd::index<formalism::Function<formalism::FluentTag>>, RuleIndexSet<R>>> functions;
 };
 
-using ListenerStratum = urd::utils::Family<TypedListenerStratum, formalism::PredicateTag, formalism::FunctionTag>;
+using ListenerStratum = ygg::Family<TypedListenerStratum, formalism::PredicateTag, formalism::FunctionTag>;
 
 struct ListenerStrata
 {

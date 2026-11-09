@@ -137,7 +137,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         out.engine().clear();
         out.cost_buckets().clear();
         out.pending_achievers().clear();
-        out.facts().delta_fact_sets.reset();
+        tyr::datalog::clear(out.facts().delta_fact_sets);
         out.reset_numeric_support_selector();
         out.annotations().clear();
         out.numeric_annotations().clear();
@@ -167,24 +167,23 @@ private:
         out.tp().reset();
         // The engine's index is rebuilt from the facts the evaluation starts with.
         out.engine().assignment_sets.reset();
-        for (const auto& set : out.facts().fact_sets.predicate.get_sets())
+        const auto& facts = out.facts().fact_sets;
+        for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
         {
-            for (const auto binding : set.get_bindings())
+            for (const auto binding : rows(facts, i))
             {
                 out.annotation_policy().initialize_annotation(binding.data(), out.annotations());
                 out.engine().assignment_sets.predicate.insert(binding);
             }
         }
 
-        for (const auto& set : out.facts().fact_sets.function.get_sets())
+        for (ygg::uint_t i = 0; i < facts.function.size(); ++i)
         {
-            const auto bindings = set.get_bindings();
-            const auto& values = set.get_values();
-            assert(bindings.size() == values.size());
-            for (size_t i = 0; i < bindings.size(); ++i)
+            for (const auto& [id, interval] : facts.function[i])
             {
-                out.annotation_policy().initialize_annotation(bindings[i].data(), values[i], out.numeric_annotations());
-                out.engine().assignment_sets.function.insert(bindings[i], values[i]);
+                const auto binding = row(facts, i, id);
+                out.annotation_policy().initialize_annotation(binding.data(), interval, out.numeric_annotations());
+                out.engine().assignment_sets.function.insert(binding, interval);
             }
         }
 

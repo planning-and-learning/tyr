@@ -40,11 +40,6 @@ struct TaggedAssignmentSets;
 class AssignmentSets;
 
 template<formalism::FactKind T>
-class PredicateFactSet;
-template<formalism::FactKind T>
-class FunctionFactSet;
-
-template<formalism::FactKind T>
 struct TaggedFactSets;
 
 class FactSets;

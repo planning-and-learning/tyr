@@ -71,7 +71,6 @@ add_library(
     datalog/lifted/kckp/assignment_sets.cpp
     datalog/lifted/solver.cpp
     datalog/lifted/kckp/consistency_graph.cpp
-    datalog/fact_set.cpp
     datalog/ground/programs/program.cpp
     datalog/ground/workspaces/facts.cpp
     datalog/ground/workspaces/program.cpp

@@ -39,7 +39,7 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include <urd/utils/family.hpp>
+#include <yggdrasil/core/family.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -140,12 +140,12 @@ private:
     template<typename Node>
     using NodeDependents = urd::Store<urd::map<Node, urd::Store<urd::sequence<Precondition>>>>;
     /// Per kind of node (Precondition's alternatives).
-    using Nodes = urd::utils::Family<NodeSet, PredicateHead, NumericNode>;
+    using Nodes = ygg::Family<NodeSet, PredicateHead, NumericNode>;
 
     Nodes m_goal_zone;
     Nodes m_before_goal_zone;
     Nodes m_before_goal_zone_explored;
-    urd::utils::Family<NodeDependents, PredicateHead, NumericNode> m_before_goal_zone_dependents;
+    ygg::Family<NodeDependents, PredicateHead, NumericNode> m_before_goal_zone_dependents;
     urd::Store<urd::map<ActionRow, datalog::Cost>> m_cut;
     urd::Store<urd::map<RuleEdge, datalog::Cost>> m_rule_cut;
     urd::Store<urd::map<NumericEdge, datalog::Cost>> m_numeric_cut;

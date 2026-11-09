@@ -36,8 +36,8 @@ TEST(TyrDatalogLiftedBottomUpTest, NoAnnotationPolicyComputesZeroCostNumericReac
     tyr::datalog::compute_model(context);
 
     const auto expected = ygg::ClosedInterval<ygg::float_t>(3, 3);
-    EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
-    EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], expected);
+    EXPECT_TRUE(tyr::datalog::contains(workspace.facts.fact_sets, fixture.goal.data()));
+    EXPECT_EQ(tyr::datalog::value(workspace.facts.fact_sets, fixture.target.data()), expected);
     EXPECT_EQ(workspace.annotations.find(fixture.goal.data()), nullptr);
     EXPECT_EQ(workspace.numeric_annotations.size(), 0);
 }
@@ -60,7 +60,7 @@ TEST(TyrDatalogLiftedBottomUpTest, SingleCoreTerminationExposesOnlyOptimalGoalFr
 
     tyr::datalog::execute_model(context, *execution_context);
 
-    ASSERT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
+    ASSERT_TRUE(tyr::datalog::contains(workspace.facts.fact_sets, fixture.goal.data()));
     const auto* achievers = workspace.annotation_policy.find_achievers(fixture.goal.data());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
@@ -143,8 +143,8 @@ TEST(TyrDatalogLiftedBottomUpTest, StoredNumericCertificateCanStillBecomeAvailab
 
     tyr::datalog::compute_model(context);
 
-    EXPECT_EQ(workspace.facts.fact_sets.function[fixture.source], source_interval);
-    EXPECT_EQ(workspace.facts.fact_sets.function[fixture.target], source_interval);
+    EXPECT_EQ(tyr::datalog::value(workspace.facts.fact_sets, fixture.source.data()), source_interval);
+    EXPECT_EQ(tyr::datalog::value(workspace.facts.fact_sets, fixture.target.data()), source_interval);
 }
 
 TEST(TyrDatalogLiftedBottomUpTest, RepricesTentativePredicateAfterAvailableNumericCertificateImproves)
@@ -168,7 +168,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepricesTentativePredicateAfterAvailableNumer
     const auto* goal = workspace.annotations.find(fixture.goal.data());
     ASSERT_NE(source, nullptr);
     ASSERT_NE(goal, nullptr);
-    EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(fixture.goal));
+    EXPECT_TRUE(tyr::datalog::contains(workspace.facts.fact_sets, fixture.goal.data()));
     EXPECT_EQ(tyr::datalog::get_cost(*source), 2);
     EXPECT_EQ(tyr::datalog::get_cost(*goal), 5);
 }
@@ -254,12 +254,12 @@ TEST(TyrDatalogLiftedBottomUpTest, GroundAndLiftedShareResolvedNumericCandidateS
 
     tyr::datalog::compute_model(ground_context);
 
-    EXPECT_TRUE(lifted_workspace.facts.fact_sets.predicate.contains(fixture.goal));
-    EXPECT_TRUE(ground_workspace.facts.fact_sets.predicate.contains(fixture.goal));
-    EXPECT_EQ(lifted_workspace.facts.fact_sets.function[fixture.source], source_interval);
-    EXPECT_EQ(ground_workspace.facts.fact_sets.function[ground_source], source_interval);
-    EXPECT_EQ(lifted_workspace.facts.fact_sets.function[fixture.target], source_interval);
-    EXPECT_EQ(ground_workspace.facts.fact_sets.function[ground_target], source_interval);
+    EXPECT_TRUE(tyr::datalog::contains(lifted_workspace.facts.fact_sets, fixture.goal.data()));
+    EXPECT_TRUE(tyr::datalog::contains(ground_workspace.facts.fact_sets, fixture.goal.data()));
+    EXPECT_EQ(tyr::datalog::value(lifted_workspace.facts.fact_sets, fixture.source.data()), source_interval);
+    EXPECT_EQ(tyr::datalog::value(ground_workspace.facts.fact_sets, ground_source.get_row().data()), source_interval);
+    EXPECT_EQ(tyr::datalog::value(lifted_workspace.facts.fact_sets, fixture.target.data()), source_interval);
+    EXPECT_EQ(tyr::datalog::value(ground_workspace.facts.fact_sets, ground_target.get_row().data()), source_interval);
 
     const auto* lifted_annotation = lifted_workspace.numeric_annotations.find(fixture.target.data(), source_interval);
     const auto* ground_annotation = ground_workspace.numeric_annotations.find(ground_target.get_row().data(), source_interval);
@@ -381,7 +381,7 @@ TEST(TyrDatalogLiftedBottomUpTest, RepeatedArgumentsNewAtomRecordsExistingHeadAc
     auto context = tyr::datalog::ProgramExecutionContext(workspace);
     tyr::datalog::compute_model(context);
 
-    ASSERT_TRUE(workspace.facts.fact_sets.predicate.contains(goal));
+    ASSERT_TRUE(tyr::datalog::contains(workspace.facts.fact_sets, goal.data()));
     const auto* achievers = workspace.annotation_policy.find_achievers(goal.data());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 2);
@@ -485,14 +485,14 @@ TEST(TyrDatalogLiftedBottomUpTest, NewHigherArityAtomsGenerateBindingsWithoutDel
     tyr::datalog::compute_model(context);
 
     const auto target = make_binding(h, { a.index(), b.index(), c.index() });
-    ASSERT_TRUE(workspace.facts.fact_sets.predicate.contains(target.data()));
+    ASSERT_TRUE(tyr::datalog::contains(workspace.facts.fact_sets, target.data()));
     const auto* achievers = workspace.annotation_policy.find_achievers(target.data());
     ASSERT_NE(achievers, nullptr);
     EXPECT_EQ(achievers->size(), 1);
     for (const auto other : { make_binding(h, { a.index(), b.index(), d.index() }),
                               make_binding(h, { d.index(), b.index(), c.index() }),
                               make_binding(h, { a.index(), d.index(), c.index() }) })
-        EXPECT_TRUE(workspace.facts.fact_sets.predicate.contains(other.data()));
+        EXPECT_TRUE(tyr::datalog::contains(workspace.facts.fact_sets, other.data()));
 
     // The h rule rejected (a,b,c) before t(a,b,c) existed, so the new atom, not a delta edge, generated it.
     const auto& h_rule = workspace.engine.rules.get<tyr::formalism::PredicateTag>()[static_cast<ygg::uint_t>(derive_h.index().value)];

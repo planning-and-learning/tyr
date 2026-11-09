@@ -20,7 +20,8 @@
 
 #include "tyr/formalism/datalog/repository.hpp"
 
-#include <urd/repr/maps/index_map.hpp>
+#include <urd/repr/maps/ordered_map.hpp>
+#include <urd/repr/values/sparse_set.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -37,175 +38,145 @@
 namespace tyr::datalog
 {
 
-namespace detail
-{
-
-/// The rows of a predicate's facts: a bitset over row indices that clears only the words it set.
-using PredicateFactRows = urd::Store<urd::set<ygg::uint_t>, urd::dense, urd::proportional_clear>;
-
-/// A fact's row from its bit.
+/// The facts of one predicate: the ids of their rows in the predicate's pool (a bitset that clears only the words it
+/// set). Read them as row views with ygg::rows_view(predicate, facts, repository).
 template<formalism::FactKind T>
-struct RowOfFact
-{
-    urd::index<ygg::Row<formalism::Predicate<T>>> operator()(ygg::uint_t row) const noexcept { return urd::index<ygg::Row<formalism::Predicate<T>>> { row }; }
-};
+using PredicateFacts = urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<T>>>>, urd::dense, urd::proportional_clear>;
 
+/// The facts of one function: the interval of each of its rows, in insertion order.
 template<formalism::FactKind T>
-using PredicateFactRowRange = urd::transformed_range<PredicateFactRows, RowOfFact<T>>;
+using FunctionFacts = urd::Store<urd::map<urd::index<ygg::Row<formalism::Function<T>>>, ygg::ClosedInterval<ygg::float_t>>, urd::dense, urd::insertion_ordered>;
 
-template<formalism::FactKind T>
-using PredicateRowRangeView = ygg::RowsView<formalism::Predicate<T>, PredicateFactRowRange<T>, formalism::datalog::Repository>;
-
-}
-
-template<formalism::FactKind T>
-using PredicateRowViewRange = detail::PredicateRowRangeView<T>;
-
-template<formalism::FactKind T>
-class PredicateFactSet
-{
-private:
-    formalism::datalog::PredicateView<T> m_predicate;
-    const formalism::datalog::Repository* m_repository;
-
-    urd::index<formalism::Predicate<T>> m_predicate_index;
-
-    detail::PredicateFactRows m_rows;
-
-public:
-    explicit PredicateFactSet(formalism::datalog::PredicateView<T> predicate, const formalism::datalog::Repository& repository);
-
-    [[nodiscard]] auto get_predicate() const noexcept { return m_predicate; }
-
-    void reset() noexcept;
-
-    bool insert(const PredicateFactSet<T>& other);
-    bool insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
-    bool insert(formalism::datalog::PredicateRowIndex<T> binding);
-    bool insert(formalism::datalog::PredicateRowView<T> binding) { return insert(binding.data()); }
-    bool insert(formalism::datalog::PredicateRowForwardRangeView<T> bindings);
-
-    [[nodiscard]] bool contains(formalism::datalog::PredicateRowIndex<T> binding) const noexcept;
-    [[nodiscard]] bool contains(formalism::datalog::PredicateRowView<T> binding) const noexcept { return contains(binding.data()); }
-
-    [[nodiscard]] PredicateRowViewRange<T> get_bindings() const noexcept;
-};
-
-template<formalism::FactKind T>
-class PredicateFactSets
-{
-private:
-    urd::Store<urd::sequence<PredicateFactSet<T>>> m_sets;
-
-public:
-    explicit PredicateFactSets(formalism::datalog::PredicateListView<T> predicates, const formalism::datalog::Repository& repository);
-
-    void reset() noexcept;
-
-    bool insert(const PredicateFactSets<T>& other);
-    bool insert(formalism::datalog::AtomView<GroundTag, T> ground_atom);
-    bool insert(formalism::datalog::PredicateRowIndex<T> binding);
-    bool insert(formalism::datalog::PredicateRowView<T> binding) { return insert(binding.data()); }
-    bool insert(formalism::datalog::PredicateRowForwardRangeView<T> bindings);
-
-    [[nodiscard]] bool contains(formalism::datalog::PredicateRowIndex<T> binding) const noexcept;
-    [[nodiscard]] bool contains(formalism::datalog::PredicateRowView<T> binding) const noexcept { return contains(binding.data()); }
-
-    [[nodiscard]] const urd::Store<urd::sequence<PredicateFactSet<T>>>& get_sets() const noexcept;
-};
-
-template<formalism::FactKind T>
-class FunctionFactSet
-{
-private:
-    formalism::datalog::FunctionView<T> m_function;
-    const formalism::datalog::Repository* m_repository;
-
-    urd::index<formalism::Function<T>> m_function_index;
-    urd::Store<urd::map<urd::index<ygg::Row<formalism::Function<T>>>, ygg::uint_t>, urd::dense, urd::constant_clear> m_remap;
-    urd::Store<urd::sequence<urd::index<ygg::Row<formalism::Function<T>>>>> m_bindings;
-    urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>> m_values;
-
-public:
-    explicit FunctionFactSet(formalism::datalog::FunctionView<T> function, const formalism::datalog::Repository& repository);
-
-    [[nodiscard]] auto get_function() const noexcept { return m_function; }
-
-    void reset() noexcept;
-
-    bool insert(const FunctionFactSet& other);
-    bool insert(formalism::datalog::FunctionRowIndex<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
-    bool insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return insert(binding.data(), std::move(interval)); }
-    bool insert(formalism::datalog::FunctionRowView<T> binding, ygg::float_t value);
-    bool insert(formalism::datalog::FunctionRowRandomAccessRangeView<T> bindings, const urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>>& intervals);
-    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, const ygg::ClosedInterval<ygg::float_t>& interval);
-    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> fterm, ygg::float_t value);
-    bool insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value);
-    bool insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
-
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionRowIndex<T> binding) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionRowView<T> binding) const noexcept { return (*this)[binding.data()]; }
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionTermView<GroundTag, T> fterm) const noexcept;
-
-    [[nodiscard]] formalism::datalog::FunctionRowRandomAccessRangeView<T> get_bindings() const noexcept;
-    [[nodiscard]] const urd::Store<urd::sequence<ygg::ClosedInterval<ygg::float_t>>>& get_values() const noexcept;
-};
-
-template<formalism::FactKind T>
-class FunctionFactSets
-{
-private:
-    urd::Store<urd::sequence<FunctionFactSet<T>>> m_sets;
-
-public:
-    explicit FunctionFactSets(formalism::datalog::FunctionListView<T> functions, const formalism::datalog::Repository& repository);
-
-    void reset() noexcept;
-
-    bool insert(const FunctionFactSets& other);
-    bool insert(formalism::datalog::FunctionRowIndex<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval);
-    bool insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return insert(binding.data(), interval); }
-    bool insert(formalism::datalog::FunctionRowView<T> binding, ygg::float_t value);
-    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval);
-    bool insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value);
-    bool insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values);
-    bool insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value);
-    bool insert(formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values);
-
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionRowIndex<T> binding) const noexcept;
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionRowView<T> binding) const noexcept { return (*this)[binding.data()]; }
-    ygg::ClosedInterval<ygg::float_t> operator[](formalism::datalog::FunctionTermView<GroundTag, T> fterm) const noexcept;
-
-    [[nodiscard]] const urd::Store<urd::sequence<FunctionFactSet<T>>>& get_sets() const noexcept;
-};
-
+/// The facts of kind T: those of each predicate and of each function, at its index, and the repository their rows are
+/// read through.
 template<formalism::FactKind T>
 struct TaggedFactSets
 {
-    PredicateFactSets<T> predicate;
-    FunctionFactSets<T> function;
+    urd::Store<urd::sequence<PredicateFacts<T>>> predicate;
+    urd::Store<urd::sequence<FunctionFacts<T>>> function;
+    const formalism::datalog::Repository* repository;
 
     TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
                    formalism::datalog::FunctionListView<T> functions,
-                   const formalism::datalog::Repository& repository);
-
+                   const formalism::datalog::Repository& repository_);
+    /// Facts of predicates only (no functions).
+    TaggedFactSets(formalism::datalog::PredicateListView<T> predicates, const formalism::datalog::Repository& repository_) :
+        predicate(predicates.size()),
+        function(),
+        repository(&repository_)
+    {
+    }
+    /// With the atoms and function values given.
     TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
                    formalism::datalog::FunctionListView<T> functions,
                    formalism::datalog::AtomListView<GroundTag, T> atoms,
                    formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values,
-                   const formalism::datalog::Repository& repository);
-
-    void insert(const TaggedFactSets<T>& other);
-
-    void reset() noexcept;
+                   const formalism::datalog::Repository& repository_);
 };
+
+/// The facts of the predicate at `index`, as row views.
+template<formalism::FactKind T>
+[[nodiscard]] auto rows(const TaggedFactSets<T>& facts, ygg::uint_t index)
+{ return ygg::rows_view(urd::index<formalism::Predicate<T>>(index), facts.predicate[index], *facts.repository); }
+
+/// The fact of the function at `index` with row `row`, as a row view.
+template<formalism::FactKind T>
+[[nodiscard]] auto row(const TaggedFactSets<T>& facts, ygg::uint_t index, urd::index<ygg::Row<formalism::Function<T>>> id)
+{ return facts.repository->view(formalism::datalog::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(index), id }); }
+
+/// Adds the fact; whether it is new.
+template<formalism::FactKind T>
+bool insert(TaggedFactSets<T>& facts, formalism::datalog::PredicateRowIndex<T> fact)
+{ return facts.predicate[fact.relation.value].insert(fact.row).second; }
+
+template<formalism::FactKind T>
+[[nodiscard]] bool contains(const TaggedFactSets<T>& facts, formalism::datalog::PredicateRowIndex<T> fact)
+{ return facts.predicate[fact.relation.value].contains(fact.row); }
+
+/// Widens the fact's interval by `interval` (its hull), adding it where it has none; whether the interval changed.
+template<formalism::FactKind T>
+bool insert(TaggedFactSets<T>& facts, formalism::datalog::FunctionRowIndex<T> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
+{
+    auto& values = facts.function[fact.relation.value];
+    const auto [it, inserted] = values.try_emplace(fact.row, interval);
+    if (inserted)
+        return true;
+    auto& held = values.at(fact.row);
+    const auto widened = hull(held, interval);
+    if (widened == held)
+        return false;
+    held = widened;
+    return true;
+}
+
+/// The fact's interval; empty where it has none.
+template<formalism::FactKind T>
+[[nodiscard]] ygg::ClosedInterval<ygg::float_t> value(const TaggedFactSets<T>& facts, formalism::datalog::FunctionRowIndex<T> fact)
+{
+    const auto& values = facts.function[fact.relation.value];
+    return values.contains(fact.row) ? values.at(fact.row) : ygg::ClosedInterval<ygg::float_t>();
+}
+
+/// Adds the facts of `other`; whether any fact or interval changed.
+template<formalism::FactKind T>
+bool insert(TaggedFactSets<T>& facts, const TaggedFactSets<T>& other)
+{
+    auto changed = false;
+    for (ygg::uint_t i = 0; i < other.predicate.size(); ++i)
+        for (const auto row : other.predicate[i])
+            changed |= facts.predicate[i].insert(row).second;
+    for (ygg::uint_t i = 0; i < other.function.size(); ++i)
+        for (const auto& [row, interval] : other.function[i])
+            changed |= insert(facts, formalism::datalog::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(i), row }, interval);
+    return changed;
+}
+
+/// Removes every fact, keeping storage.
+template<formalism::FactKind T>
+void clear(TaggedFactSets<T>& facts) noexcept
+{
+    for (auto& rows : facts.predicate)
+        rows.clear();
+    for (auto& values : facts.function)
+        values.clear();
+}
+
+template<formalism::FactKind T>
+TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
+                                  formalism::datalog::FunctionListView<T> functions,
+                                  const formalism::datalog::Repository& repository_) :
+    predicate(predicates.size()),
+    function(functions.size()),
+    repository(&repository_)
+{
+    for (ygg::uint_t i = 0; i < predicates.size(); ++i)
+        assert(predicates[i].index().value == i);
+    for (ygg::uint_t i = 0; i < functions.size(); ++i)
+        assert(functions[i].index().value == i);
+}
+
+template<formalism::FactKind T>
+TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
+                                  formalism::datalog::FunctionListView<T> functions,
+                                  formalism::datalog::AtomListView<GroundTag, T> atoms,
+                                  formalism::datalog::FunctionTermValueListView<GroundTag, T> fterm_values,
+                                  const formalism::datalog::Repository& repository_) :
+    TaggedFactSets(predicates, functions, repository_)
+{
+    for (const auto atom : atoms)
+        insert(*this, atom.get_row().data());
+    for (const auto fterm_value : fterm_values)
+        insert(*this, fterm_value.get_fterm().get_row().data(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+}
 
 class FactSets
 {
 public:
-    FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const TaggedFactSets<formalism::FluentTag>& fluent_sets) noexcept;
+    FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const TaggedFactSets<formalism::FluentTag>& fluent_sets) noexcept :
+        m_static_sets(&static_sets),
+        m_fluent_sets(&fluent_sets)
+    {
+    }
 
     template<formalism::FactKind T>
         requires std::same_as<T, formalism::StaticTag> || std::same_as<T, formalism::FluentTag>

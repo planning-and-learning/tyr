@@ -29,7 +29,7 @@ FactsWorkspace<GroundTag>::FactsWorkspace(formalism::datalog::PredicateListView<
 {
 }
 
-void FactsWorkspace<GroundTag>::reset() { fact_sets.reset(); }
+void FactsWorkspace<GroundTag>::reset() { clear(fact_sets); }
 
 ConstFactsWorkspace<GroundTag>::ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
                                                     formalism::datalog::FunctionListView<formalism::StaticTag> functions,

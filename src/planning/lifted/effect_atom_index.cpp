@@ -25,7 +25,7 @@ namespace tyr::planning
 
 EffectAtomIndex::EffectAtomIndex(const AppPredicateToActionMapping& predicate_to_action,
                                  const ConditionalEffectToPredicateMapping& effect_to_predicate,
-                                 const datalog::PredicateFactSets<formalism::FluentTag>& facts,
+                                 const datalog::TaggedFactSets<formalism::FluentTag>& facts,
                                  const formalism::datalog::Repository& repository) :
     m_effect_to_predicate(&effect_to_predicate),
     m_facts(&facts),
@@ -65,7 +65,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
                               formalism::datalog::PredicateView<formalism::FluentTag> applicability_predicate,
                               size_t action_arity)
 {
-    const auto atoms = m_facts->get_sets()[static_cast<ygg::uint_t>(effect_predicate.index().value)].get_bindings();
+    const auto atoms = datalog::rows(*m_facts, effect_predicate.index().value);
 
     // The applicability row of each atom's action binding, which holds since the effect rule's body contains the precondition.
     groups.rows.clear();

@@ -97,7 +97,7 @@ void KCKPWorkspace::clear()
         });
 }
 
-void print_rule_statistics(const urd::utils::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules)
+void print_rule_statistics(const ygg::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules)
 {
     auto rule_statistics = urd::Store<urd::sequence<RuleStatistics>> {};
     auto rule_worker_statistics = urd::Store<urd::sequence<RuleWorkerStatistics>> {};

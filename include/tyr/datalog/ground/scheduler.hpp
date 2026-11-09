@@ -38,7 +38,7 @@
 #include <tuple>
 #include <vector>
 #include <urd/elements/flat.hpp>
-#include <urd/utils/family.hpp>
+#include <yggdrasil/core/family.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
@@ -241,8 +241,8 @@ private:
     using Queue = urd::Store<urd::queue<GroundQueueEntry<R>>, urd::by_priority>;
 
     formalism::datalog::ProgramView<GroundTag> m_program;
-    urd::utils::Family<RuleStates, formalism::PredicateTag, formalism::FunctionTag> m_states;
-    urd::utils::Family<Queue, formalism::PredicateTag, formalism::FunctionTag> m_queues;
+    ygg::Family<RuleStates, formalism::PredicateTag, formalism::FunctionTag> m_states;
+    ygg::Family<Queue, formalism::PredicateTag, formalism::FunctionTag> m_queues;
     GroundQueueStatistics m_statistics;
     GroundSchedulerScratch m_scratch;
 };

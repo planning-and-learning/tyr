@@ -26,7 +26,7 @@
 
 #include <vector>
 #include <urd/elements/flat.hpp>
-#include <urd/utils/family.hpp>
+#include <yggdrasil/core/family.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::analysis
@@ -35,7 +35,7 @@ namespace tyr::analysis
 template<typename R>
 using TypedRuleStratum = urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
 
-using RuleStratum = urd::utils::Family<TypedRuleStratum, formalism::PredicateTag, formalism::FunctionTag>;
+using RuleStratum = ygg::Family<TypedRuleStratum, formalism::PredicateTag, formalism::FunctionTag>;
 
 struct RuleStrata
 {

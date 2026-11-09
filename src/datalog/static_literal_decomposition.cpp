@@ -66,7 +66,7 @@ public:
 
     Decomposer(urd::data<formalism::datalog::Program<LiftedTag>>& program,
                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-               const PredicateFactSets<formalism::StaticTag>& static_facts) :
+               const TaggedFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
         m_context(&context),
         m_static_facts(&static_facts)
@@ -115,7 +115,7 @@ private:
             pattern.push_back(urd::to_stored(term));
         auto relation = urd::Store<urd::set<Tuple>> {};
         auto element = urd::Store<urd::sequence<formalism::Term>> {};
-        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(literal.get_atom().get_predicate().index().value)].get_bindings())
+        for (const auto binding : rows(*m_static_facts, literal.get_atom().get_predicate().index().value))
         {
             element.clear();
             for (const auto object : binding.template get<urd::index<formalism::Object>>())
@@ -260,7 +260,7 @@ private:
 
     urd::data<formalism::datalog::Program<LiftedTag>>* m_program;
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
-    const PredicateFactSets<formalism::StaticTag>* m_static_facts;
+    const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_predicates = 0;
     urd::Store<urd::map<StaticLiteralIndex, std::optional<urd::Store<urd::sequence<StaticLiteralIndex>>>>> m_decompositions;
 };
@@ -282,9 +282,9 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     }
 
     // The static predicates come first in the repository, as the fact sets require.
-    auto static_facts = PredicateFactSets<formalism::StaticTag>(urd::resolve(output->static_predicates, repository), repository);
+    auto static_facts = TaggedFactSets<formalism::StaticTag>(urd::resolve(output->static_predicates, repository), repository);
     for (const auto atom : output->static_atoms)
-        static_facts.insert(urd::resolve(atom, repository));
+        insert(static_facts, urd::resolve(atom, repository).get_row().data());
     auto decomposer = Decomposer(*output, context, static_facts);
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
     {

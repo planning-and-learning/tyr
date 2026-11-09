@@ -75,7 +75,7 @@ public:
     Splitter(urd::data<formalism::datalog::Program<LiftedTag>>& program,
              RuleSplitting& splitting,
              formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-             const PredicateFactSets<formalism::StaticTag>& static_facts) :
+             const TaggedFactSets<formalism::StaticTag>& static_facts) :
         m_program(&program),
         m_splitting(&splitting),
         m_context(&context),
@@ -251,7 +251,7 @@ private:
         const auto sigma = Substitution(urd::Store<urd::sequence<formalism::ParameterIndex>>(atom_parameters.begin(), atom_parameters.end()));
 
         auto objects = urd::Store<urd::set<urd::index<formalism::Object>>> {};
-        for (const auto binding : m_static_facts->get_sets()[static_cast<ygg::uint_t>(atom.get_predicate().index().value)].get_bindings())
+        for (const auto binding : rows(*m_static_facts, atom.get_predicate().index().value))
         {
             auto element = urd::Store<urd::sequence<formalism::Term>> {};
             for (const auto object : binding.template get<urd::index<formalism::Object>>())
@@ -364,7 +364,7 @@ private:
     urd::data<formalism::datalog::Program<LiftedTag>>* m_program;
     RuleSplitting* m_splitting;
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
-    const PredicateFactSets<formalism::StaticTag>* m_static_facts;
+    const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_projections = 0;
     urd::Store<urd::map<std::pair<urd::index<formalism::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>>
         m_domain_literals;
@@ -387,9 +387,9 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
     }
 
     // The static predicates come first in the repository, as the fact sets require.
-    auto static_facts = PredicateFactSets<formalism::StaticTag>(urd::resolve(result->static_predicates, repository), repository);
+    auto static_facts = TaggedFactSets<formalism::StaticTag>(urd::resolve(result->static_predicates, repository), repository);
     for (const auto atom : result->static_atoms)
-        static_facts.insert(urd::resolve(atom, repository));
+        insert(static_facts, urd::resolve(atom, repository).get_row().data());
     auto splitter = Splitter(*result, splitting, context, static_facts);
     // Only rules of the program are inserted: rule workspaces are indexed by rule.
     for (const auto rule : program.get_rules<formalism::PredicateTag>())

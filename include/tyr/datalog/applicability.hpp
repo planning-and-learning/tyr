@@ -100,7 +100,7 @@ bool is_statically_applicable(formalism::datalog::RuleView<GroundTag, R> element
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, T> element, const FactSets& fact_sets)
-{ return fact_sets.template get<T>().function[element]; }
+{ return value(fact_sets.template get<T>(), element.get_row().data()); }
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::AuxiliaryTag>, const FactSets&)
 { throw std::logic_error("Auxiliary function terms are not stored in datalog fact sets."); }
@@ -121,7 +121,7 @@ inline bool evaluate(formalism::datalog::BooleanOperatorView<GroundTag> element,
 
 template<formalism::FactKind T>
 bool is_applicable(formalism::datalog::LiteralView<GroundTag, T> element, const FactSets& fact_sets)
-{ return fact_sets.template get<T>().predicate.contains(element.get_atom().get_row()) == element.get_polarity(); }
+{ return contains(fact_sets.template get<T>(), element.get_atom().get_row().data()) == element.get_polarity(); }
 
 template<formalism::FactKind T>
 bool is_applicable(formalism::datalog::LiteralListView<GroundTag, T> elements, const FactSets& fact_sets)

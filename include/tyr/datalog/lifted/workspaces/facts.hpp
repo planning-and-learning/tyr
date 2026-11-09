@@ -41,14 +41,14 @@ struct FactsWorkspace<LiftedTag>
 
     bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding)
     {
-        if (!fact_sets.predicate.insert(binding))
+        if (!tyr::datalog::insert(fact_sets, binding))
             return false;
-        delta_fact_sets.predicate.insert(binding);
+        tyr::datalog::insert(delta_fact_sets, binding);
         return true;
     }
 
     bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-    { return fact_sets.function.insert(binding, interval); }
+    { return tyr::datalog::insert(fact_sets, binding, interval); }
 
     void reset();
 

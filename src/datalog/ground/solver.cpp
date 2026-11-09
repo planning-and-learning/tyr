@@ -105,7 +105,7 @@ private:
         if constexpr (std::same_as<R, formalism::PredicateTag>)
             reduce_predicate_head_updates(scratch.predicate_updates,
                                           out.annotation_policy(),
-                                          out.facts().fact_sets.predicate,
+                                          out.facts().fact_sets,
                                           scratch.delta_annotations,
                                           out.annotations(),
                                           pending_heads,

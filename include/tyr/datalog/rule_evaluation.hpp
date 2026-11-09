@@ -166,7 +166,7 @@ using FunctionHeadUpdates = urd::Store<urd::set<FunctionHeadUpdate>, urd::insert
 template<AnnotationPolicyConcept AP, PredicateAnnotationStore DeltaAnnotations>
 void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
                                    [[maybe_unused]] AP& annotation_policy,
-                                   [[maybe_unused]] const PredicateFactSets<formalism::FluentTag>& facts,
+                                   [[maybe_unused]] const TaggedFactSets<formalism::FluentTag>& facts,
                                    [[maybe_unused]] DeltaAnnotations& delta_annotations,
                                    [[maybe_unused]] PredicateAnnotations<>& annotations,
                                    CostBuckets& cost_buckets,
@@ -181,7 +181,7 @@ void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
         if constexpr (AP::stores_annotations)
         {
             const auto* delta_annotation = delta_annotations.find(head);
-            if (facts.contains(head))
+            if (contains(facts, head))
             {
                 assert((!delta_annotation || get_cost(*delta_annotation) >= annotations.fetch_cost(head)) && "A committed predicate label must be final.");
                 continue;
@@ -191,7 +191,7 @@ void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
                 continue;
             cost_buckets.update(annotation_policy.commit_annotation(head, delta_annotations, annotations), head);
         }
-        else if (!facts.contains(head))
+        else if (!contains(facts, head))
         {
             cost_buckets.insert(static_cast<Cost>(0), head);
         }
