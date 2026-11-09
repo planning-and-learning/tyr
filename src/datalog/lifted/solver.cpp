@@ -375,33 +375,25 @@ private:
         return applicability_cache.dynamic_nullary && is_applicable(in.cws_rule().get_conflicting_overapproximation_condition(), applicability_context);
     }
 
-    /// Collects the heads the binding can update: committed facts are final, but still receive achievers.
-    /// Returns whether some head is not yet interned.
-    bool collect_predicate_heads(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx, bool intern)
+    /// Collects the heads the binding can update: committed facts are final, but still receive achievers. Each head is
+    /// found or interned in one step (the repository's insert gives an existing row), so it is encoded once.
+    void collect_predicate_heads(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
         auto& ground_context = out.ground_context();
         auto& heads = out.head_bindings();
         heads.clear();
-        auto missing = false;
         for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
             auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder());
             binding->relation = head_atom.get_predicate().index();
             formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->values);
-            const auto head =
-                intern ? std::optional(formalism::datalog::insert(ground_context.destination(), *binding).first) : ground_context.destination().find(*binding);
-            if (!head)
-            {
-                missing = true;
+            const auto head = formalism::datalog::insert(ground_context.destination(), *binding).first;
+            if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(head))
                 continue;
-            }
-            if (!AP::records_propositional_achievers && in.fact_sets().template get<formalism::FluentTag>().predicate.contains(*head))
-                continue;
-            heads.push_back(head->data());
+            heads.push_back(head.data());
         }
-        return missing;
     }
 
     bool try_process_predicate_binding(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
@@ -410,16 +402,14 @@ private:
     {
         [[maybe_unused]] auto& in = wrctx.in();
         auto& out = wrctx.out();
-        const auto missing = collect_predicate_heads(wrctx, false);
-        if (!missing && out.head_bindings().empty())
+        // ponytail: heads of bindings rejected below are interned too (rare: N_rej is ~0.02% of generated rules on genome).
+        collect_predicate_heads(wrctx);
+        if (out.head_bindings().empty())
             return true;
 
         if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
             return false;
 
-        // Heads are interned only for applicable bindings.
-        if (missing)
-            collect_predicate_heads(wrctx, true);
         assert(is_applicable(in.cws_rule().get_rule(), applicability_context));
         const auto handled =
             insert_propositional_update(std::span(std::as_const(out.head_bindings())), input, out.head_updates(), out.delta_annotations()).is_handled();
