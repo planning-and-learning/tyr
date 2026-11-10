@@ -73,7 +73,7 @@ template<TaskKind Kind, typename Tag, bool ThreadSafe>
 void NumericStorageBackend<Kind, Tag, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     unpacked.values.resize(m_float_vectors->row_size(packed));
-    m_float_vectors->read(packed, unpacked.values);
+    m_float_vectors->copy(packed, unpacked.values);
 }
 
 template class NumericStorageBackend<GroundTag, TreeBitset, false>;

@@ -55,7 +55,7 @@ AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacke
 
 template<TaskKind Kind, bool ThreadSafe>
 void AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
-{ m_context->bitsets.read(packed, unpacked.indices); }
+{ m_context->bitsets.copy(packed, unpacked.indices); }
 
 template class AtomStorageBackend<GroundTag, TreeBitset, false>;
 template class AtomStorageBackend<GroundTag, TreeBitset, true>;

@@ -56,7 +56,7 @@ template<typename L, typename R>
 bool same_storage(const L& lhs, const R& rhs)
 { return lhs.get_values().data() == rhs.get_values().data() && lhs.get_values().first_bit() == rhs.get_values().first_bit(); }
 template<typename L, typename R>
-bool same_values(const L& lhs, const R& rhs) { return lhs.get_values().equal(rhs.get_values()); }
+bool same_values(const L& lhs, const R& rhs) { return std::ranges::equal(lhs.get_values(), rhs.get_values()); }
 
 using RelationTag = ygg::Relation<ygg::Schema>;
 using RelationBuilder = urd::builder<RelationTag>;

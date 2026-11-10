@@ -36,7 +36,7 @@ void flips_to_writes(const ArraySet& set,
                      const urd::Store<urd::sequence<tree_bitset::Flip>>& flips,
                      urd::Store<urd::sequence<urd::Write<ygg::uint_t>>>& writes)
 {
-    const auto blocks = set.view(parent);
+    const auto blocks = set.at(parent);
     writes.clear();
     for (const auto& flip : flips)
         writes.push_back(urd::Write<ygg::uint_t> { flip.position, ygg::uint_t(blocks[flip.position] ^ flip.mask) });
@@ -84,7 +84,7 @@ template<typename... Tags, bool ThreadSafe>
 void FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto& infos = m_layout->fluent_infos;
-    const auto view = m_array_set->view(packed);
+    const auto view = m_array_set->at(packed);
     const auto data = std::span(view.data(), view.size());
     auto& values = unpacked.values;
 
@@ -126,7 +126,7 @@ auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 template<typename... Tags, bool ThreadSafe>
 void AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
-    const auto view = m_array_set->view(packed);
+    const auto view = m_array_set->at(packed);
     const auto blocks = std::span(view.data(), view.size());
     unpacked.indices.assign_words((blocks.size() + 1) / 2,
                                   [blocks](std::span<std::uint64_t> words)

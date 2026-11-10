@@ -88,8 +88,8 @@ std::span<const ygg::Value> make_distance_row(const DistanceGraph& graph,
 {
     assert(length != distance_infinity);
     row.clear();
-    const auto source = graph.vertices.view(from);
-    const auto target = graph.vertices.view(to);
+    const auto source = graph.vertices.at(from);
+    const auto target = graph.vertices.at(to);
     row.insert(row.end(), source.begin(), source.end());
     row.insert(row.end(), target.begin(), target.end());
     row.push_back(ygg::encode_value(length));

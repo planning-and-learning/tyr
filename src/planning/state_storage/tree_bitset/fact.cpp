@@ -75,7 +75,7 @@ void unpack_facts(Set& bitsets, const StateLayout<GroundTag>& layout, typename S
 
 template<typename Set>
 void unpack_facts(Set& bitsets, const StateLayout<LiftedTag>&, typename Set::handle_type packed, FactUnpackedStorage<LiftedTag>& unpacked, Blocks&)
-{ bitsets.read(packed, unpacked.indices); }
+{ bitsets.copy(packed, unpacked.indices); }
 }
 
 template<TaskKind Kind, bool ThreadSafe>

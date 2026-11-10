@@ -36,8 +36,8 @@ public:
     }
     [[nodiscard]] bool empty() const noexcept { return m_edges.empty(); }
     [[nodiscard]] size_t size() const noexcept { return m_edges.size(); }
-    [[nodiscard]] std::span<const ygg::Value> from(size_t i) const { return m_vertices.view(m_edges[i].first); }
-    [[nodiscard]] std::span<const ygg::Value> to(size_t i) const { return m_vertices.view(m_edges[i].second); }
+    [[nodiscard]] std::span<const ygg::Value> from(size_t i) const { return m_vertices.at(m_edges[i].first); }
+    [[nodiscard]] std::span<const ygg::Value> to(size_t i) const { return m_vertices.at(m_edges[i].second); }
 
 private:
     VertexSet m_vertices;

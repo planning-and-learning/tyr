@@ -158,7 +158,7 @@ ygg::uint_t min_distance(const S& sources, const E& edges, const T& targets, con
     const auto position = result.columns().size() - 1;  // The distance column follows the edge columns.
     auto best = std::numeric_limits<ygg::uint_t>::max();
     for (size_t i = 0; i < result.size(); ++i)
-        best = std::min(best, ygg::decode_value<ygg::uint_t>(result.storage().view(ygg::RowPool::handle_type(ygg::to_uint_t(i))).get(position)));
+        best = std::min(best, ygg::decode_value<ygg::uint_t>(result.storage().at(ygg::RowPool::handle_type(ygg::to_uint_t(i))).get(position)));
     return best;
 }
 

@@ -395,8 +395,8 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
         if (!literal.get_polarity())
             continue;
 
-        const auto binding = instance.resolve(literal.get_atom());
-        const auto* annotation = input.predicate_annotations().find(binding.data());
+        const auto binding = instance.resolve_row(literal.get_atom());
+        const auto* annotation = input.predicate_annotations().find(binding);
         if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
             return std::nullopt;
 

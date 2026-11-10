@@ -178,7 +178,7 @@ public:
         if (!m_last.is_none())
         {
             for (auto index = m_last; !index.is_none(); index = m_storage->m_nodes[index].parent)
-                on_vertex(m_storage->m_vertices.view(index));
+                on_vertex(m_storage->m_vertices.at(index));
             end = m_storage->m_nodes[m_last].stored;
         }
         if (end.is_none())
@@ -271,7 +271,7 @@ private:
     {
         auto& id = node(index).stored;
         if (id.is_none())
-            id = m_tree->find(m_storage->m_vertices.view(index));
+            id = m_tree->find(m_storage->m_vertices.at(index));
         return id;
     }
 
@@ -283,7 +283,7 @@ private:
         if (index.is_none())
         {
             auto estimate = m_heuristic->estimate(vertex);
-            assert(from.is_none() || estimate == infinity || m_heuristic->estimate(m_storage->m_vertices.view(from)) <= estimate + 1);  // Consistency.
+            assert(from.is_none() || estimate == infinity || m_heuristic->estimate(m_storage->m_vertices.at(from)) <= estimate + 1);  // Consistency.
             const auto stored = m_tree->find(vertex);
             if (!stored.is_none())
                 estimate = std::max(estimate, m_tree->learned(stored));
@@ -310,7 +310,7 @@ private:
         auto& current = node(index);
         if (current.closed || current.g + current.h != f)
             return std::nullopt;
-        if (m_targets->contains(m_storage->m_vertices.view(index)))
+        if (m_targets->contains(m_storage->m_vertices.at(index)))
             return finish(f, index);
         const auto id = stored(index);
         // The backward frontier may have raised its bound since the vertex was queued.
@@ -343,7 +343,7 @@ private:
     {
         node(index).closed = true;
         --m_open;
-        const auto vertex = m_storage->m_vertices.view(index);
+        const auto vertex = m_storage->m_vertices.at(index);
         m_storage->m_vertex.assign(vertex.begin(), vertex.end());
         const auto cost = node(index).g + 1;
         m_oracle->successors(m_storage->m_vertex,
@@ -381,7 +381,7 @@ private:
     {
         if (const auto id = stored(index); !id.is_none())
             return id;
-        return node(index).stored = m_tree->ensure(m_storage->m_vertices.view(index), *m_heuristic);
+        return node(index).stored = m_tree->ensure(m_storage->m_vertices.at(index), *m_heuristic);
     }
 };
 

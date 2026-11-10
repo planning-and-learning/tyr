@@ -48,7 +48,7 @@ public:
     [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> index) const
     { return m_atoms.contains(index); }
     [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
-    { return m_numeric_variables.read(index, std::identity {}, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    { return m_numeric_variables.visit(index, std::identity {}, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
     [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.index()); }
     [[nodiscard]] ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept

@@ -37,6 +37,7 @@ public:
     [[nodiscard]] auto get_head() const noexcept { return m_rule.get_head(); }
 
     [[nodiscard]] auto resolve(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
+    [[nodiscard]] auto resolve_row(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row().data(); }
 
     [[nodiscard]] auto resolve(formalism::datalog::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
 

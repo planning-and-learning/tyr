@@ -45,6 +45,9 @@ public:
 
     auto resolve(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
     { return formalism::datalog::ground_binding(atom, *m_grounder).first; }
+    /// The key of the atom's row, without its view: what rule evaluation looks annotations up by.
+    auto resolve_row(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
+    { return formalism::datalog::ground_row(atom, *m_grounder).first; }
 
     auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(std::move(constraint), *m_grounder).first; }
 

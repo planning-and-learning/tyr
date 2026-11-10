@@ -230,9 +230,10 @@ public:
             auto assignment = urd::Store<urd::sequence<Object>>(arity);
             auto assigned = std::vector<bool>(arity);
             auto has_matching_atom = false;
+            const auto predicate = literal.get_atom().get_predicate().index();
             for (const auto& atom : atoms)
             {
-                if (atom.get_predicate().index() != literal.get_atom().get_predicate().index())
+                if (atom.get_predicate().index() != predicate)
                     continue;
 
                 std::fill(assigned.begin(), assigned.end(), false);

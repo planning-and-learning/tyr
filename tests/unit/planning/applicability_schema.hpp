@@ -177,7 +177,7 @@ void expect_schema_queries_match_filtered_successors()
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
     auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
-    auto owned = pool.acquire_unique();
+    auto owned = pool.make_unique();
     owned->assign(registered_initial.get_state().data());
     owned->set(urd::index<tyr::planning::State<Kind>> {});
     ASSERT_TRUE(owned->index.is_none());
@@ -282,7 +282,7 @@ void expect_schema_queries_match_filtered_successors()
 
     using S = std::conditional_t<Borrowed, tyr::planning::BuilderStateView<Kind>, tyr::planning::StateView<Kind>>;
     auto borrowed_states = urd::Store<urd::sequence<urd::builder<tyr::planning::State<Kind>>>, urd::stable_refs> {};
-    auto callback_state = pool.acquire_unique();
+    auto callback_state = pool.make_unique();
     auto& list_storage = [&]() -> auto&
     {
         if constexpr (Borrowed)
@@ -367,8 +367,8 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(state_repository->num_states(), num_states);
     for (const auto binding : all_bindings)
     {
-        auto expected = pool.acquire_unique();
-        auto actual = pool.acquire_unique();
+        auto expected = pool.make_unique();
+        auto actual = pool.make_unique();
         auto actual_delta = tyr::planning::StateDelta {};
         auto expected_delta = tyr::planning::StateDelta {};
         EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual, actual_delta),
@@ -603,7 +603,7 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_TRUE(std::ranges::equal(callback_successors, all_successors, same_successor));
         callback_successors.clear();
         ASSERT_GT(all_bindings.size(), 1);
-        auto unregistered = pool.acquire_unique();
+        auto unregistered = pool.make_unique();
         auto saw_nullary = false;
         EXPECT_TRUE(generator->for_each_borrowed_applicable_action_binding(
             initial_node,
@@ -787,7 +787,7 @@ void expect_schema_queries_match_filtered_successors()
     EXPECT_EQ(count_action_bindings(task), bindings_before_foreign);
     EXPECT_THROW(source->get_successor_nodes(foreign_node, borrowed_states, *axiom_evaluator), std::invalid_argument);
     ASSERT_FALSE(all_bindings.empty());
-    auto out_state = pool.acquire_unique();
+    auto out_state = pool.make_unique();
     auto delta = tyr::planning::StateDelta {};
     EXPECT_THROW(source->generate_successor_state(foreign_node, all_bindings.front(), *out_state, delta), std::invalid_argument);
 }

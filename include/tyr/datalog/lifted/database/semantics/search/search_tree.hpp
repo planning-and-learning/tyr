@@ -46,7 +46,7 @@ public:
     [[nodiscard]] size_t size() const noexcept { return m_nodes.size(); }
     /// A stored vertex, or none.
     [[nodiscard]] VertexSet::handle_type find(std::span<const ygg::Value> vertex) const { return m_vertices.find(vertex); }
-    [[nodiscard]] std::span<const ygg::Value> vertex(VertexSet::handle_type id) const { return m_vertices.view(id); }
+    [[nodiscard]] std::span<const ygg::Value> vertex(VertexSet::handle_type id) const { return m_vertices.at(id); }
 
     /// A stored vertex, inserted with its heuristic estimate as learned distance. The estimate is computed only on
     /// insertion.

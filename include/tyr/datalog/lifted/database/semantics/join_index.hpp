@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <boost/hash2/xxhash.hpp>
 #include <cstddef>
 #include <limits>
 #include <ranges>
@@ -83,10 +82,10 @@ namespace detail
 inline ygg::Value field_value(const ygg::RowPool::row_type& row, size_t position) noexcept { return row.get(position); }
 inline ygg::Value field_value(std::span<const ygg::Value> values, size_t position) noexcept { return values[position]; }
 
-/// Hash the key fields' canonical values in logical key order, without materializing a key: as urd::hash_columns.
+/// Hash the key fields' canonical values in logical key order, without materializing a key: as urd::hash_range of them.
 template<typename R>
 ygg::hash_t join_key_hash(const R& row, std::span<const ColumnSlice> keys) noexcept
-{ return urd::hash_columns(keys.size(), [&](size_t i) { return field_value(row, keys[i].position); }); }
+{ return urd::hash_range(keys | std::views::transform([&](const ColumnSlice& key) { return field_value(row, key.position); })); }
 
 template<typename L, typename R>
 bool join_keys_equal(const L& lhs, std::span<const ColumnSlice> lhs_keys, const R& rhs, std::span<const ColumnSlice> rhs_keys) noexcept

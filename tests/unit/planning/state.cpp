@@ -362,7 +362,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
 {
     const auto num_states = registered.get_state_repository().num_states();
     auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
-    auto owned = pool.acquire_unique();
+    auto owned = pool.make_unique();
     owned->assign(registered.data());
     const auto state = urd::resolve(*owned, registered.get_state_repository());
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::FluentTag>(), registered.template get_atoms_view<formalism::FluentTag>()));
@@ -742,7 +742,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     EXPECT_EQ(repository->num_states(), 3);
     {
         auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
-        auto owned = pool.acquire_unique();
+        auto owned = pool.make_unique();
         owned->assign(cheap->node.get_state().data());
         owned->set(urd::index<tyr::planning::State<Kind>> {});
         const auto borrowed = tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(*owned, *repository), cheap->node.get_metric());
@@ -756,7 +756,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
             EXPECT_TRUE(std::ranges::equal(actual.get_state().template get_fterm_values<::tyr::formalism::FluentTag>(),
                                            expected.get_state().template get_fterm_values<::tyr::formalism::FluentTag>()));
         };
-        auto generated = pool.acquire_unique();
+        auto generated = pool.make_unique();
         const auto successor = generator->get_successor_node(borrowed, *raise, *generated, *axioms);
         static_assert(std::same_as<decltype(successor), const tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>>);
         EXPECT_EQ(&successor.get_state().data(), generated.get());

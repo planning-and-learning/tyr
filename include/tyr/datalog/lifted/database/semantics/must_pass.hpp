@@ -142,7 +142,7 @@ private:
         std::span<const VertexSet::handle_type> ids;
 
         [[nodiscard]] size_t size() const noexcept { return ids.size(); }
-        [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return set->view(ids[i]); }
+        [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return set->at(ids[i]); }
     };
 
     using Edges = detail::EdgeQuery<bound::QueryEvaluator>;
@@ -243,7 +243,7 @@ private:
     }
     [[nodiscard]] bool contains(std::span<const ygg::Value> vertex, VertexSet::handle_type probe) const
     {
-        const auto object = m_probes.view(probe);
+        const auto object = m_probes.at(probe);
         return std::ranges::any_of(m_probe_positions,
                                    [&](size_t position) { return std::ranges::equal(vertex.subspan(position, m_plan.probe_size()), object); });
     }
@@ -265,7 +265,7 @@ private:
         m_excluded = excluded;
         if constexpr (requires(H& h, std::span<const ygg::Value> values) { h.exclude(values, values); })
         {
-            m_heuristic->exclude(m_key, excluded.is_none() ? std::span<const ygg::Value>() : std::span<const ygg::Value>(m_probes.view(excluded)));
+            m_heuristic->exclude(m_key, excluded.is_none() ? std::span<const ygg::Value>() : std::span<const ygg::Value>(m_probes.at(excluded)));
         }
         const auto keep_allowed = [&](const VertexSet& vertices,
                                       const urd::Store<urd::sequence<VertexSet::handle_type>>& ids,
@@ -273,7 +273,7 @@ private:
         {
             out.clear();
             for (const auto id : ids)
-                if (allowed(vertices.view(id)))
+                if (allowed(vertices.at(id)))
                     out.push_back(id);
         };
         keep_allowed(m_starts, m_start_ids, m_allowed_starts);
@@ -324,13 +324,13 @@ private:
         m_row.assign(m_key.begin(), m_key.end());
         m_row.resize(m_plan.key_size() + m_plan.probe_size());
         const auto in_all = [&](const VertexSet& vertices, const urd::Store<urd::sequence<VertexSet::handle_type>>& ids, VertexSet::handle_type probe)
-        { return std::ranges::all_of(ids, [&](VertexSet::handle_type id) { return contains(vertices.view(id), probe); }); };
+        { return std::ranges::all_of(ids, [&](VertexSet::handle_type id) { return contains(vertices.at(id), probe); }); };
         for (const auto probe : m_candidates)
             // An object in every source or every target is passed trivially, as initial facts and goals are landmarks.
             if (in_all(m_starts, m_start_ids, probe) || in_all(m_ends, m_end_ids, probe)
                 || (++m_statistics.removals, !search(probe, [](std::span<const ygg::Value>) {})))
             {
-                std::ranges::copy(m_probes.view(probe), m_row.begin() + static_cast<std::ptrdiff_t>(m_plan.key_size()));
+                std::ranges::copy(m_probes.at(probe), m_row.begin() + static_cast<std::ptrdiff_t>(m_plan.key_size()));
                 out.insert(std::span<const ygg::Value>(m_row));
             }
     }

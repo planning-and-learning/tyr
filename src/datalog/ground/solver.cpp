@@ -79,7 +79,7 @@ private:
             {
                 scratch.head_bindings.clear();
                 for (const auto head : input.rule_instance.get_heads())
-                    scratch.head_bindings.push_back(input.rule_instance.resolve(head).data());
+                    scratch.head_bindings.push_back(input.rule_instance.resolve_row(head));
                 return insert_propositional_update(std::span(std::as_const(scratch.head_bindings)),
                                                    input,
                                                    scratch.predicate_updates,

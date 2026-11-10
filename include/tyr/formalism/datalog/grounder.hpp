@@ -93,6 +93,10 @@ std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, W
 template<FactKind F>
 std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
 
+/// The key of the atom's row, interned as ground_binding does, without its view (which finds the layer that owns the row).
+template<FactKind F>
+std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
+
 /// Grounds the binding without interning the enclosing GroundFunctionTerm symbol.
 template<FactKind F>
 std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
@@ -305,15 +309,22 @@ std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, W
  */
 
 template<FactKind F>
-std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
+std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
 {
     auto binding = datalog::checkout<ygg::Row<Predicate<F>>>(context.builder());
 
     binding->relation = element.get_predicate().index();
     ground(element.get_terms(), context, binding->values);
 
-    // Canonicalize and Serialize
-    return datalog::insert(context.destination(), *binding);
+    const auto [row, created] = context.destination().relations().insert(binding->relation, binding->values);
+    return { PredicateRowIndex<F> { binding->relation, row }, created };
+}
+
+template<FactKind F>
+std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
+{
+    const auto [key, created] = ground_row(element, context);
+    return { context.destination().view(key), created };
 }
 
 template<FactKind F>

@@ -233,7 +233,7 @@ private:
         auto& heads = out.head_bindings();
         heads.clear();
         for (const auto head_atom : ctx.in().cws_rule().get_rule().get_heads())
-            heads.push_back(formalism::datalog::ground_binding(head_atom, out.ground_context()).first.data());
+            heads.push_back(formalism::datalog::ground_row(head_atom, out.ground_context()).first);
         insert_propositional_update(std::span(std::as_const(heads)), input, out.head_updates(), out.delta_annotations());
     }
 
@@ -387,13 +387,10 @@ private:
         heads.clear();
         for (const auto head_atom : in.cws_rule().get_rule().get_heads())
         {
-            auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::FluentTag>>>(ground_context.builder());
-            binding->relation = head_atom.get_predicate().index();
-            formalism::datalog::ground(head_atom.get_terms(), ground_context, binding->values);
-            const auto head = formalism::datalog::insert(ground_context.destination(), *binding).first;
-            if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<formalism::FluentTag>(), head.data()))
+            const auto head = formalism::datalog::ground_row(head_atom, ground_context).first;
+            if (!AP::records_propositional_achievers && contains(in.fact_sets().template get<formalism::FluentTag>(), head))
                 continue;
-            heads.push_back(head.data());
+            heads.push_back(head);
         }
     }
 

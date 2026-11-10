@@ -179,7 +179,7 @@ public:
     {
         m_ids.clear();
         for (const auto handle : m_handles)
-            m_ids.push_back(tree.ensure(m_vertices.view(handle), heuristic));
+            m_ids.push_back(tree.ensure(m_vertices.at(handle), heuristic));
         return m_ids;
     }
 

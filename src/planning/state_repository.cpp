@@ -383,7 +383,7 @@ std::shared_ptr<urd::builder<State<Kind>>> StateRepository<Kind>::get_state_buil
 {
     // Each owner keeps the repository alive; the slot goes back to the pool with the last one.
     auto state_builder = m_impl->visit_evaluator(
-        [this](auto& evaluator) { return evaluator.state_builder_pool.acquire_shared(this->shared_from_this()); });
+        [this](auto& evaluator) { return evaluator.state_builder_pool.make_shared(this->shared_from_this()); });
     prepare_builder(*m_impl->task, *state_builder);
     return state_builder;
 }

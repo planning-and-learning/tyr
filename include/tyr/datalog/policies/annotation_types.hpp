@@ -267,7 +267,7 @@ public:
     std::invoke_result_t<Read, const Value&> read(Key key, Read&& read, std::invoke_result_t<Read, const Value&> missing) const
     {
         const auto relation = ygg::uint_t(key.relation.value);
-        return relation < m_lanes.size() ? m_lanes[relation].read(key.row, std::forward<Read>(read), missing) : missing;
+        return relation < m_lanes.size() ? m_lanes[relation].visit(key.row, std::forward<Read>(read), missing) : missing;
     }
 
     template<std::invocable<Value&, bool> Update>
@@ -294,7 +294,7 @@ public:
     [[nodiscard]] const Value* find(Relation relation, Row row) const noexcept
     {
         const auto index = ygg::uint_t(relation.value);
-        return index < m_lanes.size() ? m_lanes[index].read(row, [](const Value& value) { return &value; }, static_cast<const Value*>(nullptr)) : nullptr;
+        return index < m_lanes.size() ? m_lanes[index].visit(row, [](const Value& value) { return &value; }, static_cast<const Value*>(nullptr)) : nullptr;
     }
 
     Value* find(Relation relation, Row row) noexcept

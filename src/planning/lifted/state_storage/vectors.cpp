@@ -45,7 +45,7 @@ auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked, const Pac
         return insert(unpacked);
 
     m_parent.resize(m_uint_vectors->row_size(parent));
-    m_uint_vectors->read(parent, m_parent);
+    m_uint_vectors->copy(parent, m_parent);
 
     m_writes.clear();
     auto position = std::size_t { 0 };
@@ -63,7 +63,7 @@ template<typename U, typename Context>
 void BitPositionsBackend<U, Context>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     m_buffer.resize(m_uint_vectors->row_size(packed));
-    m_uint_vectors->read(packed, m_buffer);
+    m_uint_vectors->copy(packed, m_buffer);
 
     unpacked.indices.clear();
     unpacked.indices.insert(m_buffer.begin(), m_buffer.end());
