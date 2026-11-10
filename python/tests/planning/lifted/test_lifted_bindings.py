@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import gc
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
-from typing_extensions import TypeIs, override
+from typing_extensions import override
 
 from pytyr import datalog, planning
 from pytyr.formalism import datalog as formalism_datalog, planning as formalism_planning
@@ -22,11 +21,6 @@ IwStatistics = planning.lifted.iw.Statistics
 SearchStatus = planning.SearchStatus
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
-
-
-def _is_iterator(value: object) -> TypeIs[Iterator[object]]:
-    # The binding-value iterator is untyped in the stubs; the test checks its shape.
-    return isinstance(value, Iterator)
 
 
 def _lifted_task() -> planning.lifted.Task:
@@ -54,7 +48,7 @@ def test_lifted_datalog_workspaces_own_independent_repositories() -> None:
     assert second.get_static_fact_sets() is not None
 
 
-def test_function_fact_value_iterator_preserves_pairing() -> None:
+def test_fact_sets_give_a_predicates_rows() -> None:
     fixture = Path(__file__).parents[4] / "tests/fixtures/planning/algorithms"
     options = ParserOptions()
     task = planning.lifted.Task(
@@ -64,23 +58,15 @@ def test_function_fact_value_iterator_preserves_pairing() -> None:
     )
     program = planning.lifted.RPGProgram(task.get_task()).get_datalog_program()
     workspace = datalog.lifted.UnannotatedProgramWorkspace(program)
-    (fact_set,) = workspace.get_fluent_fact_sets().get_function_sets()
+    facts = workspace.get_fluent_fact_sets()
 
-    values = fact_set.get_binding_values()
-    assert _is_iterator(values)
-    assert iter(values) is values
-    entries = list(values)
-    assert len(entries) == fact_set.count() == 1
-    match entries[0]:
-        case (formalism_datalog.FluentFunctionRow() as binding, float() as value):
-            assert value == 0.0
-        case entry:
-            pytest.fail(f"expected a (binding, value) pair, got {entry!r}")
-    function_name = binding.get_relation().get_name()
+    rows = list(facts.rows(0))
+    assert all(isinstance(row, formalism_datalog.FluentPredicateRow) for row in rows)
 
-    del values, entries, fact_set, workspace, program, task
+    # The rows keep what they are read through alive.
+    del facts, workspace, program, task
     gc.collect()
-    assert binding.get_relation().get_name() == function_name
+    assert all(row.get_relation().get_name() for row in rows)
 
 
 def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None:

@@ -65,128 +65,41 @@ namespace tyr::datalog
 
 using Interval = ygg::ClosedInterval<ygg::float_t>;
 
-/// One predicate's facts as Python reads them: the fact sets and the predicate's index.
-template<formalism::FactKind T>
-struct PredicateFactSet
-{
-    const TaggedFactSets<T>* facts;
-    ygg::uint_t index;
-};
-
-/// One function's facts as Python reads them: the fact sets and the function's index.
-template<formalism::FactKind T>
-struct FunctionFactSet
-{
-    const TaggedFactSets<T>* facts;
-    ygg::uint_t index;
-};
-
-template<formalism::FactKind T>
-void bind_predicate_fact_set(nb::module_& m, const char* name)
-{
-    using namespace nb::literals;
-    using Set = PredicateFactSet<T>;
-
-    nb::class_<Set>(m, name)
-        .def("get_predicate", [](const Set& self) { return self.facts->repository->view(urd::index<formalism::Predicate<T>>(self.index)); })
-        .def(
-            "get_bindings",
-            [](const Set& self)
-            {
-                const auto bindings = rows(*self.facts, self.index);
-                return nb::make_iterator(nb::type<Set>(), "BindingIterator", bindings.begin(), bindings.end());
-            },
-            nb::keep_alive<0, 1>())
-        .def("count", [](const Set& self) { return self.facts->predicate[self.index].size(); })
-        .def("contains", [](const Set& self, formalism::datalog::PredicateRowIndex<T> binding) { return contains(*self.facts, binding); }, "binding"_a)
-        .def("contains", [](const Set& self, formalism::datalog::PredicateRowView<T> binding) { return contains(*self.facts, binding.data()); }, "binding"_a);
-}
-
-template<formalism::FactKind T>
-void bind_function_fact_set(nb::module_& m, const char* name)
-{
-    using namespace nb::literals;
-    using Set = FunctionFactSet<T>;
-    using Binding = formalism::datalog::FunctionRowView<T>;
-
-    nb::class_<Set>(m, name)
-        .def("get_function", [](const Set& self) { return self.facts->repository->view(urd::index<formalism::Function<T>>(self.index)); })
-        .def(
-            "get_binding_values",
-            [](const Set& self)
-            {
-                auto result = std::vector<std::pair<Binding, Interval>> {};
-                for (const auto& [id, interval] : self.facts->function[self.index])
-                    result.emplace_back(row(*self.facts, self.index, id), interval);
-                return result;
-            },
-            nb::keep_alive<0, 1>())
-        .def("count", [](const Set& self) { return self.facts->function[self.index].size(); })
-        .def("get", [](const Set& self, Binding binding) { return value(*self.facts, binding.data()); }, "binding"_a);
-}
-
+/// The facts of kind T, as tyr/datalog/fact_sets.hpp gives them: a predicate's rows, whether a fact holds, a
+/// function fact's value.
 template<formalism::FactKind T>
 void bind_tagged_fact_sets(nb::module_& m, const char* name)
 {
+    using namespace nb::literals;
     using Sets = TaggedFactSets<T>;
 
     nb::class_<Sets>(m, name)
         .def(
-            "get_predicate_sets",
-            [](const Sets& self)
+            "rows",
+            [](const Sets& self, ygg::uint_t predicate)
             {
-                auto result = std::vector<PredicateFactSet<T>> {};
-                for (ygg::uint_t i = 0; i < self.predicate.size(); ++i)
-                    result.push_back({ &self, i });
-                return result;
+                const auto found = rows(self, predicate);
+                return nb::make_iterator(nb::type<Sets>(), "RowIterator", found.begin(), found.end());
             },
+            "predicate"_a,
             nb::keep_alive<0, 1>())
-        .def(
-            "get_function_sets",
-            [](const Sets& self)
-            {
-                auto result = std::vector<FunctionFactSet<T>> {};
-                for (ygg::uint_t i = 0; i < self.function.size(); ++i)
-                    result.push_back({ &self, i });
-                return result;
-            },
-            nb::keep_alive<0, 1>());
+        .def("contains", [](const Sets& self, formalism::datalog::PredicateRowIndex<T> fact) { return contains(self, fact); }, "fact"_a)
+        .def("value", [](const Sets& self, formalism::datalog::FunctionRowIndex<T> fact) { return value(self, fact); }, "fact"_a);
 }
 
 inline void bind_fact_sets(nb::module_& m)
 {
-    bind_predicate_fact_set<formalism::StaticTag>(m, "StaticPredicateFactSet");
-    bind_predicate_fact_set<formalism::FluentTag>(m, "FluentPredicateFactSet");
-    bind_function_fact_set<formalism::StaticTag>(m, "StaticFunctionFactSet");
-    bind_function_fact_set<formalism::FluentTag>(m, "FluentFunctionFactSet");
     bind_tagged_fact_sets<formalism::StaticTag>(m, "StaticFactSets");
     bind_tagged_fact_sets<formalism::FluentTag>(m, "FluentFactSets");
 }
-
-/// Python accepts binding indices and views; the C++ stores take indices.
-template<typename H>
-H as_index(H index) noexcept
-{ return index; }
-
-template<typename F, typename C>
-ygg::RowIndex<F> as_index(const ygg::RowView<F, C>& view) noexcept
-{ return view.data(); }
 
 inline void bind_numeric_support(nb::module_& m)
 {
     using namespace nb::literals;
     using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
-    using NumericKeyView = formalism::datalog::FunctionRowView<formalism::FluentTag>;
 
     auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
                    .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
-                   .def(
-                       "__init__",
-                       [](NumericSupport* self, NumericKeyView key, Interval interval, Cost cost)
-                       { new (self) NumericSupport(key.data(), std::move(std::move(std::move(interval))), cost); },
-                       "key"_a,
-                       "interval"_a,
-                       "cost"_a)
                    .def("get_key", &NumericSupport::get_key)
                    .def("get_interval", &NumericSupport::get_interval)
                    .def("get_cost", &NumericSupport::get_cost);
@@ -196,7 +109,7 @@ inline void bind_numeric_support(nb::module_& m)
 template<typename Key>
 std::optional<Annotation<>> find_predicate_annotation(const PredicateAnnotations<>& annotations, const Key& key)
 {
-    const auto* annotation = annotations.find(as_index(key));
+    const auto* annotation = annotations.find(key);
     return annotation ? std::optional<Annotation<>>(*annotation) : std::nullopt;
 }
 
@@ -204,7 +117,7 @@ template<typename Key, typename... Interval>
 std::optional<Annotation<formalism::FunctionTag>>
 find_function_annotation(const FunctionAnnotations<>& annotations, const Key& key, const Interval&... interval)
 {
-    const auto* annotation = annotations.find(as_index(key), interval...);
+    const auto* annotation = annotations.find(key, interval...);
     return annotation ? std::optional<Annotation<formalism::FunctionTag>>(*annotation) : std::nullopt;
 }
 
@@ -216,13 +129,9 @@ inline void bind_annotations(nb::module_& m)
     using PredicateAnnotationStore = PredicateAnnotations<>;
     using FunctionAnnotationStore = FunctionAnnotations<>;
     using RuleKey = formalism::datalog::RuleRowIndex<formalism::PredicateTag>;
-    using RuleKeyView = formalism::datalog::RuleRowView<formalism::PredicateTag>;
     using FunctionRuleKey = formalism::datalog::RuleRowIndex<formalism::FunctionTag>;
-    using FunctionRuleKeyView = formalism::datalog::RuleRowView<formalism::FunctionTag>;
     using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
-    using NumericKeyView = formalism::datalog::FunctionRowView<formalism::FluentTag>;
     using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-    using PredicateKeyView = formalism::datalog::PredicateRowView<formalism::FluentTag>;
 
     auto base_annotation_cls =
         nb::class_<BaseAnnotation>(m, "BaseAnnotation").def(nb::init<>()).def(nb::init<Cost>(), "cost"_a).def("get_cost", &BaseAnnotation::get_cost);
@@ -232,18 +141,6 @@ inline void bind_annotations(nb::module_& m)
         nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
             .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
             .def(nb::init<RuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
-            .def(
-                "__init__",
-                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost) { new (self) WitnessAnnotationT(rule_key.data(), cost); },
-                "rule_key"_a,
-                "cost"_a)
-            .def(
-                "__init__",
-                [](WitnessAnnotationT* self, RuleKeyView rule_key, Cost cost, urd::Store<urd::sequence<NumericSupport>> numeric_supports)
-                { new (self) WitnessAnnotationT(rule_key.data(), cost, std::move(numeric_supports)); },
-                "rule_key"_a,
-                "cost"_a,
-                "numeric_supports"_a)
             .def("get_rule_key", &WitnessAnnotationT::get_rule_key)
             .def("get_cost", &WitnessAnnotationT::get_cost)
             .def("get_numeric_supports", &WitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
@@ -253,19 +150,6 @@ inline void bind_annotations(nb::module_& m)
         nb::class_<FunctionWitnessAnnotationT>(m, "FunctionWitnessAnnotation")
             .def(nb::init<FunctionRuleKey, Cost>(), "rule_key"_a, "cost"_a)
             .def(nb::init<FunctionRuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
-            .def(
-                "__init__",
-                [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost)
-                { new (self) FunctionWitnessAnnotationT(rule_key.data(), cost); },
-                "rule_key"_a,
-                "cost"_a)
-            .def(
-                "__init__",
-                [](FunctionWitnessAnnotationT* self, FunctionRuleKeyView rule_key, Cost cost, urd::Store<urd::sequence<NumericSupport>> numeric_supports)
-                { new (self) FunctionWitnessAnnotationT(rule_key.data(), cost, std::move(numeric_supports)); },
-                "rule_key"_a,
-                "cost"_a,
-                "numeric_supports"_a)
             .def("get_rule_key", &FunctionWitnessAnnotationT::get_rule_key)
             .def("get_cost", &FunctionWitnessAnnotationT::get_cost)
             .def("get_numeric_supports", &FunctionWitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
@@ -277,8 +161,7 @@ inline void bind_annotations(nb::module_& m)
         .def(
             "find",
             [](const PredicateAnnotationStore& self, PredicateKey key) { return find_predicate_annotation(self, key); },
-            "binding"_a)
-        .def("find", [](const PredicateAnnotationStore& self, PredicateKeyView key) { return find_predicate_annotation(self, key); }, "binding"_a);
+            "binding"_a);
 
     nb::class_<FunctionAnnotationStore>(m, "FunctionAnnotations")
         .def(nb::init<>())
@@ -290,16 +173,7 @@ inline void bind_annotations(nb::module_& m)
             "binding"_a)
         .def(
             "find",
-            [](const FunctionAnnotationStore& self, NumericKeyView key) { return find_function_annotation(self, key); },
-            "binding"_a)
-        .def(
-            "find",
             [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) { return find_function_annotation(self, key, interval); },
-            "binding"_a,
-            "interval"_a)
-        .def(
-            "find",
-            [](const FunctionAnnotationStore& self, NumericKeyView key, const Interval& interval) { return find_function_annotation(self, key, interval); },
             "binding"_a,
             "interval"_a);
 }
@@ -319,19 +193,19 @@ void bind_cost_policy(nb::module_& m, const char* name)
         cls.def(
                "get_cost",
                [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval)
-               { return self.get_cost(as_index(rule), as_index(key), interval); },
+               { return self.get_cost(rule, key, interval); },
                "rule"_a,
                "binding"_a,
                "interval"_a)
             .def(
                 "set_cost",
-                [](CostPolicy& self, RuleKey rule, Cost cost) { self.set_cost(as_index(rule), cost); },
+                [](CostPolicy& self, RuleKey rule, Cost cost) { self.set_cost(rule, cost); },
                 "rule"_a,
                 "cost"_a)
             .def(
                 "set_cost",
                 [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost)
-                { self.set_cost(as_index(rule), as_index(key), interval, cost); },
+                { self.set_cost(rule, key, interval, cost); },
                 "rule"_a,
                 "binding"_a,
                 "interval"_a,
@@ -343,8 +217,6 @@ void bind_cost_policy(nb::module_& m, const char* name)
     bind_rule_view_cost.template operator()<FunctionTag>();
     bind_rule_costs.template operator()<RuleRowIndex<PredicateTag>, FunctionRowIndex<FluentTag>>();
     bind_rule_costs.template operator()<RuleRowIndex<FunctionTag>, FunctionRowIndex<FluentTag>>();
-    bind_rule_costs.template operator()<RuleRowView<PredicateTag>, FunctionRowView<FluentTag>>();
-    bind_rule_costs.template operator()<RuleRowView<FunctionTag>, FunctionRowView<FluentTag>>();
 }
 
 template<typename Aggregation>
@@ -380,15 +252,6 @@ inline void bind_policies(nb::module_& m)
                formalism::datalog::PredicateRowIndex<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
             {
                 const auto* achievers = self.find_achievers(binding);
-                return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
-            },
-            "binding"_a)
-        .def(
-            "find_achievers",
-            [](const MaxMinCostAnnotationWithAchievers& self,
-               formalism::datalog::PredicateRowView<formalism::FluentTag> binding) -> std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>
-            {
-                const auto* achievers = self.find_achievers(binding.data());
                 return achievers ? std::optional<typename MaxMinCostAnnotationWithAchievers::Achievers>(*achievers) : std::nullopt;
             },
             "binding"_a);

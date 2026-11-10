@@ -10,6 +10,7 @@ import pytest
 
 from pyyggdrasil import formalism
 from pytyr import database
+from relation_utils import intern
 
 Readable = formalism.Relation | formalism.BorrowedRelation | formalism.RelationView
 # Reads the tests' relation builders and evaluator results.
@@ -75,7 +76,7 @@ def test_distance_mixed_inputs_and_independent_output(interned_mask: int) -> Non
     assert plan.arity() == 2
     assert tuple(plan.output_columns()) == columns(20, 21, 22, 23, 99)
     repository = formalism.RelationRepository()
-    interned = [repository.insert(value)[0] for value in (source, edges, target)]
+    interned = [intern(repository, value)[0] for value in (source, edges, target)]
     # Interned inputs are accepted without copying only when all are interned; otherwise they are copied out.
     copied = [
         database.assign(formalism.Relation(), view) if interned_mask & (1 << index) else value
@@ -127,7 +128,7 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
     plan = plan_for(source, edges, target)
     evaluator = database.DistanceEvaluator(RELATIONS, plan)
     repository = formalism.RelationRepository()
-    evaluator.initialize(*borrow(source, database.assign(formalism.Relation(), repository.insert(edges)[0]), target))
+    evaluator.initialize(*borrow(source, database.assign(formalism.Relation(), intern(repository, edges)[0]), target))
     expected = {(0, 0, 0), (0, 2, 2), (0, 3, 1), (2, 2, 0), (2, 3, 1)}
     assert rows(evaluator.get_result()) == expected
     assert evaluator.get_delta().added.empty()
@@ -150,7 +151,7 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
         ]
         for index in range(6):
             if (index % 2 == 0) == intern_added:
-                changes[index] = database.assign(formalism.Relation(), repository.insert(changes[index])[0])
+                changes[index] = database.assign(formalism.Relation(), intern(repository, changes[index])[0])
         evaluator.update(change(changes[0], changes[1]), change(changes[2], changes[3]), change(changes[4], changes[5]))
 
     before = expected

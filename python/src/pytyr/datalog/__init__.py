@@ -7,8 +7,6 @@
 from pytyr._pytyr.datalog import (
     BaseAnnotation as BaseAnnotation,
     FluentFactSets as FluentFactSets,
-    FluentFunctionFactSet as FluentFunctionFactSet,
-    FluentPredicateFactSet as FluentPredicateFactSet,
     FunctionAnnotations as FunctionAnnotations,
     FunctionWitnessAnnotation as FunctionWitnessAnnotation,
     GroundQueueStatistics as GroundQueueStatistics,
@@ -22,8 +20,6 @@ from pytyr._pytyr.datalog import (
     ProgramStatistics as ProgramStatistics,
     RuleCostPolicy as RuleCostPolicy,
     StaticFactSets as StaticFactSets,
-    StaticFunctionFactSet as StaticFunctionFactSet,
-    StaticPredicateFactSet as StaticPredicateFactSet,
     SumMinCostAnnotationPolicy as SumMinCostAnnotationPolicy,
     SumTerminationPolicy as SumTerminationPolicy,
     WitnessAnnotation as WitnessAnnotation,

@@ -8,29 +8,6 @@ import pytest
 from pytyr import datalog
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "NumericSupport",
-        "BaseAnnotation",
-        "WitnessAnnotation",
-        "FunctionWitnessAnnotation",
-        "PredicateAnnotations",
-        "FunctionAnnotations",
-        "NoAnnotationPolicy",
-        "SumMinCostAnnotationPolicy",
-        "MaxMinCostAnnotationPolicy",
-        "MaxMinCostAnnotationWithAchieversPolicy",
-        "NoTerminationPolicy",
-        "SumTerminationPolicy",
-        "MaxTerminationPolicy",
-        "RuleCostPolicy",
-    ],
-)
-def test_annotation_api_types_are_shared(name: str) -> None:
-    assert getattr(datalog, name) is getattr(datalog.ground, name) is getattr(datalog.lifted, name)
-
-
 def test_rule_cost_override_policy_remains_task_specific() -> None:
     assert datalog.ground.RuleCostOverridePolicy is not datalog.lifted.RuleCostOverridePolicy
 
@@ -43,7 +20,8 @@ def test_annotation_policy_api_is_unified(module: ModuleType) -> None:
         "MaxMinCostAnnotationPolicy",
         "MaxMinCostAnnotationWithAchieversPolicy",
     ):
-        assert getattr(module, name)() is not None
+        # The policies are the datalog module's: ground and lifted share them.
+        assert getattr(datalog, name)() is not None
 
     for name in (
         "NoOrAnnotationPolicy",

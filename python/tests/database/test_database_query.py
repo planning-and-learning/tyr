@@ -362,5 +362,5 @@ def test_selection_constants_follow_column_types_and_equality(column_type: forma
     assert rows(evaluator.get_result()) == {(constant, constant)}
     with pytest.raises(TypeError):
         db.QuerySelectValueData(source_query, formalism.ColumnIndex(0), column_type, "invalid")
-    with pytest.raises(ValueError, match="Query: constant type does not match the selected column"):
+    with pytest.raises(ValueError, match="Relational operation: selected value has an incompatible column type"):
         repo.insert(db.QuerySelectValueData(source_query, formalism.ColumnIndex(0), formalism.ColumnType.UINT64, 1))
