@@ -54,8 +54,9 @@
 #include "tyr/formalism/planning/task_view.hpp"
 
 #include <optional>
+#include <ranges>
 #include <span>
-#include <urd/repr/maps/csr_multimap.hpp>
+#include <urd/repr/maps/dense_multimap.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
@@ -100,7 +101,7 @@ public:
             return;
         }
         const auto action_arity = binding.size();
-        for (const auto atom : *atoms)
+        for (const auto atom : std::ranges::subrange(atoms->first, atoms->second) | std::views::values)
         {
             binding.clear();
             for (const auto object : urd::resolve(atom, *m_repository).template get<urd::index<formalism::Object>>())
@@ -113,17 +114,18 @@ public:
 private:
     using AtomIndex = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
-    /// The atoms of one effect predicate, grouped by the applicability row of their action binding, rebuilt in the
-    /// storage held from (row, atom) pairs.
+    /// The atoms of one effect predicate, grouped by the applicability row of their action binding, refilled in the
+    /// storage held: clear keeps each row's.
+    using Atoms = urd::Store<urd::map<ygg::uint_t, AtomIndex>, urd::multi, urd::dense>;
     struct Groups
     {
         bool current = false;
-        urd::Store<urd::map<ygg::uint_t, AtomIndex>, urd::multi, urd::dense, urd::frozen> atoms;
-        urd::Store<urd::sequence<std::pair<ygg::uint_t, AtomIndex>>> rows;
+        Atoms atoms;
     };
 
-    /// The atoms of the effect's predicate whose action binding is `binding`, or none if the effect has no predicate.
-    std::optional<std::span<const AtomIndex>> get_atoms(formalism::planning::ActionView<LiftedTag> action,
+    /// The atoms of the effect's predicate whose action binding is `binding`, as the entries of its row (an
+    /// equal_range), or none if the effect has no predicate.
+    std::optional<std::pair<Atoms::const_iterator, Atoms::const_iterator>> get_atoms(formalism::planning::ActionView<LiftedTag> action,
                                                         formalism::planning::ConditionalEffectView<LiftedTag> effect,
                                                         std::span<const urd::index<formalism::Object>> binding);
 

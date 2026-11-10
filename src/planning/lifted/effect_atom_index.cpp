@@ -41,7 +41,7 @@ void EffectAtomIndex::clear() noexcept
         groups.current = false;
 }
 
-std::optional<std::span<const EffectAtomIndex::AtomIndex>> EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
+std::optional<std::pair<EffectAtomIndex::Atoms::const_iterator, EffectAtomIndex::Atoms::const_iterator>> EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
                                                                                       formalism::planning::ConditionalEffectView<LiftedTag> effect,
                                                                                       std::span<const urd::index<formalism::Object>> binding)
 {
@@ -56,8 +56,8 @@ std::optional<std::span<const EffectAtomIndex::AtomIndex>> EffectAtomIndex::get_
 
     const auto row = find_row(applicability_predicate, binding);
     if (!row)
-        return std::span<const AtomIndex> {};
-    return groups.atoms.values(*row);
+        return std::pair(groups.atoms.end(), groups.atoms.end());
+    return groups.atoms.equal_range(*row);
 }
 
 void EffectAtomIndex::rebuild(Groups& groups,
@@ -68,7 +68,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
     const auto atoms = datalog::rows(*m_facts, effect_predicate.index().value);
 
     // The applicability row of each atom's action binding, which holds since the effect rule's body contains the precondition.
-    groups.rows.clear();
+    groups.atoms.clear();
     for (const auto atom : atoms)
     {
         const auto objects = atom.template get<urd::index<formalism::Object>>();
@@ -77,9 +77,8 @@ void EffectAtomIndex::rebuild(Groups& groups,
             m_prefix.push_back(objects[i]);
         const auto row = find_row(applicability_predicate, std::span<const urd::index<formalism::Object>>(m_prefix.data(), m_prefix.size()));
         assert(row && "An effect atom's action binding is applicable.");
-        groups.rows.emplace_back(*row, atom.data());
+        groups.atoms.emplace(*row, atom.data());
     }
-    groups.atoms.assign(groups.rows.begin(), groups.rows.end());
 
     groups.current = true;
 }

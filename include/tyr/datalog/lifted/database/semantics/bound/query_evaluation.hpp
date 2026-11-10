@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <urd/memory.hpp>
@@ -320,7 +321,7 @@ private:
         }
         // The key's variables stay bound while this step iterates, so the frame is the probe.
         const auto probe = std::span<const ygg::Value>(m_frame);
-        for (const auto r : entry.rows.values(database::detail::join_key_hash(probe, lookup.probe)))
+        for (const auto [first, last] = entry.rows.equal_range(database::detail::join_key_hash(probe, lookup.probe)); const auto r : std::ranges::subrange(first, last) | std::views::values)
             if (database::detail::join_keys_equal(rows.row(r).get_values(), entry.keys, probe, lookup.probe) && !visit(r))
                 return proceed;
         return true;

@@ -7,6 +7,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
+#include <ranges>
 #include <span>
 
 namespace tyr::datalog::database::detail
@@ -38,7 +39,7 @@ namespace tyr::datalog::database::detail
 {
 bool DistanceGraph::contains_edge(VertexSet::handle_type from, VertexSet::handle_type to) const
 {
-    for (const auto target : outgoing.values(from))
+    for (const auto [first, last] = outgoing.equal_range(from); const auto target : std::ranges::subrange(first, last) | std::views::values)
         if (target == to)
             return true;
     return false;
@@ -68,7 +69,7 @@ void breadth_first_search(const DistanceGraph& graph,
     for (size_t position = 0; position < queue.size(); ++position)
     {
         const auto from = queue[position];
-        for (const auto to : graph.outgoing.values(from))
+        for (const auto [first, last] = graph.outgoing.equal_range(from); const auto to : std::ranges::subrange(first, last) | std::views::values)
             if (distances[to] == distance_infinity)
             {
                 distances[to] = distances[from] + 1;

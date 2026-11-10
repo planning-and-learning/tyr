@@ -238,7 +238,7 @@ void join_rows(const L& lhs,
         for (size_t i = 0; i < probe.size(); ++i)
         {
             const auto probe_row = probe.row(i).get_values();
-            for (const auto match : index.values(join_key_hash(probe_row, probe_keys)))
+            for (const auto [first, last] = index.equal_range(join_key_hash(probe_row, probe_keys)); const auto match : std::ranges::subrange(first, last) | std::views::values)
             {
                 const auto build_row = build.row(match).get_values();
                 if (!join_keys_equal(build_row, build_keys, probe_row, probe_keys))
@@ -336,7 +336,7 @@ void filter_matches(const L& lhs, const R& rhs, const JoinPlan& plan, bool match
     {
         if (rhs.empty() || lhs_keys.empty())
             return !rhs.empty();
-        for (const auto match : workspace.join_index.values(join_key_hash(row, lhs_keys)))
+        for (const auto [first, last] = workspace.join_index.equal_range(join_key_hash(row, lhs_keys)); const auto match : std::ranges::subrange(first, last) | std::views::values)
             if (join_keys_equal(rhs.row(match).get_values(), rhs_keys, row, lhs_keys))
                 return true;
         return false;

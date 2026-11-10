@@ -11,6 +11,7 @@
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 
 #include <cassert>
+#include <ranges>
 #include <span>
 #include <urd/memory.hpp>
 #include <urd/repr/maps/postings.hpp>
@@ -70,7 +71,7 @@ class SemijoinEvaluator
         for (size_t i = 0; i < rhs_rows.size(); ++i)
         {
             const auto rhs_row = rhs_rows.row(i).get_values();
-            for (const auto position : m_lhs_index.values(database::detail::join_key_hash(rhs_row, rhs_keys)))
+            for (const auto [first, last] = m_lhs_index.equal_range(database::detail::join_key_hash(rhs_row, rhs_keys)); const auto position : std::ranges::subrange(first, last) | std::views::values)
                 if (database::detail::join_keys_equal(current.row(position).get_values(), lhs_keys, rhs_row, rhs_keys))
                     reconcile(current.row(position).get_values());
         }

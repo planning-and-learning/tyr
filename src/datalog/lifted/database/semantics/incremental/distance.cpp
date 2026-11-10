@@ -8,6 +8,8 @@
 #include "yggdrasil/core/config.hpp"
 #include <urd/config.hpp>
 
+#include <ranges>
+
 namespace tyr::datalog::database::incremental
 {
 DistanceEvaluator::DistanceEvaluator(const ygg::FreeRelationRepository& layer, DistancePlan plan) :
@@ -149,7 +151,7 @@ void DistanceEvaluator::rebuild_incoming(SourceState& state, VertexSet::handle_t
     assert(m_repair->settled(vertex));
     auto& supports = state.supports[vertex];
     supports = vertex == state.root ? 1 : 0;
-    for (const auto from : m_reverse.values(vertex))
+    for (const auto [first, last] = m_reverse.equal_range(vertex); const auto from : std::ranges::subrange(first, last) | std::views::values)
     {
         detail::count_distance_work(&detail::DistanceWork::incoming_edges);
         const auto candidate = successor_distance(state.distances[from]);
@@ -183,7 +185,7 @@ void DistanceEvaluator::repair(SourceState& state)
             state.supports[vertex] = m_repair->accept_improvement(vertex, key);
         else
             rebuild_incoming(state, vertex);
-        for (const auto to : m_graph.outgoing.values(vertex))
+        for (const auto [first, last] = m_graph.outgoing.equal_range(vertex); const auto to : std::ranges::subrange(first, last) | std::views::values)
         {
             detail::count_distance_work(&detail::DistanceWork::outgoing_edges);
             update_edge(state, vertex, to, before, after);
