@@ -166,7 +166,7 @@ private:
     const ygg::FreeRelationRepository* m_layer;
     database::bound::QueryEvaluator m_base;
     /// By the variables bound on arrival, as database::bound::QueryEvaluator::plans() returns them.
-    urd::Store<urd::map<database::bound::VariableSet, std::vector<database::bound::ConjunctivePlan>>> m_seed_plans;
+    urd::Store<urd::map<database::bound::VariableSet, urd::Store<urd::sequence<database::bound::ConjunctivePlan>>>> m_seed_plans;
     urd::Store<urd::sequence<InputChange>> m_changes;     ///< By slot; reused across bind() calls.
     urd::Store<urd::sequence<size_t>> m_changed;          ///< The slots the last bind() changed.
     urd::Store<urd::set<size_t>, urd::dense> m_positive;  ///< The slots that occur under an even number of negations.

@@ -9,7 +9,7 @@
 
 namespace tyr::datalog::database::bound
 {
-std::vector<ConjunctivePlan> QueryEvaluator::plans(const VariableSet& bound)
+urd::Store<urd::sequence<ConjunctivePlan>> QueryEvaluator::plans(const VariableSet& bound)
 {
     auto measured = urd::Store<urd::sequence<std::optional<RelationStatistics>>>(input_count());
     const auto statistics = [&](size_t slot) -> const RelationStatistics&
@@ -18,7 +18,7 @@ std::vector<ConjunctivePlan> QueryEvaluator::plans(const VariableSet& bound)
             measured[slot] = measure_relation(input(slot));
         return *measured[slot];
     };
-    auto compiled = std::vector<ConjunctivePlan>();
+    auto compiled = urd::Store<urd::sequence<ConjunctivePlan>>();
     for (const auto& branch : m_query.branches)
     {
         auto& plan = compiled.emplace_back(plan_branch(m_query, branch, bound, statistics));

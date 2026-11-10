@@ -58,7 +58,7 @@ struct ConjunctivePlan
 {
     ConjunctiveFilters filters;  ///< Checkable before the first step.
     urd::Store<urd::sequence<ConjunctiveStep>> steps;
-    std::vector<std::vector<ConjunctivePlan>> negation_plans;  ///< Per negation, per branch. std::vector: of an incomplete type (a Store resolves its element type at once).
+    urd::Store<urd::sequence<urd::Store<urd::sequence<ConjunctivePlan>>>> negation_plans;  ///< Per negation, per branch.
 };
 
 /// A greedy left-deep order for index nested-loop evaluation: next the atom with the smallest expected fanout, using

@@ -181,7 +181,7 @@ public:
     [[nodiscard]] const UnionNormalForm& query() const noexcept { return m_query; }
 
     /// One plan per branch, with the variables marked in `bound` bound on arrival, for the current inputs' sizes.
-    std::vector<ConjunctivePlan> plans(const VariableSet& bound);  // std::vector: as ConjunctivePlan::negation_plans
+    urd::Store<urd::sequence<ConjunctivePlan>> plans(const VariableSet& bound);
 
     /// Binds the atom's variables to an input row; false if the row repeats a variable with different values.
     bool bind_atom(const ConjunctiveAtom& atom, const ygg::RowPool::row_type& row);
@@ -198,7 +198,7 @@ private:
     struct Binding
     {
         urd::Store<urd::sequence<size_t>> positions;
-        std::vector<ConjunctivePlan> plans;  // std::vector: as ConjunctivePlan::negation_plans
+        urd::Store<urd::sequence<ConjunctivePlan>> plans;
     };
     /// The rows of an input slot keyed by some of its columns; with no key columns, a scan.
     struct KeyIndex
