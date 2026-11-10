@@ -452,7 +452,7 @@ TEST(YggdrasilTests, UnorderedMultiMapWarmedRebuildsAllocateAndFreeNothing)
                 size_t seen = 0;
                 size_t sum = 0;
                 for (size_t key = 0; key < distinct; ++key)
-                    for (const auto value : map.values(offset + key))
+                    for (const auto [first, last] = map.equal_range(offset + key); const auto value : std::ranges::subrange(first, last) | std::views::values)
                     {
                         valid &= value % distinct == key;
                         ++seen;
