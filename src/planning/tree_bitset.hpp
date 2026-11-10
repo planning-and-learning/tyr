@@ -26,7 +26,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <urd/repr/containers/bit.hpp>
+#include <urd/bits.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -58,7 +58,7 @@ template<std::unsigned_integral Block, typename Flip>
 void append_int_flips(std::uint32_t position, std::uint8_t offset, std::uint8_t length, Block value, urd::Store<urd::sequence<Flip>>& flips)
 {
     auto masks = std::array<Block, 2> {};
-    urd::repr::bit::write_int<Block>(masks, value, offset, length);
+    urd::bits::write_int<Block>(masks, value, offset, length);
     for (std::uint32_t i = 0; i < masks.size(); ++i)
         if (masks[i] != Block { 0 })
             flips.push_back(Flip { position + i, masks[i] });

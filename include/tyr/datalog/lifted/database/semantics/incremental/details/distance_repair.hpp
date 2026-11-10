@@ -12,6 +12,7 @@
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/memory.hpp>
+#include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/queues/addressable_heap.hpp>
@@ -21,7 +22,6 @@
 
 #include <cassert>
 #include <limits>
-#include <optional>
 #include <utility>
 #include <vector>
 
@@ -54,7 +54,7 @@ class DistanceRepairWorkspace
 
     Heap m_global;
     urd::Store<urd::sequence<Heap, VertexSet::handle_type>> m_local;
-    urd::Store<urd::sequence<std::optional<Heap::handle_type>, VertexSet::handle_type>> m_vertices;
+    urd::Store<urd::map<VertexSet::handle_type, Heap::handle_type>, urd::dense, urd::constant_clear> m_vertices;  ///< A scheduled vertex's handle in m_global.
     urd::Store<urd::map<std::pair<VertexSet::handle_type, VertexSet::handle_type>, Heap::handle_type>> m_edges;
 
     static void update(Heap& heap, Heap::handle_type handle, Entry entry)
@@ -79,7 +79,7 @@ public:
         assert(m_global.empty() && m_edges.empty());
         if (m_local.size() < count)
             m_local.resize(count);
-        m_vertices.resize(count);
+        m_vertices.reserve(count);
     }
 
     void clear()
@@ -87,8 +87,7 @@ public:
         m_global.clear();
         for (auto& heap : m_local)
             heap.clear();
-        for (auto& handle : m_vertices)
-            handle.reset();
+        m_vertices.clear();
         m_edges.clear();
     }
 
@@ -102,19 +101,20 @@ public:
     {
         const auto entry = m_global.top();
         m_global.pop();
-        m_vertices[entry.second].reset();
+        m_vertices.erase(entry.second);
         count_distance_work(&DistanceWork::heap_pops);
         return entry;
     }
 
-    size_t memory_usage() const noexcept
+    /// The members it owns memory through (urd::memory_of).
+    static constexpr auto memory_members() noexcept
     {
-        auto heaps = urd::memory_usage(m_global);
-        for (const auto& heap : m_local)
-            heaps += urd::memory_usage(heap);
-        return sizeof(*this) + heaps + m_local.capacity() * sizeof(Heap) + m_vertices.capacity() * sizeof(std::optional<Heap::handle_type>)
-               + urd::memory_usage(m_edges);
+        return urd::Members<&DistanceRepairWorkspace::m_global,
+                            &DistanceRepairWorkspace::m_local,
+                            &DistanceRepairWorkspace::m_vertices,
+                            &DistanceRepairWorkspace::m_edges> {};
     }
+    size_t memory_usage() const noexcept { return sizeof(*this) + urd::memory_usage(*this); }
 };
 }  // namespace tyr::datalog::database::incremental::detail
 

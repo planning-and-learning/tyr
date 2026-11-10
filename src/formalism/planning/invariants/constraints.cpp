@@ -267,7 +267,7 @@ ConstraintTerm make_constraint_term(const Term& term)
             else if constexpr (std::is_same_v<T, urd::index<Object>>)
                 return ObjectTerm { arg };
             else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case");
+                static_assert(false, "Missing case");
         },
         term);
 }

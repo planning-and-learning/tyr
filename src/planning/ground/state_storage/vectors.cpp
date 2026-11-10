@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <urd/repr/containers/bit.hpp>
+#include <urd/bits.hpp>
 
 namespace tyr::planning
 {
@@ -58,7 +58,7 @@ auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 
     std::ranges::fill(m_buffer, ygg::uint_t { 0 });
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
-        urd::repr::bit::int_reference(std::span(m_buffer).subspan(infos[i].begin), infos[i].offset, infos[i].length) = unpacked.values[i];
+        urd::bits::int_reference(std::span(m_buffer).subspan(infos[i].begin), infos[i].offset, infos[i].length) = unpacked.values[i];
 
     return m_array_set->insert(m_buffer).first;
 }
@@ -90,13 +90,13 @@ void FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const P
 
     values.resize(infos.size());
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
-        values[i] = urd::repr::bit::read_int<ygg::uint_t>(data.subspan(infos[i].begin), infos[i].offset, infos[i].length);
+        values[i] = urd::bits::read_int<ygg::uint_t>(data.subspan(infos[i].begin), infos[i].offset, infos[i].length);
 }
 
 template<typename... Tags, bool ThreadSafe>
 AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::AtomStorageBackend(Context& ctx) :
     m_array_set(&ctx.derived_array_set),
-    m_buffer(urd::repr::bit::ceil_div(ctx.layout.derived_num_bits, static_cast<ygg::uint_t>(urd::repr::bit::bits_per_block_v<ygg::uint_t>)))
+    m_buffer(urd::bits::ceil_div(ctx.layout.derived_num_bits, static_cast<ygg::uint_t>(urd::bits::bits_per_block_v<ygg::uint_t>)))
 {
 }
 

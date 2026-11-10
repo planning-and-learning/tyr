@@ -15,13 +15,15 @@
 #include "tyr/datalog/lifted/database/semantics/search/backward_frontier.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <span>
 #include <stdexcept>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace tyr::datalog::database::incremental
 {
@@ -56,7 +58,10 @@ class MinDistance
 public:
     /// Edges given by a query over inputs. `edges` has the plan's edge columns; `static_slots` marks its inputs that
     /// never change after the first bind(). Its builders are read through `layer`, which must outlive it.
-    MinDistance(const ygg::FreeRelationRepository& layer, QueryView<> edges, const DistancePlan& plan, const std::vector<bool>& static_slots = {}) :
+    MinDistance(const ygg::FreeRelationRepository& layer,
+                QueryView<> edges,
+                const DistancePlan& plan,
+                const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         MinDistance(incremental::bound::QueryEvaluator(layer, database::detail::checked_edges(edges, plan), static_slots), plan)
     {
     }
@@ -83,7 +88,7 @@ public:
     /// Diffs the current inputs against the bound ones: input(slot) returns slot's relation view (see
     /// incremental::bound::QueryEvaluator::bind).
     template<SlotRelations Input>
-    void bind(const Input& input, const std::vector<bool>& maybe_changed = {})
+    void bind(const Input& input, const urd::Store<urd::set<size_t>, urd::dense>* maybe_changed = nullptr)
     {
         auto& evaluator = m_edges.evaluator();
         guarded(
@@ -99,23 +104,21 @@ public:
             });
     }
 
-    /// Applies exact changes to bound inputs instead of diffing them: for each slot marked in `changed`, change(slot)
+    /// Applies exact changes to bound inputs instead of diffing them: for each slot in `changed`, change(slot)
     /// has relation views `added` (rows not in the slot) and `removed` (rows in it).
     template<SlotChanges Change>
-    void update(const Change& change, const std::vector<bool>& changed)
+    void update(const Change& change, const urd::Store<urd::set<size_t>, urd::dense>& changed)
     {
-        if (changed.size() > input_count())
+        if (std::ranges::any_of(changed, [&](size_t slot) { return slot >= input_count(); }))
             throw std::invalid_argument("Min distance: more changed slots than inputs.");
         auto& evaluator = m_edges.evaluator();
         guarded(
             [&]
             {
-                for (size_t slot = 0; slot < changed.size(); ++slot)
-                    if (changed[slot])
-                        evaluator.update(slot, change(slot).added, change(slot).removed);
-                for (size_t slot = 0; slot < changed.size(); ++slot)
-                    if (changed[slot])
-                        seed(slot, change(slot).added, change(slot).removed);
+                for (const auto slot : changed)
+                    evaluator.update(slot, change(slot).added, change(slot).removed);
+                for (const auto slot : changed)
+                    seed(slot, change(slot).added, change(slot).removed);
             });
     }
 

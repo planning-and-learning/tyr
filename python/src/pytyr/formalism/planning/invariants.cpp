@@ -49,7 +49,12 @@ void bind_substitution_function(nb::module_& m, const std::string& name)
                    .def(nb::init<urd::Store<urd::sequence<ParameterIndex>>>(), "parameters"_a)
                    .def_static("from_range", &V::from_range, "offset"_a, "size"_a)
                    .def("size", &V::size)
-                   .def_prop_ro("parameters", &V::parameters)
+                   .def_prop_ro("parameters",
+                                [](const V& self)
+                                {
+                                    const auto parameters = self.parameters();
+                                    return urd::Store<urd::sequence<ParameterIndex>>(parameters.begin(), parameters.end());
+                                })
                    .def("contains_parameter", &V::contains_parameter, "parameter"_a)
                    .def("is_bound", &V::is_bound, "parameter"_a)
                    .def("is_unbound", &V::is_unbound, "parameter"_a)

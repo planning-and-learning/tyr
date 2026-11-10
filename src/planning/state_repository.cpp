@@ -111,10 +111,11 @@ struct StateRepository<Kind>::Impl
     template<bool ThreadSafe>
     struct Storage
     {
-        /// The packed states, interned whole in a urd pool (references stay valid; thread-safe where ThreadSafe): a
-        /// handle's value is the state's index.
-        using PackedStates =
-            urd::Store<urd::pool<PackedState<Kind>>, urd::stable_refs, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+        /// The packed states, interned whole in a urd pool (references stay valid; thread-safe where ThreadSafe): its
+        /// handle is the state's index.
+        using PackedStates = urd::Store<urd::pool<PackedState<Kind>, urd::index<State<Kind>>>,
+                                        urd::stable_refs,
+                                        std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
         explicit Storage(const Task<Kind>& task) :
             identity(next_state_storage_identity<Kind>()),
@@ -192,28 +193,25 @@ struct StateRepository<Kind>::Impl
             }
 #endif
             auto& packed_states = storage->packed_states;
-            using PackedStates = typename Storage<ThreadSafe>::PackedStates;
-            using Handle = typename PackedStates::handle_type;
-            const auto* parent = parent_state ? &packed_states[Handle(parent_state->index.value)] : nullptr;
+            const auto* parent = parent_state ? &packed_states[parent_state->index] : nullptr;
             const auto fluent = insert_fluents(state, parent, delta);
             const auto numeric = insert_numeric(state, parent, delta);
             const auto key = PackedState<Kind>(fluent, {}, numeric);
             const auto hash = urd::Hash<PackedState<Kind>> {}(key);
             const auto found = packed_states.find(urd::prehashed<PackedState<Kind>> { key, hash });
-            auto state_index = found.is_none() ? std::optional<urd::index<State<Kind>>>() : std::optional(urd::index<State<Kind>>(found.value));
+            auto state_index = found.is_none() ? std::optional<urd::index<State<Kind>>>() : std::optional(found);
 
             if (!state_index)
             {
                 std::forward<ExtendState>(extend_state)();
                 const auto derived = insert_derived(state, parent, parent_state);
-                const auto [inserted_handle, inserted] = packed_states.insert(urd::prehashed<PackedState<Kind>> { key, hash },
-                                                                               [&](Handle new_handle)
-                                                                               {
-                                                                                   auto data = PackedState<Kind>(fluent, derived, numeric);
-                                                                                   data.index = urd::index<State<Kind>>(new_handle.value);
-                                                                                   return data;
-                                                                               });
-                const auto inserted_index = urd::index<State<Kind>>(inserted_handle.value);
+                const auto [inserted_index, inserted] = packed_states.insert(urd::prehashed<PackedState<Kind>> { key, hash },
+                                                                              [&](urd::index<State<Kind>> new_index)
+                                                                              {
+                                                                                  auto data = PackedState<Kind>(fluent, derived, numeric);
+                                                                                  data.index = new_index;
+                                                                                  return data;
+                                                                              });
                 state_index = inserted_index;
                 if (inserted)
                 {
@@ -222,8 +220,7 @@ struct StateRepository<Kind>::Impl
                 }
             }
 
-            derived_backend.unpack(packed_states[Handle(state_index->value)].atom_storage,
-                                   state.atom_storage);
+            derived_backend.unpack(packed_states[*state_index].atom_storage, state.atom_storage);
             state.set(*state_index);
         }
     };
@@ -373,8 +370,7 @@ const PackedState<Kind>& StateRepository<Kind>::packed(urd::index<State<Kind>> s
     return m_impl->visit_evaluator(
         [&](const auto& evaluator) -> const PackedState<Kind>&
         {
-            const auto& packed_states = evaluator.storage->packed_states;
-            return packed_states[typename std::remove_cvref_t<decltype(packed_states)>::handle_type(state_index.value)];
+            return evaluator.storage->packed_states[state_index];
         });
 }
 

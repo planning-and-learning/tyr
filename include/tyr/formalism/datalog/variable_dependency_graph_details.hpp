@@ -96,13 +96,14 @@ struct BinaryDependencies
     /// k rows of k bits: bit pj of row pi is set iff parameters pi and pj occur together.
     using Pairs = urd::Store<urd::sequence<urd::Store<urd::set<std::size_t>, urd::dense>>, urd::fixed_shape>;
 
+    /// Every member starts as k rows of k unset bits: the first is built from that shape, the others are copies of it.
     explicit BinaryDependencies(ygg::uint_t k_) :
         k(k_),
         static_positive_literal(std::vector<std::size_t>(k_, k_)),
-        static_negative_literal(std::vector<std::size_t>(k_, k_)),
-        fluent_positive_literal(std::vector<std::size_t>(k_, k_)),
-        fluent_negative_literal(std::vector<std::size_t>(k_, k_)),
-        numeric_constraint(std::vector<std::size_t>(k_, k_))
+        static_negative_literal(static_positive_literal),
+        fluent_positive_literal(static_positive_literal),
+        fluent_negative_literal(static_positive_literal),
+        numeric_constraint(static_positive_literal)
     {
     }
 

@@ -35,7 +35,7 @@ bool uses_parameter(const Term& term, ParameterIndex parameter)
             else if constexpr (std::is_same_v<T, urd::index<Object>>)
                 return false;
             else
-                static_assert(urd::repr::dependent_false<T>::value, "Missing case");
+                static_assert(false, "Missing case");
         },
         term);
 }
@@ -110,7 +110,7 @@ void remove_unused_parameters(MutableInvariant& inv)
                     else if constexpr (std::is_same_v<T, urd::index<Object>>)
                         return Term(arg);
                     else
-                        static_assert(urd::repr::dependent_false<T>::value, "Missing case");
+                        static_assert(false, "Missing case");
                 },
                 term);
         }

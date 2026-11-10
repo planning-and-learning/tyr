@@ -18,9 +18,9 @@
 #include <fmt/ostream.h>
 #include <span>
 #include <sstream>
-#include <urd/repr/containers/bitset_span.hpp>
+#include <urd/bits.hpp>
 #include <vector>
-#include <yggdrasil/formatting/dynamic_bitset_formatters.hpp>
+#include <urd/format.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
 namespace fmt
@@ -137,7 +137,7 @@ struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
                 {
                     const auto& info = value.layout().info.infos[partition];
                     auto adjacency =
-                        urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(adjacency_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+                        urd::bitset_span<uint64_t>(std::span<uint64_t>(adjacency_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
                     value.copy_adjacency_to(vertex, partition, adjacency);
                     fmt::print(os, "{}, ", adjacency);
                 }

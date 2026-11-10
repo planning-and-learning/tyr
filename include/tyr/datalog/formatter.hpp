@@ -36,7 +36,6 @@
 #include <vector>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
-#include <yggdrasil/formatting/dynamic_bitset_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
 namespace fmt

@@ -69,21 +69,21 @@ void DistanceRepairWorkspace::schedule(VertexSet::handle_type vertex, ygg::uint_
         key = distance;
     else if (!m_local[vertex].empty())
         key = m_local[vertex].top().first;
-    auto& handle = m_vertices[vertex];
+    const auto handle = m_vertices.find(vertex);
     if (key == infinity)
     {
-        if (handle)
+        if (handle != m_vertices.end())
         {
-            m_global.erase(*handle);
-            handle.reset();
+            m_global.erase(handle->second);
+            m_vertices.erase(vertex);
             count_distance_work(&DistanceWork::heap_erases);
         }
     }
-    else if (handle)
-        update(m_global, *handle, { key, vertex });
+    else if (handle != m_vertices.end())
+        update(m_global, handle->second, { key, vertex });
     else
     {
-        handle = m_global.push({ key, vertex });
+        m_vertices.try_emplace(vertex, m_global.push({ key, vertex }));
         count_distance_work(&DistanceWork::heap_inserts);
     }
 }

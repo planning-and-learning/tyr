@@ -5,6 +5,7 @@
 
 #include "tyr/datalog/lifted/database/semantics/min_distance.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 
 #include "query_helpers.hpp"
@@ -17,7 +18,6 @@
 #include <gtest/gtest.h>
 #include <map>
 #include <random>
-#include <vector>
 
 namespace
 {
@@ -34,7 +34,7 @@ template<typename Mutate>
 void check_sequence(tyr::datalog::database::QueryView<> edges,
                     const urd::Store<urd::sequence<Relation>>& maximal,
                     urd::Store<urd::sequence<Relation>>& inputs,
-                    const std::vector<bool>& static_slots,
+                    const urd::Store<urd::set<size_t>, urd::dense>& static_slots,
                     Relation& sources,
                     Relation& targets,
                     size_t steps,
@@ -101,7 +101,7 @@ TEST_P(DatabaseMinDistance, SingleColumnEdgesUnderChanges)
     check_sequence(edges,
                    maximal,
                    inputs,
-                   { false },
+                   {},
                    sources,
                    targets,
                    300,
@@ -196,7 +196,7 @@ TEST_P(DatabaseMinDistance, PairEdgesWithJoinsUnionsSelectionsAndDifferences)
     check_sequence(edges,
                    maximal,
                    inputs,
-                   { false, false, false, true, true },
+                   { 3, 4 },
                    sources,
                    targets,
                    300,

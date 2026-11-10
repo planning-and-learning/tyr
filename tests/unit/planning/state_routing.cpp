@@ -40,11 +40,12 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <optional>
-#include <set>
 #include <stdexcept>
 #include <string_view>
 #include <thread>
 #include <tuple>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
 
@@ -149,7 +150,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         EXPECT_EQ(trailing_zero_facts->get(low_variable), tyr::formalism::planning::FDRValue { 1 });
         EXPECT_EQ(dist_hash.hash(*canonical_facts), dist_hash.hash(*trailing_zero_facts));
 
-        auto owners = std::set<ygg::uint_t> {};
+        auto owners = urd::Store<urd::set<ygg::uint_t>> {};
         for (ygg::uint_t mask = 0; mask < 256; ++mask)
         {
             auto state = repository->get_state_builder();

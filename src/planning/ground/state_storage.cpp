@@ -19,20 +19,20 @@
 
 #include "tyr/planning/ground/task.hpp"
 
-#include <urd/repr/containers/bit.hpp>
+#include <urd/bits.hpp>
 
 namespace tyr::planning
 {
 
 StateLayout<GroundTag>::StateLayout(const Task<GroundTag>& task)
 {
-    constexpr auto bits_per_block = static_cast<ygg::uint_t>(urd::repr::bit::bits_per_block_v<ygg::uint_t>);
+    constexpr auto bits_per_block = static_cast<ygg::uint_t>(urd::bits::bits_per_block_v<ygg::uint_t>);
 
     auto current_bit = ygg::uint_t { 0 };
     for (const auto variable : task.get_formalism_task().get_task().get_fluent_variables())
     {
         const auto domain_size = static_cast<ygg::uint_t>(variable.get_atoms().size() + 1);
-        const auto length = static_cast<ygg::uint_t>(urd::repr::bit::bits_needed(domain_size));
+        const auto length = static_cast<ygg::uint_t>(urd::bits::bits_needed(domain_size));
 
         fluent_infos.push_back(VariableInfo {
             .begin = current_bit / bits_per_block,
@@ -43,7 +43,7 @@ StateLayout<GroundTag>::StateLayout(const Task<GroundTag>& task)
         current_bit += length;
     }
 
-    fluent_num_blocks = urd::repr::bit::ceil_div(current_bit, bits_per_block);
+    fluent_num_blocks = urd::bits::ceil_div(current_bit, bits_per_block);
     derived_num_bits = static_cast<ygg::uint_t>(task.get_formalism_task().get_task().get_atoms<formalism::DerivedTag>().size());
 }
 

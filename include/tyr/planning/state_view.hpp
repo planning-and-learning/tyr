@@ -146,7 +146,7 @@ auto ::tyr::planning::StateAccessors<Kind, V>::get_fterm_values() const noexcept
     else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
         return self().data().template get_fterm_values<F>();
     else
-        static_assert(urd::repr::dependent_false<F>::value);
+        static_assert(false);
 }
 
 template<::tyr::TaskKind Kind, typename V>

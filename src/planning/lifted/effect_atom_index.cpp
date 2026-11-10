@@ -32,7 +32,7 @@ EffectAtomIndex::EffectAtomIndex(const AppPredicateToActionMapping& predicate_to
     m_repository(&repository)
 {
     for (const auto& [predicate, action] : predicate_to_action)
-        m_applicability_predicates.emplace(action, predicate);
+        m_applicability_predicates.emplace(action.index(), predicate);
 }
 
 void EffectAtomIndex::clear() noexcept
@@ -49,7 +49,7 @@ std::optional<std::pair<EffectAtomIndex::Atoms::const_iterator, EffectAtomIndex:
     if (effect_predicate == m_effect_to_predicate->end())
         return std::nullopt;
 
-    const auto applicability_predicate = m_applicability_predicates.at(action);
+    const auto applicability_predicate = m_applicability_predicates.at(action.index());
     auto& groups = m_groups[effect_predicate->second];
     if (!groups.current)
         rebuild(groups, effect_predicate->second, applicability_predicate, action.get_arity());

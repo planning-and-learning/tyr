@@ -11,19 +11,20 @@
 #define TYR_SRC_ANALYSIS_STATIC_LITERAL_COMPATIBILITY_HPP_
 
 #include "tyr/algorithms/kckp/kckp.hpp"
+#include <urd/repr/maps/index_map.hpp>
+#include <urd/repr/sequences/jagged.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cstddef>
 #include <initializer_list>
-#include <limits>
-#include <span>
-#include <urd/repr/containers/bitset_span.hpp>
+#include <optional>
+#include <urd/bits.hpp>
 #include <vector>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
@@ -49,9 +50,8 @@ class StaticLiteralCompatibility
 {
 private:
     using Object = urd::index<formalism::Object>;
-    using Bitset = boost::dynamic_bitset<>;
-
-    static constexpr size_t invalid_bit = std::numeric_limits<size_t>::max();
+    /// The bits of a parameter's domain: bit i stands for the domain's i-th object.
+    using Bitset = urd::Store<urd::set<size_t>, urd::dense>;
 
     class BinaryCompatibility
     {
@@ -66,35 +66,23 @@ private:
             if (!constrained())
             {
                 m_constrained = true;
-                m_rows.resize(m_first_size * urd::repr::BitsetSpan<uint64_t>::num_blocks(m_second_size));
+                m_rows = Rows(std::vector<size_t>(m_first_size, m_second_size));
             }
-        }
-
-        auto get_row(size_t first)
-        {
-            const auto num_blocks = urd::repr::BitsetSpan<uint64_t>::num_blocks(m_second_size);
-            return urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
-        }
-
-        [[nodiscard]] auto get_row(size_t first) const
-        {
-            const auto num_blocks = urd::repr::BitsetSpan<uint64_t>::num_blocks(m_second_size);
-            return urd::repr::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_rows).subspan(first * num_blocks, num_blocks).data(), m_second_size);
         }
 
         void set(size_t first, size_t second)
         {
             assert(constrained());
-            get_row(first).set(second);
+            m_rows[first].set(second);
         }
 
-        [[nodiscard]] bool test(size_t first, size_t second) const noexcept { return !constrained() || get_row(first).test(second); }
+        [[nodiscard]] bool test(size_t first, size_t second) const noexcept { return !constrained() || m_rows[first].test(second); }
 
         [[nodiscard]] size_t count() const noexcept
         {
             auto result = size_t { 0 };
             for (size_t first = 0; first < m_first_size; ++first)
-                result += get_row(first).count();
+                result += m_rows[first].count();
             return result;
         }
 
@@ -109,7 +97,7 @@ private:
             }
 
             for (size_t first = 0; first < m_first_size; ++first)
-                get_row(first) &= support.get_row(first);
+                m_rows[first] &= support.m_rows[first];
         }
 
         void subtract(const BinaryCompatibility& support)
@@ -119,11 +107,11 @@ private:
             {
                 constrain();
                 for (size_t first = 0; first < m_first_size; ++first)
-                    get_row(first).set();
+                    m_rows[first].set();
             }
 
             for (size_t first = 0; first < m_first_size; ++first)
-                get_row(first) -= support.get_row(first);
+                m_rows[first] -= support.m_rows[first];
         }
 
         template<typename Callback>
@@ -131,18 +119,18 @@ private:
         {
             assert(constrained());
             for (size_t first = 0; first < m_first_size; ++first)
-            {
-                const auto row = get_row(first);
-                for (auto second = row.find_first(); second != urd::repr::BitsetSpan<const uint64_t>::npos; second = row.find_next(second))
+                for (const auto second : urd::set_bit_indices(m_rows[first]))
                     callback(first, second);
-            }
         }
 
     private:
+        /// m_first_size rows of m_second_size bits once constrained, no rows before.
+        using Rows = urd::Store<urd::sequence<urd::Store<urd::set<size_t>, urd::dense>>, urd::fixed_shape>;
+
         size_t m_first_size { 0 };
         size_t m_second_size { 0 };
         bool m_constrained { false };
-        urd::Store<urd::sequence<uint64_t>> m_rows;
+        Rows m_rows;
     };
 
     static size_t num_pairs(size_t arity) noexcept { return arity < 2 ? 0 : arity * (arity - 1) / 2; }
@@ -163,13 +151,15 @@ private:
         return result;
     }
 
-    [[nodiscard]] size_t object_bit(ygg::uint_t parameter, Object object) const noexcept
+    /// The bit of object in the domain of parameter, if the domain has the object.
+    [[nodiscard]] std::optional<size_t> object_bit(ygg::uint_t parameter, Object object) const noexcept
     {
         if (parameter >= m_object_to_bit.size())
-            return invalid_bit;
+            return std::nullopt;
 
-        const auto object_index = static_cast<size_t>(static_cast<ygg::uint_t>(object.value));
-        return object_index < m_object_to_bit[parameter].size() ? m_object_to_bit[parameter][object_index] : invalid_bit;
+        const auto& bits = m_object_to_bit[parameter];
+        const auto bit = bits.find(object);
+        return bit == bits.end() ? std::nullopt : std::optional<size_t>(bit->second);
     }
 
 public:
@@ -177,26 +167,24 @@ public:
     StaticLiteralCompatibility(LiteralRange literals, AtomRange atoms, const VariableDomainList& domains, size_t num_objects) :
 
         m_domains(domains),
-        m_object_to_bit(domains.size(), urd::Store<urd::sequence<size_t>>(num_objects, invalid_bit)),
+        m_object_to_bit(domains.size()),
         m_unary_compatible(domains.size()),
         m_binary_compatible(make_binary_compatibilities(domains))
     {
         const auto arity = domains.size();
         for (size_t parameter = 0; parameter < arity; ++parameter)
-        {
-            m_unary_compatible[parameter].resize(domains[parameter].objects.size());
-            m_unary_compatible[parameter].set();
             for (size_t bit = 0; bit < domains[parameter].objects.size(); ++bit)
             {
-                const auto object = static_cast<size_t>(static_cast<ygg::uint_t>(domains[parameter].objects[bit].value));
-                assert(object < num_objects);
-                if (object < num_objects)
+                m_unary_compatible[parameter].insert(bit);
+                const auto object = domains[parameter].objects[bit];
+                const auto object_index = static_cast<size_t>(static_cast<ygg::uint_t>(object.value));
+                assert(object_index < num_objects);
+                if (object_index < num_objects)
                 {
-                    assert(m_object_to_bit[parameter][object] == invalid_bit);
-                    m_object_to_bit[parameter][object] = bit;
+                    assert(!m_object_to_bit[parameter].contains(object));
+                    m_object_to_bit[parameter].insert_or_assign(object, bit);
                 }
             }
-        }
 
         for (const auto& literal : literals)
         {
@@ -221,14 +209,12 @@ public:
 
             auto unary_supports = urd::Store<urd::sequence<Bitset>>(arity);
             auto binary_supports = make_binary_compatibilities(domains);
-            for (const auto parameter : parameters)
-                unary_supports[parameter].resize(domains[parameter].objects.size());
             for (size_t first = 0; first < parameters.size(); ++first)
                 for (size_t second = first + 1; second < parameters.size(); ++second)
                     binary_supports[pair_index(arity, parameters[first], parameters[second])].constrain();
 
             auto assignment = urd::Store<urd::sequence<Object>>(arity);
-            auto assigned = std::vector<bool>(arity);
+            auto assigned = urd::Store<urd::set<ygg::uint_t>, urd::dense> {};
             auto has_matching_atom = false;
             const auto predicate = literal.get_atom().get_predicate().index();
             for (const auto& atom : atoms)
@@ -236,7 +222,7 @@ public:
                 if (atom.get_predicate().index() != predicate)
                     continue;
 
-                std::fill(assigned.begin(), assigned.end(), false);
+                assigned.clear();
                 auto matches = true;
                 auto position = size_t { 0 };
                 for (const auto object : atom.get_objects())
@@ -258,12 +244,12 @@ public:
                             else
                             {
                                 const auto parameter = parameter_number(value);
-                                if (assigned[parameter])
+                                if (assigned.contains(parameter))
                                     matches = matches && assignment[parameter] == object_index;
                                 else
                                 {
                                     assignment[parameter] = object_index;
-                                    assigned[parameter] = true;
+                                    assigned.insert(parameter);
                                 }
                             }
                         },
@@ -274,11 +260,8 @@ public:
 
                 has_matching_atom = true;
                 for (const auto parameter : parameters)
-                {
-                    const auto bit = object_bit(parameter, assignment[parameter]);
-                    if (bit != invalid_bit)
-                        unary_supports[parameter].set(bit);
-                }
+                    if (const auto bit = object_bit(parameter, assignment[parameter]))
+                        unary_supports[parameter].insert(*bit);
                 for (size_t first = 0; first < parameters.size(); ++first)
                     for (size_t second = first + 1; second < parameters.size(); ++second)
                     {
@@ -286,8 +269,8 @@ public:
                         const auto second_parameter = parameters[second];
                         const auto first_bit = object_bit(first_parameter, assignment[first_parameter]);
                         const auto second_bit = object_bit(second_parameter, assignment[second_parameter]);
-                        if (first_bit != invalid_bit && second_bit != invalid_bit)
-                            binary_supports[pair_index(arity, first_parameter, second_parameter)].set(first_bit, second_bit);
+                        if (first_bit && second_bit)
+                            binary_supports[pair_index(arity, first_parameter, second_parameter)].set(*first_bit, *second_bit);
                     }
             }
 
@@ -353,7 +336,7 @@ public:
             return true;
 
         const auto bit = object_bit(parameter, object);
-        return bit != invalid_bit && m_unary_compatible[parameter].test(bit);
+        return bit && m_unary_compatible[parameter].contains(*bit);
     }
 
     [[nodiscard]] bool binary_compatible(ygg::uint_t first_parameter, Object first_object, ygg::uint_t second_parameter, Object second_object) const noexcept
@@ -371,16 +354,16 @@ public:
 
         const auto first_bit = object_bit(first_parameter, first_object);
         const auto second_bit = object_bit(second_parameter, second_object);
-        if (first_bit == invalid_bit || second_bit == invalid_bit)
+        if (!first_bit || !second_bit)
             return false;
 
-        return m_binary_compatible[pair_index(m_unary_compatible.size(), first_parameter, second_parameter)].test(first_bit, second_bit);
+        return m_binary_compatible[pair_index(m_unary_compatible.size(), first_parameter, second_parameter)].test(*first_bit, *second_bit);
     }
 
 private:
     bool m_satisfiable = true;
     VariableDomainList m_domains;
-    urd::Store<urd::sequence<urd::Store<urd::sequence<size_t>>>> m_object_to_bit;
+    urd::Store<urd::sequence<urd::Store<urd::map<Object, size_t>, urd::dense>>> m_object_to_bit;
     urd::Store<urd::sequence<Bitset>> m_unary_compatible;
     urd::Store<urd::sequence<BinaryCompatibility>> m_binary_compatible;
 };
@@ -413,12 +396,14 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
 
     const auto layout = kckp::create_graph_layout(partition_sizes, vertex_labels);
     auto adjacency = kckp::AdjacencyMatrix(layout);
-    auto universal_partition_pairs = boost::dynamic_bitset<>(layout.num_partitions * layout.num_partitions);
-    auto object_to_bit =
-        urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(layout.num_partitions, urd::Store<urd::sequence<ygg::uint_t>>(num_objects, std::numeric_limits<ygg::uint_t>::max()));
+    auto universal_partition_pairs = urd::Store<urd::set<size_t>, urd::dense> {};
+    auto object_to_bit = urd::Store<urd::sequence<urd::Store<urd::map<urd::index<formalism::Object>, ygg::uint_t>, urd::dense>>>(layout.num_partitions);
     for (ygg::uint_t partition = 0; partition < layout.num_partitions; ++partition)
+    {
+        object_to_bit[partition].reserve(num_objects);
         for (ygg::uint_t bit = 0; bit < domains[partition].objects.size(); ++bit)
-            object_to_bit[partition][static_cast<ygg::uint_t>(domains[partition].objects[bit].value)] = bit;
+            object_to_bit[partition].insert_or_assign(domains[partition].objects[bit], bit);
+    }
 
     for (ygg::uint_t first_partition = 0; first_partition < layout.num_partitions; ++first_partition)
         for (ygg::uint_t second_partition = first_partition + 1; second_partition < layout.num_partitions; ++second_partition)
@@ -433,36 +418,38 @@ inline PairwiseCompatibilityResult create_pairwise_compatibility_graph(const Var
 
             if (!seed)
             {
-                universal_partition_pairs.set(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
-                universal_partition_pairs.set(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
                 continue;
             }
 
+            const auto& first_bits = object_to_bit[first_partition];
+            const auto& second_bits = object_to_bit[second_partition];
             auto num_compatible = size_t { 0 };
             seed->for_each_binary_compatible(
                 first_partition,
                 second_partition,
                 [&](const auto first_object, const auto second_object)
                 {
-                    const auto first_bit = object_to_bit[first_partition][static_cast<ygg::uint_t>(first_object.value)];
-                    const auto second_bit = object_to_bit[second_partition][static_cast<ygg::uint_t>(second_object.value)];
-                    if (first_bit == std::numeric_limits<ygg::uint_t>::max() || second_bit == std::numeric_limits<ygg::uint_t>::max()
+                    const auto first_bit = first_bits.find(first_object);
+                    const auto second_bit = second_bits.find(second_object);
+                    if (first_bit == first_bits.end() || second_bit == second_bits.end()
                         || !std::ranges::all_of(compatibilities,
                                                 [&](const auto* compatibility)
                                                 { return compatibility->binary_compatible(first_partition, first_object, second_partition, second_object); }))
                         return;
 
-                    const auto first_vertex = layout.info.infos[first_partition].bit_offset + first_bit;
-                    const auto second_vertex = layout.info.infos[second_partition].bit_offset + second_bit;
-                    adjacency.get_bitset(first_vertex, second_partition).set(second_bit);
-                    adjacency.get_bitset(second_vertex, first_partition).set(first_bit);
+                    const auto first_vertex = layout.info.infos[first_partition].bit_offset + first_bit->second;
+                    const auto second_vertex = layout.info.infos[second_partition].bit_offset + second_bit->second;
+                    adjacency.get_bitset(first_vertex, second_partition).set(second_bit->second);
+                    adjacency.get_bitset(second_vertex, first_partition).set(first_bit->second);
                     ++num_compatible;
                 });
 
             if (num_compatible == domains[first_partition].objects.size() * domains[second_partition].objects.size())
             {
-                universal_partition_pairs.set(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
-                universal_partition_pairs.set(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
             }
         }
 

@@ -70,7 +70,7 @@ std::optional<urd::Store<urd::sequence<urd::index<Object>>>> extract_rigid_value
                 }
                 else
                 {
-                    static_assert(urd::repr::dependent_false<T>::value, "Unhandled case");
+                    static_assert(false, "Unhandled case");
                 }
             },
             urd::to_stored(terms[position]));

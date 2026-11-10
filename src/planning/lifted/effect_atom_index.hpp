@@ -57,6 +57,7 @@
 #include <ranges>
 #include <span>
 #include <urd/repr/maps/dense_multimap.hpp>
+#include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
@@ -141,7 +142,9 @@ private:
     const ConditionalEffectToPredicateMapping* m_effect_to_predicate;
     const datalog::TaggedFactSets<formalism::FluentTag>* m_facts;
     const formalism::datalog::Repository* m_repository;
-    urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>> m_applicability_predicates;
+    /// The applicability predicate of each action, by the action's index: the actions are those of one domain.
+    urd::Store<urd::map<formalism::planning::ActionIndex<LiftedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>, urd::dense>
+        m_applicability_predicates;
     urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, Groups>> m_groups;
     urd::flat_vector<urd::index<formalism::Object>> m_prefix;
     urd::data<ygg::Row<formalism::Predicate<formalism::FluentTag>>> m_lookup;

@@ -5,7 +5,7 @@
 #ifndef TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_COST_HPP_
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_COST_HPP_
 
-#include <urd/repr/containers/bit.hpp>
+#include <urd/bits.hpp>
 #include "yggdrasil/core/config.hpp"
 #include "tyr/datalog/lifted/database/optimization/details/dpccp.hpp"
 #include "tyr/datalog/lifted/database/optimization/details/estimation.hpp"
@@ -48,7 +48,7 @@ class CostBasedPlanner
     [[nodiscard]] urd::Store<urd::sequence<urd::index<ygg::Column>>> labels(std::uint64_t subset) const
     {
         urd::Store<urd::sequence<urd::index<ygg::Column>>> result;
-        urd::repr::bit::for_each_set_bit(subset, [&](size_t atom) { result.insert(result.end(), m_variables[atom].begin(), m_variables[atom].end()); });
+        urd::bits::for_each_set_bit(subset, [&](size_t atom) { result.insert(result.end(), m_variables[atom].begin(), m_variables[atom].end()); });
         return ygg::canonicalized(std::move(result));
     }
     /// The subset's estimate; returned by value since recursion grows the memo.

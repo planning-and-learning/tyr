@@ -5,6 +5,7 @@
 
 #include "tyr/datalog/lifted/database/optimization/details/structural.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 
 #include <urd/config.hpp>
@@ -15,41 +16,41 @@ std::optional<urd::Store<urd::sequence<std::optional<size_t>>>> join_tree(urd::S
 {
     const auto count = edges.size();
     urd::Store<urd::sequence<std::optional<size_t>>> parent(count);
-    std::vector<bool> alive(count, true);
-    size_t remaining = count;
-    for (bool changed = true; changed && remaining > 1;)
+    urd::Store<urd::set<size_t>, urd::dense> alive;
+    for (size_t edge = 0; edge < count; ++edge)
+        alive.insert(edge);
+    for (bool changed = true; changed && alive.size() > 1;)
     {
         changed = false;
         for (size_t edge = 0; edge < count; ++edge)
         {
-            if (!alive[edge])
+            if (!alive.contains(edge))
                 continue;
             const auto removed = erase_if(edges[edge],
                                                [&](urd::index<ygg::Column> variable)
                                                {
                                                    for (size_t other = 0; other < count; ++other)
-                                                       if (other != edge && alive[other] && std::ranges::binary_search(edges[other], variable))
+                                                       if (other != edge && alive.contains(other) && std::ranges::binary_search(edges[other], variable))
                                                            return false;
                                                    return true;
                                                });
             changed |= removed != 0;
         }
-        for (size_t edge = 0; edge < count && remaining > 1; ++edge)
+        for (size_t edge = 0; edge < count && alive.size() > 1; ++edge)
         {
-            if (!alive[edge])
+            if (!alive.contains(edge))
                 continue;
             for (size_t other = 0; other < count; ++other)
-                if (other != edge && alive[other] && std::ranges::includes(edges[other], edges[edge]))
+                if (other != edge && alive.contains(other) && std::ranges::includes(edges[other], edges[edge]))
                 {
                     parent[edge] = other;
-                    alive[edge] = false;
-                    --remaining;
+                    alive.erase(edge);
                     changed = true;
                     break;
                 }
         }
     }
-    if (remaining > 1)
+    if (alive.size() > 1)
         return std::nullopt;
     return parent;
 }

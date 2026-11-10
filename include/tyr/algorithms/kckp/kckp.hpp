@@ -22,14 +22,13 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
-#include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <optional>
 #include <span>
-#include <urd/repr/containers/bitset_span.hpp>
+#include <urd/bits.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 
@@ -91,10 +90,10 @@ public:
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), uint64_t { 0 }); }
 
-    urd::repr::BitsetSpan<uint64_t> get_bitset(const GraphLayout::BitsetInfo& info) noexcept;
-    [[nodiscard]] urd::repr::BitsetSpan<const uint64_t> get_bitset(const GraphLayout::BitsetInfo& info) const noexcept;
-    urd::repr::BitsetSpan<uint64_t> get_bitset(ygg::uint_t partition) noexcept;
-    [[nodiscard]] urd::repr::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t partition) const noexcept;
+    urd::bitset_span<uint64_t> get_bitset(const GraphLayout::BitsetInfo& info) noexcept;
+    [[nodiscard]] urd::bitset_span<const uint64_t> get_bitset(const GraphLayout::BitsetInfo& info) const noexcept;
+    urd::bitset_span<uint64_t> get_bitset(ygg::uint_t partition) noexcept;
+    [[nodiscard]] urd::bitset_span<const uint64_t> get_bitset(ygg::uint_t partition) const noexcept;
 
     auto& data() noexcept { return m_data; }
     [[nodiscard]] const auto& data() const noexcept { return m_data; }
@@ -111,8 +110,8 @@ public:
     explicit AdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_bitset_data(layout.num_vertices * layout.info.num_blocks) {}
 
     [[nodiscard]] std::span<const uint64_t> get_row(ygg::uint_t vertex) const noexcept;
-    urd::repr::BitsetSpan<uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept;
-    [[nodiscard]] urd::repr::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
+    urd::bitset_span<uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept;
+    [[nodiscard]] urd::bitset_span<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
 
     [[nodiscard]] const auto& layout() const noexcept { return m_layout; }
 
@@ -128,7 +127,7 @@ public:
     explicit DeduplicatedAdjacencyMatrix(const GraphLayout& layout) : m_layout(layout) {}
     explicit DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& matrix);
 
-    [[nodiscard]] urd::repr::BitsetSpan<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
+    [[nodiscard]] urd::bitset_span<const uint64_t> get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;
 
     [[nodiscard]] const auto& layout() const noexcept { return m_layout; }
     [[nodiscard]] const auto& row_offset() const noexcept { return m_row_offset; }
@@ -151,15 +150,16 @@ class Graph
 public:
     Graph();
 
-    /// Constrained adjacency and universal-pair flags must both be symmetric.
-    static Graph create(bool satisfiable, AdjacencyMatrix adjacency, const boost::dynamic_bitset<>& universal_partition_pairs);
+    /// universal_partition_pairs holds first * num_partitions + second for each pair of partitions whose vertices are all adjacent.
+    /// Constrained adjacency and universal pairs must both be symmetric.
+    static Graph create(bool satisfiable, AdjacencyMatrix adjacency, const urd::Store<urd::set<size_t>, urd::dense>& universal_partition_pairs);
 
     [[nodiscard]] bool is_satisfiable() const noexcept { return m_satisfiable; }
     [[nodiscard]] const GraphLayout& get_layout() const noexcept { return m_layout; }
     [[nodiscard]] const DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept { return m_adjacency; }
 
 private:
-    Graph(bool satisfiable, AdjacencyMatrix adjacency, const boost::dynamic_bitset<>& universal_partition_pairs);
+    Graph(bool satisfiable, AdjacencyMatrix adjacency, const urd::Store<urd::set<size_t>, urd::dense>& universal_partition_pairs);
 
     bool m_satisfiable { true };
     GraphLayout m_layout;
@@ -212,9 +212,9 @@ void complete_clique(const GraphLayout& layout,
 
     const auto& info = layout.info.infos[partition];
     const auto row = workspace.compatible_vertices(depth);
-    const auto candidates = urd::repr::BitsetSpan<const uint64_t>(row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+    const auto candidates = urd::bitset_span<const uint64_t>(row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
 
-    for (const auto bit : urd::repr::set_bit_indices(candidates))
+    for (const auto bit : urd::set_bit_indices(candidates))
     {
         const auto vertex = Vertex(info.bit_offset + bit);
         workspace.partial_solution[partition] = vertex;
@@ -296,15 +296,15 @@ private:
     const Graph* m_graph;
 };
 
-inline urd::repr::BitsetSpan<uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) noexcept
-{ return urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(m_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits); }
+inline urd::bitset_span<uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) noexcept
+{ return urd::bitset_span<uint64_t>(std::span<uint64_t>(m_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits); }
 
-inline urd::repr::BitsetSpan<const uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) const noexcept
-{ return urd::repr::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits); }
+inline urd::bitset_span<const uint64_t> VertexPartitions::get_bitset(const GraphLayout::BitsetInfo& info) const noexcept
+{ return urd::bitset_span<const uint64_t>(std::span<const uint64_t>(m_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits); }
 
-inline urd::repr::BitsetSpan<uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) noexcept { return get_bitset(m_layout->info.infos[partition]); }
+inline urd::bitset_span<uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) noexcept { return get_bitset(m_layout->info.infos[partition]); }
 
-inline urd::repr::BitsetSpan<const uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) const noexcept
+inline urd::bitset_span<const uint64_t> VertexPartitions::get_bitset(ygg::uint_t partition) const noexcept
 { return get_bitset(m_layout->info.infos[partition]); }
 
 inline std::span<const uint64_t> AdjacencyMatrix::get_row(ygg::uint_t vertex) const noexcept
@@ -313,27 +313,27 @@ inline std::span<const uint64_t> AdjacencyMatrix::get_row(ygg::uint_t vertex) co
     return std::span<const uint64_t>(m_bitset_data).subspan(offset, m_layout.info.num_blocks);
 }
 
-inline urd::repr::BitsetSpan<uint64_t> AdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept
+inline urd::bitset_span<uint64_t> AdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept
 {
     const auto offset = m_layout.info.num_blocks * vertex;
     const auto& info = m_layout.info.infos[partition];
-    return urd::repr::BitsetSpan<uint64_t>(std::span<uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(), info.num_bits);
+    return urd::bitset_span<uint64_t>(std::span<uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(), info.num_bits);
 }
 
-inline urd::repr::BitsetSpan<const uint64_t> AdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
+inline urd::bitset_span<const uint64_t> AdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
 {
     const auto offset = m_layout.info.num_blocks * vertex;
     const auto& info = m_layout.info.infos[partition];
-    return urd::repr::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(), info.num_bits);
+    return urd::bitset_span<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(), info.num_bits);
 }
 
-inline urd::repr::BitsetSpan<const uint64_t> DeduplicatedAdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
+inline urd::bitset_span<const uint64_t> DeduplicatedAdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept
 {
     const auto& info = m_layout.info.infos[partition];
     assert(vertex < m_row_offset.size());
     assert(m_row_offset[vertex] + partition < m_row_data.size());
     const auto start = m_row_data[m_row_offset[vertex] + partition];
-    return urd::repr::BitsetSpan<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(start, info.num_blocks).data(), info.num_bits);
+    return urd::bitset_span<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(start, info.num_blocks).data(), info.num_bits);
 }
 
 inline std::span<uint64_t> Workspace::compatible_vertices(size_t depth) noexcept

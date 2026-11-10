@@ -29,7 +29,7 @@ namespace tyr::planning::tree_bitset
 {
 /// Blocks have the width of a tree child slot, so TreeBitsetSet stores them inline without a leaf table.
 using Block = ygg::uint_t;
-using Flip = urd::repr::BlockFlip;
+using Flip = urd::block_flip;
 
 inline constexpr size_t bits_per_block = std::numeric_limits<Block>::digits;
 }

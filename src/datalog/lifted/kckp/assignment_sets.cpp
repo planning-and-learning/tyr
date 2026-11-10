@@ -51,7 +51,7 @@
 #include <limits>
 #include <numeric>
 #include <tuple>
-#include <urd/repr/containers/bitset_span.hpp>
+#include <urd/bits.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>

@@ -6,6 +6,7 @@
 #include "tyr/datalog/lifted/database/optimization/details/cost.hpp"
 
 #include <algorithm>
+#include <urd/bits.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -84,13 +85,13 @@ QueryView<> CostBasedPlanner::plan() &&
                                   return true;
                               });
     urd::Store<urd::sequence<std::uint64_t>> components;
-    for (auto unseen = urd::repr::bit::lo_set<std::uint64_t>[count]; unseen;)
+    for (auto unseen = urd::bits::lo_set<std::uint64_t>[count]; unseen;)
     {
         auto component = unseen & -unseen;
         for (std::uint64_t previous = 0; component != previous;)
         {
             previous = component;
-            urd::repr::bit::for_each_set_bit(previous, [&](size_t atom) { component |= graph[atom]; });
+            urd::bits::for_each_set_bit(previous, [&](size_t atom) { component |= graph[atom]; });
         }
         components.push_back(component);
         unseen &= ~component;

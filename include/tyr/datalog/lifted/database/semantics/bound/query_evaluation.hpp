@@ -28,6 +28,7 @@
 #include <urd/memory.hpp>
 #include <urd/repr/maps/postings.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
@@ -49,18 +50,15 @@ class QueryEvaluator
 {
 public:
     /// `static_slots` marks inputs that never change after the first bind().
-    QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryView<> query, const std::vector<bool>& static_slots = {}) :
+    QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryView<> query, const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         m_layer(&layer),
         m_query(union_normal_form(query)),
-        m_columns(query.columns().begin(), query.columns().end())
+        m_columns(query.columns().begin(), query.columns().end()),
+        m_static(static_slots)
     {
         m_frame.resize(m_query.variables.size());
-        m_static.assign(input_count(), false);
-        for (size_t slot = 0; slot < std::min(static_slots.size(), m_static.size()); ++slot)
-            m_static[slot] = static_slots[slot];
         for (const auto& columns : m_query.input_columns)
             m_inputs.push_back(layer.get_relation_builder<ygg::Schema>(std::span<const ygg::ColumnLayout>(columns)));
-        m_bound.assign(input_count(), false);
     }
     // Its snapshots are its own: shared with no copy.
     QueryEvaluator(const QueryEvaluator&) = delete;
@@ -72,12 +70,12 @@ public:
     [[nodiscard]] size_t input_count() const noexcept { return m_query.input_columns.size(); }
     [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const noexcept { return m_columns; }
     [[nodiscard]] ygg::FreeBuilderRelationView input(size_t slot) const { return m_layer->view(*m_inputs.at(slot)); }
-    [[nodiscard]] bool bound() const noexcept { return std::ranges::find(m_bound, false) == m_bound.end(); }
+    [[nodiscard]] bool bound() const noexcept { return m_bound.size() == input_count(); }
     /// Increases whenever an input changes.
     [[nodiscard]] uint64_t version() const noexcept { return m_version; }
 
-    [[nodiscard]] bool is_bound(size_t slot) const noexcept { return m_bound[slot]; }
-    [[nodiscard]] bool is_static(size_t slot) const noexcept { return m_static[slot]; }
+    [[nodiscard]] bool is_bound(size_t slot) const noexcept { return m_bound.contains(slot); }
+    [[nodiscard]] bool is_static(size_t slot) const noexcept { return m_static.contains(slot); }
 
     /// Binds the current inputs: input(slot) returns slot's relation view. Static slots are read on the first bind
     /// only.
@@ -85,7 +83,7 @@ public:
     void bind(const Input& input)
     {
         for (size_t slot = 0; slot < input_count(); ++slot)
-            if (!m_bound[slot] || !m_static[slot])
+            if (!is_bound(slot) || !is_static(slot))
                 bind_slot(slot, input(slot));
     }
 
@@ -98,7 +96,7 @@ public:
         snapshot.clear();
         for (size_t r = 0; r < rows.size(); ++r)
             snapshot.insert(rows.row(r).get_values());
-        m_bound[slot] = true;
+        m_bound.insert(slot);
         invalidate(slot);
     }
 
@@ -183,7 +181,7 @@ public:
     [[nodiscard]] const UnionNormalForm& query() const noexcept { return m_query; }
 
     /// One plan per branch, with the variables marked in `bound` bound on arrival, for the current inputs' sizes.
-    std::vector<ConjunctivePlan> plans(const std::vector<bool>& bound);  // std::vector: of an incomplete type (a Store resolves its element type at once)
+    std::vector<ConjunctivePlan> plans(const VariableSet& bound);  // std::vector: as ConjunctivePlan::negation_plans
 
     /// Binds the atom's variables to an input row; false if the row repeats a variable with different values.
     bool bind_atom(const ConjunctiveAtom& atom, const ygg::RowPool::row_type& row);
@@ -200,7 +198,7 @@ private:
     struct Binding
     {
         urd::Store<urd::sequence<size_t>> positions;
-        std::vector<ConjunctivePlan> plans;  // std::vector: of an incomplete type (a Store resolves its element type at once)
+        std::vector<ConjunctivePlan> plans;  // std::vector: as ConjunctivePlan::negation_plans
     };
     /// The rows of an input slot keyed by some of its columns; with no key columns, a scan.
     struct KeyIndex
@@ -222,9 +220,9 @@ private:
     UnionNormalForm m_query;
     urd::Store<urd::sequence<ygg::ColumnLayout>> m_columns;
     urd::Store<urd::sequence<ygg::Value>> m_frame;  ///< The variables' values while a branch runs, by variable.
-    std::vector<bool> m_static;
+    urd::Store<urd::set<size_t>, urd::dense> m_static;  ///< The input slots that never change after the first bind().
     urd::Store<urd::sequence<std::shared_ptr<urd::builder<ygg::Relation<ygg::Schema>>>>> m_inputs;  ///< The input snapshots, from the layer.
-    std::vector<bool> m_bound;
+    urd::Store<urd::set<size_t>, urd::dense> m_bound;  ///< The input slots bound so far.
     urd::Store<urd::sequence<KeyIndex>, urd::stable_refs> m_indexes;
     urd::Store<urd::sequence<Lookup>, urd::stable_refs> m_lookups;  ///< By ConjunctiveStep::index.
     urd::Store<urd::sequence<Binding>> m_bindings;
@@ -239,11 +237,11 @@ private:
         return m_row;
     }
 
-    [[nodiscard]] std::vector<bool> bound_variables(std::span<const size_t> positions) const
+    [[nodiscard]] VariableSet bound_variables(std::span<const size_t> positions) const
     {
-        auto bound = std::vector<bool>(m_query.variables.size(), false);
+        auto bound = VariableSet();
         for (const auto position : positions)
-            bound[m_query.output[position]] = true;
+            bound.insert(m_query.output[position]);
         return bound;
     }
 

@@ -334,7 +334,7 @@ public:
     /// Retained runtime storage; excludes the immutable query plan.
     [[nodiscard]] size_t memory_usage() const noexcept
     {
-        size_t result = m_workspace.memory_usage() + m_identities.capacity() * sizeof(ygg::RelationIdentity);
+        size_t result = m_workspace.memory_usage() + urd::memory_usage(m_identities);
         // get_if rather than std::visit, which throws for a valueless variant; nodes are never valueless.
         const auto node_usage = []<typename... Nodes>(const std::variant<Nodes...>& node) noexcept
         { return ((std::get_if<Nodes>(&node) ? std::get_if<Nodes>(&node)->state.memory_usage() : size_t { 0 }) + ...); };

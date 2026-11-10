@@ -52,12 +52,11 @@
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
-#include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <cassert>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
-#include <urd/repr/containers/bitset_span.hpp>
+#include <urd/bits.hpp>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 
@@ -959,7 +958,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     if (!target_changed && !delta_delta_partition_i.any())
                         continue;
                     const auto sources = target_changed ? full_affected_partition_i : delta_delta_partition_i;
-                    for (auto bi = sources.find_first(); bi != urd::repr::BitsetSpan<const uint64_t>::npos; bi = sources.find_next(bi))
+                    for (auto bi = sources.find_first(); bi != urd::bitset_span<const uint64_t>::npos; bi = sources.find_next(bi))
                     {
                         const auto vi = offset_i + bi;
                         const auto static_blocks = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj).blocks();
@@ -980,7 +979,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                 assert(m_partitioned_adjacency_layout.is_runtime(pi, pj));
 
-                for (auto bi = full_affected_partition_i.find_first(); bi != urd::repr::BitsetSpan<const uint64_t>::npos;
+                for (auto bi = full_affected_partition_i.find_first(); bi != urd::bitset_span<const uint64_t>::npos;
                      bi = full_affected_partition_i.find_next(bi))
                 {
                     const auto vi = offset_i + bi;  ///< vi is consistent + delta
@@ -988,8 +987,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     const auto static_edges = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj);
                     auto full_edges_i = full_graph.matrix.get_runtime_bitset(vi, pj);
                     auto delta_edges_i = delta_graph.matrix.get_runtime_bitset(vi, pj);
-                    auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
-                    auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
 
                     auto process_delta_edge = [&](auto&& bj)
                     {
@@ -1009,10 +1006,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         delta_affected_partition_j.set(bj);
 
                         // Set touched partitions
-                        delta_touched_i = true;
-                        full_touched_i = true;
-                        delta_graph.matrix.touched_partitions(vj, pi) = true;
-                        full_graph.matrix.touched_partitions(vj, pi) = true;
+                        delta_graph.matrix.touch_partition(vi, pj);
+                        full_graph.matrix.touch_partition(vi, pj);
+                        delta_graph.matrix.touch_partition(vj, pi);
+                        full_graph.matrix.touch_partition(vj, pi);
                     };
 
                     const auto vertex_i = details::Vertex(formalism::ParameterIndex(pi), urd::index<formalism::Object>(layout.vertex_labels[vi]));

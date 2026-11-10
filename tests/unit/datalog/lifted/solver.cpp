@@ -20,8 +20,9 @@
 
 #include <algorithm>
 #include <gtest/gtest.h>
-#include <set>
 #include <string>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
 namespace tyr::tests
@@ -139,7 +140,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
     // The fixtures predate the predicates of the conditional effects, which are internal to the action and ground task programs.
     const auto without_effect_predicates = [](AtomsByPredicate atoms, const auto& effect_to_predicate)
     {
-        auto effect_predicates = std::set<std::string> {};
+        auto effect_predicates = urd::Store<urd::set<std::string>> {};
         for (const auto& [_, predicate] : effect_to_predicate)
             effect_predicates.insert(predicate.get_name().str());
         erase_if(atoms, [&](const auto& entry) { return effect_predicates.contains(entry.predicate); });

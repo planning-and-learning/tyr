@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -52,7 +53,7 @@ class QueryEvaluator
 {
 public:
     /// Its builders are read through `layer`, which must outlive it.
-    QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryView<> query, const std::vector<bool>& static_slots = {}) :
+    QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryView<> query, const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         m_layer(&layer),
         m_base(layer, query, static_slots)
     {
@@ -62,12 +63,10 @@ public:
             m_changes.push_back(InputChange { slot, urd::builder<ygg::Relation<ygg::Schema>>(columns), urd::builder<ygg::Relation<ygg::Schema>>(columns), SetPlan(columns, columns) });
         }
         m_changed.reserve(input_count());
-        m_positive.assign(input_count(), false);
-        m_negative.assign(input_count(), false);
         const auto mark = [&](auto&& self, const database::bound::ConjunctiveBranch& branch, bool negated) -> void
         {
             for (const auto& atom : branch.atoms)
-                (negated ? m_negative : m_positive)[atom.slot] = true;
+                (negated ? m_negative : m_positive).insert(atom.slot);
             for (const auto& negation : branch.negations)
                 for (const auto& inner : negation.branches)
                     self(self, inner, !negated);
@@ -99,11 +98,11 @@ public:
     }
 
     /// Diffs the current inputs against the bound snapshots: input(slot) returns slot's relation view. Slots not bound
-    /// yet are bound, as by initialize(); static slots are read then only. After that, slots not marked in
-    /// `maybe_changed` are assumed unchanged and are not read either. Returns the slots bound before that changed,
+    /// yet are bound, as by initialize(); static slots are read then only. After that, where `maybe_changed` is given,
+    /// the slots not in it are assumed unchanged and are not read either. Returns the slots bound before that changed,
     /// whose changes change(slot) holds; both are valid until the next bind().
     template<SlotRelations Input>
-    std::span<const size_t> bind(const Input& input, const std::vector<bool>& maybe_changed = {})
+    std::span<const size_t> bind(const Input& input, const urd::Store<urd::set<size_t>, urd::dense>* maybe_changed = nullptr)
     {
         m_changed.clear();
         for (size_t slot = 0; slot < input_count(); ++slot)
@@ -113,7 +112,7 @@ public:
                 m_base.bind_slot(slot, input(slot));
                 continue;
             }
-            if (m_base.is_static(slot) || (!maybe_changed.empty() && (slot >= maybe_changed.size() || !maybe_changed[slot])))
+            if (m_base.is_static(slot) || (maybe_changed && !maybe_changed->contains(slot)))
                 continue;
             auto& change = m_changes[slot];
             diff(input(slot), change);
@@ -166,21 +165,22 @@ public:
 private:
     const ygg::FreeRelationRepository* m_layer;
     database::bound::QueryEvaluator m_base;
-    urd::Store<urd::map<std::vector<bool>, std::vector<database::bound::ConjunctivePlan>>> m_seed_plans;  ///< By the variables bound on arrival. std::vector: filled from the plans, of an incomplete type.
-    urd::Store<urd::sequence<InputChange>> m_changes;                                                           ///< By slot; reused across bind() calls.
-    urd::Store<urd::sequence<size_t>> m_changed;                                                                ///< The slots the last bind() changed.
-    std::vector<bool> m_positive;  ///< By slot: whether it occurs under an even number of negations.
-    std::vector<bool> m_negative;  ///< By slot: whether it occurs under an odd number of negations.
+    /// By the variables bound on arrival, as database::bound::QueryEvaluator::plans() returns them.
+    urd::Store<urd::map<database::bound::VariableSet, std::vector<database::bound::ConjunctivePlan>>> m_seed_plans;
+    urd::Store<urd::sequence<InputChange>> m_changes;     ///< By slot; reused across bind() calls.
+    urd::Store<urd::sequence<size_t>> m_changed;          ///< The slots the last bind() changed.
+    urd::Store<urd::set<size_t>, urd::dense> m_positive;  ///< The slots that occur under an even number of negations.
+    urd::Store<urd::set<size_t>, urd::dense> m_negative;  ///< The slots that occur under an odd number of negations.
     uint64_t m_version = 0;
-    std::vector<bool> m_bound;  ///< Scratch of seed_plan() and seed_branch(), kept to avoid allocations.
-    std::vector<bool> m_top_vars;
+    database::bound::VariableSet m_bound;  ///< Scratch of seed_plan() and seed_branch(), kept to avoid allocations.
+    database::bound::VariableSet m_top_vars;
 
     /// Applies a change that is known to be valid (see update()).
     template<RelationViewConcept A, RelationViewConcept R>
     void apply(size_t slot, const A& added, const R& removed)
     {
         m_base.replace(slot, added, removed);
-        if ((m_positive[slot] && !removed.empty()) || (m_negative[slot] && !added.empty()))
+        if ((m_positive.contains(slot) && !removed.empty()) || (m_negative.contains(slot) && !added.empty()))
             ++m_version;
     }
 
@@ -196,9 +196,8 @@ private:
     /// The plan of a branch with the atom's variables bound; valid until the next call.
     const database::bound::ConjunctivePlan& seed_plan(size_t branch, const database::bound::ConjunctiveAtom& atom)
     {
-        m_bound.assign(m_base.query().variables.size(), false);
-        for (const auto var : atom.vars)
-            m_bound[var] = true;
+        m_bound.clear();
+        m_bound.insert(atom.vars.begin(), atom.vars.end());
         auto found = m_seed_plans.find(m_bound);
         if (found == m_seed_plans.end())
             found = m_seed_plans.emplace(m_bound, m_base.plans(m_bound)).first;
@@ -211,15 +210,14 @@ private:
         const auto& query = m_base.query();
         const auto& top = query.branches[b];
         auto& top_vars = m_top_vars;
-        top_vars.assign(query.variables.size(), false);
+        top_vars.clear();
         for (const auto& atom : top.atoms)
-            for (const auto var : atom.vars)
-                top_vars[var] = true;
+            top_vars.insert(atom.vars.begin(), atom.vars.end());
         const auto seed_atom = [&](const database::bound::ConjunctiveAtom& atom, const auto& rows) -> bool
         {
             if (atom.slot != slot || rows.empty())
                 return true;
-            if (!std::ranges::all_of(atom.vars, [&](uint32_t var) { return static_cast<bool>(top_vars[var]); }))
+            if (!std::ranges::all_of(atom.vars, [&](uint32_t var) { return top_vars.contains(var); }))
                 return false;
             const auto& plan = seed_plan(b, atom);
             for (size_t r = 0; r < rows.size(); ++r)

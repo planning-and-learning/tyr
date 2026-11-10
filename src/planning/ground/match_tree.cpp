@@ -68,7 +68,6 @@
 #include <vector>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <urd/repr/core/dependent_false.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -603,7 +602,7 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
             else if constexpr (std::same_as<Alternative, urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>)
                 return try_create_constraint_stack_entry(arg, base, details, builder);
             else
-                static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                static_assert(false, "Missing case");
         },
         sorted_preconditions[base.depth].first);
 }
@@ -846,7 +845,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                 }
                 else
                 {
-                    static_assert(urd::repr::dependent_false<Handle>::value, "Missing case");
+                    static_assert(false, "Missing case");
                 }
             },
             node);

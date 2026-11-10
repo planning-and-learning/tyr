@@ -39,7 +39,6 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <type_traits>
-#include <unordered_set>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
@@ -142,7 +141,7 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
         worker_fdr_variable_count = variables.size();
         EXPECT_GT(worker_fdr_variable_count, initial_fdr_variable_count);
 
-        auto indices = std::unordered_set<ygg::uint_t> {};
+        auto indices = urd::Store<urd::set<ygg::uint_t>> {};
         for (const auto variable : variables)
             indices.insert(ygg::uint_t(variable.index().value));
         EXPECT_EQ(indices.size(), variables.size());

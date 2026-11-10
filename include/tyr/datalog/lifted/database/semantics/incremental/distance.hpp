@@ -8,7 +8,10 @@
 
 #include "yggdrasil/core/config.hpp"
 #include <urd/config.hpp>
+#include <urd/memory.hpp>
+#include <urd/repr/maps/ordered_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/sparse_set.hpp>
 #include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/delta.hpp"
@@ -55,6 +58,9 @@ class DistanceEvaluator
         VertexSet::handle_type root;
         urd::Store<urd::sequence<ygg::uint_t, VertexSet::handle_type>> distances;
         urd::Store<urd::sequence<size_t, VertexSet::handle_type>> supports;
+
+        /// The members it owns memory through (urd::memory_of).
+        static constexpr auto memory_members() noexcept { return urd::Members<&SourceState::distances, &SourceState::supports> {}; }
     };
 
     const ygg::FreeRelationRepository* m_layer;
@@ -73,8 +79,8 @@ class DistanceEvaluator
     // One scratch area serves all source trees sequentially.
     urd::Store<urd::sequence<VertexSet::handle_type>> m_queue;
     std::unique_ptr<detail::DistanceRepairWorkspace> m_repair = std::make_unique<detail::DistanceRepairWorkspace>();
-    urd::Store<urd::sequence<std::pair<VertexSet::handle_type, ygg::uint_t>>> m_changed;  ///< Vertex, distance before.
-    urd::Store<urd::sequence<Flag, VertexSet::handle_type>> m_changed_flags;
+    /// The distance before of each vertex whose distance repair() set, in the order they were set.
+    urd::Store<urd::map<VertexSet::handle_type, ygg::uint_t>, urd::dense, urd::insertion_ordered> m_changed;
     urd::Store<urd::sequence<ygg::Value>> m_row;
     mutable urd::Store<urd::sequence<ygg::Value>> m_values;  ///< An input row's values, as read.
 
@@ -166,7 +172,6 @@ void DistanceEvaluator::initialize(const S& sources, const E& edges, const T& ta
     m_queue.clear();
     m_repair->clear();
     m_changed.clear();
-    m_changed_flags.clear();
     clear_changes();
     m_graph.outgoing.reserve(edges.size());
     m_reverse.reserve(edges.size());
@@ -388,7 +393,7 @@ public:
         return it == m_counts.end() ? std::numeric_limits<ygg::uint_t>::max() : static_cast<ygg::uint_t>(it - m_counts.begin());
     }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return m_evaluator.memory_usage() + m_counts.capacity() * sizeof(size_t); }
+    [[nodiscard]] size_t memory_usage() const noexcept { return m_evaluator.memory_usage() + urd::memory_usage(m_counts); }
 };
 
 }  // namespace tyr::datalog::database::incremental

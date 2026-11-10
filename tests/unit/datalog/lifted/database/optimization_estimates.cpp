@@ -2,8 +2,9 @@
 
 #include <array>
 #include <gtest/gtest.h>
-#include <map>
 #include <tyr/datalog/lifted/database/optimization/optimization.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/store.hpp>
 
 namespace
 {
@@ -15,7 +16,7 @@ const Column x(0), y(1), z(2);
 // must have one estimate whatever its join and filter association.
 auto estimate(tyr::datalog::database::QueryView<> root, const tyr::datalog::database::Statistics& statistics)
 {
-    std::map<PlanId, tyr::datalog::database::detail::Estimate> estimates;
+    urd::Store<urd::map<PlanId, tyr::datalog::database::detail::Estimate>> estimates;
     for (const auto query : tyr::datalog::database::reachable(std::span<const tyr::datalog::database::QueryView<>>(&root, 1)))
         estimates[query.index()] = tyr::datalog::database::detail::estimate(
             query,

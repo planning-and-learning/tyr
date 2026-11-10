@@ -21,7 +21,7 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "../../tree_bitset.hpp"
 
-#include <urd/repr/containers/bit.hpp>
+#include <urd/bits.hpp>
 
 namespace tyr::planning
 {
@@ -36,7 +36,7 @@ auto insert_facts(Set& bitsets, const StateLayout<GroundTag>& layout, const Fact
     const auto& infos = layout.fluent_infos;
     blocks.assign(layout.fluent_num_blocks, tree_bitset::Block { 0 });
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
-        urd::repr::bit::write_int(std::span(blocks).subspan(infos[i].begin), static_cast<tree_bitset::Block>(unpacked.values[i]), infos[i].offset, infos[i].length);
+        urd::bits::write_int(std::span(blocks).subspan(infos[i].begin), static_cast<tree_bitset::Block>(unpacked.values[i]), infos[i].offset, infos[i].length);
 
     trim_trailing_zero_blocks(blocks);
     return bitsets.insert_blocks(blocks);
@@ -70,7 +70,7 @@ void unpack_facts(Set& bitsets, const StateLayout<GroundTag>& layout, typename S
     auto& values = unpacked.values;
     values.resize(infos.size());
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
-        values[i] = ygg::uint_t(urd::repr::bit::read_int<tree_bitset::Block>(std::span(blocks).subspan(infos[i].begin), infos[i].offset, infos[i].length));
+        values[i] = ygg::uint_t(urd::bits::read_int<tree_bitset::Block>(std::span(blocks).subspan(infos[i].begin), infos[i].offset, infos[i].length));
 }
 
 template<typename Set>

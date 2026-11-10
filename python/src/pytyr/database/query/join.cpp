@@ -16,10 +16,7 @@ void bind_query_join(nb::module_& m, QueryRepositoryBinding& repository)
     {
         using V = ConcreteQueryView<tyr::datalog::database::QueryJoinTag>;
         auto cls = nb::class_<V>(m, "QueryJoin");
-        cls.def("index", &V::index)
-            .def("columns", &V::columns, nb::keep_alive<0, 1>())
-            .def("get_lhs", &V::get_lhs, nb::keep_alive<0, 1>())
-            .def("get_rhs", &V::get_rhs, nb::keep_alive<0, 1>());
+        cls.def("index", &V::index).def("columns", &V::columns, nb::keep_alive<0, 1>()).def("get_lhs", &V::get_lhs).def("get_rhs", &V::get_rhs);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }

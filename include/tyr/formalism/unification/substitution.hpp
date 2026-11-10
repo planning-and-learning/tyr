@@ -25,11 +25,15 @@
 #include <optional>
 #include <type_traits>
 #include <urd/elements/hash.hpp>
+#include <span>
+#include <urd/repr/maps/ordered_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/values/indexed.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
 #include <vector>
 
 namespace tyr::formalism::unification
@@ -43,8 +47,15 @@ public:
 
     SubstitutionFunction() = default;
 
-    explicit SubstitutionFunction(urd::Store<urd::sequence<ParameterIndex>> parameters) : m_parameters(std::move(parameters)), m_data(m_parameters.size())
-    { rebuild_positions(); }
+    explicit SubstitutionFunction(const urd::Store<urd::sequence<ParameterIndex>>& parameters)
+    {
+        m_bindings.reserve(parameters.size());
+        for (const auto parameter : parameters)
+        {
+            [[maybe_unused]] const auto [it, inserted] = m_bindings.try_emplace(parameter);
+            assert(inserted && "Duplicate parameter in SubstitutionFunction domain");
+        }
+    }
 
     static SubstitutionFunction from_range(ParameterIndex offset, size_t size)
     {
@@ -54,52 +65,46 @@ public:
         for (size_t i = 0; i < size; ++i)
             parameters.emplace_back(offset.value + i);
 
-        return SubstitutionFunction(std::move(parameters));
+        return SubstitutionFunction(parameters);
     }
 
-    [[nodiscard]] size_t size() const noexcept { return m_data.size(); }
+    [[nodiscard]] size_t size() const noexcept { return m_bindings.size(); }
 
-    [[nodiscard]] const urd::Store<urd::sequence<ParameterIndex>>& parameters() const noexcept { return m_parameters; }
+    /// The parameters of the domain, in the order they were given.
+    [[nodiscard]] std::span<const ParameterIndex> parameters() const noexcept { return m_bindings.keys(); }
 
-    [[nodiscard]] bool contains_parameter(ParameterIndex p) const noexcept { return m_positions.find(p) != m_positions.end(); }
+    [[nodiscard]] bool contains_parameter(ParameterIndex p) const noexcept { return m_bindings.contains(p); }
 
     [[nodiscard]] bool is_bound(ParameterIndex p) const noexcept
     {
-        const auto it = m_positions.find(p);
-        return it != m_positions.end() && m_data[it->second].has_value();
+        const auto* slot = try_get(p);
+        return slot != nullptr && slot->has_value();
     }
 
     [[nodiscard]] bool is_unbound(ParameterIndex p) const noexcept
     {
-        const auto it = m_positions.find(p);
-        return it != m_positions.end() && !m_data[it->second].has_value();
+        const auto* slot = try_get(p);
+        return slot != nullptr && !slot->has_value();
     }
 
     [[nodiscard]] const std::optional<T>* try_get(ParameterIndex p) const noexcept
     {
-        const auto it = m_positions.find(p);
-        if (it == m_positions.end())
+        const auto it = m_bindings.find(p);
+        if (it == m_bindings.end())
             return nullptr;
 
-        return &m_data[it->second];
+        return &m_bindings.values()[m_bindings.position(it)];
     }
 
-    [[nodiscard]] std::optional<T>* try_get(ParameterIndex p) noexcept
-    {
-        const auto it = m_positions.find(p);
-        if (it == m_positions.end())
-            return nullptr;
+    [[nodiscard]] std::optional<T>* try_get(ParameterIndex p) noexcept { return const_cast<std::optional<T>*>(std::as_const(*this).try_get(p)); }
 
-        return &m_data[it->second];
-    }
+    const std::optional<T>& operator[](ParameterIndex p) const { return m_bindings.at(p); }
 
-    const std::optional<T>& operator[](ParameterIndex p) const { return m_data[m_positions.at(p)]; }
-
-    std::optional<T>& operator[](ParameterIndex p) { return m_data[m_positions.at(p)]; }
+    std::optional<T>& operator[](ParameterIndex p) { return m_bindings.at(p); }
 
     [[nodiscard]] bool assign(ParameterIndex p, const T& value)
     {
-        auto& slot = m_data[m_positions.at(p)];
+        auto& slot = m_bindings.at(p);
         if (slot.has_value())
             return false;
         slot = value;
@@ -108,7 +113,7 @@ public:
 
     [[nodiscard]] bool assign_or_check(ParameterIndex p, const T& value)
     {
-        auto& slot = m_data[m_positions.at(p)];
+        auto& slot = m_bindings.at(p);
         if (!slot.has_value())
         {
             slot = value;
@@ -120,37 +125,32 @@ public:
     /// Returns true iff no parameter in the domain currently has a bound value.
     [[nodiscard]] bool is_identity() const noexcept
     {
-        return std::all_of(m_data.begin(), m_data.end(), [](const auto& slot) { return !slot.has_value(); });
+        return std::ranges::all_of(m_bindings.values(), [](const auto& slot) { return !slot.has_value(); });
     }
 
     template<typename F>
     void for_each_binding(F f) const
     {
-        for (size_t i = 0; i < m_parameters.size(); ++i)
+        for (const auto [parameter, slot] : m_bindings)
         {
-            if (const auto& slot = m_data[i]; slot.has_value())
-                f(m_parameters[i], *slot);
+            if (slot.has_value())
+                f(parameter, *slot);
         }
     }
 
-    void reset() noexcept { std::fill(m_data.begin(), m_data.end(), std::nullopt); }
+    void reset() noexcept
+    {
+        for (const auto parameter : m_bindings.keys())
+            m_bindings.at(parameter).reset();
+    }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&SubstitutionFunction::m_parameters, &SubstitutionFunction::m_data> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&SubstitutionFunction::parameters, &SubstitutionFunction::slots> {}; }
 
 private:
-    void rebuild_positions()
-    {
-        m_positions.clear();
-        for (size_t i = 0; i < m_parameters.size(); ++i)
-        {
-            [[maybe_unused]] const auto [it, inserted] = m_positions.emplace(m_parameters[i], i);
-            assert(inserted && "Duplicate parameter in SubstitutionFunction domain");
-        }
-    }
+    [[nodiscard]] std::span<const std::optional<T>> slots() const noexcept { return m_bindings.values(); }
 
-    urd::Store<urd::sequence<ParameterIndex>> m_parameters;
-    urd::Store<urd::sequence<std::optional<T>>> m_data;
-    urd::Store<urd::map<ParameterIndex, size_t>> m_positions;
+    /// Each parameter of the domain with its value, unbound where it has none, in the order the parameters were given.
+    urd::Store<urd::map<ParameterIndex, std::optional<T>>, urd::insertion_ordered> m_bindings;
 };
 
 }

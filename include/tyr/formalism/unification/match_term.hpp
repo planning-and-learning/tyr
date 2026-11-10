@@ -48,7 +48,7 @@ bool match_term(const Term& pattern, const Term& element, TermMatchState& state,
                         }
                         else
                         {
-                            static_assert(urd::repr::dependent_false<Rhs>::value, "Missing case");
+                            static_assert(false, "Missing case");
                         }
                     }
                     else if constexpr (std::is_same_v<Lhs, urd::index<Object>>)
@@ -63,12 +63,12 @@ bool match_term(const Term& pattern, const Term& element, TermMatchState& state,
                         }
                         else
                         {
-                            static_assert(urd::repr::dependent_false<Rhs>::value, "Missing case");
+                            static_assert(false, "Missing case");
                         }
                     }
                     else
                     {
-                        static_assert(urd::repr::dependent_false<Lhs>::value, "Missing case");
+                        static_assert(false, "Missing case");
                     }
                 },
                 element);

@@ -142,7 +142,7 @@ std::pair<FunctionRowView<T>, bool> ground(TermListView terms, FunctionView<T> f
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
                     binding->values.push_back(arg.index().value);
                 else
-                    static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                    static_assert(false, "Missing case");
             },
             term);
     }
@@ -235,7 +235,7 @@ std::pair<PredicateRowView<T>, bool> ground(TermListView terms, PredicateView<T>
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
                     binding->values.push_back(arg.index().value);
                 else
-                    static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                    static_assert(false, "Missing case");
             },
             term);
     }
@@ -440,7 +440,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
                     binding->values.push_back(arg.index().value);
                 else
-                    static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                    static_assert(false, "Missing case");
             },
             term);
     }
@@ -472,7 +472,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
                 else if constexpr (std::is_same_v<Alternative, ObjectView>)
                     binding->values.push_back(arg.index().value);
                 else
-                    static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                    static_assert(false, "Missing case");
             },
             term);
     }

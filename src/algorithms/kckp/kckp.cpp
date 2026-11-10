@@ -16,7 +16,7 @@
  */
 
 #include "tyr/algorithms/kckp/kckp.hpp"
-#include <urd/repr/containers/bitset_span.hpp>
+#include <urd/bits.hpp>
 
 namespace tyr::kckp
 {
@@ -52,7 +52,7 @@ bool KCKP::seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace
     for (ygg::uint_t partition = static_cast<ygg::uint_t>(prefix.size()); partition < layout.num_partitions; ++partition)
     {
         const auto& info = layout.info.infos[partition];
-        auto candidates = urd::repr::BitsetSpan<uint64_t>(initial.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        auto candidates = urd::bitset_span<uint64_t>(initial.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         candidates.set();
         for (ygg::uint_t fixed_partition = 0; fixed_partition < prefix.size(); ++fixed_partition)
         {
@@ -85,8 +85,8 @@ bool KCKP::update_candidates(ygg::uint_t first_partition, Vertex source, size_t 
             continue;
 
         const auto& info = layout.info.infos[partition];
-        const auto source_candidates = urd::repr::BitsetSpan<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        auto destination = urd::repr::BitsetSpan<uint64_t>(next_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        const auto source_candidates = urd::bitset_span<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
+        auto destination = urd::bitset_span<uint64_t>(next_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         destination.copy_from(source_candidates);
         destination &= m_graph->get_adjacency_matrix().get_bitset(source.index, partition);
         if (!destination.any())

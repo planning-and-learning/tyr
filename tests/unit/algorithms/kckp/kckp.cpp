@@ -1,5 +1,6 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 
 #include "analysis/static_literal_compatibility.hpp"
@@ -143,7 +144,7 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
 
     const auto layout = tyr::kckp::create_graph_layout(partition_sizes, vertex_labels);
     auto adjacency = tyr::kckp::AdjacencyMatrix(layout);
-    auto universal_partition_pairs = boost::dynamic_bitset<>(layout.num_partitions * layout.num_partitions);
+    auto universal_partition_pairs = urd::Store<urd::set<size_t>, urd::dense> {};
 
     for (ygg::uint_t first_partition = 0; first_partition < layout.num_partitions; ++first_partition)
         for (ygg::uint_t second_partition = first_partition + 1; second_partition < layout.num_partitions; ++second_partition)
@@ -171,8 +172,8 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
 
             if (universal)
             {
-                universal_partition_pairs.set(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
-                universal_partition_pairs.set(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
             }
         }
 

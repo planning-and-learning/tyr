@@ -95,7 +95,7 @@ inline void collect_parameters(TermView element, urd::Store<urd::set<ParameterIn
                 result.insert(arg);
             else if constexpr (std::is_same_v<Alternative, ObjectView>) {}
             else
-                static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                static_assert(false, "Missing case");
         },
         element);
 }

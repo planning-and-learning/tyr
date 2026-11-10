@@ -8,6 +8,7 @@
 
 #include "tyr/datalog/lifted/database/optimization/statistics.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/bound/union_normal_form.hpp"
 
@@ -23,6 +24,9 @@
 
 namespace tyr::datalog::database::bound
 {
+
+/// Variables of a query (UnionNormalForm::variables), by index. Sorted: equal sets are equal keys of a hashed map.
+using VariableSet = urd::Store<urd::set<uint32_t>, urd::dense, urd::sorted>;
 
 /// Filters of a branch that become checkable at one point of a plan.
 struct ConjunctiveFilters
@@ -72,39 +76,40 @@ struct ConjunctivePlan
 /// Enumeration", CSL 2007). `statistics(slot)` measures an input.
 template<typename Statistics>
     requires std::invocable<Statistics&, size_t> && std::convertible_to<std::invoke_result_t<Statistics&, size_t>, const RelationStatistics&>
-ConjunctivePlan plan_branch(const UnionNormalForm& query, const ConjunctiveBranch& branch, std::vector<bool> bound, Statistics statistics)
+ConjunctivePlan plan_branch(const UnionNormalForm& query, const ConjunctiveBranch& branch, VariableSet bound, Statistics statistics)
 {
     const auto fanout = [&](const ConjunctiveAtom& atom)
     {
         const RelationStatistics& measured = statistics(atom.slot);
         auto estimate = measured.rows;
         for (size_t c = 0; c < atom.vars.size(); ++c)
-            if (bound[atom.vars[c]] && estimate > 0)
+            if (bound.contains(atom.vars[c]) && estimate > 0)
                 estimate /= measured.distinct.at(query.input_columns[atom.slot][c].label);
         return estimate;
     };
     auto plan = ConjunctivePlan {};
-    auto pending_equal = std::vector<bool>(branch.equal.size(), true);
-    auto pending_value = std::vector<bool>(branch.value.size(), true);
-    auto pending_negation = std::vector<bool>(branch.negations.size(), true);
+    // The filters attached so far, by their index in the branch.
+    auto attached_equal = urd::Store<urd::set<size_t>, urd::dense>();
+    auto attached_value = urd::Store<urd::set<size_t>, urd::dense>();
+    auto attached_negation = urd::Store<urd::set<size_t>, urd::dense>();
     const auto attach = [&](ConjunctiveFilters& filters)
     {
         for (size_t i = 0; i < branch.equal.size(); ++i)
-            if (pending_equal[i] && bound[branch.equal[i].first] && bound[branch.equal[i].second])
+            if (!attached_equal.contains(i) && bound.contains(branch.equal[i].first) && bound.contains(branch.equal[i].second))
             {
-                pending_equal[i] = false;
+                attached_equal.insert(i);
                 filters.equal.push_back(branch.equal[i]);
             }
         for (size_t i = 0; i < branch.value.size(); ++i)
-            if (pending_value[i] && bound[branch.value[i].first])
+            if (!attached_value.contains(i) && bound.contains(branch.value[i].first))
             {
-                pending_value[i] = false;
+                attached_value.insert(i);
                 filters.value.push_back(branch.value[i]);
             }
         for (size_t i = 0; i < branch.negations.size(); ++i)
-            if (pending_negation[i] && std::ranges::all_of(branch.negations[i].outer, [&](uint32_t var) { return static_cast<bool>(bound[var]); }))
+            if (!attached_negation.contains(i) && std::ranges::all_of(branch.negations[i].outer, [&](uint32_t var) { return bound.contains(var); }))
             {
-                pending_negation[i] = false;
+                attached_negation.insert(i);
                 filters.negations.push_back(i);
             }
     };
@@ -122,7 +127,7 @@ ConjunctivePlan plan_branch(const UnionNormalForm& query, const ConjunctiveBranc
         for (size_t c = 0; c < atom.vars.size(); ++c)
         {
             const auto var = atom.vars[c];
-            if (bound[var])
+            if (bound.contains(var))
                 step.key.emplace_back(c, var);
             else if (std::ranges::find(assigned, var) != assigned.end())
                 step.compare.emplace_back(c, var);
@@ -133,37 +138,35 @@ ConjunctivePlan plan_branch(const UnionNormalForm& query, const ConjunctiveBranc
             }
         }
         for (const auto var : assigned)
-            bound[var] = true;
+            bound.insert(var);
         remaining.erase(best);
         attach(step.filters);
     }
     // Every variable of a filter or a negation's outer variable is bound by some atom of the branch (safe queries).
-    assert(std::ranges::find(pending_equal, true) == pending_equal.end() && std::ranges::find(pending_value, true) == pending_value.end()
-           && std::ranges::find(pending_negation, true) == pending_negation.end());
-    auto read = std::vector<bool>(query.variables.size(), false);
-    for (const auto var : query.output)
-        read[var] = true;
+    assert(attached_equal.size() == branch.equal.size() && attached_value.size() == branch.value.size()
+           && attached_negation.size() == branch.negations.size());
+    auto read = VariableSet(query.output.begin(), query.output.end());
     for (auto s = plan.steps.size(); s-- > 0;)
     {
         auto& step = plan.steps[s];
         step.exists =
-            std::ranges::none_of(step.assign, [&](const std::pair<size_t, uint32_t>& assignment) { return static_cast<bool>(read[assignment.second]); });
+            std::ranges::none_of(step.assign, [&](const std::pair<size_t, uint32_t>& assignment) { return read.contains(assignment.second); });
         for (const auto& pairs : { &step.key, &step.assign, &step.compare })
             for (const auto& [c, var] : *pairs)
-                read[var] = true;
+                read.insert(var);
         for (const auto& [lhs, rhs] : step.filters.equal)
-            read[lhs] = read[rhs] = true;
+        {
+            read.insert(lhs);
+            read.insert(rhs);
+        }
         for (const auto& [var, constant] : step.filters.value)
-            read[var] = true;
+            read.insert(var);
         for (const auto i : step.filters.negations)
-            for (const auto var : branch.negations[i].outer)
-                read[var] = true;
+            read.insert(branch.negations[i].outer.begin(), branch.negations[i].outer.end());
     }
     for (const auto& negation : branch.negations)
     {
-        auto outer = std::vector<bool>(query.variables.size(), false);
-        for (const auto var : negation.outer)
-            outer[var] = true;
+        const auto outer = VariableSet(negation.outer.begin(), negation.outer.end());
         auto& plans = plan.negation_plans.emplace_back();
         for (const auto& inner : negation.branches)
             plans.push_back(plan_branch(query, inner, outer, statistics));

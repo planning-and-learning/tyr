@@ -8,6 +8,7 @@
 
 #include <concepts>
 #include <gtest/gtest.h>
+#include <type_traits>
 
 using ObjectData = urd::data<tyr::formalism::Object>;
 using ObjectIndex = urd::index<tyr::formalism::Object>;
@@ -45,14 +46,28 @@ TEST(TyrFormalismObject, ExposesOwnedContract)
 
 namespace
 {
+/// Read access to one supported symbol representation.
+template<typename Repository, typename T>
+concept SymbolRepositoryFor =
+    ygg::formalism::SupportsSymbol<Repository, T> && requires(const std::remove_reference_t<Repository>& repository, urd::index<T> index) {
+        { repository[index] } -> std::same_as<const urd::data<T>&>;
+    };
+
+/// A context whose repository reads T's records and is numbered (layer()).
+template<typename C, typename T>
+concept SymbolContextFor = requires(const C& context) {
+    { get_repository(context) } -> SymbolRepositoryFor<T>;
+    get_repository(context).layer();
+};
+
 struct ObjectContext
 {
     const tyr::formalism::planning::Repository* repository;
     friend const tyr::formalism::planning::Repository& get_repository(const ObjectContext& context) noexcept { return *context.repository; }
 };
-static_assert(ygg::formalism::SymbolRepositoryFor<tyr::formalism::planning::Repository, tyr::formalism::Object>);
-static_assert(ygg::formalism::SymbolContextFor<ObjectContext, tyr::formalism::Object>);
-static_assert(!ygg::formalism::SymbolContextFor<int, tyr::formalism::Object>);
+static_assert(SymbolRepositoryFor<tyr::formalism::planning::Repository, tyr::formalism::Object>);
+static_assert(SymbolContextFor<ObjectContext, tyr::formalism::Object>);
+static_assert(!SymbolContextFor<int, tyr::formalism::Object>);
 }
 
 TEST(TyrFormalismObject, ReadsThroughRepositoryContext)

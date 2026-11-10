@@ -154,14 +154,7 @@ public:
         append(out);
     }
 
-    [[nodiscard]] size_t memory_usage() const noexcept
-    {
-        size_t result =
-            m_tries.capacity() * sizeof(detail::GenericJoinTrie) + m_cursors.capacity() * sizeof(typename decltype(m_cursors)::value_type);
-        for (const auto& trie : m_tries)
-            result += trie.memory_usage();
-        return result;
-    }
+    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(m_tries) + urd::memory_usage(m_cursors); }
 };
 
 /// Generic Join (Ngo, Re, Rudra, 2013, Section 4): intersect one variable at a

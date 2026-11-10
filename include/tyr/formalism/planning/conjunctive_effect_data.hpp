@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 #include <urd/elements/flat.hpp>
-#include <urd/repr/core/dependent_false.hpp>
 
 namespace urd
 {

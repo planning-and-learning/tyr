@@ -9,7 +9,7 @@
 
 namespace tyr::datalog::database::bound
 {
-std::vector<ConjunctivePlan> QueryEvaluator::plans(const std::vector<bool>& bound)  // std::vector: of an incomplete type (a Store resolves its element type at once)
+std::vector<ConjunctivePlan> QueryEvaluator::plans(const VariableSet& bound)
 {
     auto measured = urd::Store<urd::sequence<std::optional<RelationStatistics>>>(input_count());
     const auto statistics = [&](size_t slot) -> const RelationStatistics&
@@ -18,7 +18,7 @@ std::vector<ConjunctivePlan> QueryEvaluator::plans(const std::vector<bool>& boun
             measured[slot] = measure_relation(input(slot));
         return *measured[slot];
     };
-    auto compiled = std::vector<ConjunctivePlan>();  // std::vector: of an incomplete type (a Store resolves its element type at once)
+    auto compiled = std::vector<ConjunctivePlan>();
     for (const auto& branch : m_query.branches)
     {
         auto& plan = compiled.emplace_back(plan_branch(m_query, branch, bound, statistics));

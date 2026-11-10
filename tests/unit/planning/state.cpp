@@ -41,7 +41,6 @@
 #include <type_traits>
 #include <urd/elements/hash.hpp>
 #include <utility>
-#include <vector>
 #include <urd/repr/slots/slots.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 
@@ -651,7 +650,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     const auto expect_delta_registration = [&](const auto& parent)
     {
         auto fluent_facts = parent.get_fluent_facts();
-        auto facts = std::vector<std::ranges::range_value_t<decltype(fluent_facts)>>();
+        auto facts = urd::Store<urd::sequence<std::ranges::range_value_t<decltype(fluent_facts)>>>();
         std::ranges::copy(fluent_facts, std::back_inserter(facts));
         ASSERT_FALSE(facts.empty());
         const auto deleted = [](auto fact)

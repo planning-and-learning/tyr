@@ -7,6 +7,7 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_DETAILS_MIN_DISTANCE_HPP_
 
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/pools/pools.hpp>
 #include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
@@ -39,7 +40,11 @@ Evaluator relation_edges(const ygg::FreeRelationRepository& layer, const Distanc
     input->input_slot = 0;
     const auto columns = plan.edge_columns();
     input->columns.set(columns.begin(), columns.end());
-    return Evaluator(layer, insert_query(repository, builder, *input), { static_edges });
+    // The edge relation is the one input, slot 0.
+    auto static_slots = urd::Store<urd::set<size_t>, urd::dense>();
+    if (static_edges)
+        static_slots.insert(0);
+    return Evaluator(layer, insert_query(repository, builder, *input), static_slots);
 }
 
 /// An edge query bound for search: `Evaluator` (a bound::QueryEvaluator or incremental::bound::QueryEvaluator) over

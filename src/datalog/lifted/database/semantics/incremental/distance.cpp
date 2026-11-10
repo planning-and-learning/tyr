@@ -53,7 +53,6 @@ void DistanceEvaluator::resize_vertices()
     m_source_slots.resize(size, absent);
     m_target_flags.resize(size, Flag::CLEAR);
     m_repair->resize(size);
-    m_changed_flags.resize(size, Flag::CLEAR);
     for (size_t i = 0; i < m_active_sources; ++i)
     {
         m_sources[i].distances.resize(size, infinity);
@@ -108,11 +107,7 @@ namespace tyr::datalog::database::incremental
 {
 void DistanceEvaluator::set_distance(SourceState& state, VertexSet::handle_type vertex, ygg::uint_t length)
 {
-    if (m_changed_flags[vertex] == Flag::CLEAR)
-    {
-        m_changed_flags[vertex] = Flag::SET;
-        m_changed.emplace_back(vertex, state.distances[vertex]);
-    }
+    m_changed.try_emplace(vertex, state.distances[vertex]);
     state.distances[vertex] = length;
 }
 }
@@ -193,14 +188,11 @@ void DistanceEvaluator::repair(SourceState& state)
     }
     assert(m_repair->empty());
     for (const auto& [target, before] : m_changed)
-    {
-        m_changed_flags[target] = Flag::CLEAR;
         if (is_target(target) && before != state.distances[target])
         {
             remove_result(state.root, target, before);
             insert_result(state.root, target, state.distances[target]);
         }
-    }
     m_changed.clear();
 }
 }
@@ -240,18 +232,11 @@ namespace tyr::datalog::database::incremental
 {
 size_t DistanceEvaluator::memory_usage() const noexcept
 {
-    size_t bytes =
-        m_graph.memory_usage() + urd::memory_usage(m_reverse) + m_result.memory_usage() + m_delta.memory_usage() + (m_repair ? m_repair->memory_usage() : 0);
-    bytes += m_sources.capacity() * sizeof(SourceState) + m_source_slots.capacity() * sizeof(size_t);
-    for (const auto& source : m_sources)
-        bytes += source.distances.capacity() * sizeof(ygg::uint_t) + source.supports.capacity() * sizeof(size_t);
-    bytes += (m_targets.capacity() + m_queue.capacity() + m_sources_added.capacity() + m_sources_removed.capacity() + m_targets_added.capacity()
-              + m_targets_removed.capacity())
-             * sizeof(VertexSet::handle_type);
-    bytes += m_changed.capacity() * sizeof(std::pair<VertexSet::handle_type, ygg::uint_t>)
-             + (m_edges_added.capacity() + m_edges_removed.capacity()) * sizeof(std::pair<VertexSet::handle_type, VertexSet::handle_type>);
-    bytes += (m_target_flags.capacity() + m_changed_flags.capacity()) * sizeof(Flag) + (m_row.capacity() + m_values.capacity()) * sizeof(ygg::Value);
-    return bytes;
+    return m_graph.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + (m_repair ? m_repair->memory_usage() : 0) + urd::memory_usage(m_reverse)
+           + urd::memory_usage(m_sources) + urd::memory_usage(m_source_slots) + urd::memory_usage(m_targets) + urd::memory_usage(m_target_flags)
+           + urd::memory_usage(m_queue) + urd::memory_usage(m_changed) + urd::memory_usage(m_row) + urd::memory_usage(m_values)
+           + urd::memory_usage(m_sources_added) + urd::memory_usage(m_sources_removed) + urd::memory_usage(m_targets_added)
+           + urd::memory_usage(m_targets_removed) + urd::memory_usage(m_edges_added) + urd::memory_usage(m_edges_removed);
 }
 }
 

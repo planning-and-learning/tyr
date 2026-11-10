@@ -49,6 +49,8 @@ struct DistanceGraph
     [[nodiscard]] bool contains_edge(VertexSet::handle_type from, VertexSet::handle_type to) const;
     void clear();
     [[nodiscard]] size_t memory_usage() const noexcept;
+    /// The members it owns memory through (urd::memory_of).
+    static constexpr auto memory_members() noexcept { return urd::Members<&DistanceGraph::vertices, &DistanceGraph::outgoing, &DistanceGraph::scratch> {}; }
 };
 }  // namespace detail
 
@@ -71,6 +73,15 @@ public:
     template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
     void append_distances(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out);
     [[nodiscard]] size_t memory_usage() const noexcept;
+    /// The members it owns memory through (urd::memory_of).
+    static constexpr auto memory_members() noexcept
+    {
+        return urd::Members<&DistanceWorkspace::m_graph,
+                            &DistanceWorkspace::m_distances,
+                            &DistanceWorkspace::m_queue,
+                            &DistanceWorkspace::m_targets,
+                            &DistanceWorkspace::m_row> {};
+    }
 };
 
 /// Exact directed unit-edge distances for every reachable source/target pair.
@@ -95,7 +106,7 @@ inline constexpr ygg::uint_t distance_infinity = std::numeric_limits<ygg::uint_t
 
 inline DistanceGraph::DistanceGraph(size_t tuple_size_) : tuple_size(tuple_size_) {}
 
-inline size_t DistanceGraph::memory_usage() const noexcept { return urd::memory_usage(vertices) + urd::memory_usage(outgoing); }
+inline size_t DistanceGraph::memory_usage() const noexcept { return urd::memory_usage(*this); }
 
 void breadth_first_search(const DistanceGraph& graph,
                           VertexSet::handle_type root,

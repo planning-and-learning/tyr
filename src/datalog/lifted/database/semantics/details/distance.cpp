@@ -135,8 +135,5 @@ bool DistanceWorkspace::matches(const DistancePlan& plan) const noexcept { retur
 namespace tyr::datalog::database
 {
 size_t DistanceWorkspace::memory_usage() const noexcept
-{
-    return m_graph.memory_usage() + m_distances.capacity() * sizeof(ygg::uint_t) + (m_queue.capacity() + m_targets.capacity()) * sizeof(VertexSet::handle_type)
-           + m_row.capacity() * sizeof(ygg::Value);
-}
+{ return urd::memory_usage(*this); }
 }

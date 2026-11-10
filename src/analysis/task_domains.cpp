@@ -85,7 +85,6 @@
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <urd/elements/flat.hpp>
-#include <urd/repr/core/dependent_false.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
 
 namespace tyr::analysis
@@ -491,7 +490,7 @@ void apply_policy(formalism::planning::AtomView<LiftedTag, T> element, Policy& p
             }
             else
             {
-                static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                static_assert(false, "Missing case");
             }
         },
         element.get_terms());
@@ -527,7 +526,7 @@ void apply_policy(formalism::planning::FunctionTermView<LiftedTag, T> element, P
             }
             else
             {
-                static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                static_assert(false, "Missing case");
             }
         },
         element.get_terms());

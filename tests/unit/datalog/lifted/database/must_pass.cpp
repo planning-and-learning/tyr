@@ -5,6 +5,7 @@
 
 #include "tyr/datalog/lifted/database/semantics/must_pass.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 
 #include "query_helpers.hpp"
@@ -17,7 +18,6 @@
 #include <random>
 #include <set>
 #include <tuple>
-#include <vector>
 
 namespace
 {
@@ -73,7 +73,7 @@ bool reachable(const urd::Store<urd::sequence<std::tuple<ygg::uint_t, Vertex, Ve
 {
     const auto allowed = [&](const Vertex& vertex) { return !removed || std::ranges::find(vertex, *removed) == vertex.end(); };
     auto frontier = urd::Store<urd::sequence<Vertex>>();
-    auto seen = std::set<Vertex>();
+    auto seen = urd::Store<urd::set<Vertex>>();
     for (const auto& [k, s] : sources)
         if (k == of && allowed(s) && seen.insert(s).second)
             frontier.push_back(s);
@@ -95,8 +95,14 @@ TEST(DatabaseMustPass, ObjectsOnEveryPathPerKey)
 {
     // Key 0: a diamond 1 -> {2, 3} -> 4 -> 5; key 1: the same vertex numbers, but 2 -> 4 is the only route.
     auto edges = Relation(tyr::datalog::tests::ops::cols({ key, u, v }));
-    for (const auto& [k, from, to] : std::vector<
-             std::tuple<ygg::uint_t, ygg::uint_t, ygg::uint_t>> { { 0, 1, 2 }, { 0, 1, 3 }, { 0, 2, 4 }, { 0, 3, 4 }, { 0, 4, 5 }, { 1, 1, 2 }, { 1, 2, 4 }, { 1, 3, 4 } })
+    for (const auto& [k, from, to] : urd::Store<urd::sequence<std::tuple<ygg::uint_t, ygg::uint_t, ygg::uint_t>>> { { 0, 1, 2 },
+                                                                                                                    { 0, 1, 3 },
+                                                                                                                    { 0, 2, 4 },
+                                                                                                                    { 0, 3, 4 },
+                                                                                                                    { 0, 4, 5 },
+                                                                                                                    { 1, 1, 2 },
+                                                                                                                    { 1, 2, 4 },
+                                                                                                                    { 1, 3, 4 } })
         edges.insert(std::array { ygg::encode_value(k), ygg::encode_value(from), ygg::encode_value(to) });
     auto sources = Relation(tyr::datalog::tests::ops::cols({ key, u }));
     sources.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
@@ -208,7 +214,7 @@ TEST_P(DatabaseMustPassRandom, MatchesObjectRemoval)
                     if (const auto t = random_vertex(); insert(targets, row(of, t)))
                         target_list.emplace_back(of, t);
             }
-            const auto probed = std::set<ygg::uint_t> { 0, 2, 3, 4, 5, 7 };
+            const auto probed = urd::Store<urd::set<ygg::uint_t>> { 0, 2, 3, 4, 5, 7 };
             auto probes = Relation(tyr::datalog::tests::ops::cols({ probe }));
             for (const auto x : probed)
                 probes.insert(std::array { ygg::encode_value(x) });

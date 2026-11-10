@@ -5,6 +5,7 @@
 
 #include "query_helpers.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/incremental/min_distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/query_evaluation.hpp"
@@ -14,7 +15,6 @@
 #include <gtest/gtest.h>
 #include <map>
 #include <random>
-#include <vector>
 
 namespace
 {
@@ -38,7 +38,7 @@ template<typename Mutate>
 void check_sequence(tyr::datalog::database::QueryView<> edges,
                     const urd::Store<urd::sequence<Relation>>& maximal,
                     urd::Store<urd::sequence<Relation>>& inputs,
-                    std::vector<bool> static_slots,
+                    urd::Store<urd::set<size_t>, urd::dense> static_slots,
                     Relation& sources,
                     Relation& targets,
                     size_t steps,
@@ -86,7 +86,7 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
             exact.bind(input);
         else
         {
-            auto changed = std::vector<bool>(inputs.size(), false);
+            auto changed = urd::Store<urd::set<size_t>, urd::dense>();
             changes.clear();
             for (size_t slot = 0; slot < inputs.size(); ++slot)
             {
@@ -97,8 +97,8 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
                 for (const auto row : layer.view(previous[slot]).rows())
                     if (!inputs[slot].contains(row))
                         change.removed.insert(row);
-                const auto is_static = slot < static_slots.size() && static_slots[slot];
-                changed[slot] = !is_static && (!change.added.empty() || !change.removed.empty());
+                if (!static_slots.contains(slot) && (!change.added.empty() || !change.removed.empty()))
+                    changed.insert(slot);
             }
             exact.update([&](size_t slot) { return ChangeView { layer.view(changes[slot].added), layer.view(changes[slot].removed) }; }, changed);
         }
@@ -147,7 +147,7 @@ TEST_P(DatabaseIncrementalMinDistance, SingleColumnEdgesUnderChanges)
     check_sequence(edges,
                    maximal,
                    inputs,
-                   { false },
+                   {},
                    sources,
                    targets,
                    300,
@@ -242,7 +242,7 @@ TEST_P(DatabaseIncrementalMinDistance, PairEdgesWithJoinsUnionsSelectionsAndDiff
     check_sequence(edges,
                    maximal,
                    inputs,
-                   { false, false, false, true, true },
+                   { 3, 4 },
                    sources,
                    targets,
                    300,
@@ -307,9 +307,11 @@ TEST_P(DatabaseIncrementalMinDistance, RelationEdgesUnderChanges)
         const auto expected = tyr::datalog::database::min_distance(borrow(layer, sources), borrow(layer, edges), borrow(layer, targets), plan, result, workspace);
         const auto edge_view = borrow(layer, edges);
         const auto edge_input = [&](size_t) -> const auto& { return edge_view; };
-        const auto maybe_changed = std::vector<bool> { changed || step == 0 };
-        blind.bind(edge_input, maybe_changed);
-        guided.bind(edge_input, maybe_changed);
+        auto maybe_changed = urd::Store<urd::set<size_t>, urd::dense>();
+        if (changed || step == 0)
+            maybe_changed.insert(0);
+        blind.bind(edge_input, &maybe_changed);
+        guided.bind(edge_input, &maybe_changed);
         ASSERT_EQ(blind.min_distance(borrow(layer, sources), borrow(layer, targets)), expected) << "step " << step;
         ASSERT_EQ(guided.min_distance(borrow(layer, sources), borrow(layer, targets), heuristic), expected) << "step " << step;
     }
@@ -414,7 +416,7 @@ TEST(DatabaseIncrementalMinDistanceContract, InitializeDiscardsTheSearchWithUnch
             search.initialize(graph.input());
             changes[1].added.clear();
             changes[1].added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
-            search.update(change, { false, true });
+            search.update(change, { 1 });
         }
         else
             search.bind(graph.input());
@@ -435,15 +437,15 @@ TEST(DatabaseIncrementalMinDistanceContract, UpdateRejectsStaticUnboundAndOutOfR
     const auto change = graph.changes_of(changes);
 
     auto unbound = tyr::datalog::database::incremental::MinDistance(graph.layer, graph.edges, graph.plan);
-    EXPECT_THROW(unbound.update(change, { false, true }), std::invalid_argument);
+    EXPECT_THROW(unbound.update(change, { 1 }), std::invalid_argument);
 
-    auto with_static = tyr::datalog::database::incremental::MinDistance(graph.layer, graph.edges, graph.plan, { false, true });
+    auto with_static = tyr::datalog::database::incremental::MinDistance(graph.layer, graph.edges, graph.plan, { 1 });
     with_static.initialize(graph.input());
-    EXPECT_THROW(with_static.update(change, { false, true }), std::invalid_argument);
+    EXPECT_THROW(with_static.update(change, { 1 }), std::invalid_argument);
 
     auto search = tyr::datalog::database::incremental::MinDistance(graph.layer, graph.edges, graph.plan);
     search.initialize(graph.input());
-    EXPECT_THROW(search.update(change, { false, false, true }), std::invalid_argument);
+    EXPECT_THROW(search.update(change, { 2 }), std::invalid_argument);
     EXPECT_EQ(search.min_distance(borrow(graph.layer, graph.sources), borrow(graph.layer, graph.targets)), 2);
 }
 
@@ -457,7 +459,7 @@ TEST(DatabaseIncrementalMinDistanceContract, DistancesStayExactAfterAThrowingUpd
     auto changes = urd::Store<urd::sequence<SlotChange>>(2);
     changes[0].added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     changes[1].removed.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(5)), ygg::encode_value(static_cast<ygg::uint_t>(5)) });
-    EXPECT_THROW(search.update(graph.changes_of(changes), { true, true }), std::invalid_argument);
+    EXPECT_THROW(search.update(graph.changes_of(changes), { 0, 1 }), std::invalid_argument);
     EXPECT_EQ(search.min_distance(borrow(graph.layer, graph.sources), borrow(graph.layer, graph.targets)), 1);
 }
 

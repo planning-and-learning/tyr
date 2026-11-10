@@ -22,7 +22,7 @@ void bind_query_select_equal(nb::module_& m, QueryRepositoryBinding& repository)
         auto cls = nb::class_<V>(m, "QuerySelectEqual");
         cls.def("index", &V::index)
             .def("columns", &V::columns, nb::keep_alive<0, 1>())
-            .def("get_arg", &V::get_arg, nb::keep_alive<0, 1>())
+            .def("get_arg", &V::get_arg)
             .def("get_lhs_column", &V::get_lhs_column)
             .def("get_rhs_column", &V::get_rhs_column);
         urd::python::add_comparison(cls);

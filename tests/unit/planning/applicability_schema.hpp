@@ -32,7 +32,6 @@
 #include "tyr/planning/successor_generator_concepts.hpp"
 
 #include <algorithm>
-#include <deque>
 #include <array>
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -209,7 +208,7 @@ void expect_schema_queries_match_filtered_successors()
     using ObjectIndices = std::span<const urd::index<formalism::Object>>;
     // An offered binding: the record a caller fills, kept for the rest of the test so that it is read through a
     // repository as a borrowed binding.
-    auto offers = std::deque<urd::data<ygg::Row<tyr::formalism::planning::Action<LiftedTag>>>>();
+    auto offers = urd::Store<urd::sequence<urd::data<ygg::Row<tyr::formalism::planning::Action<LiftedTag>>>>, urd::stable_refs>();
     const auto offer = [&offers](auto action, ObjectIndices objects) -> const auto&
     {
         auto& data = offers.emplace_back();

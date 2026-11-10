@@ -69,7 +69,6 @@
 #include <urd/store.hpp>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <urd/repr/core/dependent_false.hpp>
 
 namespace tyr::planning
 {
@@ -351,7 +350,7 @@ bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> elemen
     else if constexpr (std::same_as<P, formalism::NegativeTag>)
         return value != element.get_value();
     else
-        static_assert(urd::repr::dependent_false<P>::value, "Missing case");
+        static_assert(false, "Missing case");
 }
 
 template<formalism::PolarityKind P, TaskKind Kind>

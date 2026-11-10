@@ -8,6 +8,8 @@
 
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/pools/pools.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/repr/values/sparse_set.hpp>
 #include <urd/store.hpp>
 #include "yggdrasil/core/config.hpp"
 #include <urd/config.hpp>
@@ -28,7 +30,6 @@
 #include <ranges>
 #include <span>
 #include <utility>
-#include <vector>
 
 namespace tyr::datalog::database
 {
@@ -84,7 +85,10 @@ public:
     /// Edges given by a query over inputs with the plan's edge columns; `static_slots` marks its inputs that never
     /// change, which are then read on the first call only. Its input snapshots are builders of `layer`, which must outlive
     /// it.
-    MustPass(const ygg::FreeRelationRepository& layer, QueryView<> edges, const MustPassPlan& plan, const std::vector<bool>& static_slots = {}) :
+    MustPass(const ygg::FreeRelationRepository& layer,
+             QueryView<> edges,
+             const MustPassPlan& plan,
+             const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         m_plan(plan),
         m_probe_positions(plan.probe_positions()),
         m_edges(bound::QueryEvaluator(layer, checked(edges, plan), static_slots), plan.edge_columns(), plan.keys(), plan.arity()),
@@ -310,14 +314,7 @@ private:
         intern(m_ends, m_end_ids, targets, m_key_targets[key]);
         m_candidates.clear();
         const auto on_witness = [&](std::span<const ygg::Value> vertex)
-        {
-            probes_of(vertex,
-                      [&](VertexSet::handle_type probe)
-                      {
-                          if (std::ranges::find(m_candidates, probe) == m_candidates.end())
-                              m_candidates.push_back(probe);
-                      });
-        };
+        { probes_of(vertex, [&](VertexSet::handle_type probe) { m_candidates.insert(probe); }); };
         if (!search({}, on_witness))
             return;
         ++m_statistics.keys;
@@ -358,7 +355,8 @@ private:
     BackwardFrontier m_frontier;
     detail::TargetSet m_targets;
     AStarStorage m_search;
-    urd::Store<urd::sequence<VertexSet::handle_type>> m_candidates;  ///< Probe objects on the witness.
+    /// Probe objects on the witness, as found. An insertion-ordered set is numbered.
+    urd::Store<urd::set<VertexSet::handle_type>, urd::dense, urd::insertion_ordered> m_candidates { urd::layer { 0 } };
     urd::Store<urd::sequence<ygg::Value>> m_estimated;  ///< The key and a vertex, as given to the heuristic.
     urd::Store<urd::sequence<ygg::Value>> m_row;
     urd::Store<urd::sequence<ygg::Value>> m_values;  ///< A row's values, as read from an input.

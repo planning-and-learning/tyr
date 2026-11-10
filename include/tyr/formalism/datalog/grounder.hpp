@@ -131,7 +131,7 @@ inline void ground(TermListView terms, const WriteContext<Builder, Repository>& 
                 else if constexpr (std::same_as<Alternative, ObjectView>)
                     values.push_back(arg.index().value);
                 else
-                    static_assert(urd::repr::dependent_false<Alternative>::value, "Missing case");
+                    static_assert(false, "Missing case");
             },
             term);
 }

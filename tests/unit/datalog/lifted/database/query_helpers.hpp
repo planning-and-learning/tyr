@@ -5,7 +5,6 @@
 #include <array>
 #include <cstddef>
 #include <limits>
-#include <map>
 #include <initializer_list>
 #include <span>
 #include <stdexcept>
@@ -18,6 +17,8 @@
 #include <tyr/datalog/lifted/database/semantics/operations.hpp>
 #include <tyr/datalog/lifted/database/semantics/relation_view.hpp>
 #include <tyr/datalog/lifted/database/syntax/query.hpp>
+#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/store.hpp>
 
 /// Test-only query construction on top of checkout + insert_query.
 namespace tyr::datalog::tests::qb
@@ -313,7 +314,7 @@ urd::Store<urd::sequence<ygg::uint_t>> decode(const R& row)
 /// Half the distance to the targets in a supergraph of every state: consistent in all of them.
 struct HalfDistance
 {
-    std::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t> distances;
+    urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>> distances;
     std::span<const ygg::ColumnLayout> columns;
 
     [[nodiscard]] ygg::uint_t estimate(std::span<const ygg::Value> vertex) const
@@ -324,9 +325,10 @@ struct HalfDistance
 };
 
 /// Backward breadth-first distances to the targets over materialized edges.
-inline std::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t> distances_to(ygg::FreeBuilderRelationView edges, ygg::FreeBuilderRelationView targets, size_t k)
+inline urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>>
+distances_to(ygg::FreeBuilderRelationView edges, ygg::FreeBuilderRelationView targets, size_t k)
 {
-    std::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t> result;
+    urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>> result;
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> frontier;
     for (size_t i = 0; i < targets.size(); ++i)
     {

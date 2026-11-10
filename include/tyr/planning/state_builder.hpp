@@ -170,7 +170,7 @@ template<::tyr::formalism::FactKind F>
     else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
         return urd::transform(atom_storage.indices, [](ygg::uint_t i) { return urd::index<::tyr::formalism::Atom<::tyr::GroundTag, F>> { i }; });
     else
-        static_assert(urd::repr::dependent_false<F>::value);
+        static_assert(false);
 }
 
 }  // namespace urd

@@ -14,9 +14,9 @@ UnionNormalForm union_normal_form(QueryView<> query) { return detail::UnionNorma
 
 namespace tyr::datalog::database::bound::detail
 {
-std::vector<ConjunctiveBranch> UnionNormalFormBuilder::product(const std::vector<ConjunctiveBranch>& lhs, const std::vector<ConjunctiveBranch>& rhs)  // std::vector: of an incomplete type (a Store resolves its element type at once)
+std::vector<ConjunctiveBranch> UnionNormalFormBuilder::product(const std::vector<ConjunctiveBranch>& lhs, const std::vector<ConjunctiveBranch>& rhs)
 {
-    std::vector<ConjunctiveBranch> result;  // std::vector: of an incomplete type (a Store resolves its element type at once)
+    std::vector<ConjunctiveBranch> result;
     for (const auto& l : lhs)
         for (const auto& r : rhs)
         {
@@ -32,11 +32,11 @@ std::vector<ConjunctiveBranch> UnionNormalFormBuilder::product(const std::vector
 
 namespace tyr::datalog::database::bound::detail
 {
-std::vector<ConjunctiveBranch> UnionNormalFormBuilder::flatten(QueryView<> query, std::span<const uint32_t> mapping)  // std::vector: of an incomplete type (a Store resolves its element type at once)
+std::vector<ConjunctiveBranch> UnionNormalFormBuilder::flatten(QueryView<> query, std::span<const uint32_t> mapping)
 {
     const auto columns = query.columns();
     return std::visit(
-        [&]<typename Tag>(QueryView<Tag> concrete) -> std::vector<ConjunctiveBranch>  // std::vector: of an incomplete type (a Store resolves its element type at once)
+        [&]<typename Tag>(QueryView<Tag> concrete) -> std::vector<ConjunctiveBranch>
         {
             if constexpr (std::same_as<Tag, QueryInputTag>)
             {
@@ -64,7 +64,7 @@ std::vector<ConjunctiveBranch> UnionNormalFormBuilder::flatten(QueryView<> query
                 // Labels outside the output are shared by all inputs that name them.
                 urd::Store<urd::sequence<ygg::ColumnLayout>> labels(columns.begin(), columns.end());
                 urd::Store<urd::sequence<uint32_t>> variables(mapping.begin(), mapping.end());
-                auto result = std::vector<ConjunctiveBranch>(1);  // std::vector: of an incomplete type (a Store resolves its element type at once)
+                auto result = std::vector<ConjunctiveBranch>(1);
                 const auto& repository = get_repository(concrete.context());
                 for (const auto input : concrete.get_inputs())
                 {

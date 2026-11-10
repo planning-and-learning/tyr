@@ -29,10 +29,7 @@ void bind_query_select_value(nb::module_& m, QueryRepositoryBinding& repository)
     {
         using V = ConcreteQueryView<tyr::datalog::database::QuerySelectValueTag>;
         auto cls = nb::class_<V>(m, "QuerySelectValue");
-        cls.def("index", &V::index)
-            .def("columns", &V::columns, nb::keep_alive<0, 1>())
-            .def("get_arg", &V::get_arg, nb::keep_alive<0, 1>())
-            .def("get_column", &V::get_column);
+        cls.def("index", &V::index).def("columns", &V::columns, nb::keep_alive<0, 1>()).def("get_arg", &V::get_arg).def("get_column", &V::get_column);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
     }

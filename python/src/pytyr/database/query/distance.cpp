@@ -23,9 +23,9 @@ void bind_query_distance(nb::module_& m, QueryRepositoryBinding& repository)
         auto cls = nb::class_<V>(m, "QueryDistance");
         cls.def("index", &V::index)
             .def("columns", &V::columns, nb::keep_alive<0, 1>())
-            .def("get_sources", &V::get_sources, nb::keep_alive<0, 1>())
-            .def("get_edges", &V::get_edges, nb::keep_alive<0, 1>())
-            .def("get_targets", &V::get_targets, nb::keep_alive<0, 1>())
+            .def("get_sources", &V::get_sources)
+            .def("get_edges", &V::get_edges)
+            .def("get_targets", &V::get_targets)
             .def("get_distance_column", &V::get_distance_column);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);

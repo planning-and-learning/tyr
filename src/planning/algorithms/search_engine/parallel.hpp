@@ -20,6 +20,7 @@
 
 #include "../repository_statistics.hpp"
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include "concepts.hpp"
 #include "engine.hpp"
@@ -226,8 +227,8 @@ public:
         m_synchronize_priority_layers = SearchPolicy::synchronize_priority_layers(options);
         m_active_priority.store(start_priority, std::memory_order_relaxed);
         m_layer_generation.store(0, std::memory_order_relaxed);
-        m_num_waiting_workers = 0;
-        m_waiting_workers.assign(num_workers, uint8_t { 0 });
+        m_waiting_workers.clear();
+        m_waiting_workers.reserve(num_workers);
     }
 
     template<typename ExecutionPolicy, typename WorkerData>
@@ -261,24 +262,18 @@ private:
         auto layer_statistics = std::optional<Statistics> {};
         auto next_active_priority = std::optional<ygg::float_t> {};
         auto release_workers = false;
-        const auto worker_index = static_cast<size_t>(static_cast<ygg::uint_t>(worker.index.value));
         {
             auto lock = std::unique_lock(m_layer_mutex);
             if (!execution.running())
                 return;
 
             generation = m_layer_generation.load(std::memory_order_relaxed);
-            assert(worker_index < m_waiting_workers.size());
-            if (!m_waiting_workers[worker_index])
+            assert(static_cast<size_t>(static_cast<ygg::uint_t>(worker.index.value)) < engine.num_workers());
+            m_waiting_workers.insert(worker.index);
+            assert(m_waiting_workers.size() <= engine.num_workers());
+            if (m_waiting_workers.size() == engine.num_workers())
             {
-                m_waiting_workers[worker_index] = true;
-                ++m_num_waiting_workers;
-            }
-            assert(m_num_waiting_workers <= engine.num_workers());
-            if (m_num_waiting_workers == engine.num_workers())
-            {
-                std::fill(m_waiting_workers.begin(), m_waiting_workers.end(), uint8_t { 0 });
-                m_num_waiting_workers = 0;
+                m_waiting_workers.clear();
                 auto next_priority = std::numeric_limits<ygg::float_t>::infinity();
                 auto num_open_entries = size_t { 0 };
                 for (size_t i = 0; i < engine.num_workers(); ++i)
@@ -345,12 +340,7 @@ private:
         lock.unlock();
         {
             const auto layer_lock = std::lock_guard(m_layer_mutex);
-            if (m_waiting_workers[worker_index])
-            {
-                m_waiting_workers[worker_index] = false;
-                assert(m_num_waiting_workers > 0);
-                --m_num_waiting_workers;
-            }
+            m_waiting_workers.erase(worker.index);
         }
         if (timed_out)
         {
@@ -364,8 +354,8 @@ private:
     std::mutex m_layer_mutex;
     std::atomic<ygg::float_t> m_active_priority { std::numeric_limits<ygg::float_t>::infinity() };
     std::atomic<size_t> m_layer_generation { 0 };
-    urd::Store<urd::sequence<uint8_t>> m_waiting_workers;
-    size_t m_num_waiting_workers { 0 };
+    /// The workers waiting for the active priority layer to finish.
+    urd::Store<urd::set<urd::index<Worker>>, urd::dense> m_waiting_workers;
     bool m_synchronize_priority_layers { false };
 };
 

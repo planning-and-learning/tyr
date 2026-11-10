@@ -19,8 +19,9 @@
 #include <span>
 #include <stdexcept>
 #include <type_traits>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
-#include <vector>
 
 namespace tyr::datalog::database
 {
@@ -54,7 +55,10 @@ public:
     /// Edges given by a query over inputs. `edges` has the plan's edge columns; `static_slots` marks its inputs that
     /// never change, which are then read on the first call only.
     /// Its input snapshots are builders of `layer`, which must outlive it.
-    MinDistance(const ygg::FreeRelationRepository& layer, QueryView<> edges, const DistancePlan& plan, const std::vector<bool>& static_slots = {}) :
+    MinDistance(const ygg::FreeRelationRepository& layer,
+                QueryView<> edges,
+                const DistancePlan& plan,
+                const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         MinDistance(bound::QueryEvaluator(layer, detail::checked_edges(edges, plan), static_slots), plan)
     {
     }
