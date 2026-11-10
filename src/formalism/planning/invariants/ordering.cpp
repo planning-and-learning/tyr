@@ -32,6 +32,7 @@
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -122,14 +123,18 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
     while (true)
     {
         auto candidates = urd::Store<urd::sequence<std::size_t>> {};
+        auto rest = urd::Store<urd::sequence<std::size_t>> {};
         for (std::size_t i = 0; i < unique.size(); ++i)
         {
             if (used.contains(i))
                 continue;
             residuals[i] = compute_residual(unique[i], taken);
-            if (residuals[i].informative)
-                candidates.push_back(i);
+            (residuals[i].informative ? candidates : rest).push_back(i);
         }
+        // Informative invariants first; the others still follow, since their atoms that no earlier ground group
+        // covered can form non-trivial mutex groups.
+        if (candidates.empty())
+            candidates = std::move(rest);
         if (candidates.empty())
             return order;
 

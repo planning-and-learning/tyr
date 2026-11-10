@@ -28,6 +28,7 @@
 #include <tuple>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
@@ -161,7 +162,7 @@ public:
 
 private:
     template<formalism::RelationKind R>
-    using RuleToActionMapping = urd::Store<urd::map<Rule<R>, Action>>;
+    using RuleToActionMapping = urd::Store<urd::map<Rule<R>, urd::Store<urd::sequence<Action>>>>;
 
 public:
     RuleCostOverridePolicy() = default;
@@ -217,6 +218,7 @@ private:
     [[nodiscard]] const auto* mapping(formalism::PredicateTag) const noexcept { return m_predicate_rule_to_action; }
     [[nodiscard]] const auto* mapping(formalism::FunctionTag) const noexcept { return m_function_rule_to_action; }
 
+    /// The credit of a rule is the largest credit of its actions: the rule is the cheapest of their parallel arcs.
     template<formalism::RelationKind R>
     [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView<R> rule_binding) const
         requires std::same_as<Kind, GroundTag>
@@ -225,11 +227,14 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto action = rule_to_action->find(rule_binding.data());
-        if (action == rule_to_action->end())
+        const auto actions = rule_to_action->find(rule_binding.data());
+        if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
-        const auto cost = m_action_costs.find(action->second.get_row());
-        return cost == m_action_costs.end() ? static_cast<Cost>(0) : cost->second;
+        auto credit = static_cast<Cost>(0);
+        for (const auto action : actions->second)
+            if (const auto cost = m_action_costs.find(action.get_row()); cost != m_action_costs.end())
+                credit = std::max(credit, cost->second);
+        return credit;
     }
 
     template<formalism::RelationKind R>
@@ -240,11 +245,15 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto action = rule_to_action->find(rule_binding.data().relation);
-        if (action == rule_to_action->end() || rule_binding.size() < action->second.get_arity())
+        const auto actions = rule_to_action->find(rule_binding.data().relation);
+        if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
-        const auto cost = m_action_costs.find(ActionCostLookup<R> { action->second, rule_binding });
-        return cost == m_action_costs.end() ? static_cast<Cost>(0) : cost->second;
+        auto credit = static_cast<Cost>(0);
+        for (const auto action : actions->second)
+            if (rule_binding.size() >= action.get_arity())
+                if (const auto cost = m_action_costs.find(ActionCostLookup<R> { action, rule_binding }); cost != m_action_costs.end())
+                    credit = std::max(credit, cost->second);
+        return credit;
     }
 
     RuleCostOverrideStorage<formalism::PredicateTag> predicate_storage;

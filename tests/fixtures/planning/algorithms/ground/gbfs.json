@@ -410,8 +410,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 87,
-                "num_expanded": 45,
+                "num_generated_successors": 70,
+                "num_expanded": 32,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1068,8 +1068,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 10,
-                "num_expanded": 9,
+                "num_generated_successors": 9,
+                "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1268,8 +1268,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 12,
-                "num_expanded": 7,
+                "num_generated_successors": 8,
+                "num_expanded": 4,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1369,7 +1369,7 @@
             },
             "hlmcut_unit": {
                 "num_generated_successors": 22,
-                "num_expanded": 15,
+                "num_expanded": 13,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -1470,7 +1470,7 @@
             },
             "hlmcut_unit": {
                 "num_generated_successors": 8,
-                "num_expanded": 6,
+                "num_expanded": 8,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2037,8 +2037,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 675,
-                "num_expanded": 90,
+                "num_generated_successors": 184,
+                "num_expanded": 14,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2046,9 +2046,9 @@
                     "length": 6,
                     "actions": [
                         "(choose pcaf l1 l0)",
+                        "(initialize pcaf)",
                         "(choose p300 l2 l1)",
                         "(initialize p300)",
-                        "(initialize pcaf)",
                         "(associate pcaf p300 pcaf-p300)",
                         "(dummy-action-1)"
                     ]
@@ -2541,7 +2541,7 @@
             },
             "hlmcut_unit": {
                 "num_generated_successors": 12,
-                "num_expanded": 7,
+                "num_expanded": 6,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -2657,7 +2657,7 @@
             },
             "hlmcut_unit": {
                 "num_generated_successors": 29,
-                "num_expanded": 13,
+                "num_expanded": 12,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3082,8 +3082,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 86,
-                "num_expanded": 42,
+                "num_generated_successors": 52,
+                "num_expanded": 20,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -3827,8 +3827,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 75,
-                "num_expanded": 33,
+                "num_generated_successors": 103,
+                "num_expanded": 48,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {
@@ -4407,8 +4407,8 @@
                 }
             },
             "hlmcut_unit": {
-                "num_generated_successors": 25,
-                "num_expanded": 6,
+                "num_generated_successors": 39,
+                "num_expanded": 15,
                 "num_deadends": 0,
                 "num_pruned": 0,
                 "plan": {

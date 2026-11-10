@@ -178,7 +178,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
             const auto rule = create_cond_effect_rule(action, cond_eff, translation_context, context).first;
 
             program.predicate_rules.push_back(rule.index());
-            rule_to_action.predicate.emplace(rule.index(), action);
+            rule_to_action.predicate[rule.index()].push_back(action);
         }
 
         for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
@@ -186,7 +186,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
             const auto rule = create_cond_numeric_effect_rule(action, cond_eff, numeric_effect, translation_context, context).first;
 
             program.function_rules.push_back(rule.index());
-            rule_to_action.function.emplace(rule.index(), action);
+            rule_to_action.function[rule.index()].push_back(action);
         }
     }
 }
@@ -218,10 +218,16 @@ struct RPGTables
     RPGTables remap(SymbolRemapper& remapper) const
     {
         auto result = RPGTables { remapper.translation_context(translation_context), {} };
-        for (const auto& [rule, action] : rule_to_action.predicate)
-            result.rule_to_action.predicate.emplace(remapper.rule(rule), action);
-        for (const auto& [rule, action] : rule_to_action.function)
-            result.rule_to_action.function.emplace(remapper.rule(rule), action);
+        const auto remap = [&](const auto& source, auto& destination)
+        {
+            for (const auto& [rule, actions] : source)
+            {
+                auto& result_actions = destination[remapper.rule(rule)];
+                result_actions.insert(result_actions.end(), actions.begin(), actions.end());
+            }
+        };
+        remap(rule_to_action.predicate, result.rule_to_action.predicate);
+        remap(rule_to_action.function, result.rule_to_action.function);
         return result;
     }
 };

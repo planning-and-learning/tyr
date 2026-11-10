@@ -61,6 +61,7 @@
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 
@@ -75,8 +76,10 @@ public:
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
     template<formalism::RelationKind R>
     using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
+    /// Rules are hash-consed, so actions with identical relaxed rules share one rule.
+    using Actions = urd::Store<urd::sequence<Action>>;
     template<formalism::RelationKind R>
-    using RuleToActionMapping = urd::Store<urd::map<Rule<R>, Action>>;
+    using RuleToActionMapping = urd::Store<urd::map<Rule<R>, Actions>>;
 
     struct RuleToActionMappings
     {

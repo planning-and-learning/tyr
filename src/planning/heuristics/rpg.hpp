@@ -224,20 +224,29 @@ protected:
                                              numeric_support_selector);
     }
 
+    /// Whether the witness instantiates an action rule.
     template<formalism::RelationKind R>
-    auto get_action(const datalog::WitnessAnnotation<R>& witness)
-    { return Policy::get_action(*m_definition, m_workspace, witness); }
+    [[nodiscard]] bool is_action_witness(const datalog::WitnessAnnotation<R>& witness) const
+    { return Policy::is_action_witness(*m_definition, witness); }
 
+    /// Calls back the binding of every action whose rule the witness instantiates; identical relaxed rules share one rule.
+    template<formalism::RelationKind R, typename Callback>
+    void for_each_action_binding(const datalog::WitnessAnnotation<R>& witness, Callback callback)
+    { Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback); }
+
+    /// The binding of one action whose rule the witness instantiates, if any.
     template<formalism::RelationKind R>
     std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)
     {
-        const auto action = get_action(witness);
-        if (!action)
-            return std::nullopt;
-        return detail::to_action_binding(*action);
+        auto result = std::optional<formalism::planning::ActionRowView> {};
+        for_each_action_binding(witness,
+                                [&](const auto action_binding)
+                                {
+                                    if (!result)
+                                        result = action_binding;
+                                });
+        return result;
     }
-
-    formalism::planning::ActionRowView get_action_binding(typename Policy::Action action) const noexcept { return detail::to_action_binding(action); }
 
     void append_planning_cut_frontier_atom(formalism::datalog::PredicateRowView<formalism::FluentTag> head,
                                            formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>& atoms)

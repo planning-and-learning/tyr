@@ -268,14 +268,14 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderPrefersMoreResidualAtomsOnStole
     const auto pair = intern_invariant(repository, planning::MutableInvariant(0, 1, { free, atom(repository, "loaded", { 0 }) }));
 
     // Both steal free from each other. More residual atoms keeps free and loaded in one variable; the text alone
-    // would take the smaller group first and leave loaded on its own.
-    EXPECT_EQ(invariant::compute_invariant_order_greedy({ alone, pair }), (planning::InvariantViewList { pair }));
+    // would take the smaller group first and leave loaded on its own. alone, then without mutex information, follows.
+    EXPECT_EQ(invariant::compute_invariant_order_greedy({ alone, pair }), (planning::InvariantViewList { pair, alone }));
     EXPECT_EQ(invariant::compute_invariant_order_greedy({ alone, pair },
                                                         invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates, Criterion::Lexicographic } }),
               (planning::InvariantViewList { alone, pair }));
 }
 
-TEST(TyrTests, TyrFormalismPlanningInvariantOrderDropsResidualsWithoutMutexInformation)
+TEST(TyrTests, TyrFormalismPlanningInvariantOrderPutsResidualsWithoutMutexInformationLast)
 {
     namespace planning = tyr::formalism::planning;
     namespace invariant = planning::invariant;
@@ -285,9 +285,9 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderDropsResidualsWithoutMutexInfor
     // Once taker takes shared, singleton keeps one atom without counted variables, residual one with them.
     const auto singleton = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "fixed", {}) }));
     const auto residual = intern_invariant(repository, planning::MutableInvariant(0, 2, { shared, atom(repository, "tail", { 0 }) }));
-    // Without criteria the input order decides, so taker goes first.
+    // Without criteria the input order decides, so taker goes first; singleton is not left out but comes last.
     EXPECT_EQ(invariant::compute_invariant_order_greedy({ taker, singleton, residual }, invariant::InvariantOrderOptions { {} }),
-              (planning::InvariantViewList { taker, residual }));
+              (planning::InvariantViewList { taker, residual, singleton }));
 }
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderCriteriaCompose)

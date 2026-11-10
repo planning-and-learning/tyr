@@ -32,9 +32,11 @@ namespace tyr::formalism::planning::invariant
 /// Invariant orders for GroundTaskInstantiationOptions::invariant_order, computed from the invariants alone.
 ///
 /// The order is built greedily. Taking an invariant takes its predicates: later invariants keep only their residual,
-/// the atoms whose predicate no earlier invariant took. An invariant whose residual is empty or a single atom without
-/// counted variables carries no mutex information and is left out. At each step the criteria narrow the remaining
-/// invariants in turn, in any composition; of those left, the first in the input is taken.
+/// the atoms whose predicate no earlier invariant took. A residual is informative when it has more than one atom or one
+/// atom with a counted variable. Every invariant is in the order: the informative ones come first, and once no
+/// remaining invariant is informative, the others follow, because the ground atoms that earlier groups leave uncovered
+/// can still form non-trivial mutex groups. At each step the criteria narrow the remaining invariants in turn, in any
+/// composition; of those left, the first in the input is taken.
 
 enum class InvariantOrderCriterion : std::uint8_t
 {
@@ -59,7 +61,8 @@ struct InvariantOrderOptions
     std::uint64_t random_seed = 0;
 };
 
-/// Repeatedly takes the invariant the criteria choose among those whose residual carries mutex information.
+/// Repeatedly takes the invariant the criteria choose among those whose residual is informative, or among all remaining
+/// ones once none is; returns every distinct invariant.
 InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invariants, const InvariantOrderOptions& options = {});
 
 }

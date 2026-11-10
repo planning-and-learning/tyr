@@ -4,6 +4,8 @@
 import gc
 import json
 import sys
+import time
+import weakref
 from collections.abc import Iterator
 from typing import Literal, cast
 
@@ -370,3 +372,47 @@ def test_projection_retains_native_values_from_exhausted_generator() -> None:
     gc.collect()
     assert table(dictionaries, fp.Variable) == [{"objects": ["o0", None]}]
     assert table(dictionaries, fp.Object) == [{"name": "generated"}]
+
+
+class _Holder:
+    def __init__(self, dictionaries: Dictionaries) -> None:
+        self.dictionaries = dictionaries
+
+
+def test_serialize_time_per_call_does_not_grow_with_the_tables() -> None:
+    # serialize keeps every value alive for the dictionaries. With nb::keep_alive, each call scanned all earlier values,
+    # so a call cost time linear in the calls before it; the second half of the atoms then took several times as long
+    # as the first. Atoms with a projection that serializes their objects, as table writers do, make 3 calls each.
+    count = 160
+    names = [f"o{index}" for index in range(count)]
+    edges = " ".join(f"(edge {a} {b})" for a in names for b in names if a != b)
+    domain = "(define (domain grid) (:requirements :strips) (:predicates (edge ?a ?b) (at ?a)))"
+    problem = (
+        f"(define (problem grid-1) (:domain grid) (:objects {' '.join(names)}) (:init {edges} (at o0)) (:goal (at o1)))"
+    )
+    parser = fp.Parser(domain, None, ParserOptions())
+    task = parser.parse_task(problem, None, ParserOptions())
+    atoms = list(task.get_task().get_static_atoms())
+    assert len(atoms) >= count * (count - 1)
+    holder = _Holder(Dictionaries())
+    dictionaries = holder.dictionaries
+    # Through a proxy: a projection that held the dictionaries would close a cycle through native code that gc cannot
+    # see (Dictionaries itself takes no weak references).
+    this = weakref.proxy(holder)
+
+    def project(atom: fp.StaticGroundAtom) -> dict[str, object]:
+        return {"objects": [serialize(this.dictionaries, item) for item in atom.get_objects()]}
+
+    register_table(dictionaries, fp.StaticGroundAtom, "atoms", "a", project=project)
+    register_table(dictionaries, fp.Object, "objects", "o")
+    half = len(atoms) // 2
+    start = time.perf_counter()
+    for atom in atoms[:half]:
+        serialize(dictionaries, atom)
+    first = time.perf_counter() - start
+    start = time.perf_counter()
+    for atom in atoms[half:]:
+        serialize(dictionaries, atom)
+    second = time.perf_counter() - start
+    assert len(_rows(table(dictionaries, fp.StaticGroundAtom))) == len(atoms)
+    assert second < 2.5 * first + 0.05, (first, second)
