@@ -369,7 +369,6 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinUpdatesEitherSideIndependently)
 
 TEST(YggdrasilTests, DatabaseIncrementalJoinAcceptsInternedWideInputs)
 {
-    using Value = std::uint64_t;
     urd::builder<ygg::Relation<ygg::Schema>> dynamic(columns_of<ygg::Value>({ ColumnIndex(1), ColumnIndex(2) }));
     urd::builder<ygg::Relation<ygg::Schema>> immutable(columns_of<ygg::Value>({ ColumnIndex(2), ColumnIndex(3) }));
     dynamic.insert(std::array { ygg::encode_value(ygg::Value { 1 }), ygg::encode_value(ygg::Value { 10 }) });
@@ -511,7 +510,6 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinUpdatesBothInputsAndRestoresBranches
 
 TEST(YggdrasilTests, DatabaseIncrementalJoinMaintainsWideIndexesAcrossRowCompaction)
 {
-    using Value = std::uint64_t;
     urd::builder<ygg::Relation<ygg::Schema>> lhs(columns_of<ygg::Value>({ ColumnIndex(1), ColumnIndex(2) }));
     urd::builder<ygg::Relation<ygg::Schema>> rhs(columns_of<ygg::Value>({ ColumnIndex(2), ColumnIndex(3) }));
     for (ygg::uint_t i = 0; i < 5; ++i)

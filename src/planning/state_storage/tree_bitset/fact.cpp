@@ -75,7 +75,8 @@ void unpack_facts(Set& bitsets,
     auto& values = unpacked.values;
     values.resize(infos.size());
     for (ygg::uint_t i = 0; i < infos.size(); ++i)
-        values[i] = ygg::uint_t(urd::bits::read_int<tree_bitset::Block>(std::span(blocks).subspan(infos[i].begin), infos[i].offset, infos[i].length));
+        values[i] =
+            static_cast<ygg::uint_t>(urd::bits::read_int<tree_bitset::Block>(std::span(blocks).subspan(infos[i].begin), infos[i].offset, infos[i].length));
 }
 
 template<typename Set>

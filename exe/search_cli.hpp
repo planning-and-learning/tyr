@@ -104,10 +104,10 @@ struct Search
 {
     planning::TaskPtr<Kind> task;
     std::shared_ptr<ygg::ExecutionContext> execution_context;
-    planning::AxiomEvaluatorPtr<Kind> axiom_evaluator;
-    planning::StateRepositoryPtr<Kind> state_repository;
-    planning::SuccessorGeneratorPtr<Kind> successor_generator;
-    planning::HeuristicPtr<Kind> heuristic;
+    planning::AxiomEvaluatorPtr<Kind> axiom_evaluator {};
+    planning::StateRepositoryPtr<Kind> state_repository {};
+    planning::SuccessorGeneratorPtr<Kind> successor_generator {};
+    planning::HeuristicPtr<Kind> heuristic {};
 };
 
 inline void add_common_arguments(argparse::ArgumentParser& program)

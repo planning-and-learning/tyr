@@ -38,7 +38,7 @@ template<typename Mutate>
 void check_sequence(tyr::datalog::database::QueryView<> edges,
                     const urd::Store<urd::sequence<Relation>>& maximal,
                     urd::Store<urd::sequence<Relation>>& inputs,
-                    urd::Store<urd::set<size_t>, urd::dense> static_slots,
+                    const urd::Store<urd::set<size_t>, urd::dense>& static_slots,
                     Relation& sources,
                     Relation& targets,
                     size_t steps,

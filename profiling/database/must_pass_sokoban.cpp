@@ -12,7 +12,7 @@
 //
 // state.txt replaces the initial state: a line "robot <location>", then lines "<box> <location>".
 
-#include "../../tests/unit/database/query_helpers.hpp"
+#include "../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 #include "tyr/datalog/lifted/database/optimization/optimization.hpp"
 #include "tyr/datalog/lifted/database/semantics/bound/query_evaluation.hpp"
 #include "tyr/datalog/lifted/database/semantics/must_pass.hpp"
@@ -25,11 +25,11 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <deque>
 #include <exception>
 #include <fmt/core.h>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <span>
 #include <sstream>
@@ -46,7 +46,7 @@ using Column = urd::index<ygg::Column>;
 using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
 using View = ygg::FreeBuilderRelationView;
 using ygg::uint_t;
-namespace qb = ygg::tests::qb;
+namespace qb = tyr::datalog::tests::qb;
 
 /// The layer the profile reads its builders through.
 const ygg::FreeRelationRepository& layer()
@@ -56,6 +56,21 @@ const ygg::FreeRelationRepository& layer()
 }
 
 View borrow(const Relation& relation) { return layer().view(relation); }
+
+/// The value of an environment variable, or null.
+const char* environment(const char* name)
+{
+    // NOLINTNEXTLINE(concurrency-mt-unsafe): this program starts no thread and never sets a variable
+    return std::getenv(name);
+}
+
+/// The slowest keys printed, unless TOP gives their number.
+constexpr size_t default_top = 5;
+
+/// The value in a column of a row of a relation whose columns are uint_t.
+template<typename R>
+ygg::uint_t value_at(const R& relation, size_t row, size_t column)
+{ return ygg::decode_value<ygg::uint_t>(relation.row(row).value(column)); }
 
 /// The atoms "(name args...)" of a text.
 urd::Store<urd::sequence<urd::Store<urd::sequence<std::string>>>> atoms(const std::string& text)
@@ -153,7 +168,7 @@ struct PushDistance
     /// `from` in direction d; blocked cells hold neither the box nor the agent.
     [[nodiscard]] urd::Store<urd::sequence<ygg::uint_t>> distances(ygg::uint_t b, ygg::uint_t excluded) const
     {
-        static const bool no_agent_cell = std::getenv("NO_AGENT_CELL") != nullptr;
+        static const bool no_agent_cell = environment("NO_AGENT_CELL") != nullptr;
         auto blocked = std::vector<bool>(task->names.size(), false);
         if (obstacles)
             for (const auto& [other, location] : task->at)
@@ -182,24 +197,13 @@ struct PushDistance
             }
         return distance;
     }
-    void exclude(std::span<const std::byte> key, std::span<const std::byte> object)
+    void exclude(std::span<const ygg::Value> key, std::span<const ygg::Value> object)
     {
-        auto b = static_cast<ygg::uint_t>(0), x = static_cast<ygg::uint_t>(0);
-        std::memcpy(&b, key.data(), sizeof(b));
-        if (object.empty())
-            pushes[b] = base[b];
-        else
-        {
-            std::memcpy(&x, object.data(), sizeof(x));
-            pushes[b] = distances(b, x);
-        }
+        const auto b = ygg::decode_value<ygg::uint_t>(key.front());
+        pushes[b] = object.empty() ? base[b] : distances(b, ygg::decode_value<ygg::uint_t>(object.front()));
     }
-    [[nodiscard]] ygg::uint_t estimate(std::span<const std::byte> key_and_vertex) const
-    {
-        auto values = std::array<ygg::uint_t, 3> {};
-        std::memcpy(values.data(), key_and_vertex.data(), sizeof(values));
-        return pushes.at(values[0])[values[2]];
-    }
+    [[nodiscard]] ygg::uint_t estimate(std::span<const ygg::Value> key_and_vertex) const
+    { return pushes.at(ygg::decode_value<ygg::uint_t>(key_and_vertex[0]))[ygg::decode_value<ygg::uint_t>(key_and_vertex[2])]; }
 };
 
 double seconds_since(std::chrono::steady_clock::time_point start) { return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count(); }
@@ -275,22 +279,22 @@ int run(std::span<char*> args)
     auto probes = Relation(qb::columns_of({ cell }));
     for (size_t r = 0; r < unfinished.size(); ++r)
     {
-        const auto b = borrow(unfinished)[r].get<ygg::uint_t>(0);
+        const auto b = value_at(borrow(unfinished), r, 0);
         sources.insert(std::array { ygg::encode_value(b), ygg::encode_value(task.robot), ygg::encode_value(task.at.at(b)) });
         for (const auto location : task.locations)
-            if (!std::getenv("PUSHED_TARGETS")
+            if (!environment("PUSHED_TARGETS")
                 || std::ranges::any_of(task.adjacent, [&](const auto& edge) { return std::get<0>(edge) == location && std::get<1>(edge) == task.goal.at(b); }))
                 targets.insert(std::array { ygg::encode_value(b), ygg::encode_value(location), ygg::encode_value(task.goal.at(b)) });
         probes.insert(std::array { ygg::encode_value(task.goal.at(b)) });
     }
     const auto plan = tyr::datalog::database::MustPassPlan(sources.columns(), edges.columns(), targets.columns(), probes.columns(), 1);
     auto must_pass = tyr::datalog::database::MustPass<PushDistance>(layer(), edges, plan);
-    auto heuristic = PushDistance(task, std::getenv("STATIC_HEURISTIC") == nullptr);
+    auto heuristic = PushDistance(task, environment("STATIC_HEURISTIC") == nullptr);
     auto views = urd::Store<urd::sequence<View>>();
     for (const auto& relation : slots)
         views.push_back(borrow(relation));
     const auto slot_input = [&](size_t slot) { return views[slot]; };
-    if (std::getenv("BLIND"))  // Without a heuristic, as runir's q_must_pass runs.
+    if (environment("BLIND"))  // Without a heuristic, as runir's q_must_pass runs.
     {
         auto blind = tyr::datalog::database::MustPass(layer(), edges, plan);
         auto rows = Relation(plan.output_columns());
@@ -311,7 +315,7 @@ int run(std::span<char*> args)
         must_pass.must_pass(slot_input, borrow(sources), borrow(targets), borrow(probes), out, heuristic);
         total += seconds_since(start);
     }
-    if (std::getenv("PROJECTED"))  // Times enumerating each key's edges projected onto the box column.
+    if (environment("PROJECTED"))  // Times enumerating each key's edges projected onto the box column.
     {
         const auto projected = qb::project(queries, edges, { box, boxloc, next_boxloc });
         auto evaluator = tyr::datalog::database::bound::QueryEvaluator(layer(), projected);
@@ -319,24 +323,21 @@ int run(std::span<char*> args)
         const auto by_key = evaluator.prepare({ 0 });
         auto rows = static_cast<size_t>(0), loops = static_cast<size_t>(0);
         const auto start = std::chrono::steady_clock::now();
-        auto bytes = urd::Store<urd::sequence<std::byte>>();
         for (size_t r = 0; r < unfinished.size(); ++r)
         {
-            const auto b = borrow(unfinished)[r].get<ygg::uint_t>(0);
+            const auto b = value_at(borrow(unfinished), r, 0);
             evaluator.evaluate(by_key,
-                               tyr::datalog::database::encode_row<ygg::uint_t>(std::array { b }, bytes),
-                               [&](std::span<const std::byte> row)
+                               std::array { ygg::encode_value(b) },
+                               [&](std::span<const ygg::Value> row)
                                {
-                                   auto values = std::array<ygg::uint_t, 3> {};
-                                   std::memcpy(values.data(), row.data(), sizeof(values));
                                    ++rows;
-                                   loops += values[1] == values[2];
+                                   loops += ygg::decode_value<ygg::uint_t>(row[1]) == ygg::decode_value<ygg::uint_t>(row[2]);
                                    return true;
                                });
         }
         fmt::print("projected edges: {} rows ({} self loops) for {} keys in {:.3f} s\n", rows, loops, unfinished.size(), seconds_since(start));
     }
-    if (std::getenv("PROJECTED_FULL"))  // Times the full, optimized evaluation of the edges projected onto the box column.
+    if (environment("PROJECTED_FULL"))  // Times the full, optimized evaluation of the edges projected onto the box column.
     {
         const auto projected = qb::project(queries, edges, { box, boxloc, next_boxloc });
         const auto start = std::chrono::steady_clock::now();
@@ -347,19 +348,19 @@ int run(std::span<char*> args)
         evaluator.evaluate(views);
         const auto result = evaluator.get_result();
         for (size_t r = 0; r < result.size(); ++r)
-            loops += result[r].get<ygg::uint_t>(1) == result[r].get<ygg::uint_t>(2);
+            loops += value_at(result, r, 1) == value_at(result, r, 2);
         fmt::print("projected edges, full: {} rows ({} self loops), optimize {:.3f} s, evaluate {:.3f} s\n",
                    result.size(),
                    loops,
                    compiled,
                    seconds_since(evaluated));
     }
-    if (std::getenv("PER_KEY"))  // Times each key alone.
+    if (environment("PER_KEY"))  // Times each key alone.
     {
         auto timings = urd::Store<urd::sequence<std::tuple<double, size_t, std::string>>>();
         for (size_t r = 0; r < unfinished.size(); ++r)
         {
-            const auto b = borrow(unfinished)[r].get<ygg::uint_t>(0);
+            const auto b = value_at(borrow(unfinished), r, 0);
             auto one = Relation(sources.columns());
             one.insert(std::array { ygg::encode_value(b), ygg::encode_value(task.robot), ygg::encode_value(task.at.at(b)) });
             auto alone = tyr::datalog::database::MustPass<PushDistance>(layer(), edges, plan);
@@ -369,7 +370,7 @@ int run(std::span<char*> args)
             timings.emplace_back(seconds_since(start), alone.statistics().vertices, task.names[b] + (alone.statistics().keys == 0 ? " (unreachable)" : ""));
         }
         std::ranges::sort(timings, std::greater<>());
-        for (size_t i = 0; i < std::min<size_t>(std::getenv("TOP") ? std::stoul(std::getenv("TOP")) : 5, timings.size()); ++i)
+        for (size_t i = 0; i < std::min<size_t>(environment("TOP") ? std::stoul(environment("TOP")) : default_top, timings.size()); ++i)
             fmt::print("  {:<22} {:8.3f} s {:10} expanded\n", std::get<2>(timings[i]).c_str(), std::get<0>(timings[i]), std::get<1>(timings[i]));
         auto alone_total = 0.0;
         for (const auto& timing : timings)
@@ -395,10 +396,10 @@ int run(std::span<char*> args)
     // The order key of every unfinished box: the other boxes for which its goal cell must be passed.
     auto must = std::map<ygg::uint_t, urd::Store<urd::sequence<ygg::uint_t>>>();
     for (size_t r = 0; r < out.size(); ++r)
-        must[borrow(out)[r].get<ygg::uint_t>(0)].push_back(borrow(out)[r].get<ygg::uint_t>(1));
+        must[value_at(borrow(out), r, 0)].push_back(value_at(borrow(out), r, 1));
     for (size_t r = 0; r < unfinished.size(); ++r)
     {
-        const auto c = borrow(unfinished)[r].get<ygg::uint_t>(0);
+        const auto c = value_at(borrow(unfinished), r, 0);
         auto blocked = std::string();
         for (const auto& [o, cells] : must)
             if (o != c && std::ranges::find(cells, task.goal.at(c)) != cells.end())
@@ -421,7 +422,7 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& e)
     {
-        fmt::print(stderr, "error: {}\n", e.what());
+        std::cerr << "error: " << e.what() << '\n';
         return 1;
     }
 }

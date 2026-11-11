@@ -108,9 +108,9 @@ public:
         m_weights[preferred_list] += m_pending_preferred_boost.exchange(0, std::memory_order_relaxed);
         if (m_openlists[m_current].empty() || m_num_current_pops >= m_weights[m_current])
         {
-            do
+            m_current = 1 - m_current;
+            while (m_openlists[m_current].empty())
                 m_current = 1 - m_current;
-            while (m_openlists[m_current].empty());
             m_num_current_pops = 0;
         }
         const auto state = m_openlists[m_current].top().state;

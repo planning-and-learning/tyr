@@ -52,6 +52,7 @@ struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
     data& operator=(data&& other) = default;
+    ~data() = default;
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact, &data::true_child, &data::dontcare_child> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact, &data::true_child, &data::dontcare_child> {}; }

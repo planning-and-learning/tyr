@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 
 namespace tyr::planning
 {
@@ -75,7 +76,7 @@ void EffectAtomIndex::rebuild(Groups& groups,
         const auto objects = atom.template get<urd::index<formalism::Object>>();
         m_prefix.clear();
         for (size_t i = 0; i < action_arity; ++i)
-            m_prefix.push_back(objects[i]);
+            m_prefix.push_back(objects[static_cast<std::ptrdiff_t>(i)]);
         const auto row = find_row(applicability_predicate, std::span<const urd::index<formalism::Object>>(m_prefix.data(), m_prefix.size()));
         assert(row && "An effect atom's action binding is applicable.");
         groups.atoms.emplace(*row, atom.data());

@@ -21,6 +21,7 @@
 #include <tyr/planning/algorithms/astar_eager/event_handler.hpp>
 
 int main(int argc, char** argv)
+try
 {
     using namespace tyr;
 
@@ -53,4 +54,9 @@ int main(int argc, char** argv)
                                                         options);
         },
         false);
+}
+catch (const std::exception& err)
+{
+    std::cerr << err.what() << "\n";
+    return 1;
 }

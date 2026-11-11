@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-namespace ygg::profiling
+namespace tyr::datalog::profiling
 {
 namespace
 {
@@ -99,7 +99,7 @@ struct Triangle
         return database::insert_query(repository, builder, *data);
     }
 
-    auto deltas(bool forward) const
+    [[nodiscard]] auto deltas(bool forward) const
     {
         using Change = std::pair<ygg::FreeBuilderRelationView, ygg::FreeBuilderRelationView>;
         const auto& a = forward ? added : removed;
@@ -107,7 +107,7 @@ struct Triangle
         return std::array { Change { borrow(a[0]), borrow(r[0]) }, Change { borrow(a[1]), borrow(r[1]) }, Change { borrow(a[2]), borrow(r[2]) } };
     }
 
-    database::Statistics statistics() const { return database::collect_statistics(borrow_all(initial)); }
+    [[nodiscard]] database::Statistics statistics() const { return database::collect_statistics(borrow_all(initial)); }
 };
 
 bool equal(ygg::FreeBuilderRelationView left, ygg::FreeBuilderRelationView right)
@@ -175,7 +175,7 @@ template<bool Incremental, Planning Mode>
 void query_updates(benchmark::State& state)
 {
     Triangle trace(static_cast<ygg::uint_t>(state.range(0)));
-    const auto plan = ::ygg::profiling::plan(trace, Mode, trace.statistics());
+    const auto plan = ::tyr::datalog::profiling::plan(trace, Mode, trace.statistics());
     const auto initial = borrow_all(trace.initial);
     const auto changed = borrow_all(trace.changed);
     const auto forward = trace.deltas(true), backward = trace.deltas(false);
@@ -238,7 +238,8 @@ void query_updates(benchmark::State& state)
     state.SetItemsProcessed(state.iterations() * 2);
     state.counters["retained_bytes"] = static_cast<double>(evaluator.memory_usage());
     state.counters["output_rows"] = static_cast<double>(evaluator.get_result().size());
-    state.counters["delta_rows"] = 6;
+    constexpr auto delta_rows = 6.0;  // one row added and one removed in each of the three inputs
+    state.counters["delta_rows"] = delta_rows;
 }
 
 template<bool Cold>
@@ -282,6 +283,7 @@ void generic_join_full(benchmark::State& state)
     state.counters["output_rows"] = static_cast<double>(output.size());
 }
 
+// NOLINTBEGIN(bugprone-throwing-static-initialization, cppcoreguidelines-avoid-magic-numbers): benchmarks register themselves here, with their sizes
 [[maybe_unused]] const auto registered = []
 {
     const auto configure = [](benchmark::Benchmark* bench) { bench->ArgName("rows")->Arg(64)->Arg(1024)->Unit(benchmark::kMicrosecond); };
@@ -297,5 +299,6 @@ void generic_join_full(benchmark::State& state)
     configure(benchmark::RegisterBenchmark("database/query/generic_join/warm", generic_join_full<false>));
     return true;
 }();
+// NOLINTEND(bugprone-throwing-static-initialization, cppcoreguidelines-avoid-magic-numbers)
 }  // namespace
-}  // namespace ygg::profiling
+}  // namespace tyr::datalog::profiling

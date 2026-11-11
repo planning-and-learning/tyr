@@ -110,7 +110,6 @@ public:
             return;
         auto& snapshot = *m_inputs[slot];
         const auto stored = m_layer->view(snapshot);
-        const auto columns = std::span<const ygg::ColumnLayout>(m_query.input_columns[slot]);
         for (size_t r = 0; r < removed.size(); ++r)
             if (!snapshot.contains(removed.row(r).get_values()))
                 throw std::invalid_argument("bound::QueryEvaluator: removed row is absent from the input.");
@@ -126,9 +125,9 @@ public:
             const auto erase = [](auto& rows, ygg::hash_t key, ygg::uint_t value)
             {
                 const auto matches = rows.equal_range(key);
-                const auto found = std::find_if(matches.first, matches.second, [&](const auto& pair) { return pair.second == value; });
-                URD_ASSUME(found != matches.second);  // every indexed row is in its key's entries
-                rows.erase(found);
+                const auto match = std::find_if(matches.first, matches.second, [&](const auto& pair) { return pair.second == value; });
+                URD_ASSUME(match != matches.second);  // every indexed row is in its key's entries
+                rows.erase(match);
             };
             for_each_index(slot,
                            [&](KeyIndex& entry)

@@ -70,7 +70,7 @@ struct AggregatedRuleWorkerStatistics
 /// The median of nonempty samples (the mean of the middle two for an even count); reorders them.
 inline std::chrono::nanoseconds median(urd::Store<urd::sequence<std::chrono::nanoseconds>>& samples)
 {
-    const auto middle = samples.begin() + samples.size() / 2;
+    const auto middle = samples.begin() + static_cast<std::ptrdiff_t>(samples.size() / 2);
     std::nth_element(samples.begin(), middle, samples.end());
     if (samples.size() % 2 == 1)
         return *middle;

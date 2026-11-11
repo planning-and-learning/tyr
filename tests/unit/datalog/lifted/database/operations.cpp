@@ -566,8 +566,8 @@ TEST(YggdrasilTests, DatabaseSelectionsSupportColumnsConstantsAndPredicates)
     relation.insert(cells(1, 2));
     relation.insert(cells(2, 2));
     const database::SelectEqualPlan equal(relation.columns(), ColumnIndex(1), ColumnIndex(2));
-    const database::SelectValuePlan first_one(relation.columns(), ColumnIndex(1), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t(1)));
-    const database::SelectValuePlan second_two(relation.columns(), ColumnIndex(2), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t(2)));
+    const database::SelectValuePlan first_one(relation.columns(), ColumnIndex(1), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t { 1 }));
+    const database::SelectValuePlan second_two(relation.columns(), ColumnIndex(2), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t { 2 }));
     urd::builder<ygg::Relation<ygg::Schema>> output { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     output.insert(cells(99, 99));
     database::select_equal_columns(borrow(relation), equal, output);
@@ -882,7 +882,7 @@ TEST(YggdrasilTests, DatabaseOutputGuardsPreserveExistingResults)
     input.insert(cells(3, 4));
     const auto keep = [](const auto&) { return true; };
     const database::SelectEqualPlan equal(input.columns(), ColumnIndex(1), ColumnIndex(2));
-    const database::SelectValuePlan value(input.columns(), ColumnIndex(1), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t(3)));
+    const database::SelectValuePlan value(input.columns(), ColumnIndex(1), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t { 3 }));
     const database::ProjectionPlan projection(input.columns(), std::array { ColumnIndex(1), ColumnIndex(2) });
     const database::JoinPlan joining(input.columns(), input.columns());
     const database::SetPlan sets(input.columns(), input.columns());
@@ -957,6 +957,7 @@ TEST(YggdrasilTests, DatabaseNaturalJoinMatchesSmallReferenceAcrossSchemas)
         { { ColumnIndex(1) }, {} },
         { {}, {} },
     } };
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(1701);
     database::Workspace workspace;
     for (const auto& [left_columns, right_columns] : schemas)

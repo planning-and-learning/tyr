@@ -245,7 +245,7 @@ template<FactKind F>
 inline size_t parameter_arity(FunctionTermView<LiftedTag, F> element)
 { return collect_parameters(element).size(); }
 
-inline size_t parameter_arity(BooleanOperatorView<LiftedTag> element) { return collect_parameters(std::move(element)).size(); }
+inline size_t parameter_arity(BooleanOperatorView<LiftedTag> element) { return collect_parameters(element).size(); }
 
 }
 

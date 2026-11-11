@@ -437,6 +437,7 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 
     auto cls = nb::class_<T>(m, name.c_str());
 
+    // NOLINTNEXTLINE(performance-unnecessary-value-param): moved into the lifted generator's constructor, which takes it by value
     cls.def(nb::new_([](TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context)
                      { return std::make_shared<T>(std::move(task), std::move(execution_context)); }),
             "task"_a,

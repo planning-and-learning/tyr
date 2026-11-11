@@ -108,7 +108,7 @@ template<TermUnifiableStructure T>
     append_unique(inner);
     append_unique(outer);
 
-    auto result = SubstitutionFunction<Term>(std::move(parameters));
+    auto result = SubstitutionFunction<Term>(parameters);
 
     // The resulting substitution applies `inner` first and `outer` second.
     for (const auto parameter : result.parameters())

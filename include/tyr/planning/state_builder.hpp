@@ -109,7 +109,7 @@ public:
     using base::get;
     using base::test;
 
-    void set(urd::index<::tyr::planning::State<Kind>> index) { this->index = index; }
+    void set(urd::index<::tyr::planning::State<Kind>> state) { this->index = state; }
     void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact) { this->fact_storage.set(fact); }
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
     { this->numeric_storage.set(fterm, value); }

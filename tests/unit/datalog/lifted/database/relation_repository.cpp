@@ -169,8 +169,9 @@ auto insert_columns(Repository& repository, std::initializer_list<ColumnIndex> l
 std::vector<ygg::ColumnLayout> relabeled(std::span<const ygg::ColumnLayout> columns, std::initializer_list<ColumnIndex> labels)
 {
     auto result = std::vector<ygg::ColumnLayout>(columns.begin(), columns.end());
+    const auto new_labels = std::span<const ColumnIndex>(labels);
     for (size_t i = 0; i < result.size(); ++i)
-        result[i].label = labels.begin()[i];
+        result[i].label = new_labels[i];
     return result;
 }
 
@@ -528,6 +529,7 @@ TEST(YggdrasilTests, DatabaseConversionsRemapStoredIdentityAndReuseMutableStorag
     EXPECT_FALSE(same_created);
     EXPECT_EQ(same.index(), target.index());
 
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization): the record is copied on purpose, and resolved after the repository interned more relations
     const auto pending = source.data();
 
     auto output_handle = source_repository.get_relation_builder<ygg::Schema>(tyr::datalog::tests::ops::cols({ ColumnIndex(3), ColumnIndex(7) }));
@@ -795,8 +797,8 @@ TEST(YggdrasilTests, DatabaseMixedWidthRowsPreserveTypedValuesAndResolveIndices)
     const auto verify = [&](const auto& view)
     {
         const auto row = view.row(0);
-        const auto schema = view.columns();
-        const auto at = [&](ColumnIndex label) { return static_cast<size_t>(std::ranges::find(schema, label, &ygg::ColumnLayout::label) - schema.begin()); };
+        const auto layout = view.columns();
+        const auto at = [&](ColumnIndex label) { return static_cast<size_t>(std::ranges::find(layout, label, &ygg::ColumnLayout::label) - layout.begin()); };
         EXPECT_EQ(ygg::decode_value<ygg::uint_t>(row.value(at(ColumnIndex(4)))), 42);
         EXPECT_DOUBLE_EQ(ygg::decode_value<double>(row.value(at(ColumnIndex(9)))), 1.25);
         EXPECT_EQ(row.type(at(ColumnIndex(9))), ygg::type_id<double>);
@@ -809,7 +811,7 @@ TEST(YggdrasilTests, DatabaseMixedWidthRowsPreserveTypedValuesAndResolveIndices)
         EXPECT_DOUBLE_EQ(row.template get<double>(at(ColumnIndex(9)), at(ColumnIndex(9)) + 1)[0], 1.25);
         EXPECT_TRUE(ygg::decode_value<bool>(row.value(at(ColumnIndex(2)))));
         EXPECT_EQ(resolve_in(ygg::decode_value<ygg::uint_t>(row.value(at(ColumnIndex(7)))), entities), entity);
-        EXPECT_EQ(at(ColumnIndex(99)), schema.size());
+        EXPECT_EQ(at(ColumnIndex(99)), layout.size());
     };
     verify(urd::resolve(builder, entities));
     verify(urd::resolve(stored.data(), rows));

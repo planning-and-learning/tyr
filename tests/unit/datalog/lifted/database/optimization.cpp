@@ -377,6 +377,7 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
     }
     tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), measured);
     incremental.initialize(refs);
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(1597);
     for (size_t iteration = 0; iteration < 35; ++iteration)
     {
@@ -437,6 +438,7 @@ TEST(DatabaseOptimization, BothModesMatchRandomRelationalExpressions)
                                      Relation(tyr::datalog::tests::ops::cols({ y, z })),
                                      Relation(tyr::datalog::tests::ops::cols({ x, z })) };
     const auto refs = std::array { borrow(inputs[0]), borrow(inputs[1]), borrow(inputs[2]), borrow(inputs[3]) };
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(12553);
     const auto labels = [](tyr::datalog::database::QueryView<> query)
     {

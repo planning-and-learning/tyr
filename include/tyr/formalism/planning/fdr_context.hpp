@@ -80,10 +80,10 @@ public:
 
     FDRFactView<FluentTag> get_fact(AtomView<GroundTag, FluentTag> atom);
 
-    std::optional<FDRFactView<FluentTag>> get_fact(AtomView<GroundTag, FluentTag> atom) const;
+    [[nodiscard]] std::optional<FDRFactView<FluentTag>> get_fact(AtomView<GroundTag, FluentTag> atom) const;
 
     /// Concurrent get_fact calls must have completed before accessing the variable list.
-    const FDRVariableViewList<FluentTag>& get_variables() const noexcept;
+    [[nodiscard]] const FDRVariableViewList<FluentTag>& get_variables() const noexcept;
 
 private:
     struct FactSlot
@@ -92,7 +92,7 @@ private:
         std::atomic_bool ready { false };
     };
 
-    std::optional<FDRFactView<FluentTag>> find_fact(AtomView<GroundTag, FluentTag> atom) const;
+    [[nodiscard]] std::optional<FDRFactView<FluentTag>> find_fact(AtomView<GroundTag, FluentTag> atom) const;
     void ensure_fact_slot(AtomView<GroundTag, FluentTag> atom);
     bool publish_fact(AtomView<GroundTag, FluentTag> atom, urd::data<FDRFact<FluentTag>> fact);
 

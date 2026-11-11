@@ -47,6 +47,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
     data& operator=(data&& other) = default;
+    ~data() = default;
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::numeric_effects> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::numeric_effects> {}; }

@@ -54,8 +54,25 @@ def change(
     return RELATIONS.view(added), RELATIONS.view(removed)
 
 
-def distance(source: Readable, edges: Readable, target: Readable, plan: database.DistancePlan) -> formalism.Relation:
-    """The distances into a fresh relation of the plan's output columns."""
+def distance(
+    source: formalism.BorrowedRelation,
+    edges: formalism.BorrowedRelation,
+    target: formalism.BorrowedRelation,
+    plan: database.DistancePlan,
+) -> formalism.Relation:
+    """The distances of borrowed inputs into a fresh relation of the plan's output columns."""
+    result = formalism.Relation(plan.output_columns())
+    database.distance(source, edges, target, plan, result, database.DistanceWorkspace(plan))
+    return result
+
+
+def distance_of_interned(
+    source: formalism.RelationView,
+    edges: formalism.RelationView,
+    target: formalism.RelationView,
+    plan: database.DistancePlan,
+) -> formalism.Relation:
+    """As distance(), of interned inputs."""
     result = formalism.Relation(plan.output_columns())
     database.distance(source, edges, target, plan, result, database.DistanceWorkspace(plan))
     return result
@@ -86,7 +103,7 @@ def test_distance_mixed_inputs_and_independent_output(interned_mask: int) -> Non
 
     # Two independent outputs of the same call; `other` is cleared below and must not affect `result`.
     if interned_mask == 7:
-        result, other = (distance(interned[0], interned[1], interned[2], plan) for _ in range(2))
+        result, other = (distance_of_interned(interned[0], interned[1], interned[2], plan) for _ in range(2))
     else:
         result, other = (distance(borrowed[0], borrowed[1], borrowed[2], plan) for _ in range(2))
     assert isinstance(result, formalism.Relation)

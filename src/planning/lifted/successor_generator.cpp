@@ -330,7 +330,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
                             std::optional<formalism::planning::ActionView<LiftedTag>> action,
                             Storage& storage,
                             AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                            Sink&& sink)
+                            const Sink& sink)
     {
         return for_each_applicable_action_binding(node,
                                                   action,
@@ -345,7 +345,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
                                     std::optional<formalism::planning::ActionView<LiftedTag>> action,
                                     Storage& storage,
                                     AxiomEvaluator<LiftedTag>& axiom_evaluator,
-                                    Sink&& sink)
+                                    const Sink& sink)
     {
         return for_each_applicable_action_binding(
             node,

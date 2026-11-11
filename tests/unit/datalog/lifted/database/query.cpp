@@ -403,6 +403,7 @@ TEST(DatabaseQuery, RandomizedSharedSetDagMaintainsExactNetChanges)
     tyr::datalog::database::QueryEvaluator full(layer(), plan);
     tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
     incremental.initialize(refs);
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(741);
     for (size_t iteration = 0; iteration < 120; ++iteration)
     {

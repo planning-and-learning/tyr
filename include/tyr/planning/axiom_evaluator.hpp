@@ -66,8 +66,6 @@ template<>
 void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>>& state_builder);
 template<>
 void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>>& state_builder);
-template<>
-void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const;
 
 extern template class AxiomEvaluator<GroundTag>;
 extern template class AxiomEvaluator<LiftedTag>;

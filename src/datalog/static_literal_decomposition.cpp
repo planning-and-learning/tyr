@@ -212,7 +212,7 @@ private:
             auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
             binding->relation = new_predicate;
             for (const auto object : tuple)
-                binding->values.push_back(ygg::Value(object));
+                binding->values.push_back(static_cast<ygg::Value>(object));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
             atom->row = formalism::datalog::insert(m_context->destination(), *binding).first.data();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
@@ -242,8 +242,8 @@ private:
         {
             auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
             binding->relation = new_predicate;
-            binding->values.push_back(ygg::Value(static_cast<ygg::uint_t>(key >> pair_key_shift)));
-            binding->values.push_back(ygg::Value(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
+            binding->values.push_back(static_cast<ygg::Value>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
+            binding->values.push_back(static_cast<ygg::Value>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
             atom->row = formalism::datalog::insert(m_context->destination(), *binding).first.data();
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());

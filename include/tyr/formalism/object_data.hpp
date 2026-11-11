@@ -40,6 +40,7 @@ struct data<::tyr::formalism::Object>
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;
     data& operator=(data&& other) noexcept = default;
+    ~data() = default;
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::name> {}; }

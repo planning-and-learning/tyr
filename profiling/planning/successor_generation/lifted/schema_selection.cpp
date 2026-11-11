@@ -16,8 +16,11 @@
  */
 
 #include "../../common.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
@@ -118,7 +121,7 @@ try
     state.SetLabel(std::string(schema.get_name()));
     state.counters["num_schemas"] = static_cast<double>(schemas.size());
     state.counters["num_applicable_bindings"] = static_cast<double>(expected_bindings.size());
-    std::erase_if(expected_bindings, reject_binding);
+    erase_if(expected_bindings, reject_binding);
     state.counters["num_selected_bindings"] = static_cast<double>(expected_bindings.size());
 
     auto bindings = urd::Store<urd::sequence<tyr::formalism::planning::ActionRowView>> {};
@@ -151,7 +154,7 @@ try
         {
             generator->get_applicable_action_bindings(node, bindings);
             if constexpr (operation != Operation::ALL_BINDINGS)
-                std::erase_if(bindings, reject_binding);
+                erase_if(bindings, reject_binding);
             if constexpr (operation == Operation::FILTER_SUCCESSORS)
             {
                 successors.clear();
@@ -159,9 +162,9 @@ try
                     successors.emplace_back(binding, generator->get_successor_node(node, binding, *repository, *evaluator));
             }
         }
-        benchmark::DoNotOptimize(bindings.data());
+        benchmark::DoNotOptimize(bindings);
         benchmark::DoNotOptimize(bindings.size());
-        benchmark::DoNotOptimize(successors.data());
+        benchmark::DoNotOptimize(successors);
         benchmark::DoNotOptimize(successors.size());
     };
 
@@ -176,7 +179,7 @@ try
     if constexpr (operation == Operation::FILTER_SUCCESSORS || operation == Operation::SCHEMA_SUCCESSORS)
     {
         auto expected = generator->get_labeled_successor_nodes(node, *repository, *evaluator);
-        std::erase_if(expected, [&](const auto& successor) { return reject_binding(successor.label); });
+        erase_if(expected, [&](const auto& successor) { return reject_binding(successor.label); });
         const auto by_label = [](const auto& lhs, const auto& rhs) { return lhs.label < rhs.label; };
         std::ranges::sort(expected, by_label);
         std::ranges::sort(successors, by_label);

@@ -213,7 +213,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             rule_data.row = binding.data();
             rule_data.body = body.index();
             rule_data.head = effect.index();
-            return intern(std::move(rule_data));
+            return intern(rule_data);
         };
 
         const auto object = intern(urd::data<tyr::formalism::Object> { std::string("source-object") });

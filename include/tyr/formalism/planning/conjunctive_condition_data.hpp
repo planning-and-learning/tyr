@@ -61,6 +61,7 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
     data& operator=(data&& other) = default;
+    ~data() = default;
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const
@@ -106,6 +107,7 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
     data& operator=(data&& other) = default;
+    ~data() = default;
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const

@@ -132,8 +132,9 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<Lifted
                                      evaluator.derived_bindings);
 }
 
-template<>
-void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const
+template<TaskKind Kind>
+void AxiomEvaluator<Kind>::print_summary(size_t verbosity) const
+    requires std::same_as<Kind, LiftedTag>
 {
     if (verbosity < 1 || !m_impl->evaluator.workspace)
         return;

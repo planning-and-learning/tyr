@@ -73,7 +73,7 @@ auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
     for (const auto& change : changes)
     {
         const auto& info = m_layout->fluent_infos[static_cast<ygg::uint_t>(change.variable.value)];
-        append_int_flips(info.begin, info.offset, info.length, ygg::uint_t(change.from.value ^ change.to.value), m_flips);
+        append_int_flips(info.begin, info.offset, info.length, static_cast<ygg::uint_t>(change.from.value ^ change.to.value), m_flips);
     }
     normalize_flips(m_flips);
     flips_to_writes(*m_array_set, parent, m_flips, m_writes);

@@ -246,7 +246,7 @@ create_ground_numeric_effect_rule(formalism::datalog::ConjunctiveConditionView<G
                                   formalism::planning::NumericEffectOperatorView<GroundTag, formalism::FluentTag> head,
                                   GroundProgramBuildContext& context)
 {
-    const auto datalog_head = formalism::planning::merge_p2d(std::move(head), context.merge_context).first.index();
+    const auto datalog_head = formalism::planning::merge_p2d(head, context.merge_context).first.index();
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag, formalism::FunctionTag>>(context.builder);
     rule->row = create_rule_binding<formalism::FunctionTag>(context, [&](auto) { return create_rule_binding_numeric_head(context); }).data();
     rule->body = body.index();

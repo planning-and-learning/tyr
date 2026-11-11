@@ -135,7 +135,7 @@ template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
 void DistanceWorkspace::append_distances(const S& sources,
                                          const E& edges,
                                          const T& targets,
-                                         const DistancePlan& plan,
+                                         const DistancePlan& /*plan*/,
                                          urd::builder<ygg::Relation<ygg::Schema>>& out)
 {
     m_graph.clear();
@@ -173,11 +173,11 @@ void distance(const S& sources,
               urd::builder<ygg::Relation<ygg::Schema>>& out,
               DistanceWorkspace& workspace)
 {
+    detail::prepare_output(out, sources, edges, targets);
     assert(std::ranges::equal(sources.columns(), plan.source_columns()));
     assert(std::ranges::equal(edges.columns(), plan.edge_columns()));
     assert(std::ranges::equal(targets.columns(), plan.target_columns()));
     assert(workspace.matches(plan) && std::ranges::equal(out.columns(), plan.output_columns()));
-    detail::prepare_output(out, sources, edges, targets);
     workspace.append_distances(sources, edges, targets, plan, out);
 }
 

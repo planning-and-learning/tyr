@@ -17,7 +17,7 @@
 #include <urd/store.hpp>
 #include <vector>
 
-namespace ygg::profiling
+namespace tyr::datalog::profiling
 {
 namespace
 {
@@ -25,9 +25,21 @@ using Values = boost::mp11::mp_list<ygg::uint_t>;
 using ColumnIndex = urd::index<ygg::Column>;
 using RelationBuilder = urd::builder<ygg::Relation<ygg::Schema>>;
 
+/// The first labels of the source and the target columns; the edge columns are labeled from 0.
+constexpr ygg::uint_t first_source_label = 1000;
+constexpr ygg::uint_t first_target_label = 2000;
+/// What the fields of one vertex differ by.
+constexpr ygg::uint_t field_offset = 100000;
+/// How far the second edge of a vertex reaches, as it is and changed.
+constexpr ygg::uint_t shortcut = 8;
+constexpr ygg::uint_t changed_shortcut = 9;
+/// The evaluations run before the measured ones.
+constexpr size_t warm_up_rounds = 8;
+
 std::vector<ygg::ColumnLayout> columns(size_t arity, ygg::uint_t first_label)
 {
     std::vector<ygg::ColumnLayout> result;
+    result.reserve(arity);
     for (size_t i = 0; i < arity; ++i)
         result.push_back({ ColumnIndex(first_label + static_cast<ygg::uint_t>(i)), ygg::type_id<ygg::uint_t> });
     return result;
@@ -54,7 +66,7 @@ RelationBuilder full_distance(const RelationBuilder& sources, const RelationBuil
 void append_vertex(urd::Store<urd::sequence<ygg::Value>>& values, size_t arity, ygg::uint_t vertex)
 {
     for (size_t field = 0; field < arity; ++field)
-        values.push_back(ygg::encode_value(vertex + 100000 * static_cast<ygg::uint_t>(field)));
+        values.push_back(ygg::encode_value(vertex + field_offset * static_cast<ygg::uint_t>(field)));
 }
 
 void insert_vertex(RelationBuilder& relation, size_t arity, ygg::uint_t vertex)
@@ -91,10 +103,10 @@ struct Trace
     RelationBuilder no_targets;
 
     Trace(size_t arity, ygg::uint_t vertices, ygg::uint_t source_count, ygg::uint_t changed, TraceKind kind = TraceKind::shortcuts) :
-        sources(columns(arity, 1000)),
+        sources(columns(arity, first_source_label)),
         edges(columns(2 * arity, 0)),
         changed_edges(edges.columns()),
-        targets(columns(arity, 2000)),
+        targets(columns(arity, first_target_label)),
         edge_change(layer(), edges.columns()),
         no_sources(sources.columns()),
         no_targets(targets.columns())
@@ -155,9 +167,9 @@ struct Trace
         for (ygg::uint_t vertex = 0; vertex < vertices; ++vertex)
         {
             insert_edge(edges, arity, vertex, (vertex + 1) % vertices);
-            insert_edge(edges, arity, vertex, (vertex + 8) % vertices);
+            insert_edge(edges, arity, vertex, (vertex + shortcut) % vertices);
             insert_edge(changed_edges, arity, vertex, (vertex + 1) % vertices);
-            insert_edge(changed_edges, arity, vertex, (vertex + (!harmless && vertex < changed ? 9 : 8)) % vertices);
+            insert_edge(changed_edges, arity, vertex, (vertex + (!harmless && vertex < changed ? changed_shortcut : shortcut)) % vertices);
             if (vertex % 4 == 0)
                 insert_vertex(targets, arity, vertex);
         }
@@ -170,8 +182,8 @@ struct Trace
             }
             else
             {
-                insert_edge(edge_change.removed, arity, vertex, (vertex + 8) % vertices);
-                insert_edge(edge_change.added, arity, vertex, (vertex + 9) % vertices);
+                insert_edge(edge_change.removed, arity, vertex, (vertex + shortcut) % vertices);
+                insert_edge(edge_change.added, arity, vertex, (vertex + changed_shortcut) % vertices);
             }
         }
     }
@@ -271,7 +283,7 @@ void distance_changes(benchmark::State& state)
             state.SkipWithError("distance undo delta disagrees with set difference");
             return;
         }
-    for (size_t i = 0; i < 8; ++i)
+    for (size_t i = 0; i < warm_up_rounds; ++i)
     {
         update(true);
         update(false);
@@ -324,7 +336,7 @@ void distance_initialize_warm(benchmark::State& state)
             return borrow(evaluation);
     };
     auto reference = full_distance(trace.sources, trace.edges, trace.targets, plan);
-    for (size_t i = 0; i < 8; ++i)
+    for (size_t i = 0; i < warm_up_rounds; ++i)
         initialize();
     if (!equal_rows(result(), reference))
     {
@@ -347,6 +359,7 @@ void distance_initialize_warm(benchmark::State& state)
         state.counters["retained_bytes"] = static_cast<double>(evaluation.memory_usage() + workspace.memory_usage());
 }
 
+// NOLINTBEGIN(bugprone-throwing-static-initialization, cppcoreguidelines-avoid-magic-numbers): benchmarks register themselves here, with their sizes
 [[maybe_unused]] const auto registered = []
 {
     const auto configure = [](benchmark::Benchmark* benchmark)
@@ -387,5 +400,6 @@ void distance_initialize_warm(benchmark::State& state)
     initialization(benchmark::RegisterBenchmark("database/distance/initialize_warm/incremental", distance_initialize_warm<true>));
     return true;
 }();
+// NOLINTEND(bugprone-throwing-static-initialization, cppcoreguidelines-avoid-magic-numbers)
 }  // namespace
-}  // namespace ygg::profiling
+}  // namespace tyr::datalog::profiling

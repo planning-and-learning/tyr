@@ -67,11 +67,11 @@ class DistanceRepairWorkspace
 
 public:
     /// No vertex is scheduled and no edge candidate is pending: a repair is complete.
-    bool empty() const noexcept { return m_global.empty() && m_edges.empty(); }
+    [[nodiscard]] bool empty() const noexcept { return m_global.empty() && m_edges.empty(); }
     /// Whether any vertex is scheduled for settling.
-    bool scheduled() const noexcept { return !m_global.empty(); }
+    [[nodiscard]] bool scheduled() const noexcept { return !m_global.empty(); }
     /// Whether the vertex has no pending candidate distances.
-    bool settled(VertexSet::handle_type vertex) const { return m_local.at(vertex).empty(); }
+    [[nodiscard]] bool settled(VertexSet::handle_type vertex) const { return m_local.at(vertex).empty(); }
 
     void resize(size_t count)
     {
@@ -113,7 +113,7 @@ public:
                             &DistanceRepairWorkspace::m_vertices,
                             &DistanceRepairWorkspace::m_edges> {};
     }
-    size_t memory_usage() const noexcept { return sizeof(*this) + urd::memory_usage(*this); }
+    [[nodiscard]] size_t memory_usage() const noexcept { return sizeof(*this) + urd::memory_usage(*this); }
 };
 }  // namespace tyr::datalog::database::incremental::detail
 

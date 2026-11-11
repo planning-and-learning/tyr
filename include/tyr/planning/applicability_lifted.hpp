@@ -256,7 +256,7 @@ bool is_applicable(formalism::planning::LiteralListView<LiftedTag, T> elements, 
 }
 
 inline bool is_applicable(formalism::planning::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(std::move(element), context); }
+{ return evaluate(element, context); }
 
 inline bool is_applicable(formalism::planning::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {

@@ -621,7 +621,7 @@ std::string to_string(const std::pair<ActionRowView, PlanFormatting>& value)
     auto result = fmt::format("({}", value.first.get_relation().get_original_name());
     const auto objects = urd::resolve(value.first.get<urd::index<Object>>(), value.first.context());
     for (std::size_t i = 0; i < value.first.get_relation().get_original_arity(); ++i)
-        fmt::format_to(std::back_inserter(result), " {}", objects[i]);
+        fmt::format_to(std::back_inserter(result), " {}", objects[static_cast<std::ptrdiff_t>(i)]);
     result.push_back(')');
     return result;
 }

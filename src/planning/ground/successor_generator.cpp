@@ -240,8 +240,12 @@ struct SuccessorGenerator<GroundTag>::Impl
 
     /// Passes the successor of each applicable action of `tree`, generated into `storage`, to `sink`.
     template<typename Storage, typename Sink>
-    bool
-    for_each_successor(SuccessorGenerator& self, const Source& node, MatchTree& tree, Storage& storage, AxiomEvaluator<GroundTag>& axiom_evaluator, Sink&& sink)
+    bool for_each_successor(SuccessorGenerator& self,
+                            const Source& node,
+                            MatchTree& tree,
+                            Storage& storage,
+                            AxiomEvaluator<GroundTag>& axiom_evaluator,
+                            const Sink& sink)
     {
         return for_each_applicable_action(node,
                                           tree,
@@ -256,7 +260,7 @@ struct SuccessorGenerator<GroundTag>::Impl
                                     MatchTree& tree,
                                     Storage& storage,
                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                    Sink&& sink)
+                                    const Sink& sink)
     {
         return for_each_applicable_action(
             node,

@@ -17,9 +17,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
-namespace tyr::datalog::database
-{
-namespace detail
+namespace tyr::datalog::database::detail
 {
 // Test targets enable these counters consistently across all translation units.
 struct GenericJoinWork
@@ -36,8 +34,7 @@ inline GenericJoinWork& generic_join_work() noexcept
 void count_generic_join_work(size_t GenericJoinWork::* member) noexcept;
 
 struct GenericJoinTrie;
-}  // namespace detail
-}  // namespace tyr::datalog::database
+}  // namespace tyr::datalog::database::detail
 
 /// A trie node: what its memory_usage() counts (its table and children).
 template<>
@@ -46,9 +43,7 @@ struct urd::memory_of<tyr::datalog::database::detail::GenericJoinTrie>
     static std::size_t bytes(const tyr::datalog::database::detail::GenericJoinTrie& trie);
 };
 
-namespace tyr::datalog::database
-{
-namespace detail
+namespace tyr::datalog::database::detail
 {
 
 /// Hash-trie nodes own distinct canonical values; input row movement is irrelevant.
@@ -78,8 +73,7 @@ struct GenericJoinTrie
     /// Its table, and each key's bytes and child node.
     [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(children); }
 };
-}  // namespace detail
-}  // namespace tyr::datalog::database
+}  // namespace tyr::datalog::database::detail
 
 inline std::size_t urd::memory_of<tyr::datalog::database::detail::GenericJoinTrie>::bytes(const tyr::datalog::database::detail::GenericJoinTrie& trie)
 { return trie.memory_usage(); }

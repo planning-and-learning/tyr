@@ -16,8 +16,9 @@
  */
 
 #include "../common.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
@@ -71,7 +72,7 @@ try
     for ([[maybe_unused]] auto _ : state)
     {
         successor_generator->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator, successors);
-        benchmark::DoNotOptimize(successors.data());
+        benchmark::DoNotOptimize(successors);
         benchmark::DoNotOptimize(successors.size());
     }
 
@@ -96,7 +97,7 @@ try
     for ([[maybe_unused]] auto _ : state)
     {
         successor_generator->get_applicable_action_bindings(initial_node, bindings);
-        benchmark::DoNotOptimize(bindings.data());
+        benchmark::DoNotOptimize(bindings);
         benchmark::DoNotOptimize(bindings.size());
     }
 

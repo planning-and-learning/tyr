@@ -97,15 +97,15 @@ public:
 
     [[nodiscard]] auto get_fluent_facts() const noexcept { return self().data().get_fluent_facts(); }
     template<::tyr::formalism::FactKind F>
-    auto get_atoms() const noexcept;
+    [[nodiscard]] auto get_atoms() const noexcept;
     template<::tyr::formalism::FactKind F>
-    auto get_fterm_values() const noexcept;
+    [[nodiscard]] auto get_fterm_values() const noexcept;
 
     template<::tyr::formalism::FactKind F>
-    auto get_atoms_view() const noexcept;
+    [[nodiscard]] auto get_atoms_view() const noexcept;
 
     template<::tyr::formalism::FactKind F, typename C>
-    auto get_atoms_view(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const;
+    [[nodiscard]] auto get_atoms_view(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const;
 
     /// The facts, computed on the fly: each view owns its fact.
     [[nodiscard]] auto get_fluent_facts_view() const noexcept
@@ -115,7 +115,7 @@ public:
                                        { return ::tyr::formalism::planning::computed_fact_view(fact, *repository); });
     }
     template<::tyr::formalism::FactKind F>
-    auto get_fterm_values_view() const noexcept;
+    [[nodiscard]] auto get_fterm_values_view() const noexcept;
 };
 }  // namespace tyr::planning
 

@@ -97,6 +97,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> : ::tyr::forma
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
     data& operator=(data&& other) = default;
+    ~data() = default;
 
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, data::head_pointer(), &data::cost> {}; }
     /// The head (or heads), as the base holds it.

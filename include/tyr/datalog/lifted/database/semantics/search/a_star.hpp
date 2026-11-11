@@ -88,7 +88,7 @@ private:
         ygg::uint_t g = 0;
         ygg::uint_t h = 0;        ///< The A* estimate when queued.
         ygg::uint_t h_learn = 0;  ///< max(heuristic, learned): the estimate learning may rely on.
-        VertexSet::handle_type parent;
+        VertexSet::handle_type parent {};
         VertexSet::handle_type stored;  ///< The tree's vertex, or none if the vertex was not stored when last looked up.
         bool closed = false;
     };

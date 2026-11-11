@@ -49,7 +49,7 @@ python3 --version
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install 'cmake>=3.21' 'lab>=8.10' \
-  'pyyggdrasil>=0.7.0,<0.8' 'pypddl>=1.8.0,<1.9' \
+  'pyyggdrasil>=0.7.2,<0.8' 'pypddl>=1.8.0,<1.9' \
   'pypddl-datasets>=0.0.17,<0.1'
 ```
 

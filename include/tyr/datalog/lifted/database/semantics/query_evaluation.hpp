@@ -37,9 +37,9 @@ void validate_bindings(const QueryPlan& plan, const R& bindings, IsInternal is_i
         const auto slot = as<QueryInputTag>(query).get_input_slot();
         if (slot >= std::ranges::size(bindings))
             throw std::invalid_argument("Query: missing input binding.");
-        assert(std::ranges::equal(bindings[slot].columns(), query.columns()));
         if (is_internal(bindings[slot].relation_identity()))
             throw std::invalid_argument("Query: input aliases evaluator storage.");
+        assert(std::ranges::equal(bindings[slot].columns(), query.columns()));
     }
 }
 

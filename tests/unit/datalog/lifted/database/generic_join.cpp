@@ -372,6 +372,7 @@ TEST(YggdrasilTests, DatabaseGenericJoinIncrementalRandomBatchesMatchFullReevalu
     const auto plan = plan_for(inputs, { ColumnIndex(2), ColumnIndex(3), ColumnIndex(1) }, { ColumnIndex(3), ColumnIndex(2), ColumnIndex(1) });
     database::incremental::GenericJoinEvaluator evaluator(layer(), plan);
     evaluator.initialize(inputs);
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(42);
     for (size_t batch = 0; batch < 50; ++batch)
     {

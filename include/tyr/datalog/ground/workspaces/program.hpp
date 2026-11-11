@@ -109,7 +109,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
 
     void clear_costs() { cost_policy.clear(); }
 
-    auto get_numeric_support_selector() const noexcept
+    [[nodiscard]] auto get_numeric_support_selector() const noexcept
     { return NumericSupportSelector(FactSets { const_workspace->facts.fact_sets, facts.fact_sets }, numeric_annotations, !AP::stores_annotations); }
 };
 

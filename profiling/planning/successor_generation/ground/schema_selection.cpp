@@ -16,10 +16,13 @@
  */
 
 #include "../../common.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -135,7 +138,7 @@ try
     auto repository = std::make_shared<tyr::planning::StateRepository<GroundTag>>(task);
     auto generator = prepared.generator->make_worker(execution_context);
     const auto node = generator->get_initial_node(*repository, *evaluator);
-    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state().get_state_builder(), node.get_metric());
+    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state().data(), node.get_metric());
     auto applicable = tyr::formalism::planning::ActionViewList<GroundTag> {};
     auto scratch = tyr::formalism::planning::ActionViewList<GroundTag> {};
     auto expected = tyr::formalism::planning::ActionViewList<GroundTag> {};
@@ -160,7 +163,7 @@ try
     const auto schema = *selected;
     const auto reject_action = [&](auto action) { return action.get_action() != schema; };
     const auto reject_binding = [&](auto binding) { return binding.get_relation() != schema; };
-    std::erase_if(expected, reject_action);
+    erase_if(expected, reject_action);
     forest.at(schema)->generate(context, applicable);
     std::ranges::sort(applicable, by_index);
     if (expected != applicable)
@@ -191,15 +194,15 @@ try
             else
             {
                 generator->get_applicable_action_bindings(node, bindings);
-                std::erase_if(bindings, reject_binding);
+                erase_if(bindings, reject_binding);
             }
-            benchmark::DoNotOptimize(bindings.data());
+            benchmark::DoNotOptimize(bindings);
             benchmark::DoNotOptimize(bindings.size());
         }
         else if constexpr (operation == Operation::SUCCESSORS && per_schema)
         {
             generator->get_labeled_successor_nodes(node, schema, *repository, *evaluator, successors);
-            benchmark::DoNotOptimize(successors.data());
+            benchmark::DoNotOptimize(successors);
             benchmark::DoNotOptimize(successors.size());
         }
         else
@@ -212,7 +215,7 @@ try
             {
                 tree->generate(context, applicable);
                 if constexpr (operation != Operation::ALL)
-                    std::erase_if(applicable, reject_action);
+                    erase_if(applicable, reject_action);
             }
             if constexpr (operation == Operation::SUCCESSORS)
             {
@@ -220,10 +223,10 @@ try
                 for (const auto action : applicable)
                     if (executor.is_applicable_if_fires(action, context))
                         successors.emplace_back(action.get_row(), generator->get_successor_node(node, action, *repository, *evaluator));
-                benchmark::DoNotOptimize(successors.data());
+                benchmark::DoNotOptimize(successors);
                 benchmark::DoNotOptimize(successors.size());
             }
-            benchmark::DoNotOptimize(applicable.data());
+            benchmark::DoNotOptimize(applicable);
             benchmark::DoNotOptimize(applicable.size());
         }
     };
@@ -231,7 +234,7 @@ try
     generate();
     if constexpr (operation == Operation::BINDINGS)
     {
-        std::erase_if(all_bindings, reject_binding);
+        erase_if(all_bindings, reject_binding);
         std::ranges::sort(all_bindings);
         std::ranges::sort(bindings);
         if (all_bindings != bindings)
@@ -240,7 +243,7 @@ try
     if constexpr (operation == Operation::SUCCESSORS)
     {
         auto reference = generator->get_labeled_successor_nodes(node, *repository, *evaluator);
-        std::erase_if(reference, [&](const auto& successor) { return reject_binding(successor.label); });
+        erase_if(reference, [&](const auto& successor) { return reject_binding(successor.label); });
         const auto by_label = [](const auto& lhs, const auto& rhs) { return lhs.label < rhs.label; };
         std::ranges::sort(reference, by_label);
         std::ranges::sort(successors, by_label);

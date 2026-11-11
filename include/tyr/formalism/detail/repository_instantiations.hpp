@@ -28,6 +28,7 @@
 #include <yggdrasil/formalism/intern_instantiations.hpp>
 
 /// The instantiations (PREFIX extern: declarations); the two repositories share 34 types.
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): it expands to explicit instantiations, declarations, which no function gives
 #define TYR_FORMALISM_INTERNS(PREFIX) \
     YGG_FORMALISM_INTERNS(            \
         PREFIX,                       \

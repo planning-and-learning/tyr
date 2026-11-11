@@ -84,6 +84,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;
     data& operator=(data&& other) noexcept = default;
+    ~data() = default;
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_atoms() const
@@ -192,6 +193,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;
     data& operator=(data&& other) noexcept = default;
+    ~data() = default;
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_atoms() const

@@ -138,6 +138,7 @@ public:
         }
     }
 
+    // NOLINTNEXTLINE(bugprone-exception-escape): at() throws only for a key the map lacks, and it is given the map's own keys
     void reset() noexcept
     {
         for (const auto parameter : m_bindings.keys())

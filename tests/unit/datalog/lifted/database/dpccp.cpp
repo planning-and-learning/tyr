@@ -129,6 +129,7 @@ TEST(YggdrasilTests, DatabaseDpccpHandlesLargerChainStarCliqueAndArbitraryNumber
     for (size_t i = 0; i < count; ++i)
         graph[i] = ((Mask { 1 } << count) - 1) ^ (Mask { 1 } << i);
     check_graph(graph);
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(11);
     for (size_t trial = 0; trial < 12; ++trial)
     {

@@ -53,7 +53,7 @@ extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, Ato
     auto binding = urd::Store<urd::sequence<std::optional<urd::index<Object>>>>(inv.get_num_rigid_variables() + inv.get_num_counted_variables());
     for (std::size_t position = 0; position < terms.size(); ++position)
     {
-        const auto object = objects[position].index();
+        const auto object = objects[static_cast<std::ptrdiff_t>(position)].index();
         const bool matches = std::visit(
             [&]<typename T>(const T& arg) -> bool
             {
@@ -74,7 +74,7 @@ extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, Ato
                     static_assert(false, "Unhandled case");
                 }
             },
-            urd::to_stored(terms[position]));
+            urd::to_stored(terms[static_cast<std::ptrdiff_t>(position)]));
         if (!matches)
             return std::nullopt;
     }

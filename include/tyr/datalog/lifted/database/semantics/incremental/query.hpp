@@ -255,7 +255,7 @@ class QueryEvaluator
         return std::visit([](const auto& node) -> const Delta& { return node.state.get_delta(); }, m_nodes[id]);
     }
     [[nodiscard]] const Delta& delta(QueryView<> query) const { return delta(query.index()); }
-    bool is_internal(ygg::RelationIdentity input) const { return std::ranges::find(m_identities, input) != m_identities.end(); }
+    [[nodiscard]] bool is_internal(ygg::RelationIdentity input) const { return std::ranges::find(m_identities, input) != m_identities.end(); }
 
 public:
     QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryPlan plan) : m_layer(&layer), m_plan(std::move(plan))

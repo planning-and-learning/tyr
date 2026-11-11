@@ -395,7 +395,7 @@ void expect_schema_queries_match_filtered_successors()
     const auto same_successor = [&](const auto& lhs, const auto& rhs) { return lhs.label == rhs.label && same_node(lhs.node, rhs.node); };
     ASSERT_EQ(all_successors.size(), 4);
     auto schemas = tyr::formalism::planning::ActionViewList<LiftedTag> {};
-    for (const auto action_list : { task->get_domain().get_domain().get_actions(), task->get_task().get_domain().get_actions() })
+    for (const auto& action_list : { task->get_domain().get_domain().get_actions(), task->get_task().get_domain().get_actions() })
         schemas.insert(schemas.end(), action_list.begin(), action_list.end());
 
     for (auto* generator : { source.get(), worker.get() })

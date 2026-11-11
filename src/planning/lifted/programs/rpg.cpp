@@ -159,7 +159,7 @@ auto create_cond_numeric_effect_rule(formalism::planning::ActionView<LiftedTag> 
     for (const auto variable : new_conj_cond.get_variables())
         rule->variables.push_back(urd::to_stored(variable));
     rule->body = new_conj_cond.index();
-    rule->head = merge_p2d(std::move(effect), context).first.index();
+    rule->head = merge_p2d(effect, context).first.index();
     rule->cost = 1;
 
     return formalism::datalog::insert(context.destination(), *rule);

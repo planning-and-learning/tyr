@@ -20,7 +20,6 @@ namespace tyr::datalog::database::incremental::detail
 {
 void apply_delta(const Delta& delta, urd::builder<ygg::Relation<ygg::Schema>>& result)
 {
-    const auto columns = result.columns();
     const auto [added, removed] = delta.change();
     for (size_t i = 0; i < removed.size(); ++i)
     {

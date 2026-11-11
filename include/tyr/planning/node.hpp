@@ -46,6 +46,7 @@ public:
     [[nodiscard]] const State& get_state() const noexcept { return m_state; }
     [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
 
+    // NOLINTNEXTLINE(bugprone-exception-escape): a state's repository is owned by a StateRepositoryPtr, so PackedNode's shared_from_this() does not throw
     [[nodiscard]] auto pack() const noexcept(noexcept(m_state.pack()))
         requires requires(const State& state) {
             { state.pack() } -> std::same_as<PackedStateView<Kind>>;

@@ -404,7 +404,7 @@ inline bool insert_first_best_numeric_interval_annotation(urd::Store<urd::sequen
     }
 
     const auto pos = std::upper_bound(entries.begin(), entries.end(), entry, numeric_interval_key_less);
-    entries.insert(pos, std::move(entry));
+    entries.emplace(pos, std::move(entry));
     return true;
 }
 

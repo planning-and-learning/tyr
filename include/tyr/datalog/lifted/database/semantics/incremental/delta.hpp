@@ -71,7 +71,7 @@ concept RelationDeltaRange =
 namespace detail
 {
 template<RelationViewConcept A, RelationViewConcept R>
-void require_delta(const A& added, const R& removed, std::span<const ygg::ColumnLayout> columns)
+void require_delta(const A& added, const R& removed, [[maybe_unused]] std::span<const ygg::ColumnLayout> columns)
 {
     assert(std::ranges::equal(added.columns(), columns));
     assert(std::ranges::equal(removed.columns(), columns));

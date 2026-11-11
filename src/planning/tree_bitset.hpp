@@ -67,7 +67,7 @@ void append_int_flips(std::uint32_t position, std::uint8_t offset, std::uint8_t 
 /// Block `i` of a dense set's 64-bit words (StateBits::significant_words), 0 past them: the low (even i) or high (odd i)
 /// half of word i / 2, as urd's tree bitsets read a dense set.
 inline tree_bitset::Block block_of(std::span<const std::uint64_t> words, std::size_t i) noexcept
-{ return i / 2 < words.size() ? tree_bitset::Block(words[i / 2] >> (tree_bitset::bits_per_block * (i % 2))) : tree_bitset::Block { 0 }; }
+{ return i / 2 < words.size() ? static_cast<tree_bitset::Block>(words[i / 2] >> (tree_bitset::bits_per_block * (i % 2))) : tree_bitset::Block { 0 }; }
 
 /// Removes trailing zero blocks, as inserting blocks requires a nonzero last block.
 template<std::unsigned_integral Block>

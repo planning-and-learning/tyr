@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-namespace ygg::profiling
+namespace tyr::datalog::profiling
 {
 namespace
 {
@@ -80,6 +80,13 @@ const ygg::FreeRelationRepository& layer()
 
 ygg::FreeBuilderRelationView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
+/// The transitions of a trace, which return it to its initial rows.
+constexpr size_t num_transitions = 6;
+/// The times a trace is run before it is measured.
+constexpr size_t warm_up_rounds = 8;
+/// The iterations of a latency case.
+constexpr benchmark::IterationCount latency_iterations = 256;
+
 struct Transition
 {
     database::incremental::Delta delta { layer(), cols({ ColumnIndex(1), ColumnIndex(2) }) };
@@ -89,7 +96,7 @@ struct Transition
 struct Trace
 {
     urd::builder<ygg::Relation<ygg::Schema>> initial { cols({ ColumnIndex(1), ColumnIndex(2) }) };
-    std::array<Transition, 6> transitions {};
+    std::array<Transition, num_transitions> transitions {};
     size_t rows;
     size_t changed_rows;
     size_t witnesses;
@@ -151,7 +158,8 @@ struct JoinTrace
     Trace lhs;
     Trace rhs;
     size_t rows;
-    std::array<size_t, 6> transitions { 0, 1, 2, 3, 4, 5 };
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers): the positions of the transitions, 0 to 5
+    std::array<size_t, num_transitions> transitions { 0, 1, 2, 3, 4, 5 };
 
     JoinTrace(size_t rows_, size_t changed_rows, size_t witnesses) :
         lhs(rows_, changed_rows, witnesses, true),
@@ -223,7 +231,7 @@ void measure(benchmark::State& state, TraceType& trace, Update update, Result re
 {
     // Run the entire reversible workload before measurement, including all
     // intermediate cardinalities. Every iteration then starts at the same root.
-    for (size_t warmup = 0; warmup < 8; ++warmup)
+    for (size_t warmup = 0; warmup < warm_up_rounds; ++warmup)
         for (const auto& transition : trace.transitions)
             update(transition);
 
@@ -339,7 +347,7 @@ void fixed_input_join(benchmark::State& state)
     const auto rows = static_cast<size_t>(state.range(0));
     const auto fanout = static_cast<size_t>(state.range(2));
     Trace trace(rows, static_cast<size_t>(state.range(1)), 1, false);
-    auto fixed = layer().get_relation_builder(cols({ ColumnIndex(1), ColumnIndex(3) }));
+    auto fixed = layer().get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1), ColumnIndex(3) }));
     for (size_t key = 0; key < rows; ++key)
         for (size_t match = 0; match < fanout; ++match)
             fixed->insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(key)), ygg::encode_value(static_cast<ygg::uint_t>(match)) });
@@ -484,7 +492,7 @@ void register_matrix(const std::string& suffix)
                     benchmark->Args({ rows, delta, multiplicity });
         if constexpr (Latency)
             // Bound wall time: refreshing snapshots is deliberately untimed.
-            benchmark->UseManualTime()->Iterations(256);
+            benchmark->UseManualTime()->Iterations(latency_iterations);
     };
     configure(benchmark::RegisterBenchmark("database/projection/full" + suffix, projection<false, Latency, false>));
     configure(benchmark::RegisterBenchmark("database/projection/incremental" + suffix, projection<true, Latency, false>));
@@ -497,6 +505,7 @@ void register_matrix(const std::string& suffix)
 }
 #endif
 
+// NOLINTBEGIN(bugprone-throwing-static-initialization, cppcoreguidelines-avoid-magic-numbers): benchmarks register themselves here, with their sizes
 [[maybe_unused]] const auto registered = []
 {
     benchmark::RegisterBenchmark("database/relation/append", append_only)
@@ -513,5 +522,6 @@ void register_matrix(const std::string& suffix)
 #endif
     return true;
 }();
+// NOLINTEND(bugprone-throwing-static-initialization, cppcoreguidelines-avoid-magic-numbers)
 }  // namespace
-}  // namespace ygg::profiling
+}  // namespace tyr::datalog::profiling

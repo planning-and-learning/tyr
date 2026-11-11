@@ -113,7 +113,7 @@ struct FFRPGHeuristic<Kind>::Impl :
 private:
     void extract_relaxed_plan(PredicateHead head)
     {
-        assert(static_cast<ygg::uint_t>(head.index().relation.value) < m_predicate_markings.size());
+        assert(static_cast<ygg::uint_t>(head.data().relation.value) < m_predicate_markings.size());
         if (!m_predicate_markings[static_cast<ygg::uint_t>(head.data().relation.value)].insert(head.data().row).second)
             return;
 

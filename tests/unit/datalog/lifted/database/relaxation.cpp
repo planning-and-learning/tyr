@@ -95,6 +95,7 @@ TEST(DatabaseRelaxation, RandomExpressionsAreOverApproximatedAndExactWhenKnown)
                                             Relation(tyr::datalog::tests::ops::cols({ x, y })),
                                             Relation(tyr::datalog::tests::ops::cols({ y, z })),
                                             Relation(tyr::datalog::tests::ops::cols({ x, z })) };
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     auto random = std::mt19937(4711);
     const auto labels_of = [](View query)
     {
@@ -453,6 +454,7 @@ std::array<Relation, 4> sample_inputs()
                                             Relation(tyr::datalog::tests::ops::cols({ x, y })),
                                             Relation(tyr::datalog::tests::ops::cols({ x, y })),
                                             Relation(tyr::datalog::tests::ops::cols({ y, z })) };
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     auto random = std::mt19937(17);
     for (auto& input : inputs)
         for (ygg::uint_t left = 0; left < 4; ++left)

@@ -133,7 +133,7 @@ private:
     struct Node
     {
         ygg::uint_t learned = 0;
-        VertexSet::handle_type next;
+        VertexSet::handle_type next {};
         uint64_t checked = 0;               ///< Epoch of the last chain check.
         bool valid = false;                 ///< Its result.
         uint64_t edge_version = unchecked;  ///< Graph version at which the edge to next was checked.

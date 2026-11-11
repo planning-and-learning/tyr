@@ -40,7 +40,7 @@ struct RuleSplitting
     /// A rule that replaces part of a split source rule: the position of each of its variables among the source rule's variables.
     struct Origin
     {
-        size_t num_source_variables;
+        size_t num_source_variables = 0;
         urd::Store<urd::sequence<ygg::uint_t>> source_positions;
     };
 

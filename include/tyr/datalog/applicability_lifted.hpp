@@ -133,7 +133,7 @@ bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, T> elements, c
 }
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(std::move(element), context); }
+{ return evaluate(element, context); }
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {

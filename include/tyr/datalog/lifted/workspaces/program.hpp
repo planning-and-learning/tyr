@@ -89,7 +89,7 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 
     void clear_costs() { cost_policy.clear(); }
 
-    const auto& get_numeric_support_selector() const noexcept
+    [[nodiscard]] const auto& get_numeric_support_selector() const noexcept
     {
         assert(numeric_support_selector.has_value());
         return *numeric_support_selector;

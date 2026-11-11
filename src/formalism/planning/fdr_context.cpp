@@ -30,6 +30,7 @@
 
 #include <cassert>
 #include <mutex>
+#include <urd/config.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -140,7 +141,9 @@ FDRFactView<FluentTag> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom)
     [[maybe_unused]] const auto inserted = publish_fact(atom, urd::data<FDRFact<FluentTag>>(variable.index(), FDRValue { 1 }));
     assert(inserted);
 
-    return *find_fact(atom);
+    const auto fact = find_fact(atom);
+    URD_ASSUME(fact.has_value());  // published above
+    return *fact;
 }
 
 std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom) const { return find_fact(atom); }

@@ -20,10 +20,9 @@ from typing import Literal, TypedDict, cast
 import pypddl_datasets
 from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
-from typing_extensions import TypeIs
 
 from pytyr import datalog
-from pytyr.formalism.datalog import FluentPredicateRow
+from pytyr.formalism.datalog import FluentPredicate, FluentPredicateRow
 from pytyr.formalism.planning import LiftedPlanningTask, Parser
 from pytyr.planning import lifted as planning
 
@@ -65,19 +64,13 @@ class Context:
     task: planning.Task
 
 
-def _is_iterable(value: object) -> TypeIs[Iterable[object]]:
-    return isinstance(value, Iterable)
-
-
-def fluent_bindings(fact_set: datalog.FluentPredicateFactSet) -> list[FluentPredicateRow]:
-    # The binding iterator is untyped in the stubs; check each element instead.
-    bindings = fact_set.get_bindings()
-    assert _is_iterable(bindings)
-    result: list[FluentPredicateRow] = []
-    for binding in bindings:
-        assert isinstance(binding, FluentPredicateRow)
-        result.append(binding)
-    return result
+def fluent_rows(
+    program: datalog.lifted.Program, workspace: Workspace
+) -> list[tuple[FluentPredicate, list[FluentPredicateRow]]]:
+    """The rows `workspace` holds of each fluent predicate of `program`, by ascending predicate index."""
+    fact_sets = workspace.get_fluent_fact_sets()
+    predicates = sorted(program.get_program().get_fluent_predicates(), key=lambda predicate: int(predicate.index()))
+    return [(predicate, list(fact_sets.rows(int(predicate.index())))) for predicate in predicates]
 
 
 def parse_task(domain_file: Path, task_file: Path) -> LiftedPlanningTask:
@@ -93,12 +86,10 @@ def make_context(domain_file: Path, task_file: Path) -> Context:
     return Context(execution_context, task)
 
 
-def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
+def atoms_by_predicate(program: datalog.lifted.Program, workspace: Workspace) -> list[PredicateAtoms]:
     result: list[PredicateAtoms] = []
-    for fact_set in workspace.get_fluent_fact_sets().get_predicate_sets():
-        bindings: list[AtomBinding] = [{"objects": str(binding.get_objects())} for binding in fluent_bindings(fact_set)]
-
-        predicate = fact_set.get_predicate()
+    for predicate, rows in fluent_rows(program, workspace):
+        bindings: list[AtomBinding] = [{"objects": str(row.get_objects())} for row in rows]
         result.append(
             {
                 "predicate": predicate.get_name(),
@@ -112,13 +103,11 @@ def atoms_by_predicate(workspace: Workspace) -> list[PredicateAtoms]:
 def solve_program(
     execution_context: ExecutionContext,
     program: datalog.lifted.Program,
-    input_workspace: Workspace | None = None,
+    input_rows: Iterable[FluentPredicateRow] = (),
 ) -> Workspace:
     workspace = Workspace(program)
-    if input_workspace is not None:
-        for fact_set in input_workspace.get_fluent_fact_sets().get_predicate_sets():
-            for binding in fluent_bindings(fact_set):
-                workspace.insert_fluent_binding(binding)
+    for row in input_rows:
+        workspace.insert_fluent_binding(row)
 
     execution = datalog.lifted.UnannotatedProgramExecutionContext(workspace)
     datalog.lifted.compute_model(execution, execution_context)
@@ -129,24 +118,26 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
     match config:
         case "axiom_evaluator":
             program = planning.AxiomEvaluatorProgram(context.task.get_task())
-            if len(program.get_datalog_program().get_program().get_rules()) == 0:
+            datalog_program = program.get_datalog_program()
+            if len(datalog_program.get_program().get_rules()) == 0:
                 return []
-            return atoms_by_predicate(solve_program(context.execution_context, program.get_datalog_program()))
+            return atoms_by_predicate(datalog_program, solve_program(context.execution_context, datalog_program))
         case "applicable_action":
             axiom_program = planning.AxiomEvaluatorProgram(context.task.get_task())
-            axiom_workspace = None
-            if len(axiom_program.get_datalog_program().get_program().get_rules()) != 0:
-                axiom_workspace = solve_program(context.execution_context, axiom_program.get_datalog_program())
+            axiom_datalog_program = axiom_program.get_datalog_program()
+            axiom_rows: list[FluentPredicateRow] = []
+            if len(axiom_datalog_program.get_program().get_rules()) != 0:
+                axiom_workspace = solve_program(context.execution_context, axiom_datalog_program)
+                axiom_rows = [row for _, rows in fluent_rows(axiom_datalog_program, axiom_workspace) for row in rows]
             program = planning.ApplicableActionProgram(context.task.get_task())
+            datalog_program = program.get_datalog_program()
             return atoms_by_predicate(
-                solve_program(context.execution_context, program.get_datalog_program(), axiom_workspace)
+                datalog_program, solve_program(context.execution_context, datalog_program, axiom_rows)
             )
         case "ground_task":
             program = planning.GroundTaskProgram(context.task.get_task())
-            workspace = datalog.lifted.UnannotatedProgramWorkspace(program.get_datalog_program())
-            execution = datalog.lifted.UnannotatedProgramExecutionContext(workspace)
-            datalog.lifted.compute_model(execution, context.execution_context)
-            return atoms_by_predicate(workspace)
+            datalog_program = program.get_datalog_program()
+            return atoms_by_predicate(datalog_program, solve_program(context.execution_context, datalog_program))
 
 
 def generate_case(case: FixtureCase) -> FixtureCase:

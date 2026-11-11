@@ -21,6 +21,7 @@
 #include <tyr/planning/algorithms/gbfs_lazy/event_handler.hpp>
 
 int main(int argc, char** argv)
+try
 {
     using namespace tyr;
 
@@ -51,4 +52,9 @@ int main(int argc, char** argv)
                                                       options);
         },
         true);
+}
+catch (const std::exception& err)
+{
+    std::cerr << err.what() << "\n";
+    return 1;
 }

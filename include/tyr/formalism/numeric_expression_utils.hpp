@@ -36,8 +36,27 @@ namespace tyr::formalism
 namespace numeric_evaluation_detail
 {
 
+/// A comparison evaluates to whether it can hold, every other expression to its interval of values.
+/// The type is declared rather than deduced: an operand can be a variant that holds the expression
+/// itself, so its evaluation is called while its own body is being instantiated.
+/// A class template, specialized by a constraint, rather than a requires-expression in the alias: the alias is part
+/// of evaluate's signature, and GCC 13 cannot mangle a requires-expression there.
+template<typename Expression>
+struct evaluation_of
+{
+    using type = ygg::ClosedInterval<ygg::float_t>;
+};
+template<typename Expression>
+    requires requires(const Expression& expression) { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operator())>, BooleanOperatorKind>; }
+struct evaluation_of<Expression>
+{
+    using type = bool;
+};
+template<typename Expression>
+using evaluation_t = typename evaluation_of<Expression>::type;
+
 template<typename Expression, typename ResolveTerm>
-auto evaluate(const Expression& expression, ResolveTerm& resolve_term)
+evaluation_t<Expression> evaluate(const Expression& expression, ResolveTerm& resolve_term)
 {
     using Type = std::remove_cvref_t<Expression>;
 

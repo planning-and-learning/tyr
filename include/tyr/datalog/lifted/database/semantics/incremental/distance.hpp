@@ -320,12 +320,12 @@ void DistanceEvaluator::apply(const S& sources, const E& edges, const T& targets
     }
     for (const auto& [from, to] : m_edges_removed)
     {
-        const auto erase = [](auto& edges, VertexSet::handle_type key, VertexSet::handle_type value)
+        const auto erase = [](auto& adjacency, VertexSet::handle_type key, VertexSet::handle_type value)
         {
-            const auto matches = edges.equal_range(key);
+            const auto matches = adjacency.equal_range(key);
             const auto found = std::find_if(matches.first, matches.second, [&](const auto& entry) { return entry.second == value; });
             assert(found != matches.second);
-            edges.erase(found);
+            adjacency.erase(found);
         };
         erase(m_graph.outgoing, from, to);
         erase(m_reverse, to, from);

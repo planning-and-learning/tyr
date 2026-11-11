@@ -50,8 +50,7 @@ public:
     auto resolve_row(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
     { return formalism::datalog::ground_row(atom, *m_grounder).first; }
 
-    auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const
-    { return formalism::datalog::ground(std::move(constraint), *m_grounder).first; }
+    auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(constraint, *m_grounder).first; }
 
     ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> effect) const
     {

@@ -35,7 +35,6 @@
 
 namespace tyr::formalism::planning
 {
-using urd::python::bind_index;
 
 /**
  * bind_module_definitions
