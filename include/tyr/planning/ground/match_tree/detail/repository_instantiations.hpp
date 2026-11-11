@@ -19,7 +19,8 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_DETAIL_REPOSITORY_INSTANTIATIONS_HPP_
 
 /// Extern declarations of intern for every symbol type of the action and axiom match tree repositories, instantiated
-/// in the library (src/planning/ground/match_tree.cpp). See yggdrasil's docs/TEMPLATE_RULES.md, rule 9.
+/// in the library (src/planning/ground/match_tree.cpp). See rule 9 of the template rules
+/// (https://planning-and-learning.github.io/brokkr/template_rules.html).
 
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 

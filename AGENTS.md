@@ -1,5 +1,14 @@
 # AGENTS.md
 
+## Shared rules
+
+The rules that the planning-and-learning libraries share are maintained in brokkr and published at
+<https://planning-and-learning.github.io/brokkr/>. Follow them; the rules in this file add to them.
+
+- [Release cycle](https://planning-and-learning.github.io/brokkr/release_cycle.html)
+- [Template and include rules](https://planning-and-learning.github.io/brokkr/template_rules.html)
+- [Coding rules](https://planning-and-learning.github.io/brokkr/coding_rules.html)
+
 ## Branch Policy
 
 - Never switch branches unless the user explicitly asks.
@@ -47,7 +56,7 @@ Before running a validation target, check whether the existing `build/` director
 
 - Compile on 16 cores only.
 - Explicitly instantiate templates when the set of types is small
-- Follow the template and include rules in yggdrasil's [docs/TEMPLATE_RULES.md](https://github.com/planning-and-learning/yggdrasil/blob/main/docs/TEMPLATE_RULES.md).
+- Follow the [template and include rules](https://planning-and-learning.github.io/brokkr/template_rules.html).
 - Use JSON fixtures for large repetitive test data.
 - Never modify JSON test fixtures just to make them pass without permission.
 - Keep changes scoped to the active task.

@@ -8,7 +8,8 @@
 
 /// Extern declarations of intern for every symbol type of the database's repositories (queries, relations),
 /// instantiated in the library (syntax/query_repository.cpp). Include only from sources that intern many of these
-/// types; see docs/TEMPLATE_RULES.md, rule 9.
+/// types; see rule 9 of the template rules
+/// (https://planning-and-learning.github.io/brokkr/template_rules.html).
 
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 #include "tyr/datalog/lifted/database/syntax/query_repository.hpp"
