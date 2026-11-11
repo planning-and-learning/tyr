@@ -33,7 +33,7 @@ namespace tyr::datalog::database::incremental
 /// Algorithm for a Generalization of the Shortest-Path Problem" (1996), Section 4,
 /// Figure 4 (DynamicSSF-G), https://doi.org/10.1006/jagm.1996.0046.
 /// All edge changes are seeded before repair. Counts represent the paper's support
-/// sets; temporary heaps retain only improving edges. See docs/database.md for the
+/// sets; temporary heaps retain only improving edges. See docs/database.rst for the
 /// unit-edge specialization and the costs outside the per-source repair algorithm.
 ///
 /// Inputs are borrowed during calls only. Added/removed inputs describe actual,

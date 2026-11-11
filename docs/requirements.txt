@@ -1,0 +1,3 @@
+# The documentation's Python packages.
+sphinx>=8
+furo

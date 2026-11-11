@@ -6,7 +6,7 @@ Tyr is designed to address several challenges in modern planning systems:
 
 2. **Rapid prototyping** through Python bindings with type hints, backed by a high-performance C++ core.
 
-3. **Support for expressive numeric planning formalisms** across both grounded and lifted reasoning paradigms (see [Supported PDDL Features](docs/PDDL_SUPPORT.md)).
+3. **Support for expressive numeric planning formalisms** across both grounded and lifted reasoning paradigms (see [Supported PDDL Features](https://planning-and-learning.github.io/tyr/pddl-support.html)).
 
 4. **Integration of learning and reasoning** by supporting collections of planning tasks over a shared planning domain.
 
@@ -30,7 +30,7 @@ The library consists of a **formalism** and a **planning** component. The formal
 
 Pytyr is available at [PyPI](https://pypi.org/project/pytyr/) and can be installed with `pip install pytyr`. 
 
-[`pytyr.serialization`](docs/serialization/index.md) provides structured native
+[`pytyr.serialization`](https://planning-and-learning.github.io/tyr/serialization/index.html) provides structured native
 representations with caller-selected dictionary tables and reference prefixes.
 
 Formalism repositories publish compatible payloads with `view, inserted = repository.insert(data)`.
@@ -203,7 +203,7 @@ cmake --install build --prefix=<path/to/installation-directory>
 ```
 
 More detailed Tyr-specific build instructions are available in
-[`docs/BUILD.md`](docs/BUILD.md).
+[build instructions](https://planning-and-learning.github.io/tyr/build.html).
 
 ## Build Python
 

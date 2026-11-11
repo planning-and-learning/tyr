@@ -39,6 +39,10 @@ test = [
     "typing-extensions>=4.10",
 ]
 
+# The documentation (docs/*.rst) wraps at 120 columns.
+[tool.doc8]
+max-line-length = 120
+
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
 pythonpath = ["."]
