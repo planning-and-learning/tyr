@@ -91,6 +91,13 @@ else()
         add_compile_options(-Wno-dangling-reference)
     endif()
 
+    # std::jthread (the parallel search's workers): the standard library of Apple's Xcode 16 has it behind a flag.
+    include(CheckCXXSourceCompiles)
+    check_cxx_source_compiles("#include <thread>\nint main() { std::jthread worker; }" TYR_HAS_JTHREAD)
+    if(NOT TYR_HAS_JTHREAD)
+        add_compile_options(-fexperimental-library)
+    endif()
+
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -g2 -ggdb")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g2 -fno-omit-frame-pointer -fno-lto")
 
