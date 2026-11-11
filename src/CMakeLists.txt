@@ -157,6 +157,11 @@ add_library(
 add_library(tyr::core ALIAS core)
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
 
+# An executable shares the state of inline functions (a function's static, as yggdrasil's next_layer) with this
+# library. Under link-time optimization Apple's linker gives the executable its own copy unless it keeps its
+# global symbols.
+target_link_options(core INTERFACE "$<$<AND:$<PLATFORM_ID:Darwin>,$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>>:LINKER:-export_dynamic>")
+
 target_compile_features(core PUBLIC cxx_std_20)
 
 target_compile_definitions(
