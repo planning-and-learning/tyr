@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_DETAIL_REPOSITORY_INSTANTIATIONS_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_DETAIL_REPOSITORY_INSTANTIATIONS_HPP_
 
@@ -27,13 +26,13 @@
 #include <yggdrasil/formalism/intern_instantiations.hpp>
 
 /// The instantiations (PREFIX extern: declarations).
-#define TYR_MATCH_TREE_INTERNS(PREFIX)                                                                                          \
-    YGG_FORMALISM_INTERNS(PREFIX,                                                                                               \
-                          10,                                                                                                   \
-                          false,                                                                                                \
-                          boost::mp11::mp_unique<boost::mp11::mp_append<                                                        \
-                              tyr::planning::match_tree::RepositoryTypes<tyr::formalism::planning::Action<tyr::GroundTag>>,     \
-                              tyr::planning::match_tree::RepositoryTypes<tyr::formalism::planning::Axiom<tyr::GroundTag>>>>)
+#define TYR_MATCH_TREE_INTERNS(PREFIX)                                                                                                              \
+    YGG_FORMALISM_INTERNS(                                                                                                                          \
+        PREFIX,                                                                                                                                     \
+        10,                                                                                                                                         \
+        false,                                                                                                                                      \
+        boost::mp11::mp_unique<boost::mp11::mp_append<tyr::planning::match_tree::RepositoryTypes<tyr::formalism::planning::Action<tyr::GroundTag>>, \
+                                                      tyr::planning::match_tree::RepositoryTypes<tyr::formalism::planning::Axiom<tyr::GroundTag>>>>)
 
 TYR_MATCH_TREE_INTERNS(extern)
 

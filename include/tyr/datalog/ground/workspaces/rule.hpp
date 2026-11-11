@@ -19,13 +19,13 @@
 #define TYR_DATALOG_GROUND_WORKSPACES_RULE_HPP_
 
 #include "tyr/datalog/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <optional>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog

@@ -7,14 +7,14 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_PROJECTION_HPP_
 
 #include "tyr/datalog/lifted/database/semantics/incremental/delta.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <functional>
 #include <limits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 

@@ -19,11 +19,11 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_ORDERING_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 
 #include <cstdint>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::formalism::planning::invariant
@@ -56,8 +56,8 @@ struct InvariantOrderOptions
 {
     /// Applied in this order at each greedy step.
     urd::Store<urd::sequence<InvariantOrderCriterion>> criteria = { InvariantOrderCriterion::MinStolenPredicates,
-                                                      InvariantOrderCriterion::MaxResidualAtoms,
-                                                      InvariantOrderCriterion::Lexicographic };
+                                                                    InvariantOrderCriterion::MaxResidualAtoms,
+                                                                    InvariantOrderCriterion::Lexicographic };
     std::uint64_t random_seed = 0;
 };
 

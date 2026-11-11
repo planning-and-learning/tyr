@@ -16,8 +16,6 @@
  */
 
 #include "tyr/planning/algorithms/iw.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/planning/algorithms/brfs.hpp"
 #include "tyr/planning/algorithms/brfs/event_handler.hpp"
@@ -34,6 +32,8 @@
 #include <chrono>
 #include <memory>
 #include <stdexcept>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::planning::iw

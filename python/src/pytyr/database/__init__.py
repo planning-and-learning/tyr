@@ -66,7 +66,7 @@ from pytyr._pytyr.database import (
     antijoin,
     assign,
     collect_statistics,
-    compile,
+    compile,  # noqa: A004  the engine's compile(query), exported under its own name
     difference,
     distance,
     join,

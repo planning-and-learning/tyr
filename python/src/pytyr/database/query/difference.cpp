@@ -10,7 +10,10 @@ void bind_query_difference(nb::module_& m, QueryRepositoryBinding& repository)
 
     {
         using V = QueryData<tyr::datalog::database::QueryDifferenceTag>;
-        urd::python::bind_data<V>(m, "QueryDifferenceData").def(urd::python::init_from_views<QueryView, QueryView>(), "lhs"_a, "rhs"_a).def_rw("lhs", &V::lhs).def_rw("rhs", &V::rhs);
+        urd::python::bind_data<V>(m, "QueryDifferenceData")
+            .def(urd::python::init_from_views<QueryView, QueryView>(), "lhs"_a, "rhs"_a)
+            .def_rw("lhs", &V::lhs)
+            .def_rw("rhs", &V::rhs);
     }
 
     {

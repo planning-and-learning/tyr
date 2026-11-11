@@ -18,10 +18,9 @@
 #ifndef TYR_FORMALISM_PARAMETER_INDEX_HPP_
 #define TYR_FORMALISM_PARAMETER_INDEX_HPP_
 
+#include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/unsigned_integer.hpp>
 
 namespace tyr::formalism

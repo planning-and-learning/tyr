@@ -19,31 +19,25 @@
 
 #include "../../programs/common.hpp"
 #include "../../programs/translated_program.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -53,17 +47,24 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
 namespace
 {
 
-auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
+                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
 
@@ -73,7 +74,8 @@ auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> a
     return formalism::datalog::insert(context.destination(), *predicate);
 }
 
-auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
+                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
 
@@ -231,8 +233,8 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
     auto context = formalism::WriteContext { builder, *repository };
 
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
-    auto rule_of =
-        urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>>> {};
+    auto rule_of = urd::Store<
+        urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>>> {};
     for (const auto rule : program.get_rules<formalism::PredicateTag>())
         rule_of.emplace(rule.get_heads().front().get_predicate(), rule.index());
     auto schema = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
@@ -251,7 +253,7 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
 }
 
 ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::datalog::ProgramView<LiftedTag> program_,
-                                                                 const P2DTranslationContext<LiftedTag>& translation_context) :
+                                                      const P2DTranslationContext<LiftedTag>& translation_context) :
     program(program_),
     input_translation(),
     strata(analysis::compute_rule_stratification(program)),
@@ -296,13 +298,11 @@ ApplicableActionProgram::ApplicableActionProgram(formalism::planning::TaskView<L
 
 const TranslationContext<LiftedTag>& ApplicableActionProgram::get_translation_context() const noexcept { return m_translation_context; }
 
-const AppPredicateToActionMapping& ApplicableActionProgram::get_predicate_to_action_mapping() const noexcept
-{ return m_predicate_to_actions; }
+const AppPredicateToActionMapping& ApplicableActionProgram::get_predicate_to_action_mapping() const noexcept { return m_predicate_to_actions; }
 
 const ApplicableActionProgram::SchemaPrograms& ApplicableActionProgram::get_schema_programs() const noexcept { return m_schema_programs; }
 
-const ConditionalEffectToPredicateMapping&
-ApplicableActionProgram::get_conditional_effect_to_predicate_mapping() const noexcept
+const ConditionalEffectToPredicateMapping& ApplicableActionProgram::get_conditional_effect_to_predicate_mapping() const noexcept
 { return m_conditional_effect_to_predicate; }
 
 datalog::Program<LiftedTag>& ApplicableActionProgram::get_datalog_program() noexcept { return m_datalog_program; }

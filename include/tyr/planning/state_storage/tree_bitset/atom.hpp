@@ -24,12 +24,12 @@
 #include "tyr/planning/state_storage/tree_bitset/block.hpp"
 #include "tyr/planning/state_storage/tree_bitset/context.hpp"
 
+#include <urd/elements/flat.hpp>
 #include <urd/repr/pools/tree_bitset.hpp>
-#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {

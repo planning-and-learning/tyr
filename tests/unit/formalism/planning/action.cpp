@@ -1,7 +1,7 @@
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"

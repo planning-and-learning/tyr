@@ -20,6 +20,7 @@
 
 #include "../binding_utils.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
@@ -29,8 +30,7 @@
 #include <tyr/formalism/planning/formatter.hpp>
 #include <tyr/formalism/planning/interning.hpp>
 #include <tyr/formalism/planning/repository.hpp>
-#include <yggdrasil/python/bindings.hpp>
 #include <urd/python/owner.hpp>
-#include "pytyr/module.hpp"
+#include <yggdrasil/python/bindings.hpp>
 
 #endif

@@ -6,15 +6,15 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_SEARCH_TREE_REPAIR_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_SEARCH_TREE_REPAIR_HPP_
 
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/pools/pools.hpp>
-#include <urd/repr/queues/queue.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/search_tree.hpp"
 
 #include <cstddef>
 #include <span>
+#include <urd/repr/pools/pools.hpp>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -84,7 +84,7 @@ public:
 
 private:
     urd::Store<urd::queue<std::pair<ygg::uint_t, VertexSet::handle_type>>, urd::by_priority> m_queue;  ///< (learned, vertex), the least first.
-    urd::Store<urd::sequence<ygg::Value>> m_vertex;                 ///< A copy of the lowered vertex: storing vertices may move them.
+    urd::Store<urd::sequence<ygg::Value>> m_vertex;  ///< A copy of the lowered vertex: storing vertices may move them.
 
     static bool lowers(const SearchTree& tree, VertexSet::handle_type from, ygg::uint_t to_value) noexcept
     { return to_value != infinity && tree.learned(from) > to_value + 1; }

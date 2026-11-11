@@ -18,44 +18,41 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 
 #include "../node_formatter.hpp"
-
 #include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
-#include "tyr/formalism/literal_data.hpp"
-#include "tyr/formalism/multi_operator_data.hpp"
-#include "tyr/formalism/numeric_effect_data.hpp"
-#include "tyr/formalism/datalog/program_data.hpp"
-#include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/unary_operator_data.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
-#include "tyr/formalism/function_data.hpp"
-#include "tyr/formalism/object_data.hpp"
-#include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_data.hpp"
-#include "tyr/formalism/variable_data.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
-#include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_data.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <fmt/ostream.h>
@@ -63,6 +60,8 @@
 #include <iterator>
 #include <sstream>
 #include <utility>
+#include <yggdrasil/formalism/row_data.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
@@ -185,7 +184,6 @@ std::string format_binding(V value)
 
 }  // namespace
 
-
 static std::string as_text(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
 static std::string as_text(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
 static std::string as_text(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
@@ -194,7 +192,6 @@ static std::string as_text(BinaryOperatorView<GroundTag, ArithmeticOperatorKind>
 static std::string as_text(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return node_format::format(value); }
 static std::string as_text(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
 static std::string as_text(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-
 
 static std::string as_text(AtomView<LiftedTag, StaticTag> value) { return node_format::format(value); }
 static std::string as_text(AtomView<LiftedTag, FluentTag> value) { return node_format::format(value); }
@@ -237,7 +234,6 @@ std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, PredicateTag>>>& 
 
 std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, FunctionTag>>>& value)
 { return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
-
 
 std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value)
 {
@@ -551,7 +547,6 @@ std::string to_string(const VariableDependencyGraph& value)
     os << "}\n";
     return os.str();
 }
-
 
 template<typename T>
     requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value

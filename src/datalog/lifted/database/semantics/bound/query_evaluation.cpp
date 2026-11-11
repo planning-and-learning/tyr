@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/bound/query_evaluation.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

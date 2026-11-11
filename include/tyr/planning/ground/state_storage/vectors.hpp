@@ -41,9 +41,10 @@ namespace tyr::planning
 template<typename... Tags, bool ThreadSafe>
 struct StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>
 {
-    using ArraySet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::uint_t>, urd::frozen>>, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
-    using FloatVectorSet =
-        urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using ArraySet =
+        urd::Store<urd::pool<urd::Store<urd::sequence<ygg::uint_t>, urd::frozen>>, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using FloatVectorSet = urd::
+        Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
     explicit StateStorageContext(const Task<GroundTag>& task) : layout(task) {}
 

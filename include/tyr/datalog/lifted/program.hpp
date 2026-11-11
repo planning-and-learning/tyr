@@ -32,8 +32,7 @@ template<>
 class Program<LiftedTag>
 {
 public:
-    Program(formalism::datalog::ProgramView<LiftedTag> program,
-            formalism::datalog::RepositoryPtr program_repository);
+    Program(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::RepositoryPtr program_repository);
 
     [[nodiscard]] auto get_program() const noexcept { return m_program; }
     [[nodiscard]] const auto& get_program_repository() const noexcept { return *m_program_repository; }

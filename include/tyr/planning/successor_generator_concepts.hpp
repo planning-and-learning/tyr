@@ -19,9 +19,6 @@
 #define TYR_PLANNING_SUCCESSOR_GENERATOR_CONCEPTS_HPP_
 
 #include "tyr/declarations.hpp"
-#include <urd/repr/sequences/segmented.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
@@ -31,11 +28,13 @@
 #include <cstdint>
 #include <functional>
 #include <type_traits>
-#include <vector>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
 namespace tyr::planning
@@ -53,8 +52,7 @@ struct ActionBindingResult;
 
 /// Ground enumeration borrows compiled bindings; lifted enumeration borrows reusable binding data.
 template<TaskKind Kind>
-using BorrowedActionRowView =
-    std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionRowView, formalism::planning::ActionRowDataView>;
+using BorrowedActionRowView = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionRowView, formalism::planning::ActionRowDataView>;
 
 /// Borrowed lists append distinct builders without invalidating previous outputs or the source.
 /// Callers keep those builders alive and unchanged for as long as their views are used.

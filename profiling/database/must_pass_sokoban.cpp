@@ -13,8 +13,6 @@
 // state.txt replaces the initial state: a line "robot <location>", then lines "<box> <location>".
 
 #include "../../tests/unit/database/query_helpers.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/optimization/optimization.hpp"
 #include "tyr/datalog/lifted/database/semantics/bound/query_evaluation.hpp"
 #include "tyr/datalog/lifted/database/semantics/must_pass.hpp"
@@ -38,6 +36,8 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace
@@ -132,10 +132,10 @@ struct PushDistance
 {
     const Task* task;
     bool obstacles;
-    urd::Store<urd::sequence<urd::Store<urd::sequence<std::pair<ygg::uint_t, ygg::uint_t>>>>> into;         ///< cell -> (from, direction) of its incoming edges
-    std::map<std::pair<ygg::uint_t, ygg::uint_t>, urd::Store<urd::sequence<ygg::uint_t>>> before;  ///< (cell, direction) -> cells c with c -d-> cell
-    std::map<ygg::uint_t, urd::Store<urd::sequence<ygg::uint_t>>> pushes;                     ///< box -> pushes from each location, in the current search
-    std::map<ygg::uint_t, urd::Store<urd::sequence<ygg::uint_t>>> base;                       ///< box -> pushes without an excluded cell
+    urd::Store<urd::sequence<urd::Store<urd::sequence<std::pair<ygg::uint_t, ygg::uint_t>>>>> into;  ///< cell -> (from, direction) of its incoming edges
+    std::map<std::pair<ygg::uint_t, ygg::uint_t>, urd::Store<urd::sequence<ygg::uint_t>>> before;    ///< (cell, direction) -> cells c with c -d-> cell
+    std::map<ygg::uint_t, urd::Store<urd::sequence<ygg::uint_t>>> pushes;  ///< box -> pushes from each location, in the current search
+    std::map<ygg::uint_t, urd::Store<urd::sequence<ygg::uint_t>>> base;    ///< box -> pushes without an excluded cell
 
     /// With `obstacles`, the other boxes' cells block a box in the current state; still admissible for this state.
     PushDistance(const Task& task_, bool obstacles_) : task(&task_), obstacles(obstacles_), into(task_.names.size())

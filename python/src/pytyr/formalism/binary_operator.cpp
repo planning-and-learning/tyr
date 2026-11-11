@@ -51,11 +51,8 @@ template<TaskKind T, OperatorKind O, typename C>
 void bind_binary_operator_view(nb::module_& m, nb::class_<C>& repository, const std::string& name)
 {
     using V = urd::index_view<BinaryOperator<T, O>, C>;
-    auto cls = nb::class_<V>(m, name.c_str())
-                   .def("index", &V::index)
-                   .def("get_operator", &V::get_operator)
-                   .def("get_lhs", &V::get_lhs)
-                   .def("get_rhs", &V::get_rhs);
+    auto cls =
+        nb::class_<V>(m, name.c_str()).def("index", &V::index).def("get_operator", &V::get_operator).def("get_lhs", &V::get_lhs).def("get_rhs", &V::get_rhs);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

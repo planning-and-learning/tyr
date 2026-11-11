@@ -19,13 +19,13 @@
 #define TYR_FORMALISM_PLANNING_FDR_VARIABLE_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {

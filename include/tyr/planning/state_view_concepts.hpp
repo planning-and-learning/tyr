@@ -27,9 +27,9 @@
 #include <concepts>
 #include <ranges>
 #include <type_traits>
-#include <utility>
 #include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning

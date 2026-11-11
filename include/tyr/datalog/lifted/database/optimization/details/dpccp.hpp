@@ -6,8 +6,6 @@
 #ifndef TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_DPCCP_HPP_
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_DPCCP_HPP_
 
-#include <urd/bits.hpp>
-
 #include <bit>
 #include <concepts>
 #include <cstddef>
@@ -15,6 +13,7 @@
 #include <functional>
 #include <span>
 #include <stdexcept>
+#include <urd/bits.hpp>
 #include <utility>
 
 namespace tyr::datalog::database::detail
@@ -113,11 +112,11 @@ bool enumerate_connected_pairs(std::span<const std::uint64_t> adjacency, Callbac
         if ((adjacency[vertex] & ~all) || (adjacency[vertex] & singleton))
             throw std::invalid_argument("DPccp: adjacency contains an invalid vertex or self edge.");
         urd::bits::for_each_set_bit(adjacency[vertex],
-                              [&](size_t neighbor)
-                              {
-                                  if (!(adjacency[neighbor] & singleton))
-                                      throw std::invalid_argument("DPccp: adjacency must be symmetric.");
-                              });
+                                    [&](size_t neighbor)
+                                    {
+                                        if (!(adjacency[neighbor] & singleton))
+                                            throw std::invalid_argument("DPccp: adjacency must be symmetric.");
+                                    });
     }
     return DpccpEnumerator(adjacency, emit).run();
 }

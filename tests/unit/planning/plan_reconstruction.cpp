@@ -32,8 +32,8 @@
 #include "tyr/planning/algorithms/strategies/goal.hpp"
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
-#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
@@ -85,9 +85,7 @@ enum class RepositoryMode : std::uint8_t
 
 template<TaskKind Kind>
 tyr::planning::StateRepositoryPtr<Kind> make_repository(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode mode)
-{
-    return std::make_shared<tyr::planning::StateRepository<Kind>>(task, mode == RepositoryMode::SHARED);
-}
+{ return std::make_shared<tyr::planning::StateRepository<Kind>>(task, mode == RepositoryMode::SHARED); }
 
 template<TaskKind Kind>
 struct SequentialSearchNode
@@ -541,12 +539,10 @@ auto find_successor(const tyr::planning::LabeledNodeList<Kind>& successors,
                     std::string_view action,
                     std::optional<urd::index<tyr::planning::State<Kind>>> excluded_state = std::nullopt)
 {
-    return std::ranges::find_if(successors,
-                                [&](const auto& successor)
-                                {
-                                    return successor.label.get_relation().get_name().str() == action
-                                           && (!excluded_state || successor.node.get_state().index() != *excluded_state);
-                                });
+    return std::ranges::find_if(
+        successors,
+        [&](const auto& successor)
+        { return successor.label.get_relation().get_name().str() == action && (!excluded_state || successor.node.get_state().index() != *excluded_state); });
 }
 
 template<TaskKind Kind>
@@ -677,8 +673,7 @@ void expect_parallel_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
         const auto root = tyr::planning::WorkerStateIndex<Kind> { urd::index<tyr::planning::Worker>(0), start.get_state().index() };
         const auto middle_index = tyr::planning::WorkerStateIndex<Kind> { urd::index<tyr::planning::Worker>(1), middle_state.index() };
         const auto final = tyr::planning::WorkerStateIndex<Kind> { urd::index<tyr::planning::Worker>(0), final_state.index() };
-        const auto no_parent =
-            tyr::planning::WorkerStateIndex<Kind> { urd::index<tyr::planning::Worker>(), urd::index<tyr::planning::State<Kind>>() };
+        const auto no_parent = tyr::planning::WorkerStateIndex<Kind> { urd::index<tyr::planning::Worker>(), urd::index<tyr::planning::State<Kind>>() };
         const auto default_node = ParallelSearchNode<Kind> { std::numeric_limits<ygg::float_t>::infinity(), no_parent };
         auto first_search_nodes = urd::Store<urd::sequence<ParallelSearchNode<Kind>>, urd::stable_refs> {};
         auto second_search_nodes = urd::Store<urd::sequence<ParallelSearchNode<Kind>>, urd::stable_refs> {};

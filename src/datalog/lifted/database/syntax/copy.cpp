@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

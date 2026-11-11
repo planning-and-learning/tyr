@@ -16,8 +16,6 @@
  */
 
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "planning/parser.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
@@ -41,6 +39,8 @@
 #include <iterator>
 #include <set>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>

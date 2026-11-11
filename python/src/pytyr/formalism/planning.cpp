@@ -16,10 +16,8 @@
  */
 
 #include "planning/bindings.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include <urd/python/sequences/sequence.hpp>
 #include "planning/module.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
@@ -30,8 +28,10 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
+#include <urd/python/sequences/sequence.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {
@@ -82,8 +82,8 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<FDRContext>(m, "FDRContext")  //
         .def(nb::new_([](RepositoryPtr repository) { return std::make_shared<FDRContext>(std::move(repository)); }), "repository"_a)
-        .def(nb::new_([](const urd::Store<urd::sequence<urd::Store<urd::sequence<AtomView<GroundTag, FluentTag>>>>>& ground_mutex_groups, RepositoryPtr repository)
-                      { return std::make_shared<FDRContext>(ground_mutex_groups, std::move(repository)); }),
+        .def(nb::new_([](const urd::Store<urd::sequence<urd::Store<urd::sequence<AtomView<GroundTag, FluentTag>>>>>& ground_mutex_groups,
+                         RepositoryPtr repository) { return std::make_shared<FDRContext>(ground_mutex_groups, std::move(repository)); }),
              "ground_mutex_groups"_a,
              "repository"_a)
         .def("get_fact", nb::overload_cast<AtomView<GroundTag, FluentTag>>(&FDRContext::get_fact), "atom"_a, nb::keep_alive<0, 1>())

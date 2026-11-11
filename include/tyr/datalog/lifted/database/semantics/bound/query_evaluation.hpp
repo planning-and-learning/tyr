@@ -6,14 +6,12 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_BOUND_QUERY_EVALUATION_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_BOUND_QUERY_EVALUATION_HPP_
 
-#include "yggdrasil/core/config.hpp"
-#include <urd/config.hpp>
-#include <urd/repr/sequences/segmented.hpp>
 #include "tyr/datalog/lifted/database/semantics/bound/conjunctive_plan.hpp"
 #include "tyr/datalog/lifted/database/semantics/bound/union_normal_form.hpp"
 #include "tyr/datalog/lifted/database/semantics/join_index.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
+#include "yggdrasil/core/config.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -25,8 +23,10 @@
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <urd/config.hpp>
 #include <urd/memory.hpp>
 #include <urd/repr/maps/postings.hpp>
+#include <urd/repr/sequences/segmented.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
@@ -130,7 +130,9 @@ public:
                 URD_ASSUME(found != matches.second);  // every indexed row is in its key's entries
                 rows.erase(found);
             };
-            for_each_index(slot, [&](KeyIndex& entry) { erase(entry.rows, database::detail::join_key_hash(stored.row(position).get_values(), entry.keys), position); });
+            for_each_index(slot,
+                           [&](KeyIndex& entry)
+                           { erase(entry.rows, database::detail::join_key_hash(stored.row(position).get_values(), entry.keys), position); });
             snapshot.erase(position);
             if (position != last)
                 for_each_index(slot,
@@ -145,7 +147,8 @@ public:
         for (size_t r = 0; r < added.size(); ++r)
         {
             const auto position = snapshot.insert(added.row(r).get_values());
-            for_each_index(slot, [&](KeyIndex& entry) { entry.rows.insert({ database::detail::join_key_hash(added.row(r).get_values(), entry.keys), position }); });
+            for_each_index(slot,
+                           [&](KeyIndex& entry) { entry.rows.insert({ database::detail::join_key_hash(added.row(r).get_values(), entry.keys), position }); });
         }
         ++m_version;
     }
@@ -205,7 +208,7 @@ private:
     {
         size_t slot = 0;
         urd::Store<urd::sequence<size_t>> positions;
-        urd::Store<urd::sequence<ColumnSlice>> keys;           ///< The key columns in the slot's rows.
+        urd::Store<urd::sequence<ColumnSlice>> keys;                                    ///< The key columns in the slot's rows.
         urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> rows;  ///< Row positions by key hash, once built.
         bool built = false;
     };
@@ -219,10 +222,10 @@ private:
     const ygg::FreeRelationRepository* m_layer;
     UnionNormalForm m_query;
     urd::Store<urd::sequence<ygg::ColumnLayout>> m_columns;
-    urd::Store<urd::sequence<ygg::Value>> m_frame;  ///< The variables' values while a branch runs, by variable.
+    urd::Store<urd::sequence<ygg::Value>> m_frame;      ///< The variables' values while a branch runs, by variable.
     urd::Store<urd::set<size_t>, urd::dense> m_static;  ///< The input slots that never change after the first bind().
     urd::Store<urd::sequence<std::shared_ptr<urd::builder<ygg::Relation<ygg::Schema>>>>> m_inputs;  ///< The input snapshots, from the layer.
-    urd::Store<urd::set<size_t>, urd::dense> m_bound;  ///< The input slots bound so far.
+    urd::Store<urd::set<size_t>, urd::dense> m_bound;                                               ///< The input slots bound so far.
     urd::Store<urd::sequence<KeyIndex>, urd::stable_refs> m_indexes;
     urd::Store<urd::sequence<Lookup>, urd::stable_refs> m_lookups;  ///< By ConjunctiveStep::index.
     urd::Store<urd::sequence<Binding>> m_bindings;
@@ -319,7 +322,8 @@ private:
         }
         // The key's variables stay bound while this step iterates, so the frame is the probe.
         const auto probe = std::span<const ygg::Value>(m_frame);
-        for (const auto [first, last] = entry.rows.equal_range(database::detail::join_key_hash(probe, lookup.probe)); const auto r : std::ranges::subrange(first, last) | std::views::values)
+        for (const auto [first, last] = entry.rows.equal_range(database::detail::join_key_hash(probe, lookup.probe));
+             const auto r : std::ranges::subrange(first, last) | std::views::values)
             if (database::detail::join_keys_equal(rows.row(r).get_values(), entry.keys, probe, lookup.probe) && !visit(r))
                 return proceed;
         return true;

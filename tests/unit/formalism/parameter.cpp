@@ -1,8 +1,8 @@
 #include "tyr/formalism/parameter_index.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <concepts>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
 static_assert(std::constructible_from<tyr::formalism::ParameterIndex, ygg::uint_t>);

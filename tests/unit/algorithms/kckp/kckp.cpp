@@ -1,13 +1,13 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 
 #include "analysis/static_literal_compatibility.hpp"
 
 #include <gtest/gtest.h>
 #include <initializer_list>
 #include <span>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -323,8 +323,10 @@ TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactly
     }
 
     {
-        const auto compatibility =
-            Compatibility(urd::Store<urd::sequence<FakeLiteralView>> {}, urd::Store<urd::sequence<FakeGroundAtomView>> {}, tyr::analysis::VariableDomainList { domain({}) }, 0);
+        const auto compatibility = Compatibility(urd::Store<urd::sequence<FakeLiteralView>> {},
+                                                 urd::Store<urd::sequence<FakeGroundAtomView>> {},
+                                                 tyr::analysis::VariableDomainList { domain({}) },
+                                                 0);
         EXPECT_TRUE(compatibility.is_satisfiable());
         EXPECT_FALSE(compatibility.unary_compatible(0, Object(0)));
     }

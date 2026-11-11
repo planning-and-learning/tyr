@@ -1,6 +1,4 @@
 #include "query_helpers.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <array>
 #include <cmath>
@@ -10,13 +8,15 @@
 #include <set>
 #include <string>
 #include <type_traits>
-#include <utility>
 #include <tyr/datalog/lifted/database/optimization/optimization.hpp>
 #include <tyr/datalog/lifted/database/semantics/bound/query_evaluation.hpp>
 #include <tyr/datalog/lifted/database/semantics/incremental/query.hpp>
 #include <tyr/datalog/lifted/database/semantics/query_evaluation.hpp>
 #include <tyr/datalog/lifted/database/semantics/relation_view.hpp>
 #include <tyr/datalog/lifted/database/syntax/formatter.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <utility>
 #include <yggdrasil/formalism/relation_view.hpp>
 
 namespace
@@ -152,7 +152,9 @@ TEST(DatabaseOptimization, YannakakisBoundsIntermediatesByInputTimesOutput)
     const auto s = tyr::datalog::tests::qb::input(queries, 1, { y, z });
     const auto t = tyr::datalog::tests::qb::input(queries, 2, { z, w });
     const auto root = tyr::datalog::tests::qb::project(queries, tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::join(queries, r, s), t), { x });
-    std::array<Relation, 3> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })), Relation(tyr::datalog::tests::ops::cols({ z, w })) };
+    std::array<Relation, 3> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ y, z })),
+                                     Relation(tyr::datalog::tests::ops::cols({ z, w })) };
     for (ygg::uint_t i = 0; i < 10; ++i)
     {
         inputs[0].insert(std::array { ygg::encode_value(i), ygg::encode_value(static_cast<ygg::uint_t>(0)) });
@@ -188,7 +190,8 @@ TEST(DatabaseOptimization, BoundRootsKeepTheirJoinStructure)
     const auto r = tyr::datalog::tests::qb::input(queries, 0, { x, y });
     const auto s = tyr::datalog::tests::qb::input(queries, 1, { y, z });
     const auto t = tyr::datalog::tests::qb::input(queries, 2, { z, w });
-    const auto root = tyr::datalog::tests::qb::project(queries, tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::join(queries, r, s), t), { x, w });
+    const auto root =
+        tyr::datalog::tests::qb::project(queries, tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::join(queries, r, s), t), { x, w });
     const auto atoms = [](tyr::datalog::database::QueryView<> query)
     {
         size_t result = 0;
@@ -198,12 +201,15 @@ TEST(DatabaseOptimization, BoundRootsKeepTheirJoinStructure)
     };
     const auto roots = std::array { root };
     const auto bound = std::array { tyr::datalog::database::Evaluation::bound };
-    const auto plan = tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots), std::span<const tyr::datalog::database::Evaluation>(bound));
+    const auto plan = tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots),
+                                                       std::span<const tyr::datalog::database::Evaluation>(bound));
     const auto planned = plan[plan.roots().front()];
     EXPECT_EQ(atoms(planned), 3);
     const auto full = tyr::datalog::database::optimize(root);
     EXPECT_GT(atoms(full[full.roots().front()]), 3);
-    std::array<Relation, 3> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })), Relation(tyr::datalog::tests::ops::cols({ z, w })) };
+    std::array<Relation, 3> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ y, z })),
+                                     Relation(tyr::datalog::tests::ops::cols({ z, w })) };
     for (ygg::uint_t i = 0; i < 10; ++i)
     {
         inputs[0].insert(std::array { ygg::encode_value(i % 3), ygg::encode_value(i) });
@@ -229,8 +235,9 @@ TEST(DatabaseOptimization, BoundRootsKeepTheirJoinStructure)
     };
     EXPECT_FALSE(successors(root).empty());
     EXPECT_EQ(successors(planned), successors(root));
-    EXPECT_THROW((tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots), std::span<const tyr::datalog::database::Evaluation>())),
-                 std::invalid_argument);
+    EXPECT_THROW(
+        (tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots), std::span<const tyr::datalog::database::Evaluation>())),
+        std::invalid_argument);
 }
 
 TEST(DatabaseOptimization, StructureChoosesGenericJoinOnlyForCyclicBlocks)
@@ -310,7 +317,8 @@ TEST(DatabaseOptimization, NullaryGenericJoinHasOneRow)
 {
     auto queries = tyr::datalog::tests::qb::repository();
     const auto root = tyr::datalog::tests::qb::generic_join(queries, {}, {});
-    for (const auto& plan : { tyr::datalog::database::optimize(root), tyr::datalog::database::optimize(root, tyr::datalog::database::Statistics { 4, {}, {} }) })
+    for (const auto& plan :
+         { tyr::datalog::database::optimize(root), tyr::datalog::database::optimize(root, tyr::datalog::database::Statistics { 4, {}, {} }) })
     {
         tyr::datalog::database::QueryEvaluator evaluator(layer(), plan);
         evaluator.evaluate(std::array<ygg::FreeBuilderRelationView, 0> {});
@@ -337,7 +345,9 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
                                     tyr::datalog::tests::qb::project(queries, tyr::datalog::tests::qb::join(queries, a, edges), { z, x }),
                                     tyr::datalog::tests::qb::project(queries, a, { x }),
                                     tyr::datalog::tests::qb::project(queries, a, { x }) };
-    std::array<Relation, 3> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })) };
+    std::array<Relation, 3> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ y, z })) };
     inputs[0].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     inputs[0].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     inputs[1].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
@@ -422,7 +432,10 @@ TEST(DatabaseOptimization, BothModesMatchRandomRelationalExpressions)
     const auto c = tyr::datalog::tests::qb::input(queries, 2, { y, z });
     const auto e = tyr::datalog::tests::qb::input(queries, 3, { x, z });
     const auto leaves = std::array { a, b, c, e };
-    std::array<Relation, 4> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })), Relation(tyr::datalog::tests::ops::cols({ x, z })) };
+    std::array<Relation, 4> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ y, z })),
+                                     Relation(tyr::datalog::tests::ops::cols({ x, z })) };
     const auto refs = std::array { borrow(inputs[0]), borrow(inputs[1]), borrow(inputs[2]), borrow(inputs[3]) };
     std::mt19937 random(12553);
     const auto labels = [](tyr::datalog::database::QueryView<> query)
@@ -521,17 +534,22 @@ TEST(DatabaseOptimization, BothModesPreserveFactoredUnionsAndFilteredDifferences
     const auto a = tyr::datalog::tests::qb::input(queries, 0, { x, y });
     const auto b = tyr::datalog::tests::qb::input(queries, 1, { x, y });
     const auto c = tyr::datalog::tests::qb::input(queries, 2, { y, z });
-    const auto selected_difference = tyr::datalog::tests::qb::select_value(queries,
-                                                                  tyr::datalog::tests::qb::rename(queries, tyr::datalog::tests::qb::difference(queries, a, b), { y, x }),
-                                                                  y,
-                                                                  static_cast<ygg::uint_t>(1));
-    const auto roots =
-        std::array { tyr::datalog::tests::qb::union_(queries, tyr::datalog::tests::qb::join(queries, a, c), tyr::datalog::tests::qb::join(queries, b, c)),
-                     tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::union_(queries, a, b), c),
-                     selected_difference,
-                     tyr::datalog::tests::qb::select_equal(queries, tyr::datalog::tests::qb::rename(queries, tyr::datalog::tests::qb::difference(queries, a, b), { y, x }), y, x),
-                     tyr::datalog::tests::qb::union_(queries, a, tyr::datalog::tests::qb::join(queries, a, b)),
-                     tyr::datalog::tests::qb::join(queries, a, tyr::datalog::tests::qb::union_(queries, a, b)) };
+    const auto selected_difference =
+        tyr::datalog::tests::qb::select_value(queries,
+                                              tyr::datalog::tests::qb::rename(queries, tyr::datalog::tests::qb::difference(queries, a, b), { y, x }),
+                                              y,
+                                              static_cast<ygg::uint_t>(1));
+    const auto roots = std::array {
+        tyr::datalog::tests::qb::union_(queries, tyr::datalog::tests::qb::join(queries, a, c), tyr::datalog::tests::qb::join(queries, b, c)),
+        tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::union_(queries, a, b), c),
+        selected_difference,
+        tyr::datalog::tests::qb::select_equal(queries,
+                                              tyr::datalog::tests::qb::rename(queries, tyr::datalog::tests::qb::difference(queries, a, b), { y, x }),
+                                              y,
+                                              x),
+        tyr::datalog::tests::qb::union_(queries, a, tyr::datalog::tests::qb::join(queries, a, b)),
+        tyr::datalog::tests::qb::join(queries, a, tyr::datalog::tests::qb::union_(queries, a, b))
+    };
     Relation ar(tyr::datalog::tests::ops::cols({ x, y })), br(tyr::datalog::tests::ops::cols({ x, y })), cr(tyr::datalog::tests::ops::cols({ y, z }));
     ar.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     ar.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });

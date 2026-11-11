@@ -20,46 +20,46 @@
 #include "../../programs/common.hpp"
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <optional>
 #include <stdexcept>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/slots/slots.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
-#include <urd/repr/slots/slots.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -228,13 +228,13 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag, formalism::PredicateTag>>(context.builder);
     rule->row = create_rule_binding<formalism::PredicateTag>(context,
-                                                                 [](auto atom)
-                                                                 {
-                                                                     auto atoms = urd::flat_vector<urd::index<formalism::Atom<LiftedTag, formalism::FluentTag>>> {};
-                                                                     atoms.push_back(atom.index());
-                                                                     return atoms;
-                                                                 })
-                        .data();
+                                                             [](auto atom)
+                                                             {
+                                                                 auto atoms = urd::flat_vector<urd::index<formalism::Atom<LiftedTag, formalism::FluentTag>>> {};
+                                                                 atoms.push_back(atom.index());
+                                                                 return atoms;
+                                                             })
+                    .data();
     rule->body = body.index();
     rule->heads = heads;
     rule->cost = cost;
@@ -385,7 +385,8 @@ formalism::datalog::ProgramView<GroundTag> create_rpg_ground_program(formalism::
     return finish_program(context);
 }
 
-TranslationContext<GroundTag> remap_translation_context(const TranslationContext<GroundTag>& source, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+TranslationContext<GroundTag> remap_translation_context(const TranslationContext<GroundTag>& source,
+                                                        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto result = TranslationContext<GroundTag> {};
     const auto remap_keys = [&](const auto& source_mapping, auto& result_mapping)

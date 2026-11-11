@@ -1,8 +1,8 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
@@ -51,19 +51,18 @@ struct GroundAtomPublicView<tyr::formalism::Atom<::tyr::GroundTag, T>>
 };
 
 template<typename Entity>
-concept GroundAtomContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename GroundAtomPublicView<Entity>::type>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
-           data.index;
-           data.row;
-           view.index();
-           view.get_predicate();
-           view.get_row();
-           view.get_objects();
-           view.get_key();
-       };
+concept GroundAtomContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                             && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+                             && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename GroundAtomPublicView<Entity>::type>
+                             && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
+                                    data.index;
+                                    data.row;
+                                    view.index();
+                                    view.get_predicate();
+                                    view.get_row();
+                                    view.get_objects();
+                                    view.get_key();
+                                };
 
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (GroundAtomContract<Entities> && ...); }(tyr::formalism::datalog::AtomTypes<::tyr::GroundTag> {}));

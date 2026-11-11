@@ -16,10 +16,10 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "ground/module.hpp"
 #include "lifted/module.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/declarations.hpp"

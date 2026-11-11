@@ -39,8 +39,12 @@ void bind_multi_operator_data(nb::module_& m, const std::string& name)
 
     using V = urd::data<MultiOperator<T, ArithmeticOperatorKind>>;
     auto cls = nb::class_<V>(m, (name + "Data").c_str());
-    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, const urd::Store<urd::sequence<datalog::FunctionExpressionView<T>>>&>(), "operator"_a, "args"_a);
-    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, const urd::Store<urd::sequence<planning::FunctionExpressionView<T>>>&>(), "operator"_a, "args"_a);
+    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, const urd::Store<urd::sequence<datalog::FunctionExpressionView<T>>>&>(),
+            "operator"_a,
+            "args"_a);
+    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, const urd::Store<urd::sequence<planning::FunctionExpressionView<T>>>&>(),
+            "operator"_a,
+            "args"_a);
     cls.def(nb::init<ArithmeticOperatorKind, FunctionExpressionList<T>>(), "operator"_a, "args"_a);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);

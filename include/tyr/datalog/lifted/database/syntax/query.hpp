@@ -5,9 +5,6 @@
 #ifndef TYR_DATALOG_DATABASE_SYNTAX_QUERY_HPP_
 #define TYR_DATALOG_DATABASE_SYNTAX_QUERY_HPP_
 
-#include <urd/config.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/syntax/query_construction.hpp"
 
 #include <algorithm>
@@ -18,6 +15,9 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <urd/config.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -49,7 +49,9 @@ class QueryPlan
 
 public:
     QueryPlan() : m_repository(std::make_shared<QueryRepository>()) {}
-    QueryPlan(std::shared_ptr<const QueryRepository> repository, urd::Store<urd::sequence<QueryIndex>> roots) : m_repository(std::move(repository)), m_roots(std::move(roots))
+    QueryPlan(std::shared_ptr<const QueryRepository> repository, urd::Store<urd::sequence<QueryIndex>> roots) :
+        m_repository(std::move(repository)),
+        m_roots(std::move(roots))
     {
     }
 

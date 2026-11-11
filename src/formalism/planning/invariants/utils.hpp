@@ -19,10 +19,11 @@
 #define TYR_SRC_FORMALISM_PLANNING_INVARIANTS_UTILS_HPP_
 
 #include "tyr/formalism/planning/mutable/atom.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::formalism::planning::invariant
 {

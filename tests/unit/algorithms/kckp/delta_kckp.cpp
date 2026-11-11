@@ -16,12 +16,10 @@
  */
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "planning/parser.hpp"
-#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
@@ -47,6 +45,8 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::tests

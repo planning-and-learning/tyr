@@ -19,8 +19,6 @@
 #define TYR_DATALOG_GROUND_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/ground/workspaces/facts.hpp"
@@ -34,6 +32,8 @@
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 

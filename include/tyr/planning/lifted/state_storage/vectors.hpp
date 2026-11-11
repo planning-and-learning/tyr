@@ -40,10 +40,10 @@ namespace tyr::planning
 template<typename... Tags, bool ThreadSafe>
 struct StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>
 {
-    using UintVectorSet =
-        urd::Store<urd::pool<urd::Store<urd::sequence<ygg::uint_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
-    using FloatVectorSet =
-        urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using UintVectorSet = urd::
+        Store<urd::pool<urd::Store<urd::sequence<ygg::uint_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using FloatVectorSet = urd::
+        Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, Tags..., std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
     explicit StateStorageContext(const Task<LiftedTag>&) noexcept {}
 

@@ -19,12 +19,10 @@
 #define TYR_TESTS_PLANNING_ALGORITHMS_SEARCH_STATISTICS_HPP_
 
 #include "planning/parser.hpp"
-#include "tyr/planning/lifted/successor_generator.hpp"
-#include "tyr/planning/ground/successor_generator.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
 
 #include <boost/json.hpp>
 #include <cstdint>
@@ -41,6 +39,8 @@
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/plan.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -241,14 +241,12 @@ void expect_repository_statistics(const SearchContext<Kind>& context, const plan
 
     EXPECT_EQ(statistics.get_num_registered_states(), state_repository.num_states());
     EXPECT_EQ(statistics.get_state_storage_memory_usage(), state_repository.memory_usage());
-    EXPECT_EQ(statistics.get_action_bindings_memory_usage(),
-              task_repository.relations().template memory_usage<formalism::planning::Action<LiftedTag>>());
+    EXPECT_EQ(statistics.get_action_bindings_memory_usage(), task_repository.relations().template memory_usage<formalism::planning::Action<LiftedTag>>());
     EXPECT_EQ(statistics.get_predicate_bindings_memory_usage(),
               task_repository.relations().template memory_usage<formalism::Predicate<formalism::StaticTag>>()
                   + task_repository.relations().template memory_usage<formalism::Predicate<formalism::FluentTag>>()
                   + task_repository.relations().template memory_usage<formalism::Predicate<formalism::DerivedTag>>());
-    EXPECT_EQ(statistics.get_axiom_bindings_memory_usage(),
-              task_repository.relations().template memory_usage<formalism::planning::Axiom<LiftedTag>>());
+    EXPECT_EQ(statistics.get_axiom_bindings_memory_usage(), task_repository.relations().template memory_usage<formalism::planning::Axiom<LiftedTag>>());
     EXPECT_EQ(statistics.get_function_bindings_memory_usage(),
               task_repository.relations().template memory_usage<formalism::Function<formalism::StaticTag>>()
                   + task_repository.relations().template memory_usage<formalism::Function<formalism::FluentTag>>()

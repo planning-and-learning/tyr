@@ -18,7 +18,6 @@
 #include "tyr/formalism/planning/formatter.hpp"
 
 #include "../node_formatter.hpp"
-
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -156,12 +155,10 @@ std::string relation_binding(const urd::data<ygg::Row<Tag>>& value)
 }  // namespace
 }  // namespace detail
 
-
 std::string to_string(const urd::data<FDRVariable<FluentTag>>& value) { return detail::fdr_variable(value); }
 
 std::string to_string(const urd::data<Invariant>& value) { return detail::invariant(value); }
 std::string to_string(const urd::data<FDRFact<FluentTag>>& value) { return detail::fdr_fact(value); }
-
 
 std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value)
 {
@@ -420,7 +417,6 @@ static std::string as_text(InvariantView value) { return detail::invariant(value
 std::string to_string(FDRFactView<FluentTag> value) { return detail::fdr_fact_view(value); }
 std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value) { return detail::fdr_fact_view(value); }
 
-
 static std::string as_text(ConjunctiveConditionView<LiftedTag> value)
 {
     return detail::structured("ConjunctiveCondition",
@@ -632,7 +628,6 @@ std::string to_string(const std::pair<ActionRowView, PlanFormatting>& value)
 
 std::string to_string(const std::pair<ActionView<GroundTag>, PlanFormatting>& value)
 { return fmt::format("{}", std::make_pair(value.first.get_row(), value.second)); }
-
 
 template<typename T>
     requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value

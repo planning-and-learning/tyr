@@ -19,18 +19,18 @@
 #define TYR_PLANNING_STATIC_STATE_HPP_
 
 #include "tyr/formalism/atom_view.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <functional>
 #include <limits>
 #include <ranges>
-#include <urd/repr/maps/index_map.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <vector>
 #include <urd/elements/flat.hpp>
+#include <urd/repr/maps/index_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -45,14 +45,12 @@ public:
     template<TaskKind Kind>
     explicit StaticState(formalism::planning::TaskView<Kind> task);
 
-    [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> index) const
-    { return m_atoms.contains(index); }
+    [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::StaticTag>> index) const { return m_atoms.contains(index); }
     [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::StaticTag>> index) const noexcept
     { return m_numeric_variables.visit(index, std::identity {}, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
 
     [[nodiscard]] bool test(formalism::planning::AtomView<GroundTag, formalism::StaticTag> atom) const { return test(atom.index()); }
-    [[nodiscard]] ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept
-    { return get(fterm.index()); }
+    [[nodiscard]] ygg::float_t get(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> fterm) const noexcept { return get(fterm.index()); }
 
     /// In ascending order.
     [[nodiscard]] auto get_atoms() const noexcept { return std::views::all(m_atoms); }

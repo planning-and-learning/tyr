@@ -19,15 +19,14 @@
 #define TYR_FORMALISM_ATOM_DATA_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {
@@ -40,12 +39,7 @@ struct data<::tyr::formalism::Atom<::tyr::LiftedTag, F>>
     ::tyr::formalism::TermList terms;
 
     data() = default;
-    data(urd::index<::tyr::formalism::Predicate<F>> predicate_, ::tyr::formalism::TermList terms_) :
-        index(),
-        predicate(predicate_),
-        terms(std::move(terms_))
-    {
-    }
+    data(urd::index<::tyr::formalism::Predicate<F>> predicate_, ::tyr::formalism::TermList terms_) : index(), predicate(predicate_), terms(std::move(terms_)) {}
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;

@@ -6,14 +6,14 @@
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_JOIN_BLOCK_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/operator_builder.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
 #include "yggdrasil/semantics/canonicalization.hpp"
 
 #include <algorithm>
 #include <concepts>
 #include <span>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database::detail

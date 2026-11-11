@@ -16,13 +16,13 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "../planning.hpp"
 #include "astar_eager/module.hpp"
 #include "brfs/module.hpp"
 #include "gbfs_lazy/module.hpp"
 #include "iw/module.hpp"
+#include "pytyr/module.hpp"
 #include "siw/module.hpp"
 
 namespace tyr::planning

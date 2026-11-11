@@ -22,9 +22,9 @@
 #include <urd/repr/maps/postings.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
 
@@ -85,7 +85,9 @@ inline ygg::Value field_value(std::span<const ygg::Value> values, size_t positio
 /// Hash the key fields' canonical values in logical key order, without materializing a key: as urd::hash_range of them.
 template<typename R>
 ygg::hash_t join_key_hash(const R& row, std::span<const ColumnSlice> keys) noexcept
-{ return urd::hash_range(keys | std::views::transform([&](const ColumnSlice& key) { return field_value(row, key.position); })); }
+{
+    return urd::hash_range(keys | std::views::transform([&](const ColumnSlice& key) { return field_value(row, key.position); }));
+}
 
 template<typename L, typename R>
 bool join_keys_equal(const L& lhs, std::span<const ColumnSlice> lhs_keys, const R& rhs, std::span<const ColumnSlice> rhs_keys) noexcept

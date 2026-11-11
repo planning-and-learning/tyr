@@ -21,8 +21,8 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
-#include <utility>
 #include <urd/elements/flat.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace urd

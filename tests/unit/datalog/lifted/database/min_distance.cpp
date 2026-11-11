@@ -4,9 +4,6 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/min_distance.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 
 #include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/query_evaluation.hpp"
@@ -18,6 +15,9 @@
 #include <gtest/gtest.h>
 #include <map>
 #include <random>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 
 namespace
 {
@@ -145,10 +145,10 @@ TEST_P(DatabaseMinDistance, PairEdgesWithJoinsUnionsSelectionsAndDifferences)
                                    { a, b, a2, b2 });
     const auto variable_order = std::array { a, b, a2, b2 };
     const auto inputs_of_second = std::array { qb::rename(repository, steps, { b, b2 }), qb::rename(repository, identity, { a, a2 }) };
-    const auto second =
-        qb::project(repository,
-                    qb::generic_join(repository, std::span<const tyr::datalog::database::QueryView<>>(inputs_of_second), std::span<const Column>(variable_order)),
-                    { a, b, a2, b2 });
+    const auto second = qb::project(
+        repository,
+        qb::generic_join(repository, std::span<const tyr::datalog::database::QueryView<>>(inputs_of_second), std::span<const Column>(variable_order)),
+        { a, b, a2, b2 });
     const auto teleport = qb::project(repository,
                                       qb::join(repository,
                                                qb::select_value(repository, qb::rename(repository, moves, { a, a2 }), a, static_cast<ygg::uint_t>(0)),
@@ -258,7 +258,8 @@ TEST_P(DatabaseMinDistance, RelationEdgesUnderChanges)
                 else
                     edges.insert(edge);
             }
-        const auto expected = tyr::datalog::database::min_distance(borrow(layer, sources), borrow(layer, edges), borrow(layer, targets), plan, result, workspace);
+        const auto expected =
+            tyr::datalog::database::min_distance(borrow(layer, sources), borrow(layer, edges), borrow(layer, targets), plan, result, workspace);
         const auto edge_view = borrow(layer, edges);
         const auto edge_input = [&](size_t) -> const auto& { return edge_view; };
         ASSERT_EQ(blind.min_distance(edge_input, borrow(layer, sources), borrow(layer, targets)), expected) << "step " << step;
@@ -290,7 +291,8 @@ struct ListGraph
     template<typename OnVertex>
     void predecessors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
     { each(in[id(vertex)], on_vertex); }
-    bool edge_exists(std::span<const ygg::Value> from, std::span<const ygg::Value> to) { return std::ranges::find(out[id(from)], id(to)) != out[id(from)].end(); }
+    bool edge_exists(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
+    { return std::ranges::find(out[id(from)], id(to)) != out[id(from)].end(); }
 };
 
 struct ListVertices
@@ -315,7 +317,8 @@ TEST_P(DatabaseMinDistance, AStarPathIsAShortestPath)
     auto storage = tyr::datalog::database::AStarStorage {};
     for (size_t trial = 0; trial < 50; ++trial)
     {
-        auto graph = ListGraph { urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(n), urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(n) };
+        auto graph = ListGraph { urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(n),
+                                 urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(n) };
         for (size_t e = 0; e < 70; ++e)
         {
             const auto u = static_cast<ygg::uint_t>(rng() % n);
@@ -338,7 +341,8 @@ TEST_P(DatabaseMinDistance, AStarPathIsAShortestPath)
                 ids.push_back(tree.ensure(target, heuristic));
         }
         backward.start(ids);
-        auto search = tyr::datalog::database::AStar<ListGraph, tyr::datalog::database::BlindDistanceHeuristic>(graph, tree, backward, heuristic, targets, storage, 0);
+        auto search =
+            tyr::datalog::database::AStar<ListGraph, tyr::datalog::database::BlindDistanceHeuristic>(graph, tree, backward, heuristic, targets, storage, 0);
         const auto distance = search.run(sources);
         if (distance == std::numeric_limits<ygg::uint_t>::max())
             continue;

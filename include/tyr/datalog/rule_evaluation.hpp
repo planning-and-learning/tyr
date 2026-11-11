@@ -29,7 +29,6 @@
 #include "tyr/formalism/numeric_expression_utils.hpp"
 
 #include <algorithm>
-#include <urd/repr/values/dense_set.hpp>
 #include <cassert>
 #include <cstdint>
 #include <limits>
@@ -37,16 +36,17 @@
 #include <span>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/indexed.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
@@ -115,7 +115,8 @@ private:
     using Witness = WitnessAnnotation<formalism::PredicateTag>;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
-    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>> m_seen_rows;
+    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>>
+        m_seen_rows;
     urd::Store<urd::sequence<Binding>> m_bindings;
     urd::Store<urd::sequence<PredicateAchiever>> m_achievers;
 

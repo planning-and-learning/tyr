@@ -19,27 +19,22 @@
 #define TYR_PLANNING_LIFTED_PROGRAMS_GROUND_TASK_HPP_
 
 #include "tyr/datalog/lifted/program.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -50,7 +45,11 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 
@@ -58,11 +57,12 @@
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {

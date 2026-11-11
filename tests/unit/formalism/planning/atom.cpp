@@ -1,8 +1,8 @@
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
@@ -30,17 +30,14 @@ concept AtomContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> 
                           };
 
 static_assert(AtomContract<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
-static_assert(
-    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
-                 tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
 static_assert(AtomContract<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
-static_assert(
-    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
-                 tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
 static_assert(AtomContract<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
-static_assert(
-    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
-                 tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>);
 
 TEST(TyrFormalismPlanningAtom, PreservesConstructorArguments)
 {
@@ -107,34 +104,30 @@ namespace ground_tests
 {
 
 template<typename Entity>
-concept GroundAtomContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
-           data.index;
-           data.row;
-           { data == data } -> std::same_as<bool>;
-           view.index();
-           view.get_predicate();
-           view.get_row();
-           view.get_objects();
-           view.get_key();
-           { view == view } -> std::same_as<bool>;
-           { view < view } -> std::same_as<bool>;
-       };
+concept GroundAtomContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                             && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+                             && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
+                                    data.index;
+                                    data.row;
+                                    { data == data } -> std::same_as<bool>;
+                                    view.index();
+                                    view.get_predicate();
+                                    view.get_row();
+                                    view.get_objects();
+                                    view.get_key();
+                                    { view == view } -> std::same_as<bool>;
+                                    { view < view } -> std::same_as<bool>;
+                                };
 
 static_assert(GroundAtomContract<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>>);
-static_assert(
-    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
-                 tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
 static_assert(GroundAtomContract<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>);
-static_assert(
-    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
-                 tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 static_assert(GroundAtomContract<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
-static_assert(
-    std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
-                 tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
 
 TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
 {

@@ -4,9 +4,6 @@
  */
 
 #include "query_helpers.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include <urd/testing/allocations.hpp>
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
@@ -25,6 +22,9 @@
 #include <ranges>
 #include <span>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <urd/testing/allocations.hpp>
 #include <utility>
 #include <vector>
 
@@ -381,7 +381,8 @@ struct InterningEvaluation
             valid &= original.index() == duplicate.index();
             valid &= original.index() != renamed.index();
             valid &= std::ranges::equal(original.data().rows, renamed.data().rows);
-            valid &= original.row(0).get_values().data() == renamed.row(0).get_values().data() && original.row(0).get_values().first_bit() == renamed.row(0).get_values().first_bit();
+            valid &= original.row(0).get_values().data() == renamed.row(0).get_values().data()
+                     && original.row(0).get_values().first_bit() == renamed.row(0).get_values().first_bit();
             valid &= original.size() == 2 && renamed.columns().size() == arity;
             valid &= renamed.contains(std::span<const ygg::Value>(packed(first_row)).first(arity));
         }
@@ -606,11 +607,14 @@ struct IncrementalEvaluation
     static constexpr size_t rows = 128;
     static constexpr size_t changed_rows = 32;
     static constexpr size_t fanout = 8;
-    database::incremental::JoinEvaluator joining { layer(), database::JoinPlan(cols({ ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(1), ColumnIndex(3) })) };
+    database::incremental::JoinEvaluator joining { layer(),
+                                                   database::JoinPlan(cols({ ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(1), ColumnIndex(3) })) };
     const urd::builder<ygg::Relation<ygg::Schema>> unchanged { cols({ ColumnIndex(1), ColumnIndex(3) }) };
     // Every output has eight join witnesses. Replacing a source row exercises
     // both support counts and mutable result storage without retaining history.
-    database::incremental::ProjectionEvaluator projecting { layer(), database::ProjectionPlan(cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) }), std::array { ColumnIndex(2) }) };
+    database::incremental::ProjectionEvaluator projecting { layer(),
+                                                            database::ProjectionPlan(cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) }),
+                                                                                     std::array { ColumnIndex(2) }) };
     database::incremental::Delta delta { layer(), cols({ ColumnIndex(1), ColumnIndex(2) }) };
     std::array<ygg::uint_t, rows> values {};
     database::Workspace workspace;
@@ -667,8 +671,7 @@ struct IncrementalEvaluation
         return valid;
     }
 
-    [[nodiscard]] size_t memory_usage() const
-    { return joining.memory_usage() + projecting.memory_usage() + delta.memory_usage() + unchanged.memory_usage(); }
+    [[nodiscard]] size_t memory_usage() const { return joining.memory_usage() + projecting.memory_usage() + delta.memory_usage() + unchanged.memory_usage(); }
 };
 }  // namespace
 
@@ -706,7 +709,8 @@ struct ChangingJoinEvaluation
     // key disappearance; moved last rows must remain reachable after erasure.
     static constexpr size_t changed_rows = 17;
 
-    database::incremental::JoinEvaluator joining { layer(), database::JoinPlan(cols({ ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(1), ColumnIndex(3) })) };
+    database::incremental::JoinEvaluator joining { layer(),
+                                                   database::JoinPlan(cols({ ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(1), ColumnIndex(3) })) };
     database::incremental::Delta lhs_delta { layer(), cols({ ColumnIndex(1), ColumnIndex(2) }) };
     database::incremental::Delta rhs_delta { layer(), cols({ ColumnIndex(1), ColumnIndex(3) }) };
     std::array<std::array<ygg::uint_t, 2>, rows> values {};
@@ -766,10 +770,7 @@ struct ChangingJoinEvaluation
     }
 
     [[nodiscard]] size_t memory_usage() const
-    {
-        return joining.memory_usage() + lhs_delta.memory_usage() + rhs_delta.memory_usage()
-               + urd::memory_usage(workspace.join_index);
-    }
+    { return joining.memory_usage() + lhs_delta.memory_usage() + rhs_delta.memory_usage() + urd::memory_usage(workspace.join_index); }
 };
 }  // namespace
 
@@ -797,7 +798,9 @@ TEST(YggdrasilTests, DatabaseWarmedChangingJoinReusesStorageAcrossNovelKeysAndCo
 
 TEST(YggdrasilTests, DatabaseWarmedMixedWidthTuplesAndOperationsRetainStorage)
 {
-    const std::vector<ygg::ColumnLayout> left_columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> }, { ColumnIndex(2), ygg::type_id<double> }, { ColumnIndex(3), ygg::type_id<bool> } };
+    const std::vector<ygg::ColumnLayout> left_columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> },
+                                                        { ColumnIndex(2), ygg::type_id<double> },
+                                                        { ColumnIndex(3), ygg::type_id<bool> } };
     const std::vector<ygg::ColumnLayout> right_columns { { ColumnIndex(2), ygg::type_id<double> }, { ColumnIndex(4), ygg::type_id<ygg::uint_t> } };
     urd::builder<ygg::Relation<ygg::Schema>> left(left_columns), right(right_columns);
     const database::JoinPlan joining(left.columns(), right.columns());
@@ -815,7 +818,8 @@ TEST(YggdrasilTests, DatabaseWarmedMixedWidthTuplesAndOperationsRetainStorage)
         }
         database::join(borrow(left), borrow(right), joining, joined, workspace);
         database::project(borrow(joined), projecting, projected, workspace);
-        return joined.size() == 36 && projected.size() == 4 && projected.contains(std::array { ygg::encode_value(1.0), ygg::encode_value(true) }) && projected.contains(std::array { ygg::encode_value(2.0), ygg::encode_value(false) });
+        return joined.size() == 36 && projected.size() == 4 && projected.contains(std::array { ygg::encode_value(1.0), ygg::encode_value(true) })
+               && projected.contains(std::array { ygg::encode_value(2.0), ygg::encode_value(false) });
     };
     for (ygg::uint_t generation = 0; generation < 8; ++generation)
         ASSERT_TRUE(cycle(generation));
@@ -831,7 +835,8 @@ TEST(YggdrasilTests, DatabaseWarmedMixedWidthTuplesAndOperationsRetainStorage)
 
 TEST(YggdrasilTests, DatabaseWarmedDistanceFullEvaluationRetainsStorage)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })), targets(cols({ ColumnIndex(20) }));
+    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(cols({ ColumnIndex(20) }));
     constexpr ygg::uint_t vertices = 16;
     sources.insert(cells(0));
     for (ygg::uint_t vertex = 0; vertex < vertices; ++vertex)
@@ -861,7 +866,8 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceFullEvaluationRetainsStorage)
 
 TEST(YggdrasilTests, DatabaseWarmedDistanceSourceChurnReusesFiniteUniverseStorage)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })), targets(cols({ ColumnIndex(20) }));
+    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(cols({ ColumnIndex(20) }));
     constexpr ygg::uint_t vertices = 16;
     sources.insert(cells(0));
     for (ygg::uint_t vertex = 0; vertex < vertices; ++vertex)
@@ -910,7 +916,8 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceSourceChurnReusesFiniteUniverseStorag
 
 TEST(YggdrasilTests, DatabaseWarmedDistanceEdgeRepairAndUndoRetainStorage)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })), targets(cols({ ColumnIndex(20) }));
+    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(cols({ ColumnIndex(20) }));
     constexpr ygg::uint_t vertices = 16;
     sources.insert(cells(0));
     sources.insert(cells(4));
@@ -931,7 +938,9 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceEdgeRepairAndUndoRetainStorage)
         bool valid = evaluator.get_result().size() == std::size_t { 2 } * vertices;
         valid &= evaluator.get_result().contains(cells(0, 8, 1));
         valid &= evaluator.get_delta().added.size() == 8 && evaluator.get_delta().removed.size() == 8;
-        evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) }, std::pair { borrow(change.removed), borrow(change.added) }, std::pair { borrow(no_targets), borrow(no_targets) });
+        evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) },
+                         std::pair { borrow(change.removed), borrow(change.added) },
+                         std::pair { borrow(no_targets), borrow(no_targets) });
         valid &= evaluator.get_result().size() == std::size_t { 2 } * vertices;
         valid &= evaluator.get_result().contains(cells(0, 8, 8));
         valid &= evaluator.get_delta().added.size() == 8 && evaluator.get_delta().removed.size() == 8;
@@ -951,7 +960,8 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceEdgeRepairAndUndoRetainStorage)
 
 TEST(YggdrasilTests, DatabaseWarmedDistanceDenseLocalHeapChurnRetainsStorage)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })), targets(cols({ ColumnIndex(20) }));
+    urd::builder<ygg::Relation<ygg::Schema>> sources(cols({ ColumnIndex(10) })), edges(cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(cols({ ColumnIndex(20) }));
     constexpr ygg::uint_t width = 8, first_parent = 7, first_child = first_parent + width;
     sources.insert(cells(0));
     sources.insert(cells(3));
@@ -983,7 +993,9 @@ TEST(YggdrasilTests, DatabaseWarmedDistanceDenseLocalHeapChurnRetainsStorage)
         valid &= evaluator.get_result().contains(cells(0, first_parent, 1));
         valid &= evaluator.get_result().contains(cells(3, first_child, 2));
         valid &= evaluator.get_delta().added.size() == std::size_t { 4 } * width && evaluator.get_delta().removed.size() == std::size_t { 4 } * width;
-        evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) }, std::pair { borrow(change.removed), borrow(change.added) }, std::pair { borrow(no_targets), borrow(no_targets) });
+        evaluator.update(std::pair { borrow(no_sources), borrow(no_sources) },
+                         std::pair { borrow(change.removed), borrow(change.added) },
+                         std::pair { borrow(no_targets), borrow(no_targets) });
         valid &= evaluator.get_result().size() == std::size_t { 4 } * width;
         valid &= evaluator.get_result().contains(cells(0, first_parent, first_parent));
         valid &= evaluator.get_result().contains(cells(3, first_child, first_parent - 2));

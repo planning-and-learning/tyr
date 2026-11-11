@@ -19,9 +19,6 @@
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_PARALLEL_HPP_
 
 #include "../repository_statistics.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include "concepts.hpp"
 #include "engine.hpp"
 #include "sequential.hpp"
@@ -52,6 +49,9 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -888,7 +888,14 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
 
     using Search = Policy<Kind, ParallelSearch>;
     const auto run = [&]<typename Routing>
-    { return SearchEngine<Kind, Search, ParallelExecutionPolicy<Kind, Search, Routing>>::find_solution(task, state_repository, axiom_evaluator, successor_generator, heuristic, options); };
+    {
+        return SearchEngine<Kind, Search, ParallelExecutionPolicy<Kind, Search, Routing>>::find_solution(task,
+                                                                                                         state_repository,
+                                                                                                         axiom_evaluator,
+                                                                                                         successor_generator,
+                                                                                                         heuristic,
+                                                                                                         options);
+    };
 
     if (state_repository.is_concurrent())
         return run.template operator()<SharedStatePolicy<Kind>>();

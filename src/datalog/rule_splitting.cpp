@@ -18,45 +18,45 @@
 #include "tyr/datalog/rule_splitting.hpp"
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
-#include "tyr/formalism/datalog/expression_arity.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/expression_arity.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <urd/config.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <urd/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::datalog
 {
@@ -190,14 +190,14 @@ private:
 
             const auto covered = parameters_of(candidate.projected);
             erase_if(candidate.rest.static_literals,
-                          [&](const auto literal)
-                          {
-                              const auto parameters = parameters_of(literal);
-                              const auto inside = !parameters.empty() && std::ranges::all_of(parameters, [&](auto p) { return covered.contains(p); });
-                              if (inside)
-                                  candidate.projected.static_literals.push_back(literal);
-                              return inside;
-                          });
+                     [&](const auto literal)
+                     {
+                         const auto parameters = parameters_of(literal);
+                         const auto inside = !parameters.empty() && std::ranges::all_of(parameters, [&](auto p) { return covered.contains(p); });
+                         if (inside)
+                             candidate.projected.static_literals.push_back(literal);
+                         return inside;
+                     });
 
             if (candidate.rest.static_literals.empty() && candidate.rest.fluent_literals.empty())
                 continue;
@@ -263,8 +263,7 @@ private:
                 const auto object = formalism::unification::get_object(*value);
                 if (objects.insert(object).second)
                 {
-                    auto domain_binding =
-                        formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
+                    auto domain_binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::StaticTag>>>(m_context->builder());
                     domain_binding->relation = new_predicate;
                     domain_binding->values.push_back(object.value);
                     auto ground_atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
@@ -291,7 +290,7 @@ private:
 
     template<formalism::FactKind F>
     urd::index<formalism::Literal<LiftedTag, F>> create_literal(urd::index<formalism::Predicate<F>> predicate,
-                                                                         const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
+                                                                const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
     {
         auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
         atom->predicate = predicate;
@@ -306,22 +305,22 @@ private:
     /// The atom with each parameter renumbered to its position among the emitted rule's variables.
     template<formalism::FactKind F>
     urd::index<formalism::Atom<LiftedTag, F>> renumber(formalism::datalog::AtomView<LiftedTag, F> atom,
-                                                                const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
+                                                       const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
     {
         auto data = formalism::datalog::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
         data->predicate = atom.get_predicate().index();
         for (const auto term : atom.get_terms())
         {
             const auto& value = urd::to_stored(term);
-            data->terms.push_back(
-                formalism::unification::is_parameter(value) ? formalism::Term(local.at(formalism::unification::get_parameter(value))) : value);
+            data->terms.push_back(formalism::unification::is_parameter(value) ? formalism::Term(local.at(formalism::unification::get_parameter(value))) :
+                                                                                value);
         }
         return formalism::datalog::insert(m_context->destination(), *data).first.index();
     }
 
     template<formalism::FactKind F>
     urd::index<formalism::Literal<LiftedTag, F>> renumber(urd::index<formalism::Literal<LiftedTag, F>> literal,
-                                                                   const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
+                                                          const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
     {
         const auto view = urd::resolve(literal, m_context->destination());
         auto data = formalism::datalog::checkout<formalism::Literal<LiftedTag, F>>(m_context->builder());
@@ -332,7 +331,10 @@ private:
 
     /// The rule over the variables that its body uses, in action rule order, and the action rule position of each of them.
     std::pair<urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>, urd::Store<urd::sequence<ygg::uint_t>>>
-    emit_rule(const urd::flat_vector<urd::index<formalism::Variable>>& variables, const Body& body, const urd::Store<urd::sequence<FluentAtom>>& heads, ygg::float_t cost)
+    emit_rule(const urd::flat_vector<urd::index<formalism::Variable>>& variables,
+              const Body& body,
+              const urd::Store<urd::sequence<FluentAtom>>& heads,
+              ygg::float_t cost)
     {
         auto positions = urd::Store<urd::sequence<ygg::uint_t>> {};
         for (const auto parameter : parameters_of(body))
@@ -366,8 +368,7 @@ private:
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
     const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_projections = 0;
-    urd::Store<urd::map<std::pair<urd::index<formalism::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>>
-        m_domain_literals;
+    urd::Store<urd::map<std::pair<urd::index<formalism::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>> m_domain_literals;
 };
 
 }

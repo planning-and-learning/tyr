@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {
@@ -36,7 +36,10 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "variables"_a, "body"_a, "head"_a);
+            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(),
+                    "variables"_a,
+                    "body"_a,
+                    "head"_a);
             cls.def(nb::init<urd::flat_vector<urd::index<Variable>>, urd::index<ConjunctiveCondition<LiftedTag>>, urd::index<Atom<LiftedTag, DerivedTag>>>(),
                     "variables"_a,
                     "body"_a,
@@ -45,11 +48,10 @@ void bind_axiom_kind(nb::module_& m, RepositoryBinding& repository, const std::s
         else
         {
             cls.def(urd::python::init_from_views<AxiomRowView, ConjunctiveConditionView<T>, AtomView<T, DerivedTag>>(), "binding"_a, "body"_a, "head"_a);
-            cls.def(
-                nb::init<ygg::RowIndex<Axiom<LiftedTag>>, urd::index<ConjunctiveCondition<GroundTag>>, urd::index<Atom<GroundTag, DerivedTag>>>(),
-                "binding"_a,
-                "body"_a,
-                "head"_a);
+            cls.def(nb::init<ygg::RowIndex<Axiom<LiftedTag>>, urd::index<ConjunctiveCondition<GroundTag>>, urd::index<Atom<GroundTag, DerivedTag>>>(),
+                    "binding"_a,
+                    "body"_a,
+                    "head"_a);
         }
         ygg::add_print(cls);
         urd::python::add_comparison(cls);

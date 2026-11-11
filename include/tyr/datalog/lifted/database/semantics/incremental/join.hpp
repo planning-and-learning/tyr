@@ -22,7 +22,10 @@ namespace detail
 {
 /// Inserts rows absent from `rows`, indexing their positions by the hash of `keys`.
 template<RelationViewConcept V>
-void insert_rows(const V& input, urd::builder<ygg::Relation<ygg::Schema>>& rows, std::span<const ColumnSlice> keys, urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains>& index)
+void insert_rows(const V& input,
+                 urd::builder<ygg::Relation<ygg::Schema>>& rows,
+                 std::span<const ColumnSlice> keys,
+                 urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains>& index)
 {
     if (!keys.empty())
         index.reserve(rows.size() + input.size());
@@ -136,9 +139,7 @@ public:
 
 template<RelationViewConcept L, RelationViewConcept R>
 void JoinEvaluator::join(const L& lhs, const R& rhs, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace) const
-{
-    database::detail::join_rows(lhs, rhs, m_plan, build_left, build_left ? m_lhs_index : m_rhs_index, output, workspace);
-}
+{ database::detail::join_rows(lhs, rhs, m_plan, build_left, build_left ? m_lhs_index : m_rhs_index, output, workspace); }
 
 template<RelationViewConcept L, RelationViewConcept R>
 void JoinEvaluator::initialize(const L& lhs, const R& rhs, Workspace& workspace)

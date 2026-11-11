@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {
@@ -36,7 +36,11 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(urd::python::init_from_views<const std::string&, ygg::uint_t, const VariableViewList&, ConjunctiveConditionView<T>, const ConditionalEffectViewList<T>&>(),
+            cls.def(urd::python::init_from_views<const std::string&,
+                                                 ygg::uint_t,
+                                                 const VariableViewList&,
+                                                 ConjunctiveConditionView<T>,
+                                                 const ConditionalEffectViewList<T>&>(),
                     "name"_a,
                     "original_arity"_a,
                     "variables"_a,
@@ -53,11 +57,11 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
                     "condition"_a,
                     "effects"_a);
             cls.def(urd::python::init_from_views<const std::string&,
-                             const std::string&,
-                             ygg::uint_t,
-                             const VariableViewList&,
-                             ConjunctiveConditionView<T>,
-                             const ConditionalEffectViewList<T>&>(),
+                                                 const std::string&,
+                                                 ygg::uint_t,
+                                                 const VariableViewList&,
+                                                 ConjunctiveConditionView<T>,
+                                                 const ConditionalEffectViewList<T>&>(),
                     "name"_a,
                     "original_name"_a,
                     "original_arity"_a,
@@ -79,7 +83,10 @@ void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::
         }
         else
         {
-            cls.def(urd::python::init_from_views<ActionRowView, ConjunctiveConditionView<T>, const ConditionalEffectViewList<T>&>(), "binding"_a, "condition"_a, "effects"_a);
+            cls.def(urd::python::init_from_views<ActionRowView, ConjunctiveConditionView<T>, const ConditionalEffectViewList<T>&>(),
+                    "binding"_a,
+                    "condition"_a,
+                    "effects"_a);
             cls.def(nb::init<ygg::RowIndex<Action<LiftedTag>>,
                              urd::index<ConjunctiveCondition<GroundTag>>,
                              urd::flat_vector<urd::index<ConditionalEffect<GroundTag>>>>(),

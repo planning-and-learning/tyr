@@ -2,25 +2,23 @@
 #define TYR_TESTS_UNIT_SERIALIZATION_PLANNING_FIXTURES_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
-#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
 #include "tyr/serialization/formalism/planning/planning.hpp"
 #include "tyr/serialization/planning/ground/task.hpp"
@@ -35,6 +33,8 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -108,13 +108,16 @@ void check_runtime_serialization()
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.template register_table<tyr::planning::StateView<Kind>>("states", "s");
     dictionaries.template register_table<tyr::planning::Node<Kind>>("nodes", "n");
-    dictionaries.template register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", urd::Store<urd::sequence<std::string>> {});
+    dictionaries.template register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms",
+                                                                                                                   "a",
+                                                                                                                   urd::Store<urd::sequence<std::string>> {});
     dictionaries.template register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::DerivedTag>>("derived",
                                                                                                                     "d",
                                                                                                                     urd::Store<urd::sequence<std::string>> {});
-    dictionaries.template register_table<tyr::formalism::planning::FunctionTermView<GroundTag, tyr::formalism::FluentTag>>("functions",
-                                                                                                                           "f",
-                                                                                                                           urd::Store<urd::sequence<std::string>> {});
+    dictionaries.template register_table<tyr::formalism::planning::FunctionTermView<GroundTag, tyr::formalism::FluentTag>>(
+        "functions",
+        "f",
+        urd::Store<urd::sequence<std::string>> {});
     EXPECT_TRUE(dictionaries.template table<tyr::planning::StateView<Kind>>().empty());
     EXPECT_EQ(dictionaries.serialize(plan.get_start_node()).as_string(), "n0");
     EXPECT_EQ(dictionaries.serialize(plan.get_labeled_succ_nodes()[0].node).as_string(), "n1");

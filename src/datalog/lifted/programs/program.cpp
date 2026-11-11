@@ -22,8 +22,7 @@
 namespace tyr::datalog
 {
 
-Program<LiftedTag>::Program(formalism::datalog::ProgramView<LiftedTag> program,
-                            formalism::datalog::RepositoryPtr program_repository) :
+Program<LiftedTag>::Program(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::RepositoryPtr program_repository) :
     m_program(program),
     m_program_repository(std::move(program_repository)),
     m_analysis(analysis::analyze_program(m_program)),

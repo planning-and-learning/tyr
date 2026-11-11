@@ -16,8 +16,6 @@
  */
 
 #include "planning/algorithms/search_engine/astar_eager.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "planning/algorithms/search_engine/gbfs_lazy.hpp"
 #include "planning/algorithms/search_engine/parallel.hpp"
 #include "planning/parser.hpp"
@@ -59,6 +57,8 @@
 #include <stdexcept>
 #include <string_view>
 #include <thread>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
@@ -1126,9 +1126,9 @@ void expect_pending_astar_improvement_is_coalesced(const tyr::planning::TaskPtr<
     ASSERT_TRUE(expensive);
     ASSERT_TRUE(cheap);
     const auto cheap_successors = probe.successor_generator->get_labeled_successor_nodes(cheap.value(), *probe.repository, *probe.axiom_evaluator);
-    const auto cheap_wait = std::ranges::find_if(
-        cheap_successors,
-        [&](const auto& successor) { return is_at_location(successor.node.get_state().data(), *task->get_repository(), "cheap-wait"); });
+    const auto cheap_wait =
+        std::ranges::find_if(cheap_successors,
+                             [&](const auto& successor) { return is_at_location(successor.node.get_state().data(), *task->get_repository(), "cheap-wait"); });
     ASSERT_NE(cheap_wait, cheap_successors.end());
 
     auto seed = std::optional<uint64_t> {};

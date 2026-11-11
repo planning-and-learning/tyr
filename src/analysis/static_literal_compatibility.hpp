@@ -11,11 +11,6 @@
 #define TYR_SRC_ANALYSIS_STATIC_LITERAL_COMPATIBILITY_HPP_
 
 #include "tyr/algorithms/kckp/kckp.hpp"
-#include <urd/repr/maps/index_map.hpp>
-#include <urd/repr/sequences/jagged.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include "tyr/analysis/variable_domain.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -25,8 +20,13 @@
 #include <initializer_list>
 #include <optional>
 #include <urd/bits.hpp>
-#include <vector>
 #include <urd/elements/flat.hpp>
+#include <urd/repr/maps/index_map.hpp>
+#include <urd/repr/sequences/jagged.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::analysis::detail

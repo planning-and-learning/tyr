@@ -49,8 +49,7 @@ template<::tyr::formalism::FactKind T>
 struct urd::resolution<urd::data<::tyr::formalism::planning::FDRFact<T>>>
 {
     template<typename C>
-    static urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, C> of(const urd::data<::tyr::formalism::planning::FDRFact<T>>& fact,
-                                                                            const C& context)
+    static urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, C> of(const urd::data<::tyr::formalism::planning::FDRFact<T>>& fact, const C& context)
     { return { &fact, &context.view(fact.variable).context() }; }
     template<typename C>
     static void of(const urd::data<::tyr::formalism::planning::FDRFact<T>>&& fact, const C& context) = delete;

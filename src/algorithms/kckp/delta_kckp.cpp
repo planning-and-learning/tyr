@@ -16,11 +16,11 @@
  */
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <stdexcept>
 #include <urd/bits.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::kckp
 {
@@ -165,7 +165,7 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
         auto compatible = urd::bitset_span<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
         compatible.copy_from(
             urd::bitset_span<const uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(),
-                                            info.num_bits));
+                                             info.num_bits));
         m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, partition, compatible);
         if (partition < source_partition)
             m_delta_graph.matrix.subtract_adjacency_from(edge.dst.index, partition, compatible);

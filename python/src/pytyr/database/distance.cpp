@@ -1,7 +1,7 @@
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
-#include "pytyr/module.hpp"
 
 #include "module.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 
 #include <nanobind/stl/pair.h>
@@ -82,8 +82,7 @@ void bind_database_distance(nb::module_& m)
 
     auto evaluator =
         nb::class_<Evaluator>(m, "DistanceEvaluator", "Maintains distances and exact output deltas. Input relations are borrowed only during each call.");
-    evaluator
-        .def(nb::init<const ygg::FreeRelationRepository&, Plan>(), nb::arg("repository"), nb::arg("plan"), nb::keep_alive<1, 2>())
+    evaluator.def(nb::init<const ygg::FreeRelationRepository&, Plan>(), nb::arg("repository"), nb::arg("plan"), nb::keep_alive<1, 2>())
         .def(
             "get_result",
             [](const Evaluator& self) { return self.get_result(); },

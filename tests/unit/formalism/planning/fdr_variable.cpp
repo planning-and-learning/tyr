@@ -6,19 +6,18 @@
 #include <concepts>
 
 template<typename Entity>
-concept FdrVariableContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
-           data.index;
-           data.atoms;
-           { data == data } -> std::same_as<bool>;
-           view.index();
-           view.get_domain_size();
-           view.get_atoms();
-           { view == view } -> std::same_as<bool>;
-           { view < view } -> std::same_as<bool>;
-       };
+concept FdrVariableContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                              && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+                              && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
+                                     data.index;
+                                     data.atoms;
+                                     { data == data } -> std::same_as<bool>;
+                                     view.index();
+                                     view.get_domain_size();
+                                     view.get_atoms();
+                                     { view == view } -> std::same_as<bool>;
+                                     { view < view } -> std::same_as<bool>;
+                                 };
 
 static_assert(FdrVariableContract<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>>);
 static_assert(std::same_as<urd::index_view<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,

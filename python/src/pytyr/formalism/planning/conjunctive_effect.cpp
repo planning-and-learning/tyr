@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {
@@ -37,8 +37,8 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(urd::python::init_from_views<const LiteralViewList<T, FluentTag>&,
-                             const NumericEffectOperatorViewList<T, FluentTag>&,
-                             const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
+                                                 const NumericEffectOperatorViewList<T, FluentTag>&,
+                                                 const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
                     "fluent_literals"_a,
                     "fluent_numeric_effects"_a,
                     "auxiliary_numeric_effect"_a);
@@ -52,9 +52,9 @@ void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository,
         else
         {
             cls.def(urd::python::init_from_views<const FDRFactViewList<FluentTag>&,
-                             const FDRFactViewList<FluentTag>&,
-                             const NumericEffectOperatorViewList<T, FluentTag>&,
-                             const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
+                                                 const FDRFactViewList<FluentTag>&,
+                                                 const NumericEffectOperatorViewList<T, FluentTag>&,
+                                                 const std::optional<NumericEffectOperatorView<T, AuxiliaryTag>>&>(),
                     "add_facts"_a,
                     "del_facts"_a,
                     "fluent_numeric_effects"_a,

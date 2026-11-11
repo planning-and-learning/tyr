@@ -6,13 +6,13 @@
 #define TYR_DATALOG_DATABASE_SYNTAX_FORMATTER_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "yggdrasil/formatting/formatter.hpp"
 
 #include <fmt/ranges.h>
 #include <iterator>
 #include <ranges>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database

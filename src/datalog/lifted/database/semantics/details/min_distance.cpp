@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/details/min_distance.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

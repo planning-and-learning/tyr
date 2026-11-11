@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::datalog
 {
@@ -37,9 +37,9 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(urd::python::init_from_views<const VariableViewList&,
-                             const LiteralViewList<T, StaticTag>&,
-                             const LiteralViewList<T, FluentTag>&,
-                             const BooleanOperatorViewList<T>&>(),
+                                                 const LiteralViewList<T, StaticTag>&,
+                                                 const LiteralViewList<T, FluentTag>&,
+                                                 const BooleanOperatorViewList<T>&>(),
                     "variables"_a,
                     "static_literals"_a,
                     "fluent_literals"_a,
@@ -55,10 +55,11 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
         }
         else
         {
-            cls.def(urd::python::init_from_views<const LiteralViewList<T, StaticTag>&, const LiteralViewList<T, FluentTag>&, const BooleanOperatorViewList<T>&>(),
-                    "static_literals"_a,
-                    "fluent_literals"_a,
-                    "numeric_constraints"_a);
+            cls.def(
+                urd::python::init_from_views<const LiteralViewList<T, StaticTag>&, const LiteralViewList<T, FluentTag>&, const BooleanOperatorViewList<T>&>(),
+                "static_literals"_a,
+                "fluent_literals"_a,
+                "numeric_constraints"_a);
             cls.def(nb::init<urd::flat_vector<urd::index<Literal<GroundTag, StaticTag>>>,
                              urd::flat_vector<urd::index<Literal<GroundTag, FluentTag>>>,
                              urd::flat_vector<urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>>(),

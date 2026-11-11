@@ -19,17 +19,17 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_MATCH_TREE_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/queues/queue.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 
 #include <memory>
 #include <optional>
-#include <vector>
 #include <urd/elements/flat.hpp>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::match_tree
@@ -73,7 +73,8 @@ public:
     MatchTree(MatchTree&& other) = delete;
     MatchTree& operator=(MatchTree&& other) = delete;
 
-    void generate(const StateContext<GroundTag>& state, urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>>& out_applicable_elements);
+    void generate(const StateContext<GroundTag>& state,
+                  urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>>& out_applicable_elements);
 };
 
 }

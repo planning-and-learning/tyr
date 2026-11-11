@@ -16,6 +16,7 @@
  */
 
 #include "tyr/algorithms/kckp/kckp.hpp"
+
 #include <urd/bits.hpp>
 
 namespace tyr::kckp

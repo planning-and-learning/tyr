@@ -11,16 +11,16 @@
 #define TYR_ALGORITHMS_KCKP_FORMATTER_HPP_
 
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <span>
 #include <sstream>
 #include <urd/bits.hpp>
-#include <vector>
 #include <urd/format.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/io/iostream.hpp>
 
 namespace fmt

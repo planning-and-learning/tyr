@@ -19,35 +19,34 @@
 #define TYR_PLANNING_APPLICABILITY_HPP_
 
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
-#include "tyr/formalism/boolean_operator_utils.hpp"
-#include "tyr/formalism/numeric_effect_operator_utils.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/boolean_operator_utils.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_operator_utils.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -63,12 +62,13 @@
 #include <numeric>
 #include <stdexcept>
 #include <urd/elements/equal_to.hpp>
+#include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/store.hpp>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -496,9 +496,10 @@ bool is_dynamically_applicable(formalism::planning::ConjunctiveConditionView<Gro
 
 // GroundConjunctiveCondition
 
-inline bool is_consistent(formalism::planning::ConjunctiveConditionView<GroundTag> element,
-                          urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& fluent_assign,
-                          urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign)
+inline bool
+is_consistent(formalism::planning::ConjunctiveConditionView<GroundTag> element,
+              urd::Store<urd::map<urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>>& fluent_assign,
+              urd::Store<urd::map<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>, bool>>& derived_assign)
 {
     for (const auto fact : element.template get_facts<formalism::PositiveTag>())
     {
@@ -580,8 +581,10 @@ namespace tyr::planning
 extern template ygg::float_t evaluate(ygg::float_t element, const StateContext<LiftedTag>& context);
 extern template ygg::float_t evaluate(ygg::float_t element, const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                                      const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                                      const StateContext<GroundTag>& context);
 
 extern template ygg::float_t evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                       const StateContext<LiftedTag>& context);
@@ -593,8 +596,10 @@ extern template bool evaluate(formalism::planning::BinaryOperatorView<GroundTag,
 extern template bool evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element,
                               const StateContext<GroundTag>& context);
 
-extern template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<LiftedTag>& context);
-extern template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<GroundTag>& context);
+extern template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                                      const StateContext<LiftedTag>& context);
+extern template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                                      const StateContext<GroundTag>& context);
 
 extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<LiftedTag>& context);
 extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<GroundTag>& context);
@@ -609,7 +614,6 @@ extern template ygg::float_t evaluate(formalism::planning::FunctionTermView<Grou
 
 extern template ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<LiftedTag>& context);
 extern template ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<GroundTag>& context);
-
 
 extern template bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<LiftedTag>& context);
 extern template bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<GroundTag>& context);

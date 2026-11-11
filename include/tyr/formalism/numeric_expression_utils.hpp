@@ -57,9 +57,7 @@ auto evaluate(const Expression& expression, ResolveTerm& resolve_term)
     {
         const auto rhs = evaluate(expression.get_rhs(), resolve_term);
         const auto lhs = evaluate(expression.get_lhs(), resolve_term);
-        if constexpr (requires {
-                          requires std::same_as<std::remove_cvref_t<decltype(expression.get_operator())>, BooleanOperatorKind>;
-                      })
+        if constexpr (requires { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operator())>, BooleanOperatorKind>; })
             return apply_existential(expression.get_operator(), lhs, rhs);
         else
             return apply(expression.get_operator(), lhs, rhs);

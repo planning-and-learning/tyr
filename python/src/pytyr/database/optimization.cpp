@@ -1,18 +1,18 @@
 #include "tyr/datalog/lifted/database/optimization/optimization.hpp"
-#include <urd/python/sequences/sequence.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "module.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/datalog/lifted/database/syntax/formatter.hpp"
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
-#include "pytyr/module.hpp"
 
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <optional>
 #include <span>
+#include <urd/python/sequences/sequence.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr
@@ -56,7 +56,9 @@ void bind_database_optimization(nb::module_& m)
         [](const Roots& roots, const Statistics& statistics, const std::optional<urd::Store<urd::sequence<Evaluation>>>& evaluations)
         {
             const auto modes = evaluations.value_or(urd::Store<urd::sequence<Evaluation>>(roots.size(), Evaluation::full));
-            return tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots), std::span<const Evaluation>(modes), statistics);
+            return tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots),
+                                                    std::span<const Evaluation>(modes),
+                                                    statistics);
         },
         nb::arg("roots"),
         nb::arg("statistics") = Statistics {},

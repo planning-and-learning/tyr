@@ -21,14 +21,14 @@
 #include <map>
 #include <set>
 #include <type_traits>
+#include <urd/config.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/partitions/disjoint_sets.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <urd/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -41,7 +41,10 @@ bool is_object_term(const ConstraintTerm& term) { return std::holds_alternative<
 
 InequalityDisjunction::InequalityDisjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts_) : parts(std::move(parts_)) {}
 
-EqualityConjunction::EqualityConjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> equalities_) : m_equalities(std::move(equalities_)) {}
+EqualityConjunction::EqualityConjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> equalities_) :
+    m_equalities(std::move(equalities_))
+{
+}
 
 void EqualityConjunction::compute() const
 {

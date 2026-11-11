@@ -11,8 +11,6 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_OPERATIONS_HPP_
 
 #include "tyr/datalog/lifted/database/semantics/join_index.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/plans.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
@@ -27,6 +25,8 @@
 #include <type_traits>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -95,7 +95,13 @@ void join(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Re
 /// As join, reusing the cache's index of the one marked input, or of the smaller input when both are marked; with
 /// neither marked, an ordinary transient index. Empty inputs and Cartesian products create no cached index.
 template<RelationViewConcept L, RelationViewConcept R>
-void join(const L& lhs, const R& rhs, const JoinPlan& plan, JoinIndexCache& cache, JoinReuse reuse, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace);
+void join(const L& lhs,
+          const R& rhs,
+          const JoinPlan& plan,
+          JoinIndexCache& cache,
+          JoinReuse reuse,
+          urd::builder<ygg::Relation<ygg::Schema>>& out,
+          Workspace& workspace);
 
 /// The rows of either input. The trailing underscore avoids the C++ keyword union.
 template<RelationViewConcept L, RelationViewConcept R>
@@ -238,7 +244,8 @@ void join_rows(const L& lhs,
         for (size_t i = 0; i < probe.size(); ++i)
         {
             const auto probe_row = probe.row(i).get_values();
-            for (const auto [first, last] = index.equal_range(join_key_hash(probe_row, probe_keys)); const auto match : std::ranges::subrange(first, last) | std::views::values)
+            for (const auto [first, last] = index.equal_range(join_key_hash(probe_row, probe_keys));
+                 const auto match : std::ranges::subrange(first, last) | std::views::values)
             {
                 const auto build_row = build.row(match).get_values();
                 if (!join_keys_equal(build_row, build_keys, probe_row, probe_keys))
@@ -281,7 +288,13 @@ void join(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Re
 }
 
 template<RelationViewConcept L, RelationViewConcept R>
-void join(const L& lhs, const R& rhs, const JoinPlan& plan, JoinIndexCache& cache, JoinReuse reuse, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
+void join(const L& lhs,
+          const R& rhs,
+          const JoinPlan& plan,
+          JoinIndexCache& cache,
+          JoinReuse reuse,
+          urd::builder<ygg::Relation<ygg::Schema>>& out,
+          Workspace& workspace)
 {
     if (!reuse.lhs && !reuse.rhs)
         return join(lhs, rhs, plan, out, workspace);
@@ -336,7 +349,8 @@ void filter_matches(const L& lhs, const R& rhs, const JoinPlan& plan, bool match
     {
         if (rhs.empty() || lhs_keys.empty())
             return !rhs.empty();
-        for (const auto [first, last] = workspace.join_index.equal_range(join_key_hash(row, lhs_keys)); const auto match : std::ranges::subrange(first, last) | std::views::values)
+        for (const auto [first, last] = workspace.join_index.equal_range(join_key_hash(row, lhs_keys));
+             const auto match : std::ranges::subrange(first, last) | std::views::values)
             if (join_keys_equal(rhs.row(match).get_values(), rhs_keys, row, lhs_keys))
                 return true;
         return false;

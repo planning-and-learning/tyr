@@ -1,14 +1,14 @@
 #include "module.hpp"
 #include "pytyr/module.hpp"
-#include <urd/python/sequences/sequence.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/optimization/optimization.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/query.hpp"
 #include "tyr/datalog/lifted/database/semantics/query_evaluation.hpp"
 
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
+#include <urd/python/sequences/sequence.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 

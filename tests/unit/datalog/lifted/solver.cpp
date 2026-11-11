@@ -71,7 +71,9 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
         for (const auto atom : fixture.program.get_program().get_atoms<tyr::formalism::FluentTag>())
             tyr::datalog::insert(workspace.facts.fact_sets, atom.get_row().data());
         for (const auto fterm_value : fixture.program.get_program().get_fterm_values<tyr::formalism::FluentTag>())
-            tyr::datalog::insert(workspace.facts.fact_sets, fterm_value.get_fterm().get_row().data(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+            tyr::datalog::insert(workspace.facts.fact_sets,
+                                 fterm_value.get_fterm().get_row().data(),
+                                 ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
     };
     for (size_t iteration = 0; iteration < 2; ++iteration)
     {

@@ -28,7 +28,9 @@ namespace tyr::planning
 class ApplicabilityContext
 {
 public:
-    ApplicabilityContext(const StateContext<LiftedTag>& state, formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder, const formalism::planning::FDRContext& fdr) :
+    ApplicabilityContext(const StateContext<LiftedTag>& state,
+                         formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
+                         const formalism::planning::FDRContext& fdr) :
         m_state(&state),
         m_grounder(&grounder),
         m_fdr(&fdr)

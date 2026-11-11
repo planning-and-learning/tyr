@@ -20,10 +20,10 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <variant>
 #include <vector>
-#include <boost/mp11.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -58,8 +58,8 @@ struct ElementGeneratorNode
 
 /// The node kinds of a match tree, in the order of the Node variant.
 template<typename Tag>
-using NodeTypes =
-    boost::mp11::mp_list<AtomSelectorNode<Tag>, NumericConstraintSelectorNode<Tag>, VariableSelectorNode<Tag>, NegativeFactSelectorNode<Tag>, ElementGeneratorNode<Tag>>;
+using NodeTypes = boost::mp11::
+    mp_list<AtomSelectorNode<Tag>, NumericConstraintSelectorNode<Tag>, VariableSelectorNode<Tag>, NegativeFactSelectorNode<Tag>, ElementGeneratorNode<Tag>>;
 
 /// A match-tree node: one of the node kinds (NodeTypes, in that order). Stored as it is, not interned; read through a
 /// Repository<Tag> (urd::resolve) as the std::variant of the kinds' views.

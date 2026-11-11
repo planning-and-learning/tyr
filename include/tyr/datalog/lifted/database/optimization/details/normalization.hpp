@@ -6,9 +6,6 @@
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_NORMALIZATION_HPP_
 
 #include "tyr/datalog/lifted/database/optimization/details/join_block.hpp"
-#include <urd/repr/maps/index_map.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
 
 #include <algorithm>
@@ -16,6 +13,9 @@
 #include <concepts>
 #include <optional>
 #include <span>
+#include <urd/repr/maps/index_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -89,7 +89,8 @@ class Normalizer
     }
 
     /// The labels of `arg` in `columns` or in `extra`, in the order of `arg`.
-    static urd::Store<urd::sequence<urd::index<ygg::Column>>> kept_labels(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns, std::span<const ygg::ColumnLayout> extra)
+    static urd::Store<urd::sequence<urd::index<ygg::Column>>>
+    kept_labels(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns, std::span<const ygg::ColumnLayout> extra)
     {
         urd::Store<urd::sequence<urd::index<ygg::Column>>> labels;
         for (const auto& column : arg.columns())
@@ -109,7 +110,8 @@ class Normalizer
         return project(filter_join<Tag>(project(lhs, kept), operation.get_rhs()), columns);
     }
 
-    static urd::Store<urd::sequence<urd::index<ygg::Column>>> tested(const Operation<QuerySelectEqualTag>& data) { return { data.lhs_column, data.rhs_column }; }
+    static urd::Store<urd::sequence<urd::index<ygg::Column>>> tested(const Operation<QuerySelectEqualTag>& data)
+    { return { data.lhs_column, data.rhs_column }; }
     static urd::Store<urd::sequence<urd::index<ygg::Column>>> tested(const Operation<QuerySelectValueTag>& data) { return { data.column }; }
     static void retarget(Operation<QuerySelectEqualTag>& data, QueryView<QueryRenameTag> rename)
     {
@@ -128,8 +130,14 @@ class Normalizer
     {
         const auto columns = tested(data);
         const auto within = [&](QueryView<> query)
-        { return std::ranges::all_of(columns, [&](urd::index<ygg::Column> label) { const auto schema = query.columns();
-              return std::ranges::find(schema, label, &ygg::ColumnLayout::label) != schema.end(); }); };
+        {
+            return std::ranges::all_of(columns,
+                                       [&](urd::index<ygg::Column> label)
+                                       {
+                                           const auto schema = query.columns();
+                                           return std::ranges::find(schema, label, &ygg::ColumnLayout::label) != schema.end();
+                                       });
+        };
         if (is<QueryEmptyTag>(arg))
             return arg;
         if (is<QueryJoinTag>(arg))

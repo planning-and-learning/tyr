@@ -19,8 +19,6 @@
 #define TYR_FORMALISM_PLANNING_TASK_DATA_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
@@ -28,9 +26,11 @@
 #include <optional>
 #include <string>
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {
@@ -195,7 +195,10 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_atoms() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_atoms, &data::fluent_atoms, &data::derived_atoms>(*this); }
+    {
+        return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_atoms, &data::fluent_atoms, &data::derived_atoms>(
+            *this);
+    }
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_fterm_values() const

@@ -39,7 +39,9 @@ namespace tyr::planning
 template<TaskKind Kind, bool ThreadSafe>
 struct StateStorageContext<Kind, TreeBitset, ThreadSafe>
 {
-    using FloatVectorSet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>, urd::structural_sharing, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
+    using FloatVectorSet = urd::Store<urd::pool<urd::Store<urd::sequence<ygg::float_t>, urd::frozen>>,
+                                      urd::structural_sharing,
+                                      std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
     /// Rows are the unpacked StateBits themselves, so that they go in and are read back by their words.
     using BitsetSet = urd::Store<urd::pool<StateBits>, urd::structural_sharing, std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 

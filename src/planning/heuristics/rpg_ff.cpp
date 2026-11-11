@@ -27,16 +27,16 @@
 
 #include <cassert>
 #include <tuple>
+#include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -160,7 +160,8 @@ private:
             extract_relaxed_plan(support.get_key(), support.get_interval());
     }
 
-    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>> m_predicate_markings;
+    urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>>
+        m_predicate_markings;
     urd::Store<urd::set<NumericCertificate>> m_numeric_markings;
     NumericSupportWorkspace m_numeric_support_workspace;
     urd::Store<urd::set<formalism::planning::ActionRowView>> m_relaxed_plan;

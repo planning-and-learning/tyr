@@ -7,14 +7,14 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_BOUND_UNION_NORMAL_FORM_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <stdexcept>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -57,9 +57,9 @@ struct QueryVariable
 /// only filters rows once its outer variables are bound (relational algebra is safe-range).
 struct UnionNormalForm
 {
-    urd::Store<urd::sequence<QueryVariable>> variables;  ///< The variables, one value each in a frame.
+    urd::Store<urd::sequence<QueryVariable>> variables;                                     ///< The variables, one value each in a frame.
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::ColumnLayout>>>> input_columns;  ///< The schema of each input slot.
-    urd::Store<urd::sequence<uint32_t>> output;                          ///< The variable of each of the query's columns.
+    urd::Store<urd::sequence<uint32_t>> output;                                             ///< The variable of each of the query's columns.
     urd::Store<urd::sequence<ConjunctiveBranch>> branches;
 };
 
@@ -71,10 +71,12 @@ class UnionNormalFormBuilder
 {
     UnionNormalForm m_result;  ///< Variables and input schemas so far.
 
-    static urd::Store<urd::sequence<ConjunctiveBranch>> product(const urd::Store<urd::sequence<ConjunctiveBranch>>& lhs, const urd::Store<urd::sequence<ConjunctiveBranch>>& rhs);
+    static urd::Store<urd::sequence<ConjunctiveBranch>> product(const urd::Store<urd::sequence<ConjunctiveBranch>>& lhs,
+                                                                const urd::Store<urd::sequence<ConjunctiveBranch>>& rhs);
 
     /// The child's variables: its columns found in `parent` take the parent's variable, others a fresh one.
-    urd::Store<urd::sequence<uint32_t>> by_label(std::span<const ygg::ColumnLayout> child, std::span<const ygg::ColumnLayout> parent, std::span<const uint32_t> mapping)
+    urd::Store<urd::sequence<uint32_t>>
+    by_label(std::span<const ygg::ColumnLayout> child, std::span<const ygg::ColumnLayout> parent, std::span<const uint32_t> mapping)
     {
         urd::Store<urd::sequence<uint32_t>> result;
         for (const auto& column : child)

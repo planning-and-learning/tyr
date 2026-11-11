@@ -26,10 +26,10 @@
 #include <functional>
 #include <optional>
 #include <type_traits>
-#include <utility>
-#include <vector>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 

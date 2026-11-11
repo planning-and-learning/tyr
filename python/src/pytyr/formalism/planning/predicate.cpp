@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <tyr/formalism/predicate_data.hpp>

@@ -16,8 +16,6 @@
  */
 
 #include "tyr/datalog/lifted/workspaces/program.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/program.hpp"
@@ -25,6 +23,8 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::datalog
 {

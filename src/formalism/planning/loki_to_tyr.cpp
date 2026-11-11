@@ -16,39 +16,38 @@
  */
 
 #include "loki_to_tyr.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 
-#include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/interning.hpp"
-#include "tyr/formalism/planning/planning_domain.hpp"
-#include "tyr/formalism/planning/planning_task.hpp"
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/planning_domain.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
@@ -64,6 +63,7 @@
 #include <urd/store.hpp>
 #include <variant>
 #include <vector>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -439,8 +439,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     return FunctionExpression<LiftedTag>(planning::insert(context, *minus).first.index());
 }
 
-FunctionExpression<LiftedTag>
-LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
+FunctionExpression<LiftedTag> LokiToTyrTranslator::translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
 {
     return std::visit(
         [&]<typename T>(const T& arg) -> FunctionExpression<LiftedTag>
@@ -509,8 +508,10 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
     }
 }
 
-urd::index<ConjunctiveCondition<LiftedTag>>
-LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element, const urd::flat_vector<urd::index<Variable>>& parameters, Builder& builder, Repository& context)
+urd::index<ConjunctiveCondition<LiftedTag>> LokiToTyrTranslator::translate_lifted(loki::formalism::ConditionView element,
+                                                                                  const urd::flat_vector<urd::index<Variable>>& parameters,
+                                                                                  Builder& builder,
+                                                                                  Repository& context)
 {
     auto conj_condition = planning::checkout<ConjunctiveCondition<LiftedTag>>(builder);
 
@@ -636,10 +637,12 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                                            Repository& context,
                                            urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>& output)
 {
-    using ConditionalEffectData = urd::Store<urd::map<urd::index<ConjunctiveCondition<LiftedTag>>, std::tuple<urd::flat_vector<urd::index<Variable>>,
-                                                      urd::flat_vector<urd::index<Literal<LiftedTag, FluentTag>>>,
-                                                      urd::flat_vector<urd::index<NumericEffect<LiftedTag, FluentTag>>>,
-                                                      urd::flat_optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>>, urd::sorted>;
+    using ConditionalEffectData = urd::Store<urd::map<urd::index<ConjunctiveCondition<LiftedTag>>,
+                                                      std::tuple<urd::flat_vector<urd::index<Variable>>,
+                                                                 urd::flat_vector<urd::index<Literal<LiftedTag, FluentTag>>>,
+                                                                 urd::flat_vector<urd::index<NumericEffect<LiftedTag, FluentTag>>>,
+                                                                 urd::flat_optional<urd::index<NumericEffect<LiftedTag, AuxiliaryTag>>>>>,
+                                             urd::sorted>;
 
     const auto translate_effect_func = [&](loki::formalism::EffectView effect, ConditionalEffectData& ref_conditional_effect_data)
     {
@@ -716,7 +719,8 @@ void LokiToTyrTranslator::translate_lifted(loki::formalism::EffectView element,
                     {
                         const auto numeric_effect_view_variant = translate_lifted(subeffect, builder, context);
 
-                        std::visit(Overloaded { [&](NumericEffectView<LiftedTag, FluentTag> numeric_effect) { data_fluent_numeric_effects.push_back(numeric_effect.index()); },
+                        std::visit(Overloaded { [&](NumericEffectView<LiftedTag, FluentTag> numeric_effect)
+                                                { data_fluent_numeric_effects.push_back(numeric_effect.index()); },
                                                 [&](NumericEffectView<LiftedTag, AuxiliaryTag> numeric_effect)
                                                 {
                                                     assert(!data_auxiliary_numeric_effect);
@@ -970,8 +974,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
     return FunctionExpression<GroundTag>(planning::insert(context, *minus).first.index());
 }
 
-FunctionExpression<GroundTag>
-LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
+FunctionExpression<GroundTag> LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context)
 {
     return std::visit(
         [&]<typename T>(const T& arg) -> FunctionExpression<GroundTag>
@@ -979,8 +982,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::FunctionExpressionView 
             if constexpr (std::is_same_v<T, loki::formalism::FunctionTermView>)
             {
                 const auto fterm_view_variant = translate_grounded(arg, builder, context);
-                return std::visit([](auto&& fterm) -> FunctionExpression<GroundTag>
-                                  { return FunctionExpression<GroundTag>(fterm.index()); },
+                return std::visit([](auto&& fterm) -> FunctionExpression<GroundTag> { return FunctionExpression<GroundTag>(fterm.index()); },
                                   fterm_view_variant);
             }
             else
@@ -1202,8 +1204,7 @@ LokiToTyrTranslator::translate(const loki::formalism::TaskView& element, Plannin
 
     auto task = planning::checkout<planning::Task<LiftedTag>>(builder);
 
-    auto task_context =
-        std::make_shared<Repository>(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
+    auto task_context = std::make_shared<Repository>(domain.get_domain().get_constants().size() + element.get_objects().size(), domain.get_repository().get());
 
     auto fdr_context = std::make_shared<FDRContext>(task_context);
 

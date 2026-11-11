@@ -19,9 +19,9 @@
 #define TYR_ANALYSIS_VARIABLE_DOMAIN_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-
 #include <vector>
 
 namespace tyr::analysis

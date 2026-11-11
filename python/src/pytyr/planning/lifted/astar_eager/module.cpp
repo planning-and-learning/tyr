@@ -16,9 +16,9 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "../../astar_eager.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::planning::astar_eager
 {

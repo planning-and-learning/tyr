@@ -16,35 +16,35 @@
  */
 
 #include "tyr/analysis/stratification.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "stratification_utils.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <cassert>
 #include <optional>
 #include <stdexcept>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::analysis
 {
@@ -55,7 +55,8 @@ struct RelationVertexMap
     size_t num_predicates;
     size_t num_functions;
 
-    [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) const { return static_cast<ygg::uint_t>(predicate.value); }
+    [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) const
+    { return static_cast<ygg::uint_t>(predicate.value); }
     [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Function<formalism::FluentTag>> function) const
     { return static_cast<ygg::uint_t>(num_predicates + static_cast<ygg::uint_t>(function.value)); }
     [[nodiscard]] size_t size() const { return num_predicates + num_functions; }
@@ -88,9 +89,7 @@ ygg::uint_t get_head_vertex(formalism::datalog::AtomView<LiftedTag, formalism::F
 { return vertices.get_vertex(head.get_predicate().index()); }
 
 ygg::uint_t get_head_vertex(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
-{
-    return vertices.get_vertex(head.get_fterm().get_function().index());
-}
+{ return vertices.get_vertex(head.get_fterm().get_function().index()); }
 
 template<formalism::RelationKind R>
 void add_rule_dependencies(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)

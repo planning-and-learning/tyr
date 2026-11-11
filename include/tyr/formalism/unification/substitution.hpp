@@ -23,15 +23,15 @@
 #include <algorithm>
 #include <cassert>
 #include <optional>
+#include <span>
 #include <type_traits>
 #include <urd/elements/hash.hpp>
-#include <span>
 #include <urd/repr/maps/ordered_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/indexed.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>

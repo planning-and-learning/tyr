@@ -18,17 +18,17 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
 
 #include <optional>
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {
@@ -39,14 +39,12 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> index;
     urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals;
     urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects;
-    urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
-        auxiliary_numeric_effect;  // :action-cost
+    urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
     data(urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals_,
          urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
-         urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>>
-             auxiliary_numeric_effect_) :
+         urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect_) :
         index(),
         literals(std::move(literals_)),
         numeric_effects(std::move(numeric_effects_)),
@@ -70,15 +68,13 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
     urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts;
     urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts;
     urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects;
-    urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
-        auxiliary_numeric_effect;  // :action-cost
+    urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
     data(urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts_,
          urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts_,
          urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
-         urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>>
-             auxiliary_numeric_effect_) :
+         urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect_) :
         index(),
         add_facts(std::move(add_facts_)),
         del_facts(std::move(del_facts_)),

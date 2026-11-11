@@ -16,7 +16,6 @@
  */
 
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
-#include <urd/repr/queues/queue.hpp>
 
 #include "normalization.hpp"
 #include "refinement.hpp"
@@ -31,14 +30,15 @@
 #include <algorithm>
 #include <map>
 #include <optional>
+#include <urd/config.hpp>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/elements/less.hpp>
+#include <urd/repr/queues/queue.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <variant>
 #include <vector>
-#include <urd/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -61,7 +61,7 @@ MutableAction without_overridden_deletes(MutableAction action)
             if (literal.polarity)
                 added.push_back(literal.atom);
         erase_if(literals,
-                      [&](const MutableLiteral<FluentTag>& literal) { return !literal.polarity && std::ranges::find(added, literal.atom) != added.end(); });
+                 [&](const MutableLiteral<FluentTag>& literal) { return !literal.polarity && std::ranges::find(added, literal.atom) != added.end(); });
     }
     return action;
 }

@@ -16,9 +16,9 @@
  */
 
 #include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include "loki_to_tyr.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include <loki/loki.hpp>
 #include <yggdrasil/io/project_path.hpp>
@@ -26,7 +26,9 @@
 namespace tyr::formalism::planning
 {
 
-Parser::Parser(const std::filesystem::path& domain_filepath, const loki::semantic::ParserOptions& options, const loki::semantic::TranslatorOptions& translator_options) :
+Parser::Parser(const std::filesystem::path& domain_filepath,
+               const loki::semantic::ParserOptions& options,
+               const loki::semantic::TranslatorOptions& translator_options) :
     Parser(ygg::common::read_file(domain_filepath), domain_filepath, options, translator_options)
 {
 }
@@ -37,7 +39,9 @@ struct Parser::LokiState
     loki::semantic::TranslatorOptions translator_options;
     loki::semantic::DomainTranslationResult domain_translation_result;
 
-    LokiState(const std::string& domain_description, const loki::semantic::ParserOptions& options, const loki::semantic::TranslatorOptions& translator_options_) :
+    LokiState(const std::string& domain_description,
+              const loki::semantic::ParserOptions& options,
+              const loki::semantic::TranslatorOptions& translator_options_) :
         parser(domain_description, options),
         translator_options(translator_options_),
         domain_translation_result(loki::semantic::translate(parser.get_domain(), translator_options))
@@ -61,10 +65,12 @@ Parser::~Parser() = default;
 PlanningTask<LiftedTag> Parser::parse_task(const std::filesystem::path& task_filepath, const loki::semantic::ParserOptions& options)
 { return parse_task(ygg::common::read_file(task_filepath), task_filepath, options); }
 
-PlanningTask<LiftedTag> Parser::parse_task(const std::string& task_description, std::optional<std::filesystem::path> task_filepath, const loki::semantic::ParserOptions&)
+PlanningTask<LiftedTag>
+Parser::parse_task(const std::string& task_description, std::optional<std::filesystem::path> task_filepath, const loki::semantic::ParserOptions&)
 {
     return LokiToTyrTranslator().translate(
-        loki::semantic::translate(m_loki->parser.parse_task(task_description), m_loki->domain_translation_result, m_loki->translator_options).get_translated_task(),
+        loki::semantic::translate(m_loki->parser.parse_task(task_description), m_loki->domain_translation_result, m_loki->translator_options)
+            .get_translated_task(),
         m_domain,
         std::move(task_filepath));
 }

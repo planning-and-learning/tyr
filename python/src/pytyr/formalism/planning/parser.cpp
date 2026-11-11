@@ -16,9 +16,9 @@
  */
 
 #include "tyr/formalism/planning/parser.hpp"
-#include "pytyr/module.hpp"
 
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 #include <loki/loki.hpp>
 #include <nanobind/stl/filesystem.h>

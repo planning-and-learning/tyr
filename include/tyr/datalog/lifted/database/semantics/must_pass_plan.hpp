@@ -7,13 +7,13 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_MUST_PASS_PLAN_HPP_
 
 #include "yggdrasil/formalism/relation_view.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <cstddef>
 #include <span>
 #include <stdexcept>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database

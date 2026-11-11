@@ -19,17 +19,16 @@
 #define TYR_FORMALISM_PLANNING_ACTION_DATA_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <string>
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace urd

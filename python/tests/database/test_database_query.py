@@ -6,9 +6,9 @@ from collections.abc import Iterable, Sequence
 from typing import Any, cast
 
 import pytest
-
 from pyyggdrasil import formalism
 from relation_utils import intern
+
 from pytyr import database as db
 
 QueryRecord = (
@@ -70,7 +70,9 @@ def borrow(relations: Iterable[formalism.Relation]) -> list[formalism.BorrowedRe
     return [RELATIONS.view(value) for value in relations]
 
 
-def change(added: formalism.Relation, removed: formalism.Relation) -> tuple[formalism.BorrowedRelation, formalism.BorrowedRelation]:
+def change(
+    added: formalism.Relation, removed: formalism.Relation
+) -> tuple[formalism.BorrowedRelation, formalism.BorrowedRelation]:
     return RELATIONS.view(added), RELATIONS.view(removed)
 
 
@@ -348,10 +350,15 @@ def test_planning_is_deterministic(measured: bool) -> None:
 
 
 @pytest.mark.parametrize(
-    ("column_type", "constant"), [(formalism.ColumnType.INT32, -3), (formalism.ColumnType.FLOAT64, -3.0), (formalism.ColumnType.BOOL, True)]
+    ("column_type", "constant"),
+    [(formalism.ColumnType.INT32, -3), (formalism.ColumnType.FLOAT64, -3.0), (formalism.ColumnType.BOOL, True)],
 )
-def test_selection_constants_follow_column_types_and_equality(column_type: formalism.ColumnType, constant: object) -> None:
-    other = {formalism.ColumnType.INT32: 7, formalism.ColumnType.FLOAT64: 7.0, formalism.ColumnType.BOOL: False}[column_type]
+def test_selection_constants_follow_column_types_and_equality(
+    column_type: formalism.ColumnType, constant: object
+) -> None:
+    other = {formalism.ColumnType.INT32: 7, formalism.ColumnType.FLOAT64: 7.0, formalism.ColumnType.BOOL: False}[
+        column_type
+    ]
     source = relation([0, 1], [(constant, constant), (constant, other), (other, other)], [column_type] * 2)
     repo = db.QueryRepository()
     source_query = inputs_of(repo, [source])[0]

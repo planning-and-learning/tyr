@@ -1,20 +1,13 @@
 #include "tyr/formalism/datalog/declarations.hpp"
-#include <urd/repr/sequences/segmented.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_storage/vectors.hpp"
-#include "tyr/planning/state_storage/numeric.hpp"
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
-#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
@@ -25,8 +18,12 @@
 #include "tyr/planning/plan.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>
@@ -40,8 +37,11 @@
 #include <string>
 #include <type_traits>
 #include <urd/elements/hash.hpp>
-#include <utility>
+#include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
+#include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
 
 template<typename Kind>
@@ -115,7 +115,8 @@ struct StateWithThrowingPack : tyr::planning::StateView<Kind>
 
 using StateKinds = boost::mp11::mp_list<tyr::GroundTag, tyr::LiftedTag>;
 static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>) { return (StateIndexContract<Kinds> && ...); }(StateKinds {}));
-static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>) { return (std::totally_ordered<tyr::planning::PackedStateView<Kinds>> && ...); }(StateKinds {}));
+static_assert([]<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
+              { return (std::totally_ordered<tyr::planning::PackedStateView<Kinds>> && ...); }(StateKinds {}));
 static_assert(
     []<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
     {
@@ -206,8 +207,7 @@ concept Packable = requires(const T& value) { value.pack(); };
 static_assert(
     []<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
     {
-        return ((std::totally_ordered<tyr::planning::Node<Kinds>>
-                 && Packable<tyr::planning::Node<Kinds>> && Packable<tyr::planning::LabeledNode<Kinds>>)
+        return ((std::totally_ordered<tyr::planning::Node<Kinds>> && Packable<tyr::planning::Node<Kinds>> && Packable<tyr::planning::LabeledNode<Kinds>>)
                 && ...);
     }(StateKinds {}));
 static_assert(
@@ -366,8 +366,8 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto state = urd::resolve(*owned, registered.get_state_repository());
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::FluentTag>(), registered.template get_atoms_view<formalism::FluentTag>()));
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::DerivedTag>(), registered.template get_atoms_view<formalism::DerivedTag>()));
-    EXPECT_TRUE(std::ranges::equal(state.template get_fterm_values_view<formalism::FluentTag>(),
-                                   registered.template get_fterm_values_view<formalism::FluentTag>()));
+    EXPECT_TRUE(
+        std::ranges::equal(state.template get_fterm_values_view<formalism::FluentTag>(), registered.template get_fterm_values_view<formalism::FluentTag>()));
     static_assert(std::same_as<decltype(state), const tyr::planning::BuilderStateView<Kind>>);
     const auto formatting_view = StateFormattingView<tyr::planning::BuilderStateView<Kind>> { &state };
     static_assert(tyr::planning::IterableViewStateConcept<decltype(formatting_view)>);
@@ -391,8 +391,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         tyr::planning::LabeledNode<Kind, tyr::planning::BuilderStateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label, node };
     const auto indexed_labeled = tyr::planning::LabeledNode<Kind> { label, tyr::planning::Node<Kind>(registered, 3) };
     const auto borrowed_indexed_labeled =
-        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label,
-                                                                                                                            indexed_labeled.node };
+        tyr::planning::LabeledNode<Kind, tyr::planning::StateView<Kind>, tyr::formalism::planning::ActionRowDataView> { borrowed_label, indexed_labeled.node };
     static_assert(Packable<decltype(indexed_labeled)>);
     static_assert(!Packable<decltype(borrowed_labeled)> && !Packable<decltype(borrowed_indexed_labeled)>);
     const auto borrowed_labeled_nodes =

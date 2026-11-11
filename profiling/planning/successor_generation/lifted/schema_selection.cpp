@@ -16,8 +16,6 @@
  */
 
 #include "../../common.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
@@ -31,6 +29,8 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 #if defined(__GLIBC__)

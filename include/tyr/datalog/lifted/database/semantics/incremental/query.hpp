@@ -5,9 +5,6 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_QUERY_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_QUERY_HPP_
 
-#include <boost/mp11.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/generic_join.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
@@ -15,8 +12,11 @@
 #include "tyr/datalog/lifted/database/semantics/incremental/semijoin.hpp"
 #include "tyr/datalog/lifted/database/semantics/query_evaluation.hpp"
 
+#include <boost/mp11.hpp>
 #include <ranges>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 
@@ -31,7 +31,9 @@ struct QueryValue
     const ygg::FreeRelationRepository* layer;
     urd::builder<ygg::Relation<ygg::Schema>> result;
     Delta delta;
-    QueryValue(const ygg::FreeRelationRepository& layer_, std::span<const ygg::ColumnLayout> columns) : layer(&layer_), result(columns), delta(layer_, columns) {}
+    QueryValue(const ygg::FreeRelationRepository& layer_, std::span<const ygg::ColumnLayout> columns) : layer(&layer_), result(columns), delta(layer_, columns)
+    {
+    }
     [[nodiscard]] ygg::FreeBuilderRelationView get_result() const noexcept { return layer->view(result); }
     [[nodiscard]] const auto& get_delta() const noexcept { return delta; }
     [[nodiscard]] size_t memory_usage() const noexcept { return result.memory_usage() + delta.memory_usage(); }
@@ -172,7 +174,8 @@ struct NodeRules<Tag>
 {
     using State = SemijoinEvaluator;
 
-    static State make(const ygg::FreeRelationRepository& layer, QueryView<Tag> operation) { return State(layer, operation.get_plan(), std::same_as<Tag, QueryAntijoinTag>); }
+    static State make(const ygg::FreeRelationRepository& layer, QueryView<Tag> operation)
+    { return State(layer, operation.get_plan(), std::same_as<Tag, QueryAntijoinTag>); }
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<Tag> operation, const Graph& graph, const R&, Workspace&)
     { state.initialize(graph.result(operation.get_lhs()), graph.result(operation.get_rhs())); }
@@ -269,9 +272,12 @@ public:
         database::detail::validate_bindings(m_plan, bindings, [&](ygg::RelationIdentity input) { return is_internal(input); });
         m_initialized = false;
         for (size_t i = 0; i < m_nodes.size(); ++i)
-            std::visit([&]<typename Tag>(QueryView<Tag> operation)
-                       { Rules<Tag>::initialize(std::get<detail::QueryNode<Tag>>(m_nodes[NodeId(ygg::to_uint_t(i))]).state, operation, *this, bindings, m_workspace); },
-                       m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
+            std::visit(
+                [&]<typename Tag>(QueryView<Tag> operation)
+                {
+                    Rules<Tag>::initialize(std::get<detail::QueryNode<Tag>>(m_nodes[NodeId(ygg::to_uint_t(i))]).state, operation, *this, bindings, m_workspace);
+                },
+                m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
         // Its builders stay where they are, including after a failed update.
         m_identities.clear();
         for (size_t i = 0; i < m_nodes.size(); ++i)
@@ -310,9 +316,10 @@ public:
         }
         m_initialized = false;
         for (size_t i = 0; i < m_nodes.size(); ++i)
-            std::visit([&]<typename Tag>(QueryView<Tag> operation)
-                       { Rules<Tag>::update(std::get<detail::QueryNode<Tag>>(m_nodes[NodeId(ygg::to_uint_t(i))]).state, operation, *this, changes, m_workspace); },
-                       m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
+            std::visit(
+                [&]<typename Tag>(QueryView<Tag> operation)
+                { Rules<Tag>::update(std::get<detail::QueryNode<Tag>>(m_nodes[NodeId(ygg::to_uint_t(i))]).state, operation, *this, changes, m_workspace); },
+                m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
         m_initialized = true;
     }
     [[nodiscard]] ygg::FreeBuilderRelationView get_result(size_t root = 0) const&

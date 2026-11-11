@@ -6,13 +6,13 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_QUERY_EVALUATION_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <concepts>
 #include <ranges>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <variant>
 
 namespace tyr::datalog::database
@@ -150,8 +150,7 @@ public:
                         database::project(child(operation.get_arg()), operation.get_plan(), out, m_workspace);
                     else if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
                     {
-                        const auto inputs =
-                            operation.get_inputs() | std::views::transform([&](NodeId input) { return m_layer->view(m_nodes[input].result); });
+                        const auto inputs = operation.get_inputs() | std::views::transform([&](NodeId input) { return m_layer->view(m_nodes[input].result); });
                         generic_join(inputs, operation.get_plan(), out, std::get<GenericJoinWorkspace>(state.state));
                     }
                     else

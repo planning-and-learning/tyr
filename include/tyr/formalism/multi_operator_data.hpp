@@ -19,14 +19,14 @@
 #define TYR_FORMALISM_MULTI_OPERATOR_DATA_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <stdexcept>
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {

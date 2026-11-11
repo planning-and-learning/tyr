@@ -30,9 +30,9 @@
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
-#include <utility>
 #include <boost/mp11.hpp>
 #include <urd/elements/flat.hpp>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/interning.hpp>

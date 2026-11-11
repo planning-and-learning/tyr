@@ -16,13 +16,10 @@
  */
 
 #include "tyr/formalism/datalog/variable_dependency_graph.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -30,12 +27,16 @@
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::formalism::datalog
 {
 template<FactKind F, PolarityKind P>
-static void insert_literal_dependencies(const urd::Store<urd::sequence<ParameterIndex>>& parameters, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
+static void
+insert_literal_dependencies(const urd::Store<urd::sequence<ParameterIndex>>& parameters, details::UnaryDependencies& unary, details::BinaryDependencies& binary)
 {
     auto& unary_dep = details::select_literal_dependency<F, P>(unary);
     auto& binary_dep = details::select_literal_dependency<F, P>(binary);

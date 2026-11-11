@@ -18,36 +18,36 @@
 #ifndef TYR_FORMALISM_PLANNING_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_PLANNING_CANONICALIZATION_HPP_
 
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
+#include "tyr/formalism/function_term_data.hpp"
+#include "tyr/formalism/function_term_value_data.hpp"
+#include "tyr/formalism/literal_data.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_data.hpp"
-#include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
-#include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/planning/axiom_data.hpp"
-#include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/planning/conditional_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_data.hpp"
-#include "tyr/formalism/function_term_data.hpp"
-#include "tyr/formalism/function_term_value_data.hpp"
 #include "tyr/formalism/planning/invariant_data.hpp"
-#include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/planning/metric_data.hpp"
-#include "tyr/formalism/multi_operator_data.hpp"
-#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
+#include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/unary_operator_data.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/variable_data.hpp"
 
 #include <algorithm>
+#include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
 /// The canonical form of every planning record (prepare_for_insert canonicalizes each record it inserts): records whose

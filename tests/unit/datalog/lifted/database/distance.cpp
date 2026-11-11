@@ -3,11 +3,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
+#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
 #include <algorithm>
@@ -20,6 +18,8 @@
 #include <span>
 #include <stdexcept>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -48,7 +48,9 @@ Results rows(const V& input)
     for (size_t i = 0; i < input.size(); ++i)
     {
         const auto row = input.row(i);
-        result.insert({ ygg::decode_value<ygg::uint_t>(row.value(static_cast<size_t>(0))), ygg::decode_value<ygg::uint_t>(row.value(static_cast<size_t>(1))), ygg::decode_value<ygg::uint_t>(row.value(static_cast<size_t>(2))) });
+        result.insert({ ygg::decode_value<ygg::uint_t>(row.value(static_cast<size_t>(0))),
+                        ygg::decode_value<ygg::uint_t>(row.value(static_cast<size_t>(1))),
+                        ygg::decode_value<ygg::uint_t>(row.value(static_cast<size_t>(2))) });
     }
     return result;
 }
@@ -121,7 +123,8 @@ void changes(database::incremental::Delta& delta, const Set& before, const Set& 
 
 TEST(YggdrasilTests, DatabaseDistanceIncludesZeroPathsAndKeepsInputTupleLabelsPositional)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(11) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(99) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(11) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(99) }));
     fill(sources, Vertices { 0, 5, 8 });
     fill(edges, Edges { { 0, 1 }, { 0, 2 }, { 1, 3 }, { 2, 3 }, { 3, 4 }, { 4, 1 }, { 3, 3 }, { 6, 7 } });
     fill(targets, Vertices { 0, 3, 4, 5, 7, 8 });
@@ -151,7 +154,8 @@ TEST(YggdrasilTests, DatabaseDistanceIncludesZeroPathsAndKeepsInputTupleLabelsPo
 
 TEST(YggdrasilTests, DatabaseDistanceAcceptsInternedViewsWithoutRetainingInputOwners)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     fill(sources, Vertices { 1 });
     fill(edges, Edges { { 1, 2 }, { 2, 3 } });
     fill(targets, Vertices { 3 });
@@ -168,7 +172,9 @@ TEST(YggdrasilTests, DatabaseDistanceAcceptsInternedViewsWithoutRetainingInputOw
     sources.clear();
     edges.clear();
     targets.clear();
-    evaluator.update(std::pair { layer().view(sources), layer().view(sources) }, std::pair { layer().view(edges), layer().view(edges) }, std::pair { layer().view(targets), layer().view(targets) });
+    evaluator.update(std::pair { layer().view(sources), layer().view(sources) },
+                     std::pair { layer().view(edges), layer().view(edges) },
+                     std::pair { layer().view(targets), layer().view(targets) });
     EXPECT_EQ(rows(evaluator.get_result()), rows(layer().view(result)));
     EXPECT_TRUE(evaluator.get_delta().added.empty());
     EXPECT_TRUE(evaluator.get_delta().removed.empty());
@@ -176,7 +182,8 @@ TEST(YggdrasilTests, DatabaseDistanceAcceptsInternedViewsWithoutRetainingInputOw
 
 TEST(YggdrasilTests, DatabaseDistancePlansValidateSchemasAndOutputsMustNotAlias)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     fill(sources, Vertices { 1 });
     fill(targets, Vertices { 1 });
     const database::DistancePlan plan(sources.columns(), edges.columns(), targets.columns(), ColumnIndex(3));
@@ -209,7 +216,8 @@ TEST(YggdrasilTests, DatabaseDistancePlansValidateSchemasAndOutputsMustNotAlias)
 
 TEST(YggdrasilTests, DatabaseDistanceRejectsChangesThatAreNotActualSetChanges)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     fill(sources, Vertices { 1 });
     fill(edges, Edges { { 1, 2 } });
     fill(targets, Vertices { 2 });
@@ -226,7 +234,8 @@ TEST(YggdrasilTests, DatabaseDistanceRejectsChangesThatAreNotActualSetChanges)
             if (input == 0)
                 (removing ? ds.removed : ds.added).insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(removing ? 7 : 1)) });
             else if (input == 1)
-                (removing ? de.removed : de.added).insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(removing ? 7 : 2)) });
+                (removing ? de.removed : de.added)
+                    .insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(removing ? 7 : 2)) });
             else
                 (removing ? dt.removed : dt.added).insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(removing ? 7 : 2)) });
             // Invalid changes are rejected before mutation, so the previous evaluation remains.
@@ -240,7 +249,8 @@ TEST(YggdrasilTests, DatabaseDistanceRejectsChangesThatAreNotActualSetChanges)
 
 TEST(YggdrasilTests, DatabaseDistanceRepairsAlternateShortestPathsAndDisconnectsCycles)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     fill(sources, Vertices { 0 });
     fill(edges, Edges { { 0, 1 }, { 0, 2 }, { 1, 3 }, { 2, 3 }, { 3, 4 }, { 4, 1 } });
     fill(targets, Vertices { 3, 4 });
@@ -271,7 +281,8 @@ TEST(YggdrasilTests, DatabaseDistanceRepairsAlternateShortestPathsAndDisconnects
 
 TEST(YggdrasilTests, DatabaseDistanceMixedReplacementLeavesAnUnchangedChainUnprocessed)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     constexpr ygg::uint_t last = 130;
     fill(sources, Vertices { 0 });
     Edges edge_set { { 0, 1 }, { 0, 2 }, { 1, 3 } };
@@ -302,7 +313,8 @@ TEST(YggdrasilTests, DatabaseDistanceMixedReplacementLeavesAnUnchangedChainUnpro
 
 TEST(YggdrasilTests, DatabaseDistanceEqualSupportsDoNotRescanDenseUnchangedNeighbors)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     constexpr ygg::uint_t neighbors = 40;
     fill(sources, Vertices { 0 });
     Edges edge_set { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 0, 4 } };
@@ -340,7 +352,8 @@ TEST(YggdrasilTests, DatabaseDistanceEqualSupportsDoNotRescanDenseUnchangedNeigh
 
 TEST(YggdrasilTests, DatabaseDistanceRepairsUnreachableCyclesSelfLoopsAndEdgesIntoTheSource)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     const Vertices source_set { 0 }, target_set { 0, 1, 2, 3, 4, 5, 6 };
     Edges edge_set { { 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 2 }, { 2, 1 }, { 3, 3 }, { 3, 4 }, { 4, 3 }, { 4, 0 } };
     fill(sources, source_set);
@@ -369,7 +382,8 @@ TEST(YggdrasilTests, DatabaseDistanceRepairsUnreachableCyclesSelfLoopsAndEdgesIn
         fill(de.removed, removed);
         evaluator.update(ds.change(), de.change(), dt.change());
         expect_delta(evaluator, before, reference(source_set, edge_set, target_set, 7));
-        EXPECT_TRUE(evaluator.get_result().contains(std::array { ygg::encode_value(ygg::uint_t(0)), ygg::encode_value(ygg::uint_t(0)), ygg::encode_value(ygg::uint_t(0)) }));
+        EXPECT_TRUE(evaluator.get_result().contains(
+            std::array { ygg::encode_value(ygg::uint_t(0)), ygg::encode_value(ygg::uint_t(0)), ygg::encode_value(ygg::uint_t(0)) }));
     }
 }
 
@@ -388,7 +402,12 @@ TEST(YggdrasilTests, DatabaseDistanceMixedTupleTypesShareCanonicalVertices)
     };
     urd::builder<ygg::Relation<ygg::Schema>> sources(schema(11, 1)), edges(schema(1, 2)), targets(schema(21, 1));
     sources.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(7)), ygg::encode_value(-0.0), ygg::encode_value(true) });
-    edges.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(7)), ygg::encode_value(+0.0), ygg::encode_value(true), ygg::encode_value(static_cast<ygg::uint_t>(8)), ygg::encode_value(1.5), ygg::encode_value(false) });
+    edges.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(7)),
+                              ygg::encode_value(+0.0),
+                              ygg::encode_value(true),
+                              ygg::encode_value(static_cast<ygg::uint_t>(8)),
+                              ygg::encode_value(1.5),
+                              ygg::encode_value(false) });
     targets.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(7)), ygg::encode_value(+0.0), ygg::encode_value(true) });
     targets.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(8)), ygg::encode_value(1.5), ygg::encode_value(false) });
     const database::DistancePlan plan(sources.columns(), edges.columns(), targets.columns(), ColumnIndex(99));
@@ -396,8 +415,20 @@ TEST(YggdrasilTests, DatabaseDistanceMixedTupleTypesShareCanonicalVertices)
     EXPECT_EQ(plan.tuple_size(), 3);
     auto result = tyr::datalog::tests::ops::distances(layer().view(sources), layer().view(edges), layer().view(targets), plan);
     ASSERT_EQ(result.size(), 2);
-    EXPECT_TRUE(result.contains(std::array { ygg::encode_value(ygg::uint_t(7)), ygg::encode_value(0.0), ygg::encode_value(true), ygg::encode_value(ygg::uint_t(7)), ygg::encode_value(0.0), ygg::encode_value(true), ygg::encode_value(ygg::uint_t(0)) }));
-    EXPECT_TRUE(result.contains(std::array { ygg::encode_value(ygg::uint_t(7)), ygg::encode_value(0.0), ygg::encode_value(true), ygg::encode_value(ygg::uint_t(8)), ygg::encode_value(1.5), ygg::encode_value(false), ygg::encode_value(ygg::uint_t(1)) }));
+    EXPECT_TRUE(result.contains(std::array { ygg::encode_value(ygg::uint_t(7)),
+                                             ygg::encode_value(0.0),
+                                             ygg::encode_value(true),
+                                             ygg::encode_value(ygg::uint_t(7)),
+                                             ygg::encode_value(0.0),
+                                             ygg::encode_value(true),
+                                             ygg::encode_value(ygg::uint_t(0)) }));
+    EXPECT_TRUE(result.contains(std::array { ygg::encode_value(ygg::uint_t(7)),
+                                             ygg::encode_value(0.0),
+                                             ygg::encode_value(true),
+                                             ygg::encode_value(ygg::uint_t(8)),
+                                             ygg::encode_value(1.5),
+                                             ygg::encode_value(false),
+                                             ygg::encode_value(ygg::uint_t(1)) }));
     database::incremental::DistanceEvaluator evaluator(layer(), plan);
     evaluator.initialize(layer().view(sources), layer().view(edges), layer().view(targets));
     database::incremental::Delta ds(layer(), sources.columns()), de(layer(), edges.columns()), dt(layer(), targets.columns());
@@ -406,8 +437,16 @@ TEST(YggdrasilTests, DatabaseDistanceMixedTupleTypesShareCanonicalVertices)
     EXPECT_EQ(evaluator.get_result().size(), 1);
     EXPECT_TRUE(evaluator.get_delta().added.empty());
     ASSERT_EQ(evaluator.get_delta().removed.size(), 1);
-    EXPECT_TRUE(evaluator.get_delta().removed.contains(std::array { ygg::encode_value(ygg::uint_t(7)), ygg::encode_value(0.0), ygg::encode_value(true), ygg::encode_value(ygg::uint_t(8)), ygg::encode_value(1.5), ygg::encode_value(false), ygg::encode_value(ygg::uint_t(1)) }));
-    evaluator.update(std::pair { layer().view(ds.removed), layer().view(ds.added) }, std::pair { layer().view(de.removed), layer().view(de.added) }, std::pair { layer().view(dt.removed), layer().view(dt.added) });
+    EXPECT_TRUE(evaluator.get_delta().removed.contains(std::array { ygg::encode_value(ygg::uint_t(7)),
+                                                                    ygg::encode_value(0.0),
+                                                                    ygg::encode_value(true),
+                                                                    ygg::encode_value(ygg::uint_t(8)),
+                                                                    ygg::encode_value(1.5),
+                                                                    ygg::encode_value(false),
+                                                                    ygg::encode_value(ygg::uint_t(1)) }));
+    evaluator.update(std::pair { layer().view(ds.removed), layer().view(ds.added) },
+                     std::pair { layer().view(de.removed), layer().view(de.added) },
+                     std::pair { layer().view(dt.removed), layer().view(dt.added) });
     EXPECT_EQ(evaluator.get_result().size(), 2);
     for (size_t i = 0; i < result.size(); ++i)
         EXPECT_TRUE(evaluator.get_result().contains(layer().view(result).row(i)));
@@ -426,13 +465,19 @@ TEST(YggdrasilTests, DatabaseDistanceNullaryTuplesUseTheSingleEmptyVertex)
     evaluator.initialize(layer().view(sources), layer().view(edges), layer().view(targets));
     RelationBuilder empty, truth;
     truth.insert(std::array<ygg::Value, 0> {});
-    evaluator.update(std::pair { layer().view(truth), layer().view(empty) }, std::pair { layer().view(empty), layer().view(empty) }, std::pair { layer().view(empty), layer().view(empty) });
+    evaluator.update(std::pair { layer().view(truth), layer().view(empty) },
+                     std::pair { layer().view(empty), layer().view(empty) },
+                     std::pair { layer().view(empty), layer().view(empty) });
     ASSERT_EQ(evaluator.get_result().size(), 1);
     EXPECT_TRUE(evaluator.get_result().contains(std::array { ygg::encode_value(ygg::uint_t(0)) }));
-    evaluator.update(std::pair { layer().view(empty), layer().view(empty) }, std::pair { layer().view(truth), layer().view(empty) }, std::pair { layer().view(empty), layer().view(empty) });
+    evaluator.update(std::pair { layer().view(empty), layer().view(empty) },
+                     std::pair { layer().view(truth), layer().view(empty) },
+                     std::pair { layer().view(empty), layer().view(empty) });
     EXPECT_TRUE(evaluator.get_delta().added.empty());
     EXPECT_TRUE(evaluator.get_delta().removed.empty());
-    evaluator.update(std::pair { layer().view(empty), layer().view(truth) }, std::pair { layer().view(empty), layer().view(truth) }, std::pair { layer().view(empty), layer().view(empty) });
+    evaluator.update(std::pair { layer().view(empty), layer().view(truth) },
+                     std::pair { layer().view(empty), layer().view(truth) },
+                     std::pair { layer().view(empty), layer().view(empty) });
     EXPECT_TRUE(evaluator.get_result().empty());
     EXPECT_TRUE(evaluator.get_delta().removed.contains(std::array { ygg::encode_value(ygg::uint_t(0)) }));
     sources.insert(std::array<ygg::Value, 0> {});
@@ -443,7 +488,8 @@ TEST(YggdrasilTests, DatabaseDistanceNullaryTuplesUseTheSingleEmptyVertex)
 
 TEST(YggdrasilTests, DatabaseDistanceGrowsTheSharedDictionaryAndResetsToASmallerUniverse)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     fill(sources, Vertices { 1 });
     fill(targets, Vertices { 1 });
     const database::DistancePlan plan(sources.columns(), edges.columns(), targets.columns(), ColumnIndex(3));
@@ -463,7 +509,9 @@ TEST(YggdrasilTests, DatabaseDistanceGrowsTheSharedDictionaryAndResetsToASmaller
     const auto expanded = reference(Vertices { 1, 33, 65 }, expanded_edges, Vertices { 1, 80, 97 }, 98);
     ASSERT_EQ(expanded.size(), 7);
     expect_delta(evaluator, initial, expanded);
-    evaluator.update(std::pair { layer().view(ds.removed), layer().view(ds.added) }, std::pair { layer().view(de.removed), layer().view(de.added) }, std::pair { layer().view(dt.removed), layer().view(dt.added) });
+    evaluator.update(std::pair { layer().view(ds.removed), layer().view(ds.added) },
+                     std::pair { layer().view(de.removed), layer().view(de.added) },
+                     std::pair { layer().view(dt.removed), layer().view(dt.added) });
     expect_delta(evaluator, expanded, initial);
 
     fill(sources, Vertices { 2 });
@@ -486,7 +534,8 @@ TEST(YggdrasilTests, DatabaseDistanceGrowsTheSharedDictionaryAndResetsToASmaller
 
 TEST(YggdrasilTests, DatabaseDistanceMovesRetainedRepairStorageAndResetsAfterward)
 {
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     fill(sources, Vertices { 0 });
     fill(edges, Edges { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 4 } });
     fill(targets, Vertices { 3, 4 });
@@ -536,7 +585,8 @@ TEST(YggdrasilTests, DatabaseDistanceRandomBatchesAndUndoMatchIndependentPairwis
     {
         SCOPED_TRACE(seed);
         std::mt19937 random(seed);
-        RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+        RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+            targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
         Vertices source_set { 0, 4 }, target_set { 2, 5, 8 };
         Edges edge_set { { 0, 1 }, { 1, 2 } };
         if (seed % 2 == 0)
@@ -581,7 +631,9 @@ TEST(YggdrasilTests, DatabaseDistanceRandomBatchesAndUndoMatchIndependentPairwis
             EXPECT_EQ(rows(layer().view(full)), after);
             if (step % 5 == 0)
             {
-                evaluator.update(std::pair { layer().view(ds.removed), layer().view(ds.added) }, std::pair { layer().view(de.removed), layer().view(de.added) }, std::pair { layer().view(dt.removed), layer().view(dt.added) });
+                evaluator.update(std::pair { layer().view(ds.removed), layer().view(ds.added) },
+                                 std::pair { layer().view(de.removed), layer().view(de.added) },
+                                 std::pair { layer().view(dt.removed), layer().view(dt.added) });
                 expect_delta(evaluator, after, before);
                 source_set = old_sources;
                 edge_set = old_edges;
@@ -602,7 +654,8 @@ TEST(YggdrasilTests, DatabaseMinDistanceAggregatesTheDistanceColumnFullAndIncrem
         return best;
     };
 
-    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })), targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
+    RelationBuilder sources(tyr::datalog::tests::ops::cols({ ColumnIndex(10) })), edges(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) })),
+        targets(tyr::datalog::tests::ops::cols({ ColumnIndex(20) }));
     const database::DistancePlan plan(sources.columns(), edges.columns(), targets.columns(), ColumnIndex(3));
     database::DistanceWorkspace workspace(plan);
     RelationBuilder result(plan.output_columns());
@@ -629,7 +682,8 @@ TEST(YggdrasilTests, DatabaseMinDistanceAggregatesTheDistanceColumnFullAndIncrem
         fill(sources, s);
         fill(edges, e);
         fill(targets, t);
-        EXPECT_EQ(database::min_distance(layer().view(sources), layer().view(edges), layer().view(targets), plan, result, workspace), expected) << "full, step " << step;
+        EXPECT_EQ(database::min_distance(layer().view(sources), layer().view(edges), layer().view(targets), plan, result, workspace), expected)
+            << "full, step " << step;
         if (step == 0)
             evaluator.initialize(layer().view(sources), layer().view(edges), layer().view(targets));
         else

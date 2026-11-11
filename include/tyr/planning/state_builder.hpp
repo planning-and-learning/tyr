@@ -18,32 +18,31 @@
 #ifndef TYR_PLANNING_STATE_BUILDER_HPP_
 #define TYR_PLANNING_STATE_BUILDER_HPP_
 
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
@@ -56,6 +55,7 @@
 #include <type_traits>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace urd
 {
@@ -75,8 +75,7 @@ struct data<::tyr::planning::State<Kind>>
     { return fact_storage.get(variable); }
     [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
     { return numeric_storage.get(fterm); }
-    [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const
-    { return atom_storage.test(atom); }
+    [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const { return atom_storage.test(atom); }
 
     [[nodiscard]] ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
     { return get(view.index()); }
@@ -116,8 +115,7 @@ public:
     { this->numeric_storage.set(fterm, value); }
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { this->atom_storage.set(atom); }
     void set(::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag> view) { set(view.data()); }
-    void set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value)
-    { set(view.index(), value); }
+    void set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value) { set(view.index(), value); }
     void set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) { set(view.index()); }
 
     void clear()
@@ -156,7 +154,8 @@ public:
 
     static constexpr auto identifying_members() noexcept
     {
-        return urd::Members<[](const builder& b) -> const auto& { return b.fact_storage; }, [](const builder& b) -> const auto& { return b.numeric_storage; }> {};
+        return urd::Members<[](const builder& b) -> const auto& { return b.fact_storage; },
+                            [](const builder& b) -> const auto& { return b.numeric_storage; }> {};
     }
 };
 
@@ -165,8 +164,7 @@ template<::tyr::formalism::FactKind F>
 [[nodiscard]] auto urd::data<::tyr::planning::State<Kind>>::get_atoms(const ::tyr::formalism::planning::Repository& repository_) const noexcept
 {
     if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-        return get_fluent_facts()
-               | std::views::transform([repository = &repository_](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
+        return get_fluent_facts() | std::views::transform([repository = &repository_](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
     else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
         return urd::transform(atom_storage.indices, [](ygg::uint_t i) { return urd::index<::tyr::formalism::Atom<::tyr::GroundTag, F>> { i }; });
     else

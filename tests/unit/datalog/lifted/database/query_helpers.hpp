@@ -4,21 +4,21 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <limits>
 #include <initializer_list>
+#include <limits>
+#include <ranges>
 #include <span>
 #include <stdexcept>
-#include <ranges>
-#include <utility>
-#include <vector>
-#include <yggdrasil/formalism/builder.hpp>
-#include <yggdrasil/formalism/free_relations.hpp>
 #include <tyr/datalog/lifted/database/semantics/distance.hpp>
 #include <tyr/datalog/lifted/database/semantics/operations.hpp>
 #include <tyr/datalog/lifted/database/semantics/relation_view.hpp>
 #include <tyr/datalog/lifted/database/syntax/query.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
+#include <yggdrasil/formalism/builder.hpp>
+#include <yggdrasil/formalism/free_relations.hpp>
 
 /// Test-only query construction on top of checkout + insert_query.
 namespace tyr::datalog::tests::qb
@@ -195,7 +195,8 @@ inline RelationRecords& records()
     return storage;
 }
 /// Interns the columns and the relation of `relation` (its pool and rows set) in `repository`.
-inline std::pair<ygg::FreeRelationView, bool> intern_relation(ygg::FreeRelationRepository& repository, urd::data<ygg::Relation<ygg::Schema>>& relation, std::span<const ygg::ColumnLayout> labels)
+inline std::pair<ygg::FreeRelationView, bool>
+intern_relation(ygg::FreeRelationRepository& repository, urd::data<ygg::Relation<ygg::Schema>>& relation, std::span<const ygg::ColumnLayout> labels)
 {
     auto columns = checkout<ygg::Columns>(records());
     columns->values.set(labels.begin(), labels.end());
@@ -284,7 +285,7 @@ inline ygg::FreeBuilderRelationView borrow(const ygg::FreeRelationRepository& re
 { return repository.view(relation); }
 
 inline urd::Store<urd::sequence<ygg::FreeBuilderRelationView>> borrow_all(const ygg::FreeRelationRepository& repository,
-                                                                         const urd::Store<urd::sequence<urd::builder<ygg::Relation<ygg::Schema>>>>& relations)
+                                                                          const urd::Store<urd::sequence<urd::builder<ygg::Relation<ygg::Schema>>>>& relations)
 {
     urd::Store<urd::sequence<ygg::FreeBuilderRelationView>> views;
     views.reserve(relations.size());

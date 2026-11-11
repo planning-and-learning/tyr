@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #include "tyr/datalog/lifted/database/semantics/incremental/query.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/datalog/lifted/database/optimization/optimization.hpp"
 #include "tyr/datalog/lifted/database/semantics/generic_join.hpp"
@@ -16,6 +14,8 @@
 #include <initializer_list>
 #include <memory>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -50,10 +50,18 @@ std::array<ygg::FreeBuilderRelationView, 3> borrow_all(const std::array<Relation
 
 struct Triangle
 {
-    std::array<Relation, 3> initial { Relation(cols({ Column(0), Column(1) })), Relation(cols({ Column(1), Column(2) })), Relation(cols({ Column(2), Column(0) })) };
-    std::array<Relation, 3> changed { Relation(cols({ Column(0), Column(1) })), Relation(cols({ Column(1), Column(2) })), Relation(cols({ Column(2), Column(0) })) };
-    std::array<Relation, 3> added { Relation(cols({ Column(0), Column(1) })), Relation(cols({ Column(1), Column(2) })), Relation(cols({ Column(2), Column(0) })) };
-    std::array<Relation, 3> removed { Relation(cols({ Column(0), Column(1) })), Relation(cols({ Column(1), Column(2) })), Relation(cols({ Column(2), Column(0) })) };
+    std::array<Relation, 3> initial { Relation(cols({ Column(0), Column(1) })),
+                                      Relation(cols({ Column(1), Column(2) })),
+                                      Relation(cols({ Column(2), Column(0) })) };
+    std::array<Relation, 3> changed { Relation(cols({ Column(0), Column(1) })),
+                                      Relation(cols({ Column(1), Column(2) })),
+                                      Relation(cols({ Column(2), Column(0) })) };
+    std::array<Relation, 3> added { Relation(cols({ Column(0), Column(1) })),
+                                    Relation(cols({ Column(1), Column(2) })),
+                                    Relation(cols({ Column(2), Column(0) })) };
+    std::array<Relation, 3> removed { Relation(cols({ Column(0), Column(1) })),
+                                      Relation(cols({ Column(1), Column(2) })),
+                                      Relation(cols({ Column(2), Column(0) })) };
     database::QueryRepository repository;
     database::QueryBuilder builder;
     database::QueryView<> root;

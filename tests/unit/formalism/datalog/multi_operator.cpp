@@ -1,15 +1,15 @@
-#include <algorithm>
 #include "tyr/formalism/datalog/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 
+#include <algorithm>
 #include <concepts>
 #include <gtest/gtest.h>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -34,8 +34,10 @@ static_assert(ygg::formalism::SupportsSymbol<tyr::formalism::datalog::Repository
 static_assert(!ygg::formalism::SupportsSymbol<tyr::formalism::datalog::Repository, int>);
 static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
-static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
-static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::datalog::Repository>,
+                           tyr::formalism::datalog::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::datalog::Repository>,
+                           tyr::formalism::datalog::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 
 TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
 {

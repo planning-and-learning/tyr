@@ -32,20 +32,20 @@
 #include <span>
 #include <tuple>
 #include <type_traits>
+#include <urd/config.hpp>
 #include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/segmented.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/wrappers/recycling.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <urd/config.hpp>
 
 namespace tyr::datalog
 {
@@ -109,17 +109,14 @@ struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey>
     formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
 
     PredicateAchieverKey() = default;
-    PredicateAchieverKey(PredicateRuleRow rule_key_, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head_) :
-        rule_key(rule_key_),
-        head(head_)
-    {
-    }
+    PredicateAchieverKey(PredicateRuleRow rule_key_, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head_) : rule_key(rule_key_), head(head_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
 };
 
 /// The achievers by cost, least first; erased buckets keep their vectors for the next costs (retains).
-using PendingPredicateAchieverBuckets = urd::Store<urd::map<Cost, urd::Store<urd::sequence<PredicateAchieverKey>>>, urd::sorted, urd::retains, urd::stable_refs>;
+using PendingPredicateAchieverBuckets =
+    urd::Store<urd::map<Cost, urd::Store<urd::sequence<PredicateAchieverKey>>>, urd::sorted, urd::retains, urd::stable_refs>;
 
 /// Owned by the program workspace and reused across solves: clear() keeps the capacity of by_key and of the bucket vectors.
 struct PendingPredicateAchievers

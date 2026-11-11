@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {
@@ -37,10 +37,10 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(urd::python::init_from_views<const VariableViewList&,
-                             const LiteralViewList<T, StaticTag>&,
-                             const LiteralViewList<T, FluentTag>&,
-                             const LiteralViewList<T, DerivedTag>&,
-                             const BooleanOperatorViewList<T>&>(),
+                                                 const LiteralViewList<T, StaticTag>&,
+                                                 const LiteralViewList<T, FluentTag>&,
+                                                 const LiteralViewList<T, DerivedTag>&,
+                                                 const BooleanOperatorViewList<T>&>(),
                     "variables"_a,
                     "static_literals"_a,
                     "fluent_literals"_a,
@@ -60,10 +60,10 @@ void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& reposito
         else
         {
             cls.def(urd::python::init_from_views<const LiteralViewList<T, StaticTag>&,
-                             const LiteralViewList<T, DerivedTag>&,
-                             const FDRFactViewList<FluentTag>&,
-                             const FDRFactViewList<FluentTag>&,
-                             const BooleanOperatorViewList<T>&>(),
+                                                 const LiteralViewList<T, DerivedTag>&,
+                                                 const FDRFactViewList<FluentTag>&,
+                                                 const FDRFactViewList<FluentTag>&,
+                                                 const BooleanOperatorViewList<T>&>(),
                     "static_literals"_a,
                     "derived_literals"_a,
                     "positive_facts"_a,

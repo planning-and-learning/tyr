@@ -41,9 +41,10 @@ void EffectAtomIndex::clear() noexcept
         groups.current = false;
 }
 
-std::optional<std::pair<EffectAtomIndex::Atoms::const_iterator, EffectAtomIndex::Atoms::const_iterator>> EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
-                                                                                      formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                                                                      std::span<const urd::index<formalism::Object>> binding)
+std::optional<std::pair<EffectAtomIndex::Atoms::const_iterator, EffectAtomIndex::Atoms::const_iterator>>
+EffectAtomIndex::get_atoms(formalism::planning::ActionView<LiftedTag> action,
+                           formalism::planning::ConditionalEffectView<LiftedTag> effect,
+                           std::span<const urd::index<formalism::Object>> binding)
 {
     const auto effect_predicate = m_effect_to_predicate->find(std::pair(action, effect));
     if (effect_predicate == m_effect_to_predicate->end())

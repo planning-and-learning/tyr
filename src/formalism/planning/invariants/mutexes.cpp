@@ -27,10 +27,10 @@
 #include <tuple>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
@@ -42,7 +42,8 @@ namespace
 
 /// The objects `atom` binds the rigid variables of `part` to, or nullopt if it does not match the part: same arity,
 /// equal constants, repeated variables bound consistently, and every rigid variable bound.
-std::optional<urd::Store<urd::sequence<urd::index<Object>>>> extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
+std::optional<urd::Store<urd::sequence<urd::index<Object>>>>
+extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
 {
     const auto terms = part.get_terms();
     const auto objects = atom.get_objects();
@@ -98,7 +99,12 @@ struct InstanceGroup : urd::compared_by_identity<InstanceGroup>
     AtomViewList<GroundTag, FluentTag> atoms;
     size_t num_initial_atoms = 0;
 
-    InstanceGroup(size_t inv_index_, urd::Store<urd::sequence<urd::index<Object>>> rigid_values_) : inv_index(inv_index_), rigid_values(std::move(rigid_values_)), atoms() {}
+    InstanceGroup(size_t inv_index_, urd::Store<urd::sequence<urd::index<Object>>> rigid_values_) :
+        inv_index(inv_index_),
+        rigid_values(std::move(rigid_values_)),
+        atoms()
+    {
+    }
 
     static constexpr auto identifying_members() noexcept
     { return urd::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {}; }
@@ -109,7 +115,9 @@ struct GroupKey : urd::compared_by_identity<GroupKey>
     size_t invariant_index;
     urd::Store<urd::sequence<urd::index<Object>>> rigid_values;
 
-    GroupKey(size_t invariant_index_, urd::Store<urd::sequence<urd::index<Object>>> rigid_values_) : invariant_index(invariant_index_), rigid_values(std::move(rigid_values_))
+    GroupKey(size_t invariant_index_, urd::Store<urd::sequence<urd::index<Object>>> rigid_values_) :
+        invariant_index(invariant_index_),
+        rigid_values(std::move(rigid_values_))
     {
     }
 
@@ -171,8 +179,8 @@ bool uncovered_structural_less(const InstanceGroup& lhs, const InstanceGroup& rh
 /// Every instance of every invariant with at least one reachable atom, in one pass over the atoms. An atom joins the
 /// instance its rigid values determine; parts of one invariant have distinct predicates, so instances do not overlap.
 urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
-                                              const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                              const InvariantViewList& invariants)
+                                                            const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                            const InvariantViewList& invariants)
 {
     auto is_initial = AtomSet {};
     for (const auto atom : initial_atoms)
@@ -229,7 +237,9 @@ urd::Store<urd::sequence<InstanceGroup>> instantiate_groups(const AtomViewList<G
 }
 
 size_t compute_uncovered_coverage(const InstanceGroup& group, const AtomSet& covered)
-{ return std::ranges::count_if(group.atoms, [&](const auto atom) { return !covered.contains(atom.index()); }); }
+{
+    return std::ranges::count_if(group.atoms, [&](const auto atom) { return !covered.contains(atom.index()); });
+}
 
 std::optional<size_t> select_best_group(const urd::Store<urd::sequence<InstanceGroup>>& groups, const AtomSet& covered)
 {
@@ -275,8 +285,9 @@ void add_single_atom_groups(const AtomViewList<GroundTag, FluentTag>& all_atoms,
             result.push_back(make_single_atom_group(atom));
 }
 
-urd::Store<urd::sequence<MutexGroup>>
-choose_groups_greedily(const InvariantViewList& invariants, const urd::Store<urd::sequence<InstanceGroup>>& groups, const AtomViewList<GroundTag, FluentTag>& all_atoms)
+urd::Store<urd::sequence<MutexGroup>> choose_groups_greedily(const InvariantViewList& invariants,
+                                                             const urd::Store<urd::sequence<InstanceGroup>>& groups,
+                                                             const AtomViewList<GroundTag, FluentTag>& all_atoms)
 {
     auto covered = AtomSet {};
 
@@ -313,8 +324,8 @@ void check_atoms_are_indexed_densely(const AtomViewList<GroundTag, FluentTag>& a
 }  // namespace
 
 urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
-                                             const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                             const InvariantViewList& invariants)
+                                                           const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                           const InvariantViewList& invariants)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
@@ -327,8 +338,8 @@ urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups(const AtomViewList<Gr
 }
 
 urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups_in_order(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
-                                                      const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                      const InvariantViewList& invariant_order)
+                                                                    const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                                    const InvariantViewList& invariant_order)
 {
     check_atoms_are_indexed_densely(all_atoms);
 
@@ -366,8 +377,8 @@ urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups_in_order(const AtomVi
     return result;
 }
 urd::Store<urd::sequence<MutexGroup>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
-                                                 const AtomViewList<GroundTag, FluentTag>& all_atoms,
-                                                 const InvariantViewList& invariants)
+                                                               const AtomViewList<GroundTag, FluentTag>& all_atoms,
+                                                               const InvariantViewList& invariants)
 {
     check_atoms_are_indexed_densely(all_atoms);
 

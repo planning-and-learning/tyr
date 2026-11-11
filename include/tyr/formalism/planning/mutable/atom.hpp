@@ -19,8 +19,6 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_ATOM_HPP_
 
 #include "tyr/formalism/planning/repository.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/unification/structure_traits.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 
@@ -30,6 +28,8 @@
 #include <optional>
 #include <tuple>
 #include <urd/elements/hash.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>

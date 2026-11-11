@@ -7,15 +7,15 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_GENERIC_JOIN_HPP_
 
 #include "tyr/datalog/lifted/database/semantics/generic_join_plan.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 
-#include <urd/memory.hpp>
-#include <cista/containers/vector.h>
 #include <cassert>
+#include <cista/containers/vector.h>
 #include <memory>
 #include <tuple>
+#include <urd/memory.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::datalog::database
 {

@@ -16,8 +16,6 @@
  */
 
 #include "proof.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "constraints.hpp"
 #include "tyr/formalism/planning/mutable/action.hpp"
@@ -35,6 +33,8 @@
 #include <algorithm>
 #include <map>
 #include <optional>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::formalism::planning::invariant
@@ -44,8 +44,8 @@ namespace
 {
 unification::SubstitutionFunction<Term> make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
 {
-    auto sigma = unification::SubstitutionFunction<Term>::from_range(ParameterIndex { static_cast<ygg::uint_t>(effect.num_parent_variables) },
-                                                                                effect.num_variables);
+    auto sigma =
+        unification::SubstitutionFunction<Term>::from_range(ParameterIndex { static_cast<ygg::uint_t>(effect.num_parent_variables) }, effect.num_variables);
 
     for (size_t i = 0; i < effect.num_variables; ++i)
     {

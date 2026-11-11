@@ -6,11 +6,11 @@
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_STRUCTURAL_HPP_
 
 #include "tyr/datalog/lifted/database/optimization/details/join_block.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
 #include <optional>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 /// Data-independent planning of a join block from its hypergraph alone.

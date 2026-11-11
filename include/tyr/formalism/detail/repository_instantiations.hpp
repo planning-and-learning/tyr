@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #ifndef TYR_FORMALISM_DETAIL_REPOSITORY_INSTANTIATIONS_HPP_
 #define TYR_FORMALISM_DETAIL_REPOSITORY_INSTANTIATIONS_HPP_
 
@@ -30,11 +29,11 @@
 
 /// The instantiations (PREFIX extern: declarations); the two repositories share 34 types.
 #define TYR_FORMALISM_INTERNS(PREFIX) \
-    YGG_FORMALISM_INTERNS(PREFIX,                                                                                     \
-                          67,                                                                                         \
-                          true,                                                                                       \
-                          boost::mp11::mp_unique<boost::mp11::mp_append<tyr::formalism::datalog::SymbolRepositoryTypes, \
-                                                                        tyr::formalism::planning::SymbolRepositoryTypes>>)
+    YGG_FORMALISM_INTERNS(            \
+        PREFIX,                       \
+        67,                           \
+        true,                         \
+        boost::mp11::mp_unique<boost::mp11::mp_append<tyr::formalism::datalog::SymbolRepositoryTypes, tyr::formalism::planning::SymbolRepositoryTypes>>)
 
 TYR_FORMALISM_INTERNS(extern)
 

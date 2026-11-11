@@ -19,8 +19,6 @@
 #define TYR_PLANNING_NODE_CONCEPTS_HPP_
 
 #include "tyr/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -28,6 +26,8 @@
 
 #include <concepts>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
@@ -42,8 +42,7 @@ class Node;
 /// runir's rule evaluation) before it is materialized.
 template<TaskKind Kind,
          StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding =
-             formalism::planning::ActionRowView>
+         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding = formalism::planning::ActionRowView>
 struct LabeledNode;
 
 template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
@@ -54,8 +53,7 @@ using PackedNodeList = urd::Store<urd::sequence<PackedNode<Kind>>>;
 
 template<TaskKind Kind,
          StateViewConcept<Kind> State = StateView<Kind>,
-         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding =
-             formalism::planning::ActionRowView>
+         ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding = formalism::planning::ActionRowView>
 using LabeledNodeList = urd::Store<urd::sequence<LabeledNode<Kind, State, Binding>>>;
 
 template<TaskKind Kind>

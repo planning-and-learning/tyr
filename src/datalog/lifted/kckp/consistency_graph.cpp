@@ -16,40 +16,37 @@
  */
 
 #include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <cassert>
@@ -57,8 +54,11 @@
 #include <stdexcept>
 #include <type_traits>
 #include <urd/bits.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::datalog
 {
@@ -455,27 +455,21 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(ygg::float_t value, const GraphStructure&, const RuleToConstraintInfo&, const AssignmentSets&)
-{
-    return ygg::ClosedInterval<ygg::float_t>(value, value);
-}
+{ return ygg::ClosedInterval<ygg::float_t>(value, value); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{
-    return consistent_interval(constraint_info.static_infos.infos.at(element.index()), structure, assignment_sets.static_sets().function);
-}
+{ return consistent_interval(constraint_info.static_infos.infos.at(element.index()), structure, assignment_sets.static_sets().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag> element,
                                                              const GraphStructure& structure,
                                                              const RuleToConstraintInfo& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{
-    return consistent_interval(constraint_info.fluent_infos.infos.at(element.index()), structure, assignment_sets.fluent_sets().function);
-}
+{ return consistent_interval(constraint_info.fluent_infos.infos.at(element.index()), structure, assignment_sets.fluent_sets().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
@@ -682,7 +676,9 @@ template<typename Mappings>
 static void initialize_info_mappings(Mappings& mappings, size_t arity)
 {
     mappings.parameter_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-    mappings.parameter_pairs_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>(arity, urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity));
+    mappings.parameter_pairs_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>(
+        arity,
+        urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity));
     mappings.parameter_to_infos_with_constants = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
     mappings.infos_with_constants = urd::Store<urd::sequence<ygg::uint_t>> {};
     mappings.infos_with_constant_pairs = urd::Store<urd::sequence<ygg::uint_t>> {};
@@ -780,7 +776,12 @@ static auto compute_tagged_indexed_fterms(const urd::Store<urd::sequence<formali
         auto info = details::RuleToFunctionTermInfo<T> {};
         info.function = fterm.get_function().index();
         info.kckp_arity = kckp_arity(fterm);
-        index_terms(fterm.get_terms(), formalism::datalog::collect_parameters(fterm), static_cast<ygg::uint_t>(fterm.index().value), arity, info, result.info_mappings);
+        index_terms(fterm.get_terms(),
+                    formalism::datalog::collect_parameters(fterm),
+                    static_cast<ygg::uint_t>(fterm.index().value),
+                    arity,
+                    info,
+                    result.info_mappings);
 
         result.infos.emplace(fterm.index(), std::move(info));
     }

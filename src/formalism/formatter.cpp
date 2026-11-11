@@ -18,9 +18,7 @@
 #include "tyr/formalism/formatter.hpp"
 
 #include "node_formatter.hpp"
-
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
@@ -29,6 +27,7 @@
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
 

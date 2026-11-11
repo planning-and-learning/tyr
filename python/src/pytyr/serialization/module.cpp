@@ -1,4 +1,5 @@
 #include "module.hpp"
+
 #include "pytyr/module.hpp"
 
 #include <tyr/formalism/planning/formatter.hpp>
@@ -10,9 +11,9 @@
 #include <tyr/serialization/planning/node.hpp>
 #include <tyr/serialization/planning/plan.hpp>
 #include <tyr/serialization/planning/state_view.hpp>
-#include <yggdrasil/serialization/dictionaries.hpp>
 #include <tyr/serialization/types.hpp>
 #include <yggdrasil/python/serialization.hpp>
+#include <yggdrasil/serialization/dictionaries.hpp>
 
 namespace nb = nanobind;
 

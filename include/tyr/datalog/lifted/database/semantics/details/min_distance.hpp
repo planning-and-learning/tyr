@@ -6,10 +6,6 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_DETAILS_MIN_DISTANCE_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_DETAILS_MIN_DISTANCE_HPP_
 
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/repr/pools/pools.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
@@ -20,6 +16,10 @@
 #include <cstddef>
 #include <ranges>
 #include <span>
+#include <urd/repr/pools/pools.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database::detail
@@ -190,7 +190,7 @@ public:
 
 private:
     VertexSet m_vertices;
-    mutable urd::Store<urd::sequence<ygg::Value>> m_buffer;  ///< A target's values, read from its row.
+    mutable urd::Store<urd::sequence<ygg::Value>> m_buffer;       ///< A target's values, read from its row.
     urd::Store<urd::sequence<VertexSet::handle_type>> m_handles;  ///< Of m_vertices, as inserted.
     urd::Store<urd::sequence<VertexSet::handle_type>> m_ids;
 };

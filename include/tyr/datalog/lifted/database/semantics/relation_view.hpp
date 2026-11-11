@@ -6,7 +6,6 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_RELATION_VIEW_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_RELATION_VIEW_HPP_
 
-#include <urd/elements/view.hpp>
 #include "tyr/datalog/lifted/database/declarations.hpp"
 #include "yggdrasil/formalism/relation_view.hpp"
 #include "yggdrasil/formalism/repository.hpp"
@@ -21,6 +20,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/view.hpp>
 #include <utility>
 
 namespace tyr::datalog::database

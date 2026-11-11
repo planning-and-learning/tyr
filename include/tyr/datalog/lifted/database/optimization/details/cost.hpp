@@ -5,21 +5,21 @@
 #ifndef TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_COST_HPP_
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_DETAILS_COST_HPP_
 
-#include <urd/bits.hpp>
-#include "yggdrasil/core/config.hpp"
 #include "tyr/datalog/lifted/database/optimization/details/dpccp.hpp"
 #include "tyr/datalog/lifted/database/optimization/details/estimation.hpp"
 #include "tyr/datalog/lifted/database/optimization/details/join_block.hpp"
+#include "yggdrasil/core/config.hpp"
 
 #include <algorithm>
 #include <bit>
 #include <concepts>
 #include <cstdint>
 #include <optional>
+#include <urd/bits.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>

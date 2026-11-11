@@ -15,35 +15,36 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/formalism/planning/repository.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
+
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 //
 
 #include "tyr/analysis/domains.hpp"
@@ -61,8 +62,8 @@
 
 #include <algorithm>
 #include <urd/elements/equal_to.hpp>
-#include <vector>
 #include <urd/elements/flat.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -156,13 +157,15 @@ void compute_touched_delta(const urd::data<State<Kind>>& parent,
         for (const auto fact : *effects)
             delta.fluents.push_back(StateDelta::FluentChange { fact.variable, parent.get(fact.variable), successor.get(fact.variable) });
     std::ranges::sort(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable.value); });
-    delta.fluents.erase(std::ranges::unique(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable.value); }).begin(), delta.fluents.end());
+    delta.fluents.erase(std::ranges::unique(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable.value); }).begin(),
+                        delta.fluents.end());
     erase_if(delta.fluents, [](const auto& change) { return change.from == change.to; });
 
     for (const auto fterm : numeric_writes)
         delta.numerics.push_back(StateDelta::NumericChange { fterm, parent.get(fterm), successor.get(fterm) });
     std::ranges::sort(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm.value); });
-    delta.numerics.erase(std::ranges::unique(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm.value); }).begin(), delta.numerics.end());
+    delta.numerics.erase(std::ranges::unique(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm.value); }).begin(),
+                         delta.numerics.end());
     erase_if(delta.numerics, [](const auto& change) { return urd::EqualTo<ygg::float_t> {}(change.from, change.to); });
 }
 

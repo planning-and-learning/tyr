@@ -19,8 +19,6 @@
 #define TYR_PLANNING_ALGORITHMS_UTILS_HPP_
 
 #include "tyr/planning/algorithms/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
@@ -33,6 +31,8 @@
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>

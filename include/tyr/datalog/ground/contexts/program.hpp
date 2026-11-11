@@ -123,14 +123,16 @@ private:
         const auto& facts = m_out.facts().fact_sets;
         for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
             for (const auto id : facts.predicate[i])
-                m_out.annotation_policy().initialize_annotation(formalism::datalog::PredicateRowIndex<formalism::FluentTag> { urd::index<formalism::Predicate<formalism::FluentTag>>(i), id },
-                                                                m_out.annotations());
+                m_out.annotation_policy().initialize_annotation(
+                    formalism::datalog::PredicateRowIndex<formalism::FluentTag> { urd::index<formalism::Predicate<formalism::FluentTag>>(i), id },
+                    m_out.annotations());
 
         for (ygg::uint_t i = 0; i < facts.function.size(); ++i)
             for (const auto& [id, interval] : facts.function[i])
-                m_out.annotation_policy().initialize_annotation(formalism::datalog::FunctionRowIndex<formalism::FluentTag> { urd::index<formalism::Function<formalism::FluentTag>>(i), id },
-                                                                interval,
-                                                                m_out.numeric_annotations());
+                m_out.annotation_policy().initialize_annotation(
+                    formalism::datalog::FunctionRowIndex<formalism::FluentTag> { urd::index<formalism::Function<formalism::FluentTag>>(i), id },
+                    interval,
+                    m_out.numeric_annotations());
     }
 
     void reset_from_current_facts()

@@ -18,10 +18,10 @@
 #ifndef TYR_PLANNING_GROUND_MATCH_TREE_NODES_NODE_VIEW_HPP_
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_NODE_VIEW_HPP_
 
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/atom_data.hpp"
@@ -30,8 +30,8 @@
 #include "tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp"
 #include "tyr/planning/ground/match_tree/nodes/variable_data.hpp"
 
-#include <utility>
 #include <urd/elements/flat.hpp>
+#include <utility>
 
 namespace urd
 {

@@ -16,6 +16,7 @@
  */
 
 #include "iw.hpp"
+
 #include <gtest/gtest.h>
 #include <tyr/planning/declarations.hpp>
 

@@ -1648,8 +1648,7 @@ def _check_node_lookup_ground(task: planning.ground.Task) -> None:
     assert looked_up_node == initial_node
     assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
     assert (
-        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack()
-        == initial_node
+        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack() == initial_node
     )
 
 
@@ -1662,8 +1661,7 @@ def _check_node_lookup_lifted(task: planning.lifted.Task) -> None:
     assert looked_up_node == initial_node
     assert successor_generator.get_packed_initial_node(state_repository, axiom_evaluator).unpack() == initial_node
     assert (
-        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack()
-        == initial_node
+        successor_generator.get_packed_node(state_repository, initial_node.get_state().index()).unpack() == initial_node
     )
 
 

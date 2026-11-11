@@ -19,8 +19,6 @@
 #define TYR_SRC_PLANNING_LIFTED_HEURISTICS_RPG_HPP_
 
 #include "../../heuristics/rpg.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
@@ -30,18 +28,20 @@
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
-#include "tyr/planning/state_storage/numeric.hpp"
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
-#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_repository.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
 
 #include <cassert>
 #include <fmt/ostream.h>
 #include <optional>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -153,7 +153,8 @@ struct RPGPolicy<LiftedTag>
     static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
     {
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
-        const auto& const_rule_workspace = *workspace.const_workspace->engine.rules.template get<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
+        const auto& const_rule_workspace =
+            *workspace.const_workspace->engine.rules.template get<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
         auto binding = urd::flat_vector<urd::index<formalism::Object>> {};
         for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
             binding.push_back(object);

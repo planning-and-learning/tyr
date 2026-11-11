@@ -19,9 +19,6 @@
 #define TYR_DATALOG_GROUND_SCHEDULER_HPP_
 
 #include "tyr/datalog/applicability.hpp"
-#include <urd/repr/queues/queue.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/ground/workspaces/rule.hpp"
@@ -36,10 +33,13 @@
 #include <limits>
 #include <optional>
 #include <tuple>
-#include <vector>
 #include <urd/elements/flat.hpp>
-#include <yggdrasil/core/family.hpp>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/core/family.hpp>
 
 namespace tyr::datalog
 {
@@ -99,8 +99,7 @@ template<>
 class Scheduler<GroundTag>
 {
 public:
-    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) :
-        m_program(program)
+    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program)
     {
         m_queues.get<formalism::PredicateTag>().reserve(program.template get_rules<formalism::PredicateTag>().size());
         m_queues.get<formalism::FunctionTag>().reserve(program.template get_rules<formalism::FunctionTag>().size());
@@ -129,7 +128,9 @@ public:
         m_queues.get<R>().emplace(queue_label, rule);
 
         ++m_statistics.num_queue_pushes;
-        m_statistics.max_queue_size = std::max(m_statistics.max_queue_size, static_cast<ygg::uint_t>(m_queues.get<formalism::PredicateTag>().size() + m_queues.get<formalism::FunctionTag>().size()));
+        m_statistics.max_queue_size =
+            std::max(m_statistics.max_queue_size,
+                     static_cast<ygg::uint_t>(m_queues.get<formalism::PredicateTag>().size() + m_queues.get<formalism::FunctionTag>().size()));
     }
 
     template<formalism::RelationKind R>
@@ -231,8 +232,7 @@ private:
     void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact,
-                                        ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_numeric_changed_for(formalism::datalog::FunctionRowIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);

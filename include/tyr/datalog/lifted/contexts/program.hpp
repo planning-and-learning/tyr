@@ -19,8 +19,6 @@
 #define TYR_DATALOG_LIFTED_CONTEXTS_PROGRAM_HPP_
 
 #include "tyr/datalog/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
@@ -30,6 +28,8 @@
 
 #include <cassert>
 #include <cstddef>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog

@@ -7,12 +7,12 @@
 #define TYR_DATALOG_DATABASE_SYNTAX_OPERATOR_BUILDER_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
 #include <concepts>
 #include <span>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database

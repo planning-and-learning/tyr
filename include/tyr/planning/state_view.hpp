@@ -18,33 +18,32 @@
 #ifndef TYR_PLANNING_STATE_VIEW_HPP_
 #define TYR_PLANNING_STATE_VIEW_HPP_
 
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -56,9 +55,10 @@
 #include <ranges>
 #include <tuple>
 #include <type_traits>
-#include <utility>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -120,8 +120,7 @@ public:
 }  // namespace tyr::planning
 
 template<::tyr::TaskKind Kind, typename V>
-bool ::tyr::planning::StateAccessors<Kind, V>::test(
-    ::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
+bool ::tyr::planning::StateAccessors<Kind, V>::test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
 {
     const auto fact = std::as_const(*get_task().get_fdr_context()).get_fact(view);
     return fact && value(fact->get_variable()) == fact->get_value();
@@ -158,8 +157,7 @@ auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms_view() const noexcept
 
 template<::tyr::TaskKind Kind, typename V>
 template<::tyr::formalism::FactKind F, typename C>
-auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms_view(
-    urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const
+auto ::tyr::planning::StateAccessors<Kind, V>::get_atoms_view(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const
 {
     return get_atoms_view<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
 }
@@ -172,7 +170,6 @@ auto ::tyr::planning::StateAccessors<Kind, V>::get_fterm_values_view() const noe
            | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
                                    { return std::make_pair(urd::resolve(pair.first, *repository), pair.second); });
 }
-
 
 /// A registered state (StateView: its data<State>, shared from its repository's pool): its accessors, and its identity,
 /// its index in the repository that interned it.
@@ -197,7 +194,8 @@ template<::tyr::TaskKind Kind>
 struct urd::view_mixin<::tyr::planning::State<Kind>, ::tyr::planning::PackedStateView<Kind>>
 {
 private:
-    [[nodiscard]] const ::tyr::planning::PackedStateView<Kind>& self() const noexcept { return static_cast<const ::tyr::planning::PackedStateView<Kind>&>(*this); }
+    [[nodiscard]] const ::tyr::planning::PackedStateView<Kind>& self() const noexcept
+    { return static_cast<const ::tyr::planning::PackedStateView<Kind>&>(*this); }
 
 public:
     [[nodiscard]] const ::tyr::planning::StateRepository<Kind>& get_state_repository() const noexcept { return self().context(); }

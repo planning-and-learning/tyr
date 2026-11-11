@@ -29,7 +29,11 @@ namespace tyr::datalog
 class ApplicabilityContext
 {
 public:
-    ApplicabilityContext(const FactSets& fact_sets, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) : m_fact_sets(&fact_sets), m_grounder(std::addressof(grounder)) {}  // no operator& lookup: the builder's records need not be complete here
+    ApplicabilityContext(const FactSets& fact_sets, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) :
+        m_fact_sets(&fact_sets),
+        m_grounder(std::addressof(grounder))
+    {
+    }  // no operator& lookup: the builder's records need not be complete here
 
     [[nodiscard]] const FactSets& fact_sets() const noexcept { return *m_fact_sets; }
     [[nodiscard]] formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder() const noexcept { return *m_grounder; }

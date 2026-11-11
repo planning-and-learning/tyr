@@ -4,9 +4,6 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/must_pass.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/store.hpp>
 
 #include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
@@ -18,6 +15,9 @@
 #include <random>
 #include <set>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/store.hpp>
 
 namespace
 {
@@ -107,7 +107,8 @@ TEST(DatabaseMustPass, ObjectsOnEveryPathPerKey)
     auto sources = Relation(tyr::datalog::tests::ops::cols({ key, u }));
     sources.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     sources.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
-    sources.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });  // Key 2 has no edges and no targets.
+    sources.insert(
+        std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });  // Key 2 has no edges and no targets.
     auto targets = Relation(tyr::datalog::tests::ops::cols({ key, u }));
     targets.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(5)) });
     targets.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(4)) });
@@ -138,7 +139,9 @@ TEST(DatabaseMustPass, SeveralSourcesAndTargets)
 TEST(DatabaseMustPass, UnreachableTargetsHaveNoMustPassVertices)
 {
     auto edges = Relation(tyr::datalog::tests::ops::cols({ key, u, v }));
-    edges.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
+    edges.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)),
+                              ygg::encode_value(static_cast<ygg::uint_t>(1)),
+                              ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     auto sources = Relation(tyr::datalog::tests::ops::cols({ key, u }));
     sources.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     auto targets = Relation(tyr::datalog::tests::ops::cols({ key, u }));

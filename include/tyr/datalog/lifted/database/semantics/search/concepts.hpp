@@ -6,9 +6,6 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_SEARCH_CONCEPTS_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_SEARCH_CONCEPTS_HPP_
 
-#include <urd/repr/pools/pools.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "yggdrasil/core/config.hpp"
 #include "yggdrasil/formalism/relation_builder.hpp"
 
@@ -16,6 +13,9 @@
 #include <cstddef>
 #include <limits>
 #include <span>
+#include <urd/repr/pools/pools.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::datalog::database
 {
@@ -49,7 +49,8 @@ struct BlindDistanceHeuristic
 
 /// A vertex as its values: a row of values as it is, a stored row's values read into `buffer`, which the result
 /// borrows.
-inline std::span<const ygg::Value> vertex_values(std::span<const ygg::Value> vertex, urd::Store<urd::sequence<ygg::Value>>& /*buffer*/) noexcept { return vertex; }
+inline std::span<const ygg::Value> vertex_values(std::span<const ygg::Value> vertex, urd::Store<urd::sequence<ygg::Value>>& /*buffer*/) noexcept
+{ return vertex; }
 inline std::span<const ygg::Value> vertex_values(const ygg::RowPool::row_type& row, urd::Store<urd::sequence<ygg::Value>>& buffer)
 {
     buffer.clear();

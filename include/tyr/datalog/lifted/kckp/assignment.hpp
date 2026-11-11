@@ -22,8 +22,8 @@
 #include "tyr/formalism/parameter_index.hpp"
 
 #include <limits>
-#include <yggdrasil/core/config.hpp>
 #include <urd/elements/flat.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
@@ -80,9 +80,7 @@ struct EdgeAssignment
     }
 
     [[nodiscard]] inline bool is_valid() const noexcept
-    {
-        return (first_index < second_index) && (first_object != urd::index<formalism::Object>()) && (second_object != urd::index<formalism::Object>());
-    }
+    { return (first_index < second_index) && (first_object != urd::index<formalism::Object>()) && (second_object != urd::index<formalism::Object>()); }
 };
 }
 

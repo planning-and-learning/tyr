@@ -16,9 +16,9 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "../../iw.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::planning::iw
 {

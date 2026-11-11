@@ -18,10 +18,8 @@
 #ifndef TYR_PLANNING_STATE_STORAGE_HPP_
 #define TYR_PLANNING_STATE_STORAGE_HPP_
 
+#include "tyr/containers.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/task.hpp"
 
 #include <cmath>
@@ -30,10 +28,12 @@
 #include <limits>
 #include <ranges>
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include "tyr/containers.hpp"
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning

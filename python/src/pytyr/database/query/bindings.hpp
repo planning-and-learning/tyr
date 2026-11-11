@@ -2,9 +2,9 @@
 #define PYTYR_DATABASE_QUERY_BINDINGS_HPP_
 
 #include "../module.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
 #include "yggdrasil/python/bindings.hpp"
-#include "pytyr/module.hpp"
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>

@@ -20,8 +20,7 @@
 namespace tyr::datalog
 {
 
-Program<GroundTag>::Program(formalism::datalog::ProgramView<GroundTag> program,
-                            formalism::datalog::RepositoryPtr program_repository) :
+Program<GroundTag>::Program(formalism::datalog::ProgramView<GroundTag> program, formalism::datalog::RepositoryPtr program_repository) :
     m_program_repository(std::move(program_repository)),
     m_const_program_workspace(program)
 {

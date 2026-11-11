@@ -80,7 +80,8 @@ private:
     urd::Store<urd::set<std::string>, urd::stable_refs> m_derived_predicates;  ///< Derived predicates
 
     // For type analysis of functions.
-    urd::Store<urd::set<std::string>, urd::stable_refs> m_fexpr_functions;            ///< Functions that appear in a lifted function expression, i.e., numeric effect or constraint
+    urd::Store<urd::set<std::string>, urd::stable_refs>
+        m_fexpr_functions;  ///< Functions that appear in a lifted function expression, i.e., numeric effect or constraint
     urd::Store<urd::set<std::string>, urd::stable_refs> m_effect_function_skeletons;  ///< Functions that appear in an effect
 
     template<std::ranges::input_range Range>
@@ -178,25 +179,21 @@ private:
 
     LiteralViewVariant translate_lifted(loki::formalism::LiteralView element, Builder& builder, Repository& context);
 
-    FunctionExpression<LiftedTag>
-    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
-                     Builder& builder,
-                     Repository& context);
+    FunctionExpression<LiftedTag> translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
+                                                   Builder& builder,
+                                                   Repository& context);
 
-    FunctionExpression<LiftedTag>
-    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
-                     Builder& builder,
-                     Repository& context);
+    FunctionExpression<LiftedTag> translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
+                                                   Builder& builder,
+                                                   Repository& context);
 
-    FunctionExpression<LiftedTag>
-    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
-                     Builder& builder,
-                     Repository& context);
+    FunctionExpression<LiftedTag> translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
+                                                   Builder& builder,
+                                                   Repository& context);
 
-    FunctionExpression<LiftedTag>
-    translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
-                     Builder& builder,
-                     Repository& context);
+    FunctionExpression<LiftedTag> translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
+                                                   Builder& builder,
+                                                   Repository& context);
 
     FunctionExpression<LiftedTag> translate_lifted(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 
@@ -246,25 +243,21 @@ private:
 
     GroundLiteralOrFactViewVariant translate_grounded(loki::formalism::LiteralView element, Builder& builder, Repository& context, FDRContext& fdr_context);
 
-    FunctionExpression<GroundTag>
-    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
-                       Builder& builder,
-                       Repository& context);
+    FunctionExpression<GroundTag> translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
+                                                     Builder& builder,
+                                                     Repository& context);
 
-    FunctionExpression<GroundTag>
-    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
-                       Builder& builder,
-                       Repository& context);
+    FunctionExpression<GroundTag> translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
+                                                     Builder& builder,
+                                                     Repository& context);
 
-    FunctionExpression<GroundTag>
-    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
-                       Builder& builder,
-                       Repository& context);
+    FunctionExpression<GroundTag> translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> element,
+                                                     Builder& builder,
+                                                     Repository& context);
 
-    FunctionExpression<GroundTag>
-    translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
-                       Builder& builder,
-                       Repository& context);
+    FunctionExpression<GroundTag> translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> element,
+                                                     Builder& builder,
+                                                     Repository& context);
 
     FunctionExpression<GroundTag> translate_grounded(loki::formalism::FunctionExpressionView element, Builder& builder, Repository& context);
 

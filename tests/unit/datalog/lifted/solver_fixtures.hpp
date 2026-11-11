@@ -19,37 +19,34 @@
 #define TYR_TESTS_UNIT_DATALOG_LIFTED_SOLVER_FIXTURES_HPP_
 
 #include "planning/parser.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/ground/program.hpp"
-#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
 #include "tyr/datalog/lifted/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
-#include "tyr/formalism/datalog/program_data.hpp"
-#include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/unary_operator_data.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
-#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/variable_data.hpp"
-#include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/planning/lifted/programs/action.hpp"
 #include "tyr/planning/lifted/programs/axiom.hpp"
 #include "tyr/planning/lifted/programs/ground.hpp"
@@ -77,9 +74,12 @@
 #include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
+#include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/serialization/json.hpp>
 #include <yggdrasil/serialization/json_suite.hpp>
 
@@ -289,10 +289,10 @@ make_lifted_numeric_program(bool include_source_rule = true, std::initializer_li
         tyr::formalism::NumericEffectOperatorKind::Assign,
         source_term.index(),
         tyr::formalism::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3))));
-    const auto target_assign_effect = intern(urd::data<tyr::formalism::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-        tyr::formalism::NumericEffectOperatorKind::Assign,
-        target_term.index(),
-        tyr::formalism::FunctionExpression<LiftedTag>(source_term.index())));
+    const auto target_assign_effect = intern(
+        urd::data<tyr::formalism::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(tyr::formalism::NumericEffectOperatorKind::Assign,
+                                                                                       target_term.index(),
+                                                                                       tyr::formalism::FunctionExpression<LiftedTag>(source_term.index())));
     // (source) >= 0 reads source once more, next to the target assignment.
     const auto source_comparison = intern(urd::data<tyr::formalism::BinaryOperator<LiftedTag, tyr::formalism::BooleanOperatorKind>>(
         tyr::formalism::BooleanOperatorKind::Ge,
@@ -468,10 +468,8 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         data.values.push_back(object.index().value);
         return intern(std::move(data));
     };
-    const auto ground_first_source =
-        intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(first_object).data()));
-    const auto ground_second_source =
-        intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(second_object).data()));
+    const auto ground_first_source = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(first_object).data()));
+    const auto ground_second_source = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(second_object).data()));
     auto goal_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     goal_binding_data.relation = goal_predicate.index();
     const auto goal = intern(std::move(goal_binding_data));
@@ -496,10 +494,10 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         program_data.fluent_functions = { value_function.index() };
         program_data.fluent_fterm_values = {
             intern(urd::data<tyr::formalism::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(first_object).index(),
-                                                                                                               static_cast<ygg::float_t>(5)))
+                                                                                                      static_cast<ygg::float_t>(5)))
                 .index(),
             intern(urd::data<tyr::formalism::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(bind_value(second_object).index(),
-                                                                                                               static_cast<ygg::float_t>(7)))
+                                                                                                      static_cast<ygg::float_t>(7)))
                 .index()
         };
     }

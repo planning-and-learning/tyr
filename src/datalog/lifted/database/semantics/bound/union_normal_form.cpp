@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/bound/union_normal_form.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -14,7 +15,8 @@ UnionNormalForm union_normal_form(QueryView<> query) { return detail::UnionNorma
 
 namespace tyr::datalog::database::bound::detail
 {
-urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::product(const urd::Store<urd::sequence<ConjunctiveBranch>>& lhs, const urd::Store<urd::sequence<ConjunctiveBranch>>& rhs)
+urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::product(const urd::Store<urd::sequence<ConjunctiveBranch>>& lhs,
+                                                                             const urd::Store<urd::sequence<ConjunctiveBranch>>& rhs)
 {
     urd::Store<urd::sequence<ConjunctiveBranch>> result;
     for (const auto& l : lhs)
@@ -115,8 +117,8 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 const auto lhs = concrete.get_lhs();
                 const auto rhs = concrete.get_rhs();
                 auto result = flatten(lhs, by_label(lhs.columns(), columns, mapping));
-                auto negation =
-                    ConjunctiveNegation { urd::Store<urd::sequence<uint32_t>>(mapping.begin(), mapping.end()), flatten(rhs, by_label(rhs.columns(), columns, mapping)) };
+                auto negation = ConjunctiveNegation { urd::Store<urd::sequence<uint32_t>>(mapping.begin(), mapping.end()),
+                                                      flatten(rhs, by_label(rhs.columns(), columns, mapping)) };
                 for (auto& branch : result)
                     branch.negations.push_back(negation);
                 return result;

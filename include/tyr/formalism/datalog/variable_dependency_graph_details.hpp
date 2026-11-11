@@ -20,11 +20,11 @@
 
 #include "tyr/formalism/declarations.hpp"
 
+#include <cstddef>
+#include <type_traits>
 #include <urd/repr/sequences/jagged.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
-#include <cstddef>
-#include <type_traits>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 

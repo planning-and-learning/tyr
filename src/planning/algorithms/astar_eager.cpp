@@ -31,7 +31,15 @@ SearchResult<Kind> find_solution(Task<Kind>& task,
                                  SuccessorGenerator<Kind>& successor_generator,
                                  Heuristic<Kind>& heuristic,
                                  const Options<Kind>& options)
-{ return planning::detail::find_solution<planning::detail::EagerAStarPolicy>(task, state_repository, axiom_evaluator, successor_generator, heuristic, options, "astar_eager"); }
+{
+    return planning::detail::find_solution<planning::detail::EagerAStarPolicy>(task,
+                                                                               state_repository,
+                                                                               axiom_evaluator,
+                                                                               successor_generator,
+                                                                               heuristic,
+                                                                               options,
+                                                                               "astar_eager");
+}
 
 template SearchResult<LiftedTag> find_solution<LiftedTag>(Task<LiftedTag>& task,
                                                           StateRepository<LiftedTag>& state_repository,

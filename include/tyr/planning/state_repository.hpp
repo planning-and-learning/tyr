@@ -19,8 +19,6 @@
 #define TYR_PLANNING_STATE_REPOSITORY_HPP_
 
 #include "tyr/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_view.hpp"
 #include "tyr/planning/task.hpp"
@@ -29,12 +27,13 @@
 #include <concepts>
 #include <memory>
 #include <stdexcept>
-#include <utility>
-#include <vector>
+#include <urd/config.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <urd/config.hpp>
 
 namespace tyr::planning
 {
@@ -71,9 +70,10 @@ public:
     /// The facts as views: borrowed (stored facts, FDRFactView) or owned (a state's, computed on the fly).
     template<typename FactView>
         requires std::same_as<typename FactView::value_type, formalism::planning::FDRFact<formalism::FluentTag>>
-    StateView<Kind> create_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                                 const urd::Store<urd::sequence<FactView>>& fluent_facts,
-                                 const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
+    StateView<Kind>
+    create_state(AxiomEvaluator<Kind>& axiom_evaluator,
+                 const urd::Store<urd::sequence<FactView>>& fluent_facts,
+                 const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
 
     std::shared_ptr<urd::builder<State<Kind>>> get_state_builder() const;
 

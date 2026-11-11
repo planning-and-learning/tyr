@@ -4,8 +4,6 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 
@@ -15,6 +13,8 @@
 #include <memory>
 #include <span>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace ygg::profiling
@@ -229,10 +229,10 @@ void distance_changes(benchmark::State& state)
     const auto update = [&](bool forward)
     {
         if constexpr (Incremental)
-            evaluation.update(
-                std::pair { borrow(trace.no_sources), borrow(trace.no_sources) },
-                std::pair { borrow(forward ? trace.edge_change.added : trace.edge_change.removed), borrow(forward ? trace.edge_change.removed : trace.edge_change.added) },
-                std::pair { borrow(trace.no_targets), borrow(trace.no_targets) });
+            evaluation.update(std::pair { borrow(trace.no_sources), borrow(trace.no_sources) },
+                              std::pair { borrow(forward ? trace.edge_change.added : trace.edge_change.removed),
+                                          borrow(forward ? trace.edge_change.removed : trace.edge_change.added) },
+                              std::pair { borrow(trace.no_targets), borrow(trace.no_targets) });
         else
             database::distance(borrow(trace.sources), borrow(forward ? trace.changed_edges : trace.edges), borrow(trace.targets), plan, evaluation, workspace);
     };

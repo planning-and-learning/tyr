@@ -16,8 +16,6 @@
  */
 
 #include "planning/parser.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
@@ -38,6 +36,8 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>

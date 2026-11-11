@@ -165,8 +165,10 @@ public:
 
     SearchNode& get_search_node(urd::index<State<Kind>> state)
     {
-        static const auto default_node =
-            SearchNode { std::numeric_limits<ygg::float_t>::infinity(), std::numeric_limits<ygg::float_t>::quiet_NaN(), ParentPolicy::no_parent(), SearchNodeStatus::NEW };
+        static const auto default_node = SearchNode { std::numeric_limits<ygg::float_t>::infinity(),
+                                                      std::numeric_limits<ygg::float_t>::quiet_NaN(),
+                                                      ParentPolicy::no_parent(),
+                                                      SearchNodeStatus::NEW };
         return get_or_create_search_node(state, m_search_nodes, default_node);
     }
 

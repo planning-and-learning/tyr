@@ -1,19 +1,17 @@
 #include "tyr/planning/applicability.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "applicability_schema.hpp"
 #include "planning/parser.hpp"
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/domains.hpp"
-#include "tyr/formalism/write_context.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
+#include "tyr/formalism/write_context.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
@@ -40,10 +38,11 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <utility>
-#include <vector>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/slots/slots.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 
 template<typename Kind, typename State>
@@ -152,8 +151,8 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto& effect_mapping = action_program.get_conditional_effect_to_predicate_mapping();
     const auto rule_of = [&](auto predicate)
     { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_heads().front().get_predicate() == predicate; }); };
-    auto expected_rules =
-        urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, urd::Store<urd::sequence<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>>>> {};
+    auto expected_rules = urd::Store<
+        urd::map<formalism::planning::ActionView<LiftedTag>, urd::Store<urd::sequence<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>>>> {};
     auto num_rules = static_cast<size_t>(0);
     for (const auto& [predicate, action] : action_mapping)
     {

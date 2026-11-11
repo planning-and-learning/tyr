@@ -15,10 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 
 #include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 TYR_FORMALISM_INTERNS()

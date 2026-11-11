@@ -19,29 +19,28 @@
 #define PYTHON_SRC_PYTYR_FORMALISM_BINDING_UTILS_HPP_
 
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <tyr/formalism/datalog/declarations.hpp>
 #include <tyr/formalism/declarations.hpp>
-#include <yggdrasil/formalism/row_data.hpp>
-#include <tyr/formalism/function_data.hpp>
-#include <tyr/formalism/object_data.hpp>
-#include <tyr/formalism/parameter_index.hpp>
-#include <tyr/formalism/predicate_data.hpp>
-#include <tyr/formalism/variable_data.hpp>
 #include <tyr/formalism/formatter.hpp>
-#include <tyr/formalism/declarations.hpp>
-#include <tyr/formalism/planning/declarations.hpp>
-#include <yggdrasil/formalism/row_view.hpp>
+#include <tyr/formalism/function_data.hpp>
 #include <tyr/formalism/function_view.hpp>
+#include <tyr/formalism/object_data.hpp>
 #include <tyr/formalism/object_view.hpp>
+#include <tyr/formalism/parameter_index.hpp>
+#include <tyr/formalism/planning/declarations.hpp>
+#include <tyr/formalism/predicate_data.hpp>
 #include <tyr/formalism/predicate_view.hpp>
+#include <tyr/formalism/variable_data.hpp>
 #include <tyr/formalism/variable_view.hpp>
-#include <yggdrasil/python/bindings.hpp>
-#include "pytyr/module.hpp"
 #include <urd/elements/flat.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::formalism
 {

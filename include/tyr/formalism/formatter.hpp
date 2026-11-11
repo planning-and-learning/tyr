@@ -19,7 +19,6 @@
 #define TYR_FORMALISM_FORMATTER_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
 #include <fmt/format.h>

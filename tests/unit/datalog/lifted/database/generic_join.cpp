@@ -3,11 +3,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/generic_join.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
+#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/projection.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
@@ -16,6 +14,8 @@
 #include <gtest/gtest.h>
 #include <random>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::datalog::tests
 {
@@ -376,7 +376,9 @@ TEST(YggdrasilTests, DatabaseGenericJoinIncrementalRandomBatchesMatchFullReevalu
     for (size_t batch = 0; batch < 50; ++batch)
     {
         const auto before = binary_reference(inputs, plan);
-        std::array<Change, 3> changes { Change(layer(), relations[0].columns()), Change(layer(), relations[1].columns()), Change(layer(), relations[2].columns()) };
+        std::array<Change, 3> changes { Change(layer(), relations[0].columns()),
+                                        Change(layer(), relations[1].columns()),
+                                        Change(layer(), relations[2].columns()) };
         for (size_t input = 0; input < relations.size(); ++input)
             for (ygg::uint_t a = 0; a < 4; ++a)
                 for (ygg::uint_t b = 0; b < 4; ++b)

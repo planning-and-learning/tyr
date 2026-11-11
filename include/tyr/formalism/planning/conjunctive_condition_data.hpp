@@ -18,18 +18,17 @@
 #ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_DATA_HPP_
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_DATA_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {
@@ -65,7 +64,10 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_literals, &data::fluent_literals, &data::derived_literals>(*this); }
+    {
+        return ::tyr::formalism::
+            tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_literals, &data::fluent_literals, &data::derived_literals>(*this);
+    }
 
     static constexpr auto cista_members() noexcept
     {
@@ -107,7 +109,11 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
 
     template<::tyr::formalism::FactKind T>
     [[nodiscard]] const auto& get_literals() const
-    { return ::tyr::formalism::tagged_member<boost::mp11::mp_list<::tyr::formalism::StaticTag, ::tyr::formalism::DerivedTag>, T, &data::static_literals, &data::derived_literals>(*this); }
+    {
+        return ::tyr::formalism::
+            tagged_member<boost::mp11::mp_list<::tyr::formalism::StaticTag, ::tyr::formalism::DerivedTag>, T, &data::static_literals, &data::derived_literals>(
+                *this);
+    }
 
     template<::tyr::formalism::PolarityKind T>
     [[nodiscard]] const auto& get_facts() const

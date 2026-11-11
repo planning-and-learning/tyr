@@ -16,35 +16,26 @@
  */
 
 #include "tyr/planning/task_utils.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/formalism/planning/merge_planning.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -54,10 +45,19 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
+#include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/state_builder.hpp"
 
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning::detail
 {
@@ -119,7 +119,9 @@ void insert_numeric_variables_to_fact_set(const urd::data<State<LiftedTag>>& sta
     {
         const auto fterm = urd::resolve(fterm_index, repository);
         if (const auto it = fluent_to_fluent_function.find(fterm.get_function()); it != fluent_to_fluent_function.end())
-            datalog::insert(fact_sets, formalism::planning::merge_p2d(fterm.get_row(), it->second, merge_context).first.data(), ygg::ClosedInterval<ygg::float_t>(value, value));
+            datalog::insert(fact_sets,
+                            formalism::planning::merge_p2d(fterm.get_row(), it->second, merge_context).first.data(),
+                            ygg::ClosedInterval<ygg::float_t>(value, value));
     }
 }
 

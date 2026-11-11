@@ -54,7 +54,9 @@ void expect_delta(const database::incremental::Delta& actual, const RelationBuil
 
 TEST(YggdrasilTests, DatabaseTypedProjectionConsolidatesWitnessesAndUndoesMixedChanges)
 {
-    const std::vector<ygg::ColumnLayout> columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> }, { ColumnIndex(2), ygg::type_id<double> }, { ColumnIndex(3), ygg::type_id<bool> } };
+    const std::vector<ygg::ColumnLayout> columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> },
+                                                   { ColumnIndex(2), ygg::type_id<double> },
+                                                   { ColumnIndex(3), ygg::type_id<bool> } };
     RelationBuilder input(columns);
     input.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(1.5), ygg::encode_value(true) });
     input.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(1.5), ygg::encode_value(true) });
@@ -95,8 +97,12 @@ TEST(YggdrasilTests, DatabaseTypedProjectionConsolidatesWitnessesAndUndoesMixedC
 
 TEST(YggdrasilTests, DatabaseTypedJoinUpdatesBothInputsAndRepairsCompactedIndexes)
 {
-    const std::vector<ygg::ColumnLayout> left_columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> }, { ColumnIndex(2), ygg::type_id<double> }, { ColumnIndex(3), ygg::type_id<bool> } };
-    const std::vector<ygg::ColumnLayout> right_columns { { ColumnIndex(3), ygg::type_id<bool> }, { ColumnIndex(1), ygg::type_id<ygg::uint_t> }, { ColumnIndex(4), ygg::type_id<double> } };
+    const std::vector<ygg::ColumnLayout> left_columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> },
+                                                        { ColumnIndex(2), ygg::type_id<double> },
+                                                        { ColumnIndex(3), ygg::type_id<bool> } };
+    const std::vector<ygg::ColumnLayout> right_columns { { ColumnIndex(3), ygg::type_id<bool> },
+                                                         { ColumnIndex(1), ygg::type_id<ygg::uint_t> },
+                                                         { ColumnIndex(4), ygg::type_id<double> } };
     RelationBuilder left(left_columns);
     RelationBuilder right(right_columns);
     left.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(1.5), ygg::encode_value(true) });
@@ -159,10 +165,14 @@ TEST(YggdrasilTests, DatabaseTypedConstantSelectionUsesCanonicalFloatEquality)
     ASSERT_EQ(input.size(), 2);
     RelationBuilder result(columns);
     const ygg::FreeRelationRepository repository;
-    database::select_equal_value(repository.view(input), database::SelectValuePlan(columns, ColumnIndex(1), ygg::type_id<double>, ygg::encode_value(-0.0)), result);
+    database::select_equal_value(repository.view(input),
+                                 database::SelectValuePlan(columns, ColumnIndex(1), ygg::type_id<double>, ygg::encode_value(-0.0)),
+                                 result);
     ASSERT_EQ(result.size(), 1);
     EXPECT_TRUE(result.contains(std::array { ygg::encode_value(0.0), ygg::encode_value(ygg::uint_t(1)) }));
-    database::select_equal_value(repository.view(input), database::SelectValuePlan(columns, ColumnIndex(1), ygg::type_id<double>, ygg::encode_value(second_nan)), result);
+    database::select_equal_value(repository.view(input),
+                                 database::SelectValuePlan(columns, ColumnIndex(1), ygg::type_id<double>, ygg::encode_value(second_nan)),
+                                 result);
     ASSERT_EQ(result.size(), 1);
     EXPECT_TRUE(result.contains(std::array { ygg::encode_value(first_nan), ygg::encode_value(ygg::uint_t(2)) }));
 }

@@ -16,12 +16,11 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 #include <tyr/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_data.hpp>
-#include <tyr/formalism/declarations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::formalism::datalog
@@ -68,7 +67,8 @@ void bind_row(nb::module_& m, RepositoryBinding& repository)
 {
     {
         using V = ygg::RowIndex<Rule<LiftedTag, PredicateTag>>;
-        auto cls = nb::class_<V>(m, "RuleRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
+        auto cls =
+            nb::class_<V>(m, "RuleRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
@@ -76,7 +76,9 @@ void bind_row(nb::module_& m, RepositoryBinding& repository)
 
     {
         using V = ygg::RowIndex<Rule<LiftedTag, FunctionTag>>;
-        auto cls = nb::class_<V>(m, "FunctionRuleRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
+        auto cls = nb::class_<V>(m, "FunctionRuleRowIndex")
+                       .def_ro("relation_index", &V::relation)
+                       .def_prop_ro("row_index", [](const V& self) { return self.row.value; });
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);

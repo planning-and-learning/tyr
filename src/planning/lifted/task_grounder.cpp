@@ -16,7 +16,6 @@
  */
 
 #include "tyr/planning/lifted/task_grounder.hpp"
-#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include "effect_atom_index.hpp"
 #include "tyr/datalog/lifted/contexts/program.hpp"
@@ -24,39 +23,39 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "tyr/formalism/copy.hpp"
-#include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/interning.hpp"
-#include "tyr/formalism/planning/invariants/mutexes.hpp"
-#include "tyr/formalism/planning/invariants/synthesis.hpp"
-#include "tyr/formalism/planning/merge_planning.hpp"
-#include "tyr/formalism/planning/mutable/formatter.hpp"
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/copy.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/planning/invariants/mutexes.hpp"
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
+#include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/mutable/formatter.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -72,18 +71,19 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <urd/config.hpp>
 #include <urd/elements/equal_to.hpp>
+#include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
-#include <urd/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -98,8 +98,9 @@ enum class RemapStatus : std::uint8_t
 };
 
 template<formalism::FactKind T>
-RemapStatus
-classify_literal(formalism::planning::AtomView<GroundTag, T> atom, bool polarity, const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, T>>>& atoms)
+RemapStatus classify_literal(formalism::planning::AtomView<GroundTag, T> atom,
+                             bool polarity,
+                             const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, T>>>& atoms)
 {
     const bool present = atoms.contains(atom);
 
@@ -561,20 +562,20 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                 {
                     auto fluent_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(builder);
                     fluent_atom->row = formalism::planning::merge_d2p<formalism::FluentTag, formalism::FluentTag>(
-                                               binding,
-                                               ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
-                                               merge_planning_context)
-                                               .first.data();
+                                           binding,
+                                           ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
+                                           merge_planning_context)
+                                           .first.data();
                     fluent_atoms.push_back(formalism::planning::insert(*repository, *fluent_atom).first);
                 }
                 else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
                 {
                     auto derived_atom = formalism::planning::checkout<formalism::Atom<GroundTag, formalism::DerivedTag>>(builder);
                     derived_atom->row = formalism::planning::merge_d2p<formalism::FluentTag, formalism::DerivedTag>(
-                                                binding,
-                                                ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
-                                                merge_planning_context)
-                                                .first.data();
+                                            binding,
+                                            ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
+                                            merge_planning_context)
+                                            .first.data();
                     derived_atoms.push_back(formalism::planning::insert(*repository, *derived_atom).first);
                 }
             });
@@ -629,8 +630,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
         if (const auto fact = std::as_const(*fdr_context).get_fact(copy(atom, merge_context).first))
             ground_task->fluent_facts.push_back(fact->data());
 
-    const auto static_state =
-        StaticState(urd::resolve(ground_task->static_atoms, *repository), urd::resolve(ground_task->static_fterm_values, *repository));
+    const auto static_state = StaticState(urd::resolve(ground_task->static_atoms, *repository), urd::resolve(ground_task->static_fterm_values, *repository));
 
     /// --- Create FDR goal
     const auto goal_or_nullopt =

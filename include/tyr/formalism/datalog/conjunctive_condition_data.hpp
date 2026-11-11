@@ -18,17 +18,16 @@
 #ifndef TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_DATA_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {

@@ -16,10 +16,10 @@
  */
 
 #include "tyr/formalism/numeric_expression_utils.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <gtest/gtest.h>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::tests

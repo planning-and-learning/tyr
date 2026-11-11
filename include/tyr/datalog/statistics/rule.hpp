@@ -19,11 +19,11 @@
 #define TYR_DATALOG_STATISTICS_RULE_HPP_
 
 #include <algorithm>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog

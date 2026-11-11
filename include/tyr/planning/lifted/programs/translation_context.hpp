@@ -55,7 +55,8 @@ using AppPredicateToActionMapping = urd::Store<urd::map<formalism::datalog::Pred
 /// followed by the objects of the effect's variables for which the effect fires.
 /// Keyed by the action too, since actions can share an interned conditional effect.
 using ConditionalEffectToPredicateMapping =
-    urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
+    urd::Store<urd::map<std::pair<formalism::planning::ActionView<LiftedTag>, formalism::planning::ConditionalEffectView<LiftedTag>>,
+                        formalism::datalog::PredicateView<formalism::FluentTag>>>;
 
 /// Mappings select which state inputs are translated; omitted symbols are not inserted.
 template<>

@@ -25,5 +25,7 @@ using Ground = tyr::formalism::UnaryOperator<::tyr::GroundTag, tyr::formalism::A
 
 static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
-static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
-static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::datalog::Repository>, tyr::formalism::datalog::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::datalog::Repository>,
+                           tyr::formalism::datalog::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::datalog::Repository>,
+                           tyr::formalism::datalog::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);

@@ -20,7 +20,6 @@
 
 #include "tyr/formalism/declarations.hpp"
 
-
 namespace tyr::formalism::unification
 {
 

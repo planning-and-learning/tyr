@@ -43,7 +43,12 @@ int main(int argc, char** argv)
             if (const auto max_time = program.present<uint64_t>("--max-time"))
                 options.search_budget.max_time = std::chrono::seconds(*max_time);
             options.use_preferred_actions = !program.get<bool>("--disable-preferred-actions");
-            return planning::gbfs_lazy::find_solution(*search.task, *search.state_repository, *search.axiom_evaluator, *search.successor_generator, *search.heuristic, options);
+            return planning::gbfs_lazy::find_solution(*search.task,
+                                                      *search.state_repository,
+                                                      *search.axiom_evaluator,
+                                                      *search.successor_generator,
+                                                      *search.heuristic,
+                                                      options);
         },
         true);
 }

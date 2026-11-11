@@ -19,9 +19,9 @@
 #define TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_IMPL_HPP_
 
 #include "tyr/formalism/unification/structure_traits.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-
 #include <vector>
 
 namespace tyr::formalism::unification

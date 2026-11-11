@@ -65,9 +65,7 @@ AxiomEvaluator<Kind>::AxiomEvaluator(std::unique_ptr<Impl> impl) : m_impl(std::m
 
 template<TaskKind Kind>
 AxiomEvaluatorPtr<Kind> AxiomEvaluator<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{
-    return AxiomEvaluatorPtr<Kind>(new AxiomEvaluator<Kind>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context))));
-}
+{ return AxiomEvaluatorPtr<Kind>(new AxiomEvaluator<Kind>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context)))); }
 
 template<TaskKind Kind>
 const TaskPtr<Kind>& AxiomEvaluator<Kind>::get_task() const noexcept

@@ -6,9 +6,9 @@
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 
 #include "yggdrasil/core/config.hpp"
-#include <urd/config.hpp>
 
 #include <ranges>
+#include <urd/config.hpp>
 
 namespace tyr::datalog::database::incremental
 {

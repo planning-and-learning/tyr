@@ -16,8 +16,6 @@
  */
 
 #include "refinement.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "matching.hpp"
 #include "normalization.hpp"
@@ -27,6 +25,8 @@
 
 #include <algorithm>
 #include <optional>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::formalism::planning::invariant
@@ -69,10 +69,11 @@ bool optional_parameter_less(const std::optional<ParameterIndex>& a, const std::
     return *a < *b;
 }
 
-void instantiate_factored_mapping_rec(const urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<size_t>>, urd::Store<urd::sequence<std::optional<ParameterIndex>>>>>>& groups,
-                                      size_t group_index,
-                                      PositionMapping& current,
-                                      urd::Store<urd::sequence<PositionMapping>>& out)
+void instantiate_factored_mapping_rec(
+    const urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<size_t>>, urd::Store<urd::sequence<std::optional<ParameterIndex>>>>>>& groups,
+    size_t group_index,
+    PositionMapping& current,
+    urd::Store<urd::sequence<PositionMapping>>& out)
 {
     if (group_index == groups.size())
     {
@@ -98,7 +99,8 @@ void instantiate_factored_mapping_rec(const urd::Store<urd::sequence<std::pair<u
     }
 }
 
-urd::Store<urd::sequence<PositionMapping>> instantiate_factored_mapping(const urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<size_t>>, urd::Store<urd::sequence<std::optional<ParameterIndex>>>>>>& groups)
+urd::Store<urd::sequence<PositionMapping>> instantiate_factored_mapping(
+    const urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<size_t>>, urd::Store<urd::sequence<std::optional<ParameterIndex>>>>>>& groups)
 {
     urd::Store<urd::sequence<PositionMapping>> result;
     PositionMapping current;
@@ -107,9 +109,9 @@ urd::Store<urd::sequence<PositionMapping>> instantiate_factored_mapping(const ur
 }
 
 urd::Store<urd::sequence<PositionMapping>> possible_mappings(const MutableAtom<FluentTag>& part,
-                                               const MutableAtom<FluentTag>& own_literal,
-                                               const MutableAtom<FluentTag>& other_literal,
-                                               size_t num_rigid_variables)
+                                                             const MutableAtom<FluentTag>& own_literal,
+                                                             const MutableAtom<FluentTag>& other_literal,
+                                                             size_t num_rigid_variables)
 {
     size_t allowed_omissions = other_literal.terms.size() - part_arity(part, num_rigid_variables);
     if (allowed_omissions > 1)

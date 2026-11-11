@@ -18,17 +18,16 @@
 #ifndef TYR_FORMALISM_DATALOG_RULE_DATA_HPP_
 #define TYR_FORMALISM_DATALOG_RULE_DATA_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
 
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::datalog
@@ -99,8 +98,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>> : ::tyr::forma
     data(data&& other) = default;
     data& operator=(data&& other) = default;
 
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::variables, &data::body, data::head_pointer(), &data::cost> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, data::head_pointer(), &data::cost> {}; }
     /// The head (or heads), as the base holds it.
     [[nodiscard]] const auto& get_head() const noexcept { return this->head_member(); }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::get_head, &data::cost> {}; }
@@ -130,8 +128,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag, R>> : ::tyr::forma
         cost(cost_)
     { this->head_member() = std::move(head_); }
 
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::row, &data::body, data::head_pointer(), &data::cost> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, data::head_pointer(), &data::cost> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
 };
 

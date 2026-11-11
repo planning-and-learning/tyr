@@ -10,10 +10,8 @@ using Term = tyr::formalism::Term;
 // A term is the variant itself, stored as it is; read through a repository it is the variant of the object's view and
 // the parameter.
 static_assert(std::totally_ordered<Term>);
-static_assert(std::same_as<tyr::formalism::planning::TermView,
-                           std::variant<tyr::formalism::planning::ObjectView, tyr::formalism::ParameterIndex>>);
-static_assert(std::same_as<tyr::formalism::datalog::TermView,
-                           std::variant<tyr::formalism::datalog::ObjectView, tyr::formalism::ParameterIndex>>);
+static_assert(std::same_as<tyr::formalism::planning::TermView, std::variant<tyr::formalism::planning::ObjectView, tyr::formalism::ParameterIndex>>);
+static_assert(std::same_as<tyr::formalism::datalog::TermView, std::variant<tyr::formalism::datalog::ObjectView, tyr::formalism::ParameterIndex>>);
 
 TEST(TyrFormalismTerm, PreservesParameterAlternative)
 {

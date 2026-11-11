@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/optimization/details/optimization.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

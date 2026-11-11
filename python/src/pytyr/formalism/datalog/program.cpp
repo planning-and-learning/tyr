@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::datalog
 {
@@ -35,17 +35,17 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
         using V = urd::data<Tag>;
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         cls.def(urd::python::init_from_views<const PredicateViewList<StaticTag>&,
-                         const PredicateViewList<FluentTag>&,
-                         const FunctionViewList<StaticTag>&,
-                         const FunctionViewList<FluentTag>&,
-                         const ObjectViewList&,
-                         const AtomViewList<GroundTag, StaticTag>&,
-                         const AtomViewList<GroundTag, FluentTag>&,
-                         const FunctionTermValueViewList<GroundTag, StaticTag>&,
-                         const FunctionTermValueViewList<GroundTag, FluentTag>&,
-                         const std::optional<ConjunctiveConditionView<GroundTag>>&,
-                         const RuleViewList<T, PredicateTag>&,
-                         const RuleViewList<T, FunctionTag>&>(),
+                                             const PredicateViewList<FluentTag>&,
+                                             const FunctionViewList<StaticTag>&,
+                                             const FunctionViewList<FluentTag>&,
+                                             const ObjectViewList&,
+                                             const AtomViewList<GroundTag, StaticTag>&,
+                                             const AtomViewList<GroundTag, FluentTag>&,
+                                             const FunctionTermValueViewList<GroundTag, StaticTag>&,
+                                             const FunctionTermValueViewList<GroundTag, FluentTag>&,
+                                             const std::optional<ConjunctiveConditionView<GroundTag>>&,
+                                             const RuleViewList<T, PredicateTag>&,
+                                             const RuleViewList<T, FunctionTag>&>(),
                 "static_predicates"_a,
                 "fluent_predicates"_a,
                 "static_functions"_a,

@@ -1,20 +1,20 @@
 #include "query_helpers.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
 #include <array>
 #include <gtest/gtest.h>
 #include <limits>
 #include <random>
-#include <vector>
 #include <tyr/datalog/lifted/database/semantics/bound/query_evaluation.hpp>
 #include <tyr/datalog/lifted/database/semantics/operations.hpp>
 #include <tyr/datalog/lifted/database/semantics/query_evaluation.hpp>
 #include <tyr/datalog/lifted/database/semantics/relation_view.hpp>
 #include <tyr/datalog/lifted/database/syntax/formatter.hpp>
-#include <yggdrasil/formalism/relation_view.hpp>
 #include <tyr/datalog/lifted/database/syntax/translations/relaxation.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <vector>
+#include <yggdrasil/formalism/relation_view.hpp>
 
 namespace
 {
@@ -91,7 +91,10 @@ TEST(DatabaseRelaxation, RandomExpressionsAreOverApproximatedAndExactWhenKnown)
     const auto c = qb::input(queries, 2, { y, z });
     const auto e = qb::input(queries, 3, { x, z });
     const auto leaves = std::array { a, b, c, e };
-    auto inputs = std::array<Relation, 4> { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })), Relation(tyr::datalog::tests::ops::cols({ x, z })) };
+    auto inputs = std::array<Relation, 4> { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                            Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                            Relation(tyr::datalog::tests::ops::cols({ y, z })),
+                                            Relation(tyr::datalog::tests::ops::cols({ x, z })) };
     auto random = std::mt19937(4711);
     const auto labels_of = [](View query)
     {
@@ -211,7 +214,8 @@ TEST(DatabaseRelaxation, UnknownInputsDropConstraints)
     // An unknown conjunct drops out of a join; its label z is unconstrained.
     const auto joined = relax(qb::join(queries, known_edges, unknown), both_known);
     ASSERT_TRUE(joined->relaxation.queries[0].has_value());
-    EXPECT_TRUE(std::ranges::equal(joined->relaxation.queries[0].value().columns() | std::views::transform(&ygg::ColumnLayout::label), (urd::Store<urd::sequence<Column>> { x, y })));
+    EXPECT_TRUE(std::ranges::equal(joined->relaxation.queries[0].value().columns() | std::views::transform(&ygg::ColumnLayout::label),
+                                   (urd::Store<urd::sequence<Column>> { x, y })));
     EXPECT_EQ(joined->relaxation.slots, (urd::Store<urd::sequence<size_t>> { 0 }));
 
     // A union with an unknown side constrains nothing.
@@ -221,7 +225,8 @@ TEST(DatabaseRelaxation, UnknownInputsDropConstraints)
     // A semijoin with an unknown lhs still constrains the shared label y by its known rhs: ⊤ ⋉ B̂ = B̂ on y.
     const auto semi = relax(qb::semijoin(queries, unknown, known_edges), both_known);
     ASSERT_TRUE(semi->relaxation.queries[0].has_value());
-    EXPECT_TRUE(std::ranges::equal(semi->relaxation.queries[0].value().columns() | std::views::transform(&ygg::ColumnLayout::label), (urd::Store<urd::sequence<Column>> { y })));
+    EXPECT_TRUE(std::ranges::equal(semi->relaxation.queries[0].value().columns() | std::views::transform(&ygg::ColumnLayout::label),
+                                   (urd::Store<urd::sequence<Column>> { y })));
 
     // A known antijoin rhs stays: the result is exact.
     const auto anti = relax(qb::antijoin(queries, known_edges, blocked), both_known);
@@ -277,7 +282,10 @@ TEST(DatabaseRelaxation, RootsShareOneInputNumbering)
     const auto relaxed = relax(roots, { true, false, true, false });
     ASSERT_TRUE(relaxed->relaxation.queries[0].has_value() && relaxed->relaxation.queries[1].has_value());
     EXPECT_EQ(relaxed->relaxation.slots, (urd::Store<urd::sequence<size_t>> { 0, 2 }));
-    auto inputs = std::array<Relation, 4> { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })), Relation(tyr::datalog::tests::ops::cols({ x, z })) };
+    auto inputs = std::array<Relation, 4> { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                            Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                            Relation(tyr::datalog::tests::ops::cols({ y, z })),
+                                            Relation(tyr::datalog::tests::ops::cols({ x, z })) };
     inputs[0].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     inputs[2].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     const auto plan = tyr::datalog::database::compile({ relaxed->relaxation.queries[0].value(), relaxed->relaxation.queries[1].value() });
@@ -322,7 +330,8 @@ TEST(DatabaseRelaxation, ProjectedAwayConjunctsAreTestedOnceByBoundEvaluation)
 
 /// The y of each row a bound evaluation of `query` (columns x, y) emits for x = 0, in order; on_row asks to stop after
 /// `limit` rows.
-urd::Store<urd::sequence<ygg::uint_t>> bound_successors(View query, const urd::Store<urd::sequence<const Relation*>>& inputs, size_t limit = std::numeric_limits<size_t>::max())
+urd::Store<urd::sequence<ygg::uint_t>>
+bound_successors(View query, const urd::Store<urd::sequence<const Relation*>>& inputs, size_t limit = std::numeric_limits<size_t>::max())
 {
     auto evaluator = tyr::datalog::database::bound::QueryEvaluator(layer(), query);
     for (size_t slot = 0; slot < inputs.size(); ++slot)
@@ -419,7 +428,8 @@ TEST(DatabaseRelaxation, SharedSubqueriesKeepTheRequestedColumnOrder)
     const auto roots = std::array { qb::project(queries, qb::select_value(queries, r, x, static_cast<ygg::uint_t>(0)), { y }), r };
     const auto relaxed = relax(roots, { true, true, true, true });
     ASSERT_TRUE(relaxed->relaxation.queries[1].has_value());
-    EXPECT_TRUE(std::ranges::equal(relaxed->relaxation.queries[1].value().columns() | std::views::transform(&ygg::ColumnLayout::label), (urd::Store<urd::sequence<Column>> { x, y })));
+    EXPECT_TRUE(std::ranges::equal(relaxed->relaxation.queries[1].value().columns() | std::views::transform(&ygg::ColumnLayout::label),
+                                   (urd::Store<urd::sequence<Column>> { x, y })));
 }
 
 /// Whether the root's relaxation, evaluated on the known inputs, equals `expected` evaluated on all of them.
@@ -439,7 +449,10 @@ void expect_relaxes_to(View query, View expected, const std::array<bool, 4>& kno
 
 std::array<Relation, 4> sample_inputs()
 {
-    auto inputs = std::array<Relation, 4> { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })) };
+    auto inputs = std::array<Relation, 4> { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                            Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                            Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                            Relation(tyr::datalog::tests::ops::cols({ y, z })) };
     auto random = std::mt19937(17);
     for (auto& input : inputs)
         for (ygg::uint_t left = 0; left < 4; ++left)

@@ -19,10 +19,9 @@
 #define TYR_PYTHON_DATALOG_DATALOG_HPP_
 
 #include "module.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include <urd/python/sequences/sequence.hpp>
+#include "pytyr/module.hpp"
 
+#include <memory>
 #include <nanobind/make_iterator.h>
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/optional.h>
@@ -31,6 +30,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <ranges>
 #include <tyr/algorithms/kckp/kckp.hpp>
 #include <tyr/datalog/applicability.hpp>
 #include <tyr/datalog/applicability_lifted.hpp>
@@ -41,24 +41,24 @@
 #include <tyr/datalog/lifted/kckp/assignment.hpp>
 #include <tyr/datalog/lifted/kckp/assignment_sets.hpp>
 #include <tyr/datalog/lifted/kckp/consistency_graph.hpp>
+#include <tyr/datalog/lifted/kckp/workspaces/rule.hpp>
 #include <tyr/datalog/lifted/program.hpp>
 #include <tyr/datalog/lifted/workspaces/facts.hpp>
-#include <tyr/datalog/lifted/kckp/workspaces/rule.hpp>
+#include <tyr/datalog/policies/annotation.hpp>
+#include <tyr/datalog/policies/cost.hpp>
+#include <tyr/datalog/policies/termination.hpp>
 #include <tyr/datalog/solver.hpp>
 #include <tyr/datalog/static_rule_filter.hpp>
 #include <tyr/datalog/statistics/program.hpp>
 #include <tyr/datalog/statistics/rule.hpp>
-#include <tyr/datalog/policies/annotation.hpp>
-#include <tyr/datalog/policies/cost.hpp>
-#include <tyr/datalog/policies/termination.hpp>
 #include <tyr/formalism/datalog/copy.hpp>
-#include <memory>
-#include <ranges>
+#include <urd/python/owner.hpp>
+#include <urd/python/sequences/sequence.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include <urd/python/owner.hpp>
-#include "pytyr/module.hpp"
 
 namespace tyr::datalog
 {
@@ -83,7 +83,10 @@ void bind_tagged_fact_sets(nb::module_& m, const char* name)
             },
             "predicate"_a,
             nb::keep_alive<0, 1>())
-        .def("contains", [](const Sets& self, formalism::datalog::PredicateRowIndex<T> fact) { return contains(self, fact); }, "fact"_a)
+        .def(
+            "contains",
+            [](const Sets& self, formalism::datalog::PredicateRowIndex<T> fact) { return contains(self, fact); },
+            "fact"_a)
         .def("value", [](const Sets& self, formalism::datalog::FunctionRowIndex<T> fact) { return value(self, fact); }, "fact"_a);
 }
 
@@ -137,13 +140,12 @@ inline void bind_annotations(nb::module_& m)
         nb::class_<BaseAnnotation>(m, "BaseAnnotation").def(nb::init<>()).def(nb::init<Cost>(), "cost"_a).def("get_cost", &BaseAnnotation::get_cost);
     urd::python::add_comparison(base_annotation_cls);
 
-    auto witness_annotation_cls =
-        nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
-            .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
-            .def(nb::init<RuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
-            .def("get_rule_key", &WitnessAnnotationT::get_rule_key)
-            .def("get_cost", &WitnessAnnotationT::get_cost)
-            .def("get_numeric_supports", &WitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
+    auto witness_annotation_cls = nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
+                                      .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
+                                      .def(nb::init<RuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
+                                      .def("get_rule_key", &WitnessAnnotationT::get_rule_key)
+                                      .def("get_cost", &WitnessAnnotationT::get_cost)
+                                      .def("get_numeric_supports", &WitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
     urd::python::add_comparison(witness_annotation_cls);
 
     auto function_witness_annotation_cls =
@@ -158,10 +160,7 @@ inline void bind_annotations(nb::module_& m)
     nb::class_<PredicateAnnotationStore>(m, "PredicateAnnotations")
         .def(nb::init<>())
         .def("clear", &PredicateAnnotationStore::clear)
-        .def(
-            "find",
-            [](const PredicateAnnotationStore& self, PredicateKey key) { return find_predicate_annotation(self, key); },
-            "binding"_a);
+        .def("find", [](const PredicateAnnotationStore& self, PredicateKey key) { return find_predicate_annotation(self, key); }, "binding"_a);
 
     nb::class_<FunctionAnnotationStore>(m, "FunctionAnnotations")
         .def(nb::init<>())
@@ -192,8 +191,7 @@ void bind_cost_policy(nb::module_& m, const char* name)
     {
         cls.def(
                "get_cost",
-               [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval)
-               { return self.get_cost(rule, key, interval); },
+               [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval) { return self.get_cost(rule, key, interval); },
                "rule"_a,
                "binding"_a,
                "interval"_a)
@@ -204,8 +202,7 @@ void bind_cost_policy(nb::module_& m, const char* name)
                 "cost"_a)
             .def(
                 "set_cost",
-                [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost)
-                { self.set_cost(rule, key, interval, cost); },
+                [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost) { self.set_cost(rule, key, interval, cost); },
                 "rule"_a,
                 "binding"_a,
                 "interval"_a,
@@ -319,7 +316,8 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 "atom"_a)
             .def(
                 "set_fluent_function",
-                [](Workspace& self, FunctionTerm term, const Interval& interval) { return tyr::datalog::insert(self.facts.fact_sets, term.get_row().data(), interval); },
+                [](Workspace& self, FunctionTerm term, const Interval& interval)
+                { return tyr::datalog::insert(self.facts.fact_sets, term.get_row().data(), interval); },
                 "function_term"_a,
                 "interval"_a);
     }

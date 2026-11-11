@@ -16,12 +16,12 @@
  */
 
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/formalism/planning/mutable/formatter.hpp"
 
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <yggdrasil/python/bindings.hpp>
-#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {

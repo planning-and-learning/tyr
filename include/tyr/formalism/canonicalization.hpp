@@ -64,7 +64,6 @@ void canonicalize(urd::data<Function<T>>&)
     // Trivially canonical
 }
 
-
 template<TaskKind T>
 void canonicalize(urd::data<UnaryOperator<T, ArithmeticOperatorKind>>&)
 {

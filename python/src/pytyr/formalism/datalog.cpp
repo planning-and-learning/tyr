@@ -16,8 +16,8 @@
  */
 
 #include "datalog/bindings.hpp"
-#include "pytyr/module.hpp"
 #include "datalog/module.hpp"
+#include "pytyr/module.hpp"
 
 #include <cstddef>
 #include <nanobind/stl/optional.h>

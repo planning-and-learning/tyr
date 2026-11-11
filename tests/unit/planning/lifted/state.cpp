@@ -1,18 +1,18 @@
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/parser.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
+#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_data.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_storage/numeric.hpp"
 #include "tyr/planning/state_storage/tree_bitset/atom.hpp"
 #include "tyr/planning/state_storage/tree_bitset/fact.hpp"
-#include "tyr/planning/state_data.hpp"
-#include "tyr/planning/lifted/state_storage.hpp"
-#include "tyr/planning/lifted/task.hpp"
-#include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <algorithm>
@@ -134,4 +134,3 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     EXPECT_TRUE(
         std::ranges::equal(retained.template get_fterm_values<tyr::formalism::FluentTag>(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
 }
-

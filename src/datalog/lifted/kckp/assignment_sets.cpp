@@ -16,33 +16,30 @@
  */
 
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/analysis/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/lifted/kckp/assignment.hpp"
-#include "tyr/formalism/datalog/formatter.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
@@ -52,17 +49,21 @@
 #include <numeric>
 #include <tuple>
 #include <urd/bits.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::datalog
 {
 namespace
 {
 template<typename Objects, std::invocable<size_t> Emit>
-    requires std::ranges::forward_range<const Objects> && std::ranges::sized_range<const Objects> && std::same_as<std::ranges::range_value_t<const Objects>, urd::index<formalism::Object>>
+    requires std::ranges::forward_range<const Objects> && std::ranges::sized_range<const Objects>
+             && std::same_as<std::ranges::range_value_t<const Objects>, urd::index<formalism::Object>>
              && std::convertible_to<std::ranges::range_reference_t<const Objects>, const urd::index<formalism::Object>&>
 void for_each_assignment_rank(const PerfectAssignmentHash& hash, const Objects& objects, urd::Store<urd::sequence<ygg::uint_t>>& remapped, Emit emit)
 {
@@ -230,18 +231,13 @@ PredicateAssignmentSet<T>::PredicateAssignmentSet(formalism::datalog::PredicateV
 
 template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::reset() noexcept
-{
-    m_ranks.clear();
-}
+{ m_ranks.clear(); }
 
 template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateRowView<T> binding)
 {
     assert(binding.data().relation == m_predicate_index);
-    for_each_assignment_rank(m_hash,
-                             binding.template get<urd::index<formalism::Object>>(),
-                             m_remapped_objects,
-                             [&](size_t rank) { m_ranks.insert(rank); });
+    for_each_assignment_rank(m_hash, binding.template get<urd::index<formalism::Object>>(), m_remapped_objects, [&](size_t rank) { m_ranks.insert(rank); });
 }
 
 template<formalism::FactKind T>
@@ -463,7 +459,8 @@ bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<Grou
 { return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), std::move(interval)); }
 
 template<formalism::FactKind T>
-void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms, const urd::Store<urd::sequence<ygg::float_t>>& values)
+void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms,
+                                       const urd::Store<urd::sequence<ygg::float_t>>& values)
 {
     assert(function_terms.size() == values.size());
 

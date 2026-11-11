@@ -4,11 +4,11 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <ranges>
 #include <span>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::datalog::database::detail
 {
@@ -82,10 +82,10 @@ void breadth_first_search(const DistanceGraph& graph,
 namespace tyr::datalog::database::detail
 {
 std::span<const ygg::Value> make_distance_row(const DistanceGraph& graph,
-                                         VertexSet::handle_type from,
-                                         VertexSet::handle_type to,
-                                         ygg::uint_t length,
-                                         urd::Store<urd::sequence<ygg::Value>>& row)
+                                              VertexSet::handle_type from,
+                                              VertexSet::handle_type to,
+                                              ygg::uint_t length,
+                                              urd::Store<urd::sequence<ygg::Value>>& row)
 {
     assert(length != distance_infinity);
     row.clear();
@@ -134,6 +134,5 @@ bool DistanceWorkspace::matches(const DistancePlan& plan) const noexcept { retur
 
 namespace tyr::datalog::database
 {
-size_t DistanceWorkspace::memory_usage() const noexcept
-{ return urd::memory_usage(*this); }
+size_t DistanceWorkspace::memory_usage() const noexcept { return urd::memory_usage(*this); }
 }

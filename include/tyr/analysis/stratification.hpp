@@ -19,13 +19,14 @@
 #define TYR_ANALYSIS_STRATIFICATION_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/declarations.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-#include "tyr/formalism/declarations.hpp"
 // for Program (ptr only), Rule
 
-#include <vector>
 #include <urd/elements/flat.hpp>
+#include <vector>
 #include <yggdrasil/core/family.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 

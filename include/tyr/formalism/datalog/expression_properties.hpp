@@ -18,35 +18,35 @@
 #ifndef TYR_FORMALISM_DATALOG_EXPRESSION_PROPERTIES_HPP_
 #define TYR_FORMALISM_DATALOG_EXPRESSION_PROPERTIES_HPP_
 
-#include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::formalism::datalog
 {
@@ -137,9 +137,7 @@ void collect_effect_reads(Effect effect, bool reads_target, Result& result)
 
 template<TaskKind T, typename Result>
 void collect_semantic_head_reads(NumericEffectOperatorView<T, FluentTag> head, Result& result)
-{
-    collect_effect_reads(head, head.get_operator() != NumericEffectOperatorKind::Assign, result);
-}
+{ collect_effect_reads(head, head.get_operator() != NumericEffectOperatorKind::Assign, result); }
 
 template<typename Rule, typename Result>
 void collect_rule_fluent_reads(Rule rule, Result& result)

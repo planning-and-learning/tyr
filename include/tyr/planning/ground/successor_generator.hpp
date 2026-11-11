@@ -19,8 +19,6 @@
 #define TYR_PLANNING_GROUND_SUCCESSOR_GENERATOR_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
@@ -28,6 +26,8 @@
 #include <functional>
 #include <memory>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::planning
@@ -81,10 +81,8 @@ public:
     NodeList<GroundTag> get_successor_nodes(const Source& node, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
     NodeList<GroundTag, BuilderStateView<GroundTag>>
     get_successor_nodes(const Source& node, SuccessorBuilders<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
-    void get_successor_nodes(const Source& node,
-                             StateRepository<GroundTag>& storage,
-                             AxiomEvaluator<GroundTag>& axiom_evaluator,
-                             NodeList<GroundTag>& out_nodes);
+    void
+    get_successor_nodes(const Source& node, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator, NodeList<GroundTag>& out_nodes);
     void get_successor_nodes(const Source& node,
                              SuccessorBuilders<GroundTag>& storage,
                              AxiomEvaluator<GroundTag>& axiom_evaluator,
@@ -109,8 +107,7 @@ public:
                              NodeList<GroundTag, BuilderStateView<GroundTag>>& out_nodes);
 
     // Labeled successor API.
-    LabeledNodeList<GroundTag>
-    get_labeled_successor_nodes(const Source& node, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
+    LabeledNodeList<GroundTag> get_labeled_successor_nodes(const Source& node, StateRepository<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
     LabeledNodeList<GroundTag, BuilderStateView<GroundTag>>
     get_labeled_successor_nodes(const Source& node, SuccessorBuilders<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
     void get_labeled_successor_nodes(const Source& node,
@@ -144,18 +141,14 @@ public:
                                        formalism::planning::ActionRowView binding,
                                        StateRepository<GroundTag>& storage,
                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
-    BuilderNode get_successor_node(const Source& node,
-                                   formalism::planning::ActionRowView binding,
-                                   Builder& storage,
-                                   AxiomEvaluator<GroundTag>& axiom_evaluator);
+    BuilderNode
+    get_successor_node(const Source& node, formalism::planning::ActionRowView binding, Builder& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
     Node<GroundTag> get_successor_node(const Source& node,
                                        formalism::planning::ActionView<GroundTag> action,
                                        StateRepository<GroundTag>& storage,
                                        AxiomEvaluator<GroundTag>& axiom_evaluator);
-    BuilderNode get_successor_node(const Source& node,
-                                   formalism::planning::ActionView<GroundTag> action,
-                                   Builder& storage,
-                                   AxiomEvaluator<GroundTag>& axiom_evaluator);
+    BuilderNode
+    get_successor_node(const Source& node, formalism::planning::ActionView<GroundTag> action, Builder& storage, AxiomEvaluator<GroundTag>& axiom_evaluator);
     [[nodiscard]] formalism::planning::ActionView<GroundTag> ground_action(formalism::planning::ActionRowView binding) const;
 
     Bindings get_applicable_action_bindings(const Source& node);
@@ -172,10 +165,8 @@ public:
                                  StateRepository<GroundTag>& storage,
                                  AxiomEvaluator<GroundTag>& axiom_evaluator,
                                  const std::function<bool(Node<GroundTag>)>& callback);
-    bool for_each_successor_node(const Source& node,
-                                 Builder& storage,
-                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                 const std::function<bool(BuilderNode)>& callback);
+    bool
+    for_each_successor_node(const Source& node, Builder& storage, AxiomEvaluator<GroundTag>& axiom_evaluator, const std::function<bool(BuilderNode)>& callback);
     bool for_each_labeled_successor_node(const Source& node,
                                          StateRepository<GroundTag>& storage,
                                          AxiomEvaluator<GroundTag>& axiom_evaluator,
@@ -270,8 +261,7 @@ public:
     /// Writes an unregistered successor without axiom closure, and its exact changes relative to `node` into `out_delta`.
     /// Use get_successor_node() for a completed borrowed successor.
     /// Pass the same pooled builder and auxiliary value to finalize_successor_state() to intern it.
-    ygg::float_t
-    generate_successor_state(const Source& node, formalism::planning::ActionRowView binding, Builder& out_state, StateDelta& out_delta);
+    ygg::float_t generate_successor_state(const Source& node, formalism::planning::ActionRowView binding, Builder& out_state, StateDelta& out_delta);
     /// Computes axiom closure and the final metric, then interns the completed state.
     Node<GroundTag> finalize_successor_state(StateRepository<GroundTag>& state_repository,
                                              AxiomEvaluator<GroundTag>& axiom_evaluator,

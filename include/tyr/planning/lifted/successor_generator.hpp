@@ -19,8 +19,6 @@
 #define TYR_PLANNING_LIFTED_SUCCESSOR_GENERATOR_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/successor_generator.hpp"
@@ -28,6 +26,8 @@
 #include <functional>
 #include <memory>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::planning

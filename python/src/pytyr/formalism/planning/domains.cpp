@@ -16,6 +16,7 @@
  */
 
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/analysis/domains_view.hpp"
 #include "tyr/analysis/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -23,7 +24,6 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
 #include <yggdrasil/python/bindings.hpp>
-#include "pytyr/module.hpp"
 
 namespace nb = nanobind;
 namespace tyr::formalism::planning

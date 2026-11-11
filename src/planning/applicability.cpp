@@ -29,8 +29,10 @@ namespace tyr::planning
 template ygg::float_t evaluate(ygg::float_t element, const StateContext<LiftedTag>& context);
 template ygg::float_t evaluate(ygg::float_t element, const StateContext<GroundTag>& context);
 
-template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<LiftedTag>& context);
-template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<GroundTag>& context);
+template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                               const StateContext<LiftedTag>& context);
+template ygg::float_t evaluate(formalism::planning::UnaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                               const StateContext<GroundTag>& context);
 
 template ygg::float_t evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
                                const StateContext<LiftedTag>& context);
@@ -40,8 +42,10 @@ template ygg::float_t evaluate(formalism::planning::BinaryOperatorView<GroundTag
 template bool evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<LiftedTag>& context);
 template bool evaluate(formalism::planning::BinaryOperatorView<GroundTag, formalism::BooleanOperatorKind> element, const StateContext<GroundTag>& context);
 
-template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<LiftedTag>& context);
-template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element, const StateContext<GroundTag>& context);
+template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                               const StateContext<LiftedTag>& context);
+template ygg::float_t evaluate(formalism::planning::MultiOperatorView<GroundTag, formalism::ArithmeticOperatorKind> element,
+                               const StateContext<GroundTag>& context);
 
 template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<LiftedTag>& context);
 template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag> element, const StateContext<GroundTag>& context);
@@ -54,7 +58,6 @@ template ygg::float_t evaluate(formalism::planning::FunctionTermView<GroundTag, 
 
 template ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<LiftedTag>& context);
 template ygg::float_t evaluate(formalism::planning::FunctionExpressionView<GroundTag> element, const StateContext<GroundTag>& context);
-
 
 template bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<LiftedTag>& context);
 template bool is_applicable(formalism::planning::BooleanOperatorView<GroundTag> element, const StateContext<GroundTag>& context);

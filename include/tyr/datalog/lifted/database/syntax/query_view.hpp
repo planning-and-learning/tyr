@@ -5,14 +5,14 @@
 #ifndef TYR_DATALOG_DATABASE_SYNTAX_QUERY_VIEW_HPP_
 #define TYR_DATALOG_DATABASE_SYNTAX_QUERY_VIEW_HPP_
 
-#include <urd/elements/flat.hpp>
-#include <boost/mp11.hpp>
 #include "tyr/datalog/lifted/database/syntax/query_data.hpp"
 
+#include <boost/mp11.hpp>
 #include <concepts>
 #include <span>
 #include <tuple>
 #include <urd/elements/children.hpp>
+#include <urd/elements/flat.hpp>
 
 namespace urd
 {

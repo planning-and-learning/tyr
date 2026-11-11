@@ -16,15 +16,15 @@
  */
 
 #include "tyr/algorithms/kckp/kckp.hpp"
-#include <urd/repr/queues/queue.hpp>
 
 #include <algorithm>
 #include <stdexcept>
 #include <urd/bits.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/queues/queue.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
@@ -61,7 +61,9 @@ GraphLayout create_graph_layout(std::span<const size_t> partition_sizes, std::sp
     return GraphLayout(vertex, partitions, vertex_labels);
 }
 
-GraphLayout::GraphLayout(size_t num_vertices_, const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>& partitions, std::span<const ygg::uint_t> labels) :
+GraphLayout::GraphLayout(size_t num_vertices_,
+                         const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>& partitions,
+                         std::span<const ygg::uint_t> labels) :
     num_vertices(num_vertices_),
     num_partitions(partitions.size()),
     vertex_partitions(partitions),

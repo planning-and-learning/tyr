@@ -6,13 +6,6 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_MUST_PASS_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_MUST_PASS_HPP_
 
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/pools/pools.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/repr/values/sparse_set.hpp>
-#include <urd/store.hpp>
-#include "yggdrasil/core/config.hpp"
-#include <urd/config.hpp>
 #include "tyr/datalog/lifted/database/semantics/bound/query_evaluation.hpp"
 #include "tyr/datalog/lifted/database/semantics/details/min_distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/must_pass_plan.hpp"
@@ -23,12 +16,19 @@
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/search_tree.hpp"
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
+#include "yggdrasil/core/config.hpp"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <ranges>
 #include <span>
+#include <urd/config.hpp>
+#include <urd/repr/pools/pools.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/repr/values/sparse_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 
 namespace tyr::datalog::database
@@ -271,9 +271,8 @@ private:
         {
             m_heuristic->exclude(m_key, excluded.is_none() ? std::span<const ygg::Value>() : std::span<const ygg::Value>(m_probes.at(excluded)));
         }
-        const auto keep_allowed = [&](const VertexSet& vertices,
-                                      const urd::Store<urd::sequence<VertexSet::handle_type>>& ids,
-                                      urd::Store<urd::sequence<VertexSet::handle_type>>& out)
+        const auto keep_allowed =
+            [&](const VertexSet& vertices, const urd::Store<urd::sequence<VertexSet::handle_type>>& ids, urd::Store<urd::sequence<VertexSet::handle_type>>& out)
         {
             out.clear();
             for (const auto id : ids)
@@ -335,8 +334,8 @@ private:
     MustPassPlan m_plan;
     urd::Store<urd::sequence<size_t>> m_probe_positions;
     Edges m_edges;
-    VertexSet m_keys;    ///< Interned keys; the empty key without key columns.
-    VertexSet m_probes;  ///< Interned probe objects.
+    VertexSet m_keys;                                                                                    ///< Interned keys; the empty key without key columns.
+    VertexSet m_probes;                                                                                  ///< Interned probe objects.
     urd::Store<urd::sequence<urd::Store<urd::sequence<size_t>>, VertexSet::handle_type>> m_key_sources;  ///< By key.
     urd::Store<urd::sequence<urd::Store<urd::sequence<size_t>>, VertexSet::handle_type>> m_key_targets;  ///< By key.
     // The current key.

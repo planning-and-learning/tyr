@@ -1,6 +1,6 @@
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
+#include "pytyr/module.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include "tyr/datalog/lifted/database/semantics/plans.hpp"
 
@@ -43,9 +43,7 @@ void bind_plans(nb::module_& m)
         .def(
             "__init__",
             [](SelectValuePlan* self, ColumnIndices input, Column column, ygg::TypeId type, nb::handle value)
-            {
-                new (self) SelectValuePlan(input, column, type, ygg::encode(ygg::cast_value(value, type)));
-            },
+            { new (self) SelectValuePlan(input, column, type, ygg::encode(ygg::cast_value(value, type))); },
             nb::arg("input"),
             nb::arg("column"),
             nb::arg("type"),

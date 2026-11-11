@@ -1,8 +1,8 @@
 #include "tyr/formalism/copy.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -14,29 +14,26 @@ namespace lifted_tests
 {
 
 template<typename Entity>
-concept FunctionTermContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
-           data.index;
-           data.function;
-           data.terms;
-           { data == data } -> std::same_as<bool>;
-           view.index();
-           view.get_function();
-           view.get_terms();
-           { view == view } -> std::same_as<bool>;
-           { view < view } -> std::same_as<bool>;
-       };
+concept FunctionTermContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                               && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::planning::Repository>>
+                               && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::planning::Repository>& view) {
+                                      data.index;
+                                      data.function;
+                                      data.terms;
+                                      { data == data } -> std::same_as<bool>;
+                                      view.index();
+                                      view.get_function();
+                                      view.get_terms();
+                                      { view == view } -> std::same_as<bool>;
+                                      { view < view } -> std::same_as<bool>;
+                                  };
 
 static_assert(FunctionTermContract<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
-static_assert(std::same_as<
-              urd::index_view<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
-              tyr::formalism::planning::FunctionTermView<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionTermView<::tyr::LiftedTag, tyr::formalism::StaticTag>>);
 static_assert(FunctionTermContract<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
-static_assert(std::same_as<
-              urd::index_view<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
-              tyr::formalism::planning::FunctionTermView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionTermView<::tyr::LiftedTag, tyr::formalism::FluentTag>>);
 static_assert(FunctionTermContract<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>>);
 static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::FunctionTermView<::tyr::LiftedTag, tyr::formalism::AuxiliaryTag>>);
@@ -63,13 +60,11 @@ concept GroundFunctionTermContract =
        };
 
 static_assert(GroundFunctionTermContract<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::StaticTag>>);
-static_assert(std::same_as<
-              urd::index_view<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
-              tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::StaticTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, tyr::formalism::StaticTag>>);
 static_assert(GroundFunctionTermContract<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>>);
-static_assert(std::same_as<
-              urd::index_view<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
-              tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
+static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 static_assert(GroundFunctionTermContract<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);
 static_assert(std::same_as<urd::index_view<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);

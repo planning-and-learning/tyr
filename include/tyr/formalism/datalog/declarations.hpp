@@ -19,20 +19,19 @@
 #define TYR_FORMALISM_DATALOG_DECLARATIONS_HPP_
 
 #include "tyr/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <boost/mp11.hpp>
 #include <cista/containers/variant.h>
 #include <cista/containers/vector.h>
 #include <concepts>
 #include <memory>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <variant>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <urd/elements/flat.hpp>
-#include <boost/mp11.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 
 namespace tyr::formalism::datalog
@@ -95,36 +94,35 @@ using FunctionTermValueTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_
 template<TaskKind T>
 using NumericEffectTypes = boost::mp11::mp_list<NumericEffect<T, FluentTag>>;
 template<TaskKind T>
-using ArithmeticExpressionTypes = boost::mp11::mp_list<UnaryOperator<T, ArithmeticOperatorKind>, BinaryOperator<T, ArithmeticOperatorKind>, MultiOperator<T, ArithmeticOperatorKind>>;
+using ArithmeticExpressionTypes =
+    boost::mp11::mp_list<UnaryOperator<T, ArithmeticOperatorKind>, BinaryOperator<T, ArithmeticOperatorKind>, MultiOperator<T, ArithmeticOperatorKind>>;
 template<TaskKind T>
 using BooleanExpressionTypes = boost::mp11::mp_list<BinaryOperator<T, BooleanOperatorKind>>;
-using ExpressionTypes = boost::mp11::mp_append<ArithmeticExpressionTypes<LiftedTag>,
-                                              BooleanExpressionTypes<LiftedTag>,
-                                              ArithmeticExpressionTypes<GroundTag>,
-                                              BooleanExpressionTypes<GroundTag>>;
+using ExpressionTypes = boost::mp11::
+    mp_append<ArithmeticExpressionTypes<LiftedTag>, BooleanExpressionTypes<LiftedTag>, ArithmeticExpressionTypes<GroundTag>, BooleanExpressionTypes<GroundTag>>;
 using EffectTypes = boost::mp11::mp_append<NumericEffectTypes<LiftedTag>, NumericEffectTypes<GroundTag>>;
 template<TaskKind T>
 using RuleTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Rule, T>, PredicateFunctionTags>;
 
 using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveEffect<LiftedTag>>,
-                                            RuleTypes<LiftedTag>,
-                                            boost::mp11::mp_list<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>>,
-                                            RuleTypes<GroundTag>,
-                                            boost::mp11::mp_list<Program<LiftedTag>, Program<GroundTag>>>;
+                                             RuleTypes<LiftedTag>,
+                                             boost::mp11::mp_list<ConjunctiveCondition<GroundTag>, ConjunctiveEffect<GroundTag>>,
+                                             RuleTypes<GroundTag>,
+                                             boost::mp11::mp_list<Program<LiftedTag>, Program<GroundTag>>>;
 
 using SymbolRepositoryTypes = boost::mp11::mp_append<CoreTypes,
-                                                    PredicateTypes,
-                                                    AtomTypes<LiftedTag>,
-                                                    AtomTypes<GroundTag>,
-                                                    LiteralTypes<LiftedTag>,
-                                                    LiteralTypes<GroundTag>,
-                                                    FunctionTypes,
-                                                    FunctionTermTypes<LiftedTag>,
-                                                    FunctionTermTypes<GroundTag>,
-                                                    FunctionTermValueTypes<GroundTag>,
-                                                    ExpressionTypes,
-                                                    EffectTypes,
-                                                    CompoundTypes>;
+                                                     PredicateTypes,
+                                                     AtomTypes<LiftedTag>,
+                                                     AtomTypes<GroundTag>,
+                                                     LiteralTypes<LiftedTag>,
+                                                     LiteralTypes<GroundTag>,
+                                                     FunctionTypes,
+                                                     FunctionTermTypes<LiftedTag>,
+                                                     FunctionTermTypes<GroundTag>,
+                                                     FunctionTermValueTypes<GroundTag>,
+                                                     ExpressionTypes,
+                                                     EffectTypes,
+                                                     CompoundTypes>;
 using RelationRepositoryTypes = boost::mp11::mp_append<PredicateTypes, FunctionTypes, RuleTypes<LiftedTag>>;
 using BuilderTypes = boost::mp11::mp_append<SymbolRepositoryTypes, boost::mp11::mp_transform<ygg::Row, RelationRepositoryTypes>>;
 using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, BuilderTypes>;

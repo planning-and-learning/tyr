@@ -19,11 +19,11 @@
 #define TYR_DATALOG_LIFTED_STATIC_EXTENSIONS_HPP_
 
 #include "tyr/algorithms/kckp/kckp.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/kckp/workspaces/rule.hpp"
 
 #include <span>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog

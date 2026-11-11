@@ -64,8 +64,9 @@ auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes)
-    -> Packed
+auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked&,
+                                                                         const Packed& parent,
+                                                                         std::span<const StateDelta::FluentChange> changes) -> Packed
 {
     // XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
     m_flips.clear();
@@ -110,7 +111,8 @@ auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked) -> Packed
+auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
+    -> Packed
 {
     // Derived atoms lie within the stored row, so the blocks that differ are written there.
     const auto from = parent_unpacked.indices.significant_words();

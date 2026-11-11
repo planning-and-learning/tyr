@@ -19,11 +19,11 @@
 #define TYR_FORMALISM_ATOM_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
 
 #include <urd/elements/flat.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace urd
 {

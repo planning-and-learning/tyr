@@ -39,8 +39,8 @@ namespace tyr::formalism::planning
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<PredicateRowView<T_DST>, bool> merge_d2p(datalog::PredicateRowView<T_SRC> element,  //
-                                                       const urd::Store<urd::map<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>>& predicate_mapping,
-                                                       WriteContext<Builder, Repository>& context)
+                                                   const urd::Store<urd::map<datalog::PredicateView<T_SRC>, PredicateView<T_DST>>>& predicate_mapping,
+                                                   WriteContext<Builder, Repository>& context)
 {
     auto binding = planning::checkout<ygg::Row<Predicate<T_DST>>>(context.builder());
 

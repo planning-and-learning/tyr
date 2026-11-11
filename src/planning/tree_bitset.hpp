@@ -20,6 +20,8 @@
 
 // Blocks and block flips of packed state rows (urd's tree bitset sets, tyr's packed ground rows), for the state storages.
 
+#include "tyr/planning/state_storage/tree_bitset/block.hpp"
+
 #include <algorithm>
 #include <array>
 #include <concepts>
@@ -29,8 +31,6 @@
 #include <urd/bits.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
-
-#include "tyr/planning/state_storage/tree_bitset/block.hpp"
 
 namespace tyr::planning
 {

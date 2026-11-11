@@ -16,46 +16,44 @@
  */
 
 #include "tyr/planning/ground/successor_generator.hpp"
-#include <urd/repr/sequences/segmented.hpp>
 
 #include "../metric.hpp"
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability.hpp"
-#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
-#include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/node.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_delta.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/task_utils.hpp"
 
 #include <algorithm>
@@ -63,11 +61,13 @@
 #include <stdexcept>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
+#include <urd/repr/sequences/segmented.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/formalism/membership.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -177,9 +177,7 @@ struct SuccessorGenerator<GroundTag>::Impl
 
     /// The match tree of the action schema, or of all actions.
     MatchTree& get_match_tree(std::optional<formalism::planning::ActionView<LiftedTag>> action)
-    {
-        return action ? get_schema_match_tree(*action) : *evaluator.action_match_tree;
-    }
+    { return action ? get_schema_match_tree(*action) : *evaluator.action_match_tree; }
 
     template<typename Objects>
     ActionBindingResult try_get_applicable_action_binding(const Source& node, formalism::planning::ActionView<LiftedTag> action, Objects objects);
@@ -306,9 +304,7 @@ SuccessorGenerator<GroundTag>::Impl::Evaluator::Evaluator(const Definition& defi
 
 SuccessorGenerator<GroundTag>::SuccessorGenerator(TaskPtr<GroundTag> task, const ygg::ExecutionContextPtr& execution_context) :
     m_impl(std::make_unique<Impl>(std::move(task)))
-{
-    static_cast<void>(execution_context);
-}
+{ static_cast<void>(execution_context); }
 
 SuccessorGenerator<GroundTag>::SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept : m_impl(std::move(impl)) {}
 
@@ -697,14 +693,16 @@ ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_bin
     if constexpr (requires { binding.context().owner(binding.data()); })
         if (binding.context().owner(binding.data()) == nullptr)
             throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
-    return m_impl->try_get_applicable_action_binding(node, binding.get_relation(), urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }), binding.context()));
+    return m_impl->try_get_applicable_action_binding(
+        node,
+        binding.get_relation(),
+        urd::resolve(urd::transform(binding.get_values(), [](ygg::Value value) { return urd::index<formalism::Object>(static_cast<std::uint32_t>(value)); }),
+                     binding.context()));
 }
 
 template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
 ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, Binding binding)
-{
-    return try_get_applicable_action_binding(node, binding).status;
-}
+{ return try_get_applicable_action_binding(node, binding).status; }
 
 formalism::planning::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_binding(BorrowedActionRowView<GroundTag> binding)
 {
@@ -728,17 +726,13 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Source& 
                                                                   formalism::planning::ActionRowView binding,
                                                                   StateRepository<GroundTag>& storage,
                                                                   AxiomEvaluator<GroundTag>& axiom_evaluator)
-{
-    return get_successor_node(node, ground_action(binding), storage, axiom_evaluator);
-}
+{ return get_successor_node(node, ground_action(binding), storage, axiom_evaluator); }
 
 BuilderNode SuccessorGenerator<GroundTag>::get_successor_node(const Source& node,
                                                               formalism::planning::ActionRowView binding,
                                                               Builder& storage,
                                                               AxiomEvaluator<GroundTag>& axiom_evaluator)
-{
-    return get_successor_node(node, ground_action(binding), storage, axiom_evaluator);
-}
+{ return get_successor_node(node, ground_action(binding), storage, axiom_evaluator); }
 
 /// The registering wrapper: a fresh builder of the repository, the core, then registration, which closes the state under
 /// the axioms only if it is new.
@@ -819,16 +813,12 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Sou
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
-{
-    return for_each_applicable_action_binding(node, callback);
-}
+{ return for_each_applicable_action_binding(node, callback); }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
                                                                                 const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
-{
-    return for_each_applicable_action_binding(node, action, callback);
-}
+{ return for_each_applicable_action_binding(node, action, callback); }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
@@ -848,30 +838,22 @@ bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_initial_node(StateRepository<GroundTag>& state_repository,
                                                                              AxiomEvaluator<GroundTag>& axiom_evaluator)
-{
-    return get_initial_node(state_repository, axiom_evaluator).pack();
-}
+{ return get_initial_node(state_repository, axiom_evaluator).pack(); }
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_node(StateRepository<GroundTag>& state_repository, urd::index<State<GroundTag>> state_index)
-{
-    return get_node(state_repository, state_index).pack();
-}
+{ return get_node(state_repository, state_index).pack(); }
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionRowView binding,
                                                                                StateRepository<GroundTag>& state_repository,
                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator)
-{
-    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
-}
+{ return get_successor_node(node, binding, state_repository, axiom_evaluator).pack(); }
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionView<GroundTag> action,
                                                                                StateRepository<GroundTag>& state_repository,
                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator)
-{
-    return get_successor_node(node, action, state_repository, axiom_evaluator).pack();
-}
+{ return get_successor_node(node, action, state_repository, axiom_evaluator).pack(); }
 
 ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Source& node,
                                                                      formalism::planning::ActionRowView binding,
@@ -928,8 +910,7 @@ const TaskPtr<GroundTag>& SuccessorGenerator<GroundTag>::get_task() const noexce
 
 template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionRowView binding);
 template ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, formalism::planning::ActionRowDataView binding);
-template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node,
-                                                                                              formalism::planning::ActionRowView binding);
+template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, formalism::planning::ActionRowView binding);
 template ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node,
                                                                                               formalism::planning::ActionRowDataView binding);
 

@@ -18,16 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_AXIOM_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_AXIOM_VIEW_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
-#include <yggdrasil/formalism/values.hpp>
 #include <ranges>
 #include <urd/elements/flat.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/values.hpp>
 
 namespace urd
 {
@@ -44,7 +44,10 @@ public:
     /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
     auto get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return std::views::iota(std::size_t { 0 }, std::size_t(get_arity())) | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; }); }
+    {
+        return std::views::iota(std::size_t { 0 }, std::size_t(get_arity()))
+               | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; });
+    }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }

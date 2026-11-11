@@ -26,15 +26,15 @@
 #include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/algorithms/utils.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/state_builder.hpp"
-#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristic.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
+#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_delta.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/worker_state_index.hpp"
 
 #include <cassert>
@@ -65,7 +65,9 @@ enum class ExpansionResult : uint8_t
 };
 
 template<TaskKind Kind, typename SearchNode>
-SearchNode& get_or_create_search_node(urd::index<State<Kind>> state_index, urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes, const SearchNode& default_node)
+SearchNode& get_or_create_search_node(urd::index<State<Kind>> state_index,
+                                      urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes,
+                                      const SearchNode& default_node)
 {
     const auto i = static_cast<ygg::uint_t>(state_index.value);
     if (i >= search_nodes.size())

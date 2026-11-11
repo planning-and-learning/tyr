@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/heuristics/rpg_add.hpp"
+
 #include "heuristic.hpp"
 
 namespace tyr::tests

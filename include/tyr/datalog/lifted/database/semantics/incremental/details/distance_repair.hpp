@@ -6,9 +6,11 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_DETAILS_DISTANCE_REPAIR_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_DETAILS_DISTANCE_REPAIR_HPP_
 
-#include "yggdrasil/core/config.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
+#include "yggdrasil/core/config.hpp"
 
+#include <cassert>
+#include <limits>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/memory.hpp>
@@ -16,12 +18,9 @@
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/queues/addressable_heap.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
-
-#include <cassert>
-#include <limits>
 #include <utility>
 #include <vector>
 

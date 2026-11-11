@@ -31,9 +31,7 @@ namespace tyr::formalism::planning
 class PlanningDomain
 {
 public:
-    PlanningDomain(DomainView domain,
-                   RepositoryPtr repository,
-                   std::optional<std::filesystem::path> path = std::nullopt) :
+    PlanningDomain(DomainView domain, RepositoryPtr repository, std::optional<std::filesystem::path> path = std::nullopt) :
         m_repository(std::move(repository)),
         m_domain(domain),
         m_path(std::move(path))

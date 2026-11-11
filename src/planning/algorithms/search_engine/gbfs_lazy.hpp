@@ -166,8 +166,7 @@ public:
         return ExpansionResult::EXPAND;
     }
 
-    [[nodiscard]] SuccessorMetadata
-    make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionRowView action) const
+    [[nodiscard]] SuccessorMetadata make_successor_metadata(urd::index<Worker> worker, const Node<Kind>& node, formalism::planning::ActionRowView action) const
     {
         // Successors are applicable in the evaluated state, so the preferred ones are its relaxed plan's applicable actions.
         const auto preferred = m_relaxed_plan && m_relaxed_plan->contains(action);
@@ -175,9 +174,7 @@ public:
     }
 
     void open_successor(urd::index<State<Kind>> state, ygg::float_t g_value, ygg::float_t h_value, SearchNodeStatus, bool is_preferred)
-    {
-        m_openlists[is_preferred ? preferred_list : standard_list].push(QueueEntry { g_value, h_value, state, m_step++ });
-    }
+    { m_openlists[is_preferred ? preferred_list : standard_list].push(QueueEntry { g_value, h_value, state, m_step++ }); }
 
     template<typename Engine, typename WorkerData, typename EvaluateHeuristic, typename EmitTransition>
     AcceptanceResult accept_successor(Engine& engine,

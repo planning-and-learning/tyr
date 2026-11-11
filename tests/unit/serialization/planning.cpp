@@ -1,23 +1,22 @@
+#include "tyr/serialization/formalism/planning/planning.hpp"
+
 #include "planning_fixtures.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/enums.hpp"
-#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/plan.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
-#include "tyr/serialization/formalism/planning/planning.hpp"
 #include "tyr/serialization/planning/ground/task.hpp"
 #include "tyr/serialization/planning/lifted/task.hpp"
 #include "tyr/serialization/planning/node.hpp"
@@ -30,6 +29,8 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -52,8 +53,8 @@ TEST(TyrSerialization, DefaultFieldsAndSelectionDoNotEvaluateAccessors)
     const auto dummy = 0;
     auto writer = ygg::serialization::FieldWriter { &archive, &dummy };
     EXPECT_NO_THROW(writer.field("unused", [](int) -> int { throw std::runtime_error("excluded getter ran"); }));
-    EXPECT_NO_THROW(writer.variant([](int) -> decltype(std::declval<tyr::formalism::planning::TermView>())
-                                   { throw std::runtime_error("excluded variant getter ran"); }));
+    EXPECT_NO_THROW(
+        writer.variant([](int) -> decltype(std::declval<tyr::formalism::planning::TermView>()) { throw std::runtime_error("excluded variant getter ran"); }));
     EXPECT_TRUE(std::move(archive).take_fields().empty());
 }
 
@@ -61,37 +62,39 @@ TEST(TyrSerialization, TaskTagsPreserveSerializationFields)
 {
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::TaskView<LiftedTag>>(),
               (urd::Store<urd::sequence<std::string>> { "name",
-                                          "domain",
-                                          "derived_predicates",
-                                          "objects",
-                                          "static_ground_atoms",
-                                          "fluent_ground_atoms",
-                                          "static_ground_function_term_values",
-                                          "fluent_ground_function_term_values",
-                                          "auxiliary_ground_function_term_value",
-                                          "goal",
-                                          "metric",
-                                          "axioms" }));
+                                                        "domain",
+                                                        "derived_predicates",
+                                                        "objects",
+                                                        "static_ground_atoms",
+                                                        "fluent_ground_atoms",
+                                                        "static_ground_function_term_values",
+                                                        "fluent_ground_function_term_values",
+                                                        "auxiliary_ground_function_term_value",
+                                                        "goal",
+                                                        "metric",
+                                                        "axioms" }));
     EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::TaskView<GroundTag>>(),
               (urd::Store<urd::sequence<std::string>> { "name",
-                                          "domain",
-                                          "derived_predicates",
-                                          "objects",
-                                          "static_ground_atoms",
-                                          "fluent_ground_atoms",
-                                          "derived_ground_atoms",
-                                          "static_ground_function_term_values",
-                                          "fluent_ground_function_term_values",
-                                          "auxiliary_ground_function_term_value",
-                                          "goal",
-                                          "metric",
-                                          "axioms",
-                                          "fdr_variables",
-                                          "fdr_facts",
-                                          "ground_actions",
-                                          "ground_axioms" }));
-    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<LiftedTag>>(), (urd::Store<urd::sequence<std::string>> { "task", "domain", "path" }));
-    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<GroundTag>>(), (urd::Store<urd::sequence<std::string>> { "task", "domain", "path" }));
+                                                        "domain",
+                                                        "derived_predicates",
+                                                        "objects",
+                                                        "static_ground_atoms",
+                                                        "fluent_ground_atoms",
+                                                        "derived_ground_atoms",
+                                                        "static_ground_function_term_values",
+                                                        "fluent_ground_function_term_values",
+                                                        "auxiliary_ground_function_term_value",
+                                                        "goal",
+                                                        "metric",
+                                                        "axioms",
+                                                        "fdr_variables",
+                                                        "fdr_facts",
+                                                        "ground_actions",
+                                                        "ground_axioms" }));
+    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<LiftedTag>>(),
+              (urd::Store<urd::sequence<std::string>> { "task", "domain", "path" }));
+    EXPECT_EQ(ygg::serialization::fields<tyr::formalism::planning::PlanningTask<GroundTag>>(),
+              (urd::Store<urd::sequence<std::string>> { "task", "domain", "path" }));
 }
 
 TEST(TyrSerialization, RegisteredDescendantsAreCollectedOnceAndSnapshotsAreIndependent)
@@ -158,17 +161,17 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
     const auto binding = make_atom(repository, "truck").get_row();
     auto dictionaries = ygg::serialization::Dictionaries {};
     size_t calls = 0;
-    dictionaries.register_table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>("bindings",
-                                                                                                           "b",
-                                                                                                           std::nullopt,
-                                                                                                           [&](auto& ar, const auto& value)
-                                                                                                           {
-                                                                                                               ++calls;
-                                                                                                               ar.field("predicate_name",
-                                                                                                                        value.get_relation().get_name());
-                                                                                                               ar.field("arguments", urd::resolve(value.template get<urd::index<tyr::formalism::Object>>(), value.context()));
-                                                                                                               ar.field("text", ygg::to_string(value));
-                                                                                                           });
+    dictionaries.register_table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>(
+        "bindings",
+        "b",
+        std::nullopt,
+        [&](auto& ar, const auto& value)
+        {
+            ++calls;
+            ar.field("predicate_name", value.get_relation().get_name());
+            ar.field("arguments", urd::resolve(value.template get<urd::index<tyr::formalism::Object>>(), value.context()));
+            ar.field("text", ygg::to_string(value));
+        });
     dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p");
     dictionaries.register_table<tyr::formalism::planning::ObjectView>("objects", "o");
 
@@ -210,7 +213,9 @@ TEST(TyrSerialization, UnregisteredEntitiesFailAndNativeViewIdentityIsPreserved)
     }
 
     auto dictionaries = ygg::serialization::Dictionaries {};
-    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", urd::Store<urd::sequence<std::string>> {});
+    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms",
+                                                                                                          "a",
+                                                                                                          urd::Store<urd::sequence<std::string>> {});
     EXPECT_EQ(dictionaries.serialize(first).as_string(), "a0");
     EXPECT_EQ(dictionaries.serialize(second).as_string(), "a1");
     EXPECT_EQ((dictionaries.table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>().size()), 2);
@@ -223,13 +228,16 @@ TEST(TyrSerialization, FdrNoneRetainsItsVariableAndZeroValue)
     auto variable_data = urd::data<tyr::formalism::planning::FDRVariable<tyr::formalism::FluentTag>> {};
     variable_data.atoms.push_back(atom.index());
     const auto variable = ygg::formalism::insert(repository, variable_data).first;
-    const auto fact_data = urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(variable.index(), tyr::formalism::planning::FDRValue::none());
+    const auto fact_data =
+        urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(variable.index(), tyr::formalism::planning::FDRValue::none());
     const auto fact = urd::resolve(fact_data, repository);
     ASSERT_FALSE(fact.get_atom().has_value());
     auto dictionaries = ygg::serialization::Dictionaries {};
     dictionaries.register_table<tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>>("facts", "f");
     dictionaries.register_table<tyr::formalism::planning::FDRVariableView<tyr::formalism::FluentTag>>("variables", "v");
-    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms", "a", urd::Store<urd::sequence<std::string>> {});
+    dictionaries.register_table<tyr::formalism::planning::AtomView<GroundTag, tyr::formalism::FluentTag>>("atoms",
+                                                                                                          "a",
+                                                                                                          urd::Store<urd::sequence<std::string>> {});
     EXPECT_EQ(dictionaries.serialize(fact).as_string(), "f0");
     const auto row = dictionaries.table<tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>>()[0].as_object();
     EXPECT_EQ(row.at("fdr_variable").as_string(), "v0");

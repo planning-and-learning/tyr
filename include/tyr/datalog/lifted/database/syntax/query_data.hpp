@@ -5,16 +5,13 @@
 #ifndef TYR_DATALOG_DATABASE_SYNTAX_QUERY_DATA_HPP_
 #define TYR_DATALOG_DATABASE_SYNTAX_QUERY_DATA_HPP_
 
-#include <urd/elements/flat.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "yggdrasil/formalism/values.hpp"
-#include <boost/mp11.hpp>
 #include "tyr/datalog/lifted/database/declarations.hpp"
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/generic_join.hpp"
+#include "yggdrasil/formalism/values.hpp"
 
 #include <array>
+#include <boost/mp11.hpp>
 #include <cista/containers/variant.h>
 #include <cista/containers/vector.h>
 #include <concepts>
@@ -23,6 +20,9 @@
 #include <span>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -112,7 +112,8 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTa
     tyr::datalog::database::ProjectionPlan plan;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> arg_, std::span<const urd::index<ygg::Column>> labels_) : arg(arg_) { labels.set(labels_.begin(), labels_.end()); }
+    data(urd::index<tyr::datalog::database::Query<>> arg_, std::span<const urd::index<ygg::Column>> labels_) : arg(arg_)
+    { labels.set(labels_.begin(), labels_.end()); }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::labels> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::arg, &data::labels, &data::plan> {}; }
@@ -127,7 +128,8 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag
     urd::flat_vector<ygg::ColumnLayout> columns;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> arg_, std::span<const urd::index<ygg::Column>> labels_) : arg(arg_) { labels.set(labels_.begin(), labels_.end()); }
+    data(urd::index<tyr::datalog::database::Query<>> arg_, std::span<const urd::index<ygg::Column>> labels_) : arg(arg_)
+    { labels.set(labels_.begin(), labels_.end()); }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::labels> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::arg, &data::labels, &data::columns> {}; }
@@ -151,8 +153,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqu
     }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::lhs_column, &data::rhs_column> {}; }
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::arg, &data::lhs_column, &data::rhs_column, &data::plan> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::arg, &data::lhs_column, &data::rhs_column, &data::plan> {}; }
 };
 
 template<>
@@ -194,7 +195,10 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceT
     tyr::datalog::database::DistancePlan plan;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> sources_, urd::index<tyr::datalog::database::Query<>> edges_, urd::index<tyr::datalog::database::Query<>> targets_, urd::index<ygg::Column> distance_column_) :
+    data(urd::index<tyr::datalog::database::Query<>> sources_,
+         urd::index<tyr::datalog::database::Query<>> edges_,
+         urd::index<tyr::datalog::database::Query<>> targets_,
+         urd::index<ygg::Column> distance_column_) :
         sources(sources_),
         edges(edges_),
         targets(targets_),

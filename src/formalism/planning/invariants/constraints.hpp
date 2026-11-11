@@ -19,14 +19,14 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 
 #include "tyr/formalism/planning/mutable/atom.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/mutable/literal.hpp"
 
 #include <map>
 #include <optional>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <variant>
 #include <vector>
 

@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/optimization/details/estimation.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -124,7 +125,8 @@ void validate_statistics(const RelationStatistics& stats, std::span<const ygg::C
     if (!std::isfinite(stats.rows) || stats.rows < 0 || (columns.empty() && stats.rows > 1))
         throw std::invalid_argument("Optimizer: invalid row count.");
     for (const auto& [label, count] : stats.distinct)
-        if (std::ranges::find(columns, label, &ygg::ColumnLayout::label) == columns.end() || !std::isfinite(count) || count < 0 || count > stats.rows || (stats.rows > 0 && count < 1))
+        if (std::ranges::find(columns, label, &ygg::ColumnLayout::label) == columns.end() || !std::isfinite(count) || count < 0 || count > stats.rows
+            || (stats.rows > 0 && count < 1))
             throw std::invalid_argument("Optimizer: invalid distinct count or column.");
 }
 }

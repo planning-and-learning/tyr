@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 #include <concepts>
 
@@ -39,17 +39,17 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
         if constexpr (std::same_as<T, LiftedTag>)
         {
             cls.def(urd::python::init_from_views<const std::string&,
-                             DomainView,
-                             const PredicateViewList<DerivedTag>&,
-                             const ObjectViewList&,
-                             const AtomViewList<GroundTag, StaticTag>&,
-                             const AtomViewList<GroundTag, FluentTag>&,
-                             const FunctionTermValueViewList<GroundTag, StaticTag>&,
-                             const FunctionTermValueViewList<GroundTag, FluentTag>&,
-                             const std::optional<FunctionTermValueView<GroundTag, AuxiliaryTag>>&,
-                             ConjunctiveConditionView<GroundTag>,
-                             const std::optional<MetricView>&,
-                             const AxiomViewList<LiftedTag>&>(),
+                                                 DomainView,
+                                                 const PredicateViewList<DerivedTag>&,
+                                                 const ObjectViewList&,
+                                                 const AtomViewList<GroundTag, StaticTag>&,
+                                                 const AtomViewList<GroundTag, FluentTag>&,
+                                                 const FunctionTermValueViewList<GroundTag, StaticTag>&,
+                                                 const FunctionTermValueViewList<GroundTag, FluentTag>&,
+                                                 const std::optional<FunctionTermValueView<GroundTag, AuxiliaryTag>>&,
+                                                 ConjunctiveConditionView<GroundTag>,
+                                                 const std::optional<MetricView>&,
+                                                 const AxiomViewList<LiftedTag>&>(),
                     "name"_a,
                     "domain"_a,
                     "derived_predicates"_a,
@@ -90,22 +90,22 @@ void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* i
         else
         {
             cls.def(urd::python::init_from_views<const std::string&,
-                             DomainView,
-                             const PredicateViewList<DerivedTag>&,
-                             const ObjectViewList&,
-                             const AtomViewList<GroundTag, StaticTag>&,
-                             const AtomViewList<GroundTag, FluentTag>&,
-                             const AtomViewList<GroundTag, DerivedTag>&,
-                             const FunctionTermValueViewList<GroundTag, StaticTag>&,
-                             const FunctionTermValueViewList<GroundTag, FluentTag>&,
-                             const std::optional<FunctionTermValueView<GroundTag, AuxiliaryTag>>&,
-                             const std::optional<MetricView>&,
-                             const AxiomViewList<LiftedTag>&,
-                             const FDRVariableViewList<FluentTag>&,
-                             const FDRFactViewList<FluentTag>&,
-                             ConjunctiveConditionView<GroundTag>,
-                             const ActionViewList<GroundTag>&,
-                             const AxiomViewList<GroundTag>&>(),
+                                                 DomainView,
+                                                 const PredicateViewList<DerivedTag>&,
+                                                 const ObjectViewList&,
+                                                 const AtomViewList<GroundTag, StaticTag>&,
+                                                 const AtomViewList<GroundTag, FluentTag>&,
+                                                 const AtomViewList<GroundTag, DerivedTag>&,
+                                                 const FunctionTermValueViewList<GroundTag, StaticTag>&,
+                                                 const FunctionTermValueViewList<GroundTag, FluentTag>&,
+                                                 const std::optional<FunctionTermValueView<GroundTag, AuxiliaryTag>>&,
+                                                 const std::optional<MetricView>&,
+                                                 const AxiomViewList<LiftedTag>&,
+                                                 const FDRVariableViewList<FluentTag>&,
+                                                 const FDRFactViewList<FluentTag>&,
+                                                 ConjunctiveConditionView<GroundTag>,
+                                                 const ActionViewList<GroundTag>&,
+                                                 const AxiomViewList<GroundTag>&>(),
                     "name"_a,
                     "domain"_a,
                     "derived_predicates"_a,

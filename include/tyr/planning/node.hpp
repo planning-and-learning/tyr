@@ -19,7 +19,6 @@
 #define TYR_PLANNING_NODE_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node_concepts.hpp"
@@ -34,6 +33,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -65,10 +65,7 @@ template<TaskKind Kind>
 class PackedNode : public urd::compared_by_identity<PackedNode<Kind>>
 {
 public:
-    PackedNode(PackedStateView<Kind> state, ygg::float_t metric) :
-        m_repository(state.context().shared_from_this()),
-        m_state(std::move(state)),
-        m_metric(metric)
+    PackedNode(PackedStateView<Kind> state, ygg::float_t metric) : m_repository(state.context().shared_from_this()), m_state(std::move(state)), m_metric(metric)
     {
     }
 
@@ -101,7 +98,6 @@ struct PackedLabeledNode
 {
     formalism::planning::ActionRowView label;
     PackedNode<Kind> node;
-
 
     [[nodiscard]] LabeledNode<Kind> unpack() const { return { label, node.unpack() }; }
 };

@@ -1,7 +1,7 @@
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
@@ -16,7 +16,8 @@ template<tyr::TaskKind Kind, tyr::formalism::FactKind Source>
 consteval bool numeric_effect_merges()
 {
     using tyr::formalism::FluentTag;
-    return requires(tyr::formalism::planning::NumericEffectView<Kind, Source> effect, tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>& context) {
+    return requires(tyr::formalism::planning::NumericEffectView<Kind, Source> effect,
+                    tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>& context) {
         {
             tyr::formalism::planning::merge_p2d<Source, FluentTag>(effect, context)
         } -> std::same_as<std::pair<tyr::formalism::datalog::NumericEffectView<Kind, FluentTag>, bool>>;

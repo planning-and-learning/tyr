@@ -6,10 +6,6 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_SEARCH_A_STAR_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_SEARCH_A_STAR_HPP_
 
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/pools/pools.hpp>
-#include <urd/repr/queues/queue.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/search/backward_frontier.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/search_tree.hpp"
@@ -21,6 +17,10 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include <urd/repr/pools/pools.hpp>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database
@@ -48,7 +48,7 @@ struct OpenEntry
 {
     ygg::uint_t f = 0;
     ygg::uint_t g = 0;
-    ygg::uint_t push = 0;               ///< Push order.
+    ygg::uint_t push = 0;          ///< Push order.
     VertexSet::handle_type index;  ///< The generated vertex.
 };
 
@@ -199,8 +199,8 @@ private:
     uint64_t m_version;
     size_t m_open = 0;
     ygg::uint_t m_dropped = infinity;  ///< The smallest g + h_learn among vertices dropped by the backward bound alone.
-    VertexSet::handle_type m_last;    ///< The generated vertex the search ended at, if it ended at one.
-    VertexSet::handle_type m_reused;  ///< The stored source whose tree path ended the search without expanding, if any.
+    VertexSet::handle_type m_last;     ///< The generated vertex the search ended at, if it ended at one.
+    VertexSet::handle_type m_reused;   ///< The stored source whose tree path ended the search without expanding, if any.
     AStarCounters m_counters;
 
     /// The larger lower bound of a stored vertex; exact once its next chain is valid.

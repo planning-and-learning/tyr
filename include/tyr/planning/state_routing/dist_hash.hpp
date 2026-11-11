@@ -19,8 +19,6 @@
 #define TYR_PLANNING_STATE_ROUTING_DIST_HASH_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -33,6 +31,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <urd/elements/hash.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::planning

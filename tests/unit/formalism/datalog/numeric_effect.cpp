@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
 #include <tuple>

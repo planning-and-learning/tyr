@@ -19,8 +19,6 @@
 #define TYR_FORMALISM_PLANNING_MUTABLE_ACTION_HPP_
 
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
@@ -29,6 +27,8 @@
 #include <cstddef>
 #include <tuple>
 #include <urd/elements/hash.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 

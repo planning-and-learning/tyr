@@ -16,14 +16,14 @@
  */
 
 #include <array>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <atomic>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <thread>
 #include <tyr/planning/algorithms/iw/novelty_table.hpp>
 #include <tyr/planning/algorithms/iw/pruning_strategy.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::tests

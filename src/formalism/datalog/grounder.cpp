@@ -16,6 +16,7 @@
  */
 
 #include "tyr/formalism/datalog/grounder.hpp"
+
 #include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #ifndef TYR_HEADER_INSTANTIATION
@@ -25,16 +26,20 @@ namespace tyr::formalism::datalog
 template std::pair<FunctionRowView<StaticTag>, bool> ground(TermListView terms, FunctionView<StaticTag> function, WriteContext<Builder, Repository>& context);
 template std::pair<FunctionRowView<FluentTag>, bool> ground(TermListView terms, FunctionView<FluentTag> function, WriteContext<Builder, Repository>& context);
 
-template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
-template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> ground(FunctionTermView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
+template std::pair<FunctionTermView<GroundTag, StaticTag>, bool> ground(FunctionTermView<LiftedTag, StaticTag> element,
+                                                                        WriteContext<Builder, Repository>& context);
+template std::pair<FunctionTermView<GroundTag, FluentTag>, bool> ground(FunctionTermView<LiftedTag, FluentTag> element,
+                                                                        WriteContext<Builder, Repository>& context);
 
 template std::pair<BinaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> element,
                                                                                        WriteContext<Builder, Repository>& context);
 template std::pair<BinaryOperatorView<GroundTag, BooleanOperatorKind>, bool> ground(BinaryOperatorView<LiftedTag, BooleanOperatorKind> element,
                                                                                     WriteContext<Builder, Repository>& context);
 
-template std::pair<PredicateRowView<StaticTag>, bool> ground(TermListView terms, PredicateView<StaticTag> predicate, WriteContext<Builder, Repository>& context);
-template std::pair<PredicateRowView<FluentTag>, bool> ground(TermListView terms, PredicateView<FluentTag> predicate, WriteContext<Builder, Repository>& context);
+template std::pair<PredicateRowView<StaticTag>, bool>
+ground(TermListView terms, PredicateView<StaticTag> predicate, WriteContext<Builder, Repository>& context);
+template std::pair<PredicateRowView<FluentTag>, bool>
+ground(TermListView terms, PredicateView<FluentTag> predicate, WriteContext<Builder, Repository>& context);
 
 template std::pair<AtomView<GroundTag, StaticTag>, bool> ground(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 template std::pair<AtomView<GroundTag, FluentTag>, bool> ground(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
@@ -42,7 +47,8 @@ template std::pair<AtomView<GroundTag, FluentTag>, bool> ground(AtomView<LiftedT
 template std::pair<LiteralView<GroundTag, StaticTag>, bool> ground(LiteralView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 template std::pair<LiteralView<GroundTag, FluentTag>, bool> ground(LiteralView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
 
-template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
+template std::pair<NumericEffectView<GroundTag, FluentTag>, bool> ground(NumericEffectView<LiftedTag, FluentTag> element,
+                                                                         WriteContext<Builder, Repository>& context);
 
 template std::pair<PredicateRowView<StaticTag>, bool> ground_binding(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
@@ -50,8 +56,10 @@ template std::pair<PredicateRowView<FluentTag>, bool> ground_binding(AtomView<Li
 template std::pair<FunctionRowView<StaticTag>, bool> ground_binding(FunctionTermView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 template std::pair<FunctionRowView<FluentTag>, bool> ground_binding(FunctionTermView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
 
-template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
-template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<StaticTag>> try_ground_binding(FunctionTermView<LiftedTag, StaticTag> element,
+                                                                      WriteContext<Builder, Repository>& context);
+template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTermView<LiftedTag, FluentTag> element,
+                                                                      WriteContext<Builder, Repository>& context);
 
 template std::optional<PredicateRowView<StaticTag>> try_ground_binding(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);

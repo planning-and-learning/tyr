@@ -19,8 +19,6 @@
 #define TYR_PLANNING_FORMATTER_HPP_
 
 #include "tyr/formalism/planning/formatter.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/algorithms/iw/statistics.hpp"
 #include "tyr/planning/algorithms/siw/statistics.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
@@ -34,6 +32,8 @@
 #include <fmt/ranges.h>
 #include <ostream>
 #include <sstream>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/chrono.hpp>
@@ -177,7 +177,6 @@ struct formatter<tyr::planning::ProgressStatistics, char>
     }
 };
 
-
 template<::tyr::TaskKind Kind>
 struct formatter<tyr::planning::iw::Statistics<Kind>, char>
 {
@@ -238,13 +237,15 @@ struct formatter<State, char>
             derived_atoms.push_back(atom);
         }
 
-        auto static_fterm_values = urd::Store<urd::sequence<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::StaticTag>>> {};
+        auto static_fterm_values =
+            urd::Store<urd::sequence<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::StaticTag>>> {};
         for (auto&& fterm_value : value.template get_fterm_values_view<::tyr::formalism::StaticTag>())
         {
             static_fterm_values.push_back(fterm_value);
         }
 
-        auto fluent_fterm_values = urd::Store<urd::sequence<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::FluentTag>>> {};
+        auto fluent_fterm_values =
+            urd::Store<urd::sequence<tyr::formalism::planning::FunctionTermViewValuePair<::tyr::GroundTag, tyr::formalism::FluentTag>>> {};
         for (auto&& fterm_value : value.template get_fterm_values_view<::tyr::formalism::FluentTag>())
         {
             fluent_fterm_values.push_back(fterm_value);
@@ -297,9 +298,7 @@ struct formatter<tyr::planning::Node<Kind, State>, char>
     }
 };
 
-template<::tyr::TaskKind Kind,
-         ::tyr::planning::StateViewConcept<Kind> State,
-         ygg::RowViewConcept<tyr::formalism::planning::Action<tyr::LiftedTag>> Binding>
+template<::tyr::TaskKind Kind, ::tyr::planning::StateViewConcept<Kind> State, ygg::RowViewConcept<tyr::formalism::planning::Action<tyr::LiftedTag>> Binding>
 struct formatter<tyr::planning::LabeledNode<Kind, State, Binding>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }

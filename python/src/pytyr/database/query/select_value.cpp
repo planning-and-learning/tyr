@@ -15,9 +15,7 @@ void bind_query_select_value(nb::module_& m, QueryRepositoryBinding& repository)
             .def(
                 "__init__",
                 [](V* self, QueryView arg, Column column, ygg::TypeId type, nb::handle value)
-                {
-                    std::visit([&](auto converted) { new (self) V(arg.index(), column, converted); }, ygg::cast_value(value, type));
-                },
+                { std::visit([&](auto converted) { new (self) V(arg.index(), column, converted); }, ygg::cast_value(value, type)); },
                 "arg"_a,
                 "column"_a,
                 "type"_a,

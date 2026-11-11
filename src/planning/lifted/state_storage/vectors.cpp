@@ -17,7 +17,6 @@
 
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
 
-
 namespace tyr::planning
 {
 

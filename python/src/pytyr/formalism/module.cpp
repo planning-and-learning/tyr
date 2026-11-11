@@ -16,11 +16,11 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "bindings.hpp"
 #include "datalog/module.hpp"
 #include "planning/module.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism
 {

@@ -16,11 +16,11 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "datalog.hpp"
 #include "ground/module.hpp"
 #include "lifted/module.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::datalog
 {

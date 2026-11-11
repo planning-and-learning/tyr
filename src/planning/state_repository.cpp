@@ -16,49 +16,46 @@
  */
 
 #include "tyr/planning/state_repository.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
-#include "tyr/formalism/planning/fdr_context.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/ground/state_storage/vectors.hpp"
-#include "tyr/planning/state_storage/numeric.hpp"
-#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
-#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
-#include "tyr/planning/state_data.hpp"
-#include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/state_storage/vectors.hpp"
 #include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/state_delta.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/config.hpp"
+#include "tyr/planning/state_storage/numeric.hpp"
+#include "tyr/planning/state_storage/tree_bitset/atom.hpp"
+#include "tyr/planning/state_storage/tree_bitset/fact.hpp"
 
 #include <atomic>
 #include <cassert>
@@ -66,9 +63,12 @@
 #include <span>
 #include <type_traits>
 #include <urd/elements/less.hpp>
-#include <utility>
 #include <urd/elements/prehashed.hpp>
 #include <urd/repr/records/records.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <utility>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -117,12 +117,7 @@ struct StateRepository<Kind>::Impl
                                         urd::stable_refs,
                                         std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
-        explicit Storage(const Task<Kind>& task) :
-            identity(next_state_storage_identity<Kind>()),
-            context(task),
-            packed_states(urd::layer { 0 })
-        {
-        }
+        explicit Storage(const Task<Kind>& task) : identity(next_state_storage_identity<Kind>()), context(task), packed_states(urd::layer { 0 }) {}
 
         ygg::uint_t identity;
         StateStorageContext<Kind, StateStoragePolicyTag, ThreadSafe> context;
@@ -154,8 +149,7 @@ struct StateRepository<Kind>::Impl
         auto insert_fluents(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const StateDelta* delta)
         {
             const auto& unpacked = state.fact_storage;
-            return parent ? fluent_backend.insert(unpacked, parent->fact_storage, std::span(delta->fluents)) :
-                            fluent_backend.insert(unpacked);
+            return parent ? fluent_backend.insert(unpacked, parent->fact_storage, std::span(delta->fluents)) : fluent_backend.insert(unpacked);
         }
 
         /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given.
@@ -163,10 +157,7 @@ struct StateRepository<Kind>::Impl
         auto insert_derived(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const urd::data<State<Kind>>* parent_state)
         {
             const auto& unpacked = state.atom_storage;
-            return parent ? derived_backend.insert(unpacked,
-                                                   parent->atom_storage,
-                                                   parent_state->atom_storage) :
-                            derived_backend.insert(unpacked);
+            return parent ? derived_backend.insert(unpacked, parent->atom_storage, parent_state->atom_storage) : derived_backend.insert(unpacked);
         }
 
         /// Inserts the numeric values of `state`, as `delta` to `parent` if given.
@@ -206,12 +197,12 @@ struct StateRepository<Kind>::Impl
                 std::forward<ExtendState>(extend_state)();
                 const auto derived = insert_derived(state, parent, parent_state);
                 const auto [inserted_index, inserted] = packed_states.insert(urd::prehashed<PackedState<Kind>> { key, hash },
-                                                                              [&](urd::index<State<Kind>> new_index)
-                                                                              {
-                                                                                  auto data = PackedState<Kind>(fluent, derived, numeric);
-                                                                                  data.index = new_index;
-                                                                                  return data;
-                                                                              });
+                                                                             [&](urd::index<State<Kind>> new_index)
+                                                                             {
+                                                                                 auto data = PackedState<Kind>(fluent, derived, numeric);
+                                                                                 data.index = new_index;
+                                                                                 return data;
+                                                                             });
                 state_index = inserted_index;
                 if (inserted)
                 {
@@ -235,10 +226,7 @@ struct StateRepository<Kind>::Impl
     {
     }
 
-    Impl(ygg::uint_t index_,
-         TaskPtr<Kind> task_,
-         std::shared_ptr<Storage<true>> storage,
-         std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
+    Impl(ygg::uint_t index_, TaskPtr<Kind> task_, std::shared_ptr<Storage<true>> storage, std::shared_ptr<std::atomic<ygg::uint_t>> next_index_) :
         index(index_),
         next_index(std::move(next_index_)),
         task(std::move(task_)),
@@ -320,10 +308,8 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(urd::index<State<Kin
         [&](auto& evaluator)
         {
             const auto& packed_state = packed(state_index);
-            evaluator.fluent_backend.unpack(packed_state.fact_storage,
-                                            state_builder->fact_storage);
-            evaluator.derived_backend.unpack(packed_state.atom_storage,
-                                             state_builder->atom_storage);
+            evaluator.fluent_backend.unpack(packed_state.fact_storage, state_builder->fact_storage);
+            evaluator.derived_backend.unpack(packed_state.atom_storage, state_builder->atom_storage);
             evaluator.numeric_backend.unpack(packed_state.numeric_storage, state_builder->numeric_storage);
         });
 
@@ -349,10 +335,10 @@ StateView<Kind> StateRepository<Kind>::create_state(
 template<TaskKind Kind>
 template<typename FactView>
     requires std::same_as<typename FactView::value_type, formalism::planning::FDRFact<formalism::FluentTag>>
-StateView<Kind>
-StateRepository<Kind>::create_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                                    const urd::Store<urd::sequence<FactView>>& fluent_facts,
-                                    const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values)
+StateView<Kind> StateRepository<Kind>::create_state(
+    AxiomEvaluator<Kind>& axiom_evaluator,
+    const urd::Store<urd::sequence<FactView>>& fluent_facts,
+    const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values)
 {
     auto state_builder = get_state_builder();
 
@@ -367,19 +353,14 @@ StateRepository<Kind>::create_state(AxiomEvaluator<Kind>& axiom_evaluator,
 template<TaskKind Kind>
 const PackedState<Kind>& StateRepository<Kind>::packed(urd::index<State<Kind>> state_index) const
 {
-    return m_impl->visit_evaluator(
-        [&](const auto& evaluator) -> const PackedState<Kind>&
-        {
-            return evaluator.storage->packed_states[state_index];
-        });
+    return m_impl->visit_evaluator([&](const auto& evaluator) -> const PackedState<Kind>& { return evaluator.storage->packed_states[state_index]; });
 }
 
 template<TaskKind Kind>
 std::shared_ptr<urd::builder<State<Kind>>> StateRepository<Kind>::get_state_builder() const
 {
     // Each owner keeps the repository alive; the slot goes back to the pool with the last one.
-    auto state_builder = m_impl->visit_evaluator(
-        [this](auto& evaluator) { return evaluator.state_builder_pool.make_shared(this->shared_from_this()); });
+    auto state_builder = m_impl->visit_evaluator([this](auto& evaluator) { return evaluator.state_builder_pool.make_shared(this->shared_from_this()); });
     prepare_builder(*m_impl->task, *state_builder);
     return state_builder;
 }
@@ -464,18 +445,18 @@ size_t StateRepository<Kind>::num_states() const noexcept
 template class StateRepository<GroundTag>;
 template class StateRepository<LiftedTag>;
 
-template StateView<GroundTag> StateRepository<GroundTag>::create_state(
-    AxiomEvaluator<GroundTag>&,
-    const urd::Store<urd::sequence<formalism::planning::FDRFactView<formalism::FluentTag>>>&,
-    const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+template StateView<GroundTag>
+StateRepository<GroundTag>::create_state(AxiomEvaluator<GroundTag>&,
+                                         const urd::Store<urd::sequence<formalism::planning::FDRFactView<formalism::FluentTag>>>&,
+                                         const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateView<GroundTag> StateRepository<GroundTag>::create_state(
     AxiomEvaluator<GroundTag>&,
     const urd::Store<urd::sequence<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,
     const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
-template StateView<LiftedTag> StateRepository<LiftedTag>::create_state(
-    AxiomEvaluator<LiftedTag>&,
-    const urd::Store<urd::sequence<formalism::planning::FDRFactView<formalism::FluentTag>>>&,
-    const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
+template StateView<LiftedTag>
+StateRepository<LiftedTag>::create_state(AxiomEvaluator<LiftedTag>&,
+                                         const urd::Store<urd::sequence<formalism::planning::FDRFactView<formalism::FluentTag>>>&,
+                                         const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>&);
 template StateView<LiftedTag> StateRepository<LiftedTag>::create_state(
     AxiomEvaluator<LiftedTag>&,
     const urd::Store<urd::sequence<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>>&,

@@ -19,15 +19,15 @@
 #define TYR_PLANNING_STATE_DELTA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <urd/elements/equal_to.hpp>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <urd/elements/flat.hpp>
 
 namespace tyr::planning
 {

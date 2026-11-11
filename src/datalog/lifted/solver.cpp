@@ -23,43 +23,42 @@
 #include "tyr/datalog/applicability_lifted.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/datalog/lifted/contexts/program.hpp"
+#include "tyr/datalog/lifted/contexts/stratum.hpp"
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
 #include "tyr/datalog/lifted/kckp/consistency_graph.hpp"
-#include "tyr/datalog/lifted/contexts/program.hpp"
 #include "tyr/datalog/lifted/kckp/contexts/rule.hpp"
-#include "tyr/datalog/lifted/contexts/stratum.hpp"
+#include "tyr/datalog/lifted/kckp/workspaces/rule.hpp"
 #include "tyr/datalog/lifted/rule_instance.hpp"
 #include "tyr/datalog/lifted/scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
 #include "tyr/datalog/lifted/workspaces/program.hpp"
-#include "tyr/datalog/lifted/kckp/workspaces/rule.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 #include "tyr/declarations.hpp"
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
@@ -69,18 +68,19 @@
 #include <oneapi/tbb/parallel_for_each.h>
 #include <optional>
 #include <span>
+#include <urd/elements/flat.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <urd/elements/flat.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::datalog
 {
@@ -209,8 +209,9 @@ private:
 
     static void create_nullary_binding(urd::flat_vector<urd::index<formalism::Object>>& binding) { binding.clear(); }
 
-    static void
-    create_general_binding(std::span<const kckp::Vertex> clique, const StaticConsistencyGraph& consistency_graph, urd::flat_vector<urd::index<formalism::Object>>& binding)
+    static void create_general_binding(std::span<const kckp::Vertex> clique,
+                                       const StaticConsistencyGraph& consistency_graph,
+                                       urd::flat_vector<urd::index<formalism::Object>>& binding)
     {
         const auto k = clique.size();
         const auto& layout = consistency_graph.get_graph_layout();

@@ -16,10 +16,11 @@
  */
 
 #include "normalization.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "matching.hpp"
+
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::formalism::planning::invariant
 {

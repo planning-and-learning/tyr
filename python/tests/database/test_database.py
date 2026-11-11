@@ -7,18 +7,20 @@ from collections.abc import Iterable
 from typing import Any, cast
 
 import pytest
+from pyyggdrasil import formalism
+from relation_utils import intern, rename
 
 import pytyr
-from pyyggdrasil import formalism
 from pytyr import database
-from relation_utils import intern, rename
 
 
 def columns(*labels: int) -> list[formalism.ColumnIndex]:
     return [formalism.ColumnIndex(label) for label in labels]
 
 
-def typed(labels: Iterable[formalism.ColumnIndex], types: Iterable[formalism.ColumnType]) -> list[formalism.ColumnLayout]:
+def typed(
+    labels: Iterable[formalism.ColumnIndex], types: Iterable[formalism.ColumnType]
+) -> list[formalism.ColumnLayout]:
     return [formalism.ColumnLayout(label, column_type) for label, column_type in zip(labels, types, strict=True)]
 
 
@@ -367,7 +369,9 @@ def test_operations_take_plans_outputs_and_workspaces() -> None:
     assert [tuple(row) for row in repository.view(union)] == [(1, 2)]
 
     equal = formalism.Relation(other.columns())
-    database.select_equal_columns(repository.view(other), database.SelectEqualPlan(other.columns(), *columns(0, 1)), equal)
+    database.select_equal_columns(
+        repository.view(other), database.SelectEqualPlan(other.columns(), *columns(0, 1)), equal
+    )
     assert [tuple(row) for row in repository.view(equal)] == [(7, 7)]
     value = database.SelectValuePlan(other.columns(), formalism.ColumnIndex(0), formalism.ColumnType.UINT32, 3)
     database.select_equal_value(repository.view(other), value, equal)
@@ -376,6 +380,8 @@ def test_operations_take_plans_outputs_and_workspaces() -> None:
     with pytest.raises(ValueError, match="Relational operation: input schemas must have the same column order"):
         database.SetPlan(left.columns(), right.columns())
     with pytest.raises(ValueError, match="output aliases an input"):
-        database.select_equal_columns(repository.view(equal), database.SelectEqualPlan(equal.columns(), *columns(0, 1)), equal)
+        database.select_equal_columns(
+            repository.view(equal), database.SelectEqualPlan(equal.columns(), *columns(0, 1)), equal
+        )
     with pytest.raises(ValueError, match="columns do not match the plan"):
         database.join(left, right, join, formalism.Relation(), workspace)

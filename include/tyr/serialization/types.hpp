@@ -12,8 +12,8 @@
 #include "tyr/serialization/planning/state_view.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
 
-#include <type_traits>
 #include <boost/mp11.hpp>
+#include <type_traits>
 
 namespace tyr::serialization
 {
@@ -28,21 +28,21 @@ using FormalismRowView = ygg::RowView<R, formalism::planning::Repository>;
 using FormalismValueViews = boost::mp11::mp_list<formalism::planning::FDRFactView<formalism::FluentTag>>;
 
 using FormalismViews = boost::mp11::mp_append<boost::mp11::mp_transform<FormalismIndexView, formalism::planning::SymbolRepositoryTypes>,
-                                             boost::mp11::mp_transform<FormalismRowView, formalism::planning::RelationRepositoryTypes>,
-                                             FormalismValueViews>;
+                                              boost::mp11::mp_transform<FormalismRowView, formalism::planning::RelationRepositoryTypes>,
+                                              FormalismValueViews>;
 
 using FormalismOwners =
     boost::mp11::mp_list<formalism::planning::PlanningDomain, formalism::planning::PlanningTask<LiftedTag>, formalism::planning::PlanningTask<GroundTag>>;
 
 using RuntimeStates = boost::mp11::mp_list<planning::StateView<GroundTag>, planning::StateView<LiftedTag>>;
 using RuntimeOwners = boost::mp11::mp_list<planning::Task<GroundTag>,
-                                    planning::Task<LiftedTag>,
-                                    planning::Node<GroundTag>,
-                                    planning::Node<LiftedTag>,
-                                    planning::LabeledNode<GroundTag>,
-                                    planning::LabeledNode<LiftedTag>,
-                                    planning::Plan<GroundTag>,
-                                    planning::Plan<LiftedTag>>;
+                                           planning::Task<LiftedTag>,
+                                           planning::Node<GroundTag>,
+                                           planning::Node<LiftedTag>,
+                                           planning::LabeledNode<GroundTag>,
+                                           planning::LabeledNode<LiftedTag>,
+                                           planning::Plan<GroundTag>,
+                                           planning::Plan<LiftedTag>>;
 using SerializedTypes = boost::mp11::mp_append<FormalismViews, RuntimeStates, FormalismOwners, RuntimeOwners>;
 
 template<typename T>
@@ -52,7 +52,8 @@ using RegisteredTypes = boost::mp11::mp_apply<boost::mp11::mp_append, boost::mp1
 
 using ProjectionTypes = boost::mp11::mp_append<
     SerializedTypes,
-    boost::mp11::mp_list<formalism::BooleanOperatorKind, formalism::ArithmeticOperatorKind, formalism::NumericEffectOperatorKind, formalism::OptimizationDirection>>;
+    boost::mp11::
+        mp_list<formalism::BooleanOperatorKind, formalism::ArithmeticOperatorKind, formalism::NumericEffectOperatorKind, formalism::OptimizationDirection>>;
 
 }
 

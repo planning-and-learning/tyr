@@ -6,16 +6,10 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_DISTANCE_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_INCREMENTAL_DISTANCE_HPP_
 
-#include "yggdrasil/core/config.hpp"
-#include <urd/config.hpp>
-#include <urd/memory.hpp>
-#include <urd/repr/maps/ordered_map.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/sparse_set.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/delta.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/details/distance_repair.hpp"
+#include "yggdrasil/core/config.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -23,6 +17,12 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <urd/config.hpp>
+#include <urd/memory.hpp>
+#include <urd/repr/maps/ordered_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/sparse_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -101,7 +101,11 @@ class DistanceEvaluator
     void remove_result(VertexSet::handle_type source, VertexSet::handle_type target, ygg::uint_t length);
     void set_distance(SourceState& state, VertexSet::handle_type vertex, ygg::uint_t length);
     static ygg::uint_t successor_distance(ygg::uint_t distance) noexcept;
-    void update_edge(SourceState& state, VertexSet::handle_type from, VertexSet::handle_type to, std::optional<ygg::uint_t> before, std::optional<ygg::uint_t> after);
+    void update_edge(SourceState& state,
+                     VertexSet::handle_type from,
+                     VertexSet::handle_type to,
+                     std::optional<ygg::uint_t> before,
+                     std::optional<ygg::uint_t> after);
     void rebuild_incoming(SourceState& state, VertexSet::handle_type vertex);
     void repair(SourceState& state);
     void clear_changes();
@@ -365,7 +369,11 @@ class SourceMinDistance
 
 public:
     /// Its builders are read through `layer`, which must outlive it.
-    SourceMinDistance(const ygg::FreeRelationRepository& layer, DistancePlan plan) : m_position(plan.output_columns().size() - 1), m_evaluator(layer, std::move(plan)) {}
+    SourceMinDistance(const ygg::FreeRelationRepository& layer, DistancePlan plan) :
+        m_position(plan.output_columns().size() - 1),
+        m_evaluator(layer, std::move(plan))
+    {
+    }
 
     /// Replace all inputs, retaining buffers.
     template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>

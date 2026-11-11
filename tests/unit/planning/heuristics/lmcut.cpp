@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/heuristics/lmcut.hpp"
+
 #include "heuristic.hpp"
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"

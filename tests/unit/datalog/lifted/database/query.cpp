@@ -1,6 +1,4 @@
 #include "query_helpers.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
 #include <array>
@@ -8,11 +6,13 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <random>
-#include <vector>
 #include <tyr/datalog/lifted/database/semantics/incremental/query.hpp>
 #include <tyr/datalog/lifted/database/semantics/query_evaluation.hpp>
 #include <tyr/datalog/lifted/database/semantics/relation_view.hpp>
 #include <tyr/datalog/lifted/database/syntax/query_repository.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <vector>
 
 namespace
 {
@@ -77,8 +77,8 @@ static_assert(HasArgument<ProjectView> && !HasOperands<ProjectView>);
 static_assert(HasSources<DistanceView> && !HasArgument<DistanceView> && !HasOperands<DistanceView>);
 static_assert(!HasArgument<tyr::datalog::database::QueryView<>> && !HasOperands<tyr::datalog::database::QueryView<>>);
 static_assert(!std::copy_constructible<tyr::datalog::database::QueryRepository>);
-static_assert(
-    !std::convertible_to<urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>>, urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryJoinTag>>>);
+static_assert(!std::convertible_to<urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>>,
+                                   urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryJoinTag>>>);
 
 TEST(DatabaseQuery, TypedLogicalAlternativesKeepOperandsAndRootProvenance)
 {
@@ -117,7 +117,8 @@ TEST(DatabaseQuery, TypedLogicalAlternativesKeepOperandsAndRootProvenance)
     EXPECT_EQ(count, 12);
     const auto duplicate = tyr::datalog::tests::qb::join(repository, a, b);
     EXPECT_EQ(duplicate.index(), joined.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(duplicate).index(), tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).index());
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(duplicate).index(),
+              tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).index());
     EXPECT_EQ(repository.size(), count);
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryInputTag>(a).index().value,
               tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).index().value);
@@ -152,7 +153,8 @@ TEST(DatabaseQuery, RecordConstructorsMatchFieldsAndValidateConstantTypes)
               tyr::datalog::tests::qb::project(repository, a, { x }).index());
     EXPECT_EQ(insert(urd::data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>(a.index(), x, ygg::uint_t(7))).index(),
               tyr::datalog::tests::qb::select_value(repository, a, x, ygg::uint_t(7)).index());
-    const auto generic = insert(urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>>(std::array { a.index(), b.index() }, std::array { y, x, z }));
+    const auto generic = insert(
+        urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>>(std::array { a.index(), b.index() }, std::array { y, x, z }));
     EXPECT_TRUE(std::ranges::equal(generic.columns() | std::views::transform(&ygg::ColumnLayout::label), std::array { x, y, z }));
 
     auto mismatched = urd::data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>(a.index(), x, static_cast<std::int32_t>(7));
@@ -174,7 +176,11 @@ TEST(DatabaseQuery, InternsValidatedNodesAndCompilesIndependentReachablePlan)
         EXPECT_TRUE(urd::EqualTo<decltype(a)> {}(a, same));
         EXPECT_FALSE(urd::EqualTo<decltype(a)> {}(a, foreign));
         EXPECT_EQ(urd::Hash<decltype(a)> {}(a), urd::Hash<decltype(a)> {}(same));
-        std::unordered_map<tyr::datalog::database::QueryView<>, int, urd::Hash<tyr::datalog::database::QueryView<>>, urd::EqualTo<tyr::datalog::database::QueryView<>>> keys;
+        std::unordered_map<tyr::datalog::database::QueryView<>,
+                           int,
+                           urd::Hash<tyr::datalog::database::QueryView<>>,
+                           urd::EqualTo<tyr::datalog::database::QueryView<>>>
+            keys;
         keys.emplace(a, 1);
         keys.emplace(same, 2);
         keys.emplace(foreign, 3);
@@ -318,7 +324,8 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     full.evaluate(inputs);
     incremental.initialize(inputs);
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
-    ASSERT_TRUE(incremental.get_result(1).contains(std::array { ygg::encode_value(ygg::uint_t(1)), ygg::encode_value(ygg::uint_t(3)), ygg::encode_value(ygg::uint_t(2)) }));
+    ASSERT_TRUE(incremental.get_result(1).contains(
+        std::array { ygg::encode_value(ygg::uint_t(1)), ygg::encode_value(ygg::uint_t(3)), ygg::encode_value(ygg::uint_t(2)) }));
     Delta ds(layer(), s.columns()), de(layer(), e.columns()), dt(layer(), t.columns());
     de.added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     incremental.update(std::array { std::pair { borrow(ds.added), borrow(ds.removed) },
@@ -350,8 +357,7 @@ TEST(DatabaseQuery, RejectsInvalidBatchesBeforeMutatingAndSupportsNonDistanceTyp
     const auto changes = std::array { std::pair { borrow(invalid.added), borrow(invalid.removed) } };
     EXPECT_THROW(incremental.update(changes), std::invalid_argument);
     EXPECT_EQ(rows(incremental.get_result()), rows(full.get_result()));
-    EXPECT_THROW(incremental.update(std::span<const Change> {}),
-                 std::invalid_argument);
+    EXPECT_THROW(incremental.update(std::span<const Change> {}), std::invalid_argument);
     EXPECT_EQ(incremental.get_result().size(), 1);
 }
 
@@ -389,7 +395,10 @@ TEST(DatabaseQuery, RandomizedSharedSetDagMaintainsExactNetChanges)
                                     u };
     constexpr size_t semijoin_root = 12, antijoin_root = 13, reference_root = 17, union_root = 18;
     const auto plan = tyr::datalog::database::compile(roots);
-    std::array<Relation, 4> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ x, y })), Relation(tyr::datalog::tests::ops::cols({ y, z })), Relation() };
+    std::array<Relation, 4> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ x, y })),
+                                     Relation(tyr::datalog::tests::ops::cols({ y, z })),
+                                     Relation() };
     const auto refs = std::array { borrow(inputs[0]), borrow(inputs[1]), borrow(inputs[2]), borrow(inputs[3]) };
     tyr::datalog::database::QueryEvaluator full(layer(), plan);
     tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
@@ -528,8 +537,11 @@ TEST(DatabaseQuery, CachedPlansSurviveRepositoryGrowthAndCistaRelocation)
     const auto joined = tyr::datalog::tests::qb::join(repository, a, b);
     const auto projected = tyr::datalog::tests::qb::project(repository, joined, { z, x });
     const auto generic = tyr::datalog::tests::qb::generic_join(repository, { a, b }, { z, y, x }, { x, z, y });
-    const auto distance =
-        tyr::datalog::tests::qb::distance(repository, tyr::datalog::tests::qb::project(repository, a, { x }), a, tyr::datalog::tests::qb::project(repository, b, { z }), d);
+    const auto distance = tyr::datalog::tests::qb::distance(repository,
+                                                            tyr::datalog::tests::qb::project(repository, a, { x }),
+                                                            a,
+                                                            tyr::datalog::tests::qb::project(repository, b, { z }),
+                                                            d);
     const auto view = tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined);
     const auto* original = &view.data();
     for (size_t slot = 2; slot < 260; ++slot)

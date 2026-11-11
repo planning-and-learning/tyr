@@ -21,9 +21,9 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 
+#include <urd/elements/flat.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {

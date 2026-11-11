@@ -27,28 +27,23 @@
 #include "tyr/datalog/policies/cost_concepts.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/solver.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/expression_properties.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -58,8 +53,12 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/rpg.hpp"
 #include "tyr/planning/task_utils.hpp"
@@ -75,6 +74,7 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning::detail
 {

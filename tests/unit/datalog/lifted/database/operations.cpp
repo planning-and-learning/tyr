@@ -3,11 +3,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
+#include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
 #include <array>
@@ -22,6 +20,8 @@
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -152,7 +152,8 @@ void expect_relation(const urd::builder<ygg::Relation<ygg::Schema>>& relation,
         EXPECT_TRUE(relation.contains(packed(std::span<const T>(row.begin(), row.size()))));
 }
 
-std::set<urd::Store<urd::sequence<ygg::uint_t>>> reference_join(const urd::builder<ygg::Relation<ygg::Schema>>& lhs_builder, const urd::builder<ygg::Relation<ygg::Schema>>& rhs_builder)
+std::set<urd::Store<urd::sequence<ygg::uint_t>>> reference_join(const urd::builder<ygg::Relation<ygg::Schema>>& lhs_builder,
+                                                                const urd::builder<ygg::Relation<ygg::Schema>>& rhs_builder)
 {
     const auto lhs = borrow(lhs_builder);
     const auto rhs = borrow(rhs_builder);
@@ -438,8 +439,8 @@ TEST(YggdrasilTests, DatabasePlansSurviveCistaRelocation)
     // The owning objects and original byte buffers are gone before decoding.
     auto projection_bytes = relocated_serialization(
         database::ProjectionPlan(cols({ ColumnIndex(3), ColumnIndex(1), ColumnIndex(2), ColumnIndex(4) }), std::array { ColumnIndex(4), ColumnIndex(3) }));
-    auto join_bytes =
-        relocated_serialization(database::JoinPlan(cols({ ColumnIndex(3), ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(2), ColumnIndex(4), ColumnIndex(1) })));
+    auto join_bytes = relocated_serialization(
+        database::JoinPlan(cols({ ColumnIndex(3), ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(2), ColumnIndex(4), ColumnIndex(1) })));
     const auto* projection = cista::deserialize<database::ProjectionPlan>(projection_bytes);
     const auto* joining = cista::deserialize<database::JoinPlan>(join_bytes);
     const auto values = [](auto range)
@@ -550,7 +551,9 @@ TEST(YggdrasilTests, DatabasePlansValidateSchemasAndOperationsRejectAliasedOutpu
     EXPECT_THROW((database::SetPlan(cols({ ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(2), ColumnIndex(1) }))), std::invalid_argument);
     EXPECT_THROW((database::SetPlan(duplicates, duplicates)), std::invalid_argument);
     EXPECT_THROW((database::SelectEqualPlan(left.columns(), ColumnIndex(1), ColumnIndex(9))), std::out_of_range);
-    EXPECT_THROW((database::SelectEqualPlan(Layouts { { ColumnIndex(1), ygg::type_id<ygg::uint_t> }, { ColumnIndex(2), ygg::type_id<double> } }, ColumnIndex(1), ColumnIndex(2))),
+    EXPECT_THROW((database::SelectEqualPlan(Layouts { { ColumnIndex(1), ygg::type_id<ygg::uint_t> }, { ColumnIndex(2), ygg::type_id<double> } },
+                                            ColumnIndex(1),
+                                            ColumnIndex(2))),
                  std::invalid_argument);
     EXPECT_THROW((database::SelectValuePlan(left.columns(), ColumnIndex(9), ygg::type_id<ygg::uint_t>, 3)), std::out_of_range);
     EXPECT_THROW((database::SelectValuePlan(left.columns(), ColumnIndex(1), ygg::type_id<double>, ygg::encode_value(3.0))), std::invalid_argument);

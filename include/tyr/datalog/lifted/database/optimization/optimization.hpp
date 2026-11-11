@@ -6,8 +6,6 @@
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_OPTIMIZATION_HPP_
 
 #include "tyr/datalog/lifted/database/optimization/details/optimization.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/optimization/statistics.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
@@ -20,6 +18,8 @@
 #include <span>
 #include <string>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database
@@ -65,7 +65,7 @@ public:
             auto mean = total.statistics;
             if (mean.rows == 0)
                 warnings.add(::ygg::diagnostics::Diagnostic { "Statistics: " + std::string(describe(key)) + " was empty in all " + std::to_string(total.samples)
-                                                       + " samples; its size is estimated as 0." });
+                                                              + " samples; its size is estimated as 0." });
             mean.rows = mean.rows > 0 ? std::max(mean.rows / samples, 1.0) : 0.0;
             for (const auto& [column, distinct] : mean.distinct)
                 mean.distinct.at(column) = mean.rows > 0 ? std::clamp(distinct / samples, 1.0, mean.rows) : 0.0;

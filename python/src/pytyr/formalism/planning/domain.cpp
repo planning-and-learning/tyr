@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {
@@ -32,15 +32,15 @@ void bind_domain(nb::module_& m, RepositoryBinding& repository)
 
         auto cls = nb::class_<V>(m, "DomainData")  //
                        .def(urd::python::init_from_views<const std::string&,
-                                     const PredicateViewList<StaticTag>&,
-                                     const PredicateViewList<FluentTag>&,
-                                     const PredicateViewList<DerivedTag>&,
-                                     const FunctionViewList<StaticTag>&,
-                                     const FunctionViewList<FluentTag>&,
-                                     const std::optional<FunctionView<AuxiliaryTag>>&,
-                                     const ObjectViewList&,
-                                     const ActionViewList<LiftedTag>&,
-                                     const AxiomViewList<LiftedTag>&>(),
+                                                         const PredicateViewList<StaticTag>&,
+                                                         const PredicateViewList<FluentTag>&,
+                                                         const PredicateViewList<DerivedTag>&,
+                                                         const FunctionViewList<StaticTag>&,
+                                                         const FunctionViewList<FluentTag>&,
+                                                         const std::optional<FunctionView<AuxiliaryTag>>&,
+                                                         const ObjectViewList&,
+                                                         const ActionViewList<LiftedTag>&,
+                                                         const AxiomViewList<LiftedTag>&>(),
                             "name"_a,
                             "static_predicates"_a,
                             "fluent_predicates"_a,

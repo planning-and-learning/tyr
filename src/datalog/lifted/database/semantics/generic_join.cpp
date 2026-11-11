@@ -4,12 +4,12 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/generic_join.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
 #include <span>
 #include <stdexcept>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database
@@ -73,10 +73,7 @@ bool GenericJoinPlan::matches(const GenericJoinPlan& other) const
 
 namespace detail
 {
-void count_generic_join_work(size_t GenericJoinWork::* member) noexcept
-{
-    ++(generic_join_work().*member);
-}
+void count_generic_join_work(size_t GenericJoinWork::* member) noexcept { ++(generic_join_work().*member); }
 }
 }
 

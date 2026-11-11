@@ -33,6 +33,7 @@
 #include <tyr/formalism/planning/parser.hpp>
 #include <tyr/formalism/planning/repository.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
+#include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/formatter.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
@@ -43,7 +44,6 @@
 #include <tyr/planning/heuristics/rpg_add.hpp>
 #include <tyr/planning/heuristics/rpg_ff.hpp>
 #include <tyr/planning/heuristics/rpg_max.hpp>
-#include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/lifted/successor_generator.hpp>
 #include <tyr/planning/lifted/task.hpp>
 #include <tyr/planning/lifted/task_grounder_decl.hpp>
@@ -234,8 +234,7 @@ int run_search(const Arguments& arguments,
 {
     auto search = Search<Kind> { std::move(task), std::move(execution_context) };
     search.axiom_evaluator = std::make_shared<planning::AxiomEvaluator<Kind>>(search.task, search.execution_context);
-    search.state_repository =
-        std::make_shared<planning::StateRepository<Kind>>(search.task, arguments.state_repository_mode == "shared");
+    search.state_repository = std::make_shared<planning::StateRepository<Kind>>(search.task, arguments.state_repository_mode == "shared");
     search.successor_generator = std::make_shared<planning::SuccessorGenerator<Kind>>(search.task, search.execution_context);
     search.heuristic = make_heuristic(arguments, search);
 

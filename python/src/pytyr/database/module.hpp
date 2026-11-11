@@ -1,10 +1,10 @@
 #ifndef PYTYR_DATABASE_MODULE_HPP_
 #define PYTYR_DATABASE_MODULE_HPP_
 
+#include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 #include "yggdrasil/formalism/free_relations.hpp"
 #include "yggdrasil/formalism/relation_builder.hpp"
 #include "yggdrasil/python/relations.hpp"
-#include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
 #include <algorithm>
 #include <nanobind/nanobind.h>

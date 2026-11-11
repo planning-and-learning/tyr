@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
 
@@ -18,18 +18,17 @@ struct FunctionTermPublicView<tyr::formalism::FunctionTerm<::tyr::LiftedTag, T>>
 };
 
 template<typename Entity>
-concept FunctionTermContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename FunctionTermPublicView<Entity>::type>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
-           data.index;
-           data.function;
-           data.terms;
-           view.index();
-           view.get_function();
-           view.get_terms();
-       };
+concept FunctionTermContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                               && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+                               && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename FunctionTermPublicView<Entity>::type>
+                               && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
+                                      data.index;
+                                      data.function;
+                                      data.terms;
+                                      view.index();
+                                      view.get_function();
+                                      view.get_terms();
+                                  };
 
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (FunctionTermContract<Entities> && ...); }(tyr::formalism::datalog::FunctionTermTypes<::tyr::LiftedTag> {}));

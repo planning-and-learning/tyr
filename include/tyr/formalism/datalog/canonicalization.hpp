@@ -20,26 +20,26 @@
 
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
+#include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
-#include "tyr/formalism/datalog/program_data.hpp"
-#include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/unary_operator_data.hpp"
-#include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
-#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/variable_data.hpp"
 
 #include <algorithm>
+#include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
 /// The canonical form of every datalog record (prepare_for_insert canonicalizes each record it inserts): records whose

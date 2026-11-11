@@ -22,16 +22,16 @@
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <cista/containers/vector.h>
 #include <gtl/phmap.hpp>
 #include <type_traits>
-#include <utility>
 #include <urd/elements/flat.hpp>
+#include <utility>
 
 namespace tyr::analysis
 {

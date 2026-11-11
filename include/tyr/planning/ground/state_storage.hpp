@@ -19,8 +19,6 @@
 #define TYR_PLANNING_GROUND_STATE_STORAGE_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
@@ -31,6 +29,8 @@
 #include <ranges>
 #include <tuple>
 #include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning

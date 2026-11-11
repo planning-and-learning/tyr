@@ -1,16 +1,16 @@
-#include <algorithm>
-#include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
+#include <algorithm>
 #include <concepts>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -38,8 +38,10 @@ static_assert(ygg::formalism::SupportsSymbol<tyr::formalism::planning::Repositor
 static_assert(!ygg::formalism::SupportsSymbol<tyr::formalism::planning::Repository, int>);
 static_assert(MultiOperatorContract<Lifted>);
 static_assert(MultiOperatorContract<Ground>);
-static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::planning::Repository>, tyr::formalism::planning::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
-static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Repository>, tyr::formalism::planning::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::MultiOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::MultiOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 
 TEST(TyrFormalismPlanningMultiOperator, RejectsNonMultiOperator)
 {

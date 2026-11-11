@@ -16,8 +16,6 @@
  */
 
 #include "matching.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
@@ -27,8 +25,10 @@
 #include "tyr/formalism/unification/substitution.hpp"
 
 #include <algorithm>
-#include <yggdrasil/core/config.hpp>
 #include <urd/config.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {

@@ -17,9 +17,9 @@
 
 #include "tyr/planning/state_storage/tree_bitset/fact.hpp"
 
+#include "../../tree_bitset.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
-#include "../../tree_bitset.hpp"
 
 #include <urd/bits.hpp>
 
@@ -57,11 +57,16 @@ void append_flips(const StateLayout<GroundTag>& layout, const StateDelta::Fluent
 void append_flips(const StateLayout<LiftedTag>&, const StateDelta::FluentChange& change, Flips& flips)
 {
     const auto bit = static_cast<ygg::uint_t>(change.variable.value);
-    flips.push_back(tree_bitset::Flip { static_cast<ygg::uint_t>(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
+    flips.push_back(
+        tree_bitset::Flip { static_cast<ygg::uint_t>(bit / tree_bitset::bits_per_block), tree_bitset::Block { 1 } << (bit % tree_bitset::bits_per_block) });
 }
 
 template<typename Set>
-void unpack_facts(Set& bitsets, const StateLayout<GroundTag>& layout, typename Set::handle_type packed, FactUnpackedStorage<GroundTag>& unpacked, Blocks& blocks)
+void unpack_facts(Set& bitsets,
+                  const StateLayout<GroundTag>& layout,
+                  typename Set::handle_type packed,
+                  FactUnpackedStorage<GroundTag>& unpacked,
+                  Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
     blocks.assign(layout.fluent_num_blocks, tree_bitset::Block { 0 });
@@ -88,7 +93,8 @@ auto FactStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& un
 { return insert_facts(m_context->bitsets, m_context->layout, unpacked, m_blocks); }
 
 template<TaskKind Kind, bool ThreadSafe>
-auto FactStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes) -> Packed
+auto FactStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes)
+    -> Packed
 {
     m_flips.clear();
     for (const auto& change : changes)

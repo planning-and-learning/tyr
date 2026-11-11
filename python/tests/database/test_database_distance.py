@@ -7,10 +7,10 @@ from collections.abc import Iterable, Sequence
 from typing import Any, TypeAlias, cast
 
 import pytest
-
 from pyyggdrasil import formalism
-from pytyr import database
 from relation_utils import intern
+
+from pytyr import database
 
 Readable = formalism.Relation | formalism.BorrowedRelation | formalism.RelationView
 # Reads the tests' relation builders and evaluator results.
@@ -111,7 +111,8 @@ def test_distance_canonical_nan_boolean_and_zero_length_paths() -> None:
     target = relation([30, 31], [(True, -float("nan")), (False, 0.0)], types)
     result = distance(*borrow(source, edges, target), plan_for(source, edges, target))
     normalized = {
-        tuple("nan" if isinstance(value, float) and math.isnan(value) else value for value in row) for row in RELATIONS.view(result)
+        tuple("nan" if isinstance(value, float) and math.isnan(value) else value for value in row)
+        for row in RELATIONS.view(result)
     }
     assert normalized == {
         (True, "nan", True, "nan", 0),

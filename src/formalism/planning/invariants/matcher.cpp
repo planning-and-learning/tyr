@@ -16,8 +16,6 @@
  */
 
 #include "tyr/formalism/planning/invariants/matcher.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "matching.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
@@ -30,8 +28,10 @@
 
 #include <cassert>
 #include <ranges>
-#include <yggdrasil/core/config.hpp>
 #include <urd/config.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -48,7 +48,8 @@ MutableInvariant to_mutable(InvariantView invariant)
 }
 }
 
-InvariantMatchData::InvariantMatchData(InvariantView invariant, urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> rigid_variable_bindings) :
+InvariantMatchData::InvariantMatchData(InvariantView invariant,
+                                       urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> rigid_variable_bindings) :
     m_invariant(invariant),
     m_inv(to_mutable(invariant)),
     m_rigid_variable_bindings(std::move(rigid_variable_bindings)),

@@ -19,9 +19,6 @@
 #define TYR_ALGORITHMS_KCKP_DELTA_KCKP_HPP_
 
 #include "tyr/algorithms/kckp/kckp.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 
 #include <bit>
 #include <cassert>
@@ -33,6 +30,9 @@
 #include <span>
 #include <type_traits>
 #include <urd/bits.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -110,9 +110,7 @@ public:
         m_affected_partitions(&affected_partitions),
         m_delta_partitions(&delta_partitions),
         m_bitset_data(adjacency_layout.num_blocks(), 0)
-    {
-        m_touched_partitions.reserve(layout.num_vertices * layout.num_partitions);
-    }
+    { m_touched_partitions.reserve(layout.num_vertices * layout.num_partitions); }
 
     urd::bitset_span<uint64_t> get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) noexcept;
     [[nodiscard]] urd::bitset_span<const uint64_t> get_runtime_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept;

@@ -30,8 +30,8 @@
 #include "tyr/formalism/datalog/grounder.hpp"
 
 #include <cstddef>
-#include <yggdrasil/core/config.hpp>
 #include <urd/config.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
@@ -158,7 +158,10 @@ struct RuleExecutionContext
     }
 
     void initialize()
-    { out().common().initialize_iteration(AssignmentSets { stratum_in().program().engine().assignment_sets, stratum_out().program().engine().assignment_sets }); }
+    {
+        out().common().initialize_iteration(
+            AssignmentSets { stratum_in().program().engine().assignment_sets, stratum_out().program().engine().assignment_sets });
+    }
 
     void clear_iteration() noexcept
     {

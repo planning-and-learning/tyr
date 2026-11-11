@@ -30,11 +30,11 @@
 #include <mutex>
 #include <span>
 #include <stdexcept>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::iw
@@ -299,10 +299,7 @@ private:
         return lock;
     }
 
-    bool insert_unlocked(std::span<const ygg::uint_t> tuple)
-    {
-        return m_storage->seen_by_arity[tuple.size()].insert(rank_tuple<Arity>(tuple)).second;
-    }
+    bool insert_unlocked(std::span<const ygg::uint_t> tuple) { return m_storage->seen_by_arity[tuple.size()].insert(rank_tuple<Arity>(tuple)).second; }
 
     template<TaskKind Kind>
     void collect_atoms(const StateView<Kind>& state, AtomIndexList& out)

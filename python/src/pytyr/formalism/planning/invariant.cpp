@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <tyr/formalism/planning/invariant_data.hpp>
@@ -35,7 +35,10 @@ void bind_invariant_data(nb::module_& m, const char* name)
                                           "num_rigid_variables"_a,
                                           "num_counted_variables"_a,
                                           "atoms"_a);
-    cls.def(nb::init<ygg::uint_t, ygg::uint_t, urd::flat_vector<urd::index<Atom<LiftedTag, FluentTag>>>>(), "num_rigid_variables"_a, "num_counted_variables"_a, "atoms"_a);
+    cls.def(nb::init<ygg::uint_t, ygg::uint_t, urd::flat_vector<urd::index<Atom<LiftedTag, FluentTag>>>>(),
+            "num_rigid_variables"_a,
+            "num_counted_variables"_a,
+            "atoms"_a);
     ygg::add_print(cls);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);

@@ -25,9 +25,9 @@
 #include <urd/elements/concepts.hpp>
 #include <utility>
 #include <variant>
-#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/interning.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 /// Copying records of one repository S into another R (datalog or planning, the same or the other: the records both
 /// store have one type; include R's namespace's interning.hpp, which canonicalizes on insert). A copy is found by ADL on
@@ -37,8 +37,7 @@ namespace tyr::formalism
 
 /// A binding: its relation and its objects copied.
 template<typename Rel, typename S, typename B, typename R>
-std::pair<ygg::RowView<Rel, R>, bool>
-copy(ygg::RowView<Rel, S> element, WriteContext<B, R>& context)
+std::pair<ygg::RowView<Rel, R>, bool> copy(ygg::RowView<Rel, S> element, WriteContext<B, R>& context)
 {
     auto binding = ygg::formalism::checkout<ygg::Row<Rel>>(context.builder());
 
@@ -56,11 +55,8 @@ std::pair<urd::index_view<T, R>, bool> copy(urd::index_view<T, S> element, Write
 {
     auto record = ygg::formalism::checkout<T>(context.builder());
 
-    [&]<auto... Ms>(const urd::data<T>& source, urd::Members<Ms...>) { (((*record).*Ms = source.*Ms), ...); }(element.data(),
-                                                                                                             urd::data<T>::cista_members());
-    *record = urd::map_children<typename B::Types, T>(std::move(*record),
-                                                      element.context(),
-                                                      [&](auto child) { return copy(child, context).first.index(); });
+    [&]<auto... Ms>(const urd::data<T>& source, urd::Members<Ms...>) { (((*record).*Ms = source.*Ms), ...); }(element.data(), urd::data<T>::cista_members());
+    *record = urd::map_children<typename B::Types, T>(std::move(*record), element.context(), [&](auto child) { return copy(child, context).first.index(); });
     if constexpr (requires { record->row; })
         record->row = copy(element.context().view(record->row), context).first.data();
 

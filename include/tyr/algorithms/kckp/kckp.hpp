@@ -19,9 +19,6 @@
 #define TYR_ALGORITHMS_KCKP_KCKP_HPP_
 
 #include <algorithm>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -29,6 +26,9 @@
 #include <optional>
 #include <span>
 #include <urd/bits.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 
@@ -70,7 +70,9 @@ struct GraphLayout
     PartitionInfo info;
 
     GraphLayout() = default;
-    GraphLayout(size_t num_vertices, const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>& vertex_partitions, std::span<const ygg::uint_t> vertex_labels = {});
+    GraphLayout(size_t num_vertices,
+                const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>& vertex_partitions,
+                std::span<const ygg::uint_t> vertex_labels = {});
 
     /// The vertex with label in partition, if any. Requires the partition's labels to be sorted, as for rule
     /// consistency graphs, whose labels are objects of sorted parameter domains.
@@ -324,7 +326,8 @@ inline urd::bitset_span<const uint64_t> AdjacencyMatrix::get_bitset(ygg::uint_t 
 {
     const auto offset = m_layout.info.num_blocks * vertex;
     const auto& info = m_layout.info.infos[partition];
-    return urd::bitset_span<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(), info.num_bits);
+    return urd::bitset_span<const uint64_t>(std::span<const uint64_t>(m_bitset_data).subspan(offset + info.block_offset, info.num_blocks).data(),
+                                            info.num_bits);
 }
 
 inline urd::bitset_span<const uint64_t> DeduplicatedAdjacencyMatrix::get_bitset(ygg::uint_t vertex, ygg::uint_t partition) const noexcept

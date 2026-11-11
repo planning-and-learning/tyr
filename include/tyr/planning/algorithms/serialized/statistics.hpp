@@ -19,10 +19,10 @@
 #define TYR_PLANNING_ALGORITHMS_SERIALIZED_STATISTICS_HPP_
 
 #include "tyr/planning/algorithms/utils.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <concepts>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 

@@ -1,12 +1,7 @@
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/copy.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -14,8 +9,12 @@
 #include <forward_list>
 #include <gtest/gtest.h>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
+#include <yggdrasil/formalism/row_data.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 template<typename Relation, typename Repository>
 struct RowPublicView;
@@ -64,13 +63,10 @@ struct RowPublicView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, tyr::for
 
 template<typename Relation, typename Repository>
 concept RowContract =
-    requires(const Repository& repository, ygg::RowIndex<Relation> index) { repository.view(index); }
-    && std::totally_ordered<ygg::RowIndex<Relation>> && std::totally_ordered<urd::data<ygg::Row<Relation>>>
-    && std::totally_ordered<ygg::RowView<Relation, Repository>>
+    requires(const Repository& repository, ygg::RowIndex<Relation> index) { repository.view(index); } && std::totally_ordered<ygg::RowIndex<Relation>>
+    && std::totally_ordered<urd::data<ygg::Row<Relation>>> && std::totally_ordered<ygg::RowView<Relation, Repository>>
     && std::same_as<ygg::RowView<Relation, Repository>, typename RowPublicView<Relation, Repository>::type>
-    && requires(ygg::RowIndex<Relation>& index,
-                urd::data<ygg::Row<Relation>>& data,
-                const ygg::RowView<Relation, Repository>& view) {
+    && requires(ygg::RowIndex<Relation>& index, urd::data<ygg::Row<Relation>>& data, const ygg::RowView<Relation, Repository>& view) {
            index.relation;
            index.row;
            data.relation;
@@ -156,10 +152,18 @@ void check_binding_copy()
 }  // namespace
 
 TEST(TyrFormalismDatalogCopy, RemapsBindingRelationsAndObjects)
-{ check_binding_copy<tyr::formalism::datalog::Repository, tyr::formalism::datalog::Builder, tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>>(); }
+{
+    check_binding_copy<tyr::formalism::datalog::Repository,
+                       tyr::formalism::datalog::Builder,
+                       tyr::formalism::WriteContext<tyr::formalism::datalog::Builder, tyr::formalism::datalog::Repository>>();
+}
 
 TEST(TyrFormalismPlanningCopy, RemapsBindingRelationsAndObjects)
-{ check_binding_copy<tyr::formalism::planning::Repository, tyr::formalism::planning::Builder, tyr::formalism::WriteContext<tyr::formalism::planning::Builder, tyr::formalism::planning::Repository>>(); }
+{
+    check_binding_copy<tyr::formalism::planning::Repository,
+                       tyr::formalism::planning::Builder,
+                       tyr::formalism::WriteContext<tyr::formalism::planning::Builder, tyr::formalism::planning::Repository>>();
+}
 
 TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
 {

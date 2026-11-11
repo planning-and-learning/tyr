@@ -16,9 +16,9 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "../../siw.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::planning::siw
 {

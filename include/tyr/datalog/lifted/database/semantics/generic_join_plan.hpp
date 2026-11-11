@@ -7,12 +7,12 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_GENERIC_JOIN_PLAN_HPP_
 
 #include "tyr/datalog/lifted/database/semantics/plans.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
-#include <urd/elements/flat.hpp>
 #include <cstddef>
 #include <span>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database

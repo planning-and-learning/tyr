@@ -16,44 +16,40 @@
  */
 
 #include "tyr/planning/ground/match_tree/match_tree.hpp"
-#include "tyr/planning/ground/match_tree/detail/repository_instantiations.hpp"
-#include <urd/repr/queues/queue.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
-#include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
-#include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground/match_tree/declarations.hpp"
+#include "tyr/planning/ground/match_tree/detail/repository_instantiations.hpp"
 #include "tyr/planning/ground/match_tree/nodes/node_view.hpp"
 #include "tyr/planning/ground/match_tree/repository.hpp"
 #include "tyr/planning/state_builder.hpp"
@@ -63,11 +59,15 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -546,10 +546,11 @@ static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(urd::
 }
 
 template<typename Tag>
-static std::optional<StackEntry<Tag>> try_create_constraint_stack_entry(urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
-                                                                        BaseEntry<Tag> base,
-                                                                        const PreconditionDetails<Tag>& details,
-                                                                        Builder<Tag>& builder)
+static std::optional<StackEntry<Tag>>
+try_create_constraint_stack_entry(urd::index<formalism::BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>> constraint,
+                                  BaseEntry<Tag> base,
+                                  const PreconditionDetails<Tag>& details,
+                                  Builder<Tag>& builder)
 {
     assert(!base.elements.empty());
 
@@ -628,7 +629,8 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 }
 
 template<typename Tag>
-MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements_, const formalism::planning::Repository& context_) :
+MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements_,
+                          const formalism::planning::Repository& context_) :
     m_definition(),
     m_evaluator()
 {

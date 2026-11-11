@@ -53,14 +53,13 @@ struct FactUnpackedStorage<LiftedTag>
     /// The facts set (value 1), by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {
-        return urd::transform(indices,
-                              [](ygg::uint_t i)
-                              {
-                                  return urd::data<formalism::planning::FDRFact<formalism::FluentTag>> {
-                                      urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> { i },
-                                      formalism::planning::FDRValue { 1 }
-                                  };
-                              });
+        return urd::transform(
+            indices,
+            [](ygg::uint_t i)
+            {
+                return urd::data<formalism::planning::FDRFact<formalism::FluentTag>> { urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> { i },
+                                                                                       formalism::planning::FDRValue { 1 } };
+            });
     }
     void clear() { indices.clear(); }
     void swap(FactUnpackedStorage& other) noexcept { indices.swap(other.indices); }

@@ -1,7 +1,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/literal_view.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 
 #include <concepts>
 
@@ -47,18 +47,17 @@ struct GroundLiteralPublicView<tyr::formalism::Literal<::tyr::GroundTag, T>>
 };
 
 template<typename Entity>
-concept GroundLiteralContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename GroundLiteralPublicView<Entity>::type>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
-           data.index;
-           data.atom;
-           data.polarity;
-           view.index();
-           view.get_atom();
-           view.get_polarity();
-       };
+concept GroundLiteralContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                                && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+                                && std::same_as<urd::index_view<Entity, tyr::formalism::datalog::Repository>, typename GroundLiteralPublicView<Entity>::type>
+                                && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
+                                       data.index;
+                                       data.atom;
+                                       data.polarity;
+                                       view.index();
+                                       view.get_atom();
+                                       view.get_polarity();
+                                   };
 
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (GroundLiteralContract<Entities> && ...); }(tyr::formalism::datalog::LiteralTypes<::tyr::GroundTag> {}));

@@ -19,9 +19,7 @@
 #define TYR_PYTHON_PLANNING_PLANNING_HPP_
 
 #include "module.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include <urd/python/sequences/sequence.hpp>
+#include "pytyr/module.hpp"
 
 #include <nanobind/stl/chrono.h>
 #include <nanobind/stl/function.h>
@@ -50,16 +48,10 @@
 #include <tyr/planning/algorithms/statistics.hpp>
 #include <tyr/planning/algorithms/strategies/goal.hpp>
 #include <tyr/planning/algorithms/strategies/pruning.hpp>
+#include <tyr/planning/axiom_evaluator.hpp>
 #include <tyr/planning/declarations.hpp>
 #include <tyr/planning/formatter.hpp>
-#include <tyr/planning/axiom_evaluator.hpp>
-#include <tyr/planning/state_storage/tree_bitset/fact.hpp>
 #include <tyr/planning/ground/state_storage/vectors.hpp>
-#include <tyr/planning/state_storage/numeric.hpp>
-#include <tyr/planning/state_storage/tree_bitset/atom.hpp>
-#include <tyr/planning/state_data.hpp>
-#include <tyr/planning/state_builder.hpp>
-#include <tyr/planning/state_repository.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/heuristics/blind.hpp>
@@ -78,12 +70,20 @@
 #include <tyr/planning/plan.hpp>
 #include <tyr/planning/programs/rpg.hpp>
 #include <tyr/planning/search_space/search_node.hpp>
+#include <tyr/planning/state_builder.hpp>
+#include <tyr/planning/state_data.hpp>
+#include <tyr/planning/state_repository.hpp>
 #include <tyr/planning/state_routing/dist_hash.hpp>
+#include <tyr/planning/state_storage/numeric.hpp>
+#include <tyr/planning/state_storage/tree_bitset/atom.hpp>
+#include <tyr/planning/state_storage/tree_bitset/fact.hpp>
 #include <tyr/planning/task.hpp>
 #include <tyr/planning/worker_state_index.hpp>
+#include <urd/python/sequences/sequence.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include "pytyr/module.hpp"
 
 namespace tyr::planning
 {
@@ -199,9 +199,10 @@ void bind_state(nb::module_& m, const std::string& name)
                        "fluent_facts",
                        [](const T& s)
                        {
-                           return make_owning_iterator<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>(nb::type<T>(),
-                                                                                                               "fluent facts iterator",
-                                                                                                               s.get_fluent_facts_view());
+                           return make_owning_iterator<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>(
+                               nb::type<T>(),
+                               "fluent facts iterator",
+                               s.get_fluent_facts_view());
                        },
                        nb::keep_alive<0, 1>())
                    .def(
@@ -380,9 +381,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
     using T = StateRepository<Kind>;
 
     nb::class_<T>(m, name.c_str())  //
-        .def(nb::new_([](TaskPtr<Kind> task, bool concurrent) { return std::make_shared<T>(std::move(task), concurrent); }),
-             "task"_a,
-             "concurrent"_a = false)
+        .def(nb::new_([](TaskPtr<Kind> task, bool concurrent) { return std::make_shared<T>(std::move(task), concurrent); }), "task"_a, "concurrent"_a = false)
         .def("get_worker_index", &T::get_worker_index)
         .def("layer", &T::layer)
         .def("get_initial_state", &T::get_initial_state, nb::rv_policy::move, "axiom_evaluator"_a)
@@ -391,9 +390,10 @@ void bind_state_repository(nb::module_& m, const std::string& name)
         .def("num_states", &T::num_states)
         .def("memory_usage", &T::memory_usage)
         .def("create_state",
-             static_cast<StateView<Kind> (T::*)(AxiomEvaluator<Kind>&,
-                                                const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>&,
-                                                const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&)>(
+             static_cast<StateView<Kind> (T::*)(
+                 AxiomEvaluator<Kind>&,
+                 const urd::Store<urd::sequence<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>>&,
+                 const urd::Store<urd::sequence<std::pair<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>, ygg::float_t>>>&)>(
                  &T::create_state),
              nb::rv_policy::move,
              "axiom_evaluator"_a,

@@ -22,19 +22,18 @@
 #include "tyr/formalism/enums.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 
+#include <boost/mp11.hpp>
 #include <cista/containers/variant.h>
 #include <cista/containers/vector.h>
-#include <urd/elements/flat.hpp>
-#include <urd/elements/index.hpp>
-#include <urd/tags.hpp>
-#include <yggdrasil/formatting/cista_formatters.hpp>
-
-#include <yggdrasil/core/config.hpp>
-#include <boost/mp11.hpp>
 #include <concepts>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/flat.hpp>
+#include <urd/elements/index.hpp>
+#include <urd/tags.hpp>
+#include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace ygg::formalism
 {

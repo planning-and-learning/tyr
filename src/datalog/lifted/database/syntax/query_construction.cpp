@@ -6,6 +6,7 @@
 #include "tyr/datalog/lifted/database/syntax/query_construction.hpp"
 
 #include "tyr/datalog/lifted/database/detail/repository_instantiations.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

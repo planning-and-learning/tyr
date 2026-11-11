@@ -7,10 +7,7 @@
 
 namespace tyr::datalog::database::incremental::detail
 {
-void count_distance_work(size_t DistanceWork::* member) noexcept
-{
-    ++(distance_work().*member);
-}
+void count_distance_work(size_t DistanceWork::* member) noexcept { ++(distance_work().*member); }
 }
 
 namespace tyr::datalog::database::incremental::detail

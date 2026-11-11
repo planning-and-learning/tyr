@@ -22,7 +22,6 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
-
 namespace tyr::analysis
 {
 

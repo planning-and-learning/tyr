@@ -5,8 +5,6 @@
 
 #include "query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/incremental/projection.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
@@ -18,6 +16,8 @@
 #include <span>
 #include <stdexcept>
 #include <tuple>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::tests
@@ -87,7 +87,9 @@ void expect_update(const Evaluator& evaluator, const std::set<urd::Store<urd::se
     EXPECT_EQ(rows<T>(evaluator.get_delta().change().second), removed);
 }
 
-void apply_batch(urd::builder<ygg::Relation<ygg::Schema>>& input, const urd::builder<ygg::Relation<ygg::Schema>>& added, const urd::builder<ygg::Relation<ygg::Schema>>& removed)
+void apply_batch(urd::builder<ygg::Relation<ygg::Schema>>& input,
+                 const urd::builder<ygg::Relation<ygg::Schema>>& added,
+                 const urd::builder<ygg::Relation<ygg::Schema>>& removed)
 {
     for (const auto row : borrow(removed).rows())
         input.erase(input.find(row.get_values()).value());
@@ -629,8 +631,10 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinValidatesAllInputsBeforeMutation)
     EXPECT_TRUE(evaluator.get_delta().added.contains(cells(2)));
     const auto before = rows<ygg::uint_t>(evaluator.get_result());
     const auto added_before = rows<ygg::uint_t>(evaluator.get_delta().change().first);
-    EXPECT_THROW(evaluator.update(std::pair { borrow(addition), borrow(addition) }, std::pair { borrow(empty), borrow(empty) }, workspace), std::invalid_argument);
-    EXPECT_THROW(evaluator.update(std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(addition), borrow(addition) }, workspace), std::invalid_argument);
+    EXPECT_THROW(evaluator.update(std::pair { borrow(addition), borrow(addition) }, std::pair { borrow(empty), borrow(empty) }, workspace),
+                 std::invalid_argument);
+    EXPECT_THROW(evaluator.update(std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(addition), borrow(addition) }, workspace),
+                 std::invalid_argument);
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), before);
     EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_delta().change().first), added_before);
     evaluator.update(std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(empty), borrow(empty) }, workspace);
@@ -655,9 +659,11 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinRequiresReinitializationAfterMutatio
         evaluator.initialize(borrow(input), borrow(input), workspace);
         // Mutate the left input successfully before the right input fails.
         if (invalid_removal)
-            EXPECT_THROW(evaluator.update(std::pair { borrow(empty), borrow(input) }, std::pair { borrow(empty), borrow(absent) }, workspace), std::invalid_argument);
+            EXPECT_THROW(evaluator.update(std::pair { borrow(empty), borrow(input) }, std::pair { borrow(empty), borrow(absent) }, workspace),
+                         std::invalid_argument);
         else
-            EXPECT_THROW(evaluator.update(std::pair { borrow(addition), borrow(empty) }, std::pair { borrow(input), borrow(empty) }, workspace), std::invalid_argument);
+            EXPECT_THROW(evaluator.update(std::pair { borrow(addition), borrow(empty) }, std::pair { borrow(input), borrow(empty) }, workspace),
+                         std::invalid_argument);
         EXPECT_THROW(evaluator.update(std::pair { borrow(empty), borrow(empty) }, std::pair { borrow(empty), borrow(empty) }, workspace), std::logic_error);
         evaluator.initialize(borrow(input), borrow(input), workspace);
         EXPECT_EQ(rows<ygg::uint_t>(evaluator.get_result()), rows<ygg::uint_t>(borrow(input)));
@@ -686,7 +692,9 @@ TEST(YggdrasilTests, DatabaseIncrementalEvaluatorsShareAccessAndAliasingContract
     EXPECT_THROW(static_cast<void>(join_evaluator.get_result()), std::logic_error);
     EXPECT_THROW(static_cast<void>(join_evaluator.get_delta()), std::logic_error);
     join_evaluator.initialize(borrow(lhs), borrow(rhs), workspace);
-    EXPECT_THROW(join_evaluator.update(std::pair { borrow(join_evaluator.get_delta().added), borrow(none) }, std::pair { borrow(none), borrow(none) }, workspace), std::invalid_argument);
+    EXPECT_THROW(
+        join_evaluator.update(std::pair { borrow(join_evaluator.get_delta().added), borrow(none) }, std::pair { borrow(none), borrow(none) }, workspace),
+        std::invalid_argument);
     join_evaluator.update(std::pair { borrow(none), borrow(none) }, std::pair { borrow(none), borrow(none) }, workspace);
     EXPECT_EQ(rows<ygg::uint_t>(join_evaluator.get_result()), (std::set<urd::Store<urd::sequence<ygg::uint_t>>> { { 1, 2 } }));
 

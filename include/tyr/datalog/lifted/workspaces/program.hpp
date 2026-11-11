@@ -19,12 +19,10 @@
 #define TYR_DATALOG_LIFTED_WORKSPACES_PROGRAM_HPP_
 
 #include "tyr/datalog/cost_buckets.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/lifted/kckp/workspaces/program.hpp"
 #include "tyr/datalog/lifted/scheduler.hpp"
 #include "tyr/datalog/lifted/workspaces/facts.hpp"
-#include "tyr/datalog/lifted/kckp/workspaces/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
@@ -40,8 +38,10 @@
 #include <cassert>
 #include <memory>
 #include <optional>
-#include <yggdrasil/core/family.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
+#include <yggdrasil/core/family.hpp>
 
 namespace tyr::datalog
 {

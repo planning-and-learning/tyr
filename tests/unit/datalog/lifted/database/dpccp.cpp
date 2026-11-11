@@ -4,14 +4,14 @@
  */
 
 #include "tyr/datalog/lifted/database/optimization/details/dpccp.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <array>
 #include <gtest/gtest.h>
 #include <map>
 #include <random>
 #include <set>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::tests

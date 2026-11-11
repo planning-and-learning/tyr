@@ -45,7 +45,12 @@ int main(int argc, char** argv)
             options.parallel_search_mode = program.get<std::string>("--parallel-search-mode") == "synchronous" ?
                                                planning::astar_eager::ParallelSearchMode::SYNCHRONOUS :
                                                planning::astar_eager::ParallelSearchMode::ASYNCHRONOUS;
-            return planning::astar_eager::find_solution(*search.task, *search.state_repository, *search.axiom_evaluator, *search.successor_generator, *search.heuristic, options);
+            return planning::astar_eager::find_solution(*search.task,
+                                                        *search.state_repository,
+                                                        *search.axiom_evaluator,
+                                                        *search.successor_generator,
+                                                        *search.heuristic,
+                                                        options);
         },
         false);
 }

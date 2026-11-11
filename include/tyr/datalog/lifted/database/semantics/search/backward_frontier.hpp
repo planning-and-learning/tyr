@@ -7,13 +7,13 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_SEARCH_BACKWARD_FRONTIER_HPP_
 
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/search/search_tree.hpp"
 
 #include <cstddef>
 #include <optional>
 #include <span>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 

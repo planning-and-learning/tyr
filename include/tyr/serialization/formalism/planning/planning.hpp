@@ -2,37 +2,38 @@
 #ifndef TYR_SERIALIZATION_FORMALISM_PLANNING_PLANNING_HPP_
 #define TYR_SERIALIZATION_FORMALISM_PLANNING_PLANNING_HPP_
 
+#include "tyr/formalism/atom_view.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
+#include "tyr/formalism/function_term_value_view.hpp"
+#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
-#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
-#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
-#include "tyr/formalism/function_term_value_view.hpp"
-#include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/serialization/formalism/enums.hpp"
 #include "yggdrasil/serialization/dictionaries.hpp"
+
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace ygg::serialization
 {
@@ -108,7 +109,9 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 
 template<class Archive, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AtomView<::tyr::GroundTag, F>>)
-{ ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
+{
+    ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+}
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::AxiomView<::tyr::LiftedTag>>)
@@ -228,7 +231,9 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 
 template<class Archive, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, F>>)
-{ ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); }); }
+{
+    ar.field("row", [](const auto& value) -> decltype(auto) { return (value.get_row()); });
+}
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::InvariantView>)

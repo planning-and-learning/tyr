@@ -16,6 +16,7 @@
  */
 
 #include "bindings.hpp"
+
 #include "pytyr/module.hpp"
 
 #include <tyr/formalism/enums.hpp>

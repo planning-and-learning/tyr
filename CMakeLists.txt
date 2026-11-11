@@ -143,10 +143,11 @@ add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Dependencies
 
-set(TYR_YGGDRASIL_REQUIRED_VERSION 0.6.1)
-set(TYR_LOKI_REQUIRED_VERSION 1.7.1)
+set(TYR_YGGDRASIL_REQUIRED_VERSION 0.7.0)
+set(TYR_LOKI_REQUIRED_VERSION 1.8.0)
 
-brokkr_find_python_native_prefix(pyurd URD_NATIVE_PREFIX)
+brokkr_find_python_native_prefix(pyurd URD_PREFIX)
+brokkr_find_python_native_prefix(pyurd_native URD_NATIVE_PREFIX)
 brokkr_find_python_native_prefix(pyyggdrasil YGGDRASIL_NATIVE_PREFIX)
 
 find_package(
@@ -161,11 +162,12 @@ endif()
 
 brokkr_find_python_native_prefix(pypddl LOKI_NATIVE_PREFIX)
 brokkr_register_native_dependency_prefix("${YGGDRASIL_NATIVE_PREFIX}")
+brokkr_register_native_dependency_prefix("${URD_PREFIX}")
 brokkr_register_native_dependency_prefix("${URD_NATIVE_PREFIX}")
 brokkr_register_native_dependency_prefix("${LOKI_NATIVE_PREFIX}")
 brokkr_register_python_native_runtime_prefix("pypddl/native" "${LOKI_NATIVE_PREFIX}")
 brokkr_register_python_native_runtime_prefix("pyyggdrasil" "${YGGDRASIL_NATIVE_PREFIX}")
-brokkr_register_python_native_runtime_prefix("pyurd" "${URD_NATIVE_PREFIX}")
+brokkr_register_python_native_runtime_prefix("pyurd_native" "${URD_NATIVE_PREFIX}")
 
 find_package(argparse CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(argparse_FOUND)

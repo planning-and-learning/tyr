@@ -9,6 +9,7 @@
 #include "yggdrasil/formalism/declarations.hpp"
 #include "yggdrasil/formalism/free_relations.hpp"
 #include "yggdrasil/formalism/values.hpp"
+
 #include <boost/mp11.hpp>
 #include <string_view>
 #include <urd/elements/flat.hpp>
@@ -71,28 +72,29 @@ struct QueryAntijoinTag
 };
 
 using QueryConstructorTags = boost::mp11::mp_list<QueryInputTag,
-                                      QueryEmptyTag,
-                                      QueryJoinTag,
-                                      QueryProjectTag,
-                                      QueryRenameTag,
-                                      QuerySelectEqualTag,
-                                      QuerySelectValueTag,
-                                      QueryUnionTag,
-                                      QueryDifferenceTag,
-                                      QueryDistanceTag,
-                                      QueryGenericJoinTag,
-                                      QuerySemijoinTag,
-                                      QueryAntijoinTag>;
+                                                  QueryEmptyTag,
+                                                  QueryJoinTag,
+                                                  QueryProjectTag,
+                                                  QueryRenameTag,
+                                                  QuerySelectEqualTag,
+                                                  QuerySelectValueTag,
+                                                  QueryUnionTag,
+                                                  QueryDifferenceTag,
+                                                  QueryDistanceTag,
+                                                  QueryGenericJoinTag,
+                                                  QuerySemijoinTag,
+                                                  QueryAntijoinTag>;
 
 /// Query tags grouped by the shape of their records.
-using QueryJoinTags = boost::mp11::mp_list<QueryJoinTag, QuerySemijoinTag, QueryAntijoinTag>;  ///< lhs, rhs and a JoinPlan
-using QuerySetTags = boost::mp11::mp_list<QueryUnionTag, QueryDifferenceTag>;                 ///< lhs, rhs and a SetPlan
-using QueryBinaryTags = boost::mp11::mp_append<QueryJoinTags, QuerySetTags>;                  ///< lhs and rhs
+using QueryJoinTags = boost::mp11::mp_list<QueryJoinTag, QuerySemijoinTag, QueryAntijoinTag>;                            ///< lhs, rhs and a JoinPlan
+using QuerySetTags = boost::mp11::mp_list<QueryUnionTag, QueryDifferenceTag>;                                            ///< lhs, rhs and a SetPlan
+using QueryBinaryTags = boost::mp11::mp_append<QueryJoinTags, QuerySetTags>;                                             ///< lhs and rhs
 using QueryUnaryTags = boost::mp11::mp_list<QueryProjectTag, QueryRenameTag, QuerySelectEqualTag, QuerySelectValueTag>;  ///< arg
 /// The queries with a prepared plan.
-using QueryPlannedTags = boost::mp11::mp_append<QueryJoinTags,
-                                                QuerySetTags,
-                                                boost::mp11::mp_list<QueryProjectTag, QuerySelectEqualTag, QuerySelectValueTag, QueryDistanceTag, QueryGenericJoinTag>>;
+using QueryPlannedTags =
+    boost::mp11::mp_append<QueryJoinTags,
+                           QuerySetTags,
+                           boost::mp11::mp_list<QueryProjectTag, QuerySelectEqualTag, QuerySelectValueTag, QueryDistanceTag, QueryGenericJoinTag>>;
 
 /// Tag void is the type-erased query holding one of the concrete query records.
 template<typename Tag = void>

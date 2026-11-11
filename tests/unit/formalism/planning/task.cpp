@@ -18,8 +18,9 @@ static_assert(std::totally_ordered<TaskIndex>);
 static_assert(std::totally_ordered<TaskData>);
 static_assert(std::totally_ordered<TaskView>);
 static_assert(std::same_as<TaskView, tyr::formalism::planning::TaskView<::tyr::LiftedTag>>);
-static_assert(std::same_as<tyr::formalism::planning::TaskListView<::tyr::LiftedTag>,
-                           urd::resolved_range<urd::flat_vector<urd::index<tyr::formalism::planning::Task<::tyr::LiftedTag>>>, tyr::formalism::planning::Repository>>);
+static_assert(
+    std::same_as<tyr::formalism::planning::TaskListView<::tyr::LiftedTag>,
+                 urd::resolved_range<urd::flat_vector<urd::index<tyr::formalism::planning::Task<::tyr::LiftedTag>>>, tyr::formalism::planning::Repository>>);
 static_assert(requires(TaskData& data) {
     data.index;
     data.name;
@@ -69,8 +70,9 @@ static_assert(std::totally_ordered<TaskIndex>);
 static_assert(std::totally_ordered<TaskData>);
 static_assert(std::totally_ordered<TaskView>);
 static_assert(std::same_as<TaskView, tyr::formalism::planning::TaskView<::tyr::GroundTag>>);
-static_assert(std::same_as<tyr::formalism::planning::TaskListView<::tyr::GroundTag>,
-                           urd::resolved_range<urd::flat_vector<urd::index<tyr::formalism::planning::Task<::tyr::GroundTag>>>, tyr::formalism::planning::Repository>>);
+static_assert(
+    std::same_as<tyr::formalism::planning::TaskListView<::tyr::GroundTag>,
+                 urd::resolved_range<urd::flat_vector<urd::index<tyr::formalism::planning::Task<::tyr::GroundTag>>>, tyr::formalism::planning::Repository>>);
 static_assert(requires(TaskData& data) {
     data.index;
     data.name;

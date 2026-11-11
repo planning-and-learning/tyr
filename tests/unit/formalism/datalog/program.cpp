@@ -1,6 +1,6 @@
 #include "tyr/datalog/static_rule_filter.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -122,10 +122,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     auto retained_function_source_index = static_cast<ygg::uint_t>(0);
     {
         auto source = tyr::formalism::datalog::Repository();
-        const auto intern = [&](auto data)
-        {
-            return ygg::formalism::insert(source, data).first;
-        };
+        const auto intern = [&](auto data) { return ygg::formalism::insert(source, data).first; };
         const auto predicate = [&]<tyr::formalism::FactKind T>(const char* name)
         { return intern(urd::data<tyr::formalism::Predicate<T>> { std::string(name), 0 }); };
         const auto function = [&]<tyr::formalism::FactKind T>(const char* name)
@@ -271,7 +268,8 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules<tyr::formalism::FunctionTag>().front().index()).value), 0);
     EXPECT_EQ(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_head().get_fterm().get_function().get_name().str(), "retained-function");
     EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().index()).value), 0);
-    EXPECT_EQ(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().get_head().get_fterm().get_function().get_name().str(), "retained-function");
+    EXPECT_EQ(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().get_head().get_fterm().get_function().get_name().str(),
+              "retained-function");
     ASSERT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().size(), 1);
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());

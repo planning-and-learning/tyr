@@ -18,29 +18,23 @@
 #include "tyr/planning/lifted/programs/ground.hpp"
 
 #include "../../programs/common.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -50,11 +44,17 @@
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <optional>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -69,7 +69,8 @@ namespace
  * e :- App_ci_pre                     forall i=1,...,n forall e in ci_eff
  */
 
-auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
+                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
 
@@ -79,7 +80,8 @@ auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> a
     return formalism::datalog::insert(context.destination(), *predicate);
 }
 
-auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
+                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
 
@@ -92,7 +94,8 @@ auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action
     return formalism::datalog::insert(context.destination(), *atom);
 }
 
-auto create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
+                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
 
@@ -102,7 +105,8 @@ auto create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> ax
     return formalism::datalog::insert(context.destination(), *predicate);
 }
 
-auto create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
+                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
 
@@ -130,11 +134,11 @@ void append_from_condition(formalism::planning::ConjunctiveConditionView<LiftedT
     for (const auto literal : cond.template get_literals<formalism::DerivedTag>())
         if (literal.get_polarity())
             conj_cond.fluent_literals.push_back(
-                merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context)
-                    .first.index());
+                merge_p2d<formalism::DerivedTag, formalism::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context).first.index());
 };
 
-auto create_applicability_literal(formalism::planning::ActionView<LiftedTag> action, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_literal(formalism::planning::ActionView<LiftedTag> action,
+                                  formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::FluentTag>>(context.builder());
 
@@ -166,7 +170,8 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
     return formalism::datalog::insert(context.destination(), *rule);
 }
 
-auto create_applicability_literal(formalism::planning::AxiomView<LiftedTag> axiom, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_applicability_literal(formalism::planning::AxiomView<LiftedTag> axiom,
+                                  formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::FluentTag>>(context.builder());
 

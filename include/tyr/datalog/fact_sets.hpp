@@ -20,17 +20,17 @@
 
 #include "tyr/formalism/datalog/repository.hpp"
 
-#include <urd/repr/maps/ordered_map.hpp>
-#include <urd/repr/values/sparse_set.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include <cassert>
 #include <concepts>
 #include <iterator>
 #include <ranges>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/repr/maps/ordered_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/repr/values/sparse_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>

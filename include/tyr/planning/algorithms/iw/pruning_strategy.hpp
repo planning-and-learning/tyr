@@ -26,8 +26,8 @@
 #include <mutex>
 #include <optional>
 #include <stdexcept>
-#include <yggdrasil/core/config.hpp>
 #include <urd/config.hpp>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning::iw
 {

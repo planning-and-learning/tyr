@@ -18,31 +18,31 @@
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/numeric_effect_data.hpp"
-#include "tyr/formalism/datalog/program_data.hpp"
-#include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/unary_operator_data.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
-#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_data.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
 #include "tyr/formalism/variable_data.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 
 #include <gtest/gtest.h>
 #include <string>
 #include <urd/memory.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 
 namespace tyr::tests
 {
@@ -86,7 +86,7 @@ RuleBindingFixture make_nullary_rule_binding(tyr::formalism::datalog::Repository
 }
 
 tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> make_nullary_function_binding(tyr::formalism::datalog::Repository& repository,
-                                                                                                      const char* name)
+                                                                                                  const char* name)
 {
     auto function_builder = urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string(name), 0);
     const auto [function, function_success] = ygg::formalism::insert(repository, function_builder);

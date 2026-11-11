@@ -4,6 +4,7 @@
  */
 
 #include "yggdrasil/formalism/relation_view.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 
@@ -53,7 +54,8 @@ void append_only(benchmark::State& state)
     {
         relation.clear();
         for (size_t i = 0; i < rows; ++i)
-            relation.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(i / repetitions)), ygg::encode_value(static_cast<ygg::uint_t>(i / repetitions + rows)) });
+            relation.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(i / repetitions)),
+                                         ygg::encode_value(static_cast<ygg::uint_t>(i / repetitions + rows)) });
     };
     refill();
     for ([[maybe_unused]] auto _ : state)
@@ -193,7 +195,9 @@ size_t changed_rows(const urd::builder<ygg::Relation<ygg::Schema>>& before, cons
     return result;
 }
 
-bool equal_delta(const database::incremental::Delta& delta, const urd::builder<ygg::Relation<ygg::Schema>>& before, const urd::builder<ygg::Relation<ygg::Schema>>& after)
+bool equal_delta(const database::incremental::Delta& delta,
+                 const urd::builder<ygg::Relation<ygg::Schema>>& before,
+                 const urd::builder<ygg::Relation<ygg::Schema>>& after)
 {
     size_t added = 0;
     size_t removed = 0;
@@ -439,7 +443,11 @@ void changing_join(benchmark::State& state)
     for (const auto position : trace.transitions)
     {
         update(position);
-        database::join(borrow(trace.lhs.transitions[position].snapshot), borrow(trace.rhs.transitions[position].snapshot), plan, reference, reference_workspace);
+        database::join(borrow(trace.lhs.transitions[position].snapshot),
+                       borrow(trace.rhs.transitions[position].snapshot),
+                       plan,
+                       reference,
+                       reference_workspace);
         if (!equal_rows(result(), reference))
         {
             state.SkipWithError("changing join trace disagrees with full recomputation");
@@ -455,7 +463,11 @@ void changing_join(benchmark::State& state)
         std::swap(previous, reference);
     }
     state.counters["mean_output_delta_rows"] = static_cast<double>(output_delta_rows) / trace.transitions.size();
-    measure<Latency>(state, trace, update, result, [&] { return evaluation.memory_usage() + workspace.memory_usage() + urd::memory_usage(workspace.join_index); });
+    measure<Latency>(state,
+                     trace,
+                     update,
+                     result,
+                     [&] { return evaluation.memory_usage() + workspace.memory_usage() + urd::memory_usage(workspace.join_index); });
     // Each side removes and adds range(1) rows in the same overlapping key groups.
     state.counters["input_delta_rows"] = static_cast<double>(4 * state.range(1));
 }

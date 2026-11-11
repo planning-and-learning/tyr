@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
@@ -27,8 +28,9 @@ QueryView<> clone_query(QueryView<> source, std::span<const QueryView<>> childre
         [&]<typename Tag>(QueryView<Tag> concrete)
         {
             size_t child = 0;
-            auto data = urd::map_children<boost::mp11::mp_list<Query<>>, Query<Tag>>(concrete.data(), concrete.context(),
-                                                                               [&](QueryView<>) { return children[child++].index(); });
+            auto data = urd::map_children<boost::mp11::mp_list<Query<>>, Query<Tag>>(concrete.data(),
+                                                                                     concrete.context(),
+                                                                                     [&](QueryView<>) { return children[child++].index(); });
             return insert_query(destination, builder, data);
         },
         source.get_variant());

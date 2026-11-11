@@ -16,8 +16,6 @@
  */
 
 #include "../common.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
@@ -40,6 +38,8 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 

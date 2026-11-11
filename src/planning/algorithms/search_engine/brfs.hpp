@@ -19,14 +19,14 @@
 #define TYR_SRC_PLANNING_ALGORITHMS_SEARCH_ENGINE_BRFS_HPP_
 
 #include "engine.hpp"
-#include <urd/store.hpp>
-#include <urd/repr/queues/queue.hpp>
 #include "parent_state.hpp"
 #include "tyr/planning/algorithms/brfs.hpp"
 #include "tyr/planning/algorithms/brfs/event_handler.hpp"
 
 #include <cstddef>
 #include <limits>
+#include <urd/repr/queues/queue.hpp>
+#include <urd/store.hpp>
 #include <utility>
 
 namespace tyr::planning::detail

@@ -21,7 +21,6 @@
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
-
 namespace tyr::datalog
 {
 

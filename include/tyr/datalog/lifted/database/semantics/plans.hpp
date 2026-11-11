@@ -7,15 +7,15 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_PLANS_HPP_
 
 #include "yggdrasil/formalism/relation_view.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
-#include <urd/elements/flat.hpp>
 #include <cstddef>
 #include <span>
 #include <stdexcept>
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 
 namespace tyr::datalog::database
@@ -131,7 +131,8 @@ public:
     [[nodiscard]] size_t position() const noexcept { return m_position; }
     [[nodiscard]] ygg::Value value() const noexcept { return m_value; }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&SelectValuePlan::m_columns, &SelectValuePlan::m_position, &SelectValuePlan::m_value> {}; }
+    static constexpr auto cista_members() noexcept
+    { return urd::Members<&SelectValuePlan::m_columns, &SelectValuePlan::m_position, &SelectValuePlan::m_value> {}; }
 };
 
 }  // namespace tyr::datalog::database

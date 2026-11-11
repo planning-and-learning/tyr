@@ -4,7 +4,6 @@
 import gc
 from pathlib import Path
 
-import pytest
 from pypddl.formalism import ParserOptions
 from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext

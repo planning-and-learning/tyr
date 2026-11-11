@@ -15,23 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "bindings.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/formalism/planning/invariants/matcher.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/ordering.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include <urd/python/sequences/sequence.hpp>
-
-#include "bindings.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
 #include "tyr/formalism/unification/formatter.hpp"
 
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
+#include <urd/python/sequences/sequence.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <yggdrasil/python/bindings.hpp>
-#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning::invariant
 {

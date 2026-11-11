@@ -16,12 +16,10 @@
  */
 
 #include "tyr/formalism/planning/fdr_context.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/copy.hpp"
+#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
@@ -32,8 +30,10 @@
 
 #include <cassert>
 #include <mutex>
-#include <vector>
 #include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <vector>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::planning

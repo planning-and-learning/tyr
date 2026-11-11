@@ -15,8 +15,8 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
-#include <utility>
 #include <urd/config.hpp>
+#include <utility>
 
 namespace tyr::datalog::database
 {

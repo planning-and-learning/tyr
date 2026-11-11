@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <tyr/formalism/planning/fdr_variable_data.hpp>

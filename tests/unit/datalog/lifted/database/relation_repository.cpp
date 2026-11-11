@@ -4,11 +4,8 @@
  */
 
 #include "query_helpers.hpp"
-#include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
+#include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
 #include <algorithm>
 #include <array>
@@ -28,6 +25,8 @@
 #include <type_traits>
 #include <urd/elements/equal_to.hpp>
 #include <urd/elements/hash.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -56,7 +55,8 @@ template<typename L, typename R>
 bool same_storage(const L& lhs, const R& rhs)
 { return lhs.get_values().data() == rhs.get_values().data() && lhs.get_values().first_bit() == rhs.get_values().first_bit(); }
 template<typename L, typename R>
-bool same_values(const L& lhs, const R& rhs) { return std::ranges::equal(lhs.get_values(), rhs.get_values()); }
+bool same_values(const L& lhs, const R& rhs)
+{ return std::ranges::equal(lhs.get_values(), rhs.get_values()); }
 
 using RelationTag = ygg::Relation<ygg::Schema>;
 using RelationBuilder = urd::builder<RelationTag>;
@@ -132,9 +132,10 @@ static_assert(std::same_as<decltype(std::declval<const ColumnsIndexView&>().inde
 static_assert(std::same_as<decltype(std::declval<const ColumnsIndexView&>().data()), const urd::data<ygg::Columns>&>);
 
 template<typename T, typename L, typename R>
-concept CanJoinRelations = requires(const L& lhs, const R& rhs, const database::JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, database::Workspace& workspace) {
-    database::join(lhs, rhs, plan, out, workspace);
-};
+concept CanJoinRelations =
+    requires(const L& lhs, const R& rhs, const database::JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, database::Workspace& workspace) {
+        database::join(lhs, rhs, plan, out, workspace);
+    };
 
 static_assert(CanJoinRelations<ygg::uint_t, BuilderView, DataView>);
 static_assert(CanJoinRelations<ygg::uint_t, IndexView, BuilderView>);
@@ -480,7 +481,8 @@ TEST(YggdrasilTests, DatabaseRelationRepositoryRejectsInvalidRelabelingAndForeig
     builder.insert(cells(10, 20));
     builder.insert(cells(30, 40));
     const auto original = tyr::datalog::tests::ops::intern(repository, builder).first;
-    const std::array duplicate_schema { ygg::ColumnLayout { ColumnIndex(1), ygg::type_id<std::uint32_t> }, ygg::ColumnLayout { ColumnIndex(1), ygg::type_id<std::uint32_t> } };
+    const std::array duplicate_schema { ygg::ColumnLayout { ColumnIndex(1), ygg::type_id<std::uint32_t> },
+                                        ygg::ColumnLayout { ColumnIndex(1), ygg::type_id<std::uint32_t> } };
     EXPECT_THROW(builder.rename(duplicate_schema), std::invalid_argument);
     EXPECT_THROW(builder.initialize(duplicate_schema), std::invalid_argument);
     EXPECT_TRUE(std::ranges::equal(builder.columns(), original.columns()));
@@ -747,15 +749,21 @@ struct UnsupportedColumn
     void* pointer;
 };
 
-static_assert(ygg::ColumnValueType<ygg::uint_t> && ygg::ColumnValueType<double> && ygg::ColumnValueType<bool> && ygg::ColumnValueType<urd::index<ygg::formalism::Object<void>>>);
+static_assert(ygg::ColumnValueType<ygg::uint_t> && ygg::ColumnValueType<double> && ygg::ColumnValueType<bool>
+              && ygg::ColumnValueType<urd::index<ygg::formalism::Object<void>>>);
 static_assert(!ygg::ColumnValueType<ColumnsIndex> && !ygg::ColumnValueType<const ygg::uint_t> && !ygg::ColumnValueType<UnsupportedColumn>);
-static_assert(ygg::type_id<std::uint32_t> == ygg::TypeId { 0 } && ygg::type_id<bool> == ygg::TypeId { 6 } && ygg::type_id<urd::index<ygg::formalism::Object<void>>> == ygg::TypeId { 7 });
-static_assert(ygg::column_bits(ygg::type_id<bool>, 5) == 1 && ygg::column_bits(ygg::type_id<double>, 5) == 64 && ygg::column_bits(ygg::type_id<urd::index<ygg::formalism::Object<void>>>, 5) == 5);
+static_assert(ygg::type_id<std::uint32_t> == ygg::TypeId { 0 } && ygg::type_id<bool> == ygg::TypeId { 6 }
+              && ygg::type_id<urd::index<ygg::formalism::Object<void>>> == ygg::TypeId { 7 });
+static_assert(ygg::column_bits(ygg::type_id<bool>, 5) == 1 && ygg::column_bits(ygg::type_id<double>, 5) == 64
+              && ygg::column_bits(ygg::type_id<urd::index<ygg::formalism::Object<void>>>, 5) == 5);
 }
 
 TEST(YggdrasilTests, ColumnValuesDecodeFromTheirBits)
 {
-    for (const auto value : { ygg::ColumnValue(std::int32_t { -3 }), ygg::ColumnValue(-0.0f), ygg::ColumnValue(true), ygg::ColumnValue(urd::index<ygg::formalism::Object<void>>(9)) })
+    for (const auto value : { ygg::ColumnValue(std::int32_t { -3 }),
+                              ygg::ColumnValue(-0.0f),
+                              ygg::ColumnValue(true),
+                              ygg::ColumnValue(urd::index<ygg::formalism::Object<void>>(9)) })
         EXPECT_EQ(ygg::decode(ygg::encode(value), static_cast<ygg::TypeId>(value.index())), value);
     EXPECT_EQ(ygg::encode(ygg::ColumnValue(std::int32_t { -1 })), 0xffffffffu);
     EXPECT_THROW((void) ygg::decode(0, static_cast<ygg::TypeId>(std::variant_size_v<ygg::ColumnValue>)), std::invalid_argument);
@@ -765,7 +773,10 @@ TEST(YggdrasilTests, DatabaseMixedWidthRowsPreserveTypedValuesAndResolveIndices)
 {
     Repository entities;
     const auto entity = insert_columns(entities, { ColumnIndex(11) }).first;
-    const std::vector<ygg::ColumnLayout> columns { { ColumnIndex(4), ygg::type_id<ygg::uint_t> }, { ColumnIndex(9), ygg::type_id<double> }, { ColumnIndex(2), ygg::type_id<bool> }, { ColumnIndex(7), ygg::type_id<ygg::uint_t> } };
+    const std::vector<ygg::ColumnLayout> columns { { ColumnIndex(4), ygg::type_id<ygg::uint_t> },
+                                                   { ColumnIndex(9), ygg::type_id<double> },
+                                                   { ColumnIndex(2), ygg::type_id<bool> },
+                                                   { ColumnIndex(7), ygg::type_id<ygg::uint_t> } };
     ASSERT_EQ(columns.size(), 4);
     // Rows by the schema: each column whole, a bool in one bit.
     const auto schema = urd::builder<ygg::Relation<ygg::Schema>>(columns).widths();
@@ -777,7 +788,8 @@ TEST(YggdrasilTests, DatabaseMixedWidthRowsPreserveTypedValuesAndResolveIndices)
 
     Repository rows;
     urd::builder<ygg::Relation<ygg::Schema>> builder(columns);
-    const auto tuple = std::array { ygg::encode_value(ygg::uint_t { 42 }), ygg::encode_value(1.25), ygg::encode_value(true), ygg::encode_value(entity.index().value) };
+    const auto tuple =
+        std::array { ygg::encode_value(ygg::uint_t { 42 }), ygg::encode_value(1.25), ygg::encode_value(true), ygg::encode_value(entity.index().value) };
     builder.insert(tuple);
     const auto stored = tyr::datalog::tests::ops::intern(rows, builder).first;
     const auto verify = [&](const auto& view)
@@ -861,9 +873,18 @@ TEST(YggdrasilTests, DatabaseTypedSchemaRejectsMalformedMetadataBeforeMutation)
 
 TEST(YggdrasilTests, DatabaseBuiltinCodecsPreserveSignedAndWideValues)
 {
-    const std::vector<ygg::ColumnLayout> columns { { ColumnIndex(0), ygg::type_id<uint32_t> }, { ColumnIndex(1), ygg::type_id<int32_t> }, { ColumnIndex(2), ygg::type_id<uint64_t> }, { ColumnIndex(3), ygg::type_id<int64_t> }, { ColumnIndex(4), ygg::type_id<float> }, { ColumnIndex(5), ygg::type_id<double> }, { ColumnIndex(6), ygg::type_id<bool> } };
+    const std::vector<ygg::ColumnLayout> columns { { ColumnIndex(0), ygg::type_id<uint32_t> }, { ColumnIndex(1), ygg::type_id<int32_t> },
+                                                   { ColumnIndex(2), ygg::type_id<uint64_t> }, { ColumnIndex(3), ygg::type_id<int64_t> },
+                                                   { ColumnIndex(4), ygg::type_id<float> },    { ColumnIndex(5), ygg::type_id<double> },
+                                                   { ColumnIndex(6), ygg::type_id<bool> } };
     urd::builder<ygg::Relation<ygg::Schema>> relation(columns);
-    const auto values = std::array { ygg::encode_value(std::numeric_limits<uint32_t>::max()), ygg::encode_value(std::numeric_limits<int32_t>::min()), ygg::encode_value(std::numeric_limits<uint64_t>::max()), ygg::encode_value(std::numeric_limits<int64_t>::min()), ygg::encode_value(1.25F), ygg::encode_value(std::numeric_limits<double>::infinity()), ygg::encode_value(true) };
+    const auto values = std::array { ygg::encode_value(std::numeric_limits<uint32_t>::max()),
+                                     ygg::encode_value(std::numeric_limits<int32_t>::min()),
+                                     ygg::encode_value(std::numeric_limits<uint64_t>::max()),
+                                     ygg::encode_value(std::numeric_limits<int64_t>::min()),
+                                     ygg::encode_value(1.25F),
+                                     ygg::encode_value(std::numeric_limits<double>::infinity()),
+                                     ygg::encode_value(true) };
     relation.insert(values);
     const auto row = borrow(relation).row(0);
     EXPECT_EQ(relation.widths().bits(), 32U + 32 + 64 + 64 + 32 + 64 + 1);
@@ -913,7 +934,7 @@ TEST(YggdrasilTests, DatabasePoolsKeepTheirSchema)
     auto values = urd::flat_vector<ygg::Value>();
     values.push_back(1);
     values.push_back(2);
-    EXPECT_TRUE(repository.relations().schema(key).is_none());  // not declared yet
+    EXPECT_TRUE(repository.relations().schema(key).is_none());                           // not declared yet
     EXPECT_THROW((void) repository.relations().insert(key, values), std::out_of_range);  // rows need a declared pool
     repository.relations().declare(key, key);
     repository.relations().declare(key, key);  // again with the same Schema: nothing changes

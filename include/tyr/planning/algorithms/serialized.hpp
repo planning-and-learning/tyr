@@ -19,8 +19,6 @@
 #define TYR_PLANNING_ALGORITHMS_SERIALIZED_HPP_
 
 #include "tyr/planning/algorithms/concepts.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/algorithms/serialized/event_handler.hpp"
 #include "tyr/planning/algorithms/serialized/statistics.hpp"
 #include "tyr/planning/algorithms/serialized_concepts.hpp"
@@ -38,6 +36,8 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 

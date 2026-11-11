@@ -19,14 +19,14 @@
 #define TYR_TESTS_UNIT_PLANNING_ALGORITHMS_STATISTICS_IW_HPP_
 
 #include "statistics.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <filesystem>
 #include <tyr/planning/algorithms/brfs.hpp>
 #include <tyr/planning/algorithms/brfs/event_handler.hpp>
 #include <tyr/planning/algorithms/iw.hpp>
 #include <tyr/planning/algorithms/iw/event_handler.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::tests
 {

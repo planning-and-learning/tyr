@@ -54,15 +54,18 @@ TEST(DatabaseOptimizationEstimates, JoinAndFilterAssociationHaveOneNormalizedEst
     same_estimate(expected, estimate(reordered, statistics));
 
     const auto above = tyr::datalog::tests::qb::select_value(queries, left, x, static_cast<ygg::uint_t>(7));
-    const auto below =
-        tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::select_value(queries, a, x, static_cast<ygg::uint_t>(7)), b), c);
+    const auto below = tyr::datalog::tests::qb::join(
+        queries,
+        tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::select_value(queries, a, x, static_cast<ygg::uint_t>(7)), b),
+        c);
     const auto repeated = tyr::datalog::tests::qb::select_value(queries, below, x, static_cast<ygg::uint_t>(7));
     EXPECT_NEAR(estimate(above, statistics).rows, 50, 1e-9);
     same_estimate(estimate(above, statistics), estimate(below, statistics));
     same_estimate(estimate(above, statistics), estimate(repeated, statistics));
 
     const auto equality_above = tyr::datalog::tests::qb::select_equal(queries, left, x, z);
-    const auto equality_below = tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::join(queries, a, b), tyr::datalog::tests::qb::select_equal(queries, c, z, x));
+    const auto equality_below =
+        tyr::datalog::tests::qb::join(queries, tyr::datalog::tests::qb::join(queries, a, b), tyr::datalog::tests::qb::select_equal(queries, c, z, x));
     same_estimate(estimate(equality_above, statistics), estimate(equality_below, statistics));
 }
 
@@ -82,13 +85,16 @@ TEST(DatabaseOptimizationEstimates, EqualityAndConstantPredicatesAreIdempotentAn
     same_estimate(estimate(transitive, statistics), estimate(tyr::datalog::tests::qb::select_equal(queries, transitive, z, x), statistics));
 
     const auto selected = tyr::datalog::tests::qb::select_value(queries, equal, x, static_cast<ygg::uint_t>(7));
-    same_estimate(estimate(selected, statistics), estimate(tyr::datalog::tests::qb::select_value(queries, selected, y, static_cast<ygg::uint_t>(7)), statistics));
+    same_estimate(estimate(selected, statistics),
+                  estimate(tyr::datalog::tests::qb::select_value(queries, selected, y, static_cast<ygg::uint_t>(7)), statistics));
     const auto conflict = estimate(tyr::datalog::tests::qb::select_value(queries, selected, y, static_cast<ygg::uint_t>(8)), statistics);
     EXPECT_EQ(conflict.rows, 0);
     for (const auto& [column, count] : conflict.distinct)
         EXPECT_EQ(count, 0);
     EXPECT_EQ(
-        estimate(tyr::datalog::tests::qb::select_value(queries, tyr::datalog::tests::qb::select_value(queries, input, x, ygg::uint_t(7)), x, ygg::uint_t(8)), statistics).rows,
+        estimate(tyr::datalog::tests::qb::select_value(queries, tyr::datalog::tests::qb::select_value(queries, input, x, ygg::uint_t(7)), x, ygg::uint_t(8)),
+                 statistics)
+            .rows,
         0);
 
     const auto self_join = tyr::datalog::tests::qb::join(queries, input, input);

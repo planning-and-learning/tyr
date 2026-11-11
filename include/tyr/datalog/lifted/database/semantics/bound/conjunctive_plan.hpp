@@ -7,9 +7,6 @@
 #define TYR_DATALOG_DATABASE_SEMANTICS_BOUND_CONJUNCTIVE_PLAN_HPP_
 
 #include "tyr/datalog/lifted/database/optimization/statistics.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/bound/union_normal_form.hpp"
 
 #include <algorithm>
@@ -19,6 +16,9 @@
 #include <cstdint>
 #include <limits>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -31,9 +31,9 @@ using VariableSet = urd::Store<urd::set<uint32_t>, urd::dense, urd::sorted>;
 /// Filters of a branch that become checkable at one point of a plan.
 struct ConjunctiveFilters
 {
-    urd::Store<urd::sequence<std::pair<uint32_t, uint32_t>>> equal;                ///< Variables that must hold equal values.
+    urd::Store<urd::sequence<std::pair<uint32_t, uint32_t>>> equal;    ///< Variables that must hold equal values.
     urd::Store<urd::sequence<std::pair<uint32_t, ygg::Value>>> value;  ///< Variable, the constant it must hold.
-    urd::Store<urd::sequence<size_t>> negations;                                   ///< Indices into the plan's negation_plans.
+    urd::Store<urd::sequence<size_t>> negations;                       ///< Indices into the plan's negation_plans.
 };
 
 /// One atom of a conjunctive plan: its input slot, the columns bound on arrival (its lookup key), the variables it
@@ -143,14 +143,12 @@ ConjunctivePlan plan_branch(const UnionNormalForm& query, const ConjunctiveBranc
         attach(step.filters);
     }
     // Every variable of a filter or a negation's outer variable is bound by some atom of the branch (safe queries).
-    assert(attached_equal.size() == branch.equal.size() && attached_value.size() == branch.value.size()
-           && attached_negation.size() == branch.negations.size());
+    assert(attached_equal.size() == branch.equal.size() && attached_value.size() == branch.value.size() && attached_negation.size() == branch.negations.size());
     auto read = VariableSet(query.output.begin(), query.output.end());
     for (auto s = plan.steps.size(); s-- > 0;)
     {
         auto& step = plan.steps[s];
-        step.exists =
-            std::ranges::none_of(step.assign, [&](const std::pair<size_t, uint32_t>& assignment) { return read.contains(assignment.second); });
+        step.exists = std::ranges::none_of(step.assign, [&](const std::pair<size_t, uint32_t>& assignment) { return read.contains(assignment.second); });
         for (const auto& pairs : { &step.key, &step.assign, &step.compare })
             for (const auto& [c, var] : *pairs)
                 read.insert(var);

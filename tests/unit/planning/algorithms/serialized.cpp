@@ -16,8 +16,6 @@
  */
 
 #include "planning/parser.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -45,8 +43,8 @@
 #include <tyr/planning/algorithms/strategies/goal.hpp>
 #include <tyr/planning/algorithms/strategies/pruning.hpp>
 #include <tyr/planning/algorithms/utils.hpp>
-#include <tyr/planning/declarations.hpp>
 #include <tyr/planning/axiom_evaluator.hpp>
+#include <tyr/planning/declarations.hpp>
 #include <tyr/planning/ground/successor_generator.hpp>
 #include <tyr/planning/ground/task.hpp>
 #include <tyr/planning/lifted/task.hpp>
@@ -55,6 +53,8 @@
 #include <tyr/planning/plan.hpp>
 #include <tyr/planning/search_budget.hpp>
 #include <tyr/planning/state_repository.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/serialization/json.hpp>

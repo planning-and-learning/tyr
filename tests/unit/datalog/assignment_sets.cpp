@@ -16,14 +16,11 @@
  */
 
 #include "tyr/datalog/lifted/kckp/assignment_sets.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/analysis/variable_domain.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/predicate_data.hpp"
@@ -32,8 +29,11 @@
 #include <gtest/gtest.h>
 #include <initializer_list>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
 
 namespace tyr::tests
 {
@@ -72,19 +72,14 @@ ygg::ClosedInterval<ygg::float_t> interval_of(const Set& set, Binding binding)
         result = intersect(result, set[tyr::datalog::VertexAssignment(tyr::formalism::ParameterIndex(i), objects[i])]);
         for (ygg::uint_t j = i + 1; j < objects.size(); ++j)
             result = intersect(result,
-                               set[tyr::datalog::EdgeAssignment(tyr::formalism::ParameterIndex(i),
-                                                                objects[i],
-                                                                tyr::formalism::ParameterIndex(j),
-                                                                objects[j])]);
+                               set[tyr::datalog::EdgeAssignment(tyr::formalism::ParameterIndex(i), objects[i], tyr::formalism::ParameterIndex(j), objects[j])]);
     }
     return result;
 }
 
 template<typename T>
 auto intern(tyr::formalism::datalog::Repository& repository, urd::data<T> data)
-{
-    return ygg::formalism::insert(repository, data).first;
-}
+{ return ygg::formalism::insert(repository, data).first; }
 
 struct Fixture
 {

@@ -19,10 +19,10 @@
 #define TYR_FORMALISM_FUNCTION_TERM_VIEW_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
 
 #include <urd/elements/flat.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace urd
 {

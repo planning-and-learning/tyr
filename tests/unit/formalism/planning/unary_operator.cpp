@@ -30,12 +30,13 @@ using Ground = tyr::formalism::UnaryOperator<::tyr::GroundTag, tyr::formalism::A
 
 static_assert(UnaryOperatorContract<Lifted>);
 static_assert(UnaryOperatorContract<Ground>);
-static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
-static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Repository>, tyr::formalism::planning::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
+static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::planning::Repository>,
+                           tyr::formalism::planning::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 
 TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
 {
-    EXPECT_THROW((urd::data<Lifted>(tyr::formalism::ArithmeticOperatorKind::Add,
-                                    tyr::formalism::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
+    EXPECT_THROW((urd::data<Lifted>(tyr::formalism::ArithmeticOperatorKind::Add, tyr::formalism::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
                  std::invalid_argument);
 }

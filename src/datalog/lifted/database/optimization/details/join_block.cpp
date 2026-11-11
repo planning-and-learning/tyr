@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/optimization/details/join_block.hpp"
+
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 

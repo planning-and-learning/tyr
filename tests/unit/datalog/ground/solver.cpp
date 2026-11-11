@@ -16,19 +16,19 @@
  */
 
 #include "tyr/datalog/solver.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/datalog/ground/contexts/program.hpp"
 #include "tyr/datalog/static_rule_filter.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <fmt/core.h>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <string>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <variant>
 #include <vector>
 
@@ -231,10 +231,10 @@ struct GroundQueueFixture
         lifted_term_builder.function = head.get_function().index();
         const auto lifted_term = ygg::formalism::insert(repository, lifted_term_builder).first;
 
-        auto lifted_effect_builder = urd::data<tyr::formalism::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-            op,
-            lifted_term.index(),
-            tyr::formalism::FunctionExpression<LiftedTag>(value));
+        auto lifted_effect_builder =
+            urd::data<tyr::formalism::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(op,
+                                                                                           lifted_term.index(),
+                                                                                           tyr::formalism::FunctionExpression<LiftedTag>(value));
         const auto lifted_effect = ygg::formalism::insert(repository, lifted_effect_builder).first;
 
         auto lifted_condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
@@ -249,10 +249,10 @@ struct GroundQueueFixture
         binding_builder.relation = lifted_rule.index();
         const auto binding = ygg::formalism::insert(repository, binding_builder).first;
 
-        auto effect_builder = urd::data<tyr::formalism::NumericEffect<GroundTag, tyr::formalism::FluentTag>>(
-            op,
-            head.index(),
-            tyr::formalism::FunctionExpression<GroundTag>(value));
+        auto effect_builder =
+            urd::data<tyr::formalism::NumericEffect<GroundTag, tyr::formalism::FluentTag>>(op,
+                                                                                           head.index(),
+                                                                                           tyr::formalism::FunctionExpression<GroundTag>(value));
         const auto effect = ygg::formalism::insert(repository, effect_builder).first;
 
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag, tyr::formalism::FunctionTag>>();

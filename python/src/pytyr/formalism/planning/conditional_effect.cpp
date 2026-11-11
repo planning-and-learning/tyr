@@ -16,8 +16,8 @@
  */
 
 #include "binding_utils.hpp"
-#include "pytyr/module.hpp"
 #include "bindings.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::formalism::planning
 {
@@ -36,7 +36,10 @@ void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository,
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "variables"_a, "condition"_a, "effect"_a);
+            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(),
+                    "variables"_a,
+                    "condition"_a,
+                    "effect"_a);
             cls.def(nb::init<urd::flat_vector<urd::index<Variable>>, urd::index<ConjunctiveCondition<LiftedTag>>, urd::index<ConjunctiveEffect<LiftedTag>>>(),
                     "variables"_a,
                     "condition"_a,

@@ -16,12 +16,12 @@
  */
 
 #include "tyr/formalism/unification/apply_substitution.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
 
 #include <gtest/gtest.h>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 
 namespace tyr::tests
@@ -203,7 +203,9 @@ TEST(TyrTests, TyrFormalismUnificationMatchExReportsStructureMismatch)
     auto sigma = TermSubstitution::from_range(tyr::formalism::ParameterIndex(0), 1);
     tyr::formalism::unification::TermMatchState state { std::move(sigma), TermSubstitution {} };
 
-    const auto result = tyr::formalism::unification::match_ex(urd::Store<urd::sequence<tyr::formalism::Term>> { parameter(0) }, urd::Store<urd::sequence<tyr::formalism::Term>> { object(8), object(9) }, std::move(state));
+    const auto result = tyr::formalism::unification::match_ex(urd::Store<urd::sequence<tyr::formalism::Term>> { parameter(0) },
+                                                              urd::Store<urd::sequence<tyr::formalism::Term>> { object(8), object(9) },
+                                                              std::move(state));
 
     EXPECT_FALSE(result.has_value());
     EXPECT_EQ(result.failure, tyr::formalism::unification::MatchFailure::structure_mismatch);

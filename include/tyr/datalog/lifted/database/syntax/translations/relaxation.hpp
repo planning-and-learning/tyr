@@ -7,8 +7,6 @@
 #define TYR_DATALOG_DATABASE_SYNTAX_TRANSLATIONS_RELAXATION_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/operator_builder.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
 
 #include <algorithm>
@@ -19,6 +17,8 @@
 #include <span>
 #include <stdexcept>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 

@@ -27,10 +27,10 @@
 #include <string>
 #include <type_traits>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <variant>
@@ -77,7 +77,8 @@ Residual compute_residual(InvariantView invariant, const Predicates& taken)
 }
 
 /// The residual predicates of candidate `i` that the residual of another candidate also contains.
-std::size_t count_stolen_predicates(std::size_t i, const urd::Store<urd::sequence<std::size_t>>& candidates, const urd::Store<urd::sequence<Residual>>& residuals)
+std::size_t
+count_stolen_predicates(std::size_t i, const urd::Store<urd::sequence<std::size_t>>& candidates, const urd::Store<urd::sequence<Residual>>& residuals)
 {
     auto stolen = std::size_t { 0 };
     for (const auto predicate : residuals[i].predicates)

@@ -16,9 +16,9 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
 
 #include "../../gbfs_lazy.hpp"
+#include "pytyr/module.hpp"
 
 namespace tyr::planning::gbfs_lazy
 {

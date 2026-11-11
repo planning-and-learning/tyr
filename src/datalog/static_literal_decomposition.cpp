@@ -16,43 +16,43 @@
  */
 
 #include "tyr/datalog/static_literal_decomposition.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/formalism/datalog/copy.hpp"
-#include "tyr/formalism/datalog/expression_arity.hpp"
-#include "tyr/formalism/datalog/interning.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/expression_arity.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <urd/config.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
-#include <urd/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::datalog
 {
@@ -196,7 +196,8 @@ private:
     }
 
     /// A literal over the parameters (in order) whose atoms are the tuples.
-    StaticLiteralIndex create_projection_literal(const urd::Store<urd::set<Tuple>>& tuples, const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
+    StaticLiteralIndex create_projection_literal(const urd::Store<urd::set<Tuple>>& tuples,
+                                                 const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
     {
         auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::StaticTag>>(m_context->builder());
         predicate->name = "__tyr_projection_" + std::to_string(m_num_predicates++);

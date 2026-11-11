@@ -19,16 +19,16 @@
 #define TYR_PLANNING_GROUND_MATCH_TREE_NODES_VARIABLE_DATA_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/ground/match_tree/declarations.hpp"
 
 #include <optional>
 #include <tuple>
+#include <urd/elements/flat.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <urd/elements/flat.hpp>
 
 namespace urd
 {

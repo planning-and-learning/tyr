@@ -25,9 +25,9 @@
 
 #include <concepts>
 #include <tuple>
+#include <urd/elements/flat.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/semantics/canonicalization.hpp>
 
 namespace tyr::planning

@@ -4,9 +4,6 @@
  */
 
 #include "query_helpers.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/store.hpp>
 #include "tyr/datalog/lifted/database/semantics/incremental/min_distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/query_evaluation.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
@@ -15,6 +12,9 @@
 #include <gtest/gtest.h>
 #include <map>
 #include <random>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
+#include <urd/store.hpp>
 
 namespace
 {
@@ -191,10 +191,10 @@ TEST_P(DatabaseIncrementalMinDistance, PairEdgesWithJoinsUnionsSelectionsAndDiff
                                    { a, b, a2, b2 });
     const auto variable_order = std::array { a, b, a2, b2 };
     const auto inputs_of_second = std::array { qb::rename(repository, steps, { b, b2 }), qb::rename(repository, identity, { a, a2 }) };
-    const auto second =
-        qb::project(repository,
-                    qb::generic_join(repository, std::span<const tyr::datalog::database::QueryView<>>(inputs_of_second), std::span<const Column>(variable_order)),
-                    { a, b, a2, b2 });
+    const auto second = qb::project(
+        repository,
+        qb::generic_join(repository, std::span<const tyr::datalog::database::QueryView<>>(inputs_of_second), std::span<const Column>(variable_order)),
+        { a, b, a2, b2 });
     const auto teleport = qb::project(repository,
                                       qb::join(repository,
                                                qb::select_value(repository, qb::rename(repository, moves, { a, a2 }), a, static_cast<ygg::uint_t>(0)),
@@ -304,7 +304,8 @@ TEST_P(DatabaseIncrementalMinDistance, RelationEdgesUnderChanges)
                 else
                     edges.insert(edge);
             }
-        const auto expected = tyr::datalog::database::min_distance(borrow(layer, sources), borrow(layer, edges), borrow(layer, targets), plan, result, workspace);
+        const auto expected =
+            tyr::datalog::database::min_distance(borrow(layer, sources), borrow(layer, edges), borrow(layer, targets), plan, result, workspace);
         const auto edge_view = borrow(layer, edges);
         const auto edge_input = [&](size_t) -> const auto& { return edge_view; };
         auto maybe_changed = urd::Store<urd::set<size_t>, urd::dense>();
@@ -371,8 +372,9 @@ struct TwoSlotEdges
 {
     ygg::FreeRelationRepository layer;
     tyr::datalog::database::QueryRepository repository = tyr::datalog::tests::qb::repository();
-    tyr::datalog::database::QueryView<> edges =
-        tyr::datalog::tests::qb::union_(repository, tyr::datalog::tests::qb::input(repository, 0, { x, y }), tyr::datalog::tests::qb::input(repository, 1, { x, y }));
+    tyr::datalog::database::QueryView<> edges = tyr::datalog::tests::qb::union_(repository,
+                                                                                tyr::datalog::tests::qb::input(repository, 0, { x, y }),
+                                                                                tyr::datalog::tests::qb::input(repository, 1, { x, y }));
     Relation sources = Relation(tyr::datalog::tests::ops::cols({ x }));
     Relation targets = Relation(tyr::datalog::tests::ops::cols({ y }));
     tyr::datalog::database::DistancePlan plan = tyr::datalog::database::DistancePlan(sources.columns(), edges.columns(), targets.columns(), Column(99));

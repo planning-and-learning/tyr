@@ -16,16 +16,13 @@
  */
 
 #include "module.hpp"
-#include "pytyr/module.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
-#include <urd/python/sequences/sequence.hpp>
 
 #include "../planning.hpp"
 #include "astar_eager/module.hpp"
 #include "brfs/module.hpp"
 #include "gbfs_lazy/module.hpp"
 #include "iw/module.hpp"
+#include "pytyr/module.hpp"
 #include "siw/module.hpp"
 
 #include <nanobind/stl/optional.h>
@@ -33,6 +30,9 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
 #include <urd/python/owner.hpp>
+#include <urd/python/sequences/sequence.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 
 namespace tyr::planning
 {

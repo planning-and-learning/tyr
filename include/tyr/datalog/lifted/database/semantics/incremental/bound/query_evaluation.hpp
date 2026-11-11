@@ -10,8 +10,8 @@
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -19,9 +19,9 @@
 #include <stdexcept>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
@@ -60,7 +60,10 @@ public:
         for (size_t slot = 0; slot < input_count(); ++slot)
         {
             const auto columns = std::span<const ygg::ColumnLayout>(m_base.query().input_columns[slot]);
-            m_changes.push_back(InputChange { slot, urd::builder<ygg::Relation<ygg::Schema>>(columns), urd::builder<ygg::Relation<ygg::Schema>>(columns), SetPlan(columns, columns) });
+            m_changes.push_back(InputChange { slot,
+                                              urd::builder<ygg::Relation<ygg::Schema>>(columns),
+                                              urd::builder<ygg::Relation<ygg::Schema>>(columns),
+                                              SetPlan(columns, columns) });
         }
         m_changed.reserve(input_count());
         const auto mark = [&](auto&& self, const database::bound::ConjunctiveBranch& branch, bool negated) -> void

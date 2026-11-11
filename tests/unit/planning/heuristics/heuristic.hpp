@@ -20,8 +20,6 @@
 
 #include "planning/parser.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/heuristics/rpg_add.hpp"
@@ -40,6 +38,8 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
 #include <yggdrasil/serialization/json.hpp>

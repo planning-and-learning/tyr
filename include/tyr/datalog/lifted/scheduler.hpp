@@ -29,15 +29,15 @@
 
 #include <cassert>
 #include <urd/elements/equal_to.hpp>
+#include <urd/elements/flat.hpp>
 #include <urd/elements/hash.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/dense_set.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
-#include <urd/repr/values/dense_set.hpp>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::datalog
@@ -68,7 +68,8 @@ public:
     /// Active rules in index order (the dense set iterates in it): the rule processing order assigns
     /// program-repository rows (first-derivation order) that delta bitsets are indexed by, so it must
     /// be identical on every platform.
-    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
+    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_active_rules() const noexcept
+    { return m_sorted_active_rules; }
 
     [[nodiscard]] bool requires_full_enumeration(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept
     { return m_full_enumeration_rules.contains(rule); }
@@ -160,10 +161,10 @@ private:
 };
 
 urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
-                                                    const analysis::ListenerStrata& listeners,
-                                                    const formalism::datalog::Repository& context,
-                                                    size_t num_fluent_predicates,
-                                                    size_t num_fluent_functions);
+                                                                  const analysis::ListenerStrata& listeners,
+                                                                  const formalism::datalog::Repository& context,
+                                                                  size_t num_fluent_predicates,
+                                                                  size_t num_fluent_functions);
 
 }
 

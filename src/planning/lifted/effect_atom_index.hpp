@@ -19,28 +19,22 @@
 #define TYR_SRC_PLANNING_LIFTED_EFFECT_ATOM_INDEX_HPP_
 
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/planning/lifted/programs/translation_context.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/multi_operator_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
-#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_view.hpp"
-#include "tyr/formalism/variable_view.hpp"
-#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
@@ -51,22 +45,28 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_view.hpp"
+#include "tyr/planning/lifted/programs/translation_context.hpp"
 
 #include <optional>
 #include <ranges>
 #include <span>
+#include <urd/elements/flat.hpp>
 #include <urd/repr/maps/dense_multimap.hpp>
 #include <urd/repr/maps/index_map.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/repr/sequences/sequence.hpp>
+#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <urd/elements/flat.hpp>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::planning
 {
@@ -77,7 +77,6 @@ namespace tyr::planning
 class EffectAtomIndex
 {
 public:
-
     /// Indexes the atoms of `facts`, interned in `repository`, of the program with the given mappings.
     EffectAtomIndex(const AppPredicateToActionMapping& predicate_to_action,
                     const ConditionalEffectToPredicateMapping& effect_to_predicate,
@@ -127,8 +126,8 @@ private:
     /// The atoms of the effect's predicate whose action binding is `binding`, as the entries of its row (an
     /// equal_range), or none if the effect has no predicate.
     std::optional<std::pair<Atoms::const_iterator, Atoms::const_iterator>> get_atoms(formalism::planning::ActionView<LiftedTag> action,
-                                                        formalism::planning::ConditionalEffectView<LiftedTag> effect,
-                                                        std::span<const urd::index<formalism::Object>> binding);
+                                                                                     formalism::planning::ConditionalEffectView<LiftedTag> effect,
+                                                                                     std::span<const urd::index<formalism::Object>> binding);
 
     void rebuild(Groups& groups,
                  formalism::datalog::PredicateView<formalism::FluentTag> effect_predicate,

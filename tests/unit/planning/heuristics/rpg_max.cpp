@@ -16,6 +16,7 @@
  */
 
 #include "tyr/planning/heuristics/rpg_max.hpp"
+
 #include "heuristic.hpp"
 
 namespace tyr::tests

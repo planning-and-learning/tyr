@@ -4,11 +4,11 @@
  */
 
 #include "tyr/datalog/lifted/database/optimization/details/structural.hpp"
+
+#include <urd/config.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
-
-#include <urd/config.hpp>
 
 namespace tyr::datalog::database::detail
 {
@@ -27,13 +27,13 @@ std::optional<urd::Store<urd::sequence<std::optional<size_t>>>> join_tree(urd::S
             if (!alive.contains(edge))
                 continue;
             const auto removed = erase_if(edges[edge],
-                                               [&](urd::index<ygg::Column> variable)
-                                               {
-                                                   for (size_t other = 0; other < count; ++other)
-                                                       if (other != edge && alive.contains(other) && std::ranges::binary_search(edges[other], variable))
-                                                           return false;
-                                                   return true;
-                                               });
+                                          [&](urd::index<ygg::Column> variable)
+                                          {
+                                              for (size_t other = 0; other < count; ++other)
+                                                  if (other != edge && alive.contains(other) && std::ranges::binary_search(edges[other], variable))
+                                                      return false;
+                                              return true;
+                                          });
             changed |= removed != 0;
         }
         for (size_t edge = 0; edge < count && alive.size() > 1; ++edge)

@@ -19,16 +19,16 @@
 #define TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 
 #include "tyr/formalism/unification/structure_traits.hpp"
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/store.hpp>
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
 
 #include <algorithm>
 #include <cassert>
-#include <vector>
 #include <urd/config.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
+#include <vector>
 
 namespace tyr::formalism::unification
 {
@@ -53,8 +53,7 @@ template<TermUnifiableStructure T>
     return transform_terms(value, [&](const Term& term) { return apply_substitution_once(term, rho); });
 }
 
-[[nodiscard]] inline Term apply_substitution(const Term& term, const SubstitutionFunction<Term>& rho)
-{ return apply_substitution_once(term, rho); }
+[[nodiscard]] inline Term apply_substitution(const Term& term, const SubstitutionFunction<Term>& rho) { return apply_substitution_once(term, rho); }
 
 template<TermUnifiableStructure T>
 [[nodiscard]] T apply_substitution(const T& value, const SubstitutionFunction<Term>& rho)

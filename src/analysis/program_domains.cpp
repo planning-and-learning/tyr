@@ -18,42 +18,40 @@
 #include "static_literal_compatibility.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
+#include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_data.hpp"
+#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
+#include "tyr/formalism/datalog/program_view.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/rule_data.hpp"
+#include "tyr/formalism/datalog/rule_view.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_data.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_value_data.hpp"
-#include "tyr/formalism/literal_data.hpp"
-#include "tyr/formalism/multi_operator_data.hpp"
-#include "tyr/formalism/numeric_effect_data.hpp"
-#include "tyr/formalism/datalog/program_data.hpp"
-#include "tyr/formalism/datalog/rule_data.hpp"
-#include "tyr/formalism/unary_operator_data.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include <yggdrasil/formalism/row_data.hpp>
-#include "tyr/formalism/function_data.hpp"
-#include "tyr/formalism/object_data.hpp"
-#include "tyr/formalism/parameter_index.hpp"
-#include "tyr/formalism/predicate_data.hpp"
-#include "tyr/formalism/variable_data.hpp"
-#include "tyr/formalism/datalog/formatter.hpp"
-#include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/binary_operator_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
-#include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
-#include "tyr/formalism/literal_view.hpp"
-#include "tyr/formalism/multi_operator_view.hpp"
-#include "tyr/formalism/numeric_effect_view.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
-#include "tyr/formalism/datalog/rule_view.hpp"
-#include "tyr/formalism/unary_operator_view.hpp"
-#include <yggdrasil/formalism/row_view.hpp>
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/literal_data.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/multi_operator_data.hpp"
+#include "tyr/formalism/multi_operator_view.hpp"
+#include "tyr/formalism/numeric_effect_data.hpp"
+#include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/unary_operator_data.hpp"
+#include "tyr/formalism/unary_operator_view.hpp"
+#include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
 #include <algorithm>
@@ -61,14 +59,16 @@
 #include <gtl/phmap.hpp>
 #include <stddef.h>
 #include <type_traits>
+#include <urd/elements/flat.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
+#include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/std_set.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
-#include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <urd/elements/flat.hpp>
+#include <yggdrasil/formalism/row_data.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
 
 namespace tyr::analysis
@@ -356,7 +356,10 @@ struct LiftPolicy
     void on_parameter(size_t pos, formalism::ParameterIndex param, Symbol symbol)
     {
         auto& domain = get_domains(symbol).at(symbol.index())[pos];
-        { const auto& source = (*parameter_domains)[param.value].objects; domain.objects.insert(source.begin(), source.end()); }
+        {
+            const auto& source = (*parameter_domains)[param.value].objects;
+            domain.objects.insert(source.begin(), source.end());
+        }
     }
 };
 
@@ -597,11 +600,7 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
     auto static_function_domains = to_function_domain_map(static_function_domain_sets);
     auto fluent_function_domains = to_function_domain_map(fluent_function_domain_sets);
     auto domains = ProgramVariableDomains {
-        std::move(static_predicate_domains),
-        std::move(fluent_predicate_domains),
-        std::move(static_function_domains),
-        std::move(fluent_function_domains),
-        {},
+        std::move(static_predicate_domains), std::move(fluent_predicate_domains), std::move(static_function_domains), std::move(fluent_function_domains), {},
     };
     domains.rule_domains.get<formalism::PredicateTag>() = to_rule_domain_map(predicate_rule_domain_sets);
     domains.rule_domains.get<formalism::FunctionTag>() = to_rule_domain_map(function_rule_domain_sets);

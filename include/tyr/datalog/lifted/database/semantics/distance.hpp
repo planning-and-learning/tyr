@@ -6,14 +6,10 @@
 #ifndef TYR_DATALOG_DATABASE_SEMANTICS_DISTANCE_HPP_
 #define TYR_DATALOG_DATABASE_SEMANTICS_DISTANCE_HPP_
 
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/pools/pools.hpp>
-#include <urd/store.hpp>
-#include "yggdrasil/core/config.hpp"
-#include <urd/config.hpp>
 #include "tyr/datalog/lifted/database/semantics/distance_plan.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include "tyr/datalog/lifted/database/semantics/search/concepts.hpp"
+#include "yggdrasil/core/config.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -22,6 +18,10 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <urd/config.hpp>
+#include <urd/repr/pools/pools.hpp>
+#include <urd/repr/sequences/sequence.hpp>
+#include <urd/store.hpp>
 #include <utility>
 #include <vector>
 
@@ -88,12 +88,22 @@ public:
 /// Includes zero-length paths; unreachable pairs are absent. An output aliasing an input throws before clearing it.
 /// Evaluation failures may leave partial output. Inputs must not borrow the workspace's buffers.
 template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
-void distance(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, DistanceWorkspace& workspace);
+void distance(const S& sources,
+              const E& edges,
+              const T& targets,
+              const DistancePlan& plan,
+              urd::builder<ygg::Relation<ygg::Schema>>& out,
+              DistanceWorkspace& workspace);
 
 /// The smallest distance between any source and target, from distance() into result.
 /// uint_t's maximum if no target is reachable.
 template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
-ygg::uint_t min_distance(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& result, DistanceWorkspace& workspace);
+ygg::uint_t min_distance(const S& sources,
+                         const E& edges,
+                         const T& targets,
+                         const DistancePlan& plan,
+                         urd::builder<ygg::Relation<ygg::Schema>>& result,
+                         DistanceWorkspace& workspace);
 
 }  // namespace tyr::datalog::database
 
@@ -115,14 +125,18 @@ void breadth_first_search(const DistanceGraph& graph,
 
 /// The output row (from, to, length) as values in `row`, which the result borrows.
 std::span<const ygg::Value> make_distance_row(const DistanceGraph& graph,
-                                         VertexSet::handle_type from,
-                                         VertexSet::handle_type to,
-                                         ygg::uint_t length,
-                                         urd::Store<urd::sequence<ygg::Value>>& row);
+                                              VertexSet::handle_type from,
+                                              VertexSet::handle_type to,
+                                              ygg::uint_t length,
+                                              urd::Store<urd::sequence<ygg::Value>>& row);
 }  // namespace detail
 
 template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
-void DistanceWorkspace::append_distances(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out)
+void DistanceWorkspace::append_distances(const S& sources,
+                                         const E& edges,
+                                         const T& targets,
+                                         const DistancePlan& plan,
+                                         urd::builder<ygg::Relation<ygg::Schema>>& out)
 {
     m_graph.clear();
     m_targets.clear();
@@ -152,7 +166,12 @@ void DistanceWorkspace::append_distances(const S& sources, const E& edges, const
 }
 
 template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
-void distance(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, DistanceWorkspace& workspace)
+void distance(const S& sources,
+              const E& edges,
+              const T& targets,
+              const DistancePlan& plan,
+              urd::builder<ygg::Relation<ygg::Schema>>& out,
+              DistanceWorkspace& workspace)
 {
     assert(std::ranges::equal(sources.columns(), plan.source_columns()));
     assert(std::ranges::equal(edges.columns(), plan.edge_columns()));
@@ -163,7 +182,12 @@ void distance(const S& sources, const E& edges, const T& targets, const Distance
 }
 
 template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
-ygg::uint_t min_distance(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& result, DistanceWorkspace& workspace)
+ygg::uint_t min_distance(const S& sources,
+                         const E& edges,
+                         const T& targets,
+                         const DistancePlan& plan,
+                         urd::builder<ygg::Relation<ygg::Schema>>& result,
+                         DistanceWorkspace& workspace)
 {
     distance(sources, edges, targets, plan, result, workspace);
     const auto position = result.columns().size() - 1;  // The distance column follows the edge columns.
