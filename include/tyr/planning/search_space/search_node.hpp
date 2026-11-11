@@ -22,6 +22,7 @@
 
 #include <concepts>
 #include <cstdint>
+#include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
