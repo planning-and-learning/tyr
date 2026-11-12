@@ -1,0 +1,137 @@
+/*
+ * Copyright (C) 2026 Dominik Drexler
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+#include "tyr/datalog/lifted/database/datalog/detail/executor.hpp"
+#include "tyr/datalog/lifted/database/datalog/detail/strata.hpp"
+
+#include <stdexcept>
+
+namespace tyr::datalog::database::datalog::detail
+{
+PlainStratum::PlainStratum(StratumInfo stratum, const CompiledProgram& program) : Stratum(std::move(stratum))
+{
+    for (const auto table : info().tables)
+        m_counts.emplace_back(program.tables[table]->arity);
+}
+
+void PlainStratum::evaluate(CompiledProgram& program, Executor& executor) { derive(program, executor, false); }
+
+void PlainStratum::initialize(CompiledProgram& program, Executor& executor) { derive(program, executor, true); }
+
+void PlainStratum::derive(CompiledProgram& program, Executor& executor, bool counting)
+{
+    for (size_t i = 0; i < info().tables.size(); ++i)
+    {
+        program.tables[info().tables[i]]->clear();
+        m_counts[i].rows.clear();
+        m_counts[i].counts.clear();
+    }
+    for (const auto r : info().rules)
+    {
+        const auto& rule = program.rules[r];
+        auto& head = *program.tables[rule.head];
+        executor.run(rule,
+                     rule.plain,
+                     reads(rule, Version::CURRENT),
+                     [&](std::span<const ygg::uint_t> row)
+                     {
+                         if (counting)
+                             count(rule.head, row, 1);
+                         else
+                             head.current.insert(row);
+                     });
+        if (counting)
+            apply_counts(head, m_counts[info().position(rule.head)], false);
+    }
+}
+
+/// The rule once per changed literal, which reads its added (or removed) rows, earlier literals the new, later ones the
+/// old relations; a negated literal's additions remove derivations.
+void PlainStratum::update(CompiledProgram& program, Executor& executor)
+{
+    for (const auto r : info().rules)
+    {
+        const auto& rule = program.rules[r];
+        for (size_t j = 0; j < rule.literals.size(); ++j)
+        {
+            const auto& literal = rule.literals[j];
+            if (literal.table == npos || !program.tables[literal.table]->changed())
+                continue;
+            for (const auto change : { Version::ADDED, Version::REMOVED })
+            {
+                const bool positive = literal.kind != Literal::Kind::NEGATED;
+                const int64_t sign = (change == Version::ADDED) == positive ? 1 : -1;
+                auto& read = reads(rule, Version::CURRENT);
+                for (size_t i = j + 1; i < rule.literals.size(); ++i)
+                    read[i] = Version::OLD;
+                read[j] = change;
+                executor.run(rule, rule.by_source[j], read, [&](std::span<const ygg::uint_t> row) { count(rule.head, row, sign); });
+            }
+        }
+    }
+    for (size_t i = 0; i < info().tables.size(); ++i)
+        apply_counts(*program.tables[info().tables[i]], m_counts[i], true);
+}
+
+size_t PlainStratum::state_memory_usage() const noexcept
+{
+    size_t result = 0;
+    for (const auto& counts : m_counts)
+        result += counts.rows.memory_usage() + counts.pending_rows.memory_usage() + urd::memory_usage(counts.counts) + urd::memory_usage(counts.pending);
+    return result;
+}
+
+void PlainStratum::count(size_t table, std::span<const ygg::uint_t> row, int64_t change)
+{
+    auto& counts = m_counts[info().position(table)];
+    const auto position = counts.pending_rows.insert(row);
+    if (position == counts.pending.size())
+        counts.pending.push_back(0);
+    counts.pending[position] += change;
+}
+
+void PlainStratum::apply_counts(Table& table, Counts& counts, bool record)
+{
+    for (ygg::uint_t p = 0; p < counts.pending_rows.size(); ++p)
+    {
+        const auto change = counts.pending[p];
+        if (change == 0)
+            continue;
+        const auto row = counts.pending_rows[p];
+        const auto position = counts.rows.find(row);
+        const auto before = position ? counts.counts[*position] : 0;
+        const auto after = before + change;
+        if (after < 0)
+            throw std::logic_error("Datalog evaluator: a derivation count became negative.");
+        if (position && after == 0)
+        {
+            counts.counts[*position] = counts.counts.back();
+            counts.counts.pop_back();
+            counts.rows.erase(*position);
+        }
+        else if (position)
+            counts.counts[*position] = after;
+        else
+        {
+            counts.rows.insert(row);
+            counts.counts.push_back(after);
+        }
+        if (before == 0 && after > 0)
+        {
+            table.current.insert(row);
+            if (record)
+                table.added.insert(row);
+        }
+        else if (before > 0 && after == 0)
+        {
+            table.current.erase(row);
+            if (record)
+                table.removed.insert(row);
+        }
+    }
+    counts.pending_rows.clear();
+    counts.pending.clear();
+}
+}  // namespace tyr::datalog::database::datalog::detail

@@ -76,6 +76,18 @@ add_library(
     datalog/ground/workspaces/program.cpp
     datalog/ground/solver.cpp
     datalog/lifted/scheduler.cpp
+    datalog/lifted/database/datalog/aggregate.cpp
+    datalog/lifted/database/datalog/construction.cpp
+    datalog/lifted/database/datalog/evaluator.cpp
+    datalog/lifted/database/datalog/goal_search.cpp
+    datalog/lifted/database/datalog/plain.cpp
+    datalog/lifted/database/datalog/planner.cpp
+    datalog/lifted/database/datalog/recursive.cpp
+    datalog/lifted/database/datalog/repository.cpp
+    datalog/lifted/database/datalog/strata.cpp
+    datalog/lifted/database/datalog/stratification.cpp
+    datalog/lifted/database/datalog/translation.cpp
+    datalog/lifted/database/datalog/weighted.cpp
     datalog/lifted/database/optimization/details/cost.cpp
     datalog/lifted/database/optimization/details/estimation.cpp
     datalog/lifted/database/optimization/details/join_block.cpp

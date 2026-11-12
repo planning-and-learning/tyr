@@ -101,6 +101,7 @@ add_gtest(algorithms_delta_kckp "algorithms/kckp/delta_kckp.cpp")
 
 # The database engine (datalog/lifted/database).
 add_gtest(datalog_database_allocations "datalog/lifted/database/allocations.cpp")
+add_gtest(datalog_database_datalog "datalog/lifted/database/datalog.cpp")
 add_gtest(datalog_database_dpccp "datalog/lifted/database/dpccp.cpp")
 add_gtest(datalog_database_formatter "datalog/lifted/database/formatter.cpp")
 add_gtest(datalog_database_generic_join "datalog/lifted/database/generic_join.cpp")
