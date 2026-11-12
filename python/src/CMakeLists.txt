@@ -21,13 +21,12 @@ nanobind_add_module(
     module.cpp
     pytyr/module.cpp
     pytyr/serialization/module.cpp
-    pytyr/database/distance.cpp
+    pytyr/database/datalog.cpp
     pytyr/database/evaluation.cpp
     pytyr/database/module.cpp
     pytyr/database/optimization.cpp
     pytyr/database/query/antijoin.cpp
     pytyr/database/query/difference.cpp
-    pytyr/database/query/distance.cpp
     pytyr/database/query/empty.cpp
     pytyr/database/query/generic_join.cpp
     pytyr/database/query/input.cpp

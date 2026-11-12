@@ -517,3 +517,127 @@ replace the field to change entries.
 
 ``database_query_benchmark`` separates optimizer time from execution and compares full and incremental evaluation of
 the original plan and of the plans from structure and from statistics.
+
+Datalog
+-------
+
+``<tyr/datalog/lifted/database/datalog/>`` (namespace ``tyr::datalog::database::datalog``) is a stratified Datalog
+evaluator over relations of object columns, with aggregates and weighted relations. Its records are interned in a
+``DatalogRepository`` (``repository.hpp``), built with ``checkout``/``insert`` and validated by ``prepare_for_insert``
+(``construction.hpp``):
+
+- a relation: an input (with an input slot of the evaluator) or a derived relation (with an id);
+- an atom: a relation applied to terms, each a variable numbered within its rule or an object constant;
+- an aggregate: ``result = function value : atoms, not negated, comparisons``, grouped by the variables that the
+  enclosing rule's positive atoms bind; COUNT and SUM are 0 for a group without rows;
+- a rule: ``head ← atoms, not negated, comparisons, aggregates, arithmetic``, with a derived head of distinct variables
+  and every variable bound by a positive atom, an aggregate's result or an arithmetic result;
+- comparisons ``=``, ``≠``, ``<``, ``≤`` over values, and arithmetic ``result = lhs op rhs`` (``+ − × ÷ min max``, in
+  order, each reading the variables bound before it) over {0, …, M − 1} ∪ {∞} with M the largest ``uint_t`` as ∞:
+  ``+`` and ``×`` saturate to ∞, ``−`` at 0, ``÷ 0`` is ∞;
+- a weighted relation: a derived relation whose last column is a weight, keeping per row of its other columns the least
+  weight derived; a rule into it computes the head's weight as the sum or maximum (``+``, ``max``) of its weighted
+  atoms' weights and other terms, and uses those weights nowhere else, so that the weight functions are non-decreasing
+  and superior; weighted and unweighted relations are not recursive together;
+- a program: rules, stratified by the strongly connected components of their dependencies
+  (``detail/stratification.hpp``).
+
+Evaluation
+~~~~~~~~~~
+
+``Evaluator(layer, program, outputs, static_slots)`` (``evaluator.hpp``) evaluates the requested relations rule by rule
+over indexed relations, without intermediate relations. Its inputs are relation views of ``uint_t`` columns, one per
+input slot; its results (``get_result(i)``, columns labeled 0, …, arity − 1) are read through ``layer``, and
+``get_delta(i)`` is an output's exact change by the last update.
+
+- Only the strata the outputs depend on are evaluated, and only the inputs they read are read (``reads(slot)``); each
+  stratum is one object of its kind (``detail/strata.hpp``: plain, recursive, aggregate or weighted), which owns the
+  state it maintains. Static input slots are read once.
+- Each rule is an index nested-loop join, planned once per literal that reads a change, with the most bound literal
+  next; hash indexes are chosen per access pattern. Atoms whose only unbound variables are those a step binds are
+  intersected with it: the one with the fewest matches enumerates and the others are checked (Generic Join [NRR13]).
+- ``evaluate(inputs)`` is stratified and semi-naive. ``initialize(inputs)`` and ``update(changes)`` maintain the
+  relations: a stratum without recursion by derivation counts, a recursive one by Delete and Rederive [Gupta93]; when
+  the over-deleted rows exceed a tenth of the stratum's rows, the stratum is evaluated anew. ``initialize()`` of an
+  initialized evaluator updates by the difference to the rows read last, so that what the strata maintain carries over.
+- An aggregate keeps the satisfying assignments of its body by counting and its groups incrementally.
+
+Weighted strata and goal searches
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A stratum of weighted relations is evaluated by Knuth's lightest derivation algorithm [Knuth77, as stated in FM07 §3]:
+rows settle in order of weight from a priority queue, each expanded by the rules that read it with the settled rows.
+The evaluator recognizes shapes of such strata and searches them instead (``detail/goal_search.hpp``); these criteria
+decide the search, the results are the same:
+
+1. **Goals.** If only goals read the stratum (rules of later strata with a ``min`` head over one atom of its relation,
+   the targets given by literals over earlier strata, and none of its relations an output), it stops once every goal
+   holds. A goal with key columns, which the stratum's rules keep, holds per key, and the rows of a key whose goal
+   holds are no longer settled.
+2. **Heuristic.** With goals, rows settle by weight plus a heuristic derived from the rules [FM07 §4, §5.1]: their
+   literals over static inputs give an abstract graph per key column (single-column pattern databases [CS98]), whose
+   distances to the current targets bound the weight from below; h is their maximum. With one goal whose key columns
+   are target columns, each goal key has its own tables to its own targets. Once a search has expanded as many
+   vertices as these tables have values, it also prunes the vertices from which no target is reachable in the
+   abstraction that keeps the literals over the current state (``ProvesUnreachable``), so that the proof at most
+   doubles the search's cost.
+3. **Frontier.** With one goal whose targets bind every key column, a breadth-first search per goal key backward from
+   its targets over the rules reversed with all their literals advances with the forward one; its exhaustion without
+   reaching a source proves that the key's goal has no row [Pohl71].
+4. **Unit costs.** If, in addition, the base rules derive weight 0 and each recursive rule adds 1 to the weight of the
+   row it reads (nothing else reads that weight), and every recursive rule can be reversed with all its literals, each
+   goal key is searched by A\* (``semantics/search/a_star.hpp``) over the rules as edges, with learned distances
+   [GAA*], stored paths [MPGAA*] and a backward frontier, kept across updates while the key's targets and the heuristic
+   stay the same. The edges an update adds are derived by the rules with a changed literal reading its change and
+   repaired (``TreeRepair``), or restart the frontier where they break its bounds; a change the rules cannot express
+   discards the searches.
+5. **Any path.** If, with unit costs, no weight of the goals' heads can be observed (no output or aggregate reads it,
+   and no rule uses it but by copying it into such a head), a goal holds with any weight: each search ends at the
+   first path it finds and derives the row at weight 0, and the backward frontier starts anew once a table that the
+   recursive rules read changed.
+
+Otherwise an update evaluates a weighted stratum anew.
+
+Distances and must-pass objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Datalog expresses the former query operator for distances and runir's must-pass features. The minimum distance from
+``source`` to ``target`` over ``edge``, searched by criteria 1 to 4:
+
+.. code:: text
+
+   dist(x, min 0)  ← source(x)
+   dist(y, min v)  ← dist(x, w), edge(x, y), v = w + 1
+   distance(min w) ← dist(x, w), target(x)
+
+The probes ``c`` that every path from a key's sources to its targets passes (the targets being reachable). Nothing
+reads the weights of ``reachable`` and ``escapes``: ``reach`` is searched by criteria 1 to 5; ``avoid``, whose goal key
+includes the probe that the targets do not bind, by criteria 1 and 2.
+
+.. code:: text
+
+   reach(k, x, min 0)     ← source(k, x)
+   reach(k, y, min v)     ← reach(k, x, w), edge(k, x, y), v = w + 1
+   reachable(k, min w)    ← reach(k, x, w), target(k, x)
+   avoid(k, c, x, min 0)  ← source(k, x), probe(c), x ≠ c
+   avoid(k, c, y, min v)  ← avoid(k, c, x, w), edge(k, x, y), y ≠ c, v = w + 1
+   escapes(k, c, min w)   ← avoid(k, c, x, w), target(k, x)
+   escaped(k, c)          ← escapes(k, c, w)
+   must_pass(k, c)        ← reachable(k, w), probe(c), not escaped(k, c)
+
+The tests ``datalog_database_datalog`` check both programs against naive evaluation under updates, and the must-pass
+program against breadth-first searches as well.
+
+Python exposes the records as ``DatalogRelationData``, ``DatalogAtomData``, ``DatalogAggregateData``,
+``DatalogRuleData``, ``DatalogProgramData`` (interned by ``DatalogRepository().insert``) and the evaluator as
+``DatalogEvaluator(repository, program, outputs, static_slots=[])``, with ``evaluate``, ``initialize`` and ``update``
+as above.
+
+- [CS98] J. C. Culberson, J. Schaeffer, *Pattern Databases*, Computational Intelligence 14(3), 1998.
+- [FM07] P. F. Felzenszwalb, D. McAllester, *The Generalized A\* Architecture*, JAIR 29, 2007.
+- [GAA*] X. Sun, S. Koenig, W. Yeoh, *Generalized Adaptive A\**, AAMAS 2008.
+- [Gupta93] A. Gupta, I. S. Mumick, V. S. Subrahmanian, *Maintaining Views Incrementally*, SIGMOD 1993.
+- [Knuth77] D. E. Knuth, *A Generalization of Dijkstra's Algorithm*, Information Processing Letters 6(1), 1977.
+- [MPGAA*] C. Hernández, R. Asín, J. A. Baier, *Reusing Previously Found A\* Paths for Fast Goal-Directed Navigation
+  in Dynamic Terrain*, AAAI 2015.
+- [Pohl71] I. Pohl, *Bi-directional Search*, Machine Intelligence 6, 1971.

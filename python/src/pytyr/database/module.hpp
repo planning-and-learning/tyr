@@ -25,6 +25,7 @@ inline void require_columns(std::span<const ygg::ColumnLayout> actual, std::span
 
 /// The relational operations, plans, queries and their evaluation over pyyggdrasil.formalism's free relations.
 void bind_database_module_definitions(nb::module_& m);
+void bind_database_datalog(nb::module_& m);
 void bind_database_evaluation(nb::module_& m);
 void bind_database_optimization(nb::module_& m);
 void bind_database_queries(nb::module_& m);

@@ -898,8 +898,8 @@ TEST(DatabaseDatalog, WeightedGoalSearchesWithProjectionsOfTheTargets)
 
 TEST(DatabaseDatalog, UnitWeightedGoalReusesItsSearchesAcrossUpdates)
 {
-    // dist per key k with unit costs from k's sources over the static edges where the fluent `open` holds: the searches
-    // of n_distance, kept across updates while k's targets stay the same. Most updates change `open` alone, which adds
+    // dist per key k with unit costs from k's sources over the static edges where the fluent `open` holds: unit-cost
+    // searches, kept across updates while k's targets stay the same. Most updates change `open` alone, which adds
     // and removes edges; some change sources or targets. Equal to the naive interpreter after every update.
     Programs p;
     const auto e = p.relation(100, 2, 0), source = p.relation(101, 2, 1), target = p.relation(102, 2, 2), open = p.relation(103, 1, 3);
@@ -978,8 +978,8 @@ TEST(DatabaseDatalog, UnitWeightedGoalReusesItsSearchesAcrossUpdates)
 // leave stale. Toggling `open` adds and removes edges, so keys switch between reaching a target and not.
 TEST(DatabaseDatalog, UnitWeightedGoalWhoseWeightIsNotReadUnderUpdates)
 {
-    // dist per key k with unit costs from k's sources over the static edges where the fluent `open` holds: the searches
-    // of n_distance, kept across updates while k's targets stay the same. Most updates change `open` alone, which adds
+    // dist per key k with unit costs from k's sources over the static edges where the fluent `open` holds: unit-cost
+    // searches, kept across updates while k's targets stay the same. Most updates change `open` alone, which adds
     // and removes edges; some change sources or targets. Equal to the naive interpreter after every update.
     Programs p;
     const auto e = p.relation(100, 2, 0), source = p.relation(101, 2, 1), target = p.relation(102, 2, 2), open = p.relation(103, 1, 3);
@@ -1052,6 +1052,146 @@ TEST(DatabaseDatalog, UnitWeightedGoalWhoseWeightIsNotReadUnderUpdates)
             current = inputs;
         }
     }
+}
+
+/// The probes that every path from a key's sources to its targets passes, over the static edges into cells where `open`
+/// holds; per key and probe, by breadth-first search: whether a target is reachable, and whether it is reachable
+/// avoiding the probe. Independent of the evaluator and of the program.
+Tuples must_pass_of(const std::vector<Tuples>& inputs)
+{
+    const auto& [edges, sources, targets, open, probes] = std::tie(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4]);
+    const auto reaches = [&](uint_t key, std::optional<uint_t> avoided)
+    {
+        auto seen = std::set<uint_t>();
+        auto queue = std::vector<uint_t>();
+        for (const auto& source : sources)
+            if (source[0] == key && source[1] != avoided && seen.insert(source[1]).second)
+                queue.push_back(source[1]);
+        for (size_t i = 0; i < queue.size(); ++i)
+        {
+            if (targets.contains(Tuple { key, queue[i] }))
+                return true;
+            for (const auto& edge : edges)
+                if (edge[0] == queue[i] && edge[1] != avoided && open.contains(Tuple { edge[1] }) && seen.insert(edge[1]).second)
+                    queue.push_back(edge[1]);
+        }
+        return false;
+    };
+    auto result = Tuples();
+    for (const auto& source : sources)
+        if (reaches(source[0], std::nullopt))
+            for (const auto& probe : probes)
+                if (!reaches(source[0], probe[0]))
+                    result.insert(Tuple { source[0], probe[0] });
+    return result;
+}
+
+TEST(DatabaseDatalog, MustPassProbesUnderUpdates)
+{
+    // must_pass(k, c): every path from k's sources to its targets passes the probe c, the targets being reachable. Its
+    // reachability goals read no weight, so they are searched for any path. Equal to the naive interpreter and to
+    // must_pass_of after every update.
+    Programs p;
+    const auto e = p.relation(100, 2, 0), source = p.relation(101, 2, 1), target = p.relation(102, 2, 2), open = p.relation(103, 1, 3),
+               probe = p.relation(104, 1, 4);
+    const auto reach = p.weighted(0, 3), reachable = p.weighted(1, 2), avoid = p.weighted(2, 4), escapes = p.weighted(3, 3);
+    const auto escaped = p.relation(4, 2), must_pass = p.relation(5, 2);
+    constexpr uint_t k = 0, x = 1, y = 2, w = 3, v = 4, c = 5;
+    using Operation = dl::Arithmetic::Operation;
+    using Kind = dl::Comparison::Kind;
+    const auto step = dl::Arithmetic { Operation::ADD, var(w), obj(1), v };
+    const auto program = p.program({
+        p.rule(p.atom(reach, { var(k), var(x), obj(0) }), { p.atom(source, { var(k), var(x) }) }),
+        p.rule(p.atom(reach, { var(k), var(y), var(v) }),
+               { p.atom(reach, { var(k), var(x), var(w) }), p.atom(e, { var(x), var(y) }), p.atom(open, { var(y) }) },
+               {},
+               {},
+               {},
+               { step }),
+        p.rule(p.atom(reachable, { var(k), var(w) }), { p.atom(reach, { var(k), var(x), var(w) }), p.atom(target, { var(k), var(x) }) }),
+        p.rule(p.atom(avoid, { var(k), var(c), var(x), obj(0) }),
+               { p.atom(source, { var(k), var(x) }), p.atom(probe, { var(c) }) },
+               {},
+               { dl::Comparison { Kind::NOT_EQUAL, var(x), var(c) } }),
+        p.rule(p.atom(avoid, { var(k), var(c), var(y), var(v) }),
+               { p.atom(avoid, { var(k), var(c), var(x), var(w) }), p.atom(e, { var(x), var(y) }), p.atom(open, { var(y) }) },
+               {},
+               { dl::Comparison { Kind::NOT_EQUAL, var(y), var(c) } },
+               {},
+               { step }),
+        p.rule(p.atom(escapes, { var(k), var(c), var(w) }), { p.atom(avoid, { var(k), var(c), var(x), var(w) }), p.atom(target, { var(k), var(x) }) }),
+        p.rule(p.atom(escaped, { var(k), var(c) }), { p.atom(escapes, { var(k), var(c), var(w) }) }),
+        p.rule(p.atom(must_pass, { var(k), var(c) }),
+               { p.atom(reachable, { var(k), var(w) }), p.atom(probe, { var(c) }) },
+               { p.atom(escaped, { var(k), var(c) }) }),
+    });
+    std::mt19937 random(41);
+    const auto draw = [&](size_t count, size_t arity, uint_t key_range)
+    {
+        auto tuples = Tuples();
+        for (size_t i = 0; i < count; ++i)
+        {
+            auto tuple = Tuple();
+            for (size_t a = 0; a < arity; ++a)
+                tuple.push_back(static_cast<uint_t>(random() % (a == 0 && arity == 2 ? key_range : 30)));
+            tuples.insert(tuple);
+        }
+        return tuples;
+    };
+    const auto arity = [](size_t slot) { return slot == 3 || slot == 4 ? size_t { 1 } : size_t { 2 }; };
+    auto must_pass_rows = size_t { 0 };
+    for (size_t graph = 0; graph < 20; ++graph)
+    {
+        constexpr auto static_slots = std::array<size_t, 2> { 0, 4 };
+        dl::Evaluator evaluator(layer(), program, std::array { must_pass }, static_slots);
+        auto current = std::vector<Tuples> { draw(60, 2, 30), draw(4, 2, 3), draw(4, 2, 3), draw(26, 1, 30), draw(10, 1, 30) };
+        const auto read = [&](const std::vector<Tuples>& inputs)
+        {
+            auto relations = std::vector<Relation>();
+            for (size_t slot = 0; slot < inputs.size(); ++slot)
+                relations.push_back(relation_of(inputs[slot], arity(slot)));
+            return relations;
+        };
+        const auto relations = read(current);
+        evaluator.initialize(std::array { borrow(relations[0]), borrow(relations[1]), borrow(relations[2]), borrow(relations[3]), borrow(relations[4]) });
+        EXPECT_EQ(tuples_of(evaluator.get_result()), Interpreter(program, current).get(5)) << "graph " << graph;
+        EXPECT_EQ(tuples_of(evaluator.get_result()), must_pass_of(current)) << "graph " << graph;
+        for (size_t trial = 0; trial < 40; ++trial)
+        {
+            auto inputs = current;
+            // Toggle a few cells of `open`; every fifth update also redraws the sources, every seventh the targets.
+            for (size_t i = 0; i < 3; ++i)
+            {
+                const auto cell = Tuple { static_cast<uint_t>(random() % 30) };
+                if (!inputs[3].erase(cell))
+                    inputs[3].insert(cell);
+            }
+            if (trial % 5 == 4)
+                inputs[1] = draw(4, 2, 3);
+            if (trial % 7 == 6)
+                inputs[2] = draw(4, 2, 3);
+            auto added = std::vector<Relation>(), removed = std::vector<Relation>();
+            for (size_t slot = 0; slot < inputs.size(); ++slot)
+            {
+                Tuples a, r;
+                std::ranges::set_difference(inputs[slot], current[slot], std::inserter(a, a.end()));
+                std::ranges::set_difference(current[slot], inputs[slot], std::inserter(r, r.end()));
+                added.push_back(relation_of(a, arity(slot)));
+                removed.push_back(relation_of(r, arity(slot)));
+            }
+            evaluator.update(std::array { Change { borrow(added[0]), borrow(removed[0]) },
+                                          Change { borrow(added[1]), borrow(removed[1]) },
+                                          Change { borrow(added[2]), borrow(removed[2]) },
+                                          Change { borrow(added[3]), borrow(removed[3]) },
+                                          Change { borrow(added[4]), borrow(removed[4]) } });
+            const auto result = tuples_of(evaluator.get_result());
+            EXPECT_EQ(result, Interpreter(program, inputs).get(5)) << "graph " << graph << ", trial " << trial;
+            EXPECT_EQ(result, must_pass_of(inputs)) << "graph " << graph << ", trial " << trial;
+            must_pass_rows += result.size();
+            current = inputs;
+        }
+    }
+    EXPECT_GT(must_pass_rows, 0);
 }
 
 TEST(DatabaseDatalog, DeleteAndRederiveKeepsRowsWithAnotherDerivation)

@@ -38,6 +38,14 @@ void bind_database_evaluation(nb::module_& m)
     using Repository = ygg::FreeRelationRepository;
     using QueryPlan = tyr::datalog::database::QueryPlan;
 
+    using Delta = tyr::datalog::database::incremental::Delta;
+    nb::class_<Delta>(m, "RelationDelta", "Read-only added and removed rows from the last evaluator update. The next update replaces them.")
+        .def_prop_ro(
+            "added",
+            [](const Delta& delta) { return delta.change().first; },
+            nb::keep_alive<0, 1>())
+        .def_prop_ro("removed", [](const Delta& delta) { return delta.change().second; }, nb::keep_alive<0, 1>());
+
     auto full = nb::class_<FullEvaluator>(m,
                                           "QueryEvaluator",
                                           "Evaluate a compiled query DAG; its results are read through the repository. Input relations are "
