@@ -111,6 +111,7 @@ add_gtest(datalog_database_optimization_estimates "datalog/lifted/database/optim
 add_gtest(datalog_database_query "datalog/lifted/database/query.cpp")
 add_gtest(datalog_database_relation_repository "datalog/lifted/database/relation_repository.cpp")
 add_gtest(datalog_database_relaxation "datalog/lifted/database/relaxation.cpp")
+add_gtest(datalog_database_search "datalog/lifted/database/search.cpp")
 add_gtest(datalog_database_typed_operations "datalog/lifted/database/typed_operations.cpp")
 target_link_libraries(datalog_database_allocations PRIVATE urd::count_allocations)
 

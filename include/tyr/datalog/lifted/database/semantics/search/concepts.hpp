@@ -41,6 +41,15 @@ concept DistanceHeuristic = requires(const H& h, std::span<const ygg::Value> ver
     { h.estimate(vertex) } -> std::same_as<ygg::uint_t>;
 };
 
+/// A heuristic may also prove, for the current inputs only, that no target is reachable from a vertex: unreachable(v),
+/// at a cost of about proof_cost() (e.g. an abstraction of the current graph). A search tries it once it has expanded
+/// that many vertices, so that it at most doubles the search's cost.
+template<typename H>
+concept ProvesUnreachable = requires(H& h, std::span<const ygg::Value> vertex) {
+    { h.unreachable(vertex) } -> std::same_as<bool>;
+    { h.proof_cost() } -> std::convertible_to<size_t>;
+};
+
 /// The zero estimate: breadth-first order.
 struct BlindDistanceHeuristic
 {

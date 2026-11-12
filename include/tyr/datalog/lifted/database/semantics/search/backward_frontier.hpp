@@ -35,7 +35,9 @@ namespace tyr::datalog::database
 class BackwardFrontier
 {
 public:
-    void start(std::span<const VertexSet::handle_type> targets);
+    /// Starts from the targets (stored vertices), which become their own paths of length 0 (SearchTree::mark_target).
+    /// The tree's learned distances are forgotten: A* learns them with the bounds of this frontier.
+    void start(SearchTree& tree, std::span<const VertexSet::handle_type> targets);
 
     /// Advances one level; returns the number of vertices found.
     template<PredecessorOracle Predecessors, DistanceHeuristic H>

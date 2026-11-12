@@ -7,13 +7,16 @@
 
 namespace tyr::datalog::database
 {
-void BackwardFrontier::start(std::span<const VertexSet::handle_type> targets)
+void BackwardFrontier::start(SearchTree& tree, std::span<const VertexSet::handle_type> targets)
 {
+    // The learned distances may rest on the old frontier's bounds.
+    tree.forget_learned();
     m_level.clear();
     m_frontier.clear();
     for (const auto target : targets)
     {
         level_slot(target) = 0;
+        tree.mark_target(target);
         m_frontier.push_back(target);
     }
     m_depth = 0;
