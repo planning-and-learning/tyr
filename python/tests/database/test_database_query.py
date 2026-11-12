@@ -21,7 +21,6 @@ QueryRecord = (
     | db.QuerySelectValueData
     | db.QueryUnionData
     | db.QueryDifferenceData
-    | db.QueryDistanceData
     | db.QueryGenericJoinData
     | db.QuerySemijoinData
     | db.QueryAntijoinData
@@ -134,10 +133,6 @@ def test_records_views_and_insertion_identity() -> None:
     selected, _ = repo.insert(db.QuerySelectEqualData(erased, formalism.ColumnIndex(0), formalism.ColumnIndex(2)))
     assert selected.get_arg() == erased
     assert selected.get_lhs_column() == formalism.ColumnIndex(0)
-    distance, _ = repo.insert(
-        db.QueryDistanceData(a, inputs_of(repo, [relation([5, 6, 7, 8])])[0], a, formalism.ColumnIndex(9))
-    )
-    assert distance.get_distance_column() == formalism.ColumnIndex(9)
     generic, _ = repo.insert(db.QueryGenericJoinData([a, b], columns(1, 0, 2)))
     assert tuple(generic.columns()) == tuple(columns(0, 1, 2))
     empty, _ = repo.insert(db.QueryEmptyData(a.columns()))
@@ -280,36 +275,34 @@ def test_query_handle_retains_repository_and_compiled_plan_is_independent() -> N
 
 
 @pytest.mark.parametrize("incremental", [False, True])
-def test_distance_boundary_and_sparse_input_slots(incremental: bool) -> None:
+def test_sparse_input_slots(incremental: bool) -> None:
     source = relation([10], [(0,)])
-    edges = relation([20, 21], [(0, 1), (1, 2)])
-    target = relation([30], [(2,)])
+    edges = relation([10, 21], [(0, 1), (1, 2)])
     repo = db.QueryRepository()
-    s, e, t = inputs_of(repo, [source, edges, target], slots=[1, 3, 4])
-    distance = query(repo, db.QueryDistanceData(s, e, t, formalism.ColumnIndex(99)))
-    optimized = db.optimize([distance])
+    s, e = inputs_of(repo, [source, edges], slots=[1, 3])
+    joined = query(repo, db.QueryJoinData(s, e))
+    optimized = db.optimize([joined])
     unused = formalism.Relation()
     if not incremental:
         evaluator = db.QueryEvaluator(RELATIONS, optimized)
-        evaluator.evaluate(borrow([unused, source, unused, edges, target]))
-        assert rows(evaluator.get_result()) == {(0, 2, 2)}
+        evaluator.evaluate(borrow([unused, source, unused, edges]))
+        assert rows(evaluator.get_result()) == {(0, 1)}
     else:
         maintained = db.IncrementalQueryEvaluator(RELATIONS, optimized)
-        maintained.initialize(borrow([unused, source, unused, edges, target]))
-        assert rows(maintained.get_result()) == {(0, 2, 2)}
+        maintained.initialize(borrow([unused, source, unused, edges]))
+        assert rows(maintained.get_result()) == {(0, 1)}
         no_change = change(formalism.Relation(), formalism.Relation())
         maintained.update(
             [
                 no_change,
                 change(relation([10]), relation([10])),
                 no_change,
-                change(relation([20, 21], [(0, 2)]), relation([20, 21])),
-                change(relation([30]), relation([30])),
+                change(relation([10, 21], [(0, 2)]), relation([10, 21], [(0, 1)])),
             ]
         )
-        assert rows(maintained.get_result()) == {(0, 2, 1)}
-        assert rows(maintained.get_delta().added) == {(0, 2, 1)}
-        assert rows(maintained.get_delta().removed) == {(0, 2, 2)}
+        assert rows(maintained.get_result()) == {(0, 2)}
+        assert rows(maintained.get_delta().added) == {(0, 2)}
+        assert rows(maintained.get_delta().removed) == {(0, 1)}
 
 
 def test_statistics_and_input_validation() -> None:

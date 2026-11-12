@@ -33,7 +33,6 @@ void bind_query_select_equal(nb::module_& m, QueryRepositoryBinding& repository)
 void bind_query_select_value(nb::module_& m, QueryRepositoryBinding& repository);
 void bind_query_union(nb::module_& m, QueryRepositoryBinding& repository);
 void bind_query_difference(nb::module_& m, QueryRepositoryBinding& repository);
-void bind_query_distance(nb::module_& m, QueryRepositoryBinding& repository);
 void bind_query_generic_join(nb::module_& m, QueryRepositoryBinding& repository);
 void bind_query_semijoin(nb::module_& m, QueryRepositoryBinding& repository);
 void bind_query_antijoin(nb::module_& m, QueryRepositoryBinding& repository);

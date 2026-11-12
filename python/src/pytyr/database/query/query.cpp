@@ -52,7 +52,6 @@ void bind_database_queries(nb::module_& m)
     database_python::bind_query_select_value(m, repository);
     database_python::bind_query_union(m, repository);
     database_python::bind_query_difference(m, repository);
-    database_python::bind_query_distance(m, repository);
     database_python::bind_query_generic_join(m, repository);
     database_python::bind_query_semijoin(m, repository);
     database_python::bind_query_antijoin(m, repository);

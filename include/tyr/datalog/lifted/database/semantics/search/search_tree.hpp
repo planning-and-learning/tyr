@@ -30,7 +30,7 @@ namespace tyr::datalog::database
 /// Edges of a chain are checked lazily, and a check is kept until the graph's version changes.
 ///
 /// The tree knows edges only through EdgeCheck; the caller supplies the value used along a chain (e.g. the larger of
-/// the learned distance and an exact backward level). incremental::MinDistance keeps it across searches and repairs it
+/// the learned distance and an exact backward level). Goal searches keep it across searches and repair it
 /// (incremental/search/tree_repair.hpp).
 class SearchTree
 {

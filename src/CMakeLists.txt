@@ -84,13 +84,9 @@ add_library(
     datalog/lifted/database/optimization/details/structural.cpp
     datalog/lifted/database/semantics/bound/query_evaluation.cpp
     datalog/lifted/database/semantics/bound/union_normal_form.cpp
-    datalog/lifted/database/semantics/details/distance.cpp
-    datalog/lifted/database/semantics/details/min_distance.cpp
     datalog/lifted/database/semantics/details/plans.cpp
     datalog/lifted/database/semantics/generic_join.cpp
     datalog/lifted/database/semantics/incremental/delta.cpp
-    datalog/lifted/database/semantics/incremental/details/distance_repair.cpp
-    datalog/lifted/database/semantics/incremental/distance.cpp
     datalog/lifted/database/semantics/incremental/join.cpp
     datalog/lifted/database/semantics/incremental/projection.cpp
     datalog/lifted/database/semantics/incremental/semijoin.cpp

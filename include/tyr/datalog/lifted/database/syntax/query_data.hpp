@@ -6,7 +6,6 @@
 #define TYR_DATALOG_DATABASE_SYNTAX_QUERY_DATA_HPP_
 
 #include "tyr/datalog/lifted/database/declarations.hpp"
-#include "tyr/datalog/lifted/database/semantics/distance.hpp"
 #include "tyr/datalog/lifted/database/semantics/generic_join.hpp"
 #include "yggdrasil/formalism/values.hpp"
 
@@ -182,33 +181,6 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::column, &data::constant, &data::constant_type> {}; }
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::arg, &data::column, &data::constant, &data::constant_type, &data::plan> {}; }
-};
-
-template<>
-struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceTag>>
-{
-    urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceTag>> index;
-    urd::index<tyr::datalog::database::Query<>> sources;
-    urd::index<tyr::datalog::database::Query<>> edges;
-    urd::index<tyr::datalog::database::Query<>> targets;
-    urd::index<ygg::Column> distance_column;
-    tyr::datalog::database::DistancePlan plan;
-
-    data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> sources_,
-         urd::index<tyr::datalog::database::Query<>> edges_,
-         urd::index<tyr::datalog::database::Query<>> targets_,
-         urd::index<ygg::Column> distance_column_) :
-        sources(sources_),
-        edges(edges_),
-        targets(targets_),
-        distance_column(distance_column_)
-    {
-    }
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::sources, &data::edges, &data::targets, &data::distance_column> {}; }
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::sources, &data::edges, &data::targets, &data::distance_column, &data::plan> {}; }
 };
 
 template<>

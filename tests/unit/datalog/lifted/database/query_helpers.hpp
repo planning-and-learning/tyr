@@ -9,7 +9,6 @@
 #include <ranges>
 #include <span>
 #include <stdexcept>
-#include <tyr/datalog/lifted/database/semantics/distance.hpp>
 #include <tyr/datalog/lifted/database/semantics/operations.hpp>
 #include <tyr/datalog/lifted/database/semantics/relation_view.hpp>
 #include <tyr/datalog/lifted/database/syntax/query.hpp>
@@ -142,20 +141,6 @@ database::QueryView<> select_value(database::QueryRepository& repository, databa
     return select_encoded(repository, arg, column, ygg::encode_value(value), ygg::type_id<T>);
 }
 
-inline database::QueryView<> distance(database::QueryRepository& repository,
-                                      database::QueryView<> sources,
-                                      database::QueryView<> edges,
-                                      database::QueryView<> targets,
-                                      urd::index<ygg::Column> distance_column)
-{
-    auto data = database::checkout<database::Query<database::QueryDistanceTag>>(builder());
-    data->sources = require(repository, sources);
-    data->edges = require(repository, edges);
-    data->targets = require(repository, targets);
-    data->distance_column = distance_column;
-    return database::insert_query(repository, builder(), *data);
-}
-
 inline database::QueryView<> generic_join(database::QueryRepository& repository,
                                           std::span<const database::QueryView<>> inputs,
                                           std::span<const urd::index<ygg::Column>> variable_order,
@@ -268,90 +253,6 @@ urd::builder<ygg::Relation<ygg::Schema>> subtracted(const L& lhs, const R& rhs)
     database::difference(lhs, rhs, plan, out);
     return out;
 }
-template<typename S, typename E, typename T>
-urd::builder<ygg::Relation<ygg::Schema>> distances(const S& sources, const E& edges, const T& targets, const database::DistancePlan& plan)
-{
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
-    database::DistanceWorkspace workspace(plan);
-    database::distance(sources, edges, targets, plan, out, workspace);
-    return out;
-}
 }  // namespace tyr::datalog::tests::ops
-
-/// Shared by the min-distance tests: relations borrowed as views, rows decoded to uint_t values, reference distances.
-namespace tyr::datalog::tests::distances
-{
-inline ygg::FreeBuilderRelationView borrow(const ygg::FreeRelationRepository& repository, const urd::builder<ygg::Relation<ygg::Schema>>& relation)
-{ return repository.view(relation); }
-
-inline urd::Store<urd::sequence<ygg::FreeBuilderRelationView>> borrow_all(const ygg::FreeRelationRepository& repository,
-                                                                          const urd::Store<urd::sequence<urd::builder<ygg::Relation<ygg::Schema>>>>& relations)
-{
-    urd::Store<urd::sequence<ygg::FreeBuilderRelationView>> views;
-    views.reserve(relations.size());
-    for (const auto& relation : relations)
-        views.push_back(borrow(repository, relation));
-    return views;
-}
-
-inline urd::Store<urd::sequence<ygg::uint_t>> decode(std::span<const ygg::Value> row)
-{
-    urd::Store<urd::sequence<ygg::uint_t>> values;
-    values.reserve(row.size());
-    for (const auto value : row)
-        values.push_back(ygg::decode_value<ygg::uint_t>(value));
-    return values;
-}
-template<ygg::RowViewConcept<ygg::Schema> R>
-urd::Store<urd::sequence<ygg::uint_t>> decode(const R& row)
-{
-    urd::Store<urd::sequence<ygg::uint_t>> values;
-    values.reserve(row.size());
-    for (size_t c = 0; c < row.size(); ++c)
-        values.push_back(ygg::decode_value<ygg::uint_t>(row.value(c)));
-    return values;
-}
-
-/// Half the distance to the targets in a supergraph of every state: consistent in all of them.
-struct HalfDistance
-{
-    urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>> distances;
-    std::span<const ygg::ColumnLayout> columns;
-
-    [[nodiscard]] ygg::uint_t estimate(std::span<const ygg::Value> vertex) const
-    {
-        const auto found = distances.find(decode(vertex));
-        return found == distances.end() ? std::numeric_limits<ygg::uint_t>::max() : found->second / 2;
-    }
-};
-
-/// Backward breadth-first distances to the targets over materialized edges.
-inline urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>>
-distances_to(ygg::FreeBuilderRelationView edges, ygg::FreeBuilderRelationView targets, size_t k)
-{
-    urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>> result;
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> frontier;
-    for (size_t i = 0; i < targets.size(); ++i)
-    {
-        const auto vertex = decode(targets.row(i));
-        if (result.emplace(vertex, 0).second)
-            frontier.push_back(vertex);
-    }
-    for (ygg::uint_t level = 1; !frontier.empty(); ++level)
-    {
-        urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> next;
-        for (size_t i = 0; i < edges.size(); ++i)
-        {
-            const auto edge = decode(edges.row(i));
-            const auto from = urd::Store<urd::sequence<ygg::uint_t>>(edge.begin(), edge.begin() + static_cast<std::ptrdiff_t>(k));
-            const auto to = urd::Store<urd::sequence<ygg::uint_t>>(edge.begin() + static_cast<std::ptrdiff_t>(k), edge.end());
-            if (std::ranges::find(frontier, to) != frontier.end() && result.emplace(from, level).second)
-                next.push_back(from);
-        }
-        frontier = std::move(next);
-    }
-    return result;
-}
-}  // namespace tyr::datalog::tests::distances
 
 #endif

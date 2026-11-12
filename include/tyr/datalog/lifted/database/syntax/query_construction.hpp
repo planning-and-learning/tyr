@@ -49,8 +49,6 @@ void prepare(urd::data<Query<QuerySelectEqualTag>>& data, const QueryRepository&
 
 void prepare(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& repository);
 
-void prepare(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& repository);
-
 /// An omitted output order is canonicalized to first occurrence order.
 void prepare(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository);
 }  // namespace detail

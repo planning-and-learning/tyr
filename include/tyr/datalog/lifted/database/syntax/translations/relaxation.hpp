@@ -247,8 +247,7 @@ private:
         }
         else
         {
-            static_assert(std::same_as<Tag, QueryDistanceTag>, "unhandled query operator");
-            throw std::invalid_argument("Relaxation: distances are not first-order queries.");
+            static_assert(!std::same_as<Tag, Tag>, "unhandled query operator");
         }
     }
 };
@@ -290,7 +289,6 @@ private:
 ///                          otherwise Â_N
 ///     A ▷ B                Â_N ▷ B̌_shared if shared ⊆ N ∩ S'_A and       Ǎ_(N ∪ shared) ▷ B̂_shared; ∅ if B̂ = ⊤
 ///                          B̌ ≠ ∅, otherwise Â_N
-///     distance             not first-order; rejected
 ///
 /// Each rule keeps the contract: ⊤ is the identity of ⋈ and ⋉ and absorbs ∪, ∅ the reverse; eliminating a label no
 /// one needs is exact (π_L(A ⋈ B) = π_L(A) ⋈ π_∅(B) when B shares nothing with A or L); a union may only stay

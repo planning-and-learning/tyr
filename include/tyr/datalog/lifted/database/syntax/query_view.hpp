@@ -46,15 +46,6 @@ public:
     [[nodiscard]] auto get_rhs() const
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryBinaryTags, Tag>::value
     { return urd::resolve(self().data().rhs, self().context()); }
-    [[nodiscard]] auto get_sources() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return urd::resolve(self().data().sources, self().context()); }
-    [[nodiscard]] auto get_edges() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return urd::resolve(self().data().edges, self().context()); }
-    [[nodiscard]] auto get_targets() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return urd::resolve(self().data().targets, self().context()); }
     [[nodiscard]] auto get_input_slot() const
         requires std::same_as<Tag, tyr::datalog::database::QueryInputTag>
     { return self().data().input_slot; }
@@ -73,9 +64,6 @@ public:
     [[nodiscard]] auto get_constant() const
         requires std::same_as<Tag, tyr::datalog::database::QuerySelectValueTag>
     { return self().data().constant; }
-    [[nodiscard]] auto get_distance_column() const
-        requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return self().data().distance_column; }
     [[nodiscard]] const auto& get_plan() const
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryPlannedTags, Tag>::value
     { return self().data().plan; }

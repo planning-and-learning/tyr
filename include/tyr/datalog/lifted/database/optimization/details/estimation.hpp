@@ -200,11 +200,6 @@ Estimate estimate_operation(QueryView<Tag> query, FactorIdentity identity, GetEs
     const auto rows = std::same_as<Tag, QuerySemijoinTag> ? matched : std::max(0.0, lhs.rows - matched);
     return factor(capped({ rows, lhs.distinct }), query.columns(), identity);
 }
-/// The literature has no estimate for distances; they are only known when observed.
-template<class GetEstimate>
-Estimate estimate_operation(QueryView<QueryDistanceTag>, FactorIdentity, GetEstimate&&, const Statistics&)
-{ throw std::logic_error("Optimizer: distances have no estimate unless observed."); }
-
 /// The System R estimate of a query from its children's estimates. An observation of
 /// the equivalent caller query replaces the derivation (LEO, VLDB 2001).
 template<std::invocable<QueryView<>> GetEstimate>

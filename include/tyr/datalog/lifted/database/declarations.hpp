@@ -52,10 +52,6 @@ struct QueryDifferenceTag
 {
     static constexpr std::string_view name = "difference";
 };
-struct QueryDistanceTag
-{
-    static constexpr std::string_view name = "distance";
-};
 struct QueryGenericJoinTag
 {
     static constexpr std::string_view name = "generic_join";
@@ -80,7 +76,6 @@ using QueryConstructorTags = boost::mp11::mp_list<QueryInputTag,
                                                   QuerySelectValueTag,
                                                   QueryUnionTag,
                                                   QueryDifferenceTag,
-                                                  QueryDistanceTag,
                                                   QueryGenericJoinTag,
                                                   QuerySemijoinTag,
                                                   QueryAntijoinTag>;
@@ -92,9 +87,7 @@ using QueryBinaryTags = boost::mp11::mp_append<QueryJoinTags, QuerySetTags>;    
 using QueryUnaryTags = boost::mp11::mp_list<QueryProjectTag, QueryRenameTag, QuerySelectEqualTag, QuerySelectValueTag>;  ///< arg
 /// The queries with a prepared plan.
 using QueryPlannedTags =
-    boost::mp11::mp_append<QueryJoinTags,
-                           QuerySetTags,
-                           boost::mp11::mp_list<QueryProjectTag, QuerySelectEqualTag, QuerySelectValueTag, QueryDistanceTag, QueryGenericJoinTag>>;
+    boost::mp11::mp_append<QueryJoinTags, QuerySetTags, boost::mp11::mp_list<QueryProjectTag, QuerySelectEqualTag, QuerySelectValueTag, QueryGenericJoinTag>>;
 
 /// Tag void is the type-erased query holding one of the concrete query records.
 template<typename Tag = void>

@@ -280,207 +280,6 @@ The bindings expose the library types directly:
 Run the native tests with ``ctest --test-dir <build> -R '^database_' --output-on-failure``; the Python tests are in
 ``python/tests/test_database.py``.
 
-Tuple distances
----------------
-
-``<tyr/datalog/lifted/database/semantics/distance.hpp>`` computes directed, unweighted shortest-path distances between
-tuple-valued vertices. Sources and targets have ``k`` columns; an edge has ``2k``, its source tuple first. All four
-vertex positions must have the same field types in the same order; their labels may differ.
-
-.. code:: cpp
-
-   using namespace ygg;
-   using namespace tyr::datalog::database;
-   const auto value = [](uint_t v) { return encode_value(v); };
-   const auto column = [](std::uint32_t label) { return ColumnLayout { urd::index<Column>(label), type_id<uint_t> }; };
-   const std::array source_columns { column(10) }, edge_columns { column(1), column(2) }, target_columns { column(20) };
-   urd::builder<Relation<Schema>> sources(source_columns);
-   urd::builder<Relation<Schema>> edges(edge_columns);
-   urd::builder<Relation<Schema>> targets(target_columns);
-   sources.insert(std::array{value(4)});
-   edges.insert(std::array{value(4), value(7)});
-   edges.insert(std::array{value(7), value(9)});
-   targets.insert(std::array{value(9)});
-
-   Repository repository;
-   DistancePlan plan(sources.columns(), edges.columns(), targets.columns(), urd::index<Column>(3));
-   DistanceWorkspace workspace(plan);
-   urd::builder<Relation<Schema>> result(plan.output_columns());
-   distance(repository.view(sources), repository.view(edges), repository.view(targets), plan, result, workspace);
-   assert(result.contains(std::array{value(4), value(9), value(2)}));
-
-The result has ``2k + 1`` columns: the source tuple, the target tuple and their distance as ``uint_t``, under the edge
-relation's labels followed by the supplied distance label, which must be fresh.
-
-- Each reachable source/target pair occurs once; unreachable pairs are absent.
-- Equal endpoint tuples have distance zero even without an edge.
-- Only requested sources and targets appear, but paths may traverse other vertices.
-- Zero-column tuples represent the single empty vertex.
-
-The plan owns its schemas and checks arities and types once. The workspace keeps its capacity and is reusable for the
-same vertex size. An output aliasing an input is rejected before it is cleared; a later failure can leave partial
-output.
-
-The evaluator maps tuples to private dense ids, rebuilds the graph and runs one breadth-first search per source. It
-needs storage proportional to the unique tuples plus edges and one vertex-sized buffer; it never materializes
-all-pairs distances, but the output can hold every source/target pair. ``uint_t``'s maximum is reserved for infinity;
-exceeding the supported vertex count throws.
-
-Incremental distance
-~~~~~~~~~~~~~~~~~~~~
-
-``<tyr/datalog/lifted/database/semantics/incremental/distance.hpp>`` maintains the distances under changes:
-
-.. code:: cpp
-
-   incremental::DistanceEvaluator evaluator(repository, plan);
-   evaluator.initialize(sources, edges, targets);
-   incremental::Delta source_change(repository, sources.columns());
-   incremental::Delta edge_change(repository, edges.columns());
-   incremental::Delta target_change(repository, targets.columns());
-   edge_change.removed.insert(std::array{encode_value(uint_t(7)), encode_value(uint_t(9))});
-   evaluator.update(source_change.change(), edge_change.change(), target_change.change());
-   assert(evaluator.get_result().empty());
-   assert(evaluator.get_delta().removed.contains(
-       std::array{encode_value(uint_t(4)), encode_value(uint_t(9)), encode_value(uint_t(2))}));
-
-The evaluator owns the graph, the source and target membership, the distances, the output and the last ``Delta``;
-inputs are borrowed only during a call.
-
-- **Changes** must be actual set changes with disjoint additions and removals, in each input's original schema. Pass
-  empty changes for unchanged inputs. Swapping added and removed of all three inputs undoes a batch.
-- **Deltas** are the exact net change after the whole batch: a changed distance removes the old tuple and adds the
-  new one; replacing a shortest-path witness without changing the distance produces none.
-- **Initialization** replaces the baseline and clears the output delta.
-- **Errors.** Schema, overlap, aliasing and membership rejections (adding a present or removing an absent row)
-  precede mutation and preserve the previous evaluation. An exception during mutation requires reinitialization;
-  until then result and delta access and further updates throw ``std::logic_error``.
-- **Lifetimes.** Results and deltas are borrowed until the next mutation. Inputs must not alias the evaluator's
-  buffers, and calls must be sequential and nonreentrant.
-
-This is exact maintenance, not a guarantee that every update is faster than full evaluation.
-
-Algorithm
-^^^^^^^^^
-
-Edge repair specializes Ramalingam and Reps, `An Incremental Algorithm for a Generalization of the Shortest-Path
-Problem <https://research.cs.wisc.edu/wpis/papers/jalg96.pdf>`__, Section 4, Figure 4, to unit edges. Mixed changes
-enter together: local heaps track improving incoming edges and a global heap selects inconsistent vertices.
-Equal-length replacements can cancel before descendant distances change. Initialization and added sources use
-breadth-first search, target-only changes read the retained distances, and there is no fallback from an expensive
-repair to a fresh search.
-
-For one surviving source, let ``C = |δ|`` count the modified edges and the vertices whose final distances change, and
-let ``D = ||δ||`` also include their incident dependency edges. Repair takes expected, amortized
-``O(D log(2 + D))`` with indexed binary heaps (Fibonacci heaps would give insertion-only batches
-``O(D + C log(2 + C))``). Every surviving source processes the edge batch, and the relation API also pays for tuple
-encoding, validation, adjacency changes and output materialization, so an empty output delta does not imply small
-work.
-
-Per active source the evaluator keeps ``distances`` and ``supports``. ``supports[v]`` is the cardinality of the
-paper's ``SP[v]``, not a set: membership follows from an edge's old and new contribution relative to the current
-distance. At a finite consistent distance it counts shortest predecessors, and the source has an independent
-zero-length support.
-
-The heaps are urd's addressable heaps (``urd::Store<urd::queue<Entry>, urd::by_priority, urd::handles>``). One
-workspace owns the global heap, the vertex-local heaps and a map from queued endpoint pairs to their handles; they are
-empty between repairs and reused across sources.
-
-**Memory.** Tuple ids live until ``initialize`` starts a new baseline, and the state buffers of removed sources are
-reused. The distance and support state can take ``O(S_peak * V_seen)``, the peak simultaneous source count times the
-historical vertex count; adjacency, tuple bytes, heaps, the output and its deltas add to it. ``memory_usage()``
-includes retained pool chunks and excludes the plan and the caller's inputs.
-
-The ``database_distance`` tests compare full and incremental evaluation with an independent pairwise search. With
-``YGGDRASIL_BUILD_PROFILING``, ``database_distance_benchmark`` compares them for tuple arities 1, 2, 4 and 8; an
-update iteration measures one forward batch and its undo (``updates_per_iteration = 2``).
-
-Minimum distance
-~~~~~~~~~~~~~~~~
-
-When only the smallest distance between any source and any target is needed, use the aggregates over the same plans:
-
-.. code:: cpp
-
-   urd::builder<Relation<Schema>> result(plan.output_columns());
-   const uint_t full = min_distance(sources, edges, targets, plan, result, workspace);
-
-   incremental::SourceMinDistance minimum(repository, plan);
-   minimum.initialize(sources, edges, targets);
-   minimum.update(source_delta.change(), edge_delta.change(), target_delta.change());
-   const uint_t current = minimum.get_result();
-
-Both return ``uint_t``'s maximum when no target is reachable, and 0 when a source equals a target. The incremental
-form counts result rows per distance value, so deleting the current minimum reveals the next one.
-
-Must-pass objects
-~~~~~~~~~~~~~~~~~
-
-``MustPass`` (``semantics/must_pass.hpp``) finds, per key, the probe objects that every path from the key's sources to
-its targets passes in some vertex: the landmarks of the key's graph (Hoffmann, Porteous & Sebastia, JAIR 2004).
-Sources, edges and targets start with the same key columns; a vertex has k columns; probes have one column, and a
-vertex contains an object if one of its columns of the probes' type holds it:
-
-.. code:: cpp
-
-   // sources (key…, vertex), edges (key…, from, to), targets (key…, vertex), probes (object)
-   MustPassPlan<> plan(sources.columns(), edge_query.columns(), targets.columns(), probes.columns(), keys);
-   MustPass<> must_pass(repository, edge_query, plan);
-   urd::builder<Relation<Schema>> out(plan.output_columns());   // (key…, object)
-   must_pass.must_pass(input, sources, targets, probes, out);
-
-- The edge query is evaluated on demand with the key and a vertex bound, so a key's graph is explored from its
-  sources and never materialized.
-- A\* finds a shortest witness path; only probe objects on it can be must-pass. Objects in every source or every
-  target are trivially must-pass. Every other object on the witness is verified as in landmark detection (Richter,
-  Helmert & Westphal, AAAI 2008): are the targets still reachable without the vertices containing it?
-- Each search is bidirectional: a backward breadth-first search from the targets alternates with the forward side,
-  and its exhaustion proves unreachability from the smaller side.
-- An optional heuristic (``MustPass<H>``, given the key followed by a vertex) guides the forward side; with
-  ``exclude(key, object)`` it is told which object a verification avoids.
-- A key whose targets are unreachable has no must-pass objects.
-- An edge query that projects vertices onto fewer columns is an abstraction: objects that must be passed in the
-  projection must be passed by every original path too.
-
-Distance from Python
-~~~~~~~~~~~~~~~~~~~~
-
-Python evaluators and ``distance`` take ``BorrowedRelation`` inputs, or interned ``RelationView`` inputs when every
-input of the call is interned. Read a ``Relation`` with ``repository.view(relation)``; to mix them, copy a view with
-``db.assign(formalism.Relation(), view)``.
-
-.. code:: python
-
-   from pyyggdrasil import formalism
-   from pytyr import database as db
-
-   def columns(*labels):
-       return [formalism.ColumnIndex(label) for label in labels]
-
-   sources = formalism.Relation(columns(0, 1))
-   sources.insert([10, 20])
-   edges = formalism.Relation(columns(0, 1, 2, 3))
-   edges.insert([10, 20, 10, 21])
-   targets = formalism.Relation(columns(2, 3))
-   targets.insert([10, 21])
-   plan = db.DistancePlan(sources.columns(), edges.columns(), targets.columns(), formalism.ColumnIndex(4))
-
-   repository = formalism.RelationRepository()
-   inputs = (repository.view(sources), repository.view(edges), repository.view(targets))
-   result = formalism.Relation(plan.output_columns())
-   db.distance(*inputs, plan, result, db.DistanceWorkspace(plan))
-   assert tuple(repository.view(result)[0]) == (10, 20, 10, 21, 1)
-
-   evaluator = db.DistanceEvaluator(repository, plan)
-   evaluator.initialize(*inputs)
-   assert tuple(evaluator.get_result()[0]) == (10, 20, 10, 21, 1)
-   assert evaluator.get_delta().added.empty()
-
-``get_result()`` returns a read-only ``BorrowedRelation`` and ``get_delta()`` a ``RelationDelta`` whose ``added`` and
-``removed`` are borrowed the same way. They keep the evaluator alive, but their rows must not be kept across an
-``initialize`` or ``update``; ``db.assign(formalism.Relation(), result)`` copies a result. ``update(sources, edges,
-targets)`` takes one ``(added, removed)`` tuple per input.
-
 Query graphs and optimization
 -----------------------------
 
@@ -497,7 +296,7 @@ input relation.
   is the heterogeneous root, a variant of concrete query indices. Data, views and the repository are in
   ``query_data.hpp``, ``query_view.hpp`` and ``query_repository.hpp``.
 - **Identity.** Input and empty schemas and the ordered labels of projection and rename are part of a record's
-  identity. Derived output columns and prepared plans (of join, projection, distance and Generic Join; the resolved
+  identity. Derived output columns and prepared plans (of join, projection and Generic Join; the resolved
   positions of selections) are cached and are not.
 - **Views.** ``insert_query`` returns a ``QueryView``; ``get_variant()`` gives the concrete view with its getters
   (``get_lhs()``, ``get_arg()``, ``get_constant()``). Every view has ``columns()`` and borrows its repository.
@@ -549,8 +348,8 @@ repository. It implements established algorithms as published:
    renames, unions and differences, and into the lhs of semijoins and antijoins; projections through renames and
    unions; empty relations are propagated.
 
-2. **Join blocks.** Each maximal tree of joins is planned as a whole. Unions, differences, semijoins, antijoins,
-   distances and selections spanning several join operands bound the blocks.
+2. **Join blocks.** Each maximal tree of joins is planned as a whole. Unions, differences, semijoins, antijoins
+   and selections spanning several join operands bound the blocks.
 
 3. **Planning each block.** A block whose operands all have known cardinalities (measured inputs, observed queries, or
    queries over them) is planned cost-based, any other block from structure:
@@ -564,8 +363,7 @@ repository. It implements established algorithms as published:
      otherwise Generic Join [NRR13], whose running time is bounded by the AGM bound [AGM08].
 
    Generic Join's variable order is fixed by column label: any order attains the worst-case bound, but [Freitag20]
-   additionally optimizes it with the Tributary Join cost model, which is not implemented. Distances have no estimate in
-   the literature and are only known when observed.
+   additionally optimizes it with the Tributary Join cost model, which is not implemented.
 
 4. **Compilation** of the planned roots into an owning ``QueryPlan``.
 
@@ -647,8 +445,8 @@ the current inputs only (*one-shot*, the default). A namespace exists only for a
      - ``incremental::bound::QueryEvaluator`` (``incremental/bound/query_evaluation.hpp``)
 
 Use full evaluation for a whole result, bound evaluation for many selective lookups against the same inputs (the edge
-oracle of the distance search), and an incremental evaluator when the inputs change between uses. The operator plans
-of the query records (``JoinPlan``, ``ProjectionPlan``, ``GenericJoinPlan``, ``DistancePlan``) are shared by all
+oracle of a goal search), and an incremental evaluator when the inputs change between uses. The operator plans
+of the query records (``JoinPlan``, ``ProjectionPlan``, ``GenericJoinPlan``) are shared by all
 evaluators.
 
 - **Full.** ``evaluate(bindings)`` computes all roots, reusing retained output and scratch storage.
@@ -664,27 +462,6 @@ evaluators.
 removed rows after an update; initialization clears the deltas. A later evaluation or update can invalidate borrowed
 rows. Inputs need only stay alive during the call, and an evaluator's results may not be fed back to it as inputs.
 ``memory_usage()`` reports the evaluator's retained storage.
-
-Distance search
-^^^^^^^^^^^^^^^
-
-``MinDistance<H>`` (``min_distance.hpp``) and ``incremental::MinDistance<H>`` (``incremental/min_distance.hpp``) compute
-the exact minimum distance from any source to any target over edges given by a query over input slots (or by one edge
-relation), and return ``uint_t``'s maximum when no target is reachable. Edges are never materialized: a bound evaluator
-answers successor, predecessor and edge-check lookups, and A\* (a binary heap ordered by f, then g) runs against a
-backward breadth-first frontier.
-
-- ``MinDistance::min_distance(input, sources, targets, heuristic)`` binds the inputs for one call; only compiled plans
-  and static slots are kept.
-- ``incremental::MinDistance`` keeps the search tree across calls. ``initialize(input)`` binds a new baseline;
-  ``bind(input, maybe_changed)`` diffs the inputs against it, and ``update(change, changed)`` takes exact
-  ``(added, removed)`` changes per slot. A change that throws makes the next search start afresh. Its
-  ``set_targets(targets)`` sets the targets, and different targets discard the stored search;
-  ``min_distance(sources, heuristic)`` then searches over the current inputs.
-
-The heuristic ``H`` (``search/concepts.hpp``, ``DistanceHeuristic``) must be consistent in every graph the inputs can
-form while the targets stay unchanged: it may depend on the targets and on static inputs only.
-``BlindDistanceHeuristic`` is the zero estimate.
 
 Python query API
 ~~~~~~~~~~~~~~~~
@@ -728,7 +505,6 @@ type-erased ``Query`` that operators take as operands. The records:
 - ``QueryProjectData``, ``QueryRenameData(arg, labels)``
 - ``QuerySelectEqualData(arg, lhs, rhs)``, ``QuerySelectValueData(arg, column, type, value)`` (the constant must have
   the selected column's type)
-- ``QueryDistanceData(sources, edges, targets, distance_column)``
 - ``QueryGenericJoinData(inputs, variable_order, output_order=[])``
 
 ``compile(roots)`` and ``optimize(roots, statistics=Statistics())`` take a list of roots and return a ``QueryPlan``.

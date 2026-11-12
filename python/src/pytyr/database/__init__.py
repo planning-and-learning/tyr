@@ -4,9 +4,6 @@
 """Relational operations, queries and their evaluation over pyyggdrasil.formalism's free relations."""
 
 from pytyr._pytyr.database import (
-    DistanceEvaluator,
-    DistancePlan,
-    DistanceWorkspace,
     Evaluation,
     IncrementalQueryEvaluator,
     JoinPlan,
@@ -19,9 +16,6 @@ from pytyr._pytyr.database import (
     QueryDifference,
     QueryDifferenceData,
     QueryDifferenceIndex,
-    QueryDistance,
-    QueryDistanceData,
-    QueryDistanceIndex,
     QueryEmpty,
     QueryEmptyData,
     QueryEmptyIndex,
@@ -68,7 +62,6 @@ from pytyr._pytyr.database import (
     collect_statistics,
     compile,  # noqa: A004  the engine's compile(query), exported under its own name
     difference,
-    distance,
     join,
     optimize,
     project,
@@ -79,9 +72,6 @@ from pytyr._pytyr.database import (
 )
 
 __all__ = [
-    "DistanceEvaluator",
-    "DistancePlan",
-    "DistanceWorkspace",
     "Evaluation",
     "IncrementalQueryEvaluator",
     "JoinPlan",
@@ -94,9 +84,6 @@ __all__ = [
     "QueryDifference",
     "QueryDifferenceData",
     "QueryDifferenceIndex",
-    "QueryDistance",
-    "QueryDistanceData",
-    "QueryDistanceIndex",
     "QueryEmpty",
     "QueryEmptyData",
     "QueryEmptyIndex",
@@ -143,7 +130,6 @@ __all__ = [
     "collect_statistics",
     "compile",
     "difference",
-    "distance",
     "join",
     "optimize",
     "project",
