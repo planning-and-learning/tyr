@@ -45,6 +45,8 @@ public:
     }
 
     [[nodiscard]] size_t size() const noexcept { return m_nodes.size(); }
+    /// The stored vertices; a vertex keeps its handle until clear().
+    [[nodiscard]] const VertexSet& vertices() const noexcept { return m_vertices; }
     /// A stored vertex, or none.
     [[nodiscard]] VertexSet::handle_type find(std::span<const ygg::uint_t> vertex) const { return m_vertices.find(vertex); }
     [[nodiscard]] std::span<const ygg::uint_t> vertex(VertexSet::handle_type id) const { return m_vertices.at(id); }

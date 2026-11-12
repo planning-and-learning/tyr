@@ -10,11 +10,7 @@
 
 namespace tyr::datalog::database::datalog::detail
 {
-PlainStratum::PlainStratum(StratumInfo stratum, const CompiledProgram& program) : Stratum(std::move(stratum))
-{
-    for (const auto table : info().tables)
-        m_counts.emplace_back(program.tables[table]->arity);
-}
+PlainStratum::PlainStratum(StratumInfo stratum, const CompiledProgram& /*program*/) : Stratum(std::move(stratum)) { m_counts.resize(info().tables.size()); }
 
 void PlainStratum::evaluate(CompiledProgram& program, Executor& executor) { derive(program, executor, false); }
 
@@ -79,40 +75,37 @@ size_t PlainStratum::state_memory_usage() const noexcept
 {
     size_t result = 0;
     for (const auto& counts : m_counts)
-        result += counts.rows.memory_usage() + counts.pending_rows.memory_usage() + urd::memory_usage(counts.counts) + urd::memory_usage(counts.pending);
+        result +=
+            urd::memory_usage(counts.rows) + urd::memory_usage(counts.pending_rows) + urd::memory_usage(counts.counts) + urd::memory_usage(counts.pending);
     return result;
 }
 
 void PlainStratum::count(size_t table, std::span<const ygg::uint_t> row, int64_t change)
 {
     auto& counts = m_counts[info().position(table)];
-    const auto position = counts.pending_rows.insert(row);
-    if (position == counts.pending.size())
+    const auto [handle, inserted] = counts.pending_rows.insert(row);
+    if (inserted)
         counts.pending.push_back(0);
-    counts.pending[position] += change;
+    counts.pending[handle] += change;
 }
 
 void PlainStratum::apply_counts(Table& table, Counts& counts, bool record)
 {
-    for (ygg::uint_t p = 0; p < counts.pending_rows.size(); ++p)
+    for (const auto pending : row_handles(counts.pending_rows))
     {
-        const auto change = counts.pending[p];
+        const auto change = counts.pending[pending];
         if (change == 0)
             continue;
-        const auto row = counts.pending_rows[p];
-        const auto position = counts.rows.find(row);
-        const auto before = position ? counts.counts[*position] : 0;
+        const auto row = counts.pending_rows.at(pending);
+        const auto handle = counts.rows.find(row);
+        const auto before = handle.is_none() ? 0 : counts.counts[handle];
         const auto after = before + change;
         if (after < 0)
             throw std::logic_error("Datalog evaluator: a derivation count became negative.");
-        if (position && after == 0)
-        {
-            counts.counts[*position] = counts.counts.back();
-            counts.counts.pop_back();
-            counts.rows.erase(*position);
-        }
-        else if (position)
-            counts.counts[*position] = after;
+        if (!handle.is_none() && after == 0)
+            erase_row(counts.rows, handle, counts.counts);
+        else if (!handle.is_none())
+            counts.counts[handle] = after;
         else
         {
             counts.rows.insert(row);

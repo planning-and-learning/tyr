@@ -30,14 +30,10 @@ WeightedStratum::WeightedStratum(StratumInfo stratum,
     m_unit(std::move(unit)),
     m_target_tables(std::move(target_tables))
 {
-    for (const auto table : info().tables)
-    {
-        const auto arity = program.tables[table]->arity;
-        m_settled.emplace_back(arity - 1);
-        m_queued.emplace_back(arity - 1);
-        m_best.emplace_back();
-        m_snapshot.emplace_back(arity);
-    }
+    m_settled.resize(info().tables.size());
+    m_queued.resize(info().tables.size());
+    m_best.resize(info().tables.size());
+    m_snapshot.resize(info().tables.size());
     for (const auto g : m_goals)
     {
         const auto& rule = program.rules[g];
@@ -46,8 +42,7 @@ WeightedStratum::WeightedStratum(StratumInfo stratum,
         auto columns = urd::Store<urd::sequence<size_t>>();
         for (size_t i = 0; i + 1 < rule.head_terms.size(); ++i)
             columns.push_back(static_cast<size_t>(std::ranges::find(read.terms, rule.head_terms[i]) - read.terms.begin()));
-        const auto key_arity = std::max<size_t>(columns.size(), 1);
-        m_goal_keys.push_back(GoalKeys { info().position(read.table), std::move(columns), RowSet(key_arity) });
+        m_goal_keys.push_back(GoalKeys { info().position(read.table), std::move(columns), {} });
     }
 }
 
@@ -64,14 +59,13 @@ void WeightedStratum::offer(size_t position, std::span<const ygg::uint_t> row)
         return;
     auto& queued = m_queued[position];
     auto& best = m_best[position];
-    const auto size = queued.size();
-    const auto index = queued.insert(key);
-    if (index == size)
+    const auto [handle, inserted] = queued.insert(key);
+    if (inserted)
         best.push_back(weight);
-    else if (weight >= best[index])
+    else if (weight >= best[handle])
         return;
     else
-        best[index] = weight;
+        best[handle] = weight;
     m_queue.push_back(Candidate { Arithmetic { Arithmetic::Operation::ADD, {}, {}, 0 }.apply(weight, estimate),
                                   position,
                                   urd::Store<urd::sequence<ygg::uint_t>>(row.begin(), row.end()) });
@@ -197,7 +191,7 @@ void WeightedStratum::derive(CompiledProgram& program, Executor& executor, bool 
         auto& settled = m_settled[candidate.position];
         // A lighter derivation of the row was queued after this one, or settled. A queued row has a best weight.
         const auto queued = m_queued[candidate.position].find(key);
-        if (settled.contains(key) || !queued || row.back() != m_best[candidate.position][*queued] || finished(candidate.position, row)
+        if (settled.contains(key) || queued.is_none() || row.back() != m_best[candidate.position][queued] || finished(candidate.position, row)
             || (m_frontier && m_frontier->excluded(key)))
             continue;
         settled.insert(key);
@@ -263,9 +257,9 @@ void WeightedStratum::update(CompiledProgram& program, Executor& executor)
                 if (!snapshot.contains(row))
                     table.added.insert(row);
             });
-        for (ygg::uint_t r = 0; r < snapshot.size(); ++r)
-            if (!table.current.contains(snapshot[r]))
-                table.removed.insert(snapshot[r]);
+        for (const auto handle : row_handles(snapshot))
+            if (!table.current.contains(snapshot.at(handle)))
+                table.removed.insert(snapshot.at(handle));
         snapshot.clear();
     }
 }
@@ -275,9 +269,9 @@ size_t WeightedStratum::state_memory_usage() const noexcept
     size_t result = urd::memory_usage(m_queue) + (m_heuristic ? m_heuristic->memory_usage() : 0) + (m_frontier ? m_frontier->memory_usage() : 0)
                     + (m_unit ? m_unit->memory_usage() : 0);
     for (size_t i = 0; i < m_settled.size(); ++i)
-        result += m_settled[i].memory_usage() + m_queued[i].memory_usage() + urd::memory_usage(m_best[i]) + m_snapshot[i].memory_usage();
+        result += urd::memory_usage(m_settled[i]) + urd::memory_usage(m_queued[i]) + urd::memory_usage(m_best[i]) + urd::memory_usage(m_snapshot[i]);
     for (const auto& keys : m_goal_keys)
-        result += keys.done.memory_usage();
+        result += urd::memory_usage(keys.done);
     return result;
 }
 }  // namespace tyr::datalog::database::datalog::detail

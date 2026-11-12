@@ -68,7 +68,7 @@ struct GoalSearch
     [[nodiscard]] std::optional<urd::Store<urd::sequence<BoundRule>>>
     reverse(CompiledProgram& program, std::span<const size_t> columns, bool abstract, StateEdges* state = nullptr) const;
     /// Adds the targets of the current state, rows of `target_columns`.
-    void read_targets(Executor& executor, urd::Store<urd::sequence<Version>>& reads, RowSet& keys) const;
+    void read_targets(Executor& executor, urd::Store<urd::sequence<Version>>& reads, Rows& keys) const;
 };
 
 /// A* for a GoalSearch, with a heuristic derived from its rules (Felzenszwalb & McAllester 2007, §5.1), per goal key to
@@ -110,15 +110,15 @@ private:
     {
         urd::Store<urd::sequence<size_t>> columns;
         urd::Store<urd::sequence<BoundRule>> edges;
-        RowSet keys;
+        Rows keys;
         /// Per set of projected targets (its sorted rows, flattened), the abstract weight to them of each key in
-        /// `keys`, infinity for keys beyond its size.
-        urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, urd::Store<urd::sequence<ygg::uint_t>>>, urd::sorted> weights;
+        /// `keys`, infinity for keys without an entry.
+        urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, PerRow<ygg::uint_t>>, urd::sorted> weights;
         /// Per goal key, its current targets, their key of `weights` (empty without targets) and their weights once
         /// computed.
-        urd::Store<urd::sequence<RowSet>> targets;
-        urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> wanted;
-        urd::Store<urd::sequence<const urd::Store<urd::sequence<ygg::uint_t>>*>> current;
+        PerRow<Rows> targets;
+        PerRow<urd::Store<urd::sequence<ygg::uint_t>>> wanted;
+        PerRow<const PerRow<ygg::uint_t>*> current;
         /// For a state projection, the static projection of its column, whose targets it uses (and its key there,
         /// followed by the state's id); npos otherwise.
         size_t domain = npos;
@@ -138,24 +138,24 @@ private:
     urd::Store<urd::sequence<size_t>> m_goal_positions;
     urd::Store<urd::sequence<size_t>> m_goal_columns;
     urd::Store<urd::sequence<ygg::uint_t>> m_no_goal_key { 0 };
-    RowSet m_goal_keys;
-    /// Per goal key, its targets (indices into m_target_keys) and its generation.
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> m_members;
-    urd::Store<urd::sequence<uint64_t>> m_generations;
+    Rows m_goal_keys;
+    /// Per goal key, its targets (rows of m_target_keys) and its generation.
+    PerRow<urd::Store<urd::sequence<RowHandle>>> m_members;
+    PerRow<uint64_t> m_generations;
     Executor* m_executor = nullptr;
     bool m_read = false;
-    RowSet m_target_keys;
+    Rows m_target_keys;
     urd::Store<urd::sequence<Version>> m_reads;
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> m_derived;
     urd::Store<urd::sequence<ygg::uint_t>> m_key;
 
-    explicit GoalHeuristic(const GoalSearch& search) : m_search(search), m_goal_keys(1), m_target_keys(search.target_columns.size()) {}
+    explicit GoalHeuristic(const GoalSearch& search) : m_search(search) {}
     /// The weights of the goal key's current targets, computed on first use; null without targets.
-    const urd::Store<urd::sequence<ygg::uint_t>>* weights(Projection& projection, ygg::uint_t group);
+    const PerRow<ygg::uint_t>* weights(Projection& projection, RowHandle group);
     /// The projection's weight of a key of R, of goal key `group`; infinity without one.
-    ygg::uint_t weight(Projection& projection, ygg::uint_t group, std::span<const ygg::uint_t> key);
+    ygg::uint_t weight(Projection& projection, RowHandle group, std::span<const ygg::uint_t> key);
     /// The abstract weights to the projected targets, by Dijkstra's algorithm backward from them.
-    urd::Store<urd::sequence<ygg::uint_t>> backward(Executor& executor, Projection& projection, const RowSet& targets);
+    PerRow<ygg::uint_t> backward(Executor& executor, Projection& projection, const Rows& targets);
 };
 
 /// The other side of a bidirectional search for a GoalSearch with one goal whose targets bind every key column: per key
@@ -187,10 +187,10 @@ private:
         REACHABLE,
         UNREACHABLE,
     };
-    /// The backward search of one goal key: its rows (indices into m_rows) in the order found.
+    /// The backward search of one goal key: its rows (of m_rows) in the order found.
     struct Side
     {
-        urd::Store<urd::sequence<ygg::uint_t>> rows;
+        urd::Store<urd::sequence<RowHandle>> rows;
         size_t next = 0;
         Status status = Status::SEARCHING;
     };
@@ -198,10 +198,10 @@ private:
     urd::Store<urd::sequence<size_t>> m_goal_columns;
     urd::Store<urd::sequence<BoundRule>> m_edges;
     /// The goal keys with targets, each with its side; the rows found backward; the sources.
-    RowSet m_goal_keys;
-    urd::Store<urd::sequence<Side>> m_sides;
-    RowSet m_rows;
-    RowSet m_sources;
+    Rows m_goal_keys;
+    PerRow<Side> m_sides;
+    Rows m_rows;
+    Rows m_sources;
     urd::Store<urd::sequence<Version>> m_reads;
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> m_derived;
     urd::Store<urd::sequence<ygg::uint_t>> m_key;
@@ -269,10 +269,10 @@ private:
     /// The tables whose changes the delta rules cannot express, and those that the recursive rules read.
     urd::Store<urd::sequence<size_t>> m_opaque;
     urd::Store<urd::sequence<size_t>> m_edge_tables;
-    RowSet m_goal_keys;
-    urd::Store<urd::sequence<std::unique_ptr<Key>>> m_keys;
+    Rows m_goal_keys;
+    PerRow<std::unique_ptr<Key>> m_keys;
     /// Per goal key, its targets as vertices, from the last run that read them.
-    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>> m_key_targets;
+    PerRow<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>> m_key_targets;
     bool m_read = false;
     uint64_t m_version = 0;
     urd::Store<urd::sequence<Version>> m_reads;
@@ -284,8 +284,8 @@ private:
                urd::Store<urd::sequence<BoundRule>> edges,
                urd::Store<urd::sequence<BoundRule>> reversed);
     std::span<const ygg::uint_t> goal_key(std::span<const ygg::uint_t> key);
-    /// The index of the goal key, with its search made on first use.
-    ygg::uint_t key_search(std::span<const ygg::uint_t> goal_key);
+    /// The goal key, with its search made on first use.
+    RowHandle key_search(std::span<const ygg::uint_t> goal_key);
 };
 }  // namespace tyr::datalog::database::datalog::detail
 

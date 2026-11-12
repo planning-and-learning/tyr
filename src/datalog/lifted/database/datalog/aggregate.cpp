@@ -16,12 +16,7 @@
 /// An aggregate's table holds a row (group, value) per group of its body's table; absent groups read as the fallback.
 namespace tyr::datalog::database::datalog::detail
 {
-AggregateStratum::AggregateStratum(StratumInfo stratum, AggregateTable aggregate) :
-    Stratum(std::move(stratum)),
-    m_aggregate(std::move(aggregate)),
-    m_groups(m_aggregate.group.size())
-{
-}
+AggregateStratum::AggregateStratum(StratumInfo stratum, AggregateTable aggregate) : Stratum(std::move(stratum)), m_aggregate(std::move(aggregate)) {}
 
 std::optional<ygg::uint_t> AggregateStratum::value_of(const Group& state) const
 {
@@ -41,15 +36,15 @@ std::optional<ygg::uint_t> AggregateStratum::value_of(const Group& state) const
     return std::nullopt;
 }
 
-std::pair<ygg::uint_t, AggregateStratum::Group&> AggregateStratum::group_of(std::span<const ygg::uint_t> row)
+std::pair<RowHandle, AggregateStratum::Group&> AggregateStratum::group_of(std::span<const ygg::uint_t> row)
 {
     m_key.clear();
     for (const auto column : m_aggregate.group)
         m_key.push_back(row[column]);
-    const auto position = m_groups.insert(m_key);
-    if (position == m_states.size())
+    const auto [group, inserted] = m_groups.insert(m_key);
+    if (inserted)
         m_states.emplace_back();
-    return { position, m_states[position] };
+    return { group, m_states[group] };
 }
 
 void AggregateStratum::change_group(Group& state, std::span<const ygg::uint_t> row, bool add) const
@@ -80,30 +75,30 @@ void AggregateStratum::evaluate(CompiledProgram& program, Executor&)
     m_groups.clear();
     m_states.clear();
     program.tables[m_aggregate.source]->current.for_each([&](std::span<const ygg::uint_t> row) { change_group(group_of(row).second, row, true); });
-    for (ygg::uint_t g = 0; g < m_groups.size(); ++g)
-        if (const auto value = value_of(m_states[g]))
-            table.current.insert(group_row(m_groups[g], *value));
+    for (const auto group : row_handles(m_groups))
+        if (const auto value = value_of(m_states[group]))
+            table.current.insert(group_row(m_groups.at(group), *value));
 }
 
 void AggregateStratum::update(CompiledProgram& program, Executor&)
 {
     auto& table = *program.tables[m_aggregate.table];
     auto& source = *program.tables[m_aggregate.source];
-    auto touched = urd::Store<urd::sequence<std::pair<ygg::uint_t, std::optional<ygg::uint_t>>>>();
-    auto is_touched = urd::Store<urd::set<ygg::uint_t>, urd::sorted>();
+    auto touched = urd::Store<urd::sequence<std::pair<RowHandle, std::optional<ygg::uint_t>>>>();
+    auto is_touched = urd::Store<urd::set<RowHandle>, urd::sorted>();
     const auto apply = [&](std::span<const ygg::uint_t> row, bool add)
     {
-        auto [position, state] = group_of(row);
-        if (is_touched.insert(position).second)
-            touched.emplace_back(position, value_of(state));
+        auto [handle, state] = group_of(row);
+        if (is_touched.insert(handle).second)
+            touched.emplace_back(handle, value_of(state));
         change_group(state, row, add);
     };
     source.removed.for_each([&](std::span<const ygg::uint_t> row) { apply(row, false); });
     source.added.for_each([&](std::span<const ygg::uint_t> row) { apply(row, true); });
-    for (const auto& [g, before] : touched)
+    for (const auto& [handle, before] : touched)
     {
-        const auto after = value_of(m_states[g]);
-        const auto group = m_groups[g];
+        const auto after = value_of(m_states[handle]);
+        const auto group = m_groups.at(handle);
         if (before)
             table.current.erase(group_row(group, *before));
         if (after)
@@ -121,5 +116,5 @@ void AggregateStratum::update(CompiledProgram& program, Executor&)
 }
 
 size_t AggregateStratum::state_memory_usage() const noexcept
-{ return m_groups.memory_usage() + urd::memory_usage(m_states) + urd::memory_usage(m_key) + urd::memory_usage(m_row); }
+{ return urd::memory_usage(m_groups) + urd::memory_usage(m_states) + urd::memory_usage(m_key) + urd::memory_usage(m_row); }
 }  // namespace tyr::datalog::database::datalog::detail

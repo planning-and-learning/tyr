@@ -16,13 +16,10 @@ namespace
 constexpr double recompute_fraction = 0.1;
 }  // namespace
 
-RecursiveStratum::RecursiveStratum(StratumInfo stratum, const CompiledProgram& program) : Stratum(std::move(stratum))
+RecursiveStratum::RecursiveStratum(StratumInfo stratum, const CompiledProgram& /*program*/) : Stratum(std::move(stratum))
 {
-    for (const auto table : info().tables)
-    {
-        m_next.emplace_back(program.tables[table]->arity);
-        m_snapshot.emplace_back(program.tables[table]->arity);
-    }
+    m_next.resize(info().tables.size());
+    m_snapshot.resize(info().tables.size());
 }
 
 void RecursiveStratum::evaluate(CompiledProgram& program, Executor& executor)
@@ -36,7 +33,7 @@ size_t RecursiveStratum::state_memory_usage() const noexcept
 {
     size_t result = 0;
     for (size_t i = 0; i < m_next.size(); ++i)
-        result += m_next[i].memory_usage() + m_snapshot[i].memory_usage();
+        result += m_next[i].memory_usage() + urd::memory_usage(m_snapshot[i]);
     return result;
 }
 
@@ -214,9 +211,9 @@ void RecursiveStratum::recompute(CompiledProgram& program, Executor& executor)
                 if (!snapshot.contains(row))
                     table.added.insert(row);
             });
-        for (ygg::uint_t r = 0; r < snapshot.size(); ++r)
-            if (!table.current.contains(snapshot[r]))
-                table.removed.insert(snapshot[r]);
+        for (const auto handle : row_handles(snapshot))
+            if (!table.current.contains(snapshot.at(handle)))
+                table.removed.insert(snapshot.at(handle));
         snapshot.clear();
     }
 }

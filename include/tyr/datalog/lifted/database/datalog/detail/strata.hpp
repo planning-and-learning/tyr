@@ -92,11 +92,10 @@ private:
     /// Per table of the stratum, the derivation count of each row and the changes staged by one update.
     struct Counts
     {
-        RowSet rows;
-        urd::Store<urd::sequence<int64_t>> counts;
-        RowSet pending_rows;
-        urd::Store<urd::sequence<int64_t>> pending;
-        explicit Counts(size_t arity) : rows(arity), pending_rows(arity) {}
+        Rows rows;
+        PerRow<int64_t> counts;
+        Rows pending_rows;
+        PerRow<int64_t> pending;
     };
     urd::Store<urd::sequence<Counts>> m_counts;
 
@@ -125,7 +124,7 @@ private:
     /// Per table of the stratum: the rows found by the current semi-naive iteration, and its rows before it is
     /// evaluated anew.
     urd::Store<urd::sequence<IndexedTuples>> m_next;
-    urd::Store<urd::sequence<RowSet>> m_snapshot;
+    urd::Store<urd::sequence<Rows>> m_snapshot;
 
     /// The relations from the rules alone, into empty tables.
     void derive(CompiledProgram& program, Executor& executor);
@@ -193,11 +192,11 @@ private:
         static constexpr auto memory_members() noexcept { return urd::Members<&Candidate::row> {}; }
     };
     /// Per table of the stratum: the rows of the other columns settled, and the least weight queued per such row.
-    urd::Store<urd::sequence<RowSet>> m_settled;
-    urd::Store<urd::sequence<RowSet>> m_queued;
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> m_best;
+    urd::Store<urd::sequence<Rows>> m_settled;
+    urd::Store<urd::sequence<Rows>> m_queued;
+    urd::Store<urd::sequence<PerRow<ygg::uint_t>>> m_best;
     urd::Store<urd::sequence<Candidate>> m_queue;
-    urd::Store<urd::sequence<RowSet>> m_snapshot;
+    urd::Store<urd::sequence<Rows>> m_snapshot;
     urd::Store<urd::sequence<size_t>> m_goals;
     /// Per goal without key columns, whether it holds.
     urd::Store<urd::sequence<bool>> m_holds;
@@ -207,7 +206,7 @@ private:
     {
         size_t position = 0;
         urd::Store<urd::sequence<size_t>> columns;
-        RowSet done;
+        Rows done;
     };
     urd::Store<urd::sequence<GoalKeys>> m_goal_keys;
     urd::Store<urd::sequence<ygg::uint_t>> m_key;
@@ -264,14 +263,14 @@ private:
         static constexpr auto memory_members() noexcept { return urd::Members<&Group::values> {}; }
     };
     AggregateTable m_aggregate;
-    RowSet m_groups;
-    urd::Store<urd::sequence<Group>> m_states;
+    Rows m_groups;
+    PerRow<Group> m_states;
     urd::Store<urd::sequence<ygg::uint_t>> m_key;
     urd::Store<urd::sequence<ygg::uint_t>> m_row;
 
     [[nodiscard]] std::optional<ygg::uint_t> value_of(const Group& state) const;
     /// The state of the group of a body row, created if absent.
-    std::pair<ygg::uint_t, Group&> group_of(std::span<const ygg::uint_t> row);
+    std::pair<RowHandle, Group&> group_of(std::span<const ygg::uint_t> row);
     void change_group(Group& state, std::span<const ygg::uint_t> row, bool add) const;
     std::span<const ygg::uint_t> group_row(std::span<const ygg::uint_t> group, ygg::uint_t value);
 };

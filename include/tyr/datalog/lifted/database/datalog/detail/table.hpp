@@ -46,7 +46,7 @@ struct Table
     /// An aggregate's value of an absent group (COUNT and SUM: 0); its last column holds the value.
     std::optional<ygg::uint_t> fallback;
 
-    explicit Table(size_t arity_) : arity(arity_), current(arity_), added(arity_), removed(arity_), frontier(arity_) {}
+    explicit Table(size_t arity_) : arity(arity_) {}
 
     size_t add_index(const urd::Store<urd::sequence<size_t>>& columns)
     {
