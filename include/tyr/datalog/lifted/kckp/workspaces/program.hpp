@@ -35,18 +35,16 @@ namespace tyr::datalog
 {
 
 /// The workspaces of the rules of relation kind R, by rule index (none for a rule without one).
-template<typename R>
-using RuleWorkspaces = urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag, R>>>>;
+using RuleWorkspaces = urd::Store<urd::sequence<std::unique_ptr<RuleWorkspace<LiftedTag>>>>;
 
-template<typename R>
-using ConstRuleWorkspaces = urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag, R>>>>;
+using ConstRuleWorkspaces = urd::Store<urd::sequence<std::optional<ConstRuleWorkspace<LiftedTag>>>>;
 
 /// The KCKP engine's part of a program that every evaluation shares: the static facts' assignment sets and each
 /// rule's const workspace (by rule index; none for rules the program does not evaluate).
 struct ConstKCKPWorkspace
 {
     TaggedAssignmentSets<formalism::StaticTag> assignment_sets;
-    ygg::Family<ConstRuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
+    ConstRuleWorkspaces rules;
 
     ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag> program,
                        formalism::datalog::Repository& program_repository,
@@ -59,7 +57,7 @@ struct ConstKCKPWorkspace
 struct KCKPWorkspace
 {
     TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
-    ygg::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag> rules;
+    RuleWorkspaces rules;
 
     KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                   formalism::datalog::ProgramView<LiftedTag> program,
@@ -71,7 +69,7 @@ struct KCKPWorkspace
 };
 
 /// Prints the aggregated statistics of the rules and of their workers.
-void print_rule_statistics(const ygg::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules);
+void print_rule_statistics(const RuleWorkspaces& rules);
 
 }
 

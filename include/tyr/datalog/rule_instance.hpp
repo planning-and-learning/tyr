@@ -23,14 +23,7 @@
 namespace tyr::datalog
 {
 
-struct ResolvedNumericEffect
-{
-    formalism::NumericEffectOperatorKind operator_kind = formalism::NumericEffectOperatorKind::Assign;
-    formalism::datalog::FunctionRowIndex<formalism::FluentTag> head;
-    formalism::datalog::FunctionExpressionView<GroundTag> rhs;
-};
-
-template<TaskKind Kind, formalism::RelationKind R>
+template<TaskKind Kind>
 class RuleInstance;
 
 }

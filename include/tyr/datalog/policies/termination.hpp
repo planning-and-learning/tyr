@@ -21,7 +21,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
-#include "tyr/datalog/policies/numeric_support.hpp"
+#include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 
 #include <optional>
@@ -38,9 +38,7 @@ public:
     void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag>) {}
     [[nodiscard]] bool check(const FactSets&) const noexcept { return false; }
     [[nodiscard]] bool should_terminate(const FactSets&) const noexcept { return false; }
-    [[nodiscard]] Cost
-    get_total_cost(const FactSets&, const PredicateAnnotations<>&, const FunctionAnnotations<>&, const NumericSupportSelector&) const noexcept
-    { return static_cast<Cost>(0); }
+    [[nodiscard]] Cost get_total_cost(const FactSets&, const PredicateAnnotations<>&) const noexcept { return static_cast<Cost>(0); }
     void reset() noexcept {}
     void clear() noexcept {}
 };
@@ -53,17 +51,14 @@ public:
 
     void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag> goals_);
 
-    bool check(const FactSets& fact_sets) const;
-    bool should_terminate(const FactSets& fact_sets) const;
+    [[nodiscard]] bool check(const FactSets& fact_sets) const;
+    [[nodiscard]] bool should_terminate(const FactSets& fact_sets) const;
 
     void set_early_termination(bool value) noexcept { early_termination = value; }
 
-    Cost get_total_cost(const FactSets& fact_sets,
-                        const PredicateAnnotations<>& annotations,
-                        const FunctionAnnotations<>&,
-                        const NumericSupportSelector& numeric_support_selector) const;
+    [[nodiscard]] Cost get_total_cost(const FactSets& fact_sets, const PredicateAnnotations<>& annotations) const;
 
-    const auto& get_goal() const noexcept { return goals; }
+    [[nodiscard]] const auto& get_goal() const noexcept { return goals; }
 
     void reset() noexcept;
 
@@ -71,7 +66,6 @@ public:
 
 private:
     std::optional<formalism::datalog::ConjunctiveConditionView<GroundTag>> goals;
-    mutable NumericSupportSelectorWorkspace numeric_support_selector_workspace;
     AggregationFunction agg;
     bool early_termination { true };
 };

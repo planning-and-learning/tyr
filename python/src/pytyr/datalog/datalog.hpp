@@ -96,44 +96,19 @@ inline void bind_fact_sets(nb::module_& m)
     bind_tagged_fact_sets<formalism::FluentTag>(m, "FluentFactSets");
 }
 
-inline void bind_numeric_support(nb::module_& m)
-{
-    using namespace nb::literals;
-    using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
-
-    auto cls = nb::class_<NumericSupport>(m, "NumericSupport")
-                   .def(nb::init<NumericKey, Interval, Cost>(), "key"_a, "interval"_a, "cost"_a)
-                   .def("get_key", &NumericSupport::get_key)
-                   .def("get_interval", &NumericSupport::get_interval)
-                   .def("get_cost", &NumericSupport::get_cost);
-    urd::python::add_comparison(cls);
-}
-
 template<typename Key>
-std::optional<Annotation<>> find_predicate_annotation(const PredicateAnnotations<>& annotations, const Key& key)
+std::optional<Annotation> find_predicate_annotation(const PredicateAnnotations<>& annotations, const Key& key)
 {
     const auto* annotation = annotations.find(key);
-    return annotation ? std::optional<Annotation<>>(*annotation) : std::nullopt;
-}
-
-template<typename Key, typename... Interval>
-std::optional<Annotation<formalism::FunctionTag>>
-find_function_annotation(const FunctionAnnotations<>& annotations, const Key& key, const Interval&... interval)
-{
-    const auto* annotation = annotations.find(key, interval...);
-    return annotation ? std::optional<Annotation<formalism::FunctionTag>>(*annotation) : std::nullopt;
+    return annotation ? std::optional<Annotation>(*annotation) : std::nullopt;
 }
 
 inline void bind_annotations(nb::module_& m)
 {
     using namespace nb::literals;
-    using WitnessAnnotationT = WitnessAnnotation<formalism::PredicateTag>;
-    using FunctionWitnessAnnotationT = WitnessAnnotation<formalism::FunctionTag>;
+    using WitnessAnnotationT = WitnessAnnotation;
     using PredicateAnnotationStore = PredicateAnnotations<>;
-    using FunctionAnnotationStore = FunctionAnnotations<>;
-    using RuleKey = formalism::datalog::RuleRowIndex<formalism::PredicateTag>;
-    using FunctionRuleKey = formalism::datalog::RuleRowIndex<formalism::FunctionTag>;
-    using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
+    using RuleKey = formalism::datalog::RuleRowIndex;
     using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
     auto base_annotation_cls =
@@ -142,39 +117,14 @@ inline void bind_annotations(nb::module_& m)
 
     auto witness_annotation_cls = nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
                                       .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
-                                      .def(nb::init<RuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
                                       .def("get_rule_key", &WitnessAnnotationT::get_rule_key)
-                                      .def("get_cost", &WitnessAnnotationT::get_cost)
-                                      .def("get_numeric_supports", &WitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
+                                      .def("get_cost", &WitnessAnnotationT::get_cost);
     urd::python::add_comparison(witness_annotation_cls);
-
-    auto function_witness_annotation_cls =
-        nb::class_<FunctionWitnessAnnotationT>(m, "FunctionWitnessAnnotation")
-            .def(nb::init<FunctionRuleKey, Cost>(), "rule_key"_a, "cost"_a)
-            .def(nb::init<FunctionRuleKey, Cost, urd::Store<urd::sequence<NumericSupport>>>(), "rule_key"_a, "cost"_a, "numeric_supports"_a)
-            .def("get_rule_key", &FunctionWitnessAnnotationT::get_rule_key)
-            .def("get_cost", &FunctionWitnessAnnotationT::get_cost)
-            .def("get_numeric_supports", &FunctionWitnessAnnotationT::get_numeric_supports, nb::rv_policy::copy);
-    urd::python::add_comparison(function_witness_annotation_cls);
 
     nb::class_<PredicateAnnotationStore>(m, "PredicateAnnotations")
         .def(nb::init<>())
         .def("clear", &PredicateAnnotationStore::clear)
         .def("find", [](const PredicateAnnotationStore& self, PredicateKey key) { return find_predicate_annotation(self, key); }, "binding"_a);
-
-    nb::class_<FunctionAnnotationStore>(m, "FunctionAnnotations")
-        .def(nb::init<>())
-        .def("clear", &FunctionAnnotationStore::clear)
-        .def("size", &FunctionAnnotationStore::size)
-        .def(
-            "find",
-            [](const FunctionAnnotationStore& self, NumericKey key) { return find_function_annotation(self, key); },
-            "binding"_a)
-        .def(
-            "find",
-            [](const FunctionAnnotationStore& self, NumericKey key, const Interval& interval) { return find_function_annotation(self, key, interval); },
-            "binding"_a,
-            "interval"_a);
 }
 
 template<typename CostPolicy>
@@ -185,35 +135,10 @@ void bind_cost_policy(nb::module_& m, const char* name)
     auto cls = nb::class_<CostPolicy>(m, name).def(nb::init<>()).def("clear", &CostPolicy::clear);
 
     // get_cost(rule) takes only views: the lifted action cost reads the binding's objects.
-    const auto bind_rule_view_cost = [&]<formalism::RelationKind R>()
-    { cls.def("get_cost", [](const CostPolicy& self, formalism::datalog::RuleRowView<R> rule) { return self.get_cost(rule); }, "rule"_a); };
-    const auto bind_rule_costs = [&]<typename RuleKey, typename NumericKey>()
-    {
-        cls.def(
-               "get_cost",
-               [](const CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval) { return self.get_cost(rule, key, interval); },
-               "rule"_a,
-               "binding"_a,
-               "interval"_a)
-            .def(
-                "set_cost",
-                [](CostPolicy& self, RuleKey rule, Cost cost) { self.set_cost(rule, cost); },
-                "rule"_a,
-                "cost"_a)
-            .def(
-                "set_cost",
-                [](CostPolicy& self, RuleKey rule, NumericKey key, const Interval& interval, Cost cost) { self.set_cost(rule, key, interval, cost); },
-                "rule"_a,
-                "binding"_a,
-                "interval"_a,
-                "cost"_a);
-    };
-    using namespace formalism;
-    using namespace formalism::datalog;
-    bind_rule_view_cost.template operator()<PredicateTag>();
-    bind_rule_view_cost.template operator()<FunctionTag>();
-    bind_rule_costs.template operator()<RuleRowIndex<PredicateTag>, FunctionRowIndex<FluentTag>>();
-    bind_rule_costs.template operator()<RuleRowIndex<FunctionTag>, FunctionRowIndex<FluentTag>>();
+    const auto bind_rule_view_cost = [&]()
+    { cls.def("get_cost", [](const CostPolicy& self, formalism::datalog::RuleRowView rule) { return self.get_cost(rule); }, "rule"_a); };
+    cls.def("set_cost", [](CostPolicy& self, formalism::datalog::RuleRowIndex rule, Cost cost) { self.set_cost(rule, cost); }, "rule"_a, "cost"_a);
+    bind_rule_view_cost();
 }
 
 template<typename Aggregation>
@@ -285,10 +210,6 @@ void bind_workspace(nb::module_& m, const std::string& name)
                    .def(
                        "get_annotations",
                        [](Workspace& self) -> auto& { return self.annotations; },
-                       nb::rv_policy::reference_internal)
-                   .def(
-                       "get_numeric_annotations",
-                       [](Workspace& self) -> auto& { return self.numeric_annotations; },
                        nb::rv_policy::reference_internal)
                    .def(
                        "get_annotation_policy",

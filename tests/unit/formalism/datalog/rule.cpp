@@ -8,7 +8,7 @@
 namespace lifted_tests
 {
 
-using Entity = tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::PredicateTag>;
+using Entity = tyr::formalism::datalog::Rule<::tyr::LiftedTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
 using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
@@ -17,7 +17,7 @@ static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::LiftedTag, tyr::formalism::PredicateTag>>);
+static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::LiftedTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.variables;
@@ -37,7 +37,7 @@ static_assert(requires(Data& data, const View& view) {
 namespace ground_tests
 {
 
-using Entity = tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>;
+using Entity = tyr::formalism::datalog::Rule<::tyr::GroundTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
 using View = urd::index_view<Entity, tyr::formalism::datalog::Repository>;
@@ -46,7 +46,7 @@ static_assert(std::constructible_from<Index, ygg::uint_t>);
 static_assert(std::totally_ordered<Index>);
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
-static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::GroundTag, tyr::formalism::PredicateTag>>);
+static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::GroundTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
     data.row;

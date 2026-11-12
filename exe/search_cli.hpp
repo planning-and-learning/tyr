@@ -260,9 +260,9 @@ int run_search(const Arguments& arguments,
         {
             search.successor_generator->print_summary(1);
             search.axiom_evaluator->print_summary(1);
-            search.heuristic->print_summary(1);
         }
     }
+    search.heuristic->print_summary(arguments.verbosity);
 
     print_summary(*search.task->get_repository(), result.statistics);
     std::cout << (arguments.num_search_workers == 1 ? "[Total] States memory usage: " : "[Total] Retained plan states memory usage: ")

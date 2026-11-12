@@ -57,27 +57,26 @@ struct RPGPolicy<GroundTag>
     static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
     { workspace.clear_costs(); }
 
-    template<formalism::RelationKind R>
-    static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation<R>& witness)
-    { return definition.rpg_program.template get_rule_to_action_mapping<R>().contains(witness.get_rule_key()); }
+    static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation& witness)
+    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key()); }
 
-    template<formalism::RelationKind R, typename Workspace, typename Callback>
-    static void for_each_action_binding(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<R>& witness, Callback callback)
+    template<typename Workspace, typename Callback>
+    static void for_each_action_binding(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation& witness, Callback callback)
     {
-        const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
+        const auto& mapping = definition.rpg_program.get_rule_to_action_mapping();
         if (const auto it = mapping.find(witness.get_rule_key()); it != mapping.end())
             for (const auto action : it->second)
                 callback(detail::to_action_binding(action));
     }
 
-    template<formalism::RelationKind R, typename Workspace, typename Callback>
-    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
+    template<typename Workspace, typename Callback>
+    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation& witness, Callback&& callback)
     {
         const auto rule = formalism::datalog::find_ground_rule(witness.get_rule_key(), workspace.const_workspace->program.context());
         if (!rule)
             throw std::logic_error("Ground witness binding has no rule");
 
-        const auto instance = datalog::RuleInstance<GroundTag, R>(*rule);
+        const auto instance = datalog::RuleInstance<GroundTag>(*rule);
         std::forward<Callback>(callback)(instance);
     }
 

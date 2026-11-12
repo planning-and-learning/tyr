@@ -103,7 +103,7 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                        const TranslationContext<LiftedTag>& translation_context,
                        formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
@@ -137,9 +137,9 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     translate_task_symbols(task, true, translation_context, context, *program);
 
     for (const auto axiom : task.get_domain().get_axioms())
-        program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
+        program->rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
     for (const auto axiom : task.get_axioms())
-        program->predicate_rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
+        program->rules.push_back(create_axiom_rule(axiom, translation_context, context).first.index());
 
     return formalism::datalog::insert(repository, *program).first;
 }

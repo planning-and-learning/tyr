@@ -43,12 +43,11 @@
 namespace tyr::datalog
 {
 
-template<formalism::RelationKind R>
 class TypedRuleSchedulerStratum
 {
 public:
-    TypedRuleSchedulerStratum(const analysis::TypedRuleStratum<R>& rules,
-                              const analysis::TypedListenerStratum<R>& listeners,
+    TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
+                              const analysis::TypedListenerStratum& listeners,
                               const formalism::datalog::Repository& context,
                               size_t num_fluent_predicates,
                               size_t num_fluent_functions);
@@ -63,29 +62,28 @@ public:
     void on_finish_iteration();
 
     [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return *m_context; }
-    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_rules() const noexcept { return *m_rules; }
+    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>>& get_rules() const noexcept { return *m_rules; }
 
     /// Active rules in index order (the dense set iterates in it): the rule processing order assigns
     /// program-repository rows (first-derivation order) that delta bitsets are indexed by, so it must
     /// be identical on every platform.
-    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>& get_active_rules() const noexcept
-    { return m_sorted_active_rules; }
+    [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>>& get_active_rules() const noexcept { return m_sorted_active_rules; }
 
-    [[nodiscard]] bool requires_full_enumeration(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule) const noexcept
+    [[nodiscard]] bool requires_full_enumeration(urd::index<formalism::datalog::Rule<LiftedTag>> rule) const noexcept
     { return m_full_enumeration_rules.contains(rule); }
 
 private:
     void rebuild_sorted_active_rules();
 
-    const analysis::TypedRuleStratum<R>* m_rules;
-    const analysis::TypedListenerStratum<R>* m_listeners;
+    const analysis::TypedRuleStratum* m_rules;
+    const analysis::TypedListenerStratum* m_listeners;
     const formalism::datalog::Repository* m_context;
 
     urd::Store<urd::set<urd::index<formalism::Predicate<formalism::FluentTag>>>, urd::dense> m_active_predicates;
     urd::Store<urd::set<urd::index<formalism::Function<formalism::FluentTag>>>, urd::dense> m_active_functions;
-    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>, urd::dense> m_active_rules;
-    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>, urd::dense> m_full_enumeration_rules;
-    urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>> m_sorted_active_rules;
+    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense> m_active_rules;
+    urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense> m_full_enumeration_rules;
+    urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>> m_sorted_active_rules;
 };
 
 template<>
@@ -98,18 +96,8 @@ public:
               size_t num_fluent_predicates,
               size_t num_fluent_functions);
 
-    auto& get(formalism::PredicateTag) noexcept { return predicate_rules; }
-    auto& get(formalism::FunctionTag) noexcept { return function_rules; }
-    [[nodiscard]] const auto& get(formalism::PredicateTag) const noexcept { return predicate_rules; }
-    [[nodiscard]] const auto& get(formalism::FunctionTag) const noexcept { return function_rules; }
-
-    template<formalism::RelationKind R>
-    auto& get() noexcept
-    { return get(R {}); }
-
-    template<formalism::RelationKind R>
-    [[nodiscard]] const auto& get() const noexcept
-    { return get(R {}); }
+    auto& rules() noexcept { return predicate_rules; }
+    [[nodiscard]] const auto& rules() const noexcept { return predicate_rules; }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum([[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
@@ -120,21 +108,13 @@ public:
     {
         on_start_iteration();
         ctx.out().delta_annotations().clear();
-        ctx.out().delta_numeric_annotations().clear();
     }
-
-    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding,
-                                [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
-    { activate(binding.relation); }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, [[maybe_unused]] ProgramExecutionContext<LiftedTag, AP, TP, CP>& ctx)
     {
         for (const auto fact : bucket.predicate)
             activate(fact.relation);
-        for (const auto& entry : bucket.function)
-            activate(entry.first.relation);
     }
 
     void finish_iteration([[maybe_unused]] SchedulerIterationTrigger trigger)
@@ -153,11 +133,9 @@ private:
     void activate_all();
     void on_start_iteration() noexcept;
     void activate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate);
-    void activate(urd::index<formalism::Function<formalism::FluentTag>> function);
     void on_finish_iteration();
 
-    TypedRuleSchedulerStratum<formalism::PredicateTag> predicate_rules;
-    TypedRuleSchedulerStratum<formalism::FunctionTag> function_rules;
+    TypedRuleSchedulerStratum predicate_rules;
 };
 
 urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,

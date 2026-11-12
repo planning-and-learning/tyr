@@ -37,8 +37,7 @@ namespace tyr::analysis
 {
 namespace
 {
-template<formalism::RelationKind R>
-void add_stratum_listeners(const TypedRuleStratum<R>& stratum, const formalism::datalog::Repository& context, TypedListenerStratum<R>& listeners)
+void add_stratum_listeners(const TypedRuleStratum& stratum, const formalism::datalog::Repository& context, TypedListenerStratum& listeners)
 {
     for (const auto rule : stratum)
     {
@@ -62,8 +61,7 @@ ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::data
     {
         auto listeners_in_stratum = ListenerStratum {};
 
-        add_stratum_listeners(stratum.template get<formalism::PredicateTag>(), context, listeners_in_stratum.template get<formalism::PredicateTag>());
-        add_stratum_listeners(stratum.template get<formalism::FunctionTag>(), context, listeners_in_stratum.template get<formalism::FunctionTag>());
+        add_stratum_listeners(stratum, context, listeners_in_stratum);
 
         listeners.data.push_back(std::move(listeners_in_stratum));
     }

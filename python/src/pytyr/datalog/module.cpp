@@ -28,7 +28,6 @@ namespace tyr::datalog
 void bind_module_definitions(nb::module_& m)
 {
     bind_fact_sets(m);
-    bind_numeric_support(m);
     bind_annotations(m);
     bind_policies(m);
 

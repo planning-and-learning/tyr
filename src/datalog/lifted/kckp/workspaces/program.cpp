@@ -26,25 +26,23 @@ namespace tyr::datalog
 {
 namespace
 {
-template<formalism::RelationKind R>
-void initialize_rule_workspaces(const ConstKCKPWorkspace& const_workspace, RuleWorkspaces<R>& workspaces)
+void initialize_rule_workspaces(const ConstKCKPWorkspace& const_workspace, RuleWorkspaces& workspaces)
 {
-    const auto& const_workspaces = const_workspace.rules.template get<R>();
+    const auto& const_workspaces = const_workspace.rules;
     workspaces.reserve(const_workspaces.size());
     for (const auto& workspace : const_workspaces)
-        workspaces.emplace_back(workspace ? std::make_unique<RuleWorkspace<LiftedTag, R>>(*workspace) : nullptr);
+        workspaces.emplace_back(workspace ? std::make_unique<RuleWorkspace<LiftedTag>>(*workspace) : nullptr);
 }
 
-template<formalism::RelationKind R>
 void initialize_const_rule_workspaces(formalism::datalog::ProgramView<LiftedTag> program,
                                       formalism::datalog::Repository& program_repository,
-                                      analysis::RuleCompatibilityGraphMap<R>& graphs,
-                                      ConstRuleWorkspaces<R>& workspaces)
+                                      analysis::RuleCompatibilityGraphMap& graphs,
+                                      ConstRuleWorkspaces& workspaces)
 {
-    const auto rules = program.template get_rules<R>();
+    const auto rules = program.get_rules();
     workspaces.resize(rules.size());
     for (const auto rule : rules)
-        workspaces[ygg::uint_t(rule.index().value)].emplace(rule, program_repository, std::move(graphs.at(rule.index())));
+        workspaces[static_cast<ygg::uint_t>(rule.index().value)].emplace(rule, program_repository, std::move(graphs.at(rule.index())));
 }
 }
 
@@ -59,16 +57,7 @@ ConstKCKPWorkspace::ConstKCKPWorkspace(formalism::datalog::ProgramView<LiftedTag
                     program.get_objects().size(),
                     static_fact_sets),
     rules()
-{
-    initialize_const_rule_workspaces<formalism::PredicateTag>(program,
-                                                              program_repository,
-                                                              analysis.compatibility_graphs.get<formalism::PredicateTag>(),
-                                                              rules.get<formalism::PredicateTag>());
-    initialize_const_rule_workspaces<formalism::FunctionTag>(program,
-                                                             program_repository,
-                                                             analysis.compatibility_graphs.get<formalism::FunctionTag>(),
-                                                             rules.get<formalism::FunctionTag>());
-}
+{ initialize_const_rule_workspaces(program, program_repository, analysis.compatibility_graphs, rules); }
 
 KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                              formalism::datalog::ProgramView<LiftedTag> program,
@@ -81,38 +70,27 @@ KCKPWorkspace::KCKPWorkspace(const ConstKCKPWorkspace& const_workspace,
                     program.get_objects().size(),
                     fact_sets),
     rules()
-{
-    initialize_rule_workspaces<formalism::PredicateTag>(const_workspace, rules.get<formalism::PredicateTag>());
-    initialize_rule_workspaces<formalism::FunctionTag>(const_workspace, rules.get<formalism::FunctionTag>());
-}
+{ initialize_rule_workspaces(const_workspace, rules); }
 
 void KCKPWorkspace::clear()
 {
-    rules.for_each(
-        [](auto& workspaces)
-        {
-            for (auto& rule : workspaces)
-                if (rule)
-                    rule->clear();
-        });
+    for (auto& rule : rules)
+        if (rule)
+            rule->clear();
 }
 
-void print_rule_statistics(const ygg::Family<RuleWorkspaces, formalism::PredicateTag, formalism::FunctionTag>& rules)
+void print_rule_statistics(const RuleWorkspaces& rules)
 {
     auto rule_statistics = urd::Store<urd::sequence<RuleStatistics>> {};
     auto rule_worker_statistics = urd::Store<urd::sequence<RuleWorkerStatistics>> {};
-    rules.for_each(
-        [&](const auto& workspaces)
-        {
-            for (const auto& ws_rule : workspaces)
-            {
-                if (!ws_rule)
-                    continue;
-                rule_statistics.push_back(ws_rule->common.statistics);
-                for (const auto& worker : ws_rule->worker)
-                    rule_worker_statistics.push_back(worker.solve.statistics);
-            }
-        });
+    for (const auto& ws_rule : rules)
+    {
+        if (!ws_rule)
+            continue;
+        rule_statistics.push_back(ws_rule->common.statistics);
+        for (const auto& worker : ws_rule->worker)
+            rule_worker_statistics.push_back(worker.solve.statistics);
+    }
     fmt::print(std::cout, "{}\n", compute_aggregated_rule_statistics(rule_statistics));
     fmt::print(std::cout, "{}\n", compute_aggregated_rule_worker_statistics(rule_worker_statistics));
 }

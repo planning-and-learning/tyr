@@ -73,17 +73,14 @@ namespace tyr::formalism::datalog
 
 using ygg::formalism::checkout;
 
-template<RelationKind R>
-std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleRowIndex<R> binding, const Repository& repository)
+inline std::optional<RuleView<GroundTag>> find_ground_rule(RuleRowIndex binding, const Repository& repository)
 {
-    auto rule = urd::data<Rule<GroundTag, R>> {};
+    auto rule = urd::data<Rule<GroundTag>> {};
     rule.row = binding;
     return repository.find(rule);
 }
 
-template<RelationKind R>
-std::optional<RuleView<GroundTag, R>> find_ground_rule(RuleRowView<R> binding)
-{ return find_ground_rule(binding.data(), binding.context()); }
+inline std::optional<RuleView<GroundTag>> find_ground_rule(RuleRowView binding) { return find_ground_rule(binding.data(), binding.context()); }
 
 }
 

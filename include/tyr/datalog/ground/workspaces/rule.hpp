@@ -40,7 +40,6 @@ struct RuleState
 };
 
 /// The states of the ground rules of relation kind R, by rule index (an ygg::Family member).
-template<typename R>
 using RuleStates = urd::Store<urd::sequence<RuleState>>;
 
 }

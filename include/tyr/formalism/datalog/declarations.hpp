@@ -51,29 +51,12 @@ struct ConjunctiveEffect
 {
 };
 
-template<TaskKind T, RelationKind R>
+/// A rule: its heads, fluent atoms, are derived from one instantiation of its body.
+template<TaskKind T>
 struct Rule
 {
     using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
 };
-
-template<TaskKind T, RelationKind R>
-struct RuleHead;
-
-template<TaskKind T>
-struct RuleHead<T, PredicateTag>
-{
-    using type = urd::flat_vector<urd::index<Atom<T, FluentTag>>>;
-};
-
-template<TaskKind T>
-struct RuleHead<T, FunctionTag>
-{
-    using type = urd::index<NumericEffect<T, FluentTag>>;
-};
-
-template<TaskKind T, RelationKind R>
-using RuleHeadT = typename RuleHead<T, R>::type;
 
 template<TaskKind T>
 struct Program
@@ -102,7 +85,7 @@ using ExpressionTypes = boost::mp11::
     mp_append<ArithmeticExpressionTypes<LiftedTag>, BooleanExpressionTypes<LiftedTag>, ArithmeticExpressionTypes<GroundTag>, BooleanExpressionTypes<GroundTag>>;
 using EffectTypes = boost::mp11::mp_append<NumericEffectTypes<LiftedTag>, NumericEffectTypes<GroundTag>>;
 template<TaskKind T>
-using RuleTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Rule, T>, PredicateFunctionTags>;
+using RuleTypes = boost::mp11::mp_list<Rule<T>>;
 
 using CompoundTypes = boost::mp11::mp_append<boost::mp11::mp_list<ConjunctiveCondition<LiftedTag>, ConjunctiveEffect<LiftedTag>>,
                                              RuleTypes<LiftedTag>,
@@ -149,15 +132,13 @@ template<FactKind F>
 using PredicateRowView = ygg::RowView<Predicate<F>, Repository>;
 template<FactKind F>
 using FunctionRowView = ygg::RowView<Function<F>, Repository>;
-template<RelationKind R>
-using RuleRowView = ygg::RowView<Rule<LiftedTag, R>, Repository>;
+using RuleRowView = ygg::RowView<Rule<LiftedTag>, Repository>;
 
 template<FactKind F>
 using PredicateRowIndex = ygg::RowIndex<Predicate<F>>;
 template<FactKind F>
 using FunctionRowIndex = ygg::RowIndex<Function<F>>;
-template<RelationKind R>
-using RuleRowIndex = ygg::RowIndex<Rule<LiftedTag, R>>;
+using RuleRowIndex = ygg::RowIndex<Rule<LiftedTag>>;
 
 template<FactKind F>
 using PredicateRowForwardRangeView = ygg::RowsView<Predicate<F>, urd::Store<urd::sequence<urd::index<ygg::Row<Predicate<F>>>>>, Repository>;
@@ -244,10 +225,10 @@ template<TaskKind T, FactKind F>
 using NumericEffectView = urd::index_view<NumericEffect<T, F>, Repository>;
 template<TaskKind T>
 using ProgramView = urd::index_view<Program<T>, Repository>;
-template<TaskKind T, RelationKind R>
-using RuleView = urd::index_view<Rule<T, R>, Repository>;
-template<TaskKind T, RelationKind R>
-using RuleViewList = urd::Store<urd::sequence<RuleView<T, R>>>;
+template<TaskKind T>
+using RuleView = urd::index_view<Rule<T>, Repository>;
+template<TaskKind T>
+using RuleViewList = urd::Store<urd::sequence<RuleView<T>>>;
 
 /// A function expression read through the repository: the number, or the view of the record, it holds.
 template<TaskKind T>

@@ -79,14 +79,12 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
-    const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* pick_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().engine.rules.get<tyr::formalism::PredicateTag>();
-    for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
+    const tyr::datalog::ConstRuleWorkspace<LiftedTag>* pick_workspace = nullptr;
+    const auto& rules = program.get_const_program_workspace().engine.rules;
+    for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
     {
-        const auto is_pick = action_program.get_predicate_to_action_mapping()
-                                 .at(program_view.get_rules<tyr::formalism::PredicateTag>()[i].get_heads().front().get_predicate())
-                                 .get_name()
-                             == "pick";
+        const auto is_pick =
+            action_program.get_predicate_to_action_mapping().at(program_view.get_rules()[i].get_heads().front().get_predicate()).get_name() == "pick";
 
         if (is_pick)
         {
@@ -221,11 +219,11 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
-    const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* move_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().engine.rules.get<tyr::formalism::PredicateTag>();
-    for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
+    const tyr::datalog::ConstRuleWorkspace<LiftedTag>* move_workspace = nullptr;
+    const auto& rules = program.get_const_program_workspace().engine.rules;
+    for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
     {
-        const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];
+        const auto rule = program_view.get_rules()[i];
         if (action_program.get_predicate_to_action_mapping().at(rule.get_heads().front().get_predicate()).get_name() != "move")
             continue;
 
@@ -348,11 +346,11 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     auto& program = action_program.get_datalog_program();
     const auto program_view = program.get_program();
 
-    const tyr::datalog::ConstRuleWorkspace<LiftedTag, tyr::formalism::PredicateTag>* drive_workspace = nullptr;
-    const auto& rules = program.get_const_program_workspace().engine.rules.get<tyr::formalism::PredicateTag>();
-    for (ygg::uint_t i = 0; i < program_view.get_rules<tyr::formalism::PredicateTag>().size(); ++i)
+    const tyr::datalog::ConstRuleWorkspace<LiftedTag>* drive_workspace = nullptr;
+    const auto& rules = program.get_const_program_workspace().engine.rules;
+    for (ygg::uint_t i = 0; i < program_view.get_rules().size(); ++i)
     {
-        const auto rule = program_view.get_rules<tyr::formalism::PredicateTag>()[i];
+        const auto rule = program_view.get_rules()[i];
         if (action_program.get_predicate_to_action_mapping().at(rule.get_heads().front().get_predicate()).get_name() != "drive")
             continue;
 
@@ -554,7 +552,7 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
 
     const auto used_inner_parallelism = [](const auto& workspace)
     {
-        return std::ranges::any_of(workspace.engine.rules.template get<tyr::formalism::PredicateTag>(),
+        return std::ranges::any_of(workspace.engine.rules,
                                    [](const auto& rule) { return rule && rule->worker.size() == 2 && rule->worker[1].solve.statistics.num_executions > 0; });
     };
     EXPECT_FALSE(used_inner_parallelism(sequential));

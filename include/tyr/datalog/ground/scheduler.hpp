@@ -44,14 +44,13 @@
 namespace tyr::datalog
 {
 
-template<formalism::RelationKind R>
-struct GroundQueueEntry : urd::compared_by_identity<GroundQueueEntry<R>>
+struct GroundQueueEntry : urd::compared_by_identity<GroundQueueEntry>
 {
     Cost cost;
-    formalism::datalog::RuleView<GroundTag, R> rule;
+    formalism::datalog::RuleView<GroundTag> rule;
 
     GroundQueueEntry() = delete;
-    GroundQueueEntry(Cost cost_, formalism::datalog::RuleView<GroundTag, R> rule_) : cost(cost_), rule(rule_) {}
+    GroundQueueEntry(Cost cost_, formalism::datalog::RuleView<GroundTag> rule_) : cost(cost_), rule(rule_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&GroundQueueEntry::cost, &GroundQueueEntry::rule> {}; }
 };
@@ -68,29 +67,20 @@ struct GroundQueueStatistics
 
 struct GroundSchedulerScratch
 {
-    RuleEvaluationWorkspace rule_evaluation;
     PredicateHeadUpdates predicate_updates;
-    FunctionHeadUpdates function_updates { urd::layer { 0 } };
     StagedPredicateAnnotation delta_annotations;
     urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<formalism::FluentTag>>> head_bindings;
-    StagedFunctionAnnotation delta_numeric_annotations;
     urd::Store<urd::sequence<CostBuckets::PredicateKey>> changed_facts;
-    urd::Store<urd::sequence<CostBuckets::FunctionKey>> changed_terms;
 
     void clear_updates() noexcept
     {
         predicate_updates.clear();
-        function_updates.clear();
         delta_annotations.clear();
-        delta_numeric_annotations.clear();
     }
 
     void clear() noexcept
     {
-        rule_evaluation.selector.clear();
-        rule_evaluation.exact_supports.clear();
         changed_facts.clear();
-        changed_terms.clear();
         clear_updates();
     }
 };
@@ -99,25 +89,19 @@ template<>
 class Scheduler<GroundTag>
 {
 public:
-    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program)
-    {
-        m_queues.get<formalism::PredicateTag>().reserve(program.template get_rules<formalism::PredicateTag>().size());
-        m_queues.get<formalism::FunctionTag>().reserve(program.template get_rules<formalism::FunctionTag>().size());
-    }
+    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program) { m_queue.reserve(program.get_rules().size()); }
 
     void reset(const FactSets& fact_sets)
     {
-        m_queues.clear();
+        m_queue.clear();
         m_statistics = {};
         m_scratch.clear();
-        initialize_rule_states<formalism::PredicateTag>(fact_sets);
-        initialize_rule_states<formalism::FunctionTag>(fact_sets);
+        initialize_rule_states(fact_sets);
     }
 
-    template<formalism::RelationKind R>
-    void enqueue(formalism::datalog::RuleView<GroundTag, R> rule, Cost queue_label)
+    void enqueue(formalism::datalog::RuleView<GroundTag> rule, Cost queue_label)
     {
-        auto& state = get_states<R>()[ygg::uint_t(rule.index().value)];
+        auto& state = m_states[static_cast<ygg::uint_t>(rule.index().value)];
         if (state.unsatisfied_count != 0)
             return;
 
@@ -125,31 +109,26 @@ public:
             return;
         state.queued_cost = queue_label;
 
-        m_queues.get<R>().emplace(queue_label, rule);
+        m_queue.emplace(queue_label, rule);
 
         ++m_statistics.num_queue_pushes;
-        m_statistics.max_queue_size =
-            std::max(m_statistics.max_queue_size,
-                     static_cast<ygg::uint_t>(m_queues.get<formalism::PredicateTag>().size() + m_queues.get<formalism::FunctionTag>().size()));
+        m_statistics.max_queue_size = std::max(m_statistics.max_queue_size, static_cast<ygg::uint_t>(m_queue.size()));
     }
 
-    template<formalism::RelationKind R>
-    std::optional<GroundQueueEntry<R>> pop()
+    std::optional<GroundQueueEntry> pop()
     {
-        auto& queue = m_queues.get<R>();
-        if (queue.empty())
+        if (m_queue.empty())
             return std::nullopt;
 
-        auto entry = queue.top();
-        queue.pop();
+        auto entry = m_queue.top();
+        m_queue.pop();
         ++m_statistics.num_queue_pops;
         return entry;
     }
 
-    template<formalism::RelationKind R>
-    bool claim(const GroundQueueEntry<R>& entry)
+    bool claim(const GroundQueueEntry& entry)
     {
-        auto& queued_cost = get_states<R>()[ygg::uint_t(entry.rule.index().value)].queued_cost;
+        auto& queued_cost = m_states[static_cast<ygg::uint_t>(entry.rule.index().value)].queued_cost;
         if (!queued_cost || *queued_cost != entry.cost)
         {
             ++m_statistics.num_stale_queue_pops;
@@ -159,14 +138,7 @@ public:
         return true;
     }
 
-    template<formalism::RelationKind R>
-    [[nodiscard]] Cost next_cost() const noexcept
-    {
-        const auto& queue = m_queues.get<R>();
-        return queue.empty() ? std::numeric_limits<Cost>::max() : queue.top().cost;
-    }
-
-    [[nodiscard]] Cost next_cost() const noexcept { return std::min(next_cost<formalism::PredicateTag>(), next_cost<formalism::FunctionTag>()); }
+    [[nodiscard]] Cost next_cost() const noexcept { return m_queue.empty() ? std::numeric_limits<Cost>::max() : m_queue.top().cost; }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
@@ -179,36 +151,25 @@ public:
     void finish_iteration(SchedulerIterationTrigger) noexcept {}
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed(formalism::datalog::FunctionRowIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
-
-    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<formalism::RelationKind R>
-    auto& get_states() noexcept
-    { return m_states.get<R>(); }
-
-    template<formalism::RelationKind R>
-    [[nodiscard]] const auto& get_states() const noexcept
-    { return m_states.get<R>(); }
-
+    [[nodiscard]] const RuleStates& get_states() const noexcept { return m_states; }
     GroundQueueStatistics& statistics() noexcept { return m_statistics; }
     [[nodiscard]] const GroundQueueStatistics& statistics() const noexcept { return m_statistics; }
     GroundSchedulerScratch& scratch() noexcept { return m_scratch; }
     [[nodiscard]] const GroundSchedulerScratch& scratch() const noexcept { return m_scratch; }
 
 private:
-    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void schedule(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_predicate_generated(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<formalism::RelationKind R>
     void initialize_rule_states(const FactSets& fact_sets)
     {
-        const auto rules = m_program.template get_rules<R>();
-        auto& states = get_states<R>();
+        const auto rules = m_program.get_rules();
+        auto& states = m_states;
         states.resize(rules.size());
         for (ygg::uint_t rule_index = 0; rule_index < rules.size(); ++rule_index)
         {
@@ -228,21 +189,17 @@ private:
         }
     }
 
-    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void notify_numeric_changed_for(formalism::datalog::FunctionRowIndex<formalism::FluentTag> term, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
-
-    template<typename R>
-    using Queue = urd::Store<urd::queue<GroundQueueEntry<R>>, urd::by_priority>;
+    using Queue = urd::Store<urd::queue<GroundQueueEntry>, urd::by_priority>;
 
     formalism::datalog::ProgramView<GroundTag> m_program;
-    ygg::Family<RuleStates, formalism::PredicateTag, formalism::FunctionTag> m_states;
-    ygg::Family<Queue, formalism::PredicateTag, formalism::FunctionTag> m_queues;
+    RuleStates m_states;
+    Queue m_queue;
     GroundQueueStatistics m_statistics;
     GroundSchedulerScratch m_scratch;
 };

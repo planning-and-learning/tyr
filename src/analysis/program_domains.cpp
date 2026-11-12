@@ -106,8 +106,7 @@ using TmpPredicateDomainMap = TmpSimpleScopedDomainMap<formalism::Predicate<T>>;
 template<formalism::FactKind T>
 using TmpFunctionDomainMap = TmpSimpleScopedDomainMap<formalism::Function<T>>;
 
-template<formalism::RelationKind R>
-using TmpRuleDomainMap = TmpSimpleScopedDomainMap<formalism::datalog::Rule<LiftedTag, R>>;
+using TmpRuleDomainMap = TmpSimpleScopedDomainMap<formalism::datalog::Rule<LiftedTag>>;
 
 /**
  * Conversion helpers to public representation.
@@ -163,16 +162,15 @@ FunctionDomainMap<T> to_function_domain_map(const TmpFunctionDomainMap<T>& domai
     return result;
 }
 
-template<formalism::RelationKind R>
-RuleDomainMap<R> to_rule_domain_map(const TmpRuleDomainMap<R>& domains)
+RuleDomainMap to_rule_domain_map(const TmpRuleDomainMap& domains)
 {
-    auto result = RuleDomainMap<R> {};
+    auto result = RuleDomainMap {};
     result.reserve(domains.size());
 
     for (const auto& [rule, variable_domains] : domains)
     {
         result.emplace(rule,
-                       SimpleScopedDomain<formalism::datalog::Rule<LiftedTag, R>> {
+                       SimpleScopedDomain<formalism::datalog::Rule<LiftedTag>> {
                            rule,
                            to_variable_domain_list(variable_domains),
                        });
@@ -501,9 +499,9 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
             &fluent_function_domain_sets,
         };
 
-        const auto insert_rule_constants = [&]<typename R>(R /*kind*/)
+        const auto insert_rule_constants = [&]()
         {
-            for (const auto rule : program.get_rules<R>())
+            for (const auto rule : program.get_rules())
             {
                 for (const auto literal : rule.get_body().template get_literals<formalism::StaticTag>())
                     apply_policy(literal.get_atom(), insert_policy);
@@ -511,27 +509,26 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
                 for (const auto op : rule.get_body().get_numeric_constraints())
                     apply_policy(op, insert_policy);
 
-                formalism::datalog::for_each_head(rule, [&](const auto& head) { apply_policy(head, insert_policy); });
+                for (const auto head : rule.get_heads())
+                    apply_policy(head, insert_policy);
             }
         };
 
-        insert_rule_constants(formalism::PredicateTag {});
-        insert_rule_constants(formalism::FunctionTag {});
+        insert_rule_constants();
     }
 
     ///--- Step 3: Compute rule parameter domains as tightest bound from the previously computed domains of the static predicates.
 
-    auto predicate_rule_domain_sets = TmpRuleDomainMap<formalism::PredicateTag> {};
-    auto function_rule_domain_sets = TmpRuleDomainMap<formalism::FunctionTag> {};
+    auto predicate_rule_domain_sets = TmpRuleDomainMap {};
     auto compatibility_graphs = ProgramCompatibilityGraphs {};
 
-    const auto restrict_rule_domains = [&]<typename R>(R /*kind*/, auto& domain_sets)
+    const auto restrict_rule_domains = [&](auto& domain_sets)
     {
-        domain_sets.reserve(program.get_rules<R>().size());
-        auto& graphs = compatibility_graphs.get<R>();
-        graphs.reserve(program.get_rules<R>().size());
+        domain_sets.reserve(program.get_rules().size());
+        auto& graphs = compatibility_graphs;
+        graphs.reserve(program.get_rules().size());
 
-        for (const auto rule : program.get_rules<R>())
+        for (const auto rule : program.get_rules())
         {
             auto variables = rule.get_body().get_variables();
             auto parameter_domains = TmpVariableDomainList(variables.size());
@@ -562,14 +559,13 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
         }
     };
 
-    restrict_rule_domains(formalism::PredicateTag {}, predicate_rule_domain_sets);
-    restrict_rule_domains(formalism::FunctionTag {}, function_rule_domain_sets);
+    restrict_rule_domains(predicate_rule_domain_sets);
 
     ///--- Step 4: Lift the fluent predicate domains given the variable relationships in the rules.
 
-    const auto lift_rule_domains = [&]<typename R>(R /*kind*/, const auto& domain_sets)
+    const auto lift_rule_domains = [&](const auto& domain_sets)
     {
-        for (const auto rule : program.get_rules<R>())
+        for (const auto rule : program.get_rules())
         {
             const auto& parameter_domains = domain_sets.at(rule.index());
 
@@ -586,12 +582,12 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
             for (const auto op : rule.get_body().get_numeric_constraints())
                 apply_policy(op, lift_policy);
 
-            formalism::datalog::for_each_head(rule, [&](const auto& head) { apply_policy(head, lift_policy); });
+            for (const auto head : rule.get_heads())
+                apply_policy(head, lift_policy);
         }
     };
 
-    lift_rule_domains(formalism::PredicateTag {}, predicate_rule_domain_sets);
-    lift_rule_domains(formalism::FunctionTag {}, function_rule_domain_sets);
+    lift_rule_domains(predicate_rule_domain_sets);
 
     ///--- Step 5: Convert internal sets to public domain wrapper types.
 
@@ -602,8 +598,7 @@ ProgramAnalysis analyze_program(formalism::datalog::ProgramView<LiftedTag> progr
     auto domains = ProgramVariableDomains {
         std::move(static_predicate_domains), std::move(fluent_predicate_domains), std::move(static_function_domains), std::move(fluent_function_domains), {},
     };
-    domains.rule_domains.get<formalism::PredicateTag>() = to_rule_domain_map(predicate_rule_domain_sets);
-    domains.rule_domains.get<formalism::FunctionTag>() = to_rule_domain_map(function_rule_domain_sets);
+    domains.rule_domains = to_rule_domain_map(predicate_rule_domain_sets);
 
     return ProgramAnalysis { std::move(domains), std::move(compatibility_graphs) };
 }

@@ -11,9 +11,7 @@ from pytyr.formalism import datalog, planning
 
 def test_ground_program_rule_accessors() -> None:
     assert hasattr(datalog.GroundProgram, "get_rules")
-    assert hasattr(datalog.GroundProgram, "get_function_rules")
     assert not hasattr(datalog.GroundProgram, "get_ground_rules")
-    assert not hasattr(datalog.GroundProgram, "get_ground_function_rules")
 
 
 def test_ground_facts_expose_their_bindings() -> None:

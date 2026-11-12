@@ -50,10 +50,10 @@ namespace tyr::datalog
 {
 namespace
 {
-template<typename Relation, formalism::RelationKind R>
+template<typename Relation>
 void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::dense>& relations,
-                          const urd::Store<urd::map<urd::index<Relation>, analysis::RuleIndexSet<R>>>& listeners,
-                          urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>, urd::dense>& active_rules)
+                          const urd::Store<urd::map<urd::index<Relation>, analysis::RuleIndexSet>>& listeners,
+                          urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>, urd::dense>& active_rules)
 {
     for (const auto relation : relations)
         if (const auto it = listeners.find(relation); it != listeners.end())
@@ -61,12 +61,11 @@ void collect_active_rules(const urd::Store<urd::set<urd::index<Relation>>, urd::
 }
 }
 
-template<formalism::RelationKind R>
-TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRuleStratum<R>& rules,
-                                                        const analysis::TypedListenerStratum<R>& listeners,
-                                                        const formalism::datalog::Repository& context,
-                                                        size_t num_fluent_predicates,
-                                                        size_t num_fluent_functions) :
+TypedRuleSchedulerStratum::TypedRuleSchedulerStratum(const analysis::TypedRuleStratum& rules,
+                                                     const analysis::TypedListenerStratum& listeners,
+                                                     const formalism::datalog::Repository& context,
+                                                     size_t num_fluent_predicates,
+                                                     size_t num_fluent_functions) :
     m_rules(&rules),
     m_listeners(&listeners),
     m_context(&context),
@@ -77,8 +76,7 @@ TypedRuleSchedulerStratum<R>::TypedRuleSchedulerStratum(const analysis::TypedRul
     m_active_functions.reserve(num_fluent_functions);
 }
 
-template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::activate_all()
+void TypedRuleSchedulerStratum::activate_all()
 {
     m_active_rules.clear();
     m_full_enumeration_rules.clear();
@@ -87,27 +85,19 @@ void TypedRuleSchedulerStratum<R>::activate_all()
     rebuild_sorted_active_rules();
 }
 
-template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::rebuild_sorted_active_rules()
-{ m_sorted_active_rules.set(m_active_rules.begin(), m_active_rules.end()); }
+void TypedRuleSchedulerStratum::rebuild_sorted_active_rules() { m_sorted_active_rules.set(m_active_rules.begin(), m_active_rules.end()); }
 
-template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_start_iteration() noexcept
+void TypedRuleSchedulerStratum::on_start_iteration() noexcept
 {
     m_active_predicates.clear();
     m_active_functions.clear();
 }
 
-template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_generate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate)
-{ m_active_predicates.insert(predicate); }
+void TypedRuleSchedulerStratum::on_generate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) { m_active_predicates.insert(predicate); }
 
-template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_generate(urd::index<formalism::Function<formalism::FluentTag>> function)
-{ m_active_functions.insert(function); }
+void TypedRuleSchedulerStratum::on_generate(urd::index<formalism::Function<formalism::FluentTag>> function) { m_active_functions.insert(function); }
 
-template<formalism::RelationKind R>
-void TypedRuleSchedulerStratum<R>::on_finish_iteration()
+void TypedRuleSchedulerStratum::on_finish_iteration()
 {
     m_active_rules.clear();
     m_full_enumeration_rules.clear();
@@ -122,40 +112,17 @@ Scheduler<LiftedTag>::Scheduler(const analysis::RuleStratum& rules,
                                 const formalism::datalog::Repository& context,
                                 size_t num_fluent_predicates,
                                 size_t num_fluent_functions) :
-    predicate_rules(rules.get<formalism::PredicateTag>(), listeners.get<formalism::PredicateTag>(), context, num_fluent_predicates, num_fluent_functions),
-    function_rules(rules.get<formalism::FunctionTag>(), listeners.get<formalism::FunctionTag>(), context, num_fluent_predicates, num_fluent_functions)
+    predicate_rules(rules, listeners, context, num_fluent_predicates, num_fluent_functions)
 {
 }
 
-void Scheduler<LiftedTag>::activate_all()
-{
-    predicate_rules.activate_all();
-    function_rules.activate_all();
-}
+void Scheduler<LiftedTag>::activate_all() { predicate_rules.activate_all(); }
 
-void Scheduler<LiftedTag>::on_start_iteration() noexcept
-{
-    predicate_rules.on_start_iteration();
-    function_rules.on_start_iteration();
-}
+void Scheduler<LiftedTag>::on_start_iteration() noexcept { predicate_rules.on_start_iteration(); }
 
-void Scheduler<LiftedTag>::activate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate)
-{
-    predicate_rules.on_generate(predicate);
-    function_rules.on_generate(predicate);
-}
+void Scheduler<LiftedTag>::activate(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) { predicate_rules.on_generate(predicate); }
 
-void Scheduler<LiftedTag>::activate(urd::index<formalism::Function<formalism::FluentTag>> function)
-{
-    predicate_rules.on_generate(function);
-    function_rules.on_generate(function);
-}
-
-void Scheduler<LiftedTag>::on_finish_iteration()
-{
-    predicate_rules.on_finish_iteration();
-    function_rules.on_finish_iteration();
-}
+void Scheduler<LiftedTag>::on_finish_iteration() { predicate_rules.on_finish_iteration(); }
 
 urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis::RuleStrata& rules,
                                                                   const analysis::ListenerStrata& listeners,
@@ -172,6 +139,4 @@ urd::Store<urd::sequence<Scheduler<LiftedTag>>> create_schedulers(const analysis
     return result;
 }
 
-template class TypedRuleSchedulerStratum<formalism::PredicateTag>;
-template class TypedRuleSchedulerStratum<formalism::FunctionTag>;
 }

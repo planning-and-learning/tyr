@@ -28,7 +28,6 @@
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
-#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/statistics/program.hpp"
@@ -58,10 +57,7 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
 
     AP annotation_policy;
     PredicateAnnotations<> annotations;
-    FunctionAnnotations<> numeric_annotations;
     PredicateAnnotations<true> delta_annotations;
-    FunctionAnnotations<true> delta_numeric_annotations;
-    std::optional<NumericSupportSelector> numeric_support_selector;
 
     TP tp;
     CP cost_policy;
@@ -88,12 +84,6 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     void reset_evaluation();
 
     void clear_costs() { cost_policy.clear(); }
-
-    [[nodiscard]] const auto& get_numeric_support_selector() const noexcept
-    {
-        assert(numeric_support_selector.has_value());
-        return *numeric_support_selector;
-    }
 };
 
 template<>

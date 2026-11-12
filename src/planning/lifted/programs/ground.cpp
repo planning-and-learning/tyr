@@ -152,7 +152,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
                                const TranslationContext<LiftedTag>& translation_context,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
@@ -185,7 +185,7 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                                const TranslationContext<LiftedTag>& translation_context,
                                formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
@@ -210,7 +210,7 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
                              const TranslationContext<LiftedTag>& translation_context,
                              formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
@@ -250,7 +250,7 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
                         const TranslationContext<LiftedTag>& translation_context,
                         formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
@@ -286,7 +286,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
 
     const auto applicability_rule = create_applicability_rule(action, translation_context, context).first.index();
 
-    program.predicate_rules.push_back(applicability_rule);
+    program.rules.push_back(applicability_rule);
 
     for (const auto cond_eff : action.get_effects())
     {
@@ -303,7 +303,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
         if (!effect_predicate && std::ranges::none_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
             continue;
 
-        program.predicate_rules.push_back(create_cond_effect_rule(action, cond_eff, effect_predicate, translation_context, context).first.index());
+        program.rules.push_back(create_cond_effect_rule(action, cond_eff, effect_predicate, translation_context, context).first.index());
         if (effect_predicate)
             effect_to_predicate.emplace(std::pair(action, cond_eff), *effect_predicate);
     }
@@ -323,9 +323,9 @@ void translate_axiom_to_delete_free_axiom_rules(formalism::planning::AxiomView<L
 
     const auto applicability_rule = create_applicability_rule(axiom, translation_context, context).first.index();
 
-    program.predicate_rules.push_back(applicability_rule);
+    program.rules.push_back(applicability_rule);
 
-    program.predicate_rules.push_back(
+    program.rules.push_back(
         create_effect_rule(axiom,
                            formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(axiom.get_head(),
                                                                                                        translation_context.p2d.derived_to_fluent_predicate,

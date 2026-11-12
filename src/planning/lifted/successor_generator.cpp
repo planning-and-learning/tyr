@@ -452,7 +452,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
     auto grounder_context = formalism::WriteContext { evaluator.workspace.planning_builder, *definition->task->get_repository(), evaluator.scratch_objects };
     const auto& mapping = definition->action_program.get_predicate_to_action_mapping();
 
-    for (const auto rule : program.get_rules<formalism::PredicateTag>())
+    for (const auto rule : program.get_rules())
     {
         const auto predicate = rule.get_heads().front().get_predicate();
         const auto it = mapping.find(predicate);
@@ -1130,8 +1130,8 @@ formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground
     const auto objects =
         urd::flat_vector<urd::index<formalism::Object>>(m_impl->evaluator.workspace.binding.begin(), m_impl->evaluator.workspace.binding.end());
     const auto& mapping = m_impl->definition->action_program.get_conditional_effect_to_predicate_mapping();
-    const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().engine.rules.get<formalism::PredicateTag>();
-    const auto schema_rules = m_impl->get_schema_evaluator(action).program.get_rules<formalism::PredicateTag>();
+    const auto& rules = m_impl->definition->action_program.get_datalog_program().get_const_program_workspace().engine.rules;
+    const auto schema_rules = m_impl->get_schema_evaluator(action).program.get_rules();
     const auto ground_action =
         formalism::planning::ground(
             action,

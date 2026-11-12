@@ -18,12 +18,12 @@
 #ifndef TYR_DATALOG_RULE_EVALUATION_HPP_
 #define TYR_DATALOG_RULE_EVALUATION_HPP_
 
+#include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/cost_buckets.hpp"
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/annotation_types.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
-#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/datalog/rule_instance.hpp"
 #include "tyr/formalism/numeric_expression_utils.hpp"
@@ -52,67 +52,35 @@
 namespace tyr::datalog
 {
 
-/// Conservative closure acceleration for detected label-preserving zero-edge bound growth.
-/// This does not imply exact numeric closure or global termination.
-inline ygg::ClosedInterval<ygg::float_t> widen_free_growth(ygg::ClosedInterval<ygg::float_t> next, const ygg::ClosedInterval<ygg::float_t>& current)
-{
-    if (empty(current))
-        return next;
-
-    constexpr auto inf = std::numeric_limits<ygg::float_t>::infinity();
-    return ygg::ClosedInterval<ygg::float_t>(lower(next) < lower(current) ? -inf : lower(next), upper(next) > upper(current) ? inf : upper(next));
-}
-
+/// What a rule instance is evaluated against: the facts, for its numeric constraints, and the costs of the atoms.
 class RuleEvaluationInput
 {
 public:
-    RuleEvaluationInput(const NumericSupportSelector& selector, const PredicateAnnotations<>& predicate_annotations) noexcept :
-        m_selector(&selector),
+    RuleEvaluationInput(FactSets fact_sets, const PredicateAnnotations<>& predicate_annotations) noexcept :
+        m_fact_sets(fact_sets),
         m_predicate_annotations(&predicate_annotations)
     {
     }
 
-    [[nodiscard]] const NumericSupportSelector& selector() const noexcept { return *m_selector; }
+    [[nodiscard]] const FactSets& fact_sets() const noexcept { return m_fact_sets; }
     [[nodiscard]] const PredicateAnnotations<>& predicate_annotations() const noexcept { return *m_predicate_annotations; }
 
 private:
-    const NumericSupportSelector* m_selector = nullptr;
+    FactSets m_fact_sets;
     const PredicateAnnotations<>* m_predicate_annotations = nullptr;
-};
-
-struct RuleEvaluationWorkspace
-{
-    NumericSupportSelectorWorkspace selector;
-    urd::Store<urd::sequence<NumericSupport>> exact_supports;
-};
-
-struct CandidateEvidence
-{
-    std::span<const NumericSupport> numeric_supports;
 };
 
 struct PredicateCandidate
 {
     Cost cost;
     Cost queue_label;
-    std::optional<CandidateEvidence> evidence;
-};
-
-struct FunctionCandidate
-{
-    formalism::datalog::FunctionRowIndex<formalism::FluentTag> head;
-    ygg::ClosedInterval<ygg::float_t> interval;
-    Cost cost;
-    Cost queue_label;
-    bool grows_fact;
-    std::optional<CandidateEvidence> evidence;
 };
 
 class PredicateHeadUpdates
 {
 private:
     using Binding = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-    using Witness = WitnessAnnotation<formalism::PredicateTag>;
+    using Witness = WitnessAnnotation;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
     urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>>
@@ -142,27 +110,8 @@ public:
             m_bindings.push_back(binding);
     }
 
-    void insert_achiever(Binding head, Witness witness) { m_achievers.push_back(PredicateAchiever { head, std::move(witness) }); }
+    void insert_achiever(Binding head, Witness witness) { m_achievers.push_back(PredicateAchiever { head, witness }); }
 };
-
-struct FunctionHeadUpdate : urd::compared_by_identity<FunctionHeadUpdate>
-{
-    formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding;
-    ygg::ClosedInterval<ygg::float_t> interval;
-    bool grows_fact;
-
-    FunctionHeadUpdate(formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding_, ygg::ClosedInterval<ygg::float_t> interval_, bool grows_fact_) :
-        binding(binding_),
-        interval(std::move(interval_)),
-        grows_fact(grows_fact_)
-    {
-    }
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&FunctionHeadUpdate::binding, &FunctionHeadUpdate::interval> {}; }
-};
-
-/// The distinct updates (by binding and interval), in the order first inserted.
-using FunctionHeadUpdates = urd::Store<urd::set<FunctionHeadUpdate>, urd::insertion_ordered>;
 
 template<AnnotationPolicyConcept AP, PredicateAnnotationStore DeltaAnnotations>
 void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
@@ -175,7 +124,7 @@ void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
 {
     if constexpr (AP::records_propositional_achievers)
         for (auto& achiever : head_updates.achievers())
-            insert_pending_achiever(pending_achievers, std::move(achiever));
+            insert_pending_achiever(pending_achievers, achiever);
 
     for (const auto head : head_updates.bindings())
     {
@@ -199,94 +148,22 @@ void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
     }
 }
 
-template<AnnotationPolicyConcept AP, FunctionAnnotationStore DeltaAnnotations>
-bool reduce_function_head_update(const FunctionHeadUpdate& update,
-                                 [[maybe_unused]] AP& annotation_policy,
-                                 [[maybe_unused]] DeltaAnnotations& delta_numeric_annotations,
-                                 [[maybe_unused]] FunctionAnnotations<>& numeric_annotations,
-                                 CostBuckets& cost_buckets)
-{
-    if constexpr (AP::stores_annotations)
-    {
-        const auto* annotation = delta_numeric_annotations.find(update.binding, update.interval);
-        auto improved = false;
-        if (annotation)
-        {
-            improved =
-                annotation_policy.commit_annotation(update.binding, update.interval, delta_numeric_annotations, numeric_annotations).is_strict_improvement();
-            annotation = numeric_annotations.find(update.binding, update.interval);
-        }
-        else
-            annotation = numeric_annotations.find(update.binding, update.interval);
-
-        // FunctionAnnotations retains the cheapest certificate for each exact interval.
-        // FactSets determines whether that certificate is available; CostBuckets schedules only hull growth.
-        if (annotation && update.grows_fact)
-        {
-            cost_buckets.insert(get_cost(*annotation), update.binding, update.interval);
-            return false;
-        }
-        return improved;
-    }
-    else
-    {
-        if (update.grows_fact)
-            cost_buckets.insert(static_cast<Cost>(0), update.binding, update.interval);
-        return false;
-    }
-}
-
-template<TaskKind Kind, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP, FunctionAnnotationStore DeltaAnnotations>
-bool reduce_function_head_updates(FunctionHeadUpdates& head_updates,
-                                  AP& annotation_policy,
-                                  DeltaAnnotations& delta_numeric_annotations,
-                                  FunctionAnnotations<>& numeric_annotations,
-                                  CostBuckets& cost_buckets,
-                                  Scheduler<Kind>& scheduler,
-                                  ProgramExecutionContext<Kind, AP, TP, CP>& ctx)
-{
-    auto annotation_improved = false;
-    for (const auto& update : head_updates)
-    {
-        if (reduce_function_head_update(update, annotation_policy, delta_numeric_annotations, numeric_annotations, cost_buckets))
-        {
-            annotation_improved = true;
-            scheduler.notify_numeric_changed(update.binding, ctx);
-        }
-    }
-    return annotation_improved;
-}
-
-template<formalism::RelationKind R>
-using RuleHeadUpdatesT = std::conditional_t<std::same_as<R, formalism::PredicateTag>, PredicateHeadUpdates, FunctionHeadUpdates>;
-
-template<TaskKind Kind, formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
 struct RuleUpdateInput
 {
-    RuleInstance<Kind, R> rule_instance;
+    RuleInstance<Kind> rule_instance;
     RuleEvaluationInput evaluation;
-    RuleEvaluationWorkspace* workspace = nullptr;
-    const FunctionAnnotations<>* numeric_annotations = nullptr;
     AP* annotation_policy = nullptr;
     const CP* cost_policy = nullptr;
 };
 
-template<TaskKind Kind, formalism::RelationKind R, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
-RuleUpdateInput<Kind, R, AP, CP> make_rule_update_input(RuleInstance<Kind, R> rule_instance,
-                                                        const NumericSupportSelector& numeric_support_selector,
-                                                        const PredicateAnnotations<>& predicate_annotations,
-                                                        RuleEvaluationWorkspace& workspace,
-                                                        const FunctionAnnotations<>& numeric_annotations,
-                                                        AP& annotation_policy,
-                                                        const CP& cost_policy)
-{
-    return { std::move(rule_instance),
-             RuleEvaluationInput { numeric_support_selector, predicate_annotations },
-             &workspace,
-             &numeric_annotations,
-             &annotation_policy,
-             &cost_policy };
-}
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
+RuleUpdateInput<Kind, AP, CP> make_rule_update_input(RuleInstance<Kind> rule_instance,
+                                                     FactSets fact_sets,
+                                                     const PredicateAnnotations<>& predicate_annotations,
+                                                     AP& annotation_policy,
+                                                     const CP& cost_policy)
+{ return { std::move(rule_instance), RuleEvaluationInput { fact_sets, predicate_annotations }, &annotation_policy, &cost_policy }; }
 
 enum class RuleUpdateStatus : std::uint8_t
 {
@@ -316,45 +193,10 @@ struct EvaluationState
 {
     Cost support_cost;
     Cost raw_edge;
-    std::optional<ResolvedNumericEffect> numeric_effect;
-    ygg::ClosedInterval<ygg::float_t> raw_interval;
-    ygg::ClosedInterval<ygg::float_t> current_interval;
 };
 
-template<typename Aggregation>
-void aggregate_selection_cost(Cost& cost, const NumericSupportSelectorWorkspace& workspace)
-{
-    const auto aggregate = Aggregation {};
-    for (const auto& entry : workspace.selection)
-        cost = aggregate(cost, entry.cost);
-}
-
-template<bool CollectEvidence>
-bool append_selection_evidence(const RuleEvaluationInput& input, RuleEvaluationWorkspace& workspace)
-{
-    if constexpr (!CollectEvidence)
-    {
-        return true;
-    }
-    else
-    {
-        for (const auto& entry : workspace.selector.selection)
-        {
-            const auto reported = input.selector().for_each_entry_support(entry,
-                                                                          [&](const auto key, const auto& interval, const auto& annotation)
-                                                                          { workspace.exact_supports.emplace_back(key, interval, get_cost(annotation)); });
-            if (!reported)
-            {
-                assert(false && "annotated rule support has no exact backing certificate");
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-template<TaskKind Kind, formalism::RelationKind R, typename CP>
-Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
+template<TaskKind Kind, typename CP>
+Cost get_rule_credit(const CP& policy, RuleInstance<Kind>& instance)
 {
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return static_cast<Cost>(0);
@@ -362,31 +204,13 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind, R>& instance)
         return policy.get_cost(instance.witness_key());
 }
 
-template<TaskKind Kind, formalism::RelationKind R, typename CP>
-Cost get_transition_credit(const CP& policy,
-                           RuleInstance<Kind, R>& instance,
-                           formalism::datalog::FunctionRowIndex<formalism::FluentTag> head,
-                           const ygg::ClosedInterval<ygg::float_t>& interval)
-{
-    if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
-        return static_cast<Cost>(0);
-    else
-        return policy.get_cost(instance.witness_key().data(), head, interval);
-}
-
-template<bool CollectEvidence, TaskKind Kind, formalism::RelationKind R, typename AP, typename CP, typename CanContinue>
-std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& instance,
-                                                       const AP&,
-                                                       const CP&,
-                                                       const RuleEvaluationInput& input,
-                                                       RuleEvaluationWorkspace& workspace,
-                                                       CanContinue can_continue)
+/// The cost of the instance's body atoms, where they all have one and its numeric constraints hold on the facts.
+template<TaskKind Kind, typename AP, typename CanContinue>
+std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind>& instance, const AP&, const RuleEvaluationInput& input, CanContinue can_continue)
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
-    auto state = EvaluationState { Aggregation::identity(), static_cast<Cost>(instance.get_rule().get_cost()), std::nullopt, {}, {} };
-
-    workspace.exact_supports.clear();
+    auto state = EvaluationState { Aggregation::identity(), static_cast<Cost>(instance.get_rule().get_cost()) };
 
     if (!can_continue(state.support_cost, state.raw_edge))
         return std::nullopt;
@@ -407,156 +231,57 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind, R>& in
     }
 
     for (const auto constraint : instance.get_body().get_numeric_constraints())
-    {
-        const auto resolved = instance.resolve(constraint);
-        const auto constraint_cost = input.selector().get_constraint_cost(resolved, workspace.selector.selection, Aggregation {});
-        if (constraint_cost == std::numeric_limits<Cost>::max())
+        if (!evaluate(instance.resolve(constraint), input.fact_sets()))
             return std::nullopt;
-
-        state.support_cost = aggregate(state.support_cost, constraint_cost);
-        if (!can_continue(state.support_cost, state.raw_edge))
-            return std::nullopt;
-        if (!append_selection_evidence<CollectEvidence>(input, workspace))
-            return std::nullopt;
-    }
-
-    if constexpr (std::same_as<R, formalism::FunctionTag>)
-    {
-        state.numeric_effect = instance.resolve(instance.get_head());
-        const auto& effect = *state.numeric_effect;
-        workspace.selector.clear();
-
-        auto lhs = ygg::ClosedInterval<ygg::float_t> {};
-        if (effect.operator_kind != formalism::NumericEffectOperatorKind::Assign)
-        {
-            lhs = input.selector().select_fluent_interval(effect.head, workspace.selector.selection);
-            if (empty(lhs))
-                return std::nullopt;
-        }
-
-        const auto rhs = input.selector().evaluate_effect_expression(effect.rhs, workspace.selector.selection);
-        if (empty(rhs))
-            return std::nullopt;
-
-        state.raw_interval = formalism::apply(effect.operator_kind, lhs, rhs);
-        if (empty(state.raw_interval))
-            return std::nullopt;
-
-        state.current_interval = input.selector().current_interval(effect.head);
-        aggregate_selection_cost<Aggregation>(state.support_cost, workspace.selector);
-        if (!can_continue(state.support_cost, state.raw_edge))
-            return std::nullopt;
-        if (!append_selection_evidence<CollectEvidence>(input, workspace))
-            return std::nullopt;
-    }
 
     return state;
 }
 
-template<TaskKind Kind, typename AP>
-std::optional<FunctionCandidate> evaluate_unannotated_function(RuleInstance<Kind, formalism::FunctionTag>& instance,
-                                                               const AP& policy,
-                                                               const RuleEvaluationInput& input,
-                                                               RuleEvaluationWorkspace& workspace)
-{
-    const auto effect = instance.resolve(instance.get_head());
-    workspace.selector.clear();
-
-    auto lhs = ygg::ClosedInterval<ygg::float_t> {};
-    if (effect.operator_kind != formalism::NumericEffectOperatorKind::Assign)
-    {
-        lhs = input.selector().select_fluent_interval(effect.head, workspace.selector.selection);
-        if (empty(lhs))
-            return std::nullopt;
-    }
-
-    const auto rhs = input.selector().evaluate_effect_expression(effect.rhs, workspace.selector.selection);
-    if (empty(rhs))
-        return std::nullopt;
-
-    const auto raw_interval = formalism::apply(effect.operator_kind, lhs, rhs);
-    if (empty(raw_interval))
-        return std::nullopt;
-
-    const auto current = input.selector().current_interval(effect.head);
-    auto interval = raw_interval;
-    if (!empty(current) && policy.is_widening_label_preserving(static_cast<Cost>(0), static_cast<Cost>(0)))
-        interval = widen_free_growth(raw_interval, current);
-
-    return FunctionCandidate { effect.head, interval, static_cast<Cost>(0), static_cast<Cost>(0), empty(current) || !subset(interval, current), std::nullopt };
 }
 
-}
-
-template<TaskKind Kind, formalism::RelationKind R, typename AP, typename CP>
-std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind, R>& instance,
-                                           const AP& annotation_policy,
-                                           const CP& cost_policy,
-                                           const RuleEvaluationInput& input,
-                                           RuleEvaluationWorkspace& workspace)
+template<TaskKind Kind, typename AP, typename CP>
+std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind>& instance, const AP& annotation_policy, const CP& cost_policy, const RuleEvaluationInput& input)
 {
     if constexpr (!AP::stores_annotations)
     {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return static_cast<Cost>(0);
-        else
-        {
-            const auto candidate = rule_evaluation_detail::evaluate_unannotated_function(instance, annotation_policy, input, workspace);
-            return candidate ? std::optional(candidate->queue_label) : std::nullopt;
-        }
+        return static_cast<Cost>(0);
     }
     else
     {
-        const auto state = rule_evaluation_detail::evaluate_annotated_rule<false>(instance,
-                                                                                  annotation_policy,
-                                                                                  cost_policy,
-                                                                                  input,
-                                                                                  workspace,
-                                                                                  rule_evaluation_detail::AlwaysContinue {});
+        const auto state = rule_evaluation_detail::evaluate_annotated_rule(instance, annotation_policy, input, rule_evaluation_detail::AlwaysContinue {});
         if (!state)
             return std::nullopt;
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-        {
-            const auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
-            return state->support_cost + edge;
-        }
-        else
-        {
-            return state->support_cost;
-        }
+        return state->support_cost + reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
     }
 }
 
 template<TaskKind Kind, typename AP, typename CP, typename CanContinue = rule_evaluation_detail::AlwaysContinue>
-std::optional<PredicateCandidate> evaluate_predicate_candidate(RuleInstance<Kind, formalism::PredicateTag>& instance,
+std::optional<PredicateCandidate> evaluate_predicate_candidate(RuleInstance<Kind>& instance,
                                                                const AP& annotation_policy,
                                                                const CP& cost_policy,
                                                                const RuleEvaluationInput& input,
-                                                               RuleEvaluationWorkspace& workspace,
                                                                CanContinue can_continue = {})
 {
     if constexpr (!AP::stores_annotations)
     {
-        return PredicateCandidate { static_cast<Cost>(0), static_cast<Cost>(0), std::nullopt };
+        return PredicateCandidate { static_cast<Cost>(0), static_cast<Cost>(0) };
     }
     else
     {
-        const auto state = rule_evaluation_detail::evaluate_annotated_rule<true>(instance, annotation_policy, cost_policy, input, workspace, can_continue);
+        const auto state = rule_evaluation_detail::evaluate_annotated_rule(instance, annotation_policy, input, can_continue);
         if (!state)
             return std::nullopt;
 
-        const auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
-        const auto cost = state->support_cost + edge;
-        return PredicateCandidate { cost, cost, CandidateEvidence { workspace.exact_supports } };
+        const auto cost = state->support_cost + reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
+        return PredicateCandidate { cost, cost };
     }
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-auto evaluate_propositional_candidate(RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
+auto evaluate_propositional_candidate(RuleInstance<Kind>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
                                       const RuleEvaluationInput& input,
-                                      RuleEvaluationWorkspace& workspace,
                                       Cost best_cost)
 {
     auto pruned = false;
@@ -566,7 +291,6 @@ auto evaluate_propositional_candidate(RuleInstance<Kind, formalism::PredicateTag
                                                       annotation_policy,
                                                       cost_policy,
                                                       input,
-                                                      workspace,
                                                       [&](const Cost support_cost, const Cost edge)
                                                       {
                                                           pruned = support_cost + edge >= best_cost;
@@ -576,95 +300,40 @@ auto evaluate_propositional_candidate(RuleInstance<Kind, formalism::PredicateTag
     }
     else
     {
-        return std::pair(evaluate_predicate_candidate(rule_instance, annotation_policy, cost_policy, input, workspace), false);
+        return std::pair(evaluate_predicate_candidate(rule_instance, annotation_policy, cost_policy, input), false);
     }
 }
 
 /// Prunes only once the instance cannot improve any of its heads.
 template<TaskKind Kind, typename AP, typename CP, PredicateAnnotationStore DeltaAnnotations>
 auto evaluate_propositional_candidate(std::span<const formalism::datalog::PredicateRowIndex<formalism::FluentTag>> heads,
-                                      RuleInstance<Kind, formalism::PredicateTag>& rule_instance,
+                                      RuleInstance<Kind>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
                                       const RuleEvaluationInput& input,
-                                      RuleEvaluationWorkspace& workspace,
                                       const DeltaAnnotations& delta_annotations)
 {
     auto best_cost = static_cast<Cost>(0);
     for (const auto head : heads)
         best_cost = std::max(best_cost, std::min(input.predicate_annotations().fetch_cost(head), delta_annotations.fetch_cost(head)));
-    return evaluate_propositional_candidate(rule_instance, annotation_policy, cost_policy, input, workspace, best_cost);
+    return evaluate_propositional_candidate(rule_instance, annotation_policy, cost_policy, input, best_cost);
 }
 
-template<TaskKind Kind, typename AP, typename CP>
-std::optional<FunctionCandidate> evaluate_function_candidate(RuleInstance<Kind, formalism::FunctionTag>& instance,
-                                                             const AP& annotation_policy,
-                                                             const CP& cost_policy,
-                                                             const RuleEvaluationInput& input,
-                                                             RuleEvaluationWorkspace& workspace)
-{
-    if constexpr (!AP::stores_annotations)
-    {
-        return rule_evaluation_detail::evaluate_unannotated_function(instance, annotation_policy, input, workspace);
-    }
-    else
-    {
-        const auto state = rule_evaluation_detail::evaluate_annotated_rule<true>(instance,
-                                                                                 annotation_policy,
-                                                                                 cost_policy,
-                                                                                 input,
-                                                                                 workspace,
-                                                                                 rule_evaluation_detail::AlwaysContinue {});
-        if (!state || !state->numeric_effect)
-            return std::nullopt;
-
-        const auto& effect = *state->numeric_effect;
-        auto edge = reduce_cost(state->raw_edge, rule_evaluation_detail::get_rule_credit(cost_policy, instance));
-        const auto pre_transition_label = state->support_cost + edge;
-        auto interval = state->raw_interval;
-        if (!empty(state->current_interval) && edge == static_cast<Cost>(0))
-        {
-            const auto current_label = input.selector().get_current_interval_cost(effect.head, state->current_interval);
-            if (annotation_policy.is_widening_label_preserving(pre_transition_label, current_label))
-                interval = widen_free_growth(state->raw_interval, state->current_interval);
-        }
-
-        if (interval == state->raw_interval)
-            edge = reduce_cost(edge, rule_evaluation_detail::get_transition_credit(cost_policy, instance, effect.head, interval));
-
-        const auto cost = state->support_cost + edge;
-        return FunctionCandidate { effect.head,
-                                   interval,
-                                   cost,
-                                   state->support_cost,
-                                   empty(state->current_interval) || !subset(interval, state->current_interval),
-                                   CandidateEvidence { workspace.exact_supports } };
-    }
-}
-
-template<TaskKind Kind, formalism::RelationKind R, typename Candidate>
-WitnessAnnotation<R> materialize_witness(RuleInstance<Kind, R>& instance, const Candidate& candidate)
-{
-    assert(candidate.evidence);
-    return WitnessAnnotation<R>(instance.witness_key().data(), candidate.cost, candidate.evidence->numeric_supports);
-}
+template<TaskKind Kind, typename Candidate>
+WitnessAnnotation materialize_witness(RuleInstance<Kind>& instance, const Candidate& candidate)
+{ return WitnessAnnotation(instance.witness_key().data(), candidate.cost); }
 
 /// Evaluates the rule instance once and updates each of its heads with the shared witness.
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations>
 RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog::PredicateRowIndex<formalism::FluentTag>> heads,
-                                             RuleUpdateInput<Kind, formalism::PredicateTag, AP, CP>& input,
+                                             RuleUpdateInput<Kind, AP, CP>& input,
                                              PredicateHeadUpdates& head_updates,
                                              DeltaAnnotations& delta_annotations,
                                              std::optional<Cost> required_queue_label = std::nullopt)
 {
     assert(!heads.empty());
-    auto [candidate, pruned] = evaluate_propositional_candidate(heads,
-                                                                input.rule_instance,
-                                                                *input.annotation_policy,
-                                                                *input.cost_policy,
-                                                                input.evaluation,
-                                                                *input.workspace,
-                                                                delta_annotations);
+    auto [candidate, pruned] =
+        evaluate_propositional_candidate(heads, input.rule_instance, *input.annotation_policy, *input.cost_policy, input.evaluation, delta_annotations);
     if (!candidate)
     {
         if (!pruned)
@@ -706,38 +375,6 @@ RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog:
     // A previously staged certificate may still need to become an available fact after a resumed solve.
     for (const auto head : heads)
         head_updates.insert(head);
-    return { RuleUpdateStatus::Completed, candidate->queue_label };
-}
-
-template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, FunctionAnnotationStore DeltaAnnotations>
-RuleUpdateResult insert_numeric_update(RuleUpdateInput<Kind, formalism::FunctionTag, AP, CP>& input,
-                                       FunctionHeadUpdates& head_updates,
-                                       [[maybe_unused]] DeltaAnnotations& delta_numeric_annotations,
-                                       std::optional<Cost> required_queue_label = std::nullopt)
-{
-    auto candidate = evaluate_function_candidate(input.rule_instance, *input.annotation_policy, *input.cost_policy, input.evaluation, *input.workspace);
-    if (!candidate)
-        return { RuleUpdateStatus::Unavailable, std::nullopt };
-
-    if (required_queue_label && candidate->queue_label != *required_queue_label)
-        return { RuleUpdateStatus::QueueLabelChanged, candidate->queue_label };
-
-    if constexpr (!AP::stores_annotations)
-    {
-        if (candidate->grows_fact)
-            head_updates.insert(FunctionHeadUpdate(candidate->head, candidate->interval, true));
-    }
-    else
-    {
-        auto staged = false;
-        if (input.annotation_policy->can_update(candidate->head, candidate->interval, candidate->cost, *input.numeric_annotations, delta_numeric_annotations))
-        {
-            auto witness = materialize_witness(input.rule_instance, *candidate);
-            staged = input.annotation_policy->try_update_candidate(candidate->head, candidate->interval, std::move(witness), delta_numeric_annotations);
-        }
-        if (staged || candidate->grows_fact)
-            head_updates.insert(FunctionHeadUpdate(candidate->head, candidate->interval, candidate->grows_fact));
-    }
     return { RuleUpdateStatus::Completed, candidate->queue_label };
 }
 

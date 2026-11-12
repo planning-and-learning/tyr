@@ -64,11 +64,6 @@ template std::optional<FunctionRowView<FluentTag>> try_ground_binding(FunctionTe
 template std::optional<PredicateRowView<StaticTag>> try_ground_binding(AtomView<LiftedTag, StaticTag> element, WriteContext<Builder, Repository>& context);
 template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context);
 
-template std::pair<RuleView<GroundTag, PredicateTag>, bool> ground(RuleView<LiftedTag, PredicateTag> element, WriteContext<Builder, Repository>& context);
-template std::pair<RuleView<GroundTag, FunctionTag>, bool> ground(RuleView<LiftedTag, FunctionTag> element, WriteContext<Builder, Repository>& context);
-
-template std::pair<RuleRowView<PredicateTag>, bool> ground_binding(RuleView<LiftedTag, PredicateTag> element, WriteContext<Builder, Repository>& context);
-template std::pair<RuleRowView<FunctionTag>, bool> ground_binding(RuleView<LiftedTag, FunctionTag> element, WriteContext<Builder, Repository>& context);
 }
 
 #endif

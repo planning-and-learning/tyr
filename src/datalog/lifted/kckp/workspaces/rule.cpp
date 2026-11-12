@@ -28,10 +28,9 @@ namespace tyr::datalog
  * ConstRuleWorkspace<LiftedTag>
  */
 
-template<formalism::RelationKind R>
-ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule_,
-                                                     formalism::datalog::Repository& repository,
-                                                     kckp::Graph compatibility_graph) :
+ConstRuleWorkspace<LiftedTag>::ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_,
+                                                  formalism::datalog::Repository& repository,
+                                                  kckp::Graph compatibility_graph) :
     rule(rule_),
     nullary_condition(create_ground_nullary_conjunctive_condition(get_rule().get_body(), repository).first),
     unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first),
@@ -43,6 +42,68 @@ ConstRuleWorkspace<LiftedTag, R>::ConstRuleWorkspace(formalism::datalog::RuleVie
 {
 }
 
-template struct ConstRuleWorkspace<LiftedTag, formalism::PredicateTag>;
-template struct ConstRuleWorkspace<LiftedTag, formalism::FunctionTag>;
+RuleWorkspace<LiftedTag>::Common::Common(const StaticConsistencyGraph& static_consistency_graph_) :
+    static_consistency_graph(&static_consistency_graph_),
+    kckp(static_consistency_graph_.get_graph(), static_consistency_graph_.get_partitioned_adjacency_layout()),
+    statistics()
+{
+}
+
+void RuleWorkspace<LiftedTag>::Common::clear() noexcept { kckp.reset(); }
+
+void RuleWorkspace<LiftedTag>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
+{
+    kckp.update([&](auto& delta_graph, auto& full_graph)
+                { static_consistency_graph->initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph); });
+}
+
+RuleWorkspace<LiftedTag>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag>&, const Common& common) : kckp_workspace(common.kckp.get_graph_layout()) {}
+
+void RuleWorkspace<LiftedTag>::Iteration::clear() noexcept { head_updates.clear(); }
+
+RuleWorkspace<LiftedTag>::Solve::Solve() :
+#ifndef NDEBUG
+    seen_bindings(),
+#endif
+    applicability_cache(),
+    statistics()
+{
+}
+
+void RuleWorkspace<LiftedTag>::Solve::clear() noexcept
+{
+#ifndef NDEBUG
+    seen_bindings.clear();
+#endif
+    applicability_cache.clear();
+}
+
+RuleWorkspace<LiftedTag>::Worker::Worker(const ConstRuleWorkspace<LiftedTag>& cws, const Common& common) : builder(), binding(), iteration(cws, common), solve()
+{
+}
+
+void RuleWorkspace<LiftedTag>::Worker::clear() noexcept
+{
+    iteration.clear();
+    solve.clear();
+}
+
+RuleWorkspace<LiftedTag>::RuleWorkspace(const ConstRuleWorkspace<LiftedTag>& cws_) : common(cws_.get_static_consistency_graph()), worker()
+{
+    worker.emplace_back(cws_, common);
+
+#if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
+    // Only propositional heads use partitionable delta KCKP; numeric effects require full KCKP enumeration.
+    if (supports_inner_parallelism() && cws_.get_rule().get_arity() > 2)
+        worker.emplace_back(cws_, common);
+#endif
+}
+
+void RuleWorkspace<LiftedTag>::clear() noexcept
+{
+    common.clear();
+    for (auto& w : worker)
+        w.clear();
+}
+
 }

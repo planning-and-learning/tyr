@@ -73,8 +73,8 @@ struct ApplicabilityCache
     }
 };
 
-template<formalism::RelationKind R>
-struct RuleWorkspace<LiftedTag, R>
+template<>
+struct RuleWorkspace<LiftedTag>
 {
     struct Common
     {
@@ -98,18 +98,12 @@ struct RuleWorkspace<LiftedTag, R>
     /// - annotate witnesses
     struct Iteration
     {
-        explicit Iteration(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
+        explicit Iteration(const ConstRuleWorkspace<LiftedTag>& cws, const Common& common);
 
         void clear() noexcept;
 
         /// Head updates
-        RuleHeadUpdatesT<R> head_updates = []
-        {
-            if constexpr (std::same_as<R, formalism::PredicateTag>)
-                return PredicateHeadUpdates();
-            else
-                return FunctionHeadUpdates(urd::layer { 0 });  // an insertion-ordered set is numbered
-        }();
+        PredicateHeadUpdates head_updates;
 
         /// KCKP
         kckp::Workspace kckp_workspace;
@@ -132,7 +126,6 @@ struct RuleWorkspace<LiftedTag, R>
         urd::Store<urd::set<urd::flat_vector<urd::index<formalism::Object>>>> seen_bindings;
 #endif
 
-        RuleEvaluationWorkspace rule_evaluation_workspace;
         ApplicabilityCache applicability_cache;
 
         /// Statistics
@@ -141,7 +134,7 @@ struct RuleWorkspace<LiftedTag, R>
 
     struct Worker
     {
-        explicit Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common);
+        explicit Worker(const ConstRuleWorkspace<LiftedTag>& cws, const Common& common);
 
         void clear() noexcept;
 
@@ -152,7 +145,7 @@ struct RuleWorkspace<LiftedTag, R>
         Solve solve;
     };
 
-    explicit RuleWorkspace(const ConstRuleWorkspace<LiftedTag, R>& cws);
+    explicit RuleWorkspace(const ConstRuleWorkspace<LiftedTag>& cws);
     RuleWorkspace(const RuleWorkspace& other) = delete;
     RuleWorkspace& operator=(const RuleWorkspace& other) = delete;
     RuleWorkspace(RuleWorkspace&& other) = delete;
@@ -166,11 +159,10 @@ struct RuleWorkspace<LiftedTag, R>
     urd::Store<urd::sequence<Worker>, urd::stable_refs> worker;
 };
 
-template<formalism::RelationKind R>
-using LiftedRuleWorkerT = typename RuleWorkspace<LiftedTag, R>::Worker;
+using LiftedRuleWorkerT = typename RuleWorkspace<LiftedTag>::Worker;
 
-template<formalism::RelationKind R>
-struct ConstRuleWorkspace<LiftedTag, R>
+template<>
+struct ConstRuleWorkspace<LiftedTag>
 {
 public:
     [[nodiscard]] auto get_rule() const noexcept { return rule; }
@@ -179,10 +171,10 @@ public:
     [[nodiscard]] auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
     [[nodiscard]] const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
-    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag, R> rule_, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
+    ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);
 
 private:
-    formalism::datalog::RuleView<LiftedTag, R> rule;
+    formalism::datalog::RuleView<LiftedTag> rule;
     formalism::datalog::ConjunctiveConditionView<GroundTag> nullary_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> unary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView<LiftedTag> binary_overapproximation_condition;
@@ -196,95 +188,7 @@ private:
  * Implementations
  */
 
-inline bool supports_inner_parallelism(formalism::PredicateTag) noexcept { return true; }
-inline bool supports_inner_parallelism(formalism::FunctionTag) noexcept { return false; }
-
-template<formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::Common::Common(const StaticConsistencyGraph& static_consistency_graph_) :
-    static_consistency_graph(&static_consistency_graph_),
-    kckp(static_consistency_graph_.get_graph(), static_consistency_graph_.get_partitioned_adjacency_layout()),
-    statistics()
-{
-}
-
-template<formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::Common::clear() noexcept
-{ kckp.reset(); }
-
-template<formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
-{
-    kckp.update([&](auto& delta_graph, auto& full_graph)
-                { static_consistency_graph->initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph); });
-}
-
-template<formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag, R>&, const Common& common) :
-    kckp_workspace(common.kckp.get_graph_layout())
-{
-}
-
-template<formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::Iteration::clear() noexcept
-{ head_updates.clear(); }
-
-template<formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::Solve::Solve() :
-#ifndef NDEBUG
-    seen_bindings(),
-#endif
-    rule_evaluation_workspace(),
-    applicability_cache(),
-    statistics()
-{
-}
-
-template<formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::Solve::clear() noexcept
-{
-#ifndef NDEBUG
-    seen_bindings.clear();
-#endif
-    rule_evaluation_workspace.selector.clear();
-    rule_evaluation_workspace.exact_supports.clear();
-    applicability_cache.clear();
-}
-
-template<formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::Worker::Worker(const ConstRuleWorkspace<LiftedTag, R>& cws, const Common& common) :
-    builder(),
-    binding(),
-    iteration(cws, common),
-    solve()
-{
-}
-
-template<formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::Worker::clear() noexcept
-{
-    iteration.clear();
-    solve.clear();
-}
-
-template<formalism::RelationKind R>
-RuleWorkspace<LiftedTag, R>::RuleWorkspace(const ConstRuleWorkspace<LiftedTag, R>& cws_) : common(cws_.get_static_consistency_graph()), worker()
-{
-    worker.emplace_back(cws_, common);
-
-#if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
-    // Only propositional heads use partitionable delta KCKP; numeric effects require full KCKP enumeration.
-    if (supports_inner_parallelism(R {}) && cws_.get_rule().get_arity() > 2)
-        worker.emplace_back(cws_, common);
-#endif
-}
-
-template<formalism::RelationKind R>
-void RuleWorkspace<LiftedTag, R>::clear() noexcept
-{
-    common.clear();
-    for (auto& w : worker)
-        w.clear();
-}
+inline bool supports_inner_parallelism() noexcept { return true; }
 
 }
 

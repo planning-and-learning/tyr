@@ -31,10 +31,10 @@ struct RowPublicView<tyr::formalism::Function<T>, tyr::formalism::datalog::Repos
     using type = tyr::formalism::datalog::FunctionRowView<T>;
 };
 
-template<tyr::formalism::RelationKind R>
-struct RowPublicView<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, tyr::formalism::datalog::Repository>
+template<>
+struct RowPublicView<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, tyr::formalism::datalog::Repository>
 {
-    using type = tyr::formalism::datalog::RuleRowView<R>;
+    using type = tyr::formalism::datalog::RuleRowView;
 };
 
 template<tyr::formalism::FactKind T>

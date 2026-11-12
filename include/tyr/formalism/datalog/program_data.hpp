@@ -46,8 +46,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
     urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::PredicateTag>>> predicate_rules;
-    urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::FunctionTag>>> function_rules;
+    urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>> rules;
 
     data() = default;
     data(urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates_,
@@ -60,8 +59,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
          urd::flat_optional<urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>> goal_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::PredicateTag>>> predicate_rules_,
-         urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T, ::tyr::formalism::FunctionTag>>> function_rules_) :
+         urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>> rules_) :
         index(),
         static_predicates(std::move(static_predicates_)),
         fluent_predicates(std::move(fluent_predicates_)),
@@ -73,8 +71,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
         static_fterm_values(std::move(static_fterm_values_)),
         fluent_fterm_values(std::move(fluent_fterm_values_)),
         goal(std::move(goal_)),
-        predicate_rules(std::move(predicate_rules_)),
-        function_rules(std::move(function_rules_))
+        rules(std::move(rules_))
     {
     }
     data(const data& other) = delete;
@@ -83,14 +80,8 @@ struct data<::tyr::formalism::datalog::Program<T>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    /// Dispatches on the relation kind, mirroring FactSets::get<F>() and AssignmentSets::get<F>().
-    template<::tyr::formalism::RelationKind R>
-    auto& get_rules() noexcept
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::PredicateFunctionTags, R, &data::predicate_rules, &data::function_rules>(*this); }
-
-    template<::tyr::formalism::RelationKind R>
-    const auto& get_rules() const noexcept
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::PredicateFunctionTags, R, &data::predicate_rules, &data::function_rules>(*this); }
+    auto& get_rules() noexcept { return rules; }
+    const auto& get_rules() const noexcept { return rules; }
 
     template<::tyr::formalism::FactKind F>
     const auto& get_predicates() const
@@ -121,8 +112,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
                             &data::static_fterm_values,
                             &data::fluent_fterm_values,
                             &data::goal,
-                            &data::predicate_rules,
-                            &data::function_rules> {};
+                            &data::rules> {};
     }
     static constexpr auto identifying_members() noexcept
     {
@@ -136,8 +126,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
                             &data::static_fterm_values,
                             &data::fluent_fterm_values,
                             &data::goal,
-                            &data::predicate_rules,
-                            &data::function_rules> {};
+                            &data::rules> {};
     }
 };
 

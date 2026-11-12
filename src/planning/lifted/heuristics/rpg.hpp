@@ -81,16 +81,15 @@ struct RPGPolicy<LiftedTag>
         materialize_goal(definition, workspace, source_goal);
     }
 
-    template<formalism::RelationKind R>
-    static bool is_action_witness(const RPGDefinition<LiftedTag>& definition, const datalog::WitnessAnnotation<R>& witness)
-    { return definition.rpg_program.template get_rule_to_action_mapping<R>().contains(witness.get_rule_key().relation); }
+    static bool is_action_witness(const RPGDefinition<LiftedTag>& definition, const datalog::WitnessAnnotation& witness)
+    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation); }
 
     /// Grounds every action of the witness's rule with the binding the witness recovers.
-    template<formalism::RelationKind R, typename Workspace, typename Callback>
+    template<typename Workspace, typename Callback>
     static void
-    for_each_action_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback callback)
+    for_each_action_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation& witness, Callback callback)
     {
-        const auto& mapping = definition.rpg_program.template get_rule_to_action_mapping<R>();
+        const auto& mapping = definition.rpg_program.get_rule_to_action_mapping();
         const auto it = mapping.find(witness.get_rule_key().relation);
         if (it == mapping.end())
             return;
@@ -98,15 +97,12 @@ struct RPGPolicy<LiftedTag>
         auto grounder_context = formalism::WriteContext { workspace.planning_builder, *definition.task->get_repository(), workspace.binding };
         workspace.binding.clear();
         auto recovered = false;
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
+        const auto& origins = definition.rpg_program.get_rule_splitting().origins;
+        if (const auto origin = origins.find(witness.get_rule_key().relation); origin != origins.end())
         {
-            const auto& origins = definition.rpg_program.get_rule_splitting().origins;
-            if (const auto origin = origins.find(witness.get_rule_key().relation); origin != origins.end())
-            {
-                workspace.binding.resize(origin->second.num_source_variables);
-                recover_split_binding(definition, workspace, witness);
-                recovered = true;
-            }
+            workspace.binding.resize(origin->second.num_source_variables);
+            recover_split_binding(definition, workspace, witness);
+            recovered = true;
         }
         if (!recovered)
         {
@@ -121,8 +117,7 @@ struct RPGPolicy<LiftedTag>
     /// Writes the objects that the witness of a split rule binds to its variables' positions among the source rule's variables,
     /// and those of the projections it uses, through the witnesses of their atoms.
     template<typename Workspace>
-    static void
-    recover_split_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation<formalism::PredicateTag>& witness)
+    static void recover_split_binding(const RPGDefinition<LiftedTag>& definition, Workspace& workspace, const datalog::WitnessAnnotation& witness)
     {
         const auto& origin = definition.rpg_program.get_rule_splitting().origins.at(witness.get_rule_key().relation);
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
@@ -140,8 +135,7 @@ struct RPGPolicy<LiftedTag>
                                             if (!projection_rules.contains(literal.get_atom().get_predicate().index()))
                                                 continue;
                                             const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).data());
-                                            const auto* projection =
-                                                annotation ? std::get_if<datalog::WitnessAnnotation<formalism::PredicateTag>>(annotation) : nullptr;
+                                            const auto* projection = annotation ? std::get_if<datalog::WitnessAnnotation>(annotation) : nullptr;
                                             assert(projection && "A derived projection atom has a witness.");
                                             if (projection)
                                                 recover_split_binding(definition, workspace, *projection);
@@ -149,17 +143,16 @@ struct RPGPolicy<LiftedTag>
                                     });
     }
 
-    template<formalism::RelationKind R, typename Workspace, typename Callback>
-    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<R>& witness, Callback&& callback)
+    template<typename Workspace, typename Callback>
+    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation& witness, Callback&& callback)
     {
         const auto rule_binding = urd::resolve(witness.get_rule_key(), *workspace.workspace_repository);
-        const auto& const_rule_workspace =
-            *workspace.const_workspace->engine.rules.template get<R>()[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
+        const auto& const_rule_workspace = *workspace.const_workspace->engine.rules[static_cast<ygg::uint_t>(witness.get_rule_key().relation.value)];
         auto binding = urd::flat_vector<urd::index<formalism::Object>> {};
         for (const auto object : rule_binding.template get<urd::index<formalism::Object>>())
             binding.push_back(object);
         auto grounder_context = formalism::WriteContext { workspace.datalog_builder, *workspace.workspace_repository, binding };
-        const auto instance = datalog::RuleInstance<LiftedTag, R>(const_rule_workspace.get_rule(), grounder_context);
+        const auto instance = datalog::RuleInstance<LiftedTag>(const_rule_workspace.get_rule(), grounder_context);
         std::forward<Callback>(callback)(instance);
     }
 

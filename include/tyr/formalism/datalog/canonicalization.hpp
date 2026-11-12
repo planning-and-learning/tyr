@@ -64,12 +64,9 @@ template<TaskKind T>
 void canonicalize(urd::data<ConjunctiveEffect<T>>& data)
 { canonicalize(data.numeric_effects); }
 
-template<TaskKind T, RelationKind R>
-void canonicalize(urd::data<Rule<T, R>>& data)
-{
-    if constexpr (std::same_as<R, PredicateTag>)
-        canonicalize(data.heads);
-}
+template<TaskKind T>
+void canonicalize(urd::data<Rule<T>>& data)
+{ canonicalize(data.heads); }
 
 template<TaskKind T>
 void canonicalize(urd::data<Program<T>>& data)
@@ -84,8 +81,7 @@ void canonicalize(urd::data<Program<T>>& data)
     canonicalize(data.static_fterm_values);
     canonicalize(data.fluent_fterm_values);
     canonicalize(data.goal);
-    canonicalize(data.predicate_rules);
-    canonicalize(data.function_rules);
+    canonicalize(data.rules);
 }
 
 }

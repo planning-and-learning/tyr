@@ -234,169 +234,21 @@ AtomsByPredicate collect_atoms_by_predicate(const Workspace& workspace)
     return result;
 }
 
-struct LiftedNumericProgram
-{
-    tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal;
-    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals;
-    tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> source;
-    tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> target;
-    tyr::formalism::datalog::RepositoryPtr repository;
-    tyr::datalog::Program<LiftedTag> program;
-
-    LiftedNumericProgram(tyr::formalism::datalog::RepositoryPtr repository_,
-                         tyr::formalism::datalog::ProgramView<LiftedTag> program_view,
-                         tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal_,
-                         tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals_,
-                         tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> source_,
-                         tyr::formalism::datalog::FunctionRowView<tyr::formalism::FluentTag> target_) :
-        goal(goal_),
-        goals(goals_),
-        source(source_),
-        target(target_),
-        repository(std::move(repository_)),
-        program(program_view, repository)
-    {
-    }
-};
-
-LiftedNumericProgram
-make_lifted_numeric_program(bool include_source_rule = true, std::initializer_list<ygg::float_t> initial_source_values = {}, bool general_goal_rule = false)
-{
-    auto repository = std::make_shared<tyr::formalism::datalog::Repository>();
-    const auto intern = [&]<typename T>(urd::data<T> data) { return ygg::formalism::insert(*repository, data).first; };
-    const auto bind_function = [&](auto function)
-    {
-        auto data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
-        data.relation = function.index();
-        return intern(std::move(data));
-    };
-    const auto make_function_term = [&](auto function)
-    {
-        auto data = urd::data<tyr::formalism::FunctionTerm<LiftedTag, tyr::formalism::FluentTag>>();
-        data.function = function.index();
-        return intern(std::move(data));
-    };
-
-    const auto source_function = intern(urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("source"), 0));
-    const auto target_function = intern(urd::data<tyr::formalism::Function<tyr::formalism::FluentTag>>(std::string("target"), 0));
-    const auto source = bind_function(source_function);
-    const auto target = bind_function(target_function);
-    const auto source_term = make_function_term(source_function);
-    const auto target_term = make_function_term(target_function);
-    const auto empty_body = intern(urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>());
-
-    const auto source_assign_effect = intern(urd::data<tyr::formalism::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(
-        tyr::formalism::NumericEffectOperatorKind::Assign,
-        source_term.index(),
-        tyr::formalism::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(3))));
-    const auto target_assign_effect = intern(
-        urd::data<tyr::formalism::NumericEffect<LiftedTag, tyr::formalism::FluentTag>>(tyr::formalism::NumericEffectOperatorKind::Assign,
-                                                                                       target_term.index(),
-                                                                                       tyr::formalism::FunctionExpression<LiftedTag>(source_term.index())));
-    // (source) >= 0 reads source once more, next to the target assignment.
-    const auto source_comparison = intern(urd::data<tyr::formalism::BinaryOperator<LiftedTag, tyr::formalism::BooleanOperatorKind>>(
-        tyr::formalism::BooleanOperatorKind::Ge,
-        tyr::formalism::FunctionExpression<LiftedTag>(source_term.index()),
-        tyr::formalism::FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(0))));
-    const auto add_source_constraint = [&](urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>& condition)
-    { condition.numeric_constraints.emplace_back(source_comparison.index()); };
-    auto source_body_data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
-    add_source_constraint(source_body_data);
-    const auto source_body = intern(std::move(source_body_data));
-
-    auto target_rule_data = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>();
-    target_rule_data.body = source_body.index();
-    target_rule_data.head = target_assign_effect.index();
-    target_rule_data.cost = 3;
-    const auto target_rule = intern(std::move(target_rule_data));
-
-    auto source_rule_data = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::FunctionTag>>();
-    source_rule_data.body = empty_body.index();
-    source_rule_data.head = source_assign_effect.index();
-    source_rule_data.cost = 2;
-    const auto source_rule = intern(std::move(source_rule_data));
-
-    const auto goal_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("goal"), 0));
-    auto goal_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
-    goal_binding_data.relation = goal_predicate.index();
-    const auto goal = intern(std::move(goal_binding_data));
-    auto goal_atom_data = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
-    goal_atom_data.predicate = goal_predicate.index();
-    const auto goal_atom = intern(std::move(goal_atom_data));
-    const auto ground_goal = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(goal.data()));
-    const auto goal_literal = intern(urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::FluentTag>>(ground_goal.index(), true));
-    auto goals_data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<GroundTag>>();
-    goals_data.fluent_literals.push_back(goal_literal.index());
-    const auto goals = intern(std::move(goals_data));
-
-    const auto seed_predicate = intern(urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(std::string("seed"), 1));
-    const auto object = intern(urd::data<tyr::formalism::Object>(std::string("a")));
-    const auto variable = intern(urd::data<tyr::formalism::Variable>(std::string("x")));
-    auto seed_atom_data = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
-    seed_atom_data.predicate = seed_predicate.index();
-    seed_atom_data.terms.emplace_back(tyr::formalism::ParameterIndex(0));
-    const auto seed_atom = intern(std::move(seed_atom_data));
-    const auto seed_literal = intern(urd::data<tyr::formalism::Literal<LiftedTag, tyr::formalism::FluentTag>>(seed_atom.index(), true));
-    auto seed_body_data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
-    seed_body_data.variables.push_back(variable.index());
-    seed_body_data.fluent_literals.push_back(seed_literal.index());
-    add_source_constraint(seed_body_data);
-    const auto seed_body = intern(std::move(seed_body_data));
-    auto seed_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
-    seed_binding_data.relation = seed_predicate.index();
-    seed_binding_data.values.push_back(object.index().value);
-    const auto seed_binding = intern(std::move(seed_binding_data));
-    const auto ground_seed = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(seed_binding.data()));
-
-    auto predicate_rule_data = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
-    if (general_goal_rule)
-        predicate_rule_data.variables.push_back(variable.index());
-    predicate_rule_data.body = (general_goal_rule ? seed_body : source_body).index();
-    predicate_rule_data.heads.push_back(goal_atom.index());
-    predicate_rule_data.cost = 3;
-    const auto predicate_rule = intern(std::move(predicate_rule_data));
-
-    auto program_data = urd::data<tyr::formalism::datalog::Program<LiftedTag>>();
-    program_data.fluent_predicates.push_back(goal_predicate.index());
-    if (general_goal_rule)
-    {
-        program_data.objects.push_back(object.index());
-        program_data.fluent_predicates.push_back(seed_predicate.index());
-        program_data.fluent_atoms.push_back(ground_seed.index());
-    }
-    program_data.fluent_functions.push_back(source_function.index());
-    program_data.fluent_functions.push_back(target_function.index());
-    if (initial_source_values.size() != 0)
-    {
-        const auto ground_source_term = intern(urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(source.data()));
-        for (const auto value : initial_source_values)
-            program_data.fluent_fterm_values.push_back(
-                intern(urd::data<tyr::formalism::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>(ground_source_term.index(), value)).index());
-    }
-    program_data.predicate_rules.push_back(predicate_rule.index());
-    if (include_source_rule)
-        program_data.function_rules.push_back(source_rule.index());
-    program_data.function_rules.push_back(target_rule.index());
-    const auto program = intern(std::move(program_data));
-
-    return LiftedNumericProgram(repository, program, goal, goals, source, target);
-}
-
 struct LiftedPredicateProgram
 {
     tyr::formalism::datalog::RepositoryPtr repository;
     tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal;
     tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals;
-    tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> first_binding;
-    tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> second_binding;
+    tyr::formalism::datalog::RuleRowView first_binding;
+    tyr::formalism::datalog::RuleRowView second_binding;
     tyr::datalog::Program<LiftedTag> program;
 
     LiftedPredicateProgram(tyr::formalism::datalog::RepositoryPtr repository_,
                            tyr::formalism::datalog::ProgramView<LiftedTag> program_view,
                            tyr::formalism::datalog::PredicateRowView<tyr::formalism::FluentTag> goal_,
                            tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> goals_,
-                           tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> first_binding_,
-                           tyr::formalism::datalog::RuleRowView<tyr::formalism::PredicateTag> second_binding_) :
+                           tyr::formalism::datalog::RuleRowView first_binding_,
+                           tyr::formalism::datalog::RuleRowView second_binding_) :
         repository(std::move(repository_)),
         goal(goal_),
         goals(goals_),
@@ -444,7 +296,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         body_data.numeric_constraints.emplace_back(comparison.index());
     }
     const auto body = intern(std::move(body_data));
-    auto rule_data = urd::data<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>();
+    auto rule_data = urd::data<tyr::formalism::datalog::Rule<LiftedTag>>();
     rule_data.variables.push_back(variable.index());
     rule_data.body = body.index();
     rule_data.heads.push_back(goal_atom.index());
@@ -453,7 +305,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
 
     const auto bind_rule = [&](auto object)
     {
-        auto data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag, tyr::formalism::PredicateTag>>>();
+        auto data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag>>>();
         data.relation = rule.index();
         data.values.push_back(object.index().value);
         return intern(std::move(data));
@@ -502,7 +354,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         };
     }
     program_data.fluent_atoms = { ground_first_source.index(), ground_second_source.index() };
-    program_data.predicate_rules = { rule.index() };
+    program_data.rules = { rule.index() };
     const auto program = intern(std::move(program_data));
 
     return LiftedPredicateProgram(repository, program, goal, goals, first_binding, second_binding);

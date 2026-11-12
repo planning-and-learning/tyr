@@ -23,7 +23,6 @@ namespace tyr::tests
 {
 TEST(TyrPlanningGroundFFRPGHeuristicTest, RelaxedPlanDescribesLatestEvaluation) { expect_relaxed_plan_reset_after_dead_end<GroundTag>(); }
 TEST(TyrPlanningGroundFFRPGHeuristicTest, WorkerRelaxedPlanIsIndependent) { expect_worker_has_independent_relaxed_plan<GroundTag>(); }
-TEST(TyrPlanningGroundFFRPGHeuristicTest, TraversesExactNumericHeadSupports) { expect_ff_traverses_exact_numeric_head_supports<GroundTag>(); }
 }
 
 namespace tyr::tests
@@ -52,7 +51,6 @@ namespace tyr::tests
 {
 TEST(TyrPlanningLiftedFFRPGHeuristicTest, RelaxedPlanDescribesLatestEvaluation) { expect_relaxed_plan_reset_after_dead_end<LiftedTag>(); }
 TEST(TyrPlanningLiftedFFRPGHeuristicTest, WorkerRelaxedPlanIsIndependent) { expect_worker_has_independent_relaxed_plan<LiftedTag>(); }
-TEST(TyrPlanningLiftedFFRPGHeuristicTest, TraversesExactNumericHeadSupports) { expect_ff_traverses_exact_numeric_head_supports<LiftedTag>(); }
 }
 
 namespace tyr::tests

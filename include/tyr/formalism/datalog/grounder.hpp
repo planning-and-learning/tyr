@@ -84,8 +84,7 @@ std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<Lifted
 
 std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context);
 
-template<RelationKind R>
-std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, WriteContext<Builder, Repository>& context);
+std::pair<RuleView<GroundTag>, bool> ground(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context);
 
 /**
  * ground_binding
@@ -102,8 +101,7 @@ std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element,
 template<FactKind F>
 std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context);
 
-template<RelationKind R>
-std::pair<RuleRowView<R>, bool> ground_binding(RuleView<LiftedTag, R> element, WriteContext<Builder, Repository>& context);
+std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context);
 
 /**
  * try_ground
@@ -287,20 +285,16 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
     return datalog::insert(context.destination(), *conj_cond);
 }
 
-template<RelationKind R>
-std::pair<RuleView<GroundTag, R>, bool> ground(RuleView<LiftedTag, R> element, WriteContext<Builder, Repository>& context)
+inline std::pair<RuleView<GroundTag>, bool> ground(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context)
 {
     // Fetch and clear
-    auto rule = datalog::checkout<Rule<GroundTag, R>>(context.builder());
+    auto rule = datalog::checkout<Rule<GroundTag>>(context.builder());
 
     // Fill data
     rule->row = ground_binding(element, context).first.data();
     rule->body = ground(element.get_body(), context).first.index();
-    if constexpr (std::same_as<R, PredicateTag>)
-        for (const auto head : element.get_heads())
-            rule->heads.push_back(ground(head, context).first.index());
-    else
-        rule->head = ground(element.get_head(), context).first.index();
+    for (const auto head : element.get_heads())
+        rule->heads.push_back(ground(head, context).first.index());
     rule->cost = element.get_cost();
 
     // Canonicalize and Serialize
@@ -334,10 +328,9 @@ template<FactKind F>
 std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
 { return ground(element.get_terms(), element.get_function(), context); }
 
-template<RelationKind R>
-std::pair<RuleRowView<R>, bool> ground_binding(RuleView<LiftedTag, R> element, WriteContext<Builder, Repository>& context)
+inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context)
 {
-    auto binding = datalog::checkout<ygg::Row<Rule<LiftedTag, R>>>(context.builder());
+    auto binding = datalog::checkout<ygg::Row<Rule<LiftedTag>>>(context.builder());
 
     binding->relation = element.index();
     for (const auto object : context.binding())
@@ -426,13 +419,6 @@ extern template std::optional<PredicateRowView<StaticTag>> try_ground_binding(At
 extern template std::optional<PredicateRowView<FluentTag>> try_ground_binding(AtomView<LiftedTag, FluentTag> element,
                                                                               WriteContext<Builder, Repository>& context);
 
-extern template std::pair<RuleView<GroundTag, PredicateTag>, bool> ground(RuleView<LiftedTag, PredicateTag> element,
-                                                                          WriteContext<Builder, Repository>& context);
-extern template std::pair<RuleView<GroundTag, FunctionTag>, bool> ground(RuleView<LiftedTag, FunctionTag> element, WriteContext<Builder, Repository>& context);
-
-extern template std::pair<RuleRowView<PredicateTag>, bool> ground_binding(RuleView<LiftedTag, PredicateTag> element,
-                                                                          WriteContext<Builder, Repository>& context);
-extern template std::pair<RuleRowView<FunctionTag>, bool> ground_binding(RuleView<LiftedTag, FunctionTag> element, WriteContext<Builder, Repository>& context);
 }
 
 #endif

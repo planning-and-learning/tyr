@@ -26,7 +26,6 @@
 #include "tyr/datalog/policies/annotation_concepts.hpp"
 #include "tyr/datalog/policies/cost.hpp"
 #include "tyr/datalog/policies/cost_concepts.hpp"
-#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/policies/termination_concepts.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -40,21 +39,15 @@
 namespace tyr::datalog
 {
 
-template<formalism::RelationKind R>
 struct GroundRuleDependencies
 {
 private:
-    using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag, R>>>;
+    using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag>>>;
 
 public:
     DenseRelationMap<formalism::PredicateTag, Rules> fluent_precondition_to_rules;
-    DenseRelationMap<formalism::FunctionTag, Rules> fluent_function_term_to_rules;
 
-    GroundRuleDependencies(size_t num_predicates, size_t num_functions) :
-        fluent_precondition_to_rules(num_predicates),
-        fluent_function_term_to_rules(num_functions)
-    {
-    }
+    explicit GroundRuleDependencies(size_t num_predicates) : fluent_precondition_to_rules(num_predicates) {}
 };
 
 template<>
@@ -62,11 +55,7 @@ struct ConstProgramWorkspace<GroundTag>
 {
     formalism::datalog::ProgramView<GroundTag> program;
     ConstFactsWorkspace<GroundTag> facts;
-    GroundRuleDependencies<formalism::PredicateTag> predicate_rules;
-    GroundRuleDependencies<formalism::FunctionTag> function_rules;
-
-    template<formalism::RelationKind R>
-    const auto& get_dependencies() const noexcept;
+    GroundRuleDependencies dependencies;
 
     explicit ConstProgramWorkspace(formalism::datalog::ProgramView<GroundTag> program);
 };
@@ -78,7 +67,6 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     FactsWorkspace<GroundTag> facts;
     AP annotation_policy;
     PredicateAnnotations<> annotations;
-    FunctionAnnotations<> numeric_annotations;
     TP tp;
     CP cost_policy;
     CostBuckets cost_buckets;
@@ -95,7 +83,6 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
               cws.program.context()),
         annotation_policy(std::move(annotation_policy_)),
         annotations(cws.program.template get_predicates<formalism::FluentTag>().size()),
-        numeric_annotations(cws.program.template get_functions<formalism::FluentTag>().size()),
         tp(std::move(tp_)),
         cost_policy(std::move(cost_policy_)),
         scheduler(cws.program),
@@ -108,18 +95,7 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     explicit ProgramWorkspace(Program<GroundTag>& program, AP annotation_policy_ = AP(), TP tp_ = TP(), CP cost_policy_ = CP());
 
     void clear_costs() { cost_policy.clear(); }
-
-    [[nodiscard]] auto get_numeric_support_selector() const noexcept
-    { return NumericSupportSelector(FactSets { const_workspace->facts.fact_sets, facts.fact_sets }, numeric_annotations, !AP::stores_annotations); }
 };
-
-template<>
-inline const auto& ConstProgramWorkspace<GroundTag>::get_dependencies<formalism::PredicateTag>() const noexcept
-{ return predicate_rules; }
-
-template<>
-inline const auto& ConstProgramWorkspace<GroundTag>::get_dependencies<formalism::FunctionTag>() const noexcept
-{ return function_rules; }
 
 }
 

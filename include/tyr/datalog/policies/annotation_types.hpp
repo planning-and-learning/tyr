@@ -50,57 +50,27 @@
 namespace tyr::datalog
 {
 
-struct NumericSupport : urd::compared_by_identity<NumericSupport>
+/// The rule instance that derives a fact, and the cost at which it does.
+struct WitnessAnnotation : urd::compared_by_identity<WitnessAnnotation>
 {
-    formalism::datalog::FunctionRowIndex<formalism::FluentTag> key;
-    ygg::ClosedInterval<ygg::float_t> interval;
-    Cost cost;
-
-    NumericSupport() = delete;
-    NumericSupport(formalism::datalog::FunctionRowIndex<formalism::FluentTag> key_, ygg::ClosedInterval<ygg::float_t> interval_, Cost cost_) :
-        key(key_),
-        interval(std::move(interval_)),
-        cost(cost_)
-    {
-    }
-
-    [[nodiscard]] auto get_key() const noexcept { return key; }
-    [[nodiscard]] auto get_interval() const noexcept { return interval; }
-    [[nodiscard]] auto get_cost() const noexcept { return cost; }
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&NumericSupport::key, &NumericSupport::interval, &NumericSupport::cost> {}; }
-};
-
-template<formalism::RelationKind R = formalism::PredicateTag>
-struct WitnessAnnotation : urd::compared_by_identity<WitnessAnnotation<R>>
-{
-private:
-    using NumericSupports = urd::Store<urd::sequence<NumericSupport>>;
-
-public:
-    WitnessAnnotation(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost);
-    WitnessAnnotation(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost, NumericSupports numeric_supports);
-    WitnessAnnotation(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost, std::span<const NumericSupport> numeric_supports);
+    WitnessAnnotation(formalism::datalog::RuleRowIndex rule_key_, Cost cost_) : rule_key(rule_key_), cost(cost_) {}
 
     [[nodiscard]] auto get_rule_key() const noexcept { return rule_key; }
     [[nodiscard]] auto get_cost() const noexcept { return cost; }
-    [[nodiscard]] const auto& get_numeric_supports() const noexcept { return numeric_supports; }
 
-    static constexpr auto identifying_members() noexcept
-    { return urd::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost, &WitnessAnnotation::numeric_supports> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost> {}; }
 
 private:
-    formalism::datalog::RuleRowIndex<R> rule_key;
+    formalism::datalog::RuleRowIndex rule_key;
     Cost cost;
-    NumericSupports numeric_supports;
 };
 
-using PredicateRuleRow = formalism::datalog::RuleRowIndex<formalism::PredicateTag>;
+using PredicateRuleRow = formalism::datalog::RuleRowIndex;
 
 struct PredicateAchiever
 {
     formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
-    WitnessAnnotation<formalism::PredicateTag> witness;
+    WitnessAnnotation witness;
 };
 
 struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey>
@@ -147,13 +117,13 @@ inline void insert_pending_achiever(PendingPredicateAchievers& pending, Predicat
     const auto it = pending.by_key.find(key);
     if (it == pending.by_key.end())
     {
-        pending.by_key.emplace(key, std::move(achiever));
+        pending.by_key.emplace(key, achiever);
     }
     else
     {
         if (it->second.witness.get_cost() <= cost)
             return;
-        it->second = std::move(achiever);
+        it->second = achiever;
     }
     pending.bucket(cost).push_back(key);
 }
@@ -190,16 +160,14 @@ private:
     Cost m_cost;
 };
 
-template<formalism::RelationKind R = formalism::PredicateTag>
-using Annotation = std::variant<BaseAnnotation, WitnessAnnotation<R>>;
+using Annotation = std::variant<BaseAnnotation, WitnessAnnotation>;
 
-template<formalism::RelationKind R>
-inline Cost get_cost(const Annotation<R>& annotation) noexcept
+inline Cost get_cost(const Annotation& annotation) noexcept
 {
     // get_if rather than std::visit, which throws for a valueless variant; annotations are never valueless.
     if (const auto* base = std::get_if<BaseAnnotation>(&annotation))
         return base->get_cost();
-    const auto* witness = std::get_if<WitnessAnnotation<R>>(&annotation);
+    const auto* witness = std::get_if<WitnessAnnotation>(&annotation);
     URD_ASSUME(witness != nullptr);
     return witness->get_cost();
 }
@@ -324,7 +292,7 @@ public:
     /// generations read as absent and retain their annotation storage for reuse.
     void clear() noexcept { m_annotations.clear(); }
 
-    void insert_or_assign(Key key, Annotation<> annotation)
+    void insert_or_assign(Key key, Annotation annotation)
     {
         m_annotations.update(key, [&](auto& incumbent, bool) { incumbent = std::move(annotation); });
     }
@@ -334,7 +302,7 @@ public:
         return m_annotations.read(key, [](const auto& annotation) { return get_cost(annotation); }, std::numeric_limits<Cost>::max());
     }
 
-    std::optional<CostUpdate> insert_if_better(Key key, Annotation<> annotation)
+    std::optional<CostUpdate> insert_if_better(Key key, Annotation annotation)
     {
         return m_annotations.update(key,
                                     [&](auto& incumbent, bool initialized)
@@ -349,189 +317,26 @@ public:
                                     });
     }
 
-    [[nodiscard]] const Annotation<>* find(Key key) const noexcept { return m_annotations.find(key); }
+    [[nodiscard]] const Annotation* find(Key key) const noexcept { return m_annotations.find(key); }
 
-    Annotation<>* find(Key key) noexcept
+    Annotation* find(Key key) noexcept
         requires(!ThreadSafe)
-    { return const_cast<Annotation<>*>(std::as_const(*this).find(key)); }
+    { return const_cast<Annotation*>(std::as_const(*this).find(key)); }
 
 private:
-    DenseRelationMap<formalism::PredicateTag, Annotation<>, ThreadSafe> m_annotations;
+    DenseRelationMap<formalism::PredicateTag, Annotation, ThreadSafe> m_annotations;
 };
 
 template<bool ThreadSafe = false>
 using PredicateAnnotations = PredicateAnnotationMap<ThreadSafe>;
 
-struct NumericIntervalAnnotation
-{
-    ygg::ClosedInterval<ygg::float_t> interval;
-    Annotation<formalism::FunctionTag> annotation;
-
-    NumericIntervalAnnotation() = default;
-    NumericIntervalAnnotation(ygg::ClosedInterval<ygg::float_t> interval_, Annotation<formalism::FunctionTag> annotation_) :
-        interval(std::move(interval_)),
-        annotation(std::move(annotation_))
-    {
-    }
-};
-
-inline bool numeric_interval_key_less(const NumericIntervalAnnotation& lhs, const NumericIntervalAnnotation& rhs) noexcept
-{
-    return urd::Less<> {}(std::tuple(get_cost(lhs.annotation), lower(lhs.interval), upper(lhs.interval)),
-                          std::tuple(get_cost(rhs.annotation), lower(rhs.interval), upper(rhs.interval)));
-}
-
-inline const Annotation<formalism::FunctionTag>* find_numeric_interval_annotation(const urd::Store<urd::sequence<NumericIntervalAnnotation>>& entries,
-                                                                                  ygg::ClosedInterval<ygg::float_t> interval) noexcept
-{
-    const auto it = std::find_if(entries.begin(), entries.end(), [&](const auto& entry) { return entry.interval == interval; });
-    return it == entries.end() ? nullptr : &it->annotation;
-}
-
-/// Retains the first cheapest witness for each exact interval.
-inline bool insert_first_best_numeric_interval_annotation(urd::Store<urd::sequence<NumericIntervalAnnotation>>& entries, NumericIntervalAnnotation entry)
-{
-    const auto incumbent = std::find_if(entries.begin(), entries.end(), [&](const auto& candidate) { return candidate.interval == entry.interval; });
-    if (incumbent != entries.end())
-    {
-        if (get_cost(incumbent->annotation) <= get_cost(entry.annotation))
-            return false;
-
-        const auto pos = std::upper_bound(entries.begin(), incumbent, entry, numeric_interval_key_less);
-        std::move_backward(pos, incumbent, incumbent + 1);
-        *pos = std::move(entry);
-        return true;
-    }
-
-    const auto pos = std::upper_bound(entries.begin(), entries.end(), entry, numeric_interval_key_less);
-    entries.emplace(pos, std::move(entry));
-    return true;
-}
-
-/// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
-/// and destruction require quiescence.
-template<bool ThreadSafe = false>
-class NumericIntervalAnnotations
-{
-public:
-    static constexpr bool thread_safe = ThreadSafe;
-
-private:
-    using Binding = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
-    using Entry = NumericIntervalAnnotation;
-
-public:
-    using Entries = urd::Store<urd::sequence<Entry>>;
-
-private:
-    using Storage = DenseRelationMap<formalism::FunctionTag, Entries, ThreadSafe>;
-
-public:
-    using Relation = typename Storage::Relation;
-    using Key = typename Storage::Row;
-
-    NumericIntervalAnnotations()
-        requires(!ThreadSafe)
-    = default;
-    explicit NumericIntervalAnnotations(size_t num_relations) : m_slots(num_relations) {}
-
-    void clear() noexcept
-    {
-        m_slots.clear();
-        m_size = 0;
-    }
-
-    [[nodiscard]] size_t size() const noexcept
-        requires(!ThreadSafe)
-    { return m_size; }
-
-    [[nodiscard]] Cost fetch_cost(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
-    {
-        return m_slots.read(
-            binding,
-            [&](const auto& entries)
-            {
-                const auto* annotation = find_numeric_interval_annotation(entries, interval);
-                return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
-            },
-            std::numeric_limits<Cost>::max());
-    }
-
-    [[nodiscard]] const Entries* find_entries(Binding binding) const noexcept { return m_slots.find(binding); }
-
-    [[nodiscard]] const Entries* find_entries(Relation relation, Key key) const noexcept { return m_slots.find(relation, key); }
-
-    [[nodiscard]] const Annotation<formalism::FunctionTag>* find(Binding binding) const noexcept
-    {
-        const auto* entries = find_entries(binding);
-        return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
-    }
-
-    Annotation<formalism::FunctionTag>* find(Binding binding) noexcept
-        requires(!ThreadSafe)
-    {
-        auto* entries = m_slots.find(binding);
-        return (!entries || entries->empty()) ? nullptr : &entries->back().annotation;
-    }
-
-    [[nodiscard]] const Annotation<formalism::FunctionTag>* find(Binding binding, ygg::ClosedInterval<ygg::float_t> interval) const noexcept
-    {
-        const auto* entries = find_entries(binding);
-        return entries ? find_numeric_interval_annotation(*entries, std::move(interval)) : nullptr;
-    }
-
-    bool insert(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval, Annotation<formalism::FunctionTag> annotation)
-    { return insert(binding.relation, binding.row, std::move(interval), std::move(annotation)); }
-
-    bool insert(Relation relation, Key key, const ygg::ClosedInterval<ygg::float_t>& interval, Annotation<formalism::FunctionTag> annotation)
-    {
-        if (empty(interval))
-            return false;
-
-        auto entry = Entry { interval, std::move(annotation) };
-        return m_slots.update(relation,
-                              key,
-                              [&](Entries& entries, bool initialized)
-                              {
-                                  if (!initialized)
-                                      entries.clear();
-                                  const auto old_size = entries.size();
-                                  const auto changed = insert_first_best_numeric_interval_annotation(entries, std::move(entry));
-                                  if constexpr (!ThreadSafe)
-                                      m_size += entries.size() - old_size;
-                                  return changed;
-                              });
-    }
-
-private:
-    Storage m_slots;
-    size_t m_size { 0 };
-};
-
-template<bool ThreadSafe = false>
-using FunctionAnnotations = NumericIntervalAnnotations<ThreadSafe>;
-
 /// Stores of staged predicate annotations: PredicateAnnotations<true> for the parallel lifted engine,
 /// StagedPredicateAnnotation for the ground engine.
 template<typename T>
-concept PredicateAnnotationStore = requires(T& store, const T& const_store, typename T::Key key, Annotation<> annotation) {
+concept PredicateAnnotationStore = requires(T& store, const T& const_store, typename T::Key key, Annotation annotation) {
     { const_store.fetch_cost(key) } -> std::same_as<Cost>;
-    { const_store.find(key) } -> std::same_as<const Annotation<>*>;
+    { const_store.find(key) } -> std::same_as<const Annotation*>;
     { store.insert_if_better(key, std::move(annotation)) } -> std::same_as<std::optional<CostUpdate>>;
-    store.clear();
-};
-
-/// Stores of staged function annotations: FunctionAnnotations<true> for the parallel lifted engine,
-/// StagedFunctionAnnotation for the ground engine.
-template<typename T>
-concept FunctionAnnotationStore = requires(T& store,
-                                           const T& const_store,
-                                           formalism::datalog::FunctionRowIndex<formalism::FluentTag> binding,
-                                           ygg::ClosedInterval<ygg::float_t> interval,
-                                           Annotation<formalism::FunctionTag> annotation) {
-    { const_store.fetch_cost(binding, interval) } -> std::same_as<Cost>;
-    { const_store.find(binding, interval) } -> std::same_as<const Annotation<formalism::FunctionTag>*>;
-    { store.insert(binding, interval, std::move(annotation)) } -> std::same_as<bool>;
     store.clear();
 };
 
@@ -549,19 +354,19 @@ public:
         return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
     }
 
-    [[nodiscard]] const Annotation<>* find(Key key) const noexcept
+    [[nodiscard]] const Annotation* find(Key key) const noexcept
     {
         const auto it = std::find_if(m_entries.begin(), m_entries.end(), [&](const auto& entry) { return entry.first == key; });
         return it != m_entries.end() ? &it->second : nullptr;
     }
 
-    std::optional<CostUpdate> insert_if_better(Key key, Annotation<> annotation)
+    std::optional<CostUpdate> insert_if_better(Key key, Annotation annotation)
     {
         const auto new_cost = get_cost(annotation);
         const auto it = std::find_if(m_entries.begin(), m_entries.end(), [&](const auto& entry) { return entry.first == key; });
         if (it == m_entries.end())
         {
-            m_entries.emplace_back(key, std::move(annotation));
+            m_entries.emplace_back(key, annotation);
             return std::optional<CostUpdate>(std::in_place, std::nullopt, new_cost);
         }
 
@@ -569,57 +374,16 @@ public:
         if (old_cost <= new_cost)
             return std::nullopt;
 
-        it->second = std::move(annotation);
+        it->second = annotation;
         return std::optional<CostUpdate>(std::in_place, old_cost, new_cost);
     }
 
 private:
-    urd::Store<urd::sequence<std::pair<Key, Annotation<>>>> m_entries;
-};
-
-/// The function annotation staged by one ground rule firing (one head interval).
-class StagedFunctionAnnotation
-{
-public:
-    using Binding = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
-
-    void clear() noexcept { m_entry.reset(); }
-
-    [[nodiscard]] Cost fetch_cost(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval) const noexcept
-    {
-        const auto* annotation = find(binding, interval);
-        return annotation ? get_cost(*annotation) : std::numeric_limits<Cost>::max();
-    }
-
-    [[nodiscard]] const Annotation<formalism::FunctionTag>* find(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval) const noexcept
-    { return m_entry && m_entry->binding == binding && m_entry->interval == interval ? &m_entry->annotation : nullptr; }
-
-    /// Same replacement rule as NumericIntervalAnnotations: an equal interval is replaced only by a strictly cheaper annotation.
-    bool insert(Binding binding, const ygg::ClosedInterval<ygg::float_t>& interval, Annotation<formalism::FunctionTag> annotation)
-    {
-        assert((!m_entry || (m_entry->binding == binding && m_entry->interval == interval)) && "A ground rule firing stages a single head interval.");
-        if (m_entry && get_cost(m_entry->annotation) <= get_cost(annotation))
-            return false;
-
-        m_entry.emplace(Entry { binding, interval, std::move(annotation) });
-        return true;
-    }
-
-private:
-    struct Entry
-    {
-        Binding binding;
-        ygg::ClosedInterval<ygg::float_t> interval;
-        Annotation<formalism::FunctionTag> annotation;
-    };
-
-    std::optional<Entry> m_entry;
+    urd::Store<urd::sequence<std::pair<Key, Annotation>>> m_entries;
 };
 
 static_assert(PredicateAnnotationStore<PredicateAnnotations<true>>);
 static_assert(PredicateAnnotationStore<StagedPredicateAnnotation>);
-static_assert(FunctionAnnotationStore<FunctionAnnotations<true>>);
-static_assert(FunctionAnnotationStore<StagedFunctionAnnotation>);
 }
 
 #endif

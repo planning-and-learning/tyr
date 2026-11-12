@@ -44,8 +44,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                                              const FunctionTermValueViewList<GroundTag, StaticTag>&,
                                              const FunctionTermValueViewList<GroundTag, FluentTag>&,
                                              const std::optional<ConjunctiveConditionView<GroundTag>>&,
-                                             const RuleViewList<T, PredicateTag>&,
-                                             const RuleViewList<T, FunctionTag>&>(),
+                                             const RuleViewList<T>&>(),
                 "static_predicates"_a,
                 "fluent_predicates"_a,
                 "static_functions"_a,
@@ -56,8 +55,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                 "static_fterm_values"_a,
                 "fluent_fterm_values"_a,
                 "goal"_a,
-                nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"),
-                nb::arg(std::same_as<T, GroundTag> ? "ground_function_rules" : "function_rules"));
+                nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"));
         cls.def(nb::init<urd::flat_vector<urd::index<Predicate<StaticTag>>>,
                          urd::flat_vector<urd::index<Predicate<FluentTag>>>,
                          urd::flat_vector<urd::index<Function<StaticTag>>>,
@@ -68,8 +66,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                          urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
                          urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
                          urd::flat_optional<urd::index<ConjunctiveCondition<GroundTag>>>,
-                         urd::flat_vector<urd::index<Rule<T, PredicateTag>>>,
-                         urd::flat_vector<urd::index<Rule<T, FunctionTag>>>>(),
+                         urd::flat_vector<urd::index<Rule<T>>>>(),
                 "static_predicates"_a,
                 "fluent_predicates"_a,
                 "static_functions"_a,
@@ -80,8 +77,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
                 "static_fterm_values"_a,
                 "fluent_fterm_values"_a,
                 "goal"_a,
-                nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"),
-                nb::arg(std::same_as<T, GroundTag> ? "ground_function_rules" : "function_rules"));
+                nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"));
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);
@@ -101,8 +97,7 @@ void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std:
         cls.def("get_static_fterm_values", &V::template get_fterm_values<StaticTag>);
         cls.def("get_fluent_fterm_values", &V::template get_fterm_values<FluentTag>);
         cls.def("get_goal", &V::get_goal);
-        cls.def("get_rules", &V::template get_rules<PredicateTag>);
-        cls.def("get_function_rules", &V::template get_rules<FunctionTag>);
+        cls.def("get_rules", &V::get_rules);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
         urd::python::add_hash(cls);

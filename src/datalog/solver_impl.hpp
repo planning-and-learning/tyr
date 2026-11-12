@@ -37,14 +37,10 @@ class SolverPolicy;
 
 template<typename Kind, typename AP, typename TP, typename CP>
 concept SchedulerConcept = TaskKind<Kind> && AnnotationPolicyConcept<AP> && TerminationPolicyConcept<TP> && RuleCostPolicyConcept<CP>
-                           && requires(Scheduler<Kind>& scheduler,
-                                       ProgramExecutionContext<Kind, AP, TP, CP>& ctx,
-                                       const CostBuckets::Bucket& bucket,
-                                       formalism::datalog::FunctionRowIndex<formalism::FluentTag> function) {
+                           && requires(Scheduler<Kind>& scheduler, ProgramExecutionContext<Kind, AP, TP, CP>& ctx, const CostBuckets::Bucket& bucket) {
                                   { scheduler.begin_stratum(ctx) } -> std::same_as<void>;
                                   { scheduler.begin_iteration(ctx) } -> std::same_as<void>;
                                   { scheduler.finish_iteration(SchedulerIterationTrigger::FactChanged) } -> std::same_as<void>;
-                                  { scheduler.notify_numeric_changed(function, ctx) } -> std::same_as<void>;
                                   { scheduler.notify_generated(bucket, ctx) } -> std::same_as<void>;
                               };
 
@@ -62,7 +58,6 @@ bool commit_head_bucket(ProgramExecutionContext<Kind, AP, TP, CP>& ctx, Schedule
 {
     auto& bucket = cost_buckets.at(cost);
     erase_if(bucket.predicate, [&](const auto fact) { return !ctx.out().insert(fact); });
-    erase_if(bucket.function, [&](const auto& entry) { return !ctx.out().insert(entry.first, entry.second); });
 
     // Install the entire bucket before notifying rules. The scheduler controls the representation-specific
     // notification order.

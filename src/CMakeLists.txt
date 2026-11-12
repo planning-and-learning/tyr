@@ -58,8 +58,6 @@ add_library(
     datalog/static_rule_filter.cpp
     datalog/policies/annotation.cpp
     datalog/policies/cost.cpp
-    datalog/policies/annotation_types.cpp
-    datalog/policies/numeric_support.cpp
     datalog/policies/termination.cpp
     datalog/lifted/programs/program.cpp
     datalog/lifted/workspaces/facts.cpp

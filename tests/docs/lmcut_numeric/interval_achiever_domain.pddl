@@ -1,0 +1,8 @@
+(define (domain interval-achiever)
+  (:requirements :strips :numeric-fluents)
+  (:predicates (r1) (r))
+  (:functions (x))
+  (:action c1 :parameters () :precondition (>= (x) 0) :effect (r1))
+  (:action c2 :parameters () :precondition (r1) :effect (r))
+  (:action a1 :parameters () :precondition (>= (x) 0) :effect (increase (x) 1))
+  (:action a2 :parameters () :precondition (r) :effect (increase (x) 2)))

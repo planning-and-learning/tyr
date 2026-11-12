@@ -67,27 +67,12 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
             m_ws->engine.assignment_sets.predicate.insert(urd::resolve(fact, *m_ws->workspace_repository));
             return true;
         }
-        bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
-        {
-            if (!m_ws->facts.insert(fact, interval))
-                return false;
-            m_ws->engine.assignment_sets.function.insert(urd::resolve(fact, *m_ws->workspace_repository), interval);
-            return true;
-        }
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
         [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
         auto& annotations() noexcept { return m_ws->annotations; }
         [[nodiscard]] const auto& annotations() const noexcept { return m_ws->annotations; }
-        auto& numeric_annotations() noexcept { return m_ws->numeric_annotations; }
-        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws->numeric_annotations; }
         auto& delta_annotations() noexcept { return m_ws->delta_annotations; }
         [[nodiscard]] const auto& delta_annotations() const noexcept { return m_ws->delta_annotations; }
-        auto& delta_numeric_annotations() noexcept { return m_ws->delta_numeric_annotations; }
-        [[nodiscard]] const auto& delta_numeric_annotations() const noexcept { return m_ws->delta_numeric_annotations; }
-        [[nodiscard]] const auto& numeric_support_selector() const noexcept { return m_ws->get_numeric_support_selector(); }
-        void rebuild_numeric_support_selector(const TaggedFactSets<formalism::StaticTag>& static_fact_sets)
-        { m_ws->numeric_support_selector.emplace(FactSets { static_fact_sets, m_ws->facts.fact_sets }, m_ws->numeric_annotations, !AP::stores_annotations); }
-        void reset_numeric_support_selector() noexcept { m_ws->numeric_support_selector.reset(); }
         auto& tp() noexcept { return m_ws->tp; }
         [[nodiscard]] const auto& tp() const noexcept { return m_ws->tp; }
         auto& cost_policy() noexcept { return m_ws->cost_policy; }
@@ -138,11 +123,8 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         out.cost_buckets().clear();
         out.pending_achievers().clear();
         tyr::datalog::clear(out.facts().delta_fact_sets);
-        out.reset_numeric_support_selector();
         out.annotations().clear();
-        out.numeric_annotations().clear();
         out.delta_annotations().clear();
-        out.delta_numeric_annotations().clear();
         out.annotation_policy().clear_achievers();
 
         initialize();
@@ -181,13 +163,9 @@ private:
         {
             for (const auto& [id, interval] : facts.function[i])
             {
-                const auto binding = row(facts, i, id);
-                out.annotation_policy().initialize_annotation(binding.data(), interval, out.numeric_annotations());
-                out.engine().assignment_sets.function.insert(binding, interval);
+                out.engine().assignment_sets.function.insert(row(facts, i, id), interval);
             }
         }
-
-        out.rebuild_numeric_support_selector(in().facts().fact_sets);
     }
 
     In m_in;

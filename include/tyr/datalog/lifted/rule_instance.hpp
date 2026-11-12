@@ -29,20 +29,18 @@
 namespace tyr::datalog
 {
 
-template<formalism::RelationKind R>
-class RuleInstance<LiftedTag, R>
+template<>
+class RuleInstance<LiftedTag>
 {
 public:
-    RuleInstance(formalism::datalog::RuleView<LiftedTag, R> rule,
-                 formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) :
+    RuleInstance(formalism::datalog::RuleView<LiftedTag> rule, formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder) :
         m_rule(rule),
         m_grounder(&grounder)
     {
     }
 
-    formalism::datalog::RuleView<LiftedTag, R> get_rule() const noexcept { return m_rule; }
+    formalism::datalog::RuleView<LiftedTag> get_rule() const noexcept { return m_rule; }
     auto get_body() const noexcept { return get_rule().get_body(); }
-    auto get_head() const noexcept { return get_rule().get_head(); }
 
     auto resolve(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
     { return formalism::datalog::ground_binding(atom, *m_grounder).first; }
@@ -52,13 +50,6 @@ public:
 
     auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(constraint, *m_grounder).first; }
 
-    ResolvedNumericEffect resolve(formalism::datalog::NumericEffectView<LiftedTag, formalism::FluentTag> effect) const
-    {
-        return { effect.get_operator(),
-                 formalism::datalog::ground_binding(effect.get_fterm(), *m_grounder).first.data(),
-                 formalism::datalog::ground(effect.get_fexpr(), *m_grounder) };
-    }
-
     auto witness_key() const
     {
         if (!m_witness_key)
@@ -67,9 +58,9 @@ public:
     }
 
 private:
-    formalism::datalog::RuleView<LiftedTag, R> m_rule;
+    formalism::datalog::RuleView<LiftedTag> m_rule;
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_grounder;
-    mutable std::optional<formalism::datalog::RuleRowView<R>> m_witness_key;
+    mutable std::optional<formalism::datalog::RuleRowView> m_witness_key;
 };
 
 }

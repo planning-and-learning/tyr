@@ -31,28 +31,26 @@
 
 namespace tyr::datalog
 {
-template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::schedule(formalism::datalog::RuleView<GroundTag, R> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void Scheduler<GroundTag>::schedule(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    if (get_states<R>()[ygg::uint_t(rule.index().value)].unsatisfied_count != 0)
+    if (m_states[static_cast<ygg::uint_t>(rule.index().value)].unsatisfied_count != 0)
         return;
 
-    auto instance = RuleInstance<GroundTag, R>(rule);
-    auto selector = ctx.out().numeric_support_selector();
-    auto& workspace = m_scratch.rule_evaluation;
-    const auto input = RuleEvaluationInput { selector, ctx.out().annotations() };
-    const auto priority = evaluate_rule_priority(instance, ctx.out().annotation_policy(), ctx.out().cost_policy(), input, workspace);
+    auto instance = RuleInstance<GroundTag>(rule);
+    const auto input = RuleEvaluationInput { FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().annotations() };
+    const auto priority = evaluate_rule_priority(instance, ctx.out().annotation_policy(), ctx.out().cost_policy(), input);
     if (priority)
         enqueue(rule, *priority);
 }
 
-template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag, R> rule,
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag> rule,
                                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     const auto rule_index = rule.index();
-    auto& states = get_states<R>();
-    auto& satisfied = states[ygg::uint_t(rule_index.value)].numeric_constraint_satisfied;
+    auto& states = m_states;
+    auto& satisfied = states[static_cast<ygg::uint_t>(rule_index.value)].numeric_constraint_satisfied;
     const auto numeric_constraints = rule.get_body().get_numeric_constraints();
 
     const auto fact_sets = FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets };
@@ -62,23 +60,23 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::dat
             continue;
 
         satisfied.insert(i);
-        auto& unsatisfied_count = states[ygg::uint_t(rule_index.value)].unsatisfied_count;
+        auto& unsatisfied_count = states[static_cast<ygg::uint_t>(rule_index.value)].unsatisfied_count;
         assert(unsatisfied_count > 0);
         --unsatisfied_count;
     }
 }
 
-template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
+template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact,
                                                           ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_precondition_to_rules.find(fact);
+    const auto* dependent_rules = ctx.in().dependencies().fluent_precondition_to_rules.find(fact);
     if (!dependent_rules)
         return;
 
     for (const auto dependent_rule : *dependent_rules)
     {
-        auto& unsatisfied_count = get_states<R>()[ygg::uint_t(dependent_rule.index().value)].unsatisfied_count;
+        auto& unsatisfied_count = m_states[ygg::uint_t(dependent_rule.index().value)].unsatisfied_count;
         if (unsatisfied_count == 0)
             continue;
 
@@ -87,33 +85,13 @@ void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::Pr
     }
 }
 
-template<formalism::RelationKind R, AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_numeric_changed_for(formalism::datalog::FunctionRowIndex<formalism::FluentTag> term,
-                                                      ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
-{
-    const auto* dependent_rules = ctx.in().template dependencies<R>().fluent_function_term_to_rules.find(term);
-    if (!dependent_rules)
-        return;
-
-    for (const auto dependent_rule : *dependent_rules)
-    {
-        update_numeric_constraint_satisfaction(dependent_rule, ctx);
-        if (get_states<R>()[ygg::uint_t(dependent_rule.index().value)].unsatisfied_count == 0)
-            schedule(dependent_rule, ctx);
-    }
-}
-
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    for (const auto rule : m_program.get_rules<formalism::PredicateTag>())
-        update_numeric_constraint_satisfaction(rule, ctx);
-    for (const auto rule : m_program.get_rules<formalism::FunctionTag>())
+    for (const auto rule : m_program.get_rules())
         update_numeric_constraint_satisfaction(rule, ctx);
 
-    for (const auto rule : m_program.get_rules<formalism::PredicateTag>())
-        schedule(rule, ctx);
-    for (const auto rule : m_program.get_rules<formalism::FunctionTag>())
+    for (const auto rule : m_program.get_rules())
         schedule(rule, ctx);
 }
 
@@ -122,33 +100,16 @@ void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::Predic
                                                       ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     ++m_statistics.num_facts_derived;
-    notify_predicate_generated_for<formalism::PredicateTag>(fact, ctx);
-    notify_predicate_generated_for<formalism::FunctionTag>(fact, ctx);
-}
-
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::notify_numeric_changed(formalism::datalog::FunctionRowIndex<formalism::FluentTag> term,
-                                                  ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
-{
-    notify_numeric_changed_for<formalism::PredicateTag>(term, ctx);
-    notify_numeric_changed_for<formalism::FunctionTag>(term, ctx);
+    notify_predicate_generated_for(fact, ctx);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
     m_scratch.changed_facts.assign(bucket.predicate.begin(), bucket.predicate.end());
-    m_scratch.changed_terms.clear();
-    m_scratch.changed_terms.reserve(bucket.function.size());
-    for (const auto& entry : bucket.function)
-        m_scratch.changed_terms.push_back(entry.first);
-
     std::sort(m_scratch.changed_facts.begin(), m_scratch.changed_facts.end());
-    std::sort(m_scratch.changed_terms.begin(), m_scratch.changed_terms.end());
     for (const auto fact : m_scratch.changed_facts)
         notify_predicate_generated(fact, ctx);
-    for (const auto term : m_scratch.changed_terms)
-        notify_numeric_changed(term, ctx);
 }
 
 }

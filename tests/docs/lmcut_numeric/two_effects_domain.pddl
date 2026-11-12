@@ -1,0 +1,5 @@
+(define (domain two-effects)
+  (:requirements :strips :numeric-fluents)
+  (:predicates (p))
+  (:functions (x))
+  (:action a :parameters () :precondition (>= (x) 0) :effect (and (p) (increase (x) 1))))

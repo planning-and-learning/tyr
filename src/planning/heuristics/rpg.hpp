@@ -31,7 +31,6 @@
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
-#include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
@@ -133,9 +132,6 @@ void materialize_goal(RPGDefinition<Kind>& definition, Workspace& workspace, for
         condition->fluent_literals.push_back(formalism::datalog::insert(merge_context.destination(), *literal).first.index());
     }
 
-    for (const auto numeric_constraint : source_goal.get_numeric_constraints())
-        condition->numeric_constraints.push_back(formalism::planning::merge_p2d(numeric_constraint, merge_context).first.index());
-
     workspace.tp.set_goals(formalism::datalog::insert(merge_context.destination(), *condition).first);
 }
 
@@ -217,26 +213,20 @@ protected:
 
     [[nodiscard]] datalog::Cost get_goal_cost() const
     {
-        const auto& numeric_support_selector = m_workspace.get_numeric_support_selector();
         return m_workspace.tp.get_total_cost(datalog::FactSets { m_workspace.const_workspace->facts.fact_sets, m_workspace.facts.fact_sets },
-                                             m_workspace.annotations,
-                                             m_workspace.numeric_annotations,
-                                             numeric_support_selector);
+                                             m_workspace.annotations);
     }
 
     /// Whether the witness instantiates an action rule.
-    template<formalism::RelationKind R>
-    [[nodiscard]] bool is_action_witness(const datalog::WitnessAnnotation<R>& witness) const
-    { return Policy::is_action_witness(*m_definition, witness); }
+    [[nodiscard]] bool is_action_witness(const datalog::WitnessAnnotation& witness) const { return Policy::is_action_witness(*m_definition, witness); }
 
     /// Calls back the binding of every action whose rule the witness instantiates; identical relaxed rules share one rule.
-    template<formalism::RelationKind R, typename Callback>
-    void for_each_action_binding(const datalog::WitnessAnnotation<R>& witness, Callback callback)
+    template<typename Callback>
+    void for_each_action_binding(const datalog::WitnessAnnotation& witness, Callback callback)
     { Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback); }
 
     /// The binding of one action whose rule the witness instantiates, if any.
-    template<formalism::RelationKind R>
-    std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation<R>& witness)
+    std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation& witness)
     {
         auto result = std::optional<formalism::planning::ActionRowView> {};
         for_each_action_binding(witness,
@@ -255,8 +245,8 @@ protected:
             atoms.push_back(*atom);
     }
 
-    template<formalism::RelationKind R, typename Callback>
-    void for_each_witness_precondition(const datalog::WitnessAnnotation<R>& witness, Callback callback)
+    template<typename Callback>
+    void for_each_witness_precondition(const datalog::WitnessAnnotation& witness, Callback callback)
     {
         Policy::visit_witness_rule_instance(m_workspace,
                                             witness,
@@ -294,8 +284,7 @@ private:
     static CP make_cost_policy(const Definition& definition)
     {
         if constexpr (std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>)
-            return CP(definition.rpg_program.template get_rule_to_action_mapping<formalism::PredicateTag>(),
-                      definition.rpg_program.template get_rule_to_action_mapping<formalism::FunctionTag>());
+            return CP(definition.rpg_program.get_rule_to_action_mapping());
         else
             return CP {};
     }

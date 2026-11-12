@@ -51,9 +51,7 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
 
         [[nodiscard]] auto program() const noexcept { return m_cws->program; }
         [[nodiscard]] const auto& facts() const noexcept { return m_cws->facts; }
-        template<formalism::RelationKind R>
-        [[nodiscard]] const auto& dependencies() const noexcept
-        { return m_cws->template get_dependencies<R>(); }
+        [[nodiscard]] const auto& dependencies() const noexcept { return m_cws->dependencies; }
 
     private:
         const ConstProgramWorkspace<GroundTag>* m_cws;
@@ -68,15 +66,10 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
         /// Commits a fact. Whether it was new.
         bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact) { return m_ws->facts.insert(fact); }
-        bool insert(formalism::datalog::FunctionRowIndex<formalism::FluentTag> fact, const ygg::ClosedInterval<ygg::float_t>& interval)
-        { return m_ws->facts.insert(fact, interval); }
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
         [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
         auto& annotations() noexcept { return m_ws->annotations; }
         [[nodiscard]] const auto& annotations() const noexcept { return m_ws->annotations; }
-        auto& numeric_annotations() noexcept { return m_ws->numeric_annotations; }
-        [[nodiscard]] const auto& numeric_annotations() const noexcept { return m_ws->numeric_annotations; }
-        [[nodiscard]] auto numeric_support_selector() const noexcept { return m_ws->get_numeric_support_selector(); }
         auto& tp() noexcept { return m_ws->tp; }
         [[nodiscard]] const auto& tp() const noexcept { return m_ws->tp; }
         auto& cost_policy() noexcept { return m_ws->cost_policy; }
@@ -116,7 +109,6 @@ private:
     void initialize_annotations()
     {
         m_out.annotations().clear();
-        m_out.numeric_annotations().clear();
         m_out.annotation_policy().clear_achievers();
         m_out.tp().reset();
 
@@ -126,13 +118,6 @@ private:
                 m_out.annotation_policy().initialize_annotation(
                     formalism::datalog::PredicateRowIndex<formalism::FluentTag> { urd::index<formalism::Predicate<formalism::FluentTag>>(i), id },
                     m_out.annotations());
-
-        for (ygg::uint_t i = 0; i < facts.function.size(); ++i)
-            for (const auto& [id, interval] : facts.function[i])
-                m_out.annotation_policy().initialize_annotation(
-                    formalism::datalog::FunctionRowIndex<formalism::FluentTag> { urd::index<formalism::Function<formalism::FluentTag>>(i), id },
-                    interval,
-                    m_out.numeric_annotations());
     }
 
     void reset_from_current_facts()

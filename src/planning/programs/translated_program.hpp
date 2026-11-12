@@ -64,9 +64,7 @@ public:
     auto symbol(View view)
     { return formalism::copy(view, m_context).first; }
 
-    template<formalism::RelationKind R>
-    auto rule(urd::index<formalism::datalog::Rule<LiftedTag, R>> rule) const
-    { return m_rules->get<R>().at(rule); }
+    [[nodiscard]] auto rule(urd::index<formalism::datalog::Rule<LiftedTag>> rule) const { return m_rules->at(rule); }
 
     TranslationContext<LiftedTag> translation_context(const TranslationContext<LiftedTag>& source) { return remap_translation_context(source, m_context); }
 

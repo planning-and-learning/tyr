@@ -71,8 +71,7 @@ namespace tyr::formalism::datalog
 namespace
 {
 
-template<RelationKind R>
-std::string format_data(const urd::data<Rule<LiftedTag, R>>& value)
+std::string format_data(const urd::data<Rule<LiftedTag>>& value)
 {
     auto os = std::stringstream {};
     os << "Rule(\n";
@@ -83,10 +82,7 @@ std::string format_data(const urd::data<Rule<LiftedTag, R>>& value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "variables = ", value.variables);
         os << ygg::print_indent;
-        if constexpr (std::same_as<R, PredicateTag>)
-            fmt::print(os, "{}{}\n", "heads = ", value.heads);
-        else
-            fmt::print(os, "{}{}\n", "head = ", value.head);
+        fmt::print(os, "{}{}\n", "heads = ", value.heads);
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.body);
         os << ygg::print_indent;
@@ -96,8 +92,7 @@ std::string format_data(const urd::data<Rule<LiftedTag, R>>& value)
     return os.str();
 }
 
-template<RelationKind R>
-std::string format_view(RuleView<LiftedTag, R> value)
+std::string format_view(RuleView<LiftedTag> value)
 {
     auto os = std::stringstream {};
     os << "Rule(\n";
@@ -108,10 +103,7 @@ std::string format_view(RuleView<LiftedTag, R> value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
         os << ygg::print_indent;
-        if constexpr (std::same_as<R, PredicateTag>)
-            fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
-        else
-            fmt::print(os, "{}{}\n", "head = ", value.get_head());
+        fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.get_body());
         os << ygg::print_indent;
@@ -121,8 +113,7 @@ std::string format_view(RuleView<LiftedTag, R> value)
     return os.str();
 }
 
-template<RelationKind R>
-std::string format_data(const urd::data<Rule<GroundTag, R>>& value)
+std::string format_data(const urd::data<Rule<GroundTag>>& value)
 {
     auto os = std::stringstream {};
     os << "GroundRule(\n";
@@ -131,10 +122,7 @@ std::string format_data(const urd::data<Rule<GroundTag, R>>& value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "index = ", value.index);
         os << ygg::print_indent;
-        if constexpr (std::same_as<R, PredicateTag>)
-            fmt::print(os, "{}{}\n", "heads = ", value.heads);
-        else
-            fmt::print(os, "{}{}\n", "head = ", value.head);
+        fmt::print(os, "{}{}\n", "heads = ", value.heads);
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.body);
         os << ygg::print_indent;
@@ -144,8 +132,7 @@ std::string format_data(const urd::data<Rule<GroundTag, R>>& value)
     return os.str();
 }
 
-template<RelationKind R>
-std::string format_view(RuleView<GroundTag, R> value)
+std::string format_view(RuleView<GroundTag> value)
 {
     auto os = std::stringstream {};
     os << "GroundRule(\n";
@@ -154,10 +141,7 @@ std::string format_view(RuleView<GroundTag, R> value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "index = ", value.index());
         os << ygg::print_indent;
-        if constexpr (std::same_as<R, PredicateTag>)
-            fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
-        else
-            fmt::print(os, "{}{}\n", "head = ", value.get_head());
+        fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "body = ", value.get_body());
         os << ygg::print_indent;
@@ -226,13 +210,9 @@ static std::string as_text(PredicateRowView<FluentTag> value) { return format_bi
 static std::string as_text(FunctionRowView<StaticTag> value) { return format_binding(value); }
 static std::string as_text(FunctionRowView<FluentTag> value) { return format_binding(value); }
 static std::string as_text(FunctionRowView<AuxiliaryTag> value) { return format_binding(value); }
-static std::string as_text(RuleRowView<PredicateTag> value) { return format_binding(value); }
-static std::string as_text(RuleRowView<FunctionTag> value) { return format_binding(value); }
+static std::string as_text(RuleRowView value) { return format_binding(value); }
 
-std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, PredicateTag>>>& value)
-{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
-
-std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag, FunctionTag>>>& value)
+std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag>>>& value)
 { return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
 
 std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value)
@@ -307,10 +287,8 @@ static std::string as_text(ConjunctiveEffectView<LiftedTag> value)
     return os.str();
 }
 
-std::string to_string(const urd::data<Rule<LiftedTag, PredicateTag>>& value) { return format_data(value); }
-std::string to_string(const urd::data<Rule<LiftedTag, FunctionTag>>& value) { return format_data(value); }
-static std::string as_text(RuleView<LiftedTag, PredicateTag> value) { return format_view(value); }
-static std::string as_text(RuleView<LiftedTag, FunctionTag> value) { return format_view(value); }
+std::string to_string(const urd::data<Rule<LiftedTag>>& value) { return format_data(value); }
+static std::string as_text(RuleView<LiftedTag> value) { return format_view(value); }
 
 std::string to_string(const urd::data<ConjunctiveCondition<GroundTag>>& value)
 {
@@ -380,10 +358,8 @@ static std::string as_text(ConjunctiveEffectView<GroundTag> value)
     return os.str();
 }
 
-std::string to_string(const urd::data<Rule<GroundTag, PredicateTag>>& value) { return format_data(value); }
-std::string to_string(const urd::data<Rule<GroundTag, FunctionTag>>& value) { return format_data(value); }
-static std::string as_text(RuleView<GroundTag, PredicateTag> value) { return format_view(value); }
-static std::string as_text(RuleView<GroundTag, FunctionTag> value) { return format_view(value); }
+std::string to_string(const urd::data<Rule<GroundTag>>& value) { return format_data(value); }
+static std::string as_text(RuleView<GroundTag> value) { return format_view(value); }
 
 std::string to_string(const urd::data<Program<LiftedTag>>& value)
 {
@@ -414,9 +390,7 @@ std::string to_string(const urd::data<Program<LiftedTag>>& value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "goal = ", value.goal);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "rules = ", value.predicate_rules);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric rules = ", value.function_rules);
+        fmt::print(os, "{}{}\n", "rules = ", value.rules);
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -451,9 +425,7 @@ static std::string as_text(ProgramView<LiftedTag> value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "rules = ", value.template get_rules<PredicateTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric rules = ", value.template get_rules<FunctionTag>());
+        fmt::print(os, "{}{}\n", "rules = ", value.get_rules());
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -488,9 +460,7 @@ std::string to_string(const urd::data<Program<GroundTag>>& value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "goal = ", value.goal);
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "ground rules = ", value.predicate_rules);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric ground rules = ", value.function_rules);
+        fmt::print(os, "{}{}\n", "ground rules = ", value.rules);
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -525,9 +495,7 @@ static std::string as_text(ProgramView<GroundTag> value)
         os << ygg::print_indent;
         fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
         os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "ground rules = ", value.template get_rules<PredicateTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric ground rules = ", value.template get_rules<FunctionTag>());
+        fmt::print(os, "{}{}\n", "ground rules = ", value.get_rules());
     }
     os << ygg::print_indent << ")";
     return os.str();
@@ -558,6 +526,6 @@ template<typename R>
 std::string to_string(ygg::RowView<R, Repository> value)
 { return as_text(value); }
 
-TYR_VIEW_TO_STRINGS(44, 7)
+TYR_VIEW_TO_STRINGS(42, 6)
 
 }  // namespace tyr::formalism::datalog

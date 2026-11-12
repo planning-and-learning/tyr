@@ -275,19 +275,12 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     auto context = formalism::WriteContext { builder, repository };
     auto output = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
     formalism::datalog::copy_except_rules(program, *output, context);
-    for (const auto rule : program.get_rules<formalism::FunctionTag>())
-    {
-        const auto copy = formalism::copy(rule, context).first.index();
-        output->function_rules.push_back(copy);
-        result.rules.function.emplace(rule.index(), copy);
-    }
-
     // The static predicates come first in the repository, as the fact sets require.
     auto static_facts = TaggedFactSets<formalism::StaticTag>(urd::resolve(output->static_predicates, repository), repository);
     for (const auto atom : output->static_atoms)
         insert(static_facts, urd::resolve(atom, repository).get_row().data());
     auto decomposer = Decomposer(*output, context, static_facts);
-    for (const auto rule : program.get_rules<formalism::PredicateTag>())
+    for (const auto rule : program.get_rules())
     {
         // Only rules of the program are inserted: rule workspaces are indexed by rule.
         const auto body = formalism::copy(rule.get_body(), context).first;
@@ -306,8 +299,8 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
         if (!decomposed)
         {
             const auto copy = formalism::copy(rule, context).first.index();
-            output->predicate_rules.push_back(copy);
-            result.rules.predicate.emplace(rule.index(), copy);
+            output->rules.push_back(copy);
+            result.rules.emplace(rule.index(), copy);
             continue;
         }
 
@@ -319,7 +312,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
             condition->numeric_constraints.push_back(numeric_constraint.index());
         const auto new_body = formalism::datalog::insert(repository, *condition).first;
 
-        auto new_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(builder);
+        auto new_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
         for (const auto variable : new_body.get_variables())
             new_rule->variables.push_back(urd::to_stored(variable));
         new_rule->body = new_body.index();
@@ -327,8 +320,8 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
             new_rule->heads.push_back(formalism::copy(head, context).first.index());
         new_rule->cost = rule.get_cost();
         const auto rewritten = formalism::datalog::insert(repository, *new_rule).first.index();
-        output->predicate_rules.push_back(rewritten);
-        result.rules.predicate.emplace(rule.index(), rewritten);
+        output->rules.push_back(rewritten);
+        result.rules.emplace(rule.index(), rewritten);
     }
 
     return formalism::datalog::insert(repository, *output).first;

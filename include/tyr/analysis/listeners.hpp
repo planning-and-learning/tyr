@@ -38,17 +38,15 @@
 namespace tyr::analysis
 {
 
-template<formalism::RelationKind R>
-using RuleIndexSet = urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag, R>>>>;
+using RuleIndexSet = urd::Store<urd::set<urd::index<formalism::datalog::Rule<LiftedTag>>>>;
 
-template<typename R>
 struct TypedListenerStratum
 {
-    urd::Store<urd::map<urd::index<formalism::Predicate<formalism::FluentTag>>, RuleIndexSet<R>>> predicates;
-    urd::Store<urd::map<urd::index<formalism::Function<formalism::FluentTag>>, RuleIndexSet<R>>> functions;
+    urd::Store<urd::map<urd::index<formalism::Predicate<formalism::FluentTag>>, RuleIndexSet>> predicates;
+    urd::Store<urd::map<urd::index<formalism::Function<formalism::FluentTag>>, RuleIndexSet>> functions;
 };
 
-using ListenerStratum = ygg::Family<TypedListenerStratum, formalism::PredicateTag, formalism::FunctionTag>;
+using ListenerStratum = TypedListenerStratum;
 
 struct ListenerStrata
 {

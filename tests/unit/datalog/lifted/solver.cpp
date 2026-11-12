@@ -30,29 +30,6 @@ namespace tyr::tests
 namespace
 {
 
-TEST(TyrDatalogLiftedBottomUpTest, FullEnumerationIsLimitedToNumericListeners)
-{
-    auto fixture = make_lifted_numeric_program(true, { 3 }, true);
-    auto workspace = tyr::datalog::ProgramWorkspace<LiftedTag>(fixture.program);
-    ASSERT_EQ(workspace.schedulers.size(), 1);
-
-    const auto rule = fixture.program.get_program().get_rules<tyr::formalism::PredicateTag>().front();
-    const auto seed = rule.get_body().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().index();
-    auto& scheduler = workspace.schedulers.front().get<tyr::formalism::PredicateTag>();
-
-    scheduler.on_start_iteration();
-    scheduler.on_generate(seed);
-    scheduler.on_generate(fixture.target.data().relation);
-    scheduler.on_finish_iteration();
-    EXPECT_NE(std::ranges::find(scheduler.get_active_rules(), rule.index()), scheduler.get_active_rules().end());
-    EXPECT_FALSE(scheduler.requires_full_enumeration(rule.index()));
-
-    scheduler.on_start_iteration();
-    scheduler.on_generate(fixture.source.data().relation);
-    scheduler.on_finish_iteration();
-    EXPECT_TRUE(scheduler.requires_full_enumeration(rule.index()));
-}
-
 TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWorkspaceReuse)
 {
     auto fixture = make_lifted_predicate_program(true);
@@ -105,7 +82,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedBindingSurvivesNestedGrounding)
     auto fixture = make_lifted_predicate_program();
     auto builder = tyr::formalism::datalog::Builder {};
     const auto program = fixture.program.get_program();
-    const auto atom = program.get_rules<tyr::formalism::PredicateTag>()[0].get_body().get_literals<tyr::formalism::FluentTag>()[0].get_atom();
+    const auto atom = program.get_rules()[0].get_body().get_literals<tyr::formalism::FluentTag>()[0].get_atom();
     const auto objects = program.get_objects();
     ASSERT_EQ(objects.size(), 2);
     auto indices = urd::flat_vector<urd::index<tyr::formalism::Object>> { objects[0].index() };

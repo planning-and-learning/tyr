@@ -39,46 +39,17 @@
 namespace tyr::datalog
 {
 
-template<formalism::RelationKind R>
 struct ActionCostLookup
 {
     formalism::planning::ActionView<LiftedTag> action;
-    formalism::datalog::RuleRowView<R> rule_binding;
+    formalism::datalog::RuleRowView rule_binding;
 
     [[nodiscard]] auto get_key() const
     {
         const auto objects = rule_binding.get_key().second;
         assert(objects.size() >= action.get_arity());
         // A subrange of the stored row's iterators, which hold the row: it outlives `objects`.
-        return std::make_pair(action.index(), std::ranges::subrange(objects.begin(), objects.begin() + action.get_arity()));
-    }
-};
-
-template<formalism::RelationKind R>
-struct NumericTransitionCostKey : urd::compared_by_identity<NumericTransitionCostKey<R>>
-{
-    formalism::datalog::RuleRowIndex<R> rule_key;
-    formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key;
-    ygg::ClosedInterval<ygg::float_t> interval;
-
-    NumericTransitionCostKey() = default;
-    NumericTransitionCostKey(formalism::datalog::RuleRowIndex<R> rule_key_,
-                             formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key_,
-                             ygg::ClosedInterval<ygg::float_t> interval_) :
-        rule_key(rule_key_),
-        numeric_key(numeric_key_),
-        interval(std::move(interval_))
-    {
-    }
-
-    [[nodiscard]] ygg::float_t lower_bound() const noexcept { return lower(interval); }
-    [[nodiscard]] ygg::float_t upper_bound() const noexcept { return upper(interval); }
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&NumericTransitionCostKey::rule_key,
-                            &NumericTransitionCostKey::numeric_key,
-                            &NumericTransitionCostKey::lower_bound,
-                            &NumericTransitionCostKey::upper_bound> {};
+        return std::make_pair(action.index(), std::ranges::subrange(objects.begin(), objects.begin() + static_cast<std::ptrdiff_t>(action.get_arity())));
     }
 };
 
@@ -90,32 +61,22 @@ public:
     template<typename RuleKey>
     [[nodiscard]] Cost get_cost(RuleKey) const noexcept
     { return static_cast<Cost>(0); }
-    template<typename RuleKey, typename NumericKey>
-    [[nodiscard]] Cost get_cost(RuleKey, NumericKey, const ygg::ClosedInterval<ygg::float_t>&) const noexcept
-    { return static_cast<Cost>(0); }
 
     void clear() noexcept {}
     template<typename RuleKey>
     void set_cost(RuleKey, Cost) noexcept
     {
     }
-    template<typename RuleKey, typename NumericKey>
-    void set_cost(RuleKey, NumericKey, const ygg::ClosedInterval<ygg::float_t>&, Cost) noexcept
-    {
-    }
 };
 
-template<formalism::RelationKind R>
 class RuleCostOverrideStorage
 {
-    using RuleKey = formalism::datalog::RuleRowIndex<R>;
-    using NumericKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
+    using RuleKey = formalism::datalog::RuleRowIndex;
     using CostMap = urd::Store<urd::map<RuleKey, Cost>>;
-    using NumericTransitionCostMap = urd::Store<urd::map<NumericTransitionCostKey<R>, Cost>>;
 
 public:
     RuleCostOverrideStorage() = default;
-    explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)), m_numeric_transition_costs() {}
+    explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)) {}
 
     [[nodiscard]] Cost get_cost(RuleKey rule_key) const
     {
@@ -124,106 +85,61 @@ public:
         return static_cast<Cost>(0);
     }
 
-    [[nodiscard]] Cost get_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval) const
-    {
-        if (const auto it = m_numeric_transition_costs.find(NumericTransitionCostKey<R> { rule_key, numeric_key, std::move(interval) });
-            it != m_numeric_transition_costs.end())
-            return it->second;
-        return static_cast<Cost>(0);
-    }
-
-    void clear() noexcept
-    {
-        m_costs.clear();
-        m_numeric_transition_costs.clear();
-    }
+    void clear() noexcept { m_costs.clear(); }
 
     void set_cost(RuleKey rule_key, Cost cost) { m_costs.insert_or_assign(rule_key, cost); }
 
-    void set_cost(RuleKey rule_key, NumericKey numeric_key, ygg::ClosedInterval<ygg::float_t> interval, Cost cost)
-    { m_numeric_transition_costs.insert_or_assign(NumericTransitionCostKey<R> { rule_key, numeric_key, std::move(interval) }, cost); }
-
     [[nodiscard]] const CostMap& get_costs() const noexcept { return m_costs; }
     CostMap& get_costs() noexcept { return m_costs; }
-    [[nodiscard]] const NumericTransitionCostMap& get_numeric_transition_costs() const noexcept { return m_numeric_transition_costs; }
 
 private:
     CostMap m_costs;
-    NumericTransitionCostMap m_numeric_transition_costs;
 };
 
 template<TaskKind Kind>
 class RuleCostOverridePolicy
 {
 public:
-    template<formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex, urd::index<formalism::datalog::Rule<LiftedTag>>>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
 
 private:
-    template<formalism::RelationKind R>
-    using RuleToActionMapping = urd::Store<urd::map<Rule<R>, urd::Store<urd::sequence<Action>>>>;
+    using RuleToActionMapping = urd::Store<urd::map<Rule, urd::Store<urd::sequence<Action>>>>;
 
 public:
     RuleCostOverridePolicy() = default;
-    RuleCostOverridePolicy(const RuleToActionMapping<formalism::PredicateTag>& predicate_rule_to_action,
-                           const RuleToActionMapping<formalism::FunctionTag>& function_rule_to_action) noexcept :
-        m_predicate_rule_to_action(&predicate_rule_to_action),
-        m_function_rule_to_action(&function_rule_to_action)
-    {
-    }
+    explicit RuleCostOverridePolicy(const RuleToActionMapping& predicate_rule_to_action) noexcept : m_predicate_rule_to_action(&predicate_rule_to_action) {}
 
     /// Takes the rule binding as a view: the lifted action cost reads the binding's objects.
-    template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_cost(formalism::datalog::RuleRowView<R> rule_key) const
+    [[nodiscard]] Cost get_cost(formalism::datalog::RuleRowView rule_key) const
     {
-        const auto& costs = storage(R {}).get_costs();
+        const auto& costs = storage().get_costs();
         if (const auto it = costs.find(rule_key.data()); it != costs.end())
             return it->second;
         return get_action_cost(rule_key);
     }
 
-    template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_cost(formalism::datalog::RuleRowIndex<R> rule_key,
-                                formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key,
-                                ygg::ClosedInterval<ygg::float_t> interval) const
-    { return storage(R {}).get_cost(rule_key, numeric_key, std::move(interval)); }
-
     void clear() noexcept
     {
         predicate_storage.clear();
-        function_storage.clear();
         m_action_costs.clear();
     }
 
     void set_action_cost(formalism::planning::ActionRowView action, Cost cost) { m_action_costs.insert_or_assign(action, cost); }
 
-    template<formalism::RelationKind R>
-    void set_cost(formalism::datalog::RuleRowIndex<R> rule_key, Cost cost)
-    { storage(R {}).set_cost(rule_key, cost); }
-
-    template<formalism::RelationKind R>
-    void set_cost(formalism::datalog::RuleRowIndex<R> rule_key,
-                  formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key,
-                  ygg::ClosedInterval<ygg::float_t> interval,
-                  Cost cost)
-    { storage(R {}).set_cost(rule_key, numeric_key, std::move(interval), cost); }
+    void set_cost(formalism::datalog::RuleRowIndex rule_key, Cost cost) { storage().set_cost(rule_key, cost); }
 
 private:
-    auto& storage(formalism::PredicateTag) noexcept { return predicate_storage; }
-    auto& storage(formalism::FunctionTag) noexcept { return function_storage; }
-    [[nodiscard]] const auto& storage(formalism::PredicateTag) const noexcept { return predicate_storage; }
-    [[nodiscard]] const auto& storage(formalism::FunctionTag) const noexcept { return function_storage; }
+    auto& storage() noexcept { return predicate_storage; }
+    [[nodiscard]] const auto& storage() const noexcept { return predicate_storage; }
 
-    [[nodiscard]] const auto* mapping(formalism::PredicateTag) const noexcept { return m_predicate_rule_to_action; }
-    [[nodiscard]] const auto* mapping(formalism::FunctionTag) const noexcept { return m_function_rule_to_action; }
+    [[nodiscard]] const auto* mapping() const noexcept { return m_predicate_rule_to_action; }
 
     /// The credit of a rule is the largest credit of its actions: the rule is the cheapest of their parallel arcs.
-    template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView<R> rule_binding) const
+    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView rule_binding) const
         requires std::same_as<Kind, GroundTag>
     {
-        const auto* rule_to_action = mapping(R {});
+        const auto* rule_to_action = mapping();
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
@@ -237,11 +153,10 @@ private:
         return credit;
     }
 
-    template<formalism::RelationKind R>
-    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView<R> rule_binding) const
+    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView rule_binding) const
         requires std::same_as<Kind, LiftedTag>
     {
-        const auto* rule_to_action = mapping(R {});
+        const auto* rule_to_action = mapping();
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
@@ -251,15 +166,13 @@ private:
         auto credit = static_cast<Cost>(0);
         for (const auto action : actions->second)
             if (rule_binding.size() >= action.get_arity())
-                if (const auto cost = m_action_costs.find(ActionCostLookup<R> { action, rule_binding }); cost != m_action_costs.end())
+                if (const auto cost = m_action_costs.find(ActionCostLookup { action, rule_binding }); cost != m_action_costs.end())
                     credit = std::max(credit, cost->second);
         return credit;
     }
 
-    RuleCostOverrideStorage<formalism::PredicateTag> predicate_storage;
-    RuleCostOverrideStorage<formalism::FunctionTag> function_storage;
-    const RuleToActionMapping<formalism::PredicateTag>* m_predicate_rule_to_action { nullptr };
-    const RuleToActionMapping<formalism::FunctionTag>* m_function_rule_to_action { nullptr };
+    RuleCostOverrideStorage predicate_storage;
+    const RuleToActionMapping* m_predicate_rule_to_action { nullptr };
     gtl::flat_hash_map<formalism::planning::ActionRowView, Cost, ygg::RowKeyHash, ygg::RowKeyEqualTo> m_action_costs;
 };
 

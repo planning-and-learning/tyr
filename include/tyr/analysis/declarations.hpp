@@ -63,8 +63,7 @@ using PredicateDomainMap = SimpleScopedDomainMap<formalism::Predicate<T>>;
 template<formalism::FactKind T>
 using FunctionDomainMap = SimpleScopedDomainMap<formalism::Function<T>>;
 
-template<typename R>
-using RuleDomainMap = ScopedDomainMap<formalism::datalog::Rule<LiftedTag, R>>;
+using RuleDomainMap = ScopedDomainMap<formalism::datalog::Rule<LiftedTag>>;
 
 using AxiomDomainMap = ScopedDomainMap<formalism::planning::Axiom<LiftedTag>>;
 
@@ -98,7 +97,7 @@ struct ProgramVariableDomains
     PredicateDomainMap<formalism::FluentTag> fluent_predicate_domains;
     FunctionDomainMap<formalism::StaticTag> static_function_domains;
     FunctionDomainMap<formalism::FluentTag> fluent_function_domains;
-    ygg::Family<RuleDomainMap, formalism::PredicateTag, formalism::FunctionTag> rule_domains;
+    RuleDomainMap rule_domains;
 };
 
 struct TaskVariableDomains

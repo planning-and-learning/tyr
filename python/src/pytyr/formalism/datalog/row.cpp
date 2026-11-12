@@ -66,7 +66,7 @@ void bind_row_view(nb::module_& m, const char* name)
 void bind_row(nb::module_& m, RepositoryBinding& repository)
 {
     {
-        using V = ygg::RowIndex<Rule<LiftedTag, PredicateTag>>;
+        using V = ygg::RowIndex<Rule<LiftedTag>>;
         auto cls =
             nb::class_<V>(m, "RuleRowIndex").def_ro("relation_index", &V::relation).def_prop_ro("row_index", [](const V& self) { return self.row.value; });
         ygg::add_print(cls);
@@ -74,29 +74,17 @@ void bind_row(nb::module_& m, RepositoryBinding& repository)
         urd::python::add_hash(cls);
     }
 
-    {
-        using V = ygg::RowIndex<Rule<LiftedTag, FunctionTag>>;
-        auto cls = nb::class_<V>(m, "FunctionRuleRowIndex")
-                       .def_ro("relation_index", &V::relation)
-                       .def_prop_ro("row_index", [](const V& self) { return self.row.value; });
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
+    bind_row_data<Rule<LiftedTag>>(m, "RuleRowData");
 
-    bind_row_data<Rule<LiftedTag, PredicateTag>>(m, "RuleRowData");
-    bind_row_data<Rule<LiftedTag, FunctionTag>>(m, "FunctionRuleRowData");
-
-    bind_row_view<Rule<LiftedTag, PredicateTag>>(m, "RuleRow");
-    bind_row_view<Rule<LiftedTag, FunctionTag>>(m, "FunctionRuleRow");
+    bind_row_view<Rule<LiftedTag>>(m, "RuleRow");
     bind_row_view<Predicate<StaticTag>>(m, "StaticPredicateRow");
     bind_row_view<Predicate<FluentTag>>(m, "FluentPredicateRow");
     bind_row_view<Function<StaticTag>>(m, "StaticFunctionRow");
     bind_row_view<Function<FluentTag>>(m, "FluentFunctionRow");
     bind_row_view<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionRow");
 
-    ygg::bind_insert<ygg::Row<Rule<LiftedTag, PredicateTag>>>(repository);
-    ygg::bind_insert<ygg::Row<Rule<LiftedTag, FunctionTag>>>(repository);
+    ygg::bind_insert<ygg::Row<Rule<LiftedTag>>>(repository);
+    ygg::bind_insert<ygg::Row<Rule<LiftedTag>>>(repository);
     ygg::bind_insert<ygg::Row<Predicate<StaticTag>>>(repository);
     ygg::bind_insert<ygg::Row<Predicate<FluentTag>>>(repository);
     ygg::bind_insert<ygg::Row<Function<StaticTag>>>(repository);

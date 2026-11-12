@@ -34,8 +34,7 @@ static_assert(requires(Data& data, const View& view) {
     data.static_fterm_values;
     data.fluent_fterm_values;
     data.goal;
-    data.predicate_rules;
-    data.function_rules;
+    data.rules;
     data.template get_predicates<tyr::formalism::StaticTag>();
     data.template get_predicates<tyr::formalism::FluentTag>();
     data.template get_functions<tyr::formalism::StaticTag>();
@@ -55,8 +54,8 @@ static_assert(requires(Data& data, const View& view) {
     view.template get_fterm_values<tyr::formalism::StaticTag>();
     view.template get_fterm_values<tyr::formalism::FluentTag>();
     view.get_goal();
-    view.template get_rules<tyr::formalism::PredicateTag>();
-    view.template get_rules<tyr::formalism::FunctionTag>();
+    view.get_rules();
+    view.get_rules();
 });
 
 }
@@ -86,8 +85,7 @@ static_assert(requires(Data& data, const View& view) {
     data.static_fterm_values;
     data.fluent_fterm_values;
     data.goal;
-    data.predicate_rules;
-    data.function_rules;
+    data.rules;
     data.template get_predicates<tyr::formalism::StaticTag>();
     data.template get_predicates<tyr::formalism::FluentTag>();
     data.template get_functions<tyr::formalism::StaticTag>();
@@ -96,8 +94,8 @@ static_assert(requires(Data& data, const View& view) {
     data.template get_atoms<tyr::formalism::FluentTag>();
     data.template get_fterm_values<tyr::formalism::StaticTag>();
     data.template get_fterm_values<tyr::formalism::FluentTag>();
-    data.template get_rules<tyr::formalism::PredicateTag>();
-    data.template get_rules<tyr::formalism::FunctionTag>();
+    data.get_rules();
+    data.get_rules();
     view.index();
     view.template get_predicates<tyr::formalism::StaticTag>();
     view.template get_predicates<tyr::formalism::FluentTag>();
@@ -109,8 +107,8 @@ static_assert(requires(Data& data, const View& view) {
     view.template get_fterm_values<tyr::formalism::StaticTag>();
     view.template get_fterm_values<tyr::formalism::FluentTag>();
     view.get_goal();
-    view.template get_rules<tyr::formalism::PredicateTag>();
-    view.template get_rules<tyr::formalism::FunctionTag>();
+    view.get_rules();
+    view.get_rules();
 });
 
 TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
@@ -119,7 +117,6 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
 
     auto filtered = std::optional<tyr::formalism::datalog::ProgramView<::tyr::GroundTag>> {};
     auto retained_predicate_source_index = static_cast<ygg::uint_t>(0);
-    auto retained_function_source_index = static_cast<ygg::uint_t>(0);
     {
         auto source = tyr::formalism::datalog::Repository();
         const auto intern = [&](auto data) { return ygg::formalism::insert(source, data).first; };
@@ -162,60 +159,26 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             data.predicate = predicate_.index();
             return intern(std::move(data));
         };
-        const auto lifted_fterm = [&](tyr::formalism::datalog::FunctionView<tyr::formalism::FluentTag> function_)
-        {
-            auto data = urd::data<tyr::formalism::FunctionTerm<::tyr::LiftedTag, tyr::formalism::FluentTag>> {};
-            data.function = function_.index();
-            return intern(std::move(data));
-        };
 
         const auto empty_lifted_body = intern(urd::data<tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> {});
         const auto predicate_rule = [&](tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> body,
                                         tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag> head)
         {
-            auto lifted_rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::PredicateTag>> {};
+            auto lifted_rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::LiftedTag>> {};
             lifted_rule_data.body = empty_lifted_body.index();
             lifted_rule_data.heads.push_back(lifted_atom(head.get_predicate()).index());
             const auto lifted_rule = intern(std::move(lifted_rule_data));
 
-            auto binding_data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::PredicateTag>>> {};
+            auto binding_data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<::tyr::LiftedTag>>> {};
             binding_data.relation = lifted_rule.index();
             const auto binding = intern(std::move(binding_data));
 
-            auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>> {};
+            auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag>> {};
             rule_data.row = binding.data();
             rule_data.body = body.index();
             rule_data.heads.push_back(head.index());
             return intern(std::move(rule_data));
         };
-        const auto function_rule = [&](tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> body,
-                                       tyr::formalism::datalog::FunctionTermView<::tyr::GroundTag, tyr::formalism::FluentTag> head)
-        {
-            const auto source_fterm = lifted_fterm(head.get_function());
-            const auto lifted_effect = intern(urd::data<tyr::formalism::NumericEffect<::tyr::LiftedTag, tyr::formalism::FluentTag>> {
-                tyr::formalism::NumericEffectOperatorKind::Assign,
-                source_fterm.index(),
-                tyr::formalism::FunctionExpression<::tyr::LiftedTag> { 1.0 } });
-            auto lifted_rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::FunctionTag>> {};
-            lifted_rule_data.body = empty_lifted_body.index();
-            lifted_rule_data.head = lifted_effect.index();
-            const auto lifted_rule = intern(std::move(lifted_rule_data));
-
-            auto binding_data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<::tyr::LiftedTag, tyr::formalism::FunctionTag>>> {};
-            binding_data.relation = lifted_rule.index();
-            const auto binding = intern(std::move(binding_data));
-            const auto effect = intern(urd::data<tyr::formalism::NumericEffect<::tyr::GroundTag, tyr::formalism::FluentTag>> {
-                tyr::formalism::NumericEffectOperatorKind::Assign,
-                head.index(),
-                tyr::formalism::FunctionExpression<::tyr::GroundTag> { 1.0 } });
-
-            auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>> {};
-            rule_data.row = binding.data();
-            rule_data.body = body.index();
-            rule_data.head = effect.index();
-            return intern(rule_data);
-        };
-
         const auto object = intern(urd::data<tyr::formalism::Object> { std::string("source-object") });
         const auto present = ground_atom(predicate.template operator()<tyr::formalism::StaticTag>("present"));
         const auto absent = ground_atom(predicate.template operator()<tyr::formalism::StaticTag>("absent"));
@@ -228,10 +191,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         const auto inapplicable = condition({ static_literal(present, false), static_literal(absent, true) });
         const auto removed_predicate_rule = predicate_rule(inapplicable, removed_atom);
         const auto retained_predicate_rule = predicate_rule(applicable, retained_atom);
-        const auto removed_function_rule = function_rule(inapplicable, removed_term);
-        const auto retained_function_rule = function_rule(applicable, retained_term);
         retained_predicate_source_index = static_cast<ygg::uint_t>(retained_predicate_rule.index().value);
-        retained_function_source_index = static_cast<ygg::uint_t>(retained_function_rule.index().value);
         const auto goal = condition({}, { fluent_literal(retained_atom, true) });
         const auto static_value =
             intern(urd::data<tyr::formalism::FunctionTermValue<::tyr::GroundTag, tyr::formalism::StaticTag>> { static_term.index(), 2.0 });
@@ -249,33 +209,23 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
         program_data.static_fterm_values = { static_value.index() };
         program_data.fluent_fterm_values = { fluent_value.index() };
         program_data.goal = goal.index();
-        program_data.predicate_rules = { removed_predicate_rule.index(), retained_predicate_rule.index() };
-        program_data.function_rules = { removed_function_rule.index(), retained_function_rule.index() };
+        program_data.rules = { removed_predicate_rule.index(), retained_predicate_rule.index() };
         filtered = tyr::datalog::remove_statically_inapplicable_rules(intern(std::move(program_data)), destination);
     }
 
     ASSERT_TRUE(filtered.has_value());
     EXPECT_GT(retained_predicate_source_index, 0);
-    EXPECT_GT(retained_function_source_index, 0);
     EXPECT_EQ(&filtered->context(), &destination);
-    ASSERT_EQ(filtered->get_rules<tyr::formalism::PredicateTag>().size(), 1);
-    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules<tyr::formalism::PredicateTag>().front().index()).value), 0);
-    EXPECT_EQ(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_heads().front().get_predicate().get_name().str(), "retained-predicate");
-    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules<tyr::formalism::PredicateTag>().front().get_rule().index()).value), 0);
-    EXPECT_EQ(filtered->get_rules<tyr::formalism::PredicateTag>().front().get_rule().get_heads().front().get_predicate().get_name().str(),
-              "retained-predicate");
-    ASSERT_EQ(filtered->get_rules<tyr::formalism::FunctionTag>().size(), 1);
-    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules<tyr::formalism::FunctionTag>().front().index()).value), 0);
-    EXPECT_EQ(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_head().get_fterm().get_function().get_name().str(), "retained-function");
-    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().index()).value), 0);
-    EXPECT_EQ(filtered->get_rules<tyr::formalism::FunctionTag>().front().get_rule().get_head().get_fterm().get_function().get_name().str(),
-              "retained-function");
+    ASSERT_EQ(filtered->get_rules().size(), 1);
+    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().index()).value), 0);
+    EXPECT_EQ(filtered->get_rules().front().get_heads().front().get_predicate().get_name().str(), "retained-predicate");
+    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().get_rule().index()).value), 0);
+    EXPECT_EQ(filtered->get_rules().front().get_rule().get_heads().front().get_predicate().get_name().str(), "retained-predicate");
     ASSERT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().size(), 1);
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());
     EXPECT_EQ(filtered->get_goal().value().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_name().str(), "retained-predicate");
-    EXPECT_EQ((destination.symbols().size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::PredicateTag>>()), 1);
-    EXPECT_EQ((destination.symbols().size<tyr::formalism::datalog::Rule<::tyr::GroundTag, tyr::formalism::FunctionTag>>()), 1);
+    EXPECT_EQ((destination.symbols().size<tyr::formalism::datalog::Rule<::tyr::GroundTag>>()), 1);
 }
 
 }

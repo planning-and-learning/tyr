@@ -33,10 +33,9 @@
 namespace tyr::analysis
 {
 
-template<typename R>
-using TypedRuleStratum = urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
+using TypedRuleStratum = urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>>;
 
-using RuleStratum = ygg::Family<TypedRuleStratum, formalism::PredicateTag, formalism::FunctionTag>;
+using RuleStratum = TypedRuleStratum;
 
 struct RuleStrata
 {

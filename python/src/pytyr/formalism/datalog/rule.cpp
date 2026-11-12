@@ -28,11 +28,11 @@ namespace tyr::formalism::datalog
 
 namespace
 {
-template<TaskKind T, RelationKind R>
+template<TaskKind T>
 void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
 {
     using namespace nb::literals;
-    using Tag = Rule<T, R>;
+    using Tag = Rule<T>;
     urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
 
     {
@@ -40,29 +40,34 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
         auto cls = nb::class_<V>(m, (name + "Data").c_str());
         if constexpr (std::same_as<T, LiftedTag>)
         {
-            cls.def(
-                urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
-                "variables"_a,
-                "body"_a,
-                std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
-                "cost"_a = static_cast<ygg::float_t>(0));
-            cls.def(nb::init<urd::flat_vector<urd::index<Variable>>, urd::index<ConjunctiveCondition<LiftedTag>>, RuleHeadT<LiftedTag, R>, ygg::float_t>(),
+            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, const AtomViewList<T, FluentTag>&, ygg::float_t>(),
                     "variables"_a,
                     "body"_a,
-                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                    "heads"_a,
+                    "cost"_a = static_cast<ygg::float_t>(0));
+            cls.def(nb::init<urd::flat_vector<urd::index<Variable>>,
+                             urd::index<ConjunctiveCondition<LiftedTag>>,
+                             urd::flat_vector<urd::index<Atom<LiftedTag, FluentTag>>>,
+                             ygg::float_t>(),
+                    "variables"_a,
+                    "body"_a,
+                    "heads"_a,
                     "cost"_a = static_cast<ygg::float_t>(0));
         }
         else
         {
-            cls.def(urd::python::init_from_views<RuleRowView<R>, ConjunctiveConditionView<T>, typename V::template HeadView<Repository>, ygg::float_t>(),
+            cls.def(urd::python::init_from_views<RuleRowView, ConjunctiveConditionView<T>, const AtomViewList<T, FluentTag>&, ygg::float_t>(),
                     "binding"_a,
                     "body"_a,
-                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                    "heads"_a,
                     "cost"_a = static_cast<ygg::float_t>(0));
-            cls.def(nb::init<ygg::RowIndex<Rule<LiftedTag, R>>, urd::index<ConjunctiveCondition<GroundTag>>, RuleHeadT<GroundTag, R>, ygg::float_t>(),
+            cls.def(nb::init<ygg::RowIndex<Rule<LiftedTag>>,
+                             urd::index<ConjunctiveCondition<GroundTag>>,
+                             urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
+                             ygg::float_t>(),
                     "binding"_a,
                     "body"_a,
-                    std::same_as<R, PredicateTag> ? "heads"_a : "head"_a,
+                    "heads"_a,
                     "cost"_a = static_cast<ygg::float_t>(0));
         }
         ygg::add_print(cls);
@@ -71,7 +76,7 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
     }
 
     {
-        using V = RuleView<T, R>;
+        using V = RuleView<T>;
         auto cls = nb::class_<V>(m, name.c_str());
         cls.def("index", &V::index);
         if constexpr (std::same_as<T, LiftedTag>)
@@ -86,10 +91,7 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
             cls.def("get_objects", &V::get_objects);
         }
         cls.def("get_body", &V::get_body);
-        if constexpr (std::same_as<R, PredicateTag>)
-            cls.def("get_heads", &V::get_heads);
-        else
-            cls.def("get_head", &V::get_head);
+        cls.def("get_heads", &V::get_heads);
         cls.def("get_cost", &V::get_cost);
         ygg::add_print(cls);
         urd::python::add_comparison(cls);
@@ -102,10 +104,8 @@ void bind_rule_kind(nb::module_& m, RepositoryBinding& repository, const std::st
 
 void bind_rule(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_rule_kind<LiftedTag, PredicateTag>(m, repository, "Rule");
-    bind_rule_kind<LiftedTag, FunctionTag>(m, repository, "FunctionRule");
-    bind_rule_kind<GroundTag, PredicateTag>(m, repository, "GroundRule");
-    bind_rule_kind<GroundTag, FunctionTag>(m, repository, "GroundFunctionRule");
+    bind_rule_kind<LiftedTag>(m, repository, "Rule");
+    bind_rule_kind<GroundTag>(m, repository, "GroundRule");
 }
 
 }  // namespace tyr::formalism::datalog

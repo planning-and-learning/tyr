@@ -39,8 +39,8 @@ struct StaticExtensionWorkspace
 
 /// Calls `callback` with the objects of the rule's remaining variables for each binding that extends the objects of its first
 /// variables and is consistent with the rule's static consistency graph: the pairwise static constraints of its body.
-template<formalism::RelationKind R, typename Callback>
-void for_each_static_extension(const ConstRuleWorkspace<LiftedTag, R>& rule,
+template<typename Callback>
+void for_each_static_extension(const ConstRuleWorkspace<LiftedTag>& rule,
                                std::span<const urd::index<formalism::Object>> prefix,
                                StaticExtensionWorkspace& workspace,
                                Callback callback)

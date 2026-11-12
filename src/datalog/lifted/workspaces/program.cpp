@@ -40,10 +40,7 @@ ProgramWorkspace<LiftedTag, AP, TP, CP>::ProgramWorkspace(const Program<LiftedTa
           *workspace_repository),
     annotation_policy(std::move(annotation_policy_)),
     annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
-    numeric_annotations(program.get_program().get_functions<formalism::FluentTag>().size()),
     delta_annotations(program.get_program().get_predicates<formalism::FluentTag>().size()),
-    delta_numeric_annotations(program.get_program().get_functions<formalism::FluentTag>().size()),
-    numeric_support_selector(),
     tp(std::move(tp_)),
     cost_policy(std::move(cost_policy_)),
     engine(const_workspace->engine, program.get_program(), program.get_domains(), facts.fact_sets),
@@ -67,11 +64,8 @@ void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
     cost_buckets.clear();
     tp.clear();
     cost_policy.clear();
-    numeric_support_selector.reset();
     annotations.clear();
-    numeric_annotations.clear();
     delta_annotations.clear();
-    delta_numeric_annotations.clear();
     annotation_policy.clear_achievers();
     facts.reset();
     workspace_repository->symbols().clear();

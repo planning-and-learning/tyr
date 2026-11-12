@@ -43,26 +43,18 @@ class CostBuckets
 {
 public:
     using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-    using FunctionKey = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
 
 private:
-    using Interval = ygg::ClosedInterval<ygg::float_t>;
     using PredicateBucket = urd::Store<urd::set<PredicateKey>>;
-    using FunctionBucket = urd::Store<urd::map<FunctionKey, Interval>>;
 
 public:
     struct Bucket
     {
         PredicateBucket predicate;
-        FunctionBucket function;
 
-        [[nodiscard]] bool empty() const noexcept { return predicate.empty() && function.empty(); }
+        [[nodiscard]] bool empty() const noexcept { return predicate.empty(); }
         /// Empties the bucket, keeping its storage for the next cost (CostBuckets' erased buckets are kept).
-        void clear()
-        {
-            predicate.clear();
-            function.clear();
-        }
+        void clear() { predicate.clear(); }
     };
 
     void clear() noexcept { m_buckets.clear(); }
@@ -72,22 +64,6 @@ public:
     [[nodiscard]] Cost min_cost() const noexcept { return m_buckets.empty() ? std::numeric_limits<Cost>::max() : m_buckets.begin()->first; }
 
     bool insert(Cost cost, PredicateKey key) { return m_buckets[cost].predicate.insert(key).second; }
-
-    bool insert(Cost cost, FunctionKey key, Interval interval)
-    {
-        if (empty(interval))
-            return false;
-
-        auto& bucket = m_buckets[cost].function;
-        const auto [it, inserted] = bucket.emplace(key, interval);
-        if (inserted)
-            return true;
-        if (subset(interval, it->second))
-            return false;
-
-        it->second = hull(it->second, interval);
-        return true;
-    }
 
     bool erase(Cost cost, PredicateKey key)
     {

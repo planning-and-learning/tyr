@@ -79,8 +79,7 @@ bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag> elemen
 
 bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag> element, const ApplicabilityContext& context);
 
-template<formalism::RelationKind R>
-bool is_applicable(formalism::datalog::RuleView<LiftedTag, R> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::datalog::RuleView<LiftedTag> element, const ApplicabilityContext& context);
 
 /**
  * evaluate
@@ -147,8 +146,7 @@ inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag
            && is_applicable(element.get_numeric_constraints(), context);
 }
 
-template<formalism::RelationKind R>
-bool is_applicable(formalism::datalog::RuleView<LiftedTag, R> element, const ApplicabilityContext& context)
+inline bool is_applicable(formalism::datalog::RuleView<LiftedTag> element, const ApplicabilityContext& context)
 { return is_applicable(element.get_body(), context); }
 
 }

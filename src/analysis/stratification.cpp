@@ -62,8 +62,7 @@ struct RelationVertexMap
     [[nodiscard]] size_t size() const { return num_predicates + num_functions; }
 };
 
-template<formalism::RelationKind R>
-void add_body_dependencies(formalism::datalog::RuleView<LiftedTag, R> rule,
+void add_body_dependencies(formalism::datalog::RuleView<LiftedTag> rule,
                            ygg::uint_t head_vertex,
                            const RelationVertexMap& vertices,
                            stratification::DepGraph& graph)
@@ -88,35 +87,30 @@ void add_body_dependencies(formalism::datalog::RuleView<LiftedTag, R> rule,
 ygg::uint_t get_head_vertex(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
 { return vertices.get_vertex(head.get_predicate().index()); }
 
-ygg::uint_t get_head_vertex(formalism::datalog::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> head, const RelationVertexMap& vertices)
-{ return vertices.get_vertex(head.get_fterm().get_function().index()); }
-
-template<formalism::RelationKind R>
 void add_rule_dependencies(formalism::datalog::ProgramView<LiftedTag> program, const RelationVertexMap& vertices, stratification::DepGraph& graph)
 {
-    for (const auto rule : program.get_rules<R>())
-        formalism::datalog::for_each_head(rule, [&](const auto& head) { add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph); });
+    for (const auto rule : program.get_rules())
+        for (const auto head : rule.get_heads())
+            add_body_dependencies(rule, get_head_vertex(head, vertices), vertices, graph);
 }
 
-template<formalism::RelationKind R>
 void bucket_rules_by_stratum(formalism::datalog::ProgramView<LiftedTag> program,
                              const RelationVertexMap& vertices,
                              const urd::Store<urd::sequence<ygg::uint_t>>& relation_stratum,
                              urd::Store<urd::sequence<RuleStratum>>& buckets)
 {
-    for (const auto rule : program.get_rules<R>())
+    for (const auto rule : program.get_rules())
     {
         auto stratum = std::optional<ygg::uint_t> {};
-        formalism::datalog::for_each_head(rule,
-                                          [&](const auto& head)
-                                          {
-                                              const auto head_stratum = relation_stratum[get_head_vertex(head, vertices)];
-                                              if (stratum && *stratum != head_stratum)
-                                                  throw std::runtime_error("bucket_rules_by_stratum: the heads of a rule must share a stratum.");
-                                              stratum = head_stratum;
-                                          });
+        for (const auto head : rule.get_heads())
+        {
+            const auto head_stratum = relation_stratum[get_head_vertex(head, vertices)];
+            if (stratum && *stratum != head_stratum)
+                throw std::runtime_error("bucket_rules_by_stratum: the heads of a rule must share a stratum.");
+            stratum = head_stratum;
+        }
         assert(stratum);
-        buckets[*stratum].template get<R>().push_back(rule.index());
+        buckets[*stratum].push_back(rule.index());
     }
 }
 
@@ -127,8 +121,7 @@ static stratification::DepGraph build_dependency_graph(formalism::datalog::Progr
 {
     stratification::DepGraph graph(vertices.size());
 
-    add_rule_dependencies<formalism::PredicateTag>(program, vertices, graph);
-    add_rule_dependencies<formalism::FunctionTag>(program, vertices, graph);
+    add_rule_dependencies(program, vertices, graph);
 
     return graph;
 }
@@ -163,8 +156,7 @@ RuleStrata compute_rule_stratification(formalism::datalog::ProgramView<LiftedTag
         max_s = std::max(max_s, s);
 
     auto buckets = urd::Store<urd::sequence<RuleStratum>>(max_s + 1);
-    bucket_rules_by_stratum<formalism::PredicateTag>(program, vertices, relation_stratum, buckets);
-    bucket_rules_by_stratum<formalism::FunctionTag>(program, vertices, relation_stratum, buckets);
+    bucket_rules_by_stratum(program, vertices, relation_stratum, buckets);
 
     auto out = RuleStrata {};
     out.data = std::move(buckets);

@@ -108,12 +108,11 @@ public:
     {
         auto& ctx = stratum();
         begin_goal_cutoff_iteration(ctx);
-        run_active_rules<formalism::PredicateTag>(ctx);
-        run_active_rules<formalism::FunctionTag>(ctx);
+        run_active_rules(ctx);
         // The rules consumed the facts committed since they last ran; the commit phase collects the next ones.
         clear(ctx.out().program().facts().delta_fact_sets);
-        reduce_worker_results<formalism::PredicateTag>(ctx, cost_buckets, pending_achievers);
-        return reduce_worker_results<formalism::FunctionTag>(ctx, cost_buckets, pending_achievers);
+        reduce_worker_results(ctx, cost_buckets, pending_achievers);
+        return false;
     }
 
     Scheduler<LiftedTag>& scheduler() { return stratum().out().scheduler(); }
@@ -129,15 +128,14 @@ private:
                       && std::same_as<CP, RuleCostPolicy> && !std::same_as<TP, NoTerminationPolicy>)
         {
             const auto& goal = m_ctx->out().tp().get_goal();
-            if (!goal || !goal->get_numeric_constraints().empty() || m_ctx->out().schedulers().size() != 1
-                || !m_ctx->in().engine().rules.template get<formalism::FunctionTag>().empty())
+            if (!goal || !goal->get_numeric_constraints().empty() || m_ctx->out().schedulers().size() != 1)
                 return;
             const auto fact_sets = FactSets { m_ctx->in().facts().fact_sets, m_ctx->out().facts().fact_sets };
             if (!is_applicable(goal->template get_literals<formalism::StaticTag>(), fact_sets))
                 return;
 
             auto min_edge_cost = std::numeric_limits<Cost>::max();
-            for (const auto& rule : m_ctx->in().engine().rules.template get<formalism::PredicateTag>())
+            for (const auto& rule : m_ctx->in().engine().rules)
                 if (rule)
                     min_edge_cost = std::min(min_edge_cost, Cost(rule->get_rule().get_cost()));
 
@@ -226,9 +224,7 @@ private:
         }
     }
 
-    void insert_nullary_update(formalism::PredicateTag,
-                               RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
-                               RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& ctx)
+    void insert_nullary_update(RuleUpdateInput<LiftedTag, AP, CP>& input, RuleWorkerExecutionContext<AP, TP, CP>& ctx)
     {
         auto& out = ctx.out();
         auto& heads = out.head_bindings();
@@ -238,28 +234,15 @@ private:
         insert_propositional_update(std::span(std::as_const(heads)), input, out.head_updates(), out.delta_annotations());
     }
 
-    void insert_nullary_update(formalism::FunctionTag,
-                               RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
-                               RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& ctx)
-    {
-        [[maybe_unused]] const auto& in = ctx.in();
-        auto& out = ctx.out();
-        assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-        insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
-    }
-
-    template<formalism::RelationKind R>
-    void generate_nullary_case(RuleExecutionContext<R, AP, TP, CP>& rctx)
+    void generate_nullary_case(RuleExecutionContext<AP, TP, CP>& rctx)
     {
         auto wrctx = rctx.get_rule_worker_execution_context();
 
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule().get_rule(), out.ground_context() },
-                                            in.numeric_support_selector(),
+        auto input = make_rule_update_input(RuleInstance<LiftedTag> { in.cws_rule().get_rule(), out.ground_context() },
+                                            in.fact_sets(),
                                             in.annotations(),
-                                            out.rule_evaluation_workspace(),
-                                            in.numeric_annotations(),
                                             in.annotation_policy(),
                                             in.cost_policy());
         ++out.statistics().num_executions;
@@ -286,7 +269,7 @@ private:
 
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
         if (statically_applicable() && dynamically_applicable())
-            insert_nullary_update(R {}, input, wrctx);
+            insert_nullary_update(input, wrctx);
         else
             ++out.statistics().num_rejected_rules;
     }
@@ -296,11 +279,7 @@ private:
     { return set.insert(binding).second; }
 
     template<typename Callback>
-    void for_each_relevant_clique(formalism::PredicateTag,
-                                  kckp::DeltaKCKP& algorithm,
-                                  Callback&& callback,
-                                  kckp::Workspace& workspace,
-                                  [[maybe_unused]] bool enumerate_all)
+    void for_each_relevant_clique(kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, [[maybe_unused]] bool enumerate_all)
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         if (!enumerate_all)
@@ -312,11 +291,7 @@ private:
         algorithm.for_each_clique(std::forward<Callback>(callback), workspace);
     }
 
-    template<typename Callback>
-    void for_each_relevant_clique(formalism::FunctionTag, kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, bool)
-    { algorithm.for_each_clique(std::forward<Callback>(callback), workspace); }
-
-    inline bool require_novel_binding(formalism::PredicateTag) noexcept
+    inline bool require_novel_binding() noexcept
     {
 #ifdef TYR_ENABLE_SEMI_NAIVE
         return true;
@@ -325,9 +300,7 @@ private:
 #endif
     }
 
-    inline bool require_novel_binding(formalism::FunctionTag) noexcept { return false; }
-
-    bool try_generate_parallel(formalism::PredicateTag, [[maybe_unused]] RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
+    bool try_generate_parallel([[maybe_unused]] RuleExecutionContext<AP, TP, CP>& rctx)
     {
 #if defined(TYR_ENABLE_INNER_PARALLELISM) && defined(TYR_ENABLE_SEMI_NAIVE)
         constexpr size_t kNumStripes = 2;
@@ -365,10 +338,7 @@ private:
         return false;
     }
 
-    bool try_generate_parallel(formalism::FunctionTag, RuleExecutionContext<formalism::FunctionTag, AP, TP, CP>&) { return false; }
-
-    template<formalism::RelationKind R>
-    bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
+    bool is_current_binding_dynamically_applicable(RuleWorkerExecutionContext<AP, TP, CP>& wrctx, const ApplicabilityContext& applicability_context)
     {
         auto& in = wrctx.in();
         auto& applicability_cache = wrctx.out().applicability_cache();
@@ -379,7 +349,7 @@ private:
 
     /// Collects the heads the binding can update: committed facts are final, but still receive achievers. Each head is
     /// found or interned in one step (the repository's insert gives an existing row), so it is encoded once.
-    void collect_predicate_heads(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx)
+    void collect_predicate_heads(RuleWorkerExecutionContext<AP, TP, CP>& wrctx)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
@@ -395,8 +365,8 @@ private:
         }
     }
 
-    bool try_process_predicate_binding(RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
-                                       RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
+    bool try_process_predicate_binding(RuleWorkerExecutionContext<AP, TP, CP>& wrctx,
+                                       RuleUpdateInput<LiftedTag, AP, CP>& input,
                                        const ApplicabilityContext& applicability_context)
     {
         [[maybe_unused]] auto& in = wrctx.in();
@@ -416,9 +386,8 @@ private:
         return handled;
     }
 
-    void process_clique_head(formalism::PredicateTag,
-                             RuleWorkerExecutionContext<formalism::PredicateTag, AP, TP, CP>& wrctx,
-                             RuleUpdateInput<LiftedTag, formalism::PredicateTag, AP, CP>& input,
+    void process_clique_head(RuleWorkerExecutionContext<AP, TP, CP>& wrctx,
+                             RuleUpdateInput<LiftedTag, AP, CP>& input,
                              const ApplicabilityContext& applicability_context)
     {
         // A rejected binding is generated again by the delta that makes it applicable (see generate_hyperedge_cliques).
@@ -427,41 +396,20 @@ private:
             ++wrctx.out().statistics().num_rejected_rules;
     }
 
-    void process_clique_head(formalism::FunctionTag,
-                             RuleWorkerExecutionContext<formalism::FunctionTag, AP, TP, CP>& wrctx,
-                             RuleUpdateInput<LiftedTag, formalism::FunctionTag, AP, CP>& input,
-                             const ApplicabilityContext& applicability_context)
-    {
-        [[maybe_unused]] const auto& in = wrctx.in();
-        auto& out = wrctx.out();
-        if (!is_current_binding_dynamically_applicable(wrctx, applicability_context))
-        {
-            ++out.statistics().num_rejected_rules;
-            return;
-        }
-
-        assert(is_applicable(in.cws_rule().get_rule(), ApplicabilityContext { in.fact_sets(), out.ground_context() }));
-        insert_numeric_update(input, out.head_updates(), out.delta_numeric_annotations());
-    }
-
-    template<formalism::RelationKind R>
-    void process_clique(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding)
+    void process_clique(RuleWorkerExecutionContext<AP, TP, CP>& wrctx, std::span<const kckp::Vertex> clique, bool require_novel_binding)
     {
         create_general_binding(clique, wrctx.in().cws_rule().get_static_consistency_graph(), wrctx.out().ground_context().binding());
         process_binding(wrctx, require_novel_binding);
     }
 
     /// Processes the binding in the worker's ground context.
-    template<formalism::RelationKind R>
-    void process_binding(RuleWorkerExecutionContext<R, AP, TP, CP>& wrctx, [[maybe_unused]] bool require_novel_binding)
+    void process_binding(RuleWorkerExecutionContext<AP, TP, CP>& wrctx, [[maybe_unused]] bool require_novel_binding)
     {
         auto& in = wrctx.in();
         auto& out = wrctx.out();
-        auto input = make_rule_update_input(RuleInstance<LiftedTag, R> { in.cws_rule().get_rule(), out.ground_context() },
-                                            in.numeric_support_selector(),
+        auto input = make_rule_update_input(RuleInstance<LiftedTag> { in.cws_rule().get_rule(), out.ground_context() },
+                                            in.fact_sets(),
                                             in.annotations(),
-                                            out.rule_evaluation_workspace(),
-                                            in.numeric_annotations(),
                                             in.annotation_policy(),
                                             in.cost_policy());
 
@@ -493,21 +441,19 @@ private:
         }
 #endif
 
-        process_clique_head(R {}, wrctx, input, applicability_context);
+        process_clique_head(wrctx, input, applicability_context);
     }
 
-    template<formalism::RelationKind R>
-    void generate_general_case(RuleExecutionContext<R, AP, TP, CP>& rctx, bool enumerate_all)
+    void generate_general_case(RuleExecutionContext<AP, TP, CP>& rctx, bool enumerate_all)
     {
         auto& rule_out = rctx.out();
         auto& kckp_algorithm = rule_out.kckp();
 #ifdef TYR_ENABLE_SEMI_NAIVE
         // Before the edge deltas, as the retried bindings were: equal-cost witnesses keep their first derivation.
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            if (!enumerate_all)
-                generate_hyperedge_cliques(rctx);
+        if (!enumerate_all)
+            generate_hyperedge_cliques(rctx);
 #endif
-        if (enumerate_all || !try_generate_parallel(R {}, rctx))
+        if (enumerate_all || !try_generate_parallel(rctx))
         {
             auto wrctx = rctx.get_rule_worker_execution_context();
             auto& out = wrctx.out();
@@ -515,12 +461,11 @@ private:
             ++out.statistics().num_executions;
 
             for_each_relevant_clique(
-                R {},
                 kckp_algorithm,
                 [&](auto&& clique)
                 {
                     if (!goal_cutoff_stopped())
-                        process_clique(wrctx, clique, require_novel_binding(R {}) && !enumerate_all);
+                        process_clique(wrctx, clique, require_novel_binding() && !enumerate_all);
                 },
                 kckp_workspace,
                 enumerate_all);
@@ -531,7 +476,7 @@ private:
     /// the cliques without any, provided no literal before i has a new atom, so each binding is generated once,
     /// in the iteration it becomes applicable. generate_general_case calls this before the edge anchors, the order
     /// in which the retried bindings were processed, so that equal-cost witnesses keep their first derivation.
-    void generate_hyperedge_cliques(RuleExecutionContext<formalism::PredicateTag, AP, TP, CP>& rctx)
+    void generate_hyperedge_cliques(RuleExecutionContext<AP, TP, CP>& rctx)
     {
         const auto& cws_rule = rctx.in().cws_rule();
         const auto literals = cws_rule.get_hyperedge_condition().template get_literals<formalism::FluentTag>();
@@ -600,8 +545,7 @@ private:
         return true;
     }
 
-    template<formalism::RelationKind R>
-    void generate(RuleExecutionContext<R, AP, TP, CP>& rctx, bool enumerate_all)
+    void generate(RuleExecutionContext<AP, TP, CP>& rctx, bool enumerate_all)
     {
         const auto arity = rctx.in().cws_rule().get_rule().get_arity();
 
@@ -611,12 +555,11 @@ private:
             generate_general_case(rctx, enumerate_all);
     }
 
-    template<formalism::RelationKind R>
     /// Parallel phase: generate new ground witnesses for all active rules.
     void run_active_rules(StratumExecutionContext<AP, TP, CP>& ctx)
     {
         auto& program_out = ctx.out().program();
-        const auto& rule_scheduler = ctx.out().scheduler().template get<R>();
+        const auto& rule_scheduler = ctx.out().scheduler().rules();
         const auto& active_rules = rule_scheduler.get_active_rules();
 
         const auto program_stopwatch = ygg::StopwatchScope(program_out.statistics().parallel_time);
@@ -624,8 +567,8 @@ private:
         const auto process_rule = [&](auto&& rule_index)
         {
             // Numeric effects and state-dependent costs are non-idempotent as the numeric envelope evolves.
-            const auto enumerate_all = std::same_as<R, formalism::FunctionTag> || rule_scheduler.requires_full_enumeration(rule_index);
-            auto rctx = RuleExecutionContext<R, AP, TP, CP> { rule_index, ctx };
+            const auto enumerate_all = rule_scheduler.requires_full_enumeration(rule_index);
+            auto rctx = RuleExecutionContext<AP, TP, CP> { rule_index, ctx };
             auto& rule_out = rctx.out();
 
             const auto total_time = ygg::StopwatchScope(rule_out.statistics().total_time);
@@ -677,38 +620,27 @@ private:
         }
     }
 
-    template<formalism::RelationKind R>
     /// Sequential phase: reduce worker annotations and bucket their already-canonical heads by cost.
     bool reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
     {
         auto& program_out = ctx.out().program();
-        auto& scheduler = ctx.out().scheduler();
         auto& annotation_policy = program_out.annotation_policy();
         auto annotation_improved = false;
 
-        for (const auto rule_index : ctx.out().scheduler().template get<R>().get_active_rules())
+        for (const auto rule_index : ctx.out().scheduler().rules().get_active_rules())
         {
             const auto i = ygg::uint_t(rule_index.value);
-            const auto& ws_rule = program_out.engine().rules.template get<R>()[i];
+            const auto& ws_rule = program_out.engine().rules[i];
 
             for (auto& worker : ws_rule->worker)
             {
-                if constexpr (std::same_as<R, formalism::PredicateTag>)
-                    reduce_predicate_head_updates(worker.iteration.head_updates,
-                                                  annotation_policy,
-                                                  program_out.facts().fact_sets,
-                                                  program_out.delta_annotations(),
-                                                  program_out.annotations(),
-                                                  cost_buckets,
-                                                  pending_achievers);
-                else
-                    annotation_improved |= reduce_function_head_updates(worker.iteration.head_updates,
-                                                                        annotation_policy,
-                                                                        program_out.delta_numeric_annotations(),
-                                                                        program_out.numeric_annotations(),
-                                                                        cost_buckets,
-                                                                        scheduler,
-                                                                        ctx.out().program_context());
+                reduce_predicate_head_updates(worker.iteration.head_updates,
+                                              annotation_policy,
+                                              program_out.facts().fact_sets,
+                                              program_out.delta_annotations(),
+                                              program_out.annotations(),
+                                              cost_buckets,
+                                              pending_achievers);
             }
         }
         return annotation_improved;

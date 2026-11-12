@@ -24,6 +24,12 @@ The rules the planning-and-learning libraries share are documented in
 
 .. toctree::
    :maxdepth: 2
+   :caption: Heuristics
+
+   lmcut
+
+.. toctree::
+   :maxdepth: 2
    :caption: Python
 
    serialization/index

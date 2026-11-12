@@ -53,11 +53,10 @@ public:
     Scheduler<GroundTag>& scheduler() noexcept { return m_ctx->out().scheduler(); }
 
 private:
-    template<formalism::RelationKind R>
     void process_next_rule(CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers)
     {
         auto& out = m_ctx->out();
-        auto entry = scheduler().template pop<R>();
+        auto entry = scheduler().pop();
         assert(entry);
 
         if (!scheduler().claim(*entry))
@@ -65,32 +64,19 @@ private:
 
         auto& scratch = scheduler().scratch();
         scratch.clear_updates();
-        auto selector = out.numeric_support_selector();
-        auto input = make_rule_update_input(RuleInstance<GroundTag, R>(entry->rule),
-                                            selector,
+        auto input = make_rule_update_input(RuleInstance<GroundTag>(entry->rule),
+                                            FactSets { m_ctx->in().facts().fact_sets, out.facts().fact_sets },
                                             out.annotations(),
-                                            scratch.rule_evaluation,
-                                            out.numeric_annotations(),
                                             out.annotation_policy(),
                                             out.cost_policy());
-        const auto result = [&]
-        {
-            if constexpr (std::same_as<R, formalism::PredicateTag>)
-            {
-                scratch.head_bindings.clear();
-                for (const auto head : input.rule_instance.get_heads())
-                    scratch.head_bindings.push_back(input.rule_instance.resolve_row(head));
-                return insert_propositional_update(std::span(std::as_const(scratch.head_bindings)),
-                                                   input,
-                                                   scratch.predicate_updates,
-                                                   scratch.delta_annotations,
-                                                   entry->cost);
-            }
-            else
-            {
-                return insert_numeric_update(input, scratch.function_updates, scratch.delta_numeric_annotations, entry->cost);
-            }
-        }();
+        scratch.head_bindings.clear();
+        for (const auto head : input.rule_instance.get_heads())
+            scratch.head_bindings.push_back(input.rule_instance.resolve_row(head));
+        const auto result = insert_propositional_update(std::span(std::as_const(scratch.head_bindings)),
+                                                        input,
+                                                        scratch.predicate_updates,
+                                                        scratch.delta_annotations,
+                                                        entry->cost);
         if (result.status == RuleUpdateStatus::Unavailable || result.status == RuleUpdateStatus::QueueLabelChanged)
         {
             ++scheduler().statistics().num_stale_queue_pops;
@@ -102,33 +88,19 @@ private:
         if (result.status == RuleUpdateStatus::Completed)
             ++scheduler().statistics().num_rules_fired;
 
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            reduce_predicate_head_updates(scratch.predicate_updates,
-                                          out.annotation_policy(),
-                                          out.facts().fact_sets,
-                                          scratch.delta_annotations,
-                                          out.annotations(),
-                                          pending_heads,
-                                          pending_achievers);
-        else
-            reduce_function_head_updates(scratch.function_updates,
-                                         out.annotation_policy(),
-                                         scratch.delta_numeric_annotations,
-                                         out.numeric_annotations(),
-                                         pending_heads,
-                                         scheduler(),
-                                         *m_ctx);
+        reduce_predicate_head_updates(scratch.predicate_updates,
+                                      out.annotation_policy(),
+                                      out.facts().fact_sets,
+                                      scratch.delta_annotations,
+                                      out.annotations(),
+                                      pending_heads,
+                                      pending_achievers);
     }
 
     void process_rule_frontier(CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers, Cost cost)
     {
         while (scheduler().next_cost() == cost)
-        {
-            if (scheduler().template next_cost<formalism::PredicateTag>() <= scheduler().template next_cost<formalism::FunctionTag>())
-                process_next_rule<formalism::PredicateTag>(pending_heads, pending_achievers);
-            else
-                process_next_rule<formalism::FunctionTag>(pending_heads, pending_achievers);
-        }
+            process_next_rule(pending_heads, pending_achievers);
     }
 
     ProgramExecutionContext<GroundTag, AP, TP, CP>* m_ctx;

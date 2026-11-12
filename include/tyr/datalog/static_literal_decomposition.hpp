@@ -32,7 +32,7 @@ namespace tyr::datalog
 
 struct StaticLiteralDecomposition
 {
-    using Rule = urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
+    using Rule = urd::index<formalism::datalog::Rule<LiftedTag>>;
 
     /// Rewritten rules keep the variables of their source rules.
     RuleMapping rules;

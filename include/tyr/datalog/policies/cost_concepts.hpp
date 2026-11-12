@@ -26,23 +26,12 @@ namespace tyr::datalog
 {
 
 template<typename T>
-concept RuleCostPolicyConcept = requires(T& policy,
-                                         const T& const_policy,
-                                         formalism::datalog::RuleRowView<formalism::PredicateTag> predicate_rule,
-                                         formalism::datalog::RuleRowView<formalism::FunctionTag> function_rule,
-                                         formalism::datalog::RuleRowIndex<formalism::PredicateTag> predicate_rule_key,
-                                         formalism::datalog::RuleRowIndex<formalism::FunctionTag> function_rule_key,
-                                         formalism::datalog::FunctionRowIndex<formalism::FluentTag> numeric_key,
-                                         ygg::ClosedInterval<ygg::float_t> interval,
-                                         Cost cost) {
-    { const_policy.get_cost(predicate_rule) } -> std::same_as<Cost>;
-    { const_policy.get_cost(function_rule) } -> std::same_as<Cost>;
-    { const_policy.get_cost(function_rule_key, numeric_key, interval) } -> std::same_as<Cost>;
-    { policy.clear() } -> std::same_as<void>;
-    { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
-    { policy.set_cost(function_rule_key, cost) } -> std::same_as<void>;
-    { policy.set_cost(function_rule_key, numeric_key, interval, cost) } -> std::same_as<void>;
-};
+concept RuleCostPolicyConcept =
+    requires(T& policy, const T& const_policy, formalism::datalog::RuleRowView predicate_rule, formalism::datalog::RuleRowIndex predicate_rule_key, Cost cost) {
+        { const_policy.get_cost(predicate_rule) } -> std::same_as<Cost>;
+        { policy.clear() } -> std::same_as<void>;
+        { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
+    };
 
 }
 

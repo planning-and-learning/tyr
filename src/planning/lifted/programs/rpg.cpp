@@ -74,6 +74,7 @@ void append_variable(formalism::planning::VariableView variable,
         conj_cond.variables.push_back(index);
 }
 
+/// The relaxation holds no values of functions: the numeric constraints of a condition are taken to hold.
 void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> action,
                                 formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
                                 TranslationContext<LiftedTag>& translation_context,
@@ -88,8 +89,6 @@ void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> actio
     for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
             conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
-    for (const auto numeric_constraint : action.get_condition().get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context).first.index());
 
     for (const auto variable : cond_eff.get_variables())
         append_variable(variable, context, conj_cond);
@@ -98,8 +97,6 @@ void fill_delete_free_condition(formalism::planning::ActionView<LiftedTag> actio
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
             conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
-    for (const auto numeric_constraint : cond_eff.get_condition().get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context).first.index());
 }
 
 auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal,
@@ -112,9 +109,6 @@ auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<Groun
         if (const auto literal = merge_p2d(fact, true, translation_context.p2d.fluent_to_fluent_predicate, context))
             conj_cond->fluent_literals.push_back(literal->index());
 
-    for (const auto numeric_constraint : goal.get_numeric_constraints())
-        conj_cond->numeric_constraints.push_back(merge_p2d(numeric_constraint, context).first.index());
-
     return formalism::datalog::insert(context.destination(), *conj_cond);
 }
 
@@ -123,7 +117,7 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
                              TranslationContext<LiftedTag>& translation_context,
                              formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(context.builder());
+    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
     auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
 
@@ -142,34 +136,11 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
     return formalism::datalog::insert(context.destination(), *rule);
 }
 
-auto create_cond_numeric_effect_rule(formalism::planning::ActionView<LiftedTag> action,
-                                     formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
-                                     formalism::planning::NumericEffectOperatorView<LiftedTag, formalism::FluentTag> effect,
-                                     TranslationContext<LiftedTag>& translation_context,
-                                     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
-{
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::FunctionTag>>(context.builder());
-
-    auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder());
-
-    fill_delete_free_condition(action, cond_eff, translation_context, context, *conj_cond);
-
-    const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
-
-    for (const auto variable : new_conj_cond.get_variables())
-        rule->variables.push_back(urd::to_stored(variable));
-    rule->body = new_conj_cond.index();
-    rule->head = merge_p2d(effect, context).first.index();
-    rule->cost = 1;
-
-    return formalism::datalog::insert(context.destination(), *rule);
-}
-
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<LiftedTag> action,
                                            urd::data<formalism::datalog::Program<LiftedTag>>& program,
                                            TranslationContext<LiftedTag>& translation_context,
                                            formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                                           RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action)
+                                           RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
 {
     for (const auto cond_eff : action.get_effects())
     {
@@ -177,23 +148,15 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
         {
             const auto rule = create_cond_effect_rule(action, cond_eff, translation_context, context).first;
 
-            program.predicate_rules.push_back(rule.index());
-            rule_to_action.predicate[rule.index()].push_back(action);
-        }
-
-        for (const auto numeric_effect : cond_eff.get_effect().get_numeric_effects())
-        {
-            const auto rule = create_cond_numeric_effect_rule(action, cond_eff, numeric_effect, translation_context, context).first;
-
-            program.function_rules.push_back(rule.index());
-            rule_to_action.function[rule.index()].push_back(action);
+            program.rules.push_back(rule.index());
+            rule_to_action[rule.index()].push_back(action);
         }
     }
 }
 
 auto create_program(formalism::planning::TaskView<LiftedTag> task,
                     TranslationContext<LiftedTag>& translation_context,
-                    RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action,
+                    RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action,
                     formalism::datalog::Repository& destination)
 {
     auto builder = formalism::datalog::Builder();
@@ -213,21 +176,16 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
 struct RPGTables
 {
     TranslationContext<LiftedTag> translation_context;
-    RPGProgram<LiftedTag>::RuleToActionMappings rule_to_action;
+    RPGProgram<LiftedTag>::RuleToActionMapping rule_to_action;
 
     RPGTables remap(SymbolRemapper& remapper) const
     {
         auto result = RPGTables { remapper.translation_context(translation_context), {} };
-        const auto remap = [&](const auto& source, auto& destination)
+        for (const auto& [rule, actions] : rule_to_action)
         {
-            for (const auto& [rule, actions] : source)
-            {
-                auto& result_actions = destination[remapper.rule(rule)];
-                result_actions.insert(result_actions.end(), actions.begin(), actions.end());
-            }
-        };
-        remap(rule_to_action.predicate, result.rule_to_action.predicate);
-        remap(rule_to_action.function, result.rule_to_action.function);
+            auto& result_actions = result.rule_to_action[remapper.rule(rule)];
+            result_actions.insert(result_actions.end(), actions.begin(), actions.end());
+        }
         return result;
     }
 };
@@ -236,7 +194,7 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
                             CostMode cost_mode,
                             bool split_rules,
                             TranslationContext<LiftedTag>& translation_context,
-                            RPGProgram<LiftedTag>::RuleToActionMappings& rule_to_action,
+                            RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action,
                             datalog::RuleSplitting& rule_splitting)
 {
     require_unit_cost(cost_mode);

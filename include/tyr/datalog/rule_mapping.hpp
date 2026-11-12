@@ -32,23 +32,7 @@ namespace tyr::datalog
 
 /// The rule of a program transformation's output that replaces each rule of its source program, rewritten or copied; source
 /// rules index the source program's repository.
-struct RuleMapping
-{
-    template<formalism::RelationKind R>
-    using Rule = urd::index<formalism::datalog::Rule<LiftedTag, R>>;
-
-    urd::Store<urd::map<Rule<formalism::PredicateTag>, Rule<formalism::PredicateTag>>> predicate;
-    urd::Store<urd::map<Rule<formalism::FunctionTag>, Rule<formalism::FunctionTag>>> function;
-
-    template<formalism::RelationKind R>
-    [[nodiscard]] const auto& get() const noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return predicate;
-        else
-            return function;
-    }
-};
+using RuleMapping = urd::Store<urd::map<urd::index<formalism::datalog::Rule<LiftedTag>>, urd::index<formalism::datalog::Rule<LiftedTag>>>>;
 
 }
 

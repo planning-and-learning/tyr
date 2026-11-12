@@ -74,32 +74,17 @@ class RPGProgram
 public:
     using Task = formalism::planning::TaskView<Kind>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
-    template<formalism::RelationKind R>
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex<R>, urd::index<formalism::datalog::Rule<LiftedTag, R>>>;
+    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex, urd::index<formalism::datalog::Rule<LiftedTag>>>;
     /// Rules are hash-consed, so actions with identical relaxed rules share one rule.
     using Actions = urd::Store<urd::sequence<Action>>;
-    template<formalism::RelationKind R>
-    using RuleToActionMapping = urd::Store<urd::map<Rule<R>, Actions>>;
-
-    struct RuleToActionMappings
-    {
-        RuleToActionMapping<formalism::PredicateTag> predicate;
-        RuleToActionMapping<formalism::FunctionTag> function;
-    };
+    using RuleToActionMapping = urd::Store<urd::map<Rule, Actions>>;
 
     /// With split_rules, action rules project away the variables that only some of their preconditions use (lifted tasks only).
     explicit RPGProgram(Task task, CostMode cost_mode = CostMode::UNIT, bool split_rules = false);
 
     [[nodiscard]] const TranslationContext<Kind>& get_translation_context() const noexcept { return m_translation_context; }
 
-    template<formalism::RelationKind R>
-    [[nodiscard]] const RuleToActionMapping<R>& get_rule_to_action_mapping() const noexcept
-    {
-        if constexpr (std::same_as<R, formalism::PredicateTag>)
-            return m_rule_to_action.predicate;
-        else
-            return m_rule_to_action.function;
-    }
+    [[nodiscard]] const RuleToActionMapping& get_rule_to_action_mapping() const noexcept { return m_rule_to_action; }
 
     /// The splitting of the action rules, empty unless they were split.
     [[nodiscard]] const datalog::RuleSplitting& get_rule_splitting() const noexcept { return m_rule_splitting; }
@@ -112,7 +97,7 @@ public:
 
 private:
     TranslationContext<Kind> m_translation_context;
-    RuleToActionMappings m_rule_to_action;
+    RuleToActionMapping m_rule_to_action;
     datalog::RuleSplitting m_rule_splitting;
     datalog::Program<Kind> m_datalog_program;
 };

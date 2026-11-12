@@ -92,12 +92,12 @@ struct formatter<tyr::analysis::Scoped<tyr::formalism::planning::Axiom<::tyr::Li
     }
 };
 
-template<tyr::formalism::RelationKind R, typename Payload>
-struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload>, char>
+template<typename Payload>
+struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, Payload>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag, R>, Payload>& value, FormatContext& ctx) const
+    auto format(const tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, Payload>& value, FormatContext& ctx) const
     {
         auto os = std::stringstream {};
         os << "RuleDomain(\n";
@@ -221,16 +221,15 @@ struct formatter<tyr::analysis::ProgramVariableDomains, char>
             os << ygg::print_indent;
             fmt::print(os, "{}{}\n", "fluent function domains = ", value.fluent_function_domains);
 
-            const auto format_rules = [&]<tyr::formalism::RelationKind RK>()
+            const auto format_rules = [&]()
             {
-                for (const auto& [rule, domain] : value.rule_domains.template get<RK>())
+                for (const auto& [rule, domain] : value.rule_domains)
                 {
                     os << ygg::print_indent;
                     fmt::print(os, "rule {} domain = {}\n", rule, domain);
                 }
             };
-            format_rules.template operator()<tyr::formalism::PredicateTag>();
-            format_rules.template operator()<tyr::formalism::FunctionTag>();
+            format_rules();
         }
         os << ygg::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.view());

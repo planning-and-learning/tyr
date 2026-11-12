@@ -78,8 +78,7 @@ bool is_applicable(formalism::datalog::ConjunctiveConditionView<GroundTag> eleme
 
 // GroundRule
 
-template<formalism::RelationKind R>
-bool is_applicable(formalism::datalog::RuleView<GroundTag, R> element, const FactSets& fact_sets);
+bool is_applicable(formalism::datalog::RuleView<GroundTag> element, const FactSets& fact_sets);
 
 /**
  * is_statically_applicable
@@ -91,8 +90,7 @@ bool is_statically_applicable(formalism::datalog::ConjunctiveConditionView<Groun
 
 // GroundRule
 
-template<formalism::RelationKind R>
-bool is_statically_applicable(formalism::datalog::RuleView<GroundTag, R> element, const FactSets& fact_sets);
+bool is_statically_applicable(formalism::datalog::RuleView<GroundTag> element, const FactSets& fact_sets);
 
 /**
  * evaluate
@@ -148,9 +146,7 @@ inline bool is_dynamically_applicable(formalism::datalog::ConjunctiveConditionVi
 
 // GroundRule
 
-template<formalism::RelationKind R>
-inline bool is_applicable(formalism::datalog::RuleView<GroundTag, R> element, const FactSets& fact_sets)
-{ return is_applicable(element.get_body(), fact_sets); }
+inline bool is_applicable(formalism::datalog::RuleView<GroundTag> element, const FactSets& fact_sets) { return is_applicable(element.get_body(), fact_sets); }
 
 /**
  * is_statically_applicable
@@ -163,8 +159,7 @@ inline bool is_statically_applicable(formalism::datalog::ConjunctiveConditionVie
 
 // GroundRule
 
-template<formalism::RelationKind R>
-inline bool is_statically_applicable(formalism::datalog::RuleView<GroundTag, R> element, const FactSets& fact_sets)
+inline bool is_statically_applicable(formalism::datalog::RuleView<GroundTag> element, const FactSets& fact_sets)
 { return is_statically_applicable(element.get_body(), fact_sets); }
 
 }

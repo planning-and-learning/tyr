@@ -27,6 +27,7 @@ try
 
     auto program = argparse::ArgumentParser("AStar eager search.");
     cli::add_common_arguments(program);
+    program.add_argument("--max-time").scan<'u', uint64_t>().help("The search time limit in seconds; the search then stops with OUT_OF_TIME.");
     program.add_argument("--parallel-search-mode")
         .default_value(std::string("synchronous"))
         .choices("synchronous", "asynchronous")
@@ -43,6 +44,8 @@ try
             auto options = planning::astar_eager::Options<Kind>();
             cli::set_common_options(options, arguments, search);
             options.event_handler = planning::astar_eager::DefaultEventHandler<Kind>::create(arguments.verbosity);
+            if (const auto max_time = program.present<uint64_t>("--max-time"))
+                options.search_budget.max_time = std::chrono::seconds(*max_time);
             options.parallel_search_mode = program.get<std::string>("--parallel-search-mode") == "synchronous" ?
                                                planning::astar_eager::ParallelSearchMode::SYNCHRONOUS :
                                                planning::astar_eager::ParallelSearchMode::ASYNCHRONOUS;

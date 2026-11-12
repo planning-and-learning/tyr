@@ -142,7 +142,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto generator = std::make_shared<tyr::planning::SuccessorGenerator<LiftedTag>>(task, ygg::ExecutionContext::create(1));
     const auto& action_program = generator->get_action_program();
     const auto global_program = action_program.get_datalog_program().get_program();
-    const auto global_rules = global_program.get_rules<formalism::PredicateTag>();
+    const auto global_rules = global_program.get_rules();
     const auto& schemas = action_program.get_schema_programs();
     ASSERT_EQ(schemas.size(), task->get_task().get_domain().get_actions().size());
 
@@ -151,8 +151,8 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     const auto& effect_mapping = action_program.get_conditional_effect_to_predicate_mapping();
     const auto rule_of = [&](auto predicate)
     { return *std::ranges::find_if(global_rules, [&](auto rule) { return rule.get_heads().front().get_predicate() == predicate; }); };
-    auto expected_rules = urd::Store<
-        urd::map<formalism::planning::ActionView<LiftedTag>, urd::Store<urd::sequence<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>>>>> {};
+    auto expected_rules =
+        urd::Store<urd::map<formalism::planning::ActionView<LiftedTag>, urd::Store<urd::sequence<formalism::datalog::RuleView<LiftedTag>>>>> {};
     auto num_rules = static_cast<size_t>(0);
     for (const auto& [predicate, action] : action_mapping)
     {
@@ -177,17 +177,15 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
         EXPECT_TRUE(std::ranges::equal(data.static_functions, global_data.static_functions));
         EXPECT_TRUE(std::ranges::equal(data.fluent_functions, global_data.fluent_functions));
         EXPECT_TRUE(std::ranges::equal(data.objects, global_data.objects));
-        const auto schema_rules = schema.program.get_rules<formalism::PredicateTag>();
+        const auto schema_rules = schema.program.get_rules();
         ASSERT_EQ(schema_rules.size(), rules.size());
         for (size_t i = 0; i < rules.size(); ++i)
         {
             EXPECT_EQ(schema_rules[i], rules[i]);
             EXPECT_EQ(&schema_rules[i].data(), &rules[i].data());
         }
-        EXPECT_TRUE(schema.program.get_rules<formalism::FunctionTag>().empty());
         ASSERT_EQ(schema.strata.data.size(), 1);
-        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front().get<tyr::formalism::PredicateTag>(), data.predicate_rules));
-        EXPECT_TRUE(schema.strata.data.front().get<tyr::formalism::FunctionTag>().empty());
+        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front(), data.rules));
     }
 }
 

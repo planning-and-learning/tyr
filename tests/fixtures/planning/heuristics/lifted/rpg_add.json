@@ -316,7 +316,7 @@
             "task_file": "numeric/tests/fo-counters/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 4
+                    "h": 0
                 }
             }
         },
@@ -326,7 +326,7 @@
             "task_file": "numeric/tests/refuel/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 5
+                    "h": 0
                 }
             }
         },
@@ -346,7 +346,7 @@
             "task_file": "numeric/tests/tpp/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 8
+                    "h": 0
                 }
             }
         },
@@ -366,7 +366,7 @@
             "task_file": "numeric/tests/block-grouping/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 0
                 }
             }
         },
@@ -376,7 +376,7 @@
             "task_file": "numeric/tests/counters/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 9
+                    "h": 0
                 }
             }
         },
@@ -396,7 +396,7 @@
             "task_file": "numeric/tests/drone/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
+                    "h": 2
                 }
             }
         },
@@ -416,7 +416,7 @@
             "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 7
+                    "h": 0
                 }
             }
         },
@@ -426,7 +426,7 @@
             "task_file": "numeric/tests/farmland/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 0
                 }
             }
         },
@@ -436,7 +436,7 @@
             "task_file": "numeric/tests/fo-farmland/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 3
+                    "h": 0
                 }
             }
         },
@@ -446,7 +446,7 @@
             "task_file": "numeric/tests/fo-sailing/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 1
                 }
             }
         },
@@ -456,7 +456,7 @@
             "task_file": "numeric/tests/hydropower/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 0
                 }
             }
         },
@@ -466,7 +466,7 @@
             "task_file": "numeric/tests/markettrader/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 1
                 }
             }
         },
@@ -486,7 +486,7 @@
             "task_file": "numeric/tests/pathwaysmetric/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 0
                 }
             }
         },
@@ -506,7 +506,7 @@
             "task_file": "numeric/tests/sailing/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 1
                 }
             }
         },
@@ -516,7 +516,7 @@
             "task_file": "numeric/tests/settersnumeric/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 0
                 }
             }
         },
@@ -526,7 +526,7 @@
             "task_file": "numeric/tests/sugar/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 2
+                    "h": 0
                 }
             }
         }

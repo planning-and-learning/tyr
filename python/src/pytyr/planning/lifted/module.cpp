@@ -128,9 +128,9 @@ should not be used further.
              [](const RelaxedProgram& self)
              {
                  const auto& repository = self.get_datalog_program().get_program_repository();
-                 using Entry = std::pair<formalism::datalog::RuleView<LiftedTag, formalism::PredicateTag>, formalism::planning::ActionView<LiftedTag>>;
+                 using Entry = std::pair<formalism::datalog::RuleView<LiftedTag>, formalism::planning::ActionView<LiftedTag>>;
                  auto result = urd::Store<urd::sequence<Entry>> {};
-                 for (const auto& [rule, actions] : self.get_rule_to_action_mapping<formalism::PredicateTag>())
+                 for (const auto& [rule, actions] : self.get_rule_to_action_mapping())
                      for (const auto action : actions)
                          result.emplace_back(urd::resolve(rule, repository), action);
                  return result;

@@ -64,8 +64,6 @@ class TerminationPolicy;
 class RuleCostPolicy;
 template<TaskKind Kind>
 class RuleCostOverridePolicy;
-class NumericSupportSelectorWorkspace;
-class NumericSupportSelector;
 
 template<TaskKind Kind>
 struct FactsWorkspace;
@@ -75,9 +73,9 @@ template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTermin
 struct ProgramWorkspace;
 template<TaskKind Kind>
 struct ConstProgramWorkspace;
-template<TaskKind Kind, formalism::RelationKind R>
+template<TaskKind Kind>
 struct RuleWorkspace;
-template<TaskKind Kind, formalism::RelationKind R>
+template<TaskKind Kind>
 struct ConstRuleWorkspace;
 template<TaskKind Kind, typename AP = NoAnnotationPolicy, typename TP = NoTerminationPolicy, typename CP = RuleCostPolicy>
 struct ProgramExecutionContext;
@@ -88,7 +86,6 @@ class Scheduler<GroundTag>;
 template<>
 class Scheduler<LiftedTag>;
 
-template<formalism::RelationKind R>
 class TypedRuleSchedulerStratum;
 
 struct ProgramStatistics;

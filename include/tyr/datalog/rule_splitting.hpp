@@ -35,7 +35,7 @@ namespace tyr::datalog
 
 struct RuleSplitting
 {
-    using Rule = urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>;
+    using Rule = urd::index<formalism::datalog::Rule<LiftedTag>>;
 
     /// A rule that replaces part of a split source rule: the position of each of its variables among the source rule's variables.
     struct Origin

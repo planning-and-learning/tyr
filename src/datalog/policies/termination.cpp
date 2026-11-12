@@ -55,10 +55,7 @@ bool TerminationPolicy<AggregationFunction>::should_terminate(const FactSets& fa
 { return early_termination && check(fact_sets); }
 
 template<typename AggregationFunction>
-Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&,
-                                                            const PredicateAnnotations<>& annotations,
-                                                            const FunctionAnnotations<>&,
-                                                            const NumericSupportSelector& numeric_support_selector) const
+Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&, const PredicateAnnotations<>& annotations) const
 {
     if (!goals)
         return AggregationFunction::identity();
@@ -77,20 +74,13 @@ Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&,
         total = agg(total, atom_cost);
     }
 
-    for (const auto numeric_constraint : goals->get_numeric_constraints())
-    {
-        const auto constraint_cost = numeric_support_selector.get_constraint_cost(numeric_constraint, numeric_support_selector_workspace.selection, agg);
-        if (constraint_cost == std::numeric_limits<Cost>::max())
-            return std::numeric_limits<Cost>::max();
-        total = agg(total, constraint_cost);
-    }
-
     return total;
 }
 
 template<typename AggregationFunction>
 void TerminationPolicy<AggregationFunction>::reset() noexcept
-{ numeric_support_selector_workspace.clear(); }
+{
+}
 
 template<typename AggregationFunction>
 void TerminationPolicy<AggregationFunction>::clear() noexcept

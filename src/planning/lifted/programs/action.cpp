@@ -131,7 +131,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
 
         program->fluent_predicates.push_back(applicability_predicate.index());
 
-        auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(builder);
+        auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
 
         auto conj_cond = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
 
@@ -153,7 +153,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
 
         const auto new_rule = formalism::datalog::insert(repository, *rule).first.index();
 
-        program->predicate_rules.push_back(new_rule);
+        program->rules.push_back(new_rule);
 
         // A rule per conditional effect with variables or a condition: its atoms are the bindings for which the effect fires.
         for (const auto cond_eff : action.get_effects())
@@ -169,7 +169,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
             const auto new_effect_predicate = formalism::datalog::insert(repository, *effect_predicate).first;
             program->fluent_predicates.push_back(new_effect_predicate.index());
 
-            auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>(builder);
+            auto effect_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
             auto effect_condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(builder);
             for (const auto variable : action.get_variables())
                 effect_condition->variables.push_back(formalism::copy(variable, context).first.index());
@@ -186,7 +186,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
                 effect_atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
             effect_rule->heads.push_back(formalism::datalog::insert(repository, *effect_atom).first.index());
 
-            program->predicate_rules.push_back(formalism::datalog::insert(repository, *effect_rule).first.index());
+            program->rules.push_back(formalism::datalog::insert(repository, *effect_rule).first.index());
             effect_to_predicate.emplace(std::pair(action, cond_eff), new_effect_predicate);
         }
     }
@@ -233,19 +233,18 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
     auto context = formalism::WriteContext { builder, *repository };
 
     // A program per action schema with the rules that derive its applicability predicate and the predicates of its effects.
-    auto rule_of = urd::Store<
-        urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::index<formalism::datalog::Rule<LiftedTag, formalism::PredicateTag>>>> {};
-    for (const auto rule : program.get_rules<formalism::PredicateTag>())
+    auto rule_of = urd::Store<urd::map<formalism::datalog::PredicateView<formalism::FluentTag>, urd::index<formalism::datalog::Rule<LiftedTag>>>> {};
+    for (const auto rule : program.get_rules())
         rule_of.emplace(rule.get_heads().front().get_predicate(), rule.index());
     auto schema = formalism::datalog::checkout<formalism::datalog::Program<LiftedTag>>(builder);
     formalism::datalog::copy_except_rules(program, *schema, context);
     for (const auto& [predicate, action] : mapping)
     {
-        schema->predicate_rules.clear();
-        schema->predicate_rules.push_back(rule_of.at(predicate));
+        schema->rules.clear();
+        schema->rules.push_back(rule_of.at(predicate));
         for (const auto effect : action.get_effects())
             if (const auto it = effect_to_predicate.find(std::pair(action, effect)); it != effect_to_predicate.end())
-                schema->predicate_rules.push_back(rule_of.at(it->second));
+                schema->rules.push_back(rule_of.at(it->second));
         schema_programs.try_emplace(action, formalism::datalog::insert(*repository, *schema).first, translation_context.p2d);
     }
     return datalog::Program<LiftedTag>(program, std::move(repository));
@@ -259,7 +258,7 @@ ApplicableActionProgram::SchemaProgram::SchemaProgram(formalism::datalog::Progra
     strata(analysis::compute_rule_stratification(program)),
     listeners(analysis::compute_listeners(strata, program.context()))
 {
-    const auto rules = program.get_rules<formalism::PredicateTag>();
+    const auto rules = program.get_rules();
     const auto reads_predicate = [&](auto predicate)
     {
         // Negative literals also need the complete relation to check absence.

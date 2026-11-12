@@ -75,8 +75,8 @@ void collect_fterms(MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKin
 template<TaskKind T, FactKind F1, FactKind F2>
 void collect_fterms(NumericEffectView<T, F1> element, urd::Store<urd::set<FunctionTermView<T, F2>>>& result);
 
-template<TaskKind T, RelationKind R>
-auto collect_fluent_reads(RuleView<T, R> rule);
+template<TaskKind T>
+auto collect_fluent_reads(RuleView<T> rule);
 
 /**
  * Implementations
@@ -144,14 +144,11 @@ void collect_rule_fluent_reads(Rule rule, Result& result)
 {
     for (const auto constraint : rule.get_body().get_numeric_constraints())
         collect_fterms(constraint, result);
-
-    if constexpr (requires { rule.get_head(); })
-        collect_semantic_head_reads(rule.get_head(), result);
 }
 }
 
-template<TaskKind T, RelationKind R>
-inline auto collect_fluent_reads(RuleView<T, R> rule)
+template<TaskKind T>
+inline auto collect_fluent_reads(RuleView<T> rule)
 {
     auto result = urd::Store<urd::set<FunctionTermView<T, FluentTag>>> {};
     detail::collect_rule_fluent_reads(rule, result);

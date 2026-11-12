@@ -28,41 +28,31 @@ namespace tyr::datalog
 {
 namespace
 {
-template<formalism::RelationKind R>
 void validate_rules(formalism::datalog::ProgramView<GroundTag> program, const FactSets& fact_sets)
 {
-    for (const auto rule : program.template get_rules<R>())
+    for (const auto rule : program.get_rules())
     {
         if (!is_statically_applicable(rule, fact_sets))
             throw std::invalid_argument("Ground Datalog programs must remove statically inapplicable rules before execution");
         for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
             if (!literal.get_polarity())
             {
-                const auto kind = std::is_same_v<R, formalism::PredicateTag> ? "predicate" : "function";
-                throw std::invalid_argument("Ground Datalog " + std::string(kind) + " rule " + std::to_string(ygg::uint_t(rule.index().value))
+                throw std::invalid_argument("Ground Datalog rule " + std::to_string(static_cast<ygg::uint_t>(rule.index().value))
                                             + " contains a negative fluent literal; only positive fluent rule bodies are supported");
             }
     }
 }
 
-void validate_program(formalism::datalog::ProgramView<GroundTag> program, const FactSets& fact_sets)
-{
-    validate_rules<formalism::PredicateTag>(program, fact_sets);
-    validate_rules<formalism::FunctionTag>(program, fact_sets);
-}
+void validate_program(formalism::datalog::ProgramView<GroundTag> program, const FactSets& fact_sets) { validate_rules(program, fact_sets); }
 
-template<formalism::RelationKind R>
-void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program, GroundRuleDependencies<R>& dependencies)
+void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program, GroundRuleDependencies& dependencies)
 {
-    for (const auto rule : program.template get_rules<R>())
+    for (const auto rule : program.get_rules())
     {
         const auto body = rule.get_body();
         for (const auto literal : body.template get_literals<formalism::FluentTag>())
             if (literal.get_polarity())
                 dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row().data(), [&](auto& rules, bool) { rules.push_back(rule); });
-
-        for (const auto term : formalism::datalog::collect_fluent_reads(rule))
-            dependencies.fluent_function_term_to_rules.update(term.get_row().data(), [&](auto& rules, bool) { rules.push_back(rule); });
     }
 }
 }
@@ -74,8 +64,7 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::datalog::Prog
           program.template get_atoms<formalism::StaticTag>(),
           program.template get_fterm_values<formalism::StaticTag>(),
           program.context()),
-    predicate_rules(program.template get_predicates<formalism::FluentTag>().size(), program.template get_functions<formalism::FluentTag>().size()),
-    function_rules(program.template get_predicates<formalism::FluentTag>().size(), program.template get_functions<formalism::FluentTag>().size())
+    dependencies(program.template get_predicates<formalism::FluentTag>().size())
 {
     const auto fluent_fact_sets = TaggedFactSets<formalism::FluentTag>(program.template get_predicates<formalism::FluentTag>(),
                                                                        program.template get_functions<formalism::FluentTag>(),
@@ -83,8 +72,7 @@ ConstProgramWorkspace<GroundTag>::ConstProgramWorkspace(formalism::datalog::Prog
                                                                        program.template get_fterm_values<formalism::FluentTag>(),
                                                                        program.context());
     validate_program(program, FactSets { facts.fact_sets, fluent_fact_sets });
-    initialize_dependencies(program, predicate_rules);
-    initialize_dependencies(program, function_rules);
+    initialize_dependencies(program, dependencies);
 }
 
 }

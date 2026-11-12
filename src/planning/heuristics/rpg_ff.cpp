@@ -22,7 +22,6 @@
 #include "rpg.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/cost.hpp"
-#include "tyr/datalog/policies/numeric_support.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 
 #include <cassert>
@@ -49,19 +48,6 @@ struct FFRPGHeuristic<Kind>::Impl :
     using Base =
         detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
     using PredicateHead = formalism::datalog::PredicateRowView<formalism::FluentTag>;
-    using FunctionHead = formalism::datalog::FunctionRowIndex<formalism::FluentTag>;
-    using NumericSupportWorkspace = datalog::NumericSupportSelectorWorkspace;
-
-    struct NumericCertificate : urd::compared_by_identity<NumericCertificate>
-    {
-        FunctionHead head;
-        ygg::ClosedInterval<ygg::float_t> interval;
-
-        NumericCertificate(FunctionHead head_, ygg::ClosedInterval<ygg::float_t> interval_) : head(head_), interval(std::move(interval_)) {}
-
-        static constexpr auto identifying_members() noexcept { return urd::Members<&NumericCertificate::head, &NumericCertificate::interval> {}; }
-    };
-
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         Base(std::move(task), std::move(execution_context), cost_mode),
         m_predicate_markings(this->workspace().facts.fact_sets.predicate.size())
@@ -82,8 +68,6 @@ struct FFRPGHeuristic<Kind>::Impl :
 
     ygg::float_t evaluate(const urd::data<State<Kind>>& state)
     {
-        m_numeric_support_workspace.clear();
-        m_numeric_markings.clear();
         m_relaxed_plan.clear();
         return Base::evaluate(state);
     }
@@ -100,15 +84,12 @@ struct FFRPGHeuristic<Kind>::Impl :
                 assert(literal.get_polarity());
                 extract_relaxed_plan(literal.get_atom().get_row());
             }
-
-            for (const auto constraint : goal->get_numeric_constraints())
-                extract_numeric_constraint_support(constraint);
         }
 
         return static_cast<ygg::float_t>(m_relaxed_plan.size());
     }
 
-    const auto& get_relaxed_plan() const noexcept { return m_relaxed_plan; }
+    [[nodiscard]] const auto& get_relaxed_plan() const noexcept { return m_relaxed_plan; }
 
 private:
     void extract_relaxed_plan(PredicateHead head)
@@ -121,49 +102,21 @@ private:
         if (!annotation)
             return;
 
-        const auto* witness = std::get_if<datalog::WitnessAnnotation<>>(annotation);
+        const auto* witness = std::get_if<datalog::WitnessAnnotation>(annotation);
         if (witness)
             extract_relaxed_plan(*witness);
     }
 
-    void extract_relaxed_plan(FunctionHead head, const ygg::ClosedInterval<ygg::float_t>& interval)
-    {
-        if (!m_numeric_markings.emplace(head, interval).second)
-            return;
-
-        const auto* annotation = this->workspace().numeric_annotations.find(head, interval);
-        if (!annotation)
-            return;
-
-        const auto* witness = std::get_if<datalog::WitnessAnnotation<formalism::FunctionTag>>(annotation);
-        if (witness)
-            extract_relaxed_plan(*witness);
-    }
-
-    void extract_numeric_constraint_support(formalism::datalog::BooleanOperatorView<GroundTag> constraint)
-    {
-        const auto& selector = this->workspace().get_numeric_support_selector();
-        selector.for_each_constraint_support(std::move(constraint),
-                                             m_numeric_support_workspace.selection,
-                                             datalog::SumAggregation {},
-                                             [&](const auto head, const auto& interval, const auto&) { extract_relaxed_plan(head, interval); });
-    }
-
-    template<formalism::RelationKind R>
-    void extract_relaxed_plan(const datalog::WitnessAnnotation<R>& witness)
+    void extract_relaxed_plan(const datalog::WitnessAnnotation& witness)
     {
         if (const auto action_binding = this->get_action_binding(witness))
             m_relaxed_plan.insert(*action_binding);
 
         this->for_each_witness_precondition(witness, [&](const auto precondition) { extract_relaxed_plan(precondition); });
-        for (const auto& support : witness.get_numeric_supports())
-            extract_relaxed_plan(support.get_key(), support.get_interval());
     }
 
     urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>>
         m_predicate_markings;
-    urd::Store<urd::set<NumericCertificate>> m_numeric_markings;
-    NumericSupportWorkspace m_numeric_support_workspace;
     urd::Store<urd::set<formalism::planning::ActionRowView>> m_relaxed_plan;
 };
 

@@ -32,7 +32,7 @@
 #define TYR_FORMALISM_INTERNS(PREFIX) \
     YGG_FORMALISM_INTERNS(            \
         PREFIX,                       \
-        67,                           \
+        65,                           \
         true,                         \
         boost::mp11::mp_unique<boost::mp11::mp_append<tyr::formalism::datalog::SymbolRepositoryTypes, tyr::formalism::planning::SymbolRepositoryTypes>>)
 

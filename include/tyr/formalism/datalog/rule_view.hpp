@@ -32,8 +32,8 @@
 
 namespace urd
 {
-template<::tyr::TaskKind T, ::tyr::formalism::RelationKind R, typename V>
-struct view_mixin<::tyr::formalism::datalog::Rule<T, R>, V>
+template<::tyr::TaskKind T, typename V>
+struct view_mixin<::tyr::formalism::datalog::Rule<T>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -53,12 +53,7 @@ public:
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }
     auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
-    auto get_heads() const noexcept
-        requires std::same_as<R, ::tyr::formalism::PredicateTag>
-    { return self().template member<&urd::record_of<V>::heads>(); }
-    auto get_head() const noexcept
-        requires std::same_as<R, ::tyr::formalism::FunctionTag>
-    { return self().template member<&urd::record_of<V>::head>(); }
+    auto get_heads() const noexcept { return self().template member<&urd::record_of<V>::heads>(); }
     auto get_cost() const noexcept { return self().data().cost; }
 
     auto get_rule() const noexcept
@@ -80,21 +75,5 @@ public:
     { return get_row().get_key(); }
 };
 }  // namespace urd
-
-namespace tyr::formalism::datalog
-{
-
-/// Calls f for each head of a predicate rule, or for the single head of a function rule.
-template<TaskKind T, RelationKind R, typename C, typename F>
-void for_each_head(urd::index_view<Rule<T, R>, C> rule, F f)
-{
-    if constexpr (std::same_as<R, PredicateTag>)
-        for (const auto head : rule.get_heads())
-            f(head);
-    else
-        f(rule.get_head());
-}
-
-}
 
 #endif
