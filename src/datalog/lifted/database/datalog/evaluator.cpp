@@ -72,15 +72,15 @@ struct Evaluator::Impl
             auto& table = *program.tables[table_index];
             if (table.is_static && table.loaded)
                 continue;
-            table.current.for_each(
-                [&](std::span<const ygg::uint_t> row)
-                {
-                    if (!table.frontier.contains(row))
-                        table.removed.insert(row);
-                });
-            table.removed.for_each([&](std::span<const ygg::uint_t> row) { table.current.erase(row); });
-            table.added.for_each([&](std::span<const ygg::uint_t> row) { table.current.insert(row); });
-            table.frontier.clear();
+            table.for_each(Version::CURRENT,
+                           [&](std::span<const ygg::uint_t> row)
+                           {
+                               if (!table.contains(Version::FRONTIER, row))
+                                   table.insert(Version::REMOVED, row);
+                           });
+            table.for_each(Version::REMOVED, [&](std::span<const ygg::uint_t> row) { table.erase(Version::CURRENT, row); });
+            table.for_each(Version::ADDED, [&](std::span<const ygg::uint_t> row) { table.insert(Version::CURRENT, row); });
+            table.clear(Version::FRONTIER);
         }
         rebinding = false;
     }
@@ -111,23 +111,23 @@ struct Evaluator::Impl
             if (!exact_changes)
             {
                 result.clear();
-                table.current.for_each([&](std::span<const ygg::uint_t> row) { result.insert(encode(row)); });
+                table.for_each(Version::CURRENT, [&](std::span<const ygg::uint_t> row) { result.insert(encode(row)); });
                 continue;
             }
-            table.removed.for_each(
-                [&](std::span<const ygg::uint_t> row)
-                {
-                    const auto encoded = encode(row);
-                    delta.removed.insert(encoded);
-                    result.erase(*result.find(encoded));
-                });
-            table.added.for_each(
-                [&](std::span<const ygg::uint_t> row)
-                {
-                    const auto encoded = encode(row);
-                    delta.added.insert(encoded);
-                    result.insert(encoded);
-                });
+            table.for_each(Version::REMOVED,
+                           [&](std::span<const ygg::uint_t> row)
+                           {
+                               const auto encoded = encode(row);
+                               delta.removed.insert(encoded);
+                               result.erase(*result.find(encoded));
+                           });
+            table.for_each(Version::ADDED,
+                           [&](std::span<const ygg::uint_t> row)
+                           {
+                               const auto encoded = encode(row);
+                               delta.added.insert(encoded);
+                               result.insert(encoded);
+                           });
         }
     }
 };
@@ -168,9 +168,9 @@ void Evaluator::begin(bool updating)
         if (!updating && table->slot && !(table->is_static && table->loaded))
         {
             if (impl.initialized)
-                table->frontier.clear();
+                table->clear(Version::FRONTIER);
             else
-                table->current.clear();
+                table->clear(Version::CURRENT);
         }
     }
     impl.rebinding = !updating && impl.initialized;
@@ -180,9 +180,9 @@ void Evaluator::input_row(size_t slot, std::span<const ygg::uint_t> row)
 {
     auto& table = *m_impl->program.tables[m_impl->program.slot_tables[slot]];
     if (!m_impl->rebinding)
-        table.current.insert(row);
-    else if (table.frontier.insert(row) && !table.current.contains(row))
-        table.added.insert(row);
+        table.insert(Version::CURRENT, row);
+    else if (table.insert(Version::FRONTIER, row) && !table.contains(Version::CURRENT, row))
+        table.insert(Version::ADDED, row);
 }
 
 void Evaluator::change_row(size_t slot, bool added, std::span<const ygg::uint_t> row)
@@ -190,15 +190,15 @@ void Evaluator::change_row(size_t slot, bool added, std::span<const ygg::uint_t>
     auto& table = *m_impl->program.tables[m_impl->program.slot_tables[slot]];
     if (added)
     {
-        if (!table.current.insert(row))
+        if (!table.insert(Version::CURRENT, row))
             throw std::invalid_argument("Datalog evaluator: an added row is already present.");
-        table.added.insert(row);
+        table.insert(Version::ADDED, row);
     }
     else
     {
-        if (!table.current.erase(row))
+        if (!table.erase(Version::CURRENT, row))
             throw std::invalid_argument("Datalog evaluator: a removed row is absent.");
-        table.removed.insert(row);
+        table.insert(Version::REMOVED, row);
     }
 }
 

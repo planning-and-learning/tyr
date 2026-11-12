@@ -15,6 +15,8 @@ JoinEvaluator::JoinEvaluator(const ygg::FreeRelationRepository& layer, JoinPlan 
     m_result(m_plan.output_columns()),
     m_delta(layer, m_plan.output_columns())
 {
+    m_lhs_index = detail::key_index(m_lhs, m_plan.lhs_keys());
+    m_rhs_index = detail::key_index(m_rhs, m_plan.rhs_keys());
 }
 }
 
@@ -39,8 +41,5 @@ const Delta& JoinEvaluator::get_delta() const&
 namespace tyr::datalog::database::incremental
 {
 size_t JoinEvaluator::memory_usage() const noexcept
-{
-    return m_lhs.memory_usage() + m_rhs.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + urd::memory_usage(m_lhs_index)
-           + urd::memory_usage(m_rhs_index);
-}
+{ return m_lhs.memory_usage() + m_rhs.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + urd::memory_usage(m_key); }
 }

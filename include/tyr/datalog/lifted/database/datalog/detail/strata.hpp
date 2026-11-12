@@ -6,6 +6,7 @@
 #define TYR_DATALOG_DATABASE_DATALOG_DETAIL_STRATA_HPP_
 
 #include "tyr/datalog/lifted/database/datalog/detail/table.hpp"
+#include "tyr/datalog/lifted/database/datalog/detail/tuples.hpp"
 #include "tyr/datalog/lifted/database/datalog/repository.hpp"
 
 #include <algorithm>
@@ -123,7 +124,7 @@ private:
 
     /// Per table of the stratum: the rows found by the current semi-naive iteration, and its rows before it is
     /// evaluated anew.
-    urd::Store<urd::sequence<IndexedTuples>> m_next;
+    urd::Store<urd::sequence<Rows>> m_next;
     urd::Store<urd::sequence<Rows>> m_snapshot;
 
     /// The relations from the rules alone, into empty tables.

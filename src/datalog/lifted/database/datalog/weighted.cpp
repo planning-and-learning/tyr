@@ -197,9 +197,9 @@ void WeightedStratum::derive(CompiledProgram& program, Executor& executor, bool 
         settled.insert(key);
         const auto table_index = info().tables[candidate.position];
         auto& table = *program.tables[table_index];
-        table.current.insert(row);
-        table.frontier.clear();
-        table.frontier.insert(row);
+        table.insert(Version::CURRENT, row);
+        table.clear(Version::FRONTIER);
+        table.insert(Version::FRONTIER, row);
         for (const auto r : info().rules)
         {
             const auto& rule = program.rules[r];
@@ -219,7 +219,7 @@ void WeightedStratum::derive(CompiledProgram& program, Executor& executor, bool 
         }
         offer_derived();
         const bool done = !m_goals.empty() && goals_hold(program, executor, table_index);
-        table.frontier.clear();
+        table.clear(Version::FRONTIER);
         if (done)
             break;
         // The other side advances as this one does, so that the smaller is exhausted first.
@@ -244,22 +244,22 @@ void WeightedStratum::update(CompiledProgram& program, Executor& executor)
     {
         auto& snapshot = m_snapshot[i];
         snapshot.clear();
-        program.tables[info().tables[i]]->current.for_each([&](std::span<const ygg::uint_t> row) { snapshot.insert(row); });
+        program.tables[info().tables[i]]->for_each(Version::CURRENT, [&](std::span<const ygg::uint_t> row) { snapshot.insert(row); });
     }
     derive(program, executor, false);
     for (size_t i = 0; i < info().tables.size(); ++i)
     {
         auto& table = *program.tables[info().tables[i]];
         auto& snapshot = m_snapshot[i];
-        table.current.for_each(
-            [&](std::span<const ygg::uint_t> row)
-            {
-                if (!snapshot.contains(row))
-                    table.added.insert(row);
-            });
-        for (const auto handle : row_handles(snapshot))
-            if (!table.current.contains(snapshot.at(handle)))
-                table.removed.insert(snapshot.at(handle));
+        table.for_each(Version::CURRENT,
+                       [&](std::span<const ygg::uint_t> row)
+                       {
+                           if (!snapshot.contains(row))
+                               table.insert(Version::ADDED, row);
+                       });
+        for (const auto handle : snapshot)
+            if (!table.contains(Version::CURRENT, snapshot.at(handle)))
+                table.insert(Version::REMOVED, snapshot.at(handle));
         snapshot.clear();
     }
 }

@@ -25,7 +25,6 @@
 #include <stdexcept>
 #include <urd/config.hpp>
 #include <urd/memory.hpp>
-#include <urd/repr/maps/postings.hpp>
 #include <urd/repr/sequences/segmented.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
@@ -100,16 +99,14 @@ public:
         invalidate(slot);
     }
 
-    /// Applies a change to a bound input slot: `removed` rows are in it, `added` rows are not. Built indexes of the slot
-    /// are updated in place. Every row is checked before any is applied, so a change that throws leaves the slot, its
-    /// indexes and version() unchanged; an empty change does not increase version().
+    /// Applies a change to a bound input slot: `removed` rows are in it, `added` rows are not. The slot's indexes follow. Every row is checked before any is
+    /// applied, so a change that throws leaves the slot, its indexes and version() unchanged; an empty change does not increase version().
     template<RelationViewConcept A, RelationViewConcept R>
     void replace(size_t slot, const A& added, const R& removed)
     {
         if (added.empty() && removed.empty())
             return;
         auto& snapshot = *m_inputs[slot];
-        const auto stored = m_layer->view(snapshot);
         for (size_t r = 0; r < removed.size(); ++r)
             if (!snapshot.contains(removed.row(r).get_values()))
                 throw std::invalid_argument("bound::QueryEvaluator: removed row is absent from the input.");
@@ -120,35 +117,10 @@ public:
         {
             const auto found = snapshot.find(removed.row(r).get_values());
             URD_ASSUME(found.has_value());  // every removed row was checked present above
-            const auto position = *found;
-            const auto last = ygg::to_uint_t(snapshot.size() - 1);
-            const auto erase = [](auto& rows, ygg::hash_t key, ygg::uint_t value)
-            {
-                const auto matches = rows.equal_range(key);
-                const auto match = std::find_if(matches.first, matches.second, [&](const auto& pair) { return pair.second == value; });
-                URD_ASSUME(match != matches.second);  // every indexed row is in its key's entries
-                rows.erase(match);
-            };
-            for_each_index(slot,
-                           [&](KeyIndex& entry)
-                           { erase(entry.rows, database::detail::join_key_hash(stored.row(position).get_values(), entry.keys), position); });
-            snapshot.erase(position);
-            if (position != last)
-                for_each_index(slot,
-                               [&](KeyIndex& entry)
-                               {
-                                   // The last row moved into the erased one's position.
-                                   const auto key = database::detail::join_key_hash(stored.row(position).get_values(), entry.keys);
-                                   erase(entry.rows, key, last);
-                                   entry.rows.insert({ key, position });
-                               });
+            snapshot.erase(*found);
         }
         for (size_t r = 0; r < added.size(); ++r)
-        {
-            const auto position = snapshot.insert(added.row(r).get_values());
-            for_each_index(slot,
-                           [&](KeyIndex& entry) { entry.rows.insert({ database::detail::join_key_hash(added.row(r).get_values(), entry.keys), position }); });
-        }
+            snapshot.insert(added.row(r).get_values());
         ++m_version;
     }
 
@@ -202,14 +174,13 @@ private:
         urd::Store<urd::sequence<size_t>> positions;
         urd::Store<urd::sequence<ConjunctivePlan>> plans;
     };
-    /// The rows of an input slot keyed by some of its columns; with no key columns, a scan.
+    /// The rows of an input slot keyed by some of its columns: the number of the snapshot's index on them; with no key
+    /// columns, a scan.
     struct KeyIndex
     {
         size_t slot = 0;
         urd::Store<urd::sequence<size_t>> positions;
-        urd::Store<urd::sequence<ColumnSlice>> keys;                                    ///< The key columns in the slot's rows.
-        urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> rows;  ///< Row positions by key hash, once built.
-        bool built = false;
+        size_t number = 0;
     };
     /// A step's lookup: its index and where the key's variables are in the frame.
     struct Lookup
@@ -229,6 +200,7 @@ private:
     urd::Store<urd::sequence<Lookup>, urd::stable_refs> m_lookups;  ///< By ConjunctiveStep::index.
     urd::Store<urd::sequence<Binding>> m_bindings;
     urd::Store<urd::sequence<ygg::Value>> m_row;
+    urd::Store<urd::sequence<ygg::Value>> m_key;  ///< A lookup's key, from the frame.
     uint64_t m_version = 0;
 
     std::span<const ygg::Value> output_row()
@@ -247,24 +219,8 @@ private:
         return bound;
     }
 
-    /// The slot's rows were replaced: its indexes are rebuilt, in place, when next used.
-    void invalidate(size_t slot)
-    {
-        for (auto& entry : m_indexes)
-            if (entry.slot == slot)
-                entry.built = false;
-        ++m_version;
-    }
-
-    /// Calls f on each built index of the slot that has key columns.
-    template<typename F>
-        requires std::invocable<const F&, KeyIndex&>
-    void for_each_index(size_t slot, const F& f)
-    {
-        for (auto& entry : m_indexes)
-            if (entry.slot == slot && entry.built && !entry.positions.empty())
-                f(entry);
-    }
+    /// The slot's rows were replaced (its indexes follow).
+    void invalidate(size_t /*slot*/) { ++m_version; }
 
     // ---- Plans --------------------------------------------------------------------------------------------------
 
@@ -303,7 +259,7 @@ private:
             return proceed && !step.exists;
         };
         const auto& lookup = m_lookups[step.index];
-        auto& entry = m_indexes[lookup.index];
+        const auto& entry = m_indexes[lookup.index];
         if (entry.positions.empty())
         {
             for (size_t r = 0; r < rows.size(); ++r)
@@ -311,19 +267,13 @@ private:
                     return proceed;
             return true;
         }
-        if (!entry.built)
-        {
-            entry.rows.clear();
-            entry.rows.reserve(rows.size());
-            for (size_t r = 0; r < rows.size(); ++r)
-                entry.rows.insert({ database::detail::join_key_hash(rows.row(r).get_values(), entry.keys), ygg::to_uint_t(r) });
-            entry.built = true;
-        }
-        // The key's variables stay bound while this step iterates, so the frame is the probe.
-        const auto probe = std::span<const ygg::Value>(m_frame);
-        for (const auto [first, last] = entry.rows.equal_range(database::detail::join_key_hash(probe, lookup.probe));
-             const auto r : std::ranges::subrange(first, last) | std::views::values)
-            if (database::detail::join_keys_equal(rows.row(r).get_values(), entry.keys, probe, lookup.probe) && !visit(r))
+        // The key's variables stay bound while this step iterates; the key is read before the next step overwrites it.
+        m_key.clear();
+        for (const auto& probe : lookup.probe)
+            m_key.push_back(m_frame[probe.position]);
+        for (const auto [first, last] = m_inputs[step.slot]->index(entry.number).equal_range(std::span<const ygg::Value>(m_key));
+             const auto handle : std::ranges::subrange(first, last))
+            if (!visit(handle.value))
                 return proceed;
         return true;
     }

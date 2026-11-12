@@ -11,10 +11,10 @@
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 
 #include <cassert>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <urd/memory.hpp>
-#include <urd/repr/maps/postings.hpp>
 #include <urd/store.hpp>
 #include <utility>
 
@@ -34,11 +34,13 @@ class SemijoinEvaluator
     bool m_anti;
     urd::builder<ygg::Relation<ygg::Schema>> m_lhs;
     urd::builder<ygg::Relation<ygg::Schema>> m_rhs;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_lhs_index;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_rhs_index;
+    /// Each input's index on its key columns (none without key columns).
+    std::optional<size_t> m_lhs_index;
+    std::optional<size_t> m_rhs_index;
     urd::builder<ygg::Relation<ygg::Schema>> m_result;
     Delta m_delta;
     bool m_initialized = false;
+    mutable urd::Store<urd::sequence<ygg::Value>> m_key;  ///< A probe key being looked up.
 
     [[nodiscard]] bool matched(const ygg::RowPool::row_type& lhs_row) const;
     [[nodiscard]] bool kept(const ygg::RowPool::row_type& lhs_row) const { return matched(lhs_row) != m_anti; }
@@ -62,20 +64,19 @@ class SemijoinEvaluator
         if (rhs_rows.empty())
             return;
         const auto current = m_layer->view(m_lhs);
-        if (lhs_keys.empty())
+        if (lhs_keys.empty() || !m_lhs_index)  // key columns have an index
         {
             for (size_t i = 0; i < current.size(); ++i)
                 reconcile(current.row(i).get_values());
             return;
         }
         for (size_t i = 0; i < rhs_rows.size(); ++i)
-        {
-            const auto rhs_row = rhs_rows.row(i).get_values();
-            for (const auto [first, last] = m_lhs_index.equal_range(database::detail::join_key_hash(rhs_row, rhs_keys));
-                 const auto position : std::ranges::subrange(first, last) | std::views::values)
-                if (database::detail::join_keys_equal(current.row(position).get_values(), lhs_keys, rhs_row, rhs_keys))
-                    reconcile(current.row(position).get_values());
-        }
+            detail::for_each_keyed(m_lhs,
+                                   *m_lhs_index,
+                                   rhs_rows.row(i).get_values(),
+                                   rhs_keys,
+                                   m_key,
+                                   [&](size_t position) { reconcile(current.row(position).get_values()); });
     }
 
     template<RelationChange L, RelationChange R>
@@ -88,10 +89,10 @@ class SemijoinEvaluator
         for (size_t i = 0; i < lhs_removed.size(); ++i)
             if (const auto row = lhs_removed.row(i).get_values(); m_result.contains(row))
                 m_delta.removed.insert(row);
-        detail::erase_rows(*m_layer, lhs_removed, m_lhs, m_plan.lhs_keys(), m_lhs_index);
-        detail::erase_rows(*m_layer, rhs_removed, m_rhs, m_plan.rhs_keys(), m_rhs_index);
-        detail::insert_rows(rhs_added, m_rhs, m_plan.rhs_keys(), m_rhs_index);
-        detail::insert_rows(lhs_added, m_lhs, m_plan.lhs_keys(), m_lhs_index);
+        detail::erase_rows(lhs_removed, m_lhs);
+        detail::erase_rows(rhs_removed, m_rhs);
+        detail::insert_rows(rhs_added, m_rhs);
+        detail::insert_rows(lhs_added, m_lhs);
         for (size_t i = 0; i < lhs_added.size(); ++i)
             reconcile(lhs_added.row(i).get_values());
         if (m_plan.lhs_keys().empty())
@@ -119,6 +120,8 @@ public:
         m_result(m_plan.lhs_columns()),
         m_delta(layer, m_plan.lhs_columns())
     {
+        m_lhs_index = detail::key_index(m_lhs, m_plan.lhs_keys());
+        m_rhs_index = detail::key_index(m_rhs, m_plan.rhs_keys());
     }
 
     /// Replace the baseline, retaining buffers, and clear the last output delta.
@@ -132,12 +135,10 @@ public:
         m_initialized = false;
         m_lhs.clear();
         m_rhs.clear();
-        m_lhs_index.clear();
-        m_rhs_index.clear();
         m_result.clear();
         m_delta.clear();
-        detail::insert_rows(lhs, m_lhs, m_plan.lhs_keys(), m_lhs_index);
-        detail::insert_rows(rhs, m_rhs, m_plan.rhs_keys(), m_rhs_index);
+        detail::insert_rows(lhs, m_lhs);
+        detail::insert_rows(rhs, m_rhs);
         const auto current = m_layer->view(m_lhs);
         for (size_t i = 0; i < current.size(); ++i)
             if (kept(current.row(i).get_values()))
@@ -169,10 +170,7 @@ public:
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 
     [[nodiscard]] size_t memory_usage() const noexcept
-    {
-        return m_lhs.memory_usage() + m_rhs.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + urd::memory_usage(m_lhs_index)
-               + urd::memory_usage(m_rhs_index);
-    }
+    { return m_lhs.memory_usage() + m_rhs.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + urd::memory_usage(m_key); }
 };
 
 }  // namespace tyr::datalog::database::incremental

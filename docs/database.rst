@@ -554,7 +554,8 @@ input slot; its results (``get_result(i)``, columns labeled 0, …, arity − 1)
   stratum is one object of its kind (``detail/strata.hpp``: plain, recursive, aggregate or weighted), which owns the
   state it maintains. Static input slots are read once.
 - Each rule is an index nested-loop join, planned once per literal that reads a change, with the most bound literal
-  next; hash indexes are chosen per access pattern. Atoms whose only unbound variables are those a step binds are
+  next. A table's row sets (current, added, removed, frontier) are relations with an index (``add_index``) per access
+  pattern, kept as rows come and go. Atoms whose only unbound variables are those a step binds are
   intersected with it: the one with the fewest matches enumerates and the others are checked (Generic Join [NRR13]).
 - ``evaluate(inputs)`` is stratified and semi-naive. ``initialize(inputs)`` and ``update(changes)`` maintain the
   relations: a stratum without recursion by derivation counts, a recursive one by Delete and Rederive [Gupta93]; when

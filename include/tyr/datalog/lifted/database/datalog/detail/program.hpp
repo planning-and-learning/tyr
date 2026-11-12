@@ -7,6 +7,7 @@
 
 #include "tyr/datalog/lifted/database/datalog/detail/strata.hpp"
 #include "tyr/datalog/lifted/database/datalog/detail/table.hpp"
+#include "tyr/datalog/lifted/database/datalog/detail/tuples.hpp"
 #include "tyr/datalog/lifted/database/datalog/repository.hpp"
 
 #include <algorithm>

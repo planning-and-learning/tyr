@@ -307,7 +307,7 @@ void GoalHeuristic::read_targets(CompiledProgram& program, Executor& executor, b
         m_search.read_targets(executor, m_reads, m_target_keys);
         for (auto& members : m_members)
             members.clear();
-        for (const auto target : row_handles(m_target_keys))
+        for (const auto target : m_target_keys)
         {
             const auto [group, inserted] = m_goal_keys.insert(goal_key_of(m_target_keys.at(target), m_goal_positions, m_key));
             if (inserted)
@@ -321,7 +321,7 @@ void GoalHeuristic::read_targets(CompiledProgram& program, Executor& executor, b
             projection.targets.resize(m_goal_keys.size());
             projection.wanted.resize(m_goal_keys.size());
             projection.current.resize(m_goal_keys.size(), nullptr);
-            for (const auto index : row_handles(m_goal_keys))
+            for (const auto index : m_goal_keys)
             {
                 auto targets = Rows();
                 for (const auto target : m_members[index])
@@ -332,7 +332,7 @@ void GoalHeuristic::read_targets(CompiledProgram& program, Executor& executor, b
                     targets.insert(m_key);
                 }
                 auto rows = urd::Store<urd::sequence<std::span<const ygg::uint_t>>>();
-                for (const auto handle : row_handles(targets))
+                for (const auto handle : targets)
                     rows.push_back(targets.at(handle));
                 std::ranges::sort(rows, [](auto lhs, auto rhs) { return std::ranges::lexicographical_compare(lhs, rhs); });
                 auto flat = urd::Store<urd::sequence<ygg::uint_t>>();
@@ -354,8 +354,8 @@ void GoalHeuristic::read_targets(CompiledProgram& program, Executor& executor, b
         auto state = urd::Store<urd::sequence<ygg::uint_t>>();
         for (const auto t : m_state_tables)
         {
-            state.push_back(static_cast<ygg::uint_t>(program.tables[t]->current.size()));
-            program.tables[t]->current.for_each([&](std::span<const ygg::uint_t> row) { state.insert(state.end(), row.begin(), row.end()); });
+            state.push_back(static_cast<ygg::uint_t>(program.tables[t]->size(Version::CURRENT)));
+            program.tables[t]->for_each(Version::CURRENT, [&](std::span<const ygg::uint_t> row) { state.insert(state.end(), row.begin(), row.end()); });
         }
         if (m_states.size() >= max_weights)
             m_states.clear();  // Ids stay unique: weights of forgotten states are only not found again.
@@ -375,7 +375,7 @@ void GoalHeuristic::read_targets(CompiledProgram& program, Executor& executor, b
         const auto& domain = m_projections[projection.domain];
         projection.wanted.resize(m_goal_keys.size());
         projection.current.resize(m_goal_keys.size(), nullptr);
-        for (const auto index : row_handles(m_goal_keys))
+        for (const auto index : m_goal_keys)
         {
             auto key = urd::Store<urd::sequence<ygg::uint_t>>();
             if (!domain.wanted[index].empty())
@@ -411,7 +411,7 @@ ygg::uint_t GoalHeuristic::weight(Projection& projection, RowHandle group, std::
     for (const auto c : projection.columns)
         m_key.push_back(key[c]);
     const auto at = projection.keys.find(m_key);
-    return weights && !at.is_none() && has_entry(*weights, at) ? (*weights)[at] : Arithmetic::infinity;
+    return weights && !at.is_none() && at.value < weights->size() ? (*weights)[at] : Arithmetic::infinity;
 }
 
 ygg::uint_t GoalHeuristic::operator()(std::span<const ygg::uint_t> key)
@@ -456,7 +456,7 @@ PerRow<ygg::uint_t> GoalHeuristic::backward(Executor& executor, Projection& proj
     const auto relax = [&](std::span<const ygg::uint_t> key, ygg::uint_t weight)
     {
         const auto handle = projection.keys.insert(key).first;
-        if (!has_entry(best, handle))
+        if (handle.value >= best.size())
             best.resize(projection.keys.size(), Arithmetic::infinity);
         if (weight < best[handle])
         {
@@ -465,7 +465,7 @@ PerRow<ygg::uint_t> GoalHeuristic::backward(Executor& executor, Projection& proj
             std::ranges::push_heap(queue, std::greater {});
         }
     };
-    for (const auto handle : row_handles(targets))
+    for (const auto handle : targets)
         relax(targets.at(handle), 0);
     auto row = urd::Store<urd::sequence<ygg::uint_t>>();
     while (!queue.empty())
@@ -526,7 +526,7 @@ void GoalFrontier::read_targets(Executor& executor)
     m_sources.clear();
     auto targets = Rows();
     m_search.read_targets(executor, m_reads, targets);
-    for (const auto target : row_handles(targets))
+    for (const auto target : targets)
     {
         const auto [side, inserted] = m_goal_keys.insert(goal_key(targets.at(target)));
         if (inserted)
@@ -611,8 +611,8 @@ struct UnitSearch::Key
     std::span<const database::VertexSet::handle_type> ensure_targets(const H& heuristic)
     {
         ids.clear();
-        for (const auto target : row_handles(targets))
-            ids.push_back(tree.ensure(targets.at(target), heuristic));
+        for (size_t target = 0; target < targets.size(); ++target)
+            ids.push_back(tree.ensure(targets.at(database::VertexSet::handle_type(ygg::to_uint_t(target))), heuristic));
         return ids;
     }
 };
@@ -916,8 +916,9 @@ void UnitSearch::changed(CompiledProgram& program, Executor& executor)
             auto& index = key->indexes[position];
             if (!index)
                 index.emplace();
-            for (const auto vertex : row_handles(key->tree.vertices()) | std::views::drop(index->indexed))
+            for (auto at = index->indexed; at < key->tree.vertices().size(); ++at)
             {
+                const auto vertex = database::VertexSet::handle_type(ygg::to_uint_t(at));
                 from_vertex(key->tree.vertex(vertex), from);
                 for (size_t i = 0; i < width; ++i)
                     part[i] = from[delta.columns[i]];
@@ -969,14 +970,14 @@ void UnitSearch::run(CompiledProgram& program,
         auto targets = Rows();
         m_search.read_targets(executor, m_reads, targets);
         m_key_targets.assign(m_keys.size(), {});
-        for (const auto target : row_handles(targets))
+        for (const auto target : targets)
         {
             const auto index = key_search(goal_key(targets.at(target)));
             m_key_targets.resize(m_keys.size());
             m_key_targets[index].push_back(vertex(targets.at(target)));
         }
         m_key_targets.resize(m_keys.size());
-        for (const auto index : row_handles(m_goal_keys))
+        for (const auto index : m_goal_keys)
         {
             auto& key = *m_keys[index];
             const auto& wanted = m_key_targets[index];
@@ -1000,7 +1001,7 @@ void UnitSearch::run(CompiledProgram& program,
     auto estimate_key = urd::Store<urd::sequence<ygg::uint_t>>();
     const auto estimate = Estimate { heuristic, &estimate_key };
     auto& table = *program.tables[m_search.table];
-    for (const auto index : row_handles(m_goal_keys))
+    for (const auto index : m_goal_keys)
     {
         if (key_sources[index].empty())
             continue;
@@ -1051,7 +1052,7 @@ void UnitSearch::run(CompiledProgram& program,
             });
         // No weight of an any-path search is observed: 0 keeps the row the same while the goal holds.
         reached.push_back(m_search.any_path ? 0 : distance);
-        table.current.insert(reached);
+        table.insert(Version::CURRENT, reached);
     }
 }
 

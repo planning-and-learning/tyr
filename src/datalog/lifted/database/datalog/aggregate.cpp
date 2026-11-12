@@ -74,10 +74,10 @@ void AggregateStratum::evaluate(CompiledProgram& program, Executor&)
     table.clear();
     m_groups.clear();
     m_states.clear();
-    program.tables[m_aggregate.source]->current.for_each([&](std::span<const ygg::uint_t> row) { change_group(group_of(row).second, row, true); });
-    for (const auto group : row_handles(m_groups))
+    program.tables[m_aggregate.source]->for_each(Version::CURRENT, [&](std::span<const ygg::uint_t> row) { change_group(group_of(row).second, row, true); });
+    for (const auto group : m_groups)
         if (const auto value = value_of(m_states[group]))
-            table.current.insert(group_row(m_groups.at(group), *value));
+            table.insert(Version::CURRENT, group_row(m_groups.at(group), *value));
 }
 
 void AggregateStratum::update(CompiledProgram& program, Executor&)
@@ -93,25 +93,25 @@ void AggregateStratum::update(CompiledProgram& program, Executor&)
             touched.emplace_back(handle, value_of(state));
         change_group(state, row, add);
     };
-    source.removed.for_each([&](std::span<const ygg::uint_t> row) { apply(row, false); });
-    source.added.for_each([&](std::span<const ygg::uint_t> row) { apply(row, true); });
+    source.for_each(Version::REMOVED, [&](std::span<const ygg::uint_t> row) { apply(row, false); });
+    source.for_each(Version::ADDED, [&](std::span<const ygg::uint_t> row) { apply(row, true); });
     for (const auto& [handle, before] : touched)
     {
         const auto after = value_of(m_states[handle]);
         const auto group = m_groups.at(handle);
         if (before)
-            table.current.erase(group_row(group, *before));
+            table.erase(Version::CURRENT, group_row(group, *before));
         if (after)
-            table.current.insert(group_row(group, *after));
+            table.insert(Version::CURRENT, group_row(group, *after));
         // An absent group reads as the fallback value, so the change sets hold it in place of the absent row.
         const auto old_value = before ? before : table.fallback;
         const auto new_value = after ? after : table.fallback;
         if (old_value == new_value)
             continue;
         if (old_value)
-            table.removed.insert(group_row(group, *old_value));
+            table.insert(Version::REMOVED, group_row(group, *old_value));
         if (new_value)
-            table.added.insert(group_row(group, *new_value));
+            table.insert(Version::ADDED, group_row(group, *new_value));
     }
 }
 

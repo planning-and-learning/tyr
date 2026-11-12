@@ -79,9 +79,10 @@ private:
     std::span<const Version> m_reads;
 
     urd::Store<urd::sequence<ygg::uint_t>> m_slots;
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> m_keys;
+    /// Keys and probed rows, as the tables' values.
+    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>> m_keys;
     urd::Store<urd::sequence<ygg::uint_t>> m_head;
-    urd::Store<urd::sequence<ygg::uint_t>> m_probe;
+    urd::Store<urd::sequence<ygg::Value>> m_probe;
     bool m_stop = false;
 
     [[nodiscard]] ygg::uint_t value(Term t) const { return t.is_variable() ? m_slots[t.value] : t.value; }
@@ -110,7 +111,7 @@ private:
             {
                 key.clear();
                 for (const auto t : g.key)
-                    key.push_back(value(t));
+                    key.push_back(ygg::encode_value(value(t)));
             };
             // The member of the intersection with the fewest matches enumerates.
             const Step* chosen = &s;
@@ -134,15 +135,15 @@ private:
                 .lookup(m_reads[chosen->literal],
                         chosen->index,
                         key,
-                        [&](std::span<const ygg::uint_t> row)
+                        [&](const StoredRow& row)
                         {
                             if (m_stop || (!s.generator && found))
                                 return;
                             found = true;
                             for (const auto& [column, slot] : chosen->binds)
-                                m_slots[slot] = row[column];
+                                m_slots[slot] = static_cast<ygg::uint_t>(row.get(column));
                             for (const auto& [column, slot] : chosen->checks)
-                                if (row[column] != m_slots[slot])
+                                if (static_cast<ygg::uint_t>(row.get(column)) != m_slots[slot])
                                     return;
                             if (!s.peers.empty() && !members_hold(rule, s, chosen))
                                 return;
@@ -166,7 +167,7 @@ private:
             auto& key = m_keys[i];
             key.clear();
             for (const auto t : literal.terms)
-                key.push_back(value(t));
+                key.push_back(ygg::encode_value(value(t)));
             if (!table_of(rule, s.literal).contains(version, key))
                 step(rule, plan, i + 1, emit);
             return;
@@ -194,7 +195,7 @@ private:
                 return true;
             m_probe.clear();
             for (const auto t : rule.literals[member.literal].terms)
-                m_probe.push_back(value(t));
+                m_probe.push_back(ygg::encode_value(value(t)));
             return table_of(rule, member.literal).contains(m_reads[member.literal], m_probe);
         };
         return holds(s) && std::ranges::all_of(s.peers, holds);

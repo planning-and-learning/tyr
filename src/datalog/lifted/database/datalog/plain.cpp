@@ -36,7 +36,7 @@ void PlainStratum::derive(CompiledProgram& program, Executor& executor, bool cou
                          if (counting)
                              count(rule.head, row, 1);
                          else
-                             head.current.insert(row);
+                             head.insert(Version::CURRENT, row);
                      });
         if (counting)
             apply_counts(head, m_counts[info().position(rule.head)], false);
@@ -91,7 +91,7 @@ void PlainStratum::count(size_t table, std::span<const ygg::uint_t> row, int64_t
 
 void PlainStratum::apply_counts(Table& table, Counts& counts, bool record)
 {
-    for (const auto pending : row_handles(counts.pending_rows))
+    for (const auto pending : counts.pending_rows)
     {
         const auto change = counts.pending[pending];
         if (change == 0)
@@ -103,7 +103,12 @@ void PlainStratum::apply_counts(Table& table, Counts& counts, bool record)
         if (after < 0)
             throw std::logic_error("Datalog evaluator: a derivation count became negative.");
         if (!handle.is_none() && after == 0)
-            erase_row(counts.rows, handle, counts.counts);
+        {
+            // The last row moves into the erased row's handle, and so does its count.
+            if (const auto moved = counts.rows.erase(handle); !moved.is_none())
+                counts.counts[handle] = counts.counts[moved];
+            counts.counts.pop_back();
+        }
         else if (!handle.is_none())
             counts.counts[handle] = after;
         else
@@ -113,15 +118,15 @@ void PlainStratum::apply_counts(Table& table, Counts& counts, bool record)
         }
         if (before == 0 && after > 0)
         {
-            table.current.insert(row);
+            table.insert(Version::CURRENT, row);
             if (record)
-                table.added.insert(row);
+                table.insert(Version::ADDED, row);
         }
         else if (before > 0 && after == 0)
         {
-            table.current.erase(row);
+            table.erase(Version::CURRENT, row);
             if (record)
-                table.removed.insert(row);
+                table.insert(Version::REMOVED, row);
         }
     }
     counts.pending_rows.clear();

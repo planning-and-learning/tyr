@@ -204,14 +204,32 @@ void select_equal_value(const V& input, const SelectValuePlan& plan, urd::builde
 
 namespace detail
 {
-/// Appends joined rows. Lookup values are row positions in the selected build input for a key hash; actual key
-/// equality resolves hash collisions.
-template<RelationViewConcept L, RelationViewConcept R, typename Index>
+/// The matches of a probe row in the build input by a hash index (urd::Store<urd::map<hash_t, position>, urd::multi,
+/// urd::retains>): the positions under the probe key's hash, whose keys are compared to resolve collisions.
+template<typename Index>
+auto hashed_matches(const Index& index)
+{
+    return [&index](const RelationViewConcept auto& build,
+                    const ygg::RowPool::row_type& probe_row,
+                    std::span<const ColumnSlice> build_keys,
+                    std::span<const ColumnSlice> probe_keys,
+                    const auto& f)
+    {
+        for (const auto [first, last] = index.equal_range(join_key_hash(probe_row, probe_keys));
+             const auto match : std::ranges::subrange(first, last) | std::views::values)
+            if (join_keys_equal(build.row(match).get_values(), build_keys, probe_row, probe_keys))
+                f(match);
+    };
+}
+
+/// Appends joined rows. `matches(build, probe_row, build_keys, probe_keys, f)` calls f(position) for each row of the
+/// build input whose key equals the probe row's.
+template<RelationViewConcept L, RelationViewConcept R, typename Matches>
 void join_rows(const L& lhs,
                const R& rhs,
                const JoinPlan& plan,
                bool build_left,
-               const Index& index,  ///< urd::Store<urd::map<hash_t, position>, urd::multi, urd::retains>
+               const Matches& matches,
                urd::builder<ygg::Relation<ygg::Schema>>& out,
                Workspace& workspace)
 {
@@ -244,16 +262,15 @@ void join_rows(const L& lhs,
         for (size_t i = 0; i < probe.size(); ++i)
         {
             const auto probe_row = probe.row(i).get_values();
-            for (const auto [first, last] = index.equal_range(join_key_hash(probe_row, probe_keys));
-                 const auto match : std::ranges::subrange(first, last) | std::views::values)
-            {
-                const auto build_row = build.row(match).get_values();
-                if (!join_keys_equal(build_row, build_keys, probe_row, probe_keys))
-                    continue;
-                const auto left = build_left ? build_row : probe_row;
-                const auto right = build_left ? probe_row : build_row;
-                emit(left, right);
-            }
+            matches(build,
+                    probe_row,
+                    build_keys,
+                    probe_keys,
+                    [&](size_t match)
+                    {
+                        const auto build_row = build.row(match).get_values();
+                        emit(build_left ? build_row : probe_row, build_left ? probe_row : build_row);
+                    });
         }
     };
     if (build_left)
@@ -284,7 +301,7 @@ void join(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Re
         else
             detail::build_join_index(rhs, plan.rhs_keys(), workspace.join_index);
     }
-    detail::join_rows(lhs, rhs, plan, build_left, workspace.join_index, out, workspace);
+    detail::join_rows(lhs, rhs, plan, build_left, detail::hashed_matches(workspace.join_index), out, workspace);
 }
 
 template<RelationViewConcept L, RelationViewConcept R>
@@ -308,7 +325,7 @@ void join(const L& lhs,
     const auto* index = &workspace.join_index;
     if (!plan.lhs_keys().empty())
         index = &(build_left ? cache.get_or_create(lhs, plan.lhs_keys()) : cache.get_or_create(rhs, plan.rhs_keys())).index();
-    detail::join_rows(lhs, rhs, plan, build_left, *index, out, workspace);
+    detail::join_rows(lhs, rhs, plan, build_left, detail::hashed_matches(*index), out, workspace);
 }
 
 template<RelationViewConcept L, RelationViewConcept R>

@@ -57,8 +57,8 @@ size_t QueryEvaluator::index_id(size_t slot, std::span<const std::pair<size_t, u
             return id;
     auto& entry = m_indexes.emplace_back();
     entry.slot = slot;
-    for (const auto position : positions)
-        entry.keys.push_back(ColumnSlice { position });
+    if (!positions.empty())
+        entry.number = m_inputs[slot]->add_index(std::span<const size_t>(positions));
     entry.positions = std::move(positions);
     return m_indexes.size() - 1;
 }
