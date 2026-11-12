@@ -51,21 +51,8 @@ bool all_bound(const Terms& terms, const urd::Store<urd::set<ygg::uint_t>, urd::
     return std::ranges::all_of(terms, [&](Term t) { return !t.is_variable() || bound.contains(t.value); });
 }
 
-/// A key of R as a search vertex: its values, encoded into `vertex`.
-std::span<const ygg::Value> as_vertex(std::span<const ygg::uint_t> key, urd::Store<urd::sequence<ygg::Value>>& vertex)
-{
-    vertex.clear();
-    for (const auto value : key)
-        vertex.push_back(ygg::encode_value(value));
-    return vertex;
-}
-
-void from_vertex(std::span<const ygg::Value> vertex, urd::Store<urd::sequence<ygg::uint_t>>& key)
-{
-    key.clear();
-    for (const auto value : vertex)
-        key.push_back(ygg::decode_value<ygg::uint_t>(value));
-}
+/// A search vertex as a key of R, copied into `key`.
+void from_vertex(std::span<const ygg::uint_t> vertex, urd::Store<urd::sequence<ygg::uint_t>>& key) { key.assign(vertex.begin(), vertex.end()); }
 
 /// The head weight is the read row's weight plus 1, by one addition that nothing else reads.
 bool adds_one(const CompiledRule& rule, const Literal& source)
@@ -646,13 +633,13 @@ struct UnitSearch::Oracle
     Executor* executor;
     UnitSearch* search;
     /// Per call depth, the neighbors found (as vertices) and the vertex's row.
-    urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<ygg::Value>>, urd::Store<urd::sequence<ygg::uint_t>>>>> buffers;
+    urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<ygg::uint_t>>, urd::Store<urd::sequence<ygg::uint_t>>>>> buffers;
     size_t depth = 0;
     urd::Store<urd::sequence<Version>> reads;
     urd::Store<urd::sequence<ygg::uint_t>> edge;
 
     template<typename F>
-    void neighbors(std::span<const ygg::Value> vertex, bool forward, const F& on_vertex)
+    void neighbors(std::span<const ygg::uint_t> vertex, bool forward, const F& on_vertex)
     {
         if (buffers.size() <= depth)
             buffers.resize(depth + 1);
@@ -670,30 +657,25 @@ struct UnitSearch::Oracle
                                 reads,
                                 bound.inputs,
                                 row,
-                                [&](std::span<const ygg::uint_t> derived)
-                                {
-                                    for (const auto value : derived.first(derived.size() - 1))
-                                        found.push_back(ygg::encode_value(value));
-                                });
+                                [&](std::span<const ygg::uint_t> derived) { found.insert(found.end(), derived.begin(), derived.end() - 1); });
         }
         for (size_t offset = 0; offset < found.size(); offset += arity)
-            if (!on_vertex(std::span<const ygg::Value>(found).subspan(offset, arity)))
+            if (!on_vertex(std::span<const ygg::uint_t>(found).subspan(offset, arity)))
                 break;
         --depth;
     }
     template<typename F>
-    void successors(std::span<const ygg::Value> vertex, const F& on_vertex)
+    void successors(std::span<const ygg::uint_t> vertex, const F& on_vertex)
     { neighbors(vertex, true, on_vertex); }
     template<typename F>
-    void predecessors(std::span<const ygg::Value> vertex, const F& on_vertex)
+    void predecessors(std::span<const ygg::uint_t> vertex, const F& on_vertex)
     { neighbors(vertex, false, on_vertex); }
-    bool edge_exists(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
+    bool edge_exists(std::span<const ygg::uint_t> from, std::span<const ygg::uint_t> to)
     {
         // The read row's key at weight 0, then the head's key.
         from_vertex(from, edge);
         edge.push_back(0);
-        for (const auto value : to)
-            edge.push_back(ygg::decode_value<ygg::uint_t>(value));
+        edge.insert(edge.end(), to.begin(), to.end());
         auto exists = false;
         for (const auto& bound : search->m_edges)
         {
@@ -714,14 +696,14 @@ struct Estimate
     GoalHeuristic* heuristic;
     urd::Store<urd::sequence<ygg::uint_t>>* key;
 
-    [[nodiscard]] ygg::uint_t estimate(std::span<const ygg::Value> vertex) const
+    [[nodiscard]] ygg::uint_t estimate(std::span<const ygg::uint_t> vertex) const
     {
         if (!heuristic)
             return 0;
         from_vertex(vertex, *key);
         return (*heuristic)(*key);
     }
-    [[nodiscard]] bool unreachable(std::span<const ygg::Value> vertex) const
+    [[nodiscard]] bool unreachable(std::span<const ygg::uint_t> vertex) const
     {
         if (!heuristic)
             return false;
@@ -734,10 +716,10 @@ struct Estimate
 /// Vertices as a VertexRange.
 struct Vertices
 {
-    const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>>* rows;
+    const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>* rows;
 
     [[nodiscard]] size_t size() const noexcept { return rows->size(); }
-    [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return (*rows)[i]; }
+    [[nodiscard]] std::span<const ygg::uint_t> row(size_t i) const { return (*rows)[i]; }
 };
 }  // namespace
 
@@ -901,16 +883,14 @@ void UnitSearch::changed(CompiledProgram& program, Executor& executor)
         {
             if (key.reset)
                 return;
-            const auto from_vertex = as_vertex(from, m_from_vertex);
-            const auto to_vertex = as_vertex(to, m_to_vertex);
-            const auto stored = key.tree.find(from_vertex);
+            const auto stored = key.tree.find(from);
             if (!key.restart)
             {
-                const auto to_bound = key.backward.bound(key.tree.find(to_vertex));
+                const auto to_bound = key.backward.bound(key.tree.find(to));
                 key.restart = to_bound != database::infinity && key.backward.bound(stored) > to_bound + 1;
             }
             if (!stored.is_none())
-                key.added.add(from_vertex, to_vertex);
+                key.added.add(from, to);
         };
         const auto width = delta.columns.size();
         auto from = urd::Store<urd::sequence<ygg::uint_t>>(arity), to = urd::Store<urd::sequence<ygg::uint_t>>(arity);
@@ -988,11 +968,7 @@ void UnitSearch::run(CompiledProgram& program,
                      bool targets_changed)
 {
     const auto arity = m_search.target_columns.size();
-    const auto vertex = [&](std::span<const ygg::uint_t> key)
-    {
-        const auto values = as_vertex(key, m_from_vertex);
-        return urd::Store<urd::sequence<ygg::Value>>(values.begin(), values.end());
-    };
+    const auto vertex = [](std::span<const ygg::uint_t> key) { return urd::Store<urd::sequence<ygg::uint_t>>(key.begin(), key.end()); };
     // Per goal key, its targets (read anew only if they can have changed) and sources as vertices.
     const auto reread = targets_changed || !m_read;
     if (reread)
@@ -1022,7 +998,7 @@ void UnitSearch::run(CompiledProgram& program,
         m_read = true;
     }
     const auto& key_targets = m_key_targets;
-    auto key_sources = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>>>>();
+    auto key_sources = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>();
     key_sources.resize(m_keys.size());
     for (const auto& source : sources)
         if (const auto index = m_goal_keys.find(goal_key(std::span<const ygg::uint_t>(source).first(arity))); index && !key_targets[*index].empty())
@@ -1075,7 +1051,7 @@ void UnitSearch::run(CompiledProgram& program,
             continue;
         auto reached = urd::Store<urd::sequence<ygg::uint_t>>();
         search.path(
-            [&](std::span<const ygg::Value> on_path)
+            [&](std::span<const ygg::uint_t> on_path)
             {
                 if (key.targets.contains(on_path))
                     from_vertex(on_path, reached);
@@ -1090,7 +1066,7 @@ size_t UnitSearch::memory_usage() const noexcept
 {
     size_t result = m_goal_keys.memory_usage();
     for (const auto& key : m_keys)
-        result += urd::memory_usage(key->targets) + key->tree.size() * (m_search.target_columns.size() * sizeof(ygg::Value) + 4 * sizeof(uint64_t));
+        result += urd::memory_usage(key->targets) + key->tree.size() * (m_search.target_columns.size() * sizeof(ygg::uint_t) + 4 * sizeof(uint64_t));
     return result;
 }
 }  // namespace tyr::datalog::database::datalog::detail

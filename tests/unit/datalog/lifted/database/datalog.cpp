@@ -1218,6 +1218,33 @@ TEST(DatabaseDatalog, DeleteAndRederiveKeepsRowsWithAnotherDerivation)
     EXPECT_EQ(evaluator.get_result().size(), n - 2);
 }
 
+/// Object columns are read as their index, so that relations of object rows are inputs; other column types are rejected.
+TEST(DatabaseDatalog, ReadsObjectColumnsAsTheirIndex)
+{
+    Programs p;
+    const auto e = p.relation(100, 2, 0), copy = p.relation(0, 2);
+    constexpr uint_t x = 0, y = 1;
+    const auto program = p.program({ p.rule(p.atom(copy, { var(x), var(y) }), { p.atom(e, { var(x), var(y) }) }) });
+    dl::Evaluator evaluator(layer(), program, std::array { copy });
+
+    using Object = urd::index<ygg::formalism::Object<void>>;
+    const auto columns = std::array { ygg::ColumnLayout { urd::index<ygg::Column>(0), ygg::type_id<Object> },
+                                      ygg::ColumnLayout { urd::index<ygg::Column>(1), ygg::type_id<Object> } };
+    auto objects = Relation { std::span<const ygg::ColumnLayout>(columns) };
+    for (const auto& [from, to] : std::array<std::pair<uint_t, uint_t>, 2> { { { 3, 5 }, { 5, 8 } } })
+    {
+        const auto values = std::array { ygg::encode_value(Object(from)), ygg::encode_value(Object(to)) };
+        objects.insert(std::span<const ygg::Value>(values));
+    }
+    evaluator.evaluate(std::array { borrow(objects) });
+    EXPECT_EQ(tuples_of(evaluator.get_result()), (Tuples { { 3, 5 }, { 5, 8 } }));
+
+    const auto doubles = std::array { ygg::ColumnLayout { urd::index<ygg::Column>(0), ygg::type_id<double> },
+                                      ygg::ColumnLayout { urd::index<ygg::Column>(1), ygg::type_id<double> } };
+    const auto other = Relation { std::span<const ygg::ColumnLayout>(doubles) };
+    EXPECT_THROW(evaluator.evaluate(std::array { borrow(other) }), std::invalid_argument);
+}
+
 TEST(DatabaseDatalog, RejectsInvalidRules)
 {
     Programs p;

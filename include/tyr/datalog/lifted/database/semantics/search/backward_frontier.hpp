@@ -51,7 +51,7 @@ public:
             // A copy: inserting predecessors into the tree may move its vertices.
             m_vertex.assign(tree.vertex(parent).begin(), tree.vertex(parent).end());
             predecessors.predecessors(m_vertex,
-                                      [&](std::span<const ygg::Value> from)
+                                      [&](std::span<const ygg::uint_t> from)
                                       {
                                           const auto id = tree.ensure(from, heuristic);
                                           auto& found = level_slot(id);
@@ -86,7 +86,7 @@ private:
     urd::Store<urd::sequence<ygg::uint_t, VertexSet::handle_type>> m_level;  ///< By the tree's vertex.
     urd::Store<urd::sequence<VertexSet::handle_type>> m_frontier;
     urd::Store<urd::sequence<VertexSet::handle_type>> m_expanding;  ///< The level step() expands; kept with m_vertex to avoid allocations.
-    urd::Store<urd::sequence<ygg::Value>> m_vertex;
+    urd::Store<urd::sequence<ygg::uint_t>> m_vertex;
     ygg::uint_t m_depth = 0;
     bool m_exhausted = false;
 

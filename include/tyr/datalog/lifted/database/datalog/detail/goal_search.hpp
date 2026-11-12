@@ -6,7 +6,6 @@
 #define TYR_DATALOG_DATABASE_DATALOG_DETAIL_GOAL_SEARCH_HPP_
 
 #include "tyr/datalog/lifted/database/datalog/detail/program.hpp"
-#include "yggdrasil/formalism/values.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -273,15 +272,12 @@ private:
     RowSet m_goal_keys;
     urd::Store<urd::sequence<std::unique_ptr<Key>>> m_keys;
     /// Per goal key, its targets as vertices, from the last run that read them.
-    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>>>> m_key_targets;
+    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>> m_key_targets;
     bool m_read = false;
     uint64_t m_version = 0;
     urd::Store<urd::sequence<Version>> m_reads;
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> m_derived;
     urd::Store<urd::sequence<ygg::uint_t>> m_key;
-    /// An edge's ends as vertices.
-    urd::Store<urd::sequence<ygg::Value>> m_from_vertex;
-    urd::Store<urd::sequence<ygg::Value>> m_to_vertex;
 
     UnitSearch(const GoalSearch& search,
                urd::Store<urd::sequence<BoundRule>> forward,

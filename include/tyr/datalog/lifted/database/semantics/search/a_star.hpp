@@ -105,8 +105,7 @@ private:
     /// A binary heap in one vector, so clear() keeps its capacity and a reused open list does not allocate.
     urd::Store<urd::queue<OpenEntry>, urd::by_priority, urd::order_by<PoppedFirst>> m_open_list;
     ygg::uint_t m_pushes = 0;
-    urd::Store<urd::sequence<ygg::Value>> m_vertex;  ///< A copy of the expanded vertex: generating successors may move m_vertices.
-    urd::Store<urd::sequence<ygg::Value>> m_source;  ///< A source's values, read from its row.
+    urd::Store<urd::sequence<ygg::uint_t>> m_vertex;  ///< A copy of the expanded vertex: generating successors may move m_vertices.
 };
 
 /// One best-first search from sources to the targets with unit edge costs (Hart, Nilsson & Raphael, "A Formal Basis
@@ -226,10 +225,10 @@ private:
     ygg::uint_t m_dropped = infinity;  ///< The smallest g + h of a vertex pruned as unreachable in the current inputs only.
     AStarCounters m_counters;
 
-    /// The values of the i-th source, borrowed until the next call.
+    /// The i-th source.
     template<VertexRange Sources>
-    [[nodiscard]] std::span<const ygg::Value> source(const Sources& sources, size_t i) const
-    { return vertex_values(sources.row(i), m_storage->m_source); }
+    [[nodiscard]] static std::span<const ygg::uint_t> source(const Sources& sources, size_t i)
+    { return sources.row(i); }
 
     /// The larger lower bound of a stored vertex; exact once its next chain is valid.
     [[nodiscard]] ygg::uint_t value(VertexSet::handle_type id) const noexcept
@@ -338,7 +337,7 @@ private:
         return id;
     }
 
-    void push(std::span<const ygg::Value> vertex, ygg::uint_t cost, VertexSet::handle_type from)
+    void push(std::span<const ygg::uint_t> vertex, ygg::uint_t cost, VertexSet::handle_type from)
     {
         auto index = m_storage->m_vertices.find(vertex);
         if (!index.is_none() && node(index).g <= cost)
@@ -455,7 +454,7 @@ private:
     }
 
     /// Whether pruning is on and the vertex, reached at f = `f`, is proven unreachable; then it counts for learning.
-    bool pruned(std::span<const ygg::Value> vertex, ygg::uint_t f)
+    bool pruned(std::span<const ygg::uint_t> vertex, ygg::uint_t f)
     {
         if constexpr (ProvesUnreachable<const H>)
         {
@@ -477,7 +476,7 @@ private:
         m_storage->m_vertex.assign(vertex.begin(), vertex.end());
         const auto cost = node(index).g + 1;
         m_oracle->successors(m_storage->m_vertex,
-                             [&](std::span<const ygg::Value> to)
+                             [&](std::span<const ygg::uint_t> to)
                              {
                                  push(to, cost, index);
                                  return true;

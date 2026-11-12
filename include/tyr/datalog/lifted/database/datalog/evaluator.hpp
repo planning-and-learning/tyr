@@ -36,9 +36,9 @@ namespace tyr::datalog::database::datalog
 /// Only the strata the requested outputs depend on are evaluated, and only the input slots they read are read.
 ///
 /// An aggregate reads a relation of the satisfying assignments of its body, kept by counting, whose groups it keeps
-/// incrementally; COUNT and SUM are 0 for a group without rows. Columns are uint_t; relation i of the outputs has
-/// columns labeled 0, ..., arity - 1. Input slot s is binding s; static slots are read by the first evaluate() or
-/// initialize() only.
+/// incrementally; COUNT and SUM are 0 for a group without rows. Input columns are uint_t or objects (read as their
+/// index); output columns are uint_t, and relation i of the outputs has columns labeled 0, ..., arity - 1. Input slot s
+/// is binding s; static slots are read by the first evaluate() or initialize() only.
 ///
 /// [Gupta93] A. Gupta, I. S. Mumick, V. S. Subrahmanian, Maintaining Views Incrementally, SIGMOD 1993.
 /// [Ngo13] H. Q. Ngo, C. Ré, A. Rudra, Skew Strikes Back: New Developments in the Theory of Join Algorithms, SIGMOD
@@ -65,8 +65,8 @@ class Evaluator
         if (relation.columns().size() != arity)
             throw std::invalid_argument("Datalog evaluator: an input does not have its relation's arity.");
         for (const auto& column : relation.columns())
-            if (column.type != ygg::type_id<ygg::uint_t>)
-                throw std::invalid_argument("Datalog evaluator: input columns must be uint_t.");
+            if (column.type != ygg::type_id<ygg::uint_t> && column.type != ygg::type_id<urd::index<ygg::formalism::Object<void>>>)
+                throw std::invalid_argument("Datalog evaluator: input columns must be uint_t or objects.");
         auto& row = m_row;
         row.resize(arity);
         for (size_t i = 0; i < relation.size(); ++i)

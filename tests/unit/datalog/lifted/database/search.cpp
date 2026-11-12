@@ -27,30 +27,29 @@ constexpr uint_t unreachable = std::numeric_limits<uint_t>::max();
 /// Vertices are uint_t values; edges are adjacency lists.
 struct ListGraph
 {
-    using Row = std::array<ygg::Value, 1>;
+    using Row = std::array<uint_t, 1>;
 
     Adjacency out;
     Adjacency in;
 
     explicit ListGraph(uint_t n) : out(n), in(n) {}
 
-    static uint_t id(std::span<const ygg::Value> vertex) { return ygg::decode_value<uint_t>(vertex[0]); }
-    static Row row(uint_t value) { return Row { ygg::encode_value(value) }; }
+    static uint_t id(std::span<const uint_t> vertex) { return vertex[0]; }
+    static Row row(uint_t value) { return Row { value }; }
     template<typename OnVertex>
     static void each(const urd::Store<urd::sequence<uint_t>>& vertices, const OnVertex& on_vertex)
     {
         for (const auto w : vertices)
-            if (const auto encoded = row(w); !on_vertex(std::span<const ygg::Value>(encoded)))
+            if (const auto encoded = row(w); !on_vertex(std::span<const uint_t>(encoded)))
                 return;
     }
     template<typename OnVertex>
-    void successors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
+    void successors(std::span<const uint_t> vertex, const OnVertex& on_vertex)
     { each(out[id(vertex)], on_vertex); }
     template<typename OnVertex>
-    void predecessors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
+    void predecessors(std::span<const uint_t> vertex, const OnVertex& on_vertex)
     { each(in[id(vertex)], on_vertex); }
-    bool edge_exists(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
-    { return std::ranges::find(out[id(from)], id(to)) != out[id(from)].end(); }
+    bool edge_exists(std::span<const uint_t> from, std::span<const uint_t> to) { return std::ranges::find(out[id(from)], id(to)) != out[id(from)].end(); }
     [[nodiscard]] bool has(uint_t u, uint_t v) const { return std::ranges::find(out[u], v) != out[u].end(); }
     /// Adds the edge unless it is a loop or present; returns whether it was added.
     bool add(uint_t u, uint_t v)
@@ -81,7 +80,7 @@ struct ListVertices
     urd::Store<urd::sequence<ListGraph::Row>> rows;
 
     [[nodiscard]] size_t size() const noexcept { return rows.size(); }
-    [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return rows[i]; }
+    [[nodiscard]] std::span<const uint_t> row(size_t i) const { return rows[i]; }
 };
 
 /// The targets of a search: their values, and their vertices in the tree.
@@ -95,7 +94,7 @@ struct Targets
     void add(uint_t target, db::SearchTree& tree, const H& heuristic)
     {
         const auto row = ListGraph::row(target);
-        if (set.insert(std::span<const ygg::Value>(row)).second)
+        if (set.insert(std::span<const uint_t>(row)).second)
         {
             ids.push_back(target);
             stored.push_back(tree.ensure(row, heuristic));
@@ -130,7 +129,7 @@ template<typename Search>
 bool expect_path(const ListGraph& graph, const ListVertices& sources, const Targets& targets, const Search& search, uint_t distance)
 {
     auto path = urd::Store<urd::sequence<uint_t>>();
-    search.path([&](std::span<const ygg::Value> vertex) { path.push_back(ListGraph::id(vertex)); });
+    search.path([&](std::span<const uint_t> vertex) { path.push_back(ListGraph::id(vertex)); });
     const auto is_source = [&](uint_t v) { return std::ranges::any_of(sources.rows, [&](const auto& row) { return ListGraph::id(row) == v; }); };
     const auto source = static_cast<size_t>(std::ranges::find_if(path, is_source) - path.begin());
     EXPECT_LT(source, path.size());
@@ -144,7 +143,7 @@ bool expect_path(const ListGraph& graph, const ListVertices& sources, const Targ
         EXPECT_TRUE(graph.has(path[i + 1], path[i]));
     for (size_t i = source + 1; i < path.size(); ++i)
         EXPECT_TRUE(graph.has(i == source + 1 ? path.front() : path[i - 1], path[i]));
-    EXPECT_TRUE(targets.set.contains(std::span<const ygg::Value>(ListGraph::row(source + 1 < path.size() ? path.back() : path.front()))));
+    EXPECT_TRUE(targets.set.contains(std::span<const uint_t>(ListGraph::row(source + 1 < path.size() ? path.back() : path.front()))));
     return source + 1 < path.size();
 }
 
@@ -194,8 +193,8 @@ struct ProvingHeuristic
     const urd::Store<urd::sequence<uint_t>>* distances = nullptr;
     bool proves = false;
 
-    [[nodiscard]] uint_t estimate(std::span<const ygg::Value>) const noexcept { return 0; }
-    [[nodiscard]] bool unreachable(std::span<const ygg::Value> vertex) const { return (*distances)[ListGraph::id(vertex)] == ::unreachable; }
+    [[nodiscard]] uint_t estimate(std::span<const uint_t>) const noexcept { return 0; }
+    [[nodiscard]] bool unreachable(std::span<const uint_t> vertex) const { return (*distances)[ListGraph::id(vertex)] == ::unreachable; }
     [[nodiscard]] size_t proof_cost() const noexcept { return proves ? 4 : std::numeric_limits<size_t>::max(); }
 };
 

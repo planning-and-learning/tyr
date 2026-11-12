@@ -27,7 +27,7 @@ class EdgeList
 public:
     EdgeList() : m_vertices() {}
 
-    void add(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
+    void add(std::span<const ygg::uint_t> from, std::span<const ygg::uint_t> to)
     { m_edges.emplace_back(m_vertices.insert(from).first, m_vertices.insert(to).first); }
     void clear() noexcept
     {
@@ -36,8 +36,8 @@ public:
     }
     [[nodiscard]] bool empty() const noexcept { return m_edges.empty(); }
     [[nodiscard]] size_t size() const noexcept { return m_edges.size(); }
-    [[nodiscard]] std::span<const ygg::Value> from(size_t i) const { return m_vertices.at(m_edges[i].first); }
-    [[nodiscard]] std::span<const ygg::Value> to(size_t i) const { return m_vertices.at(m_edges[i].second); }
+    [[nodiscard]] std::span<const ygg::uint_t> from(size_t i) const { return m_vertices.at(m_edges[i].first); }
+    [[nodiscard]] std::span<const ygg::uint_t> to(size_t i) const { return m_vertices.at(m_edges[i].second); }
 
 private:
     VertexSet m_vertices;
@@ -72,7 +72,7 @@ public:
             ++lowered;
             m_vertex.assign(tree.vertex(id).begin(), tree.vertex(id).end());
             predecessors.predecessors(m_vertex,
-                                      [&](std::span<const ygg::Value> from)
+                                      [&](std::span<const ygg::uint_t> from)
                                       {
                                           if (const auto stored = tree.find(from); !stored.is_none() && lowers(tree, stored, tree.learned(id)))
                                               lower(tree, stored, id);
@@ -84,7 +84,7 @@ public:
 
 private:
     urd::Store<urd::queue<std::pair<ygg::uint_t, VertexSet::handle_type>>, urd::by_priority> m_queue;  ///< (learned, vertex), the least first.
-    urd::Store<urd::sequence<ygg::Value>> m_vertex;  ///< A copy of the lowered vertex: storing vertices may move them.
+    urd::Store<urd::sequence<ygg::uint_t>> m_vertex;  ///< A copy of the lowered vertex: storing vertices may move them.
 
     static bool lowers(const SearchTree& tree, VertexSet::handle_type from, ygg::uint_t to_value) noexcept
     { return to_value != infinity && tree.learned(from) > to_value + 1; }

@@ -46,13 +46,13 @@ public:
 
     [[nodiscard]] size_t size() const noexcept { return m_nodes.size(); }
     /// A stored vertex, or none.
-    [[nodiscard]] VertexSet::handle_type find(std::span<const ygg::Value> vertex) const { return m_vertices.find(vertex); }
-    [[nodiscard]] std::span<const ygg::Value> vertex(VertexSet::handle_type id) const { return m_vertices.at(id); }
+    [[nodiscard]] VertexSet::handle_type find(std::span<const ygg::uint_t> vertex) const { return m_vertices.find(vertex); }
+    [[nodiscard]] std::span<const ygg::uint_t> vertex(VertexSet::handle_type id) const { return m_vertices.at(id); }
 
     /// A stored vertex, inserted with its heuristic estimate as learned distance. The estimate is computed only on
     /// insertion.
     template<DistanceHeuristic H>
-    VertexSet::handle_type ensure(std::span<const ygg::Value> vertex, const H& heuristic)
+    VertexSet::handle_type ensure(std::span<const ygg::uint_t> vertex, const H& heuristic)
     {
         if (const auto stored = m_vertices.find(vertex); !stored.is_none())
             return stored;
@@ -62,7 +62,7 @@ public:
     }
     /// The learned distance of a vertex: its stored value, or the heuristic's estimate if it is not stored.
     template<DistanceHeuristic H>
-    [[nodiscard]] ygg::uint_t value(std::span<const ygg::Value> vertex, const H& heuristic) const
+    [[nodiscard]] ygg::uint_t value(std::span<const ygg::uint_t> vertex, const H& heuristic) const
     {
         const auto stored = m_vertices.find(vertex);
         return stored.is_none() ? heuristic.estimate(vertex) : learned(stored);
