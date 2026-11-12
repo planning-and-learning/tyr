@@ -4,7 +4,6 @@
 #include "tyr/datalog/lifted/database/datalog/evaluator.hpp"
 #include "yggdrasil/python/bindings.hpp"
 
-#include <nanobind/operators.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -61,8 +60,8 @@ void bind_database_datalog(nb::module_& m)
     term.def_static("variable", &dl::Term::variable, "variable"_a)
         .def_static("constant", &dl::Term::constant, "object"_a)
         .def("is_variable", &dl::Term::is_variable)
-        .def_ro("value", &dl::Term::value)
-        .def(nb::self == nb::self);
+        .def_ro("value", &dl::Term::value);
+    urd::python::add_comparison(term);
 
     nb::enum_<dl::Comparison::Kind>(m, "DatalogComparisonKind")
         .value("EQUAL", dl::Comparison::Kind::EQUAL)

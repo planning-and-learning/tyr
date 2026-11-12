@@ -522,6 +522,7 @@ TEST(DatabaseDatalog, EvaluatorEqualsNaiveEvaluation)
 {
     Fixture fixture;
     dl::Evaluator evaluator(layer(), fixture.program, fixture.outputs);
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(5);
     for (size_t trial = 0; trial < 60; ++trial)
     {
@@ -546,6 +547,7 @@ TEST(DatabaseDatalog, EvaluatorUpdatesEqualNaiveEvaluationAfterEveryBatch)
     dl::Evaluator evaluator(layer(), fixture.program, fixture.outputs);
     std::vector<Tuples> current(2);
     evaluator.initialize(std::array { borrow(relation_of(current[0], 2)), borrow(relation_of(current[1], 1)) });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(9);
     for (size_t batch = 0; batch < 400; ++batch)
     {
@@ -655,6 +657,7 @@ TEST(DatabaseDatalog, WeightedGoalStopsAtTheLeastTarget)
         p.rule(p.atom(best, { var(w) }), { p.atom(dist, { var(x), var(w) }), p.atom(target, { var(x) }) }),
     });
     dl::Evaluator evaluator(layer(), program, std::array { best });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(17);
     const auto draw = [&](size_t count, size_t arity)
     {
@@ -728,6 +731,7 @@ TEST(DatabaseDatalog, WeightedGoalSearchesWithAHeuristicFromStaticRules)
                { dl::Arithmetic { Operation::ADD, var(y), obj(1), c }, dl::Arithmetic { Operation::ADD, var(w), var(c), v } }),
         p.rule(p.atom(best, { var(w) }), { p.atom(dist, { var(x), var(w) }), p.atom(target, { var(x) }) }),
     });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(23);
     const auto draw = [&](size_t count, size_t arity)
     {
@@ -778,6 +782,7 @@ TEST(DatabaseDatalog, WeightedGoalStopsEachKeyAtItsLeastTarget)
                { dl::Arithmetic { Operation::ADD, var(y), obj(1), c }, dl::Arithmetic { Operation::ADD, var(w), var(c), v } }),
         p.rule(p.atom(best, { var(k), var(w) }), { p.atom(dist, { var(k), var(x), var(w) }), p.atom(target, { var(k), var(x) }) }),
     });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(29);
     const auto draw = [&](size_t count, size_t arity, uint_t range)
     {
@@ -866,6 +871,7 @@ TEST(DatabaseDatalog, WeightedGoalSearchesWithProjectionsOfTheTargets)
                { dl::Arithmetic { Operation::ADD, var(w), obj(2), v } }),
         p.rule(p.atom(best, { var(w) }), { p.atom(dist, { var(x), var(y), var(w) }), p.atom(target, { var(y) }) }),
     });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(31);
     const auto draw = [&](size_t count, size_t arity)
     {
@@ -916,6 +922,7 @@ TEST(DatabaseDatalog, UnitWeightedGoalReusesItsSearchesAcrossUpdates)
                { dl::Arithmetic { Operation::ADD, var(w), obj(1), v } }),
         p.rule(p.atom(best, { var(k), var(w) }), { p.atom(dist, { var(k), var(x), var(w) }), p.atom(target, { var(k), var(x) }) }),
     });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(37);
     const auto draw = [&](size_t count, size_t arity, uint_t key_range)
     {
@@ -997,6 +1004,7 @@ TEST(DatabaseDatalog, UnitWeightedGoalWhoseWeightIsNotReadUnderUpdates)
         p.rule(p.atom(best, { var(k), var(w) }), { p.atom(dist, { var(k), var(x), var(w) }), p.atom(target, { var(k), var(x) }) }),
         p.rule(p.atom(reached, { var(k) }), { p.atom(best, { var(k), var(w) }) }),
     });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(37);
     const auto draw = [&](size_t count, size_t arity, uint_t key_range)
     {
@@ -1057,7 +1065,7 @@ TEST(DatabaseDatalog, UnitWeightedGoalWhoseWeightIsNotReadUnderUpdates)
 /// The probes that every path from a key's sources to its targets passes, over the static edges into cells where `open`
 /// holds; per key and probe, by breadth-first search: whether a target is reachable, and whether it is reachable
 /// avoiding the probe. Independent of the evaluator and of the program.
-Tuples must_pass_of(const std::vector<Tuples>& inputs)
+static Tuples must_pass_of(const std::vector<Tuples>& inputs)
 {
     const auto& [edges, sources, targets, open, probes] = std::tie(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4]);
     const auto reaches = [&](uint_t key, std::optional<uint_t> avoided)
@@ -1125,6 +1133,7 @@ TEST(DatabaseDatalog, MustPassProbesUnderUpdates)
                { p.atom(reachable, { var(k), var(w) }), p.atom(probe, { var(c) }) },
                { p.atom(escaped, { var(k), var(c) }) }),
     });
+    // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(41);
     const auto draw = [&](size_t count, size_t arity, uint_t key_range)
     {

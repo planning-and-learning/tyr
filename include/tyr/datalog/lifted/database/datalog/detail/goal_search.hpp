@@ -254,8 +254,8 @@ private:
     struct Delta
     {
         CompiledRule rule;
-        size_t literal;
-        Version change;
+        size_t literal = 0;
+        Version change = Version::CURRENT;
         urd::Store<urd::sequence<size_t>> columns;
     };
     GoalSearch m_search;

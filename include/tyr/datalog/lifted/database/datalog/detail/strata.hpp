@@ -186,8 +186,8 @@ private:
     /// A derived row of a table of the stratum, waiting to be settled, by its weight plus the heuristic.
     struct Candidate
     {
-        ygg::uint_t priority;
-        size_t position;
+        ygg::uint_t priority = 0;
+        size_t position = 0;
         urd::Store<urd::sequence<ygg::uint_t>> row;
         friend bool operator>(const Candidate& lhs, const Candidate& rhs) noexcept { return lhs.priority > rhs.priority; }
         static constexpr auto memory_members() noexcept { return urd::Members<&Candidate::row> {}; }
@@ -205,7 +205,7 @@ private:
     /// goal holds.
     struct GoalKeys
     {
-        size_t position;
+        size_t position = 0;
         urd::Store<urd::sequence<size_t>> columns;
         RowSet done;
     };

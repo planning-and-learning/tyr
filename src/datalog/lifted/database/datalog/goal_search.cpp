@@ -361,7 +361,7 @@ void GoalHeuristic::read_targets(CompiledProgram& program, Executor& executor, b
         }
         if (m_states.size() >= max_weights)
             m_states.clear();  // Ids stay unique: weights of forgotten states are only not found again.
-        m_state = m_states.try_emplace(std::move(state), m_next_state).first->second;
+        m_state = m_states.try_emplace(state, m_next_state).first->second;
         m_next_state += m_state == m_next_state;
     }
     m_read = true;
@@ -629,9 +629,9 @@ struct UnitSearch::Key
 /// of its own depth, as a search may check an edge while it generates successors.
 struct UnitSearch::Oracle
 {
-    CompiledProgram* program;
-    Executor* executor;
-    UnitSearch* search;
+    CompiledProgram* program = nullptr;
+    Executor* executor = nullptr;
+    UnitSearch* search = nullptr;
     /// Per call depth, the neighbors found (as vertices) and the vertex's row.
     urd::Store<urd::sequence<std::pair<urd::Store<urd::sequence<ygg::uint_t>>, urd::Store<urd::sequence<ygg::uint_t>>>>> buffers;
     size_t depth = 0;

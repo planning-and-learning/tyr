@@ -34,7 +34,7 @@ struct Literal
         /// Terms lhs, rhs and the result variable, which it binds (or checks, if a plan binds it earlier).
         ARITHMETIC,
     };
-    Kind kind;
+    Kind kind = Kind::POSITIVE;
     size_t table = npos;
     /// A variable's term holds its slot in the rule.
     urd::Store<urd::sequence<Term>> terms;
@@ -69,7 +69,7 @@ struct Plan
 
 struct CompiledRule
 {
-    size_t head;
+    size_t head = npos;
     urd::Store<urd::sequence<Term>> head_terms;
     urd::Store<urd::sequence<Literal>> literals;
     size_t slots = 0;
