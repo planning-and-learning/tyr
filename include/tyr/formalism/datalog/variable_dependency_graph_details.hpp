@@ -22,10 +22,11 @@
 
 #include <cstddef>
 #include <type_traits>
-#include <urd/repr/sequences/jagged.hpp>
+#include <urd/graph_types.hpp>
+#include <urd/repr/graphs/bit_matrix.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
-#include <vector>
+#include <utility>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::formalism::datalog::details
@@ -93,13 +94,13 @@ struct UnaryDependencies
 
 struct BinaryDependencies
 {
-    /// k rows of k bits: bit pj of row pi is set iff parameters pi and pj occur together.
-    using Pairs = urd::Store<urd::sequence<urd::Store<urd::set<std::size_t>, urd::dense>>, urd::fixed_shape>;
+    /// The k parameters of a condition, adjacent where they occur together in a literal (or constraint) of one kind.
+    using Pairs = urd::Store<urd::graph<ParameterIndex>, urd::monotone, urd::undirected, urd::constant_adjacency>;
 
-    /// Every member starts as k rows of k unset bits: the first is built from that shape, the others are copies of it.
+    /// Every member starts as the k parameters without edges: the first is built so, the others are copies of it.
     explicit BinaryDependencies(ygg::uint_t k_) :
         k(k_),
-        static_positive_literal(std::vector<std::size_t>(k_, k_)),
+        static_positive_literal(urd::graph_data<std::pair<ParameterIndex, ParameterIndex>> { k_, {}, {} }),
         static_negative_literal(static_positive_literal),
         fluent_positive_literal(static_positive_literal),
         fluent_negative_literal(static_positive_literal),
@@ -123,9 +124,10 @@ struct BinaryDependencies
 
     template<FactKind F, PolarityKind P>
     [[nodiscard]] bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
-    { return get_literal_dependency<F, P>()[pi].test(pj); }
+    { return get_literal_dependency<F, P>().adjacent(ParameterIndex { pi }, ParameterIndex { pj }); }
 
-    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept { return numeric_constraint[pi].test(pj); }
+    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    { return numeric_constraint.adjacent(ParameterIndex { pi }, ParameterIndex { pj }); }
 
     [[nodiscard]] bool has_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
     {

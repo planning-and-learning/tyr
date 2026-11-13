@@ -363,13 +363,13 @@ struct InterningEvaluation
             valid &= copied_created;
             valid &= !tyr::datalog::tests::ops::intern(copied_repository, original).second;
             auto extracted = builders.get_relation_builder<ygg::Schema>(renamed_schema);
-            const auto identity = ygg::relation_identity(*extracted);
+            const auto identity = extracted->relation_identity();
             const auto* schema_storage = extracted->columns().data();
             database::assign(*extracted, copied);
             database::assign(*extracted, borrow(*extracted));
             database::assign(*extracted, urd::resolve(*extracted, repository));
             valid &= extracted->size() == original.size();
-            valid &= ygg::relation_identity(*extracted) == identity && extracted->columns().data() == schema_storage;
+            valid &= extracted->relation_identity() == identity && extracted->columns().data() == schema_storage;
             valid &= std::ranges::equal(extracted->columns(), schema);
             valid &= extracted->contains(std::span<const ygg::Value>(packed(first_row)).first(arity));
             builder->clear();

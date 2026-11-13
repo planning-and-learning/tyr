@@ -164,7 +164,7 @@ void generic_join(const R& inputs, const GenericJoinPlan& plan, urd::builder<ygg
     for (size_t input = 0; input < plan.input_count(); ++input)
     {
         assert(std::ranges::equal(inputs[input].columns(), plan.input_columns(input)));
-        if (inputs[input].relation_identity() == relation_identity(out))
+        if (inputs[input].relation_identity() == out.relation_identity())
             throw std::invalid_argument("Generic join: output aliases an input.");
     }
     out.clear();

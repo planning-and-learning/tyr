@@ -127,7 +127,7 @@ public:
         detail::validate_bindings(m_plan,
                                   bindings,
                                   [&](ygg::RelationIdentity input)
-                                  { return std::ranges::any_of(m_nodes, [&](const Node& node) { return relation_identity(node.result) == input; }); });
+                                  { return std::ranges::any_of(m_nodes, [&](const Node& node) { return node.result.relation_identity() == input; }); });
         m_ready = false;
         for (size_t i = 0; i < m_nodes.size(); ++i)
         {

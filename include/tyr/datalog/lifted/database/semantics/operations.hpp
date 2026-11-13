@@ -139,7 +139,7 @@ inline void copy_fields(ygg::RowPool::row_builder_type& output, size_t first, co
 template<RelationViewConcept... Vs>
 void prepare_output(urd::builder<ygg::Relation<ygg::Schema>>& out, const Vs&... inputs)
 {
-    if (((inputs.relation_identity() == relation_identity(out)) || ...))
+    if (((inputs.relation_identity() == out.relation_identity()) || ...))
         throw std::invalid_argument("Relational operation: output aliases an input.");
     out.clear();
 }
@@ -169,7 +169,7 @@ void project(const V& input, const ProjectionPlan& plan, urd::builder<ygg::Relat
 template<RelationViewConcept V>
 urd::builder<ygg::Relation<ygg::Schema>>& assign(urd::builder<ygg::Relation<ygg::Schema>>& destination, const V& source)
 {
-    if (source.relation_identity() == relation_identity(destination))
+    if (source.relation_identity() == destination.relation_identity())
         return destination;
     destination.initialize(source.columns());
     for (size_t i = 0; i < source.size(); ++i)

@@ -45,17 +45,8 @@ insert_literal_dependencies(const urd::Store<urd::sequence<ParameterIndex>>& par
         unary_dep.insert(parameter);
 
     for (ygg::uint_t i = 0; i < parameters.size(); ++i)
-    {
-        const auto pi = parameters[i].value;
-
         for (ygg::uint_t j = i + 1; j < parameters.size(); ++j)
-        {
-            const auto pj = parameters[j].value;
-
-            binary_dep[pi].set(pj);
-            binary_dep[pj].set(pi);
-        }
-    }
+            binary_dep.add_edge(parameters[i], parameters[j]);  // undirected: both ways
 }
 
 template<FactKind F>
@@ -84,17 +75,8 @@ static void insert_numeric_constraint(BooleanOperatorView<LiftedTag> numeric_con
         unary_dep.insert(parameter);
 
     for (ygg::uint_t i = 0; i < parameters.size(); ++i)
-    {
-        const auto pi = parameters[i].value;
-
         for (ygg::uint_t j = i + 1; j < parameters.size(); ++j)
-        {
-            const auto pj = parameters[j].value;
-
-            binary_dep[pi].set(pj);
-            binary_dep[pj].set(pi);
-        }
-    }
+            binary_dep.add_edge(parameters[i], parameters[j]);  // undirected: both ways
 }
 
 VariableDependencyGraph::VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition) :

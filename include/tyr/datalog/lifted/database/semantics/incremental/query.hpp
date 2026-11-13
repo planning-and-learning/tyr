@@ -284,8 +284,8 @@ public:
         {
             const NodeId id(ygg::to_uint_t(i));
             m_identities.push_back(result(id).relation_identity());
-            m_identities.push_back(relation_identity(delta(id).added));
-            m_identities.push_back(relation_identity(delta(id).removed));
+            m_identities.push_back(delta(id).added.relation_identity());
+            m_identities.push_back(delta(id).removed.relation_identity());
         }
         m_initialized = true;
     }

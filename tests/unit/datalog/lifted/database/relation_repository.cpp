@@ -381,7 +381,7 @@ TEST(YggdrasilTests, DatabaseRelationViewsMixBuildersDataAndInternedIndicesInOpe
     right.rename(labels);
     const auto borrowed = urd::resolve(right, repository);
     static_assert(database::RelationViewConcept<decltype(borrowed)>);
-    EXPECT_EQ(borrowed.relation_identity(), ygg::relation_identity(right));
+    EXPECT_EQ(borrowed.relation_identity(), right.relation_identity());
     database::project(borrowed, to_30, renamed_projection, workspace);
     expect_rows(renamed_projection, { { 400 }, { 600 } });
 }
@@ -411,7 +411,7 @@ TEST(YggdrasilTests, DatabaseInternedRowsOutliveBuilderReuseAndRenamesShareStora
     EXPECT_NE(original.index(), renamed.index());
     EXPECT_TRUE(same_storage(original.row(0), renamed.row(0)));
     EXPECT_NE(original.relation_identity(), renamed.relation_identity());  // another relation over the same rows
-    EXPECT_NE(original.relation_identity(), ygg::relation_identity(*builder));
+    EXPECT_NE(original.relation_identity(), builder->relation_identity());
     EXPECT_TRUE(std::ranges::equal(renamed.columns(), renamed_columns));
     EXPECT_TRUE(urd::EqualTo<IndexView> {}(tyr::datalog::tests::ops::rename(repository, original, renamed_columns), renamed));
     expect_rows(renamed, { { 7, 70 }, { 8, 80 } });
@@ -534,7 +534,7 @@ TEST(YggdrasilTests, DatabaseConversionsRemapStoredIdentityAndReuseMutableStorag
 
     auto output_handle = source_repository.get_relation_builder<ygg::Schema>(tyr::datalog::tests::ops::cols({ ColumnIndex(3), ColumnIndex(7) }));
     auto& output = *output_handle;
-    const auto identity = ygg::relation_identity(output);
+    const auto identity = output.relation_identity();
     output.insert(cells(99, 88));
     database::assign(output, source);
     EXPECT_TRUE(std::ranges::equal(output.columns(), source.columns()));
@@ -545,7 +545,7 @@ TEST(YggdrasilTests, DatabaseConversionsRemapStoredIdentityAndReuseMutableStorag
     EXPECT_EQ(&database::assign(output, target), &output);
     EXPECT_EQ(output.memory_usage(), capacity);
     EXPECT_EQ(output.columns().data(), columns_storage);
-    EXPECT_EQ(ygg::relation_identity(output), identity);
+    EXPECT_EQ(output.relation_identity(), identity);
     expect_rows(output, { { 4, 5 }, { 1, 2 } });
 
     const auto* first_row = source_repository.view(output).row(0).get_values().data();
@@ -557,7 +557,7 @@ TEST(YggdrasilTests, DatabaseConversionsRemapStoredIdentityAndReuseMutableStorag
     EXPECT_EQ(source_repository.view(output).row(0).get_values().data(), first_row);
     EXPECT_EQ(output.columns().data(), columns_storage);
     EXPECT_EQ(output.memory_usage(), capacity);
-    EXPECT_EQ(ygg::relation_identity(output), identity);
+    EXPECT_EQ(output.relation_identity(), identity);
     expect_rows(output, { { 4, 5 }, { 1, 2 } });
 
     // A changed arity replaces storage; row values follow the source's column order.
@@ -572,7 +572,7 @@ TEST(YggdrasilTests, DatabaseConversionsRemapStoredIdentityAndReuseMutableStorag
     EXPECT_TRUE(output.empty());
     EXPECT_TRUE(std::ranges::equal(output.columns(), empty.columns()));
     EXPECT_EQ(output.memory_usage(), capacity);
-    EXPECT_EQ(ygg::relation_identity(output), identity);
+    EXPECT_EQ(output.relation_identity(), identity);
     expect_rows(canonical, { { 4, 5 }, { 1, 2 } });
 
     RelationBuilder nullary;
@@ -969,8 +969,8 @@ TEST(YggdrasilTests, DatabaseBuildersAreNumberedLikeLayers)
     first.clear();
     first.initialize(tyr::datalog::tests::ops::cols({ ColumnIndex(1), ColumnIndex(2) }));
     EXPECT_EQ(first.layer(), number);
-    EXPECT_EQ(ygg::relation_identity(first).context, number);
-    EXPECT_EQ(ygg::relation_identity(first).relation, urd::index<void>::none_value);
+    EXPECT_EQ(first.relation_identity().context, number);
+    EXPECT_EQ(first.relation_identity().relation, urd::index<void>::none_value);
     first.insert(cells(3, 4));
     EXPECT_EQ(layer.view(first).row(0).context().layer(), number);
 }

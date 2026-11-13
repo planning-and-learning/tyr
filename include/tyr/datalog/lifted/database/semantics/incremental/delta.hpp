@@ -88,7 +88,7 @@ template<RelationViewConcept V>
 void require_unaliased(const V& input, const urd::builder<ygg::Relation<ygg::Schema>>& result, const Delta& delta)
 {
     const auto storage = input.relation_identity();
-    if (storage == relation_identity(result) || storage == relation_identity(delta.added) || storage == relation_identity(delta.removed))
+    if (storage == result.relation_identity() || storage == delta.added.relation_identity() || storage == delta.removed.relation_identity())
         throw std::invalid_argument("Incremental evaluation: input aliases the evaluator's result or delta.");
 }
 

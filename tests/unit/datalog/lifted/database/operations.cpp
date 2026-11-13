@@ -616,8 +616,8 @@ TEST(YggdrasilTests, DatabaseJoinCacheIdentifiesBuildersByAddressAcrossPoolsAndR
     const ygg::FreeRelationRepository second_layer;
     auto first = first_layer.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1) }));
     auto second = second_layer.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1) }));
-    EXPECT_NE(ygg::relation_identity(*first), ygg::relation_identity(*second));
-    EXPECT_EQ(borrow(*first).relation_identity(), ygg::relation_identity(*first));
+    EXPECT_NE(first->relation_identity(), second->relation_identity());
+    EXPECT_EQ(borrow(*first).relation_identity(), first->relation_identity());
     first->insert(cells(4));
     second->insert(cells(5));
     database::JoinIndexCache cache;
@@ -627,28 +627,28 @@ TEST(YggdrasilTests, DatabaseJoinCacheIdentifiesBuildersByAddressAcrossPoolsAndR
     EXPECT_EQ(cache.size(), 2);
     const auto labels = cols({ ColumnIndex(2) });
     const auto* cached = &cache.get_or_create(borrow(*first), keys);
-    const auto identity = ygg::relation_identity(*first);
+    const auto identity = first->relation_identity();
     first->rename(labels);
-    EXPECT_EQ(ygg::relation_identity(*first), identity);
+    EXPECT_EQ(first->relation_identity(), identity);
     EXPECT_EQ(cached, &cache.get_or_create(borrow(*first), keys));
 
     cache.clear();  // Cached rows must be released before a builder is reused.
     first = {};
     auto reused = first_layer.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(9) }));
-    EXPECT_EQ(ygg::relation_identity(*reused), identity);  // the same slot, so the same address
+    EXPECT_EQ(reused->relation_identity(), identity);  // the same slot, so the same address
     EXPECT_TRUE(reused->empty());
     reused->insert(cells(8));
     cache.get_or_create(borrow(*reused), keys);
     EXPECT_EQ(cache.size(), 1);
     auto pair = first_layer.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1), ColumnIndex(2) }));
-    EXPECT_NE(ygg::relation_identity(*pair), identity);
+    EXPECT_NE(pair->relation_identity(), identity);
 
     // Interned relations are identified by their layer and index: a rename is another relation.
     ygg::FreeRelationRepository layer;
     const auto interned = tyr::datalog::tests::ops::intern(layer, *reused).first;
     const auto renamed = tyr::datalog::tests::ops::rename(layer, interned, cols({ ColumnIndex(3) }));
     EXPECT_NE(interned.relation_identity(), renamed.relation_identity());
-    EXPECT_NE(interned.relation_identity(), ygg::relation_identity(*reused));
+    EXPECT_NE(interned.relation_identity(), reused->relation_identity());
     cache.get_or_create(interned, keys);
     cache.get_or_create(renamed, keys);
     EXPECT_EQ(cache.size(), 3);
@@ -661,7 +661,7 @@ TEST(YggdrasilTests, DatabaseJoinIndexIndexesDirectlyConstructedRelations)
     urd::builder<ygg::Relation<ygg::Schema>> right { cols({ ColumnIndex(1) }) };
     left.insert(cells(1));
     right.insert(cells(1));
-    EXPECT_NE(ygg::relation_identity(left), ygg::relation_identity(right));
+    EXPECT_NE(left.relation_identity(), right.relation_identity());
     database::JoinIndexCache cache;
     database::Workspace workspace;
     const database::JoinPlan plan(left.columns(), right.columns());
