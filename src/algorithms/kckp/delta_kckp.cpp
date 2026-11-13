@@ -18,69 +18,160 @@
 #include "tyr/algorithms/kckp/delta_kckp.hpp"
 
 #include <stdexcept>
-#include <urd/bits.hpp>
-#include <urd/repr/sequences/sequence.hpp>
+#include <urd/graphs.hpp>
+#include <urd/sets.hpp>
 #include <urd/store.hpp>
 
 namespace tyr::kckp
 {
 
-PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const GraphLayout& layout, std::span<const AdjacencyKind> adjacency_kinds) :
-    m_num_partitions(layout.num_partitions),
-    m_row_offsets(layout.num_vertices),
-    m_pair_offsets()
-
+PartitionedAdjacencyLayout::PartitionedAdjacencyLayout(const Graph& graph, std::span<const AdjacencyKind> adjacency_kinds) :
+    m_num_partitions(graph.num_parts()),
+    m_kinds(adjacency_kinds.begin(), adjacency_kinds.end()),
+    m_pair_rows(adjacency_kinds.size(), 0),
+    m_first_rows(graph.num_vertices(), 0)
 {
-    if (m_num_partitions != 0 && m_num_partitions > m_pair_offsets.max_size() / m_num_partitions)
-        throw std::overflow_error("PartitionedAdjacencyLayout: partition-pair table size overflow");
-
-    const auto num_partition_pairs = m_num_partitions * m_num_partitions;
-    if (adjacency_kinds.size() != num_partition_pairs)
+    if (adjacency_kinds.size() != m_num_partitions * m_num_partitions)
         throw std::invalid_argument("PartitionedAdjacencyLayout: expected one adjacency kind per partition pair");
 
-    m_pair_offsets.assign(num_partition_pairs, IMPLICIT);
-    const auto checked_add = [](size_t lhs, size_t rhs)
+    auto next_row = size_t { 0 };
+    for (size_t source_partition = 0; source_partition < m_num_partitions; ++source_partition)
     {
-        constexpr auto max_blocks = static_cast<size_t>(STATIC_ONLY);
-        if (lhs >= max_blocks || rhs >= max_blocks - lhs)
-            throw std::overflow_error("PartitionedAdjacencyLayout: adjacency block offset overflow");
-        return lhs + rhs;
-    };
-
-    for (ygg::uint_t source_partition = 0; source_partition < m_num_partitions; ++source_partition)
-    {
-        auto row_blocks = size_t { 0 };
-        for (ygg::uint_t target_partition = 0; target_partition < m_num_partitions; ++target_partition)
+        auto rows_per_vertex = size_t { 0 };
+        for (size_t target_partition = 0; target_partition < m_num_partitions; ++target_partition)
         {
-            const auto pair = source_partition * m_num_partitions + target_partition;
-            switch (adjacency_kinds[pair])
+            const auto pair = (source_partition * m_num_partitions) + target_partition;
+            switch (m_kinds[pair])
             {
                 case AdjacencyKind::IMPLICIT:
-                    break;
                 case AdjacencyKind::STATIC_ONLY:
-                    m_pair_offsets[pair] = STATIC_ONLY;
                     break;
                 case AdjacencyKind::RUNTIME:
-                    m_pair_offsets[pair] = static_cast<ygg::uint_t>(row_blocks);
-                    row_blocks = checked_add(row_blocks, layout.info.infos[target_partition].num_blocks);
+                    m_pair_rows[pair] = rows_per_vertex++;
                     break;
                 default:
                     throw std::invalid_argument("PartitionedAdjacencyLayout: invalid adjacency kind");
             }
         }
-
-        for (const auto vertex : layout.vertex_partitions[source_partition])
+        for (const auto vertex : graph.part(source_partition))
         {
-            m_row_offsets[vertex] = static_cast<ygg::uint_t>(m_num_blocks);
-            m_num_blocks = checked_add(m_num_blocks, row_blocks);
+            m_first_rows[vertex.index] = next_row;
+            next_row += rows_per_vertex;
         }
     }
 }
 
+PartitionedAdjacencyMatrix::PartitionedAdjacencyMatrix(const Graph& graph,
+                                                       const PartitionedAdjacencyLayout& adjacency_layout,
+                                                       const VertexSets& affected,
+                                                       const VertexSets& delta) :
+    m_graph(&graph),
+    m_adjacency_layout(&adjacency_layout),
+    m_affected(&affected),
+    m_delta(&delta)
+{
+    // The rows in the layout's order: vertex after vertex, each into its runtime parts in order.
+    const auto parts = graph.empty_parts();
+    for (size_t source_partition = 0; source_partition < graph.num_parts(); ++source_partition)
+        for ([[maybe_unused]] const auto vertex : graph.part(source_partition))
+            for (size_t target_partition = 0; target_partition < graph.num_parts(); ++target_partition)
+                if (adjacency_layout.is_runtime(source_partition, target_partition))
+                {
+                    assert(adjacency_layout.row(vertex, source_partition, target_partition) == m_rows.size());
+                    m_rows.push_back(parts[target_partition]);
+                }
+}
+
+void PartitionedAdjacencyMatrix::add_edge(Vertex u, Vertex v)
+{
+    const auto u_partition = m_graph->part_of(u);
+    const auto v_partition = m_graph->part_of(v);
+    const auto u_row = m_adjacency_layout->row(u, u_partition, v_partition);
+    const auto v_row = m_adjacency_layout->row(v, v_partition, u_partition);
+    m_rows[u_row].insert(v);
+    m_rows[v_row].insert(u);
+    m_touched.insert(u_row);
+    m_touched.insert(v_row);
+}
+
+void PartitionedAdjacencyMatrix::reset() noexcept
+{
+    for (const auto row : m_touched)
+        m_rows[row].clear();
+    m_touched.clear();
+}
+
+void PartitionedAdjacencyMatrix::copy_adjacency_to(Vertex vertex, size_t partition, VertexSet& destination) const
+{
+    switch (m_adjacency_layout->kind(m_graph->part_of(vertex), partition))
+    {
+        case AdjacencyKind::RUNTIME:
+            destination = runtime_neighbours(vertex, partition);
+            return;
+        case AdjacencyKind::IMPLICIT:
+            destination = context(vertex, partition);
+            return;
+        case AdjacencyKind::STATIC_ONLY:
+            destination = context(vertex, partition);
+            urd::intersect_neighbours(m_graph->rows(), vertex, partition, destination);
+            return;
+    }
+}
+
+void PartitionedAdjacencyMatrix::intersect_adjacency(Vertex vertex, size_t partition, const VertexSet& source, VertexSet& destination) const
+{
+    switch (m_adjacency_layout->kind(m_graph->part_of(vertex), partition))
+    {
+        case AdjacencyKind::RUNTIME:
+            urd::set_intersection(source, runtime_neighbours(vertex, partition), destination);
+            return;
+        case AdjacencyKind::IMPLICIT:
+            urd::set_intersection(source, context(vertex, partition), destination);
+            return;
+        case AdjacencyKind::STATIC_ONLY:
+            urd::intersect_neighbours(m_graph->rows(), vertex, partition, source, destination);
+            destination &= context(vertex, partition);
+            return;
+    }
+}
+
+void PartitionedAdjacencyMatrix::subtract_adjacency_from(Vertex vertex, size_t partition, VertexSet& destination, VertexSet& scratch) const
+{
+    switch (m_adjacency_layout->kind(m_graph->part_of(vertex), partition))
+    {
+        case AdjacencyKind::RUNTIME:
+            destination -= runtime_neighbours(vertex, partition);
+            return;
+        case AdjacencyKind::IMPLICIT:
+            destination -= context(vertex, partition);
+            return;
+        case AdjacencyKind::STATIC_ONLY:
+            scratch = context(vertex, partition);
+            urd::intersect_neighbours(m_graph->rows(), vertex, partition, scratch);
+            destination -= scratch;
+            return;
+    }
+}
+
+bool PartitionedAdjacencyMatrix::is_adjacent(Vertex vertex, Vertex target) const
+{
+    const auto target_partition = m_graph->part_of(target);
+    switch (m_adjacency_layout->kind(m_graph->part_of(vertex), target_partition))
+    {
+        case AdjacencyKind::RUNTIME:
+            return runtime_neighbours(vertex, target_partition).contains(target);
+        case AdjacencyKind::IMPLICIT:
+            return context(vertex, target_partition).contains(target);
+        case AdjacencyKind::STATIC_ONLY:
+            return context(vertex, target_partition).contains(target) && m_graph->adjacent(vertex, target);
+    }
+    return false;
+}
+
 DeltaKCKP::DeltaKCKP(const Graph& graph, const PartitionedAdjacencyLayout& adjacency_layout) :
-    m_layout(&graph.get_layout()),
-    m_delta_graph(graph.get_layout(), adjacency_layout, graph.get_adjacency_matrix()),
-    m_full_graph(graph.get_layout(), adjacency_layout, graph.get_adjacency_matrix())
+    m_graph(&graph),
+    m_delta_graph(graph, adjacency_layout),
+    m_full_graph(graph, adjacency_layout)
 {
 }
 
@@ -101,40 +192,33 @@ const urd::Store<urd::sequence<Edge>>& DeltaKCKP::materialize_delta_edges()
 
 void DeltaKCKP::seed_without_anchor(Workspace& workspace) const
 {
-    workspace.prepare(*m_layout);
+    workspace.prepare(*m_graph);
     workspace.partial_solution_size = 0;
     workspace.partition_bits.clear();
     workspace.anchor_pi = std::numeric_limits<ygg::uint_t>::max();
     workspace.anchor_pj = std::numeric_limits<ygg::uint_t>::max();
 
-    auto compatible_row = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
-    {
-        const auto& info = m_layout->info.infos[partition];
-        auto compatible = urd::bitset_span<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        compatible.copy_from(m_full_graph.matrix.affected_partitions().get_bitset(info));
-    }
+    for (size_t partition = 0; partition < m_graph->num_parts(); ++partition)
+        workspace.candidates_at(0, partition) = m_full_graph.affected_partitions[partition];
 }
 
 bool DeltaKCKP::seed_from_anchor(const Edge& edge, Workspace& workspace) const
-{ return prepare_anchor_source(edge.src, m_layout->vertex_to_partition[edge.dst.index], workspace) && seed_from_prepared_anchor(edge, workspace); }
+{ return prepare_anchor_source(edge.src, m_graph->part_of(edge.dst), workspace) && seed_from_prepared_anchor(edge, workspace); }
 
 bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partition, Workspace& workspace) const
 {
-    workspace.prepare(*m_layout);
-    const auto source_partition = m_layout->vertex_to_partition[source.index];
-    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
+    workspace.prepare(*m_graph);
+    const auto source_partition = m_graph->part_of(source);
+    for (ygg::uint_t partition = 0; partition < m_graph->num_parts(); ++partition)
     {
         if (partition == source_partition || partition == target_partition)
             continue;
 
-        const auto& info = m_layout->info.infos[partition];
-        auto row =
-            urd::bitset_span<uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        m_full_graph.matrix.copy_adjacency_to(source.index, partition, row);
+        auto& row = workspace.anchor_source[partition];
+        m_full_graph.matrix.copy_adjacency_to(source, partition, row);
         if (partition < target_partition)
-            m_delta_graph.matrix.subtract_adjacency_from(source.index, partition, row);
-        if (!row.any())
+            m_delta_graph.matrix.subtract_adjacency_from(source, partition, row, workspace.scratch[partition]);
+        if (row.empty())
             return false;
     }
     return true;
@@ -142,8 +226,8 @@ bool DeltaKCKP::prepare_anchor_source(Vertex source, ygg::uint_t target_partitio
 
 bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace) const
 {
-    const auto source_partition = m_layout->vertex_to_partition[edge.src.index];
-    const auto target_partition = m_layout->vertex_to_partition[edge.dst.index];
+    const auto source_partition = m_graph->part_of(edge.src);
+    const auto target_partition = m_graph->part_of(edge.dst);
     assert(source_partition < target_partition);
 
     workspace.partial_solution[source_partition] = edge.src;
@@ -155,21 +239,16 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
     workspace.partition_bits.insert(source_partition);
     workspace.partition_bits.insert(target_partition);
 
-    auto compatible_row = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
+    for (ygg::uint_t partition = 0; partition < m_graph->num_parts(); ++partition)
     {
         if (partition == source_partition || partition == target_partition)
             continue;
 
-        const auto& info = m_layout->info.infos[partition];
-        auto compatible = urd::bitset_span<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        compatible.copy_from(
-            urd::bitset_span<const uint64_t>(std::span<uint64_t>(workspace.anchor_source_data).subspan(info.block_offset, info.num_blocks).data(),
-                                             info.num_bits));
-        m_full_graph.matrix.intersect_adjacency_with(edge.dst.index, partition, compatible);
+        auto& compatible = workspace.candidates_at(0, partition);
+        m_full_graph.matrix.intersect_adjacency(edge.dst, partition, workspace.anchor_source[partition], compatible);
         if (partition < source_partition)
-            m_delta_graph.matrix.subtract_adjacency_from(edge.dst.index, partition, compatible);
-        if (!compatible.any())
+            m_delta_graph.matrix.subtract_adjacency_from(edge.dst, partition, compatible, workspace.scratch[partition]);
+        if (compatible.empty())
             return false;
     }
     return true;
@@ -178,7 +257,7 @@ bool DeltaKCKP::seed_from_prepared_anchor(const Edge& edge, Workspace& workspace
 bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& workspace) const
 {
     assert(!vertices.empty());
-    workspace.prepare(*m_layout);
+    workspace.prepare(*m_graph);
     workspace.partial_solution_size = 0;
     workspace.partition_bits.clear();
     workspace.anchor_pi = std::numeric_limits<ygg::uint_t>::max();
@@ -186,40 +265,34 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
 
     for (size_t i = 0; i < vertices.size(); ++i)
     {
-        const auto vertex = vertices[i].index;
-        const auto partition = m_layout->vertex_to_partition[vertex];
-        const auto& info = m_layout->info.infos[partition];
-        const auto bit = m_layout->vertex_to_bit[vertex];
+        const auto vertex = vertices[i];
+        const auto partition = m_graph->part_of(vertex);
         assert(!workspace.partition_bits.contains(partition));
 
-        if (!m_full_graph.affected_partitions.get_bitset(info).test(bit) || m_delta_graph.delta_partitions.get_bitset(info).test(bit))
+        if (!m_full_graph.affected_partitions[partition].contains(vertex) || m_delta_graph.delta_partitions[partition].contains(vertex))
             return false;
 
         for (size_t j = 0; j < i; ++j)
-        {
-            if (!m_full_graph.matrix.is_adjacent(vertices[j].index, vertex) || m_delta_graph.matrix.is_adjacent(vertices[j].index, vertex))
+            if (!m_full_graph.matrix.is_adjacent(vertices[j], vertex) || m_delta_graph.matrix.is_adjacent(vertices[j], vertex))
                 return false;
-        }
 
-        workspace.partial_solution[partition] = vertices[i];
+        workspace.partial_solution[partition] = vertex;
         workspace.partition_bits.insert(partition);
         ++workspace.partial_solution_size;
     }
 
-    auto compatible_row = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
+    for (ygg::uint_t partition = 0; partition < m_graph->num_parts(); ++partition)
     {
         if (workspace.partition_bits.contains(partition))
             continue;
 
-        const auto& info = m_layout->info.infos[partition];
-        auto compatible = urd::bitset_span<uint64_t>(compatible_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        m_full_graph.matrix.copy_adjacency_to(vertices.front().index, partition, compatible);
+        auto& compatible = workspace.candidates_at(0, partition);
+        m_full_graph.matrix.copy_adjacency_to(vertices.front(), partition, compatible);
         for (const auto vertex : vertices.subspan(1))
-            m_full_graph.matrix.intersect_adjacency_with(vertex.index, partition, compatible);
+            m_full_graph.matrix.intersect_adjacency(vertex, partition, compatible, compatible);
         for (const auto vertex : vertices)
-            m_delta_graph.matrix.subtract_adjacency_from(vertex.index, partition, compatible);
-        if (!compatible.any())
+            m_delta_graph.matrix.subtract_adjacency_from(vertex, partition, compatible, workspace.scratch[partition]);
+        if (compatible.empty())
             return false;
     }
     return true;
@@ -228,20 +301,16 @@ bool DeltaKCKP::seed_from_vertices(std::span<const Vertex> vertices, Workspace& 
 ygg::uint_t DeltaKCKP::choose_best_partition(size_t depth, const Workspace& workspace) const
 {
     auto best_partition = std::numeric_limits<ygg::uint_t>::max();
-    auto best_set_bits = std::numeric_limits<ygg::uint_t>::max();
-    const auto current_row = workspace.compatible_vertices(depth);
-
-    for (ygg::uint_t partition = 0; partition < m_layout->num_partitions; ++partition)
+    auto best_size = std::numeric_limits<size_t>::max();
+    for (ygg::uint_t partition = 0; partition < m_graph->num_parts(); ++partition)
     {
         if (workspace.partition_bits.contains(partition))
             continue;
 
-        const auto& info = m_layout->info.infos[partition];
-        const auto current = urd::bitset_span<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        const auto num_set_bits = current.count();
-        if (num_set_bits < best_set_bits)
+        const auto size = workspace.candidates_at(depth, partition).size();
+        if (size < best_size)
         {
-            best_set_bits = num_set_bits;
+            best_size = size;
             best_partition = partition;
         }
     }

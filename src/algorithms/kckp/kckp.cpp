@@ -17,50 +17,59 @@
 
 #include "tyr/algorithms/kckp/kckp.hpp"
 
-#include <urd/bits.hpp>
+#include <algorithm>
 
 namespace tyr::kckp
 {
 
+void Workspace::prepare(const Graph& graph)
+{
+    const auto wanted = graph.bounds();
+    if (std::ranges::equal(bounds, wanted))
+        return;
+
+    bounds.assign(wanted.begin(), wanted.end());
+    const auto parts = graph.empty_parts();
+    candidates.clear();
+    for (size_t depth = 0; depth < parts.size(); ++depth)
+        for (const auto& part : parts)
+            candidates.push_back(part);
+    anchor_source = parts;
+    scratch = parts;
+    partition_bits.clear();
+    partial_solution.resize(parts.size());
+}
+
 bool KCKP::seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace) const
 {
-    const auto& layout = m_graph->get_layout();
-    workspace.prepare(layout);
+    const auto& graph = *m_graph;
+    workspace.prepare(graph);
     workspace.partition_bits.clear();
     workspace.partial_solution_size = static_cast<ygg::uint_t>(prefix.size());
 
     for (ygg::uint_t partition = 0; partition < prefix.size(); ++partition)
     {
         const auto vertex = prefix[partition];
-        if (vertex.index >= layout.num_vertices || layout.vertex_to_partition[vertex.index] != partition)
+        if (vertex.index >= graph.num_vertices() || graph.part_of(vertex) != partition)
             return false;
 
         workspace.partial_solution[partition] = vertex;
         workspace.partition_bits.insert(partition);
         for (ygg::uint_t previous = 0; previous < partition; ++previous)
-        {
-            const auto previous_vertex = workspace.partial_solution[previous];
-            const auto bit = layout.vertex_to_bit[vertex.index];
-            if (!m_graph->get_adjacency_matrix().get_bitset(previous_vertex.index, partition).test(bit))
+            if (!graph.adjacent(workspace.partial_solution[previous], vertex))
                 return false;
-        }
     }
 
-    if (prefix.size() == layout.num_partitions)
+    if (prefix.size() == graph.num_parts())
         return true;
 
-    auto initial = workspace.compatible_vertices(0);
-    for (ygg::uint_t partition = static_cast<ygg::uint_t>(prefix.size()); partition < layout.num_partitions; ++partition)
+    for (auto partition = prefix.size(); partition < graph.num_parts(); ++partition)
     {
-        const auto& info = layout.info.infos[partition];
-        auto candidates = urd::bitset_span<uint64_t>(initial.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        candidates.set();
+        auto& candidates = workspace.candidates_at(0, partition);
+        candidates = graph.all(partition);
         for (ygg::uint_t fixed_partition = 0; fixed_partition < prefix.size(); ++fixed_partition)
-        {
-            const auto fixed_vertex = workspace.partial_solution[fixed_partition];
-            candidates &= m_graph->get_adjacency_matrix().get_bitset(fixed_vertex.index, partition);
-        }
-        if (!candidates.any())
+            urd::intersect_neighbours(graph.rows(), workspace.partial_solution[fixed_partition], partition, candidates);
+        if (candidates.empty())
             return false;
     }
     return true;
@@ -68,8 +77,7 @@ bool KCKP::seed_from_prefix(std::span<const Vertex> prefix, Workspace& workspace
 
 ygg::uint_t KCKP::choose_next_partition(ygg::uint_t first_partition, const Workspace& workspace) const noexcept
 {
-    const auto& layout = m_graph->get_layout();
-    for (ygg::uint_t partition = first_partition; partition < layout.num_partitions; ++partition)
+    for (auto partition = first_partition; partition < m_graph->num_parts(); ++partition)
         if (!workspace.partition_bits.contains(partition))
             return partition;
     return std::numeric_limits<ygg::uint_t>::max();
@@ -77,20 +85,14 @@ ygg::uint_t KCKP::choose_next_partition(ygg::uint_t first_partition, const Works
 
 bool KCKP::update_candidates(ygg::uint_t first_partition, Vertex source, size_t depth, Workspace& workspace) const
 {
-    const auto& layout = m_graph->get_layout();
-    const auto current_row = workspace.compatible_vertices(depth);
-    auto next_row = workspace.compatible_vertices(depth + 1);
-    for (ygg::uint_t partition = first_partition; partition < layout.num_partitions; ++partition)
+    for (auto partition = first_partition; partition < m_graph->num_parts(); ++partition)
     {
         if (workspace.partition_bits.contains(partition))
             continue;
 
-        const auto& info = layout.info.infos[partition];
-        const auto source_candidates = urd::bitset_span<const uint64_t>(current_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        auto destination = urd::bitset_span<uint64_t>(next_row.subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-        destination.copy_from(source_candidates);
-        destination &= m_graph->get_adjacency_matrix().get_bitset(source.index, partition);
-        if (!destination.any())
+        auto& next = workspace.candidates_at(depth + 1, partition);
+        urd::intersect_neighbours(m_graph->rows(), source, partition, workspace.candidates_at(depth, partition), next);
+        if (next.empty())
             return false;
     }
     return true;

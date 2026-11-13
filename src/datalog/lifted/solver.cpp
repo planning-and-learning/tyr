@@ -212,15 +212,14 @@ private:
                                        urd::flat_vector<urd::index<formalism::Object>>& binding)
     {
         const auto k = clique.size();
-        const auto& layout = consistency_graph.get_graph_layout();
+        const auto& graph = consistency_graph.get_graph();
 
         binding.resize(k);
 
         for (ygg::uint_t p = 0; p < k; ++p)
         {
-            const auto vertex = clique[p].index;
-            assert(layout.vertex_to_partition[vertex] == p);
-            binding[p] = urd::index<formalism::Object>(layout.vertex_labels[vertex]);
+            assert(graph.part_of(clique[p]) == p);
+            binding[p] = urd::index<formalism::Object>(graph.label(clique[p]));
         }
     }
 
@@ -496,7 +495,7 @@ private:
         {
             for (const auto atom : rows(delta_fact_sets, infos[i].predicate.value))
             {
-                if (!match_anchor(graph.get_graph_layout(), infos[i], atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
+                if (!match_anchor(graph.get_graph(), infos[i], atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
                     continue;
 
                 kckp_algorithm.for_each_hyperedge_clique(
@@ -518,7 +517,7 @@ private:
 
     /// The vertices of the atom's objects at the literal's parameters, if the atom matches its constants and repeated parameters.
     /// vertices is a per-worker scratch buffer, reused across anchors to avoid allocations.
-    static bool match_anchor(const kckp::GraphLayout& layout,
+    static bool match_anchor(const kckp::Graph& graph,
                              const details::RuleToLiteralInfo<formalism::FluentTag>& info,
                              const auto& objects,
                              urd::Store<urd::sequence<kckp::Vertex>>& vertices)
@@ -537,7 +536,7 @@ private:
             const auto object = objects[positions.front()];
             if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position] == object; }))
                 return false;
-            const auto vertex = layout.find_vertex(parameter, ygg::uint_t(object.value));
+            const auto vertex = graph.find_vertex(parameter, ygg::uint_t(object.value));
             if (!vertex)
                 return false;
             vertices.push_back(*vertex);

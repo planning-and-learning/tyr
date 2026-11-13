@@ -16,7 +16,6 @@
 #include <fmt/ostream.h>
 #include <span>
 #include <sstream>
-#include <urd/bits.hpp>
 #include <urd/format.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -47,60 +46,6 @@ struct formatter<tyr::kckp::Edge, char>
 };
 
 template<>
-struct formatter<tyr::kckp::VertexPartitions, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::kckp::VertexPartitions& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "VertexPartitions(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent << "partitions = [";
-            for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
-            {
-                const auto& info = value.layout().info.infos[partition];
-                fmt::print(os, "{}, ", value.get_bitset(info));
-            }
-            os << "]\n";
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
-};
-
-template<>
-struct formatter<tyr::kckp::DeduplicatedAdjacencyMatrix, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::kckp::DeduplicatedAdjacencyMatrix& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "DeduplicatedAdjacencyMatrix(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent << "adjacency lists = [\n";
-            for (ygg::uint_t vertex = 0; vertex < value.layout().num_vertices; ++vertex)
-            {
-                ygg::IndentScope row_scope(os);
-                os << ygg::print_indent;
-                fmt::print(os, "{}: [", vertex);
-                for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
-                    fmt::print(os, "{}, ", value.get_bitset(vertex, partition));
-                os << "]\n";
-            }
-            os << "]\n";
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
-};
-
-template<>
 struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -108,38 +53,37 @@ struct formatter<tyr::kckp::PartitionedAdjacencyMatrix, char>
     template<typename FormatContext>
     auto format(const tyr::kckp::PartitionedAdjacencyMatrix& value, FormatContext& ctx) const
     {
+        const auto print_set = [](std::ostream& os, const tyr::kckp::VertexSet& set)
+        {
+            os << "{";
+            for (const auto vertex : set)
+                fmt::print(os, "{}, ", vertex);
+            os << "}, ";
+        };
+        const auto& graph = value.graph();
         auto os = std::stringstream {};
         os << "PartitionedAdjacencyMatrix(\n";
         {
             ygg::IndentScope scope(os);
             os << ygg::print_indent << "affected partitions = [";
-            for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
-            {
-                const auto& info = value.layout().info.infos[partition];
-                fmt::print(os, "{}, ", value.affected_partitions().get_bitset(info));
-            }
+            for (const auto& set : value.affected_partitions())
+                print_set(os, set);
             os << "]\n";
             os << ygg::print_indent << "delta partitions = [";
-            for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
-            {
-                const auto& info = value.layout().info.infos[partition];
-                fmt::print(os, "{}, ", value.delta_partitions().get_bitset(info));
-            }
+            for (const auto& set : value.delta_partitions())
+                print_set(os, set);
             os << "]\n";
             os << ygg::print_indent << "adjacency lists = [\n";
-            auto adjacency_data = urd::Store<urd::sequence<uint64_t>>(value.layout().info.num_blocks);
-            for (ygg::uint_t vertex = 0; vertex < value.layout().num_vertices; ++vertex)
+            auto adjacency = graph.empty_parts();
+            for (ygg::uint_t vertex = 0; vertex < graph.num_vertices(); ++vertex)
             {
                 ygg::IndentScope row_scope(os);
                 os << ygg::print_indent;
                 fmt::print(os, "{}: [", vertex);
-                for (ygg::uint_t partition = 0; partition < value.layout().num_partitions; ++partition)
+                for (size_t partition = 0; partition < graph.num_parts(); ++partition)
                 {
-                    const auto& info = value.layout().info.infos[partition];
-                    auto adjacency =
-                        urd::bitset_span<uint64_t>(std::span<uint64_t>(adjacency_data).subspan(info.block_offset, info.num_blocks).data(), info.num_bits);
-                    value.copy_adjacency_to(vertex, partition, adjacency);
-                    fmt::print(os, "{}, ", adjacency);
+                    value.copy_adjacency_to(tyr::kckp::Vertex(vertex), partition, adjacency[partition]);
+                    print_set(os, adjacency[partition]);
                 }
                 os << "]\n";
             }

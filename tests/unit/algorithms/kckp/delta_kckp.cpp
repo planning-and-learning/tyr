@@ -53,7 +53,10 @@ namespace tyr::tests
 {
 TEST(TyrKCKPPartitionedAdjacency, ClassifiesPartitionPairsAndRejectsInvalidTableSizes)
 {
-    const auto layout = tyr::kckp::GraphLayout(3, { { 0, 1 }, { 2 } });
+    const auto parts = urd::Store<urd::sequence<size_t>> { 2, 1 };
+    const auto labels = urd::Store<urd::sequence<ygg::uint_t>> { 0, 1, 2 };
+    const auto matrix = tyr::kckp::CompatibilityMatrix(urd::graph_data<std::pair<tyr::kckp::Vertex, tyr::kckp::Vertex>> { 3, {}, parts });
+    const auto layout = tyr::kckp::Graph::create(true, matrix, labels, tyr::kckp::PartPairs { 1, 2 });
     const auto kinds = std::array {
         tyr::kckp::AdjacencyKind::IMPLICIT,
         tyr::kckp::AdjacencyKind::STATIC_ONLY,
@@ -65,8 +68,7 @@ TEST(TyrKCKPPartitionedAdjacency, ClassifiesPartitionPairsAndRejectsInvalidTable
     EXPECT_TRUE(adjacency.is_implicit(0, 0));
     EXPECT_TRUE(adjacency.is_static_only(0, 1));
     EXPECT_TRUE(adjacency.is_runtime(1, 0));
-    EXPECT_EQ(adjacency.get_offset(2, 1, 0), 0);
-    EXPECT_EQ(adjacency.num_blocks(), 1);
+    EXPECT_EQ(adjacency.row(tyr::kckp::Vertex(2), 1, 0), 0);
 
     EXPECT_THROW((tyr::kckp::PartitionedAdjacencyLayout(layout, std::span<const tyr::kckp::AdjacencyKind>(kinds).first(3))), std::invalid_argument);
 }
@@ -114,47 +116,34 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
 
     const auto& static_assignments = program.get_const_program_workspace().engine.assignment_sets;
     const auto& static_graph = pick_workspace->get_static_consistency_graph();
-    const auto& graph_layout = static_graph.get_graph_layout();
+    const auto& graph_layout = static_graph.get_graph();
     const auto& adjacency_layout = static_graph.get_partitioned_adjacency_layout();
-    auto expected_offset = size_t { 0 };
+    auto expected_row = size_t { 0 };
     auto saw_runtime = false;
     auto saw_implicit = false;
-    for (ygg::uint_t pi = 0; pi < graph_layout.num_partitions; ++pi)
+    for (ygg::uint_t pi = 0; pi < graph_layout.num_parts(); ++pi)
     {
-        for (const auto v : graph_layout.vertex_partitions[pi])
+        for (const auto v : graph_layout.part(pi))
         {
-            for (ygg::uint_t pj = 0; pj < graph_layout.num_partitions; ++pj)
+            for (ygg::uint_t pj = 0; pj < graph_layout.num_parts(); ++pj)
             {
                 if (adjacency_layout.is_runtime(pi, pj))
                 {
                     saw_runtime = true;
-                    ASSERT_LT(expected_offset, tyr::kckp::PartitionedAdjacencyLayout::STATIC_ONLY);
-                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), static_cast<ygg::uint_t>(expected_offset));
-                    expected_offset += graph_layout.info.infos[pj].num_blocks;
+                    EXPECT_EQ(adjacency_layout.row(v, pi, pj), expected_row++);
                 }
-                else if (adjacency_layout.is_static_only(pi, pj))
-                {
-                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), tyr::kckp::PartitionedAdjacencyLayout::STATIC_ONLY);
-                }
-                else
-                {
+                else if (adjacency_layout.is_implicit(pi, pj))
                     saw_implicit = true;
-                    EXPECT_EQ(adjacency_layout.get_offset(v, pi, pj), tyr::kckp::PartitionedAdjacencyLayout::IMPLICIT);
-                }
             }
         }
     }
     EXPECT_TRUE(saw_runtime);
     EXPECT_TRUE(saw_implicit);
-    EXPECT_EQ(adjacency_layout.num_blocks(), expected_offset);
 
     auto kckp = tyr::kckp::DeltaKCKP(static_graph.get_graph(), adjacency_layout);
-    EXPECT_EQ(kckp.get_delta_graph().matrix.bitset_data().size(), expected_offset);
-    EXPECT_EQ(kckp.get_full_graph().matrix.bitset_data().size(), expected_offset);
     const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets)
     {
-        kckp.update([&](auto& delta_graph, auto& full_graph)
-                    { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, graph_layout, delta_graph, full_graph); });
+        kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
     update(tyr::datalog::AssignmentSets(static_assignments, empty_assignments));
     update(tyr::datalog::AssignmentSets(static_assignments, initial_assignments));
@@ -166,12 +155,12 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     const auto& delta_edges = kckp.materialize_delta_edges();
     ASSERT_EQ(delta_edges, authoritative_edges);
 
-    const auto& layout = kckp.get_graph_layout();
+    const auto& layout = kckp.get_graph();
     EXPECT_TRUE(std::ranges::any_of(delta_edges,
                                     [&](const auto& edge)
                                     {
-                                        const auto pi = layout.vertex_to_partition[edge.src.index];
-                                        const auto pj = layout.vertex_to_partition[edge.dst.index];
+                                        const auto pi = layout.part_of(edge.src);
+                                        const auto pj = layout.part_of(edge.dst);
                                         return !static_graph.get_variable_dependeny_graph().binary().has_dependency(pi, pj);
                                     }));
 
@@ -254,13 +243,13 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     const auto& static_assignments = program.get_const_program_workspace().engine.assignment_sets;
     const auto& static_graph = move_workspace->get_static_consistency_graph();
     const auto& binary = static_graph.get_variable_dependeny_graph().binary();
-    ASSERT_EQ(static_graph.get_graph_layout().num_partitions, 2);
+    ASSERT_EQ(static_graph.get_graph().num_parts(), 2);
     ASSERT_TRUE(binary.has_dependency(0, 1));
     EXPECT_FALSE((binary.has_literal_dependency<tyr::formalism::FluentTag, tyr::formalism::PositiveTag>(0, 1)));
     EXPECT_FALSE((binary.has_literal_dependency<tyr::formalism::FluentTag, tyr::formalism::NegativeTag>(0, 1)));
     EXPECT_FALSE(binary.has_numeric_dependency(0, 1));
 
-    const auto& layout = static_graph.get_graph_layout();
+    const auto& layout = static_graph.get_graph();
     using Binding = std::array<std::string, 2>;
     const auto collect_edges = [&](const auto& graph)
     {
@@ -271,8 +260,8 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
                 auto binding = Binding {};
                 const auto insert = [&](const tyr::kckp::Vertex vertex)
                 {
-                    const auto parameter = layout.vertex_to_partition[vertex.index];
-                    const auto object = urd::index<tyr::formalism::Object>(layout.vertex_labels[vertex.index]);
+                    const auto parameter = layout.part_of(vertex);
+                    const auto object = urd::index<tyr::formalism::Object>(layout.label(vertex));
                     binding[parameter] = urd::resolve(object, program.get_program_repository()).get_name().str();
                 };
                 insert(edge.src);
@@ -292,12 +281,7 @@ TEST(TyrKCKPDelta, StaticOnlyAdjacencyPreservesFullAndClearsDelta)
     {
         kckp.update(
             [&](auto& delta_graph, auto& full_graph)
-            {
-                static_graph.initialize_dynamic_consistency_graphs(tyr::datalog::AssignmentSets(static_assignments, assignments),
-                                                                   layout,
-                                                                   delta_graph,
-                                                                   full_graph);
-            });
+            { static_graph.initialize_dynamic_consistency_graphs(tyr::datalog::AssignmentSets(static_assignments, assignments), delta_graph, full_graph); });
     };
     update();
     ASSERT_EQ(kckp.get_iteration(), 1);
@@ -398,9 +382,9 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 
     const auto& static_assignments = program.get_const_program_workspace().engine.assignment_sets;
     const auto& static_graph = drive_workspace->get_static_consistency_graph();
-    const auto& layout = static_graph.get_graph_layout();
+    const auto& layout = static_graph.get_graph();
     const auto& adjacency_layout = static_graph.get_partitioned_adjacency_layout();
-    ASSERT_EQ(layout.num_partitions, 3);
+    ASSERT_EQ(layout.num_parts(), 3);
     EXPECT_TRUE(adjacency_layout.is_runtime(0, 1));
     EXPECT_TRUE(adjacency_layout.is_runtime(1, 0));
     EXPECT_TRUE(adjacency_layout.is_static_only(1, 2));
@@ -419,7 +403,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
             auto binding = Binding {};
             for (ygg::uint_t p = 0; p < clique.size(); ++p)
             {
-                const auto object = urd::index<tyr::formalism::Object>(layout.vertex_labels[clique[p].index]);
+                const auto object = urd::index<tyr::formalism::Object>(layout.label(clique[p]));
                 binding[p] = urd::resolve(object, program.get_program_repository()).get_name().str();
             }
             result.push_back(std::move(binding));
@@ -454,8 +438,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
 
     const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets)
     {
-        kckp.update([&](auto& delta_graph, auto& full_graph)
-                    { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, layout, delta_graph, full_graph); });
+        kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
     update(tyr::datalog::AssignmentSets(static_assignments, first_assignments));
     EXPECT_EQ(count_vertices(kckp.get_full_graph()), 5);

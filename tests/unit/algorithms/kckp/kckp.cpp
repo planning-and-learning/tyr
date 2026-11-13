@@ -89,38 +89,26 @@ tyr::analysis::VariableDomain domain(std::initializer_list<ygg::uint_t> values)
 class LabeledGraph
 {
 public:
-    explicit LabeledGraph(tyr::kckp::Graph graph) : m_graph(std::move(graph)), m_domains(m_graph.get_layout().num_partitions)
+    explicit LabeledGraph(tyr::kckp::Graph graph) : m_graph(std::move(graph)), m_domains(m_graph.num_parts())
     {
-        const auto& layout = m_graph.get_layout();
-        for (ygg::uint_t partition = 0; partition < layout.num_partitions; ++partition)
-        {
-            const auto& info = layout.info.infos[partition];
-            auto& objects = m_domains[partition].objects;
-            objects.reserve(info.num_bits);
-            for (ygg::uint_t bit = 0; bit < info.num_bits; ++bit)
-                objects.push_back(get_object(tyr::kckp::Vertex(info.bit_offset + bit)));
-        }
+        for (ygg::uint_t partition = 0; partition < m_graph.num_parts(); ++partition)
+            for (const auto vertex : m_graph.part(partition))
+                m_domains[partition].objects.push_back(get_object(vertex));
     }
 
     [[nodiscard]] const tyr::kckp::Graph& get_graph() const noexcept { return m_graph; }
     [[nodiscard]] bool is_satisfiable() const noexcept { return m_graph.is_satisfiable(); }
     [[nodiscard]] const tyr::analysis::VariableDomainList& get_domains() const noexcept { return m_domains; }
 
-    [[nodiscard]] Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.get_layout().vertex_labels[vertex.index]); }
+    [[nodiscard]] Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.label(vertex)); }
 
     [[nodiscard]] tyr::kckp::Vertex find_vertex(ygg::uint_t partition, Object object) const noexcept
     {
-        const auto& layout = m_graph.get_layout();
-        if (partition >= layout.num_partitions)
+        if (partition >= m_graph.num_parts())
             return {};
-
-        const auto& info = layout.info.infos[partition];
-        for (ygg::uint_t bit = 0; bit < info.num_bits; ++bit)
-        {
-            const auto vertex = tyr::kckp::Vertex(info.bit_offset + bit);
+        for (const auto vertex : m_graph.part(partition))
             if (get_object(vertex) == object)
                 return vertex;
-        }
         return {};
     }
 
@@ -142,18 +130,20 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
             vertex_labels.push_back(static_cast<ygg::uint_t>(object.value));
     }
 
-    const auto layout = tyr::kckp::create_graph_layout(partition_sizes, vertex_labels);
-    auto adjacency = tyr::kckp::AdjacencyMatrix(layout);
-    auto universal_partition_pairs = urd::Store<urd::set<size_t>, urd::dense> {};
+    const auto num_partitions = static_cast<ygg::uint_t>(domains.size());
+    auto adjacency =
+        tyr::kckp::CompatibilityMatrix(urd::graph_data<std::pair<tyr::kckp::Vertex, tyr::kckp::Vertex>> { vertex_labels.size(), {}, partition_sizes });
+    auto first_vertex_of = urd::Store<urd::sequence<ygg::uint_t>>(num_partitions + 1, 0);
+    for (ygg::uint_t partition = 0; partition < num_partitions; ++partition)
+        first_vertex_of[partition + 1] = first_vertex_of[partition] + static_cast<ygg::uint_t>(partition_sizes[partition]);
+    auto universal_partition_pairs = tyr::kckp::PartPairs {};
 
-    for (ygg::uint_t first_partition = 0; first_partition < layout.num_partitions; ++first_partition)
-        for (ygg::uint_t second_partition = first_partition + 1; second_partition < layout.num_partitions; ++second_partition)
+    for (ygg::uint_t first_partition = 0; first_partition < num_partitions; ++first_partition)
+        for (ygg::uint_t second_partition = first_partition + 1; second_partition < num_partitions; ++second_partition)
         {
-            const auto& first_info = layout.info.infos[first_partition];
-            const auto& second_info = layout.info.infos[second_partition];
             auto universal = true;
-            for (ygg::uint_t first_bit = 0; first_bit < first_info.num_bits; ++first_bit)
-                for (ygg::uint_t second_bit = 0; second_bit < second_info.num_bits; ++second_bit)
+            for (ygg::uint_t first_bit = 0; first_bit < partition_sizes[first_partition]; ++first_bit)
+                for (ygg::uint_t second_bit = 0; second_bit < partition_sizes[second_partition]; ++second_bit)
                 {
                     if (!binary_compatible(first_partition,
                                            domains[first_partition].objects[first_bit],
@@ -164,20 +154,18 @@ LabeledGraph make_graph(tyr::analysis::VariableDomainList domains, bool satisfia
                         continue;
                     }
 
-                    const auto first_vertex = first_info.bit_offset + first_bit;
-                    const auto second_vertex = second_info.bit_offset + second_bit;
-                    adjacency.get_bitset(first_vertex, second_partition).set(second_bit);
-                    adjacency.get_bitset(second_vertex, first_partition).set(first_bit);
+                    adjacency.add_edge(tyr::kckp::Vertex(first_vertex_of[first_partition] + first_bit),
+                                       tyr::kckp::Vertex(first_vertex_of[second_partition] + second_bit));
                 }
 
             if (universal)
             {
-                universal_partition_pairs.insert(static_cast<size_t>(first_partition) * layout.num_partitions + second_partition);
-                universal_partition_pairs.insert(static_cast<size_t>(second_partition) * layout.num_partitions + first_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(first_partition) * num_partitions + second_partition);
+                universal_partition_pairs.insert(static_cast<size_t>(second_partition) * num_partitions + first_partition);
             }
         }
 
-    return LabeledGraph(tyr::kckp::Graph::create(satisfiable, std::move(adjacency), universal_partition_pairs));
+    return LabeledGraph(tyr::kckp::Graph::create(satisfiable, adjacency, vertex_labels, universal_partition_pairs));
 }
 
 Extensions enumerate(const LabeledGraph& graph, std::initializer_list<ygg::uint_t> prefix_values, tyr::kckp::Workspace& workspace)
@@ -216,13 +204,6 @@ Extensions enumerate_cliques(const LabeledGraph& graph, tyr::kckp::Workspace& wo
             workspace);
     return result;
 }
-}
-
-TEST(TyrKCKPGraphLayout, UsesVertexIndicesAsDefaultLabels)
-{
-    const auto layout = tyr::kckp::create_graph_layout(urd::Store<urd::sequence<size_t>> { 2, 1 });
-
-    EXPECT_EQ(layout.vertex_labels, (urd::Store<urd::sequence<ygg::uint_t>> { 0, 1, 2 }));
 }
 
 TEST(TyrAnalysisStaticLiteralCompatibility, ProjectsSupportedStaticTuplesExactlyWhenArityAllows)
@@ -362,7 +343,7 @@ TEST(TyrKCKP, ValidatesVertexPrefixes)
 
     EXPECT_EQ(count_extensions({ graph.find_vertex(0, Object(0)) }), 1);
     EXPECT_EQ(count_extensions({ graph.find_vertex(1, Object(2)) }), 0);
-    EXPECT_EQ(count_extensions({ tyr::kckp::Vertex(raw_graph.get_layout().num_vertices) }), 0);
+    EXPECT_EQ(count_extensions({ tyr::kckp::Vertex(static_cast<ygg::uint_t>(raw_graph.num_vertices())) }), 0);
     EXPECT_EQ(count_extensions({ graph.find_vertex(0, Object(0)), graph.find_vertex(1, Object(3)) }), 0);
 }
 

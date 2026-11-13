@@ -54,10 +54,10 @@ void RuleWorkspace<LiftedTag>::Common::clear() noexcept { kckp.reset(); }
 void RuleWorkspace<LiftedTag>::Common::initialize_iteration(const AssignmentSets& assignment_sets)
 {
     kckp.update([&](auto& delta_graph, auto& full_graph)
-                { static_consistency_graph->initialize_dynamic_consistency_graphs(assignment_sets, kckp.get_graph_layout(), delta_graph, full_graph); });
+                { static_consistency_graph->initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
 }
 
-RuleWorkspace<LiftedTag>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag>&, const Common& common) : kckp_workspace(common.kckp.get_graph_layout()) {}
+RuleWorkspace<LiftedTag>::Iteration::Iteration(const ConstRuleWorkspace<LiftedTag>&, const Common& common) : kckp_workspace(common.kckp.get_graph()) {}
 
 void RuleWorkspace<LiftedTag>::Iteration::clear() noexcept { head_updates.clear(); }
 

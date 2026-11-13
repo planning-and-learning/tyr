@@ -184,16 +184,11 @@ public:
                            formalism::datalog::ConjunctiveConditionView<LiftedTag> hyperedge_condition,
                            kckp::Graph compatibility_graph);
 
-    void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
-                                               const kckp::GraphLayout& layout,
-                                               kckp::DeltaGraph& delta_graph,
-                                               kckp::FullGraph& full_graph) const;
+    void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets, kckp::DeltaGraph& delta_graph, kckp::FullGraph& full_graph) const;
 
     [[nodiscard]] const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     [[nodiscard]] const kckp::Graph& get_graph() const noexcept;
-    [[nodiscard]] const kckp::GraphLayout& get_graph_layout() const noexcept;
     [[nodiscard]] const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
-    [[nodiscard]] const kckp::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
     /// Term positions of the hyperedge condition's literals, in its literal order.
     [[nodiscard]] const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& get_hyperedge_indexed_literals() const noexcept;
 

@@ -46,13 +46,12 @@ void for_each_static_extension(const ConstRuleWorkspace<LiftedTag>& rule,
                                Callback callback)
 {
     const auto& graph = rule.get_static_consistency_graph().get_graph();
-    const auto& layout = graph.get_layout();
-    assert(prefix.size() <= layout.num_partitions);
+    assert(prefix.size() <= graph.num_parts());
 
     workspace.prefix.clear();
     for (ygg::uint_t partition = 0; partition < prefix.size(); ++partition)
     {
-        const auto vertex = layout.find_vertex(partition, static_cast<ygg::uint_t>(prefix[partition].value));
+        const auto vertex = graph.find_vertex(partition, static_cast<ygg::uint_t>(prefix[partition].value));
         if (!vertex)
             return;
         workspace.prefix.push_back(*vertex);
@@ -65,7 +64,7 @@ void for_each_static_extension(const ConstRuleWorkspace<LiftedTag>& rule,
         {
             workspace.extension.clear();
             for (const auto vertex : extension)
-                workspace.extension.push_back(urd::index<formalism::Object>(layout.vertex_labels[vertex.index]));
+                workspace.extension.push_back(urd::index<formalism::Object>(graph.label(vertex)));
             callback(std::span<const urd::index<formalism::Object>>(workspace.extension.data(), workspace.extension.size()));
         });
 }

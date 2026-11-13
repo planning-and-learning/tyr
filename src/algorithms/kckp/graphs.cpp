@@ -18,208 +18,111 @@
 #include "tyr/algorithms/kckp/kckp.hpp"
 
 #include <algorithm>
-#include <stdexcept>
-#include <urd/bits.hpp>
-#include <urd/repr/maps/std_map.hpp>
-#include <urd/repr/maps/unordered_flat_map.hpp>
+#include <iterator>
+#include <urd/graph_types.hpp>
 #include <urd/repr/queues/queue.hpp>
-#include <urd/repr/sequences/sequence.hpp>
-#include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
-#include <yggdrasil/core/config.hpp>
 
 namespace tyr::kckp
 {
-namespace
+
+Graph::Graph() : m_rows(urd::graph_data<std::pair<Vertex, Vertex>> { 0, {}, {} }), m_bounds(1, 0) {}
+
+std::optional<Vertex> Graph::find_vertex(size_t p, ygg::uint_t label) const
 {
-[[maybe_unused]] bool verify_vertex_partitions(const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>& partitions)
-{
-    auto expected = ygg::uint_t { 0 };
-    for (const auto& partition : partitions)
-        for (const auto vertex : partition)
-            if (vertex != expected++)
-                return false;
-    return true;
-}
-
-size_t pair_rank(size_t num_partitions, ygg::uint_t first, ygg::uint_t second) noexcept { return static_cast<size_t>(first) * num_partitions + second; }
-}
-
-GraphLayout create_graph_layout(std::span<const size_t> partition_sizes, std::span<const ygg::uint_t> vertex_labels)
-{
-    auto partitions = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> {};
-    partitions.reserve(partition_sizes.size());
-    auto vertex = ygg::uint_t { 0 };
-    for (const auto partition_size : partition_sizes)
-    {
-        auto& partition = partitions.emplace_back();
-        partition.reserve(partition_size);
-        for (size_t i = 0; i < partition_size; ++i)
-            partition.push_back(vertex++);
-    }
-    return GraphLayout(vertex, partitions, vertex_labels);
-}
-
-GraphLayout::GraphLayout(size_t num_vertices_,
-                         const urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>& partitions,
-                         std::span<const ygg::uint_t> labels) :
-    num_vertices(num_vertices_),
-    num_partitions(partitions.size()),
-    vertex_partitions(partitions),
-    vertex_to_partition(num_vertices),
-    vertex_to_bit(num_vertices),
-    vertex_labels(labels.begin(), labels.end())
-{
-    assert(verify_vertex_partitions(partitions));
-    assert(labels.empty() || labels.size() == num_vertices);
-
-    if (labels.empty())
-    {
-        vertex_labels.reserve(num_vertices);
-        for (ygg::uint_t vertex = 0; vertex < num_vertices; ++vertex)
-            vertex_labels.push_back(vertex);
-    }
-
-    auto block_offset = ygg::uint_t { 0 };
-    auto bit_offset = ygg::uint_t { 0 };
-    info.infos.reserve(num_partitions);
-    for (ygg::uint_t partition = 0; partition < num_partitions; ++partition)
-    {
-        const auto partition_size = static_cast<ygg::uint_t>(partitions[partition].size());
-        const auto partition_blocks = static_cast<ygg::uint_t>(urd::bitset_span<uint64_t>::num_blocks(partition_size));
-        info.infos.push_back(BitsetInfo { bit_offset, partition_size, block_offset, partition_blocks });
-        block_offset += partition_blocks;
-
-        auto bit = ygg::uint_t { 0 };
-        for (const auto vertex : partitions[partition])
-        {
-            vertex_to_partition[vertex] = partition;
-            vertex_to_bit[vertex] = bit++;
-            ++bit_offset;
-        }
-    }
-    info.num_blocks = block_offset;
-}
-
-std::optional<Vertex> GraphLayout::find_vertex(ygg::uint_t partition, ygg::uint_t label) const noexcept
-{
-    const auto& vertices = vertex_partitions[partition];
-    const auto label_of = [&](ygg::uint_t vertex) { return vertex_labels[vertex]; };
-    assert(std::ranges::is_sorted(vertices, {}, label_of));
-    const auto it = std::ranges::lower_bound(vertices, label, {}, label_of);
-    if (it == vertices.end() || vertex_labels[*it] != label)
+    const auto first = m_labels.begin() + static_cast<std::ptrdiff_t>(m_bounds[p]);
+    const auto last = m_labels.begin() + static_cast<std::ptrdiff_t>(m_bounds[p + 1]);
+    assert(std::is_sorted(first, last));
+    const auto it = std::lower_bound(first, last, label);
+    if (it == last || *it != label)
         return std::nullopt;
-    return Vertex(*it);
+    return Vertex(static_cast<ygg::uint_t>(it - m_labels.begin()));
 }
 
-DeduplicatedAdjacencyMatrix::DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& matrix) : m_layout(matrix.layout())
+VertexSets Graph::empty_parts() const
 {
-    auto row_to_offset = urd::Store<urd::map<std::span<const uint64_t>, ygg::uint_t>> {};
-    auto partition_to_offset = urd::Store<urd::map<urd::bitset_span<const uint64_t>, ygg::uint_t>> {};
-    for (ygg::uint_t vertex = 0; vertex < m_layout.num_vertices; ++vertex)
-    {
-        const auto [row_it, new_row] = row_to_offset.emplace(matrix.get_row(vertex), m_row_data.size());
-        m_row_offset.push_back(row_it->second);
-        if (!new_row)
-            continue;
-
-        for (ygg::uint_t partition = 0; partition < m_layout.num_partitions; ++partition)
-        {
-            const auto bitset = matrix.get_bitset(vertex, partition);
-            const auto [partition_it, new_partition] = partition_to_offset.emplace(bitset, m_bitset_data.size());
-            m_row_data.push_back(partition_it->second);
-            if (new_partition)
-                m_bitset_data.insert(m_bitset_data.end(), bitset.blocks().begin(), bitset.blocks().end());
-        }
-    }
+    auto result = VertexSets {};
+    for (size_t p = 0; p < num_parts(); ++p)
+        result.emplace_back(urd::key_range<Vertex> { Vertex(static_cast<ygg::uint_t>(m_bounds[p])), Vertex(static_cast<ygg::uint_t>(m_bounds[p + 1])) });
+    return result;
 }
 
-Graph::Graph() : m_layout(create_graph_layout(std::span<const size_t> {})), m_adjacency(m_layout) {}
-
-Graph Graph::create(bool satisfiable, AdjacencyMatrix adjacency, const urd::Store<urd::set<size_t>, urd::dense>& universal_partition_pairs)
-{ return Graph(satisfiable, std::move(adjacency), universal_partition_pairs); }
-
-Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, const urd::Store<urd::set<size_t>, urd::dense>& universal_partition_pairs)
+Graph Graph::create(bool satisfiable, const CompatibilityMatrix& matrix, std::span<const ygg::uint_t> labels, const PartPairs& universal)
 {
-    const auto old_layout = adjacency.layout();
+    const auto num_vertices = matrix.num_vertices();
+    const auto num_parts = matrix.num_parts();
+    assert(labels.size() == num_vertices);
+    const auto constrained = [&](size_t first, size_t second) { return first != second && !universal.contains(first * num_parts + second); };
 
-    auto live = VertexPartitions(old_layout);
-    if (satisfiable)
-        for (ygg::uint_t partition = 0; partition < old_layout.num_partitions; ++partition)
+    auto live = VertexSet(urd::key_range<Vertex> { Vertex(0), Vertex(static_cast<ygg::uint_t>(num_vertices)) });
+    auto live_in_part = urd::Store<urd::sequence<size_t>>(num_parts, 0);
+    for (size_t p = 0; p < num_parts; ++p)
+        for (const auto v : matrix.part(p))
         {
-            auto bits = live.get_bitset(partition);
-            bits.set();
-            if (bits.empty())
-                satisfiable = false;
+            live.insert(v);
+            ++live_in_part[p];
         }
+    if (std::ranges::find(live_in_part, size_t { 0 }) != live_in_part.end())
+        satisfiable = false;
     if (!satisfiable)
-        live.reset();
+        live.clear();
 
-    auto removed = urd::Store<urd::queue<ygg::uint_t>, urd::fifo> {};
-    auto wiped_out = !satisfiable && old_layout.num_partitions != 0;
-    const auto remove_vertex = [&](ygg::uint_t vertex)
+    // Arc consistency: a vertex without a neighbour in some constrained part goes, and with it its support of others.
+    auto removed = urd::Store<urd::queue<Vertex>, urd::fifo> {};
+    auto wiped_out = !satisfiable && num_parts != 0;
+    const auto remove_vertex = [&](Vertex v)
     {
-        const auto partition = old_layout.vertex_to_partition[vertex];
-        auto bits = live.get_bitset(partition);
-        const auto bit = old_layout.vertex_to_bit[vertex];
-        if (!bits.test(bit))
+        if (!live.contains(v))
             return;
-
-        bits.reset(bit);
-        removed.push(vertex);
-        if (bits.none())
+        live.erase(v);
+        removed.push(v);
+        if (--live_in_part[matrix.part_of(v)] == 0)
         {
-            live.reset();
+            live.clear();
             removed.clear();
             wiped_out = true;
         }
     };
 
-    auto support_counts = urd::Store<urd::sequence<ygg::uint_t>>(old_layout.num_vertices * old_layout.num_partitions);
-    if (!wiped_out)
-        for (ygg::uint_t source = 0; source < old_layout.num_vertices && !wiped_out; ++source)
+    auto support_counts = urd::Store<urd::sequence<size_t>>(num_vertices * num_parts);
+    for (const auto source : matrix.vertices())
+    {
+        if (wiped_out)
+            break;
+        for (size_t target_part = 0; target_part < num_parts; ++target_part)
         {
-            const auto source_partition = old_layout.vertex_to_partition[source];
-            for (ygg::uint_t target_partition = 0; target_partition < old_layout.num_partitions; ++target_partition)
+            if (!constrained(matrix.part_of(source), target_part))
+                continue;
+            auto& count = support_counts[(source.index * num_parts) + target_part];
+            count = urd::degree_in(matrix, source, target_part);
+            if (count == 0)
             {
-                if (source_partition == target_partition
-                    || universal_partition_pairs.contains(pair_rank(old_layout.num_partitions, source_partition, target_partition)))
-                    continue;
-
-                auto& count = support_counts[static_cast<size_t>(source) * old_layout.num_partitions + target_partition];
-                count = static_cast<ygg::uint_t>(adjacency.get_bitset(source, target_partition).count());
-                if (count == 0)
-                {
-                    remove_vertex(source);
-                    break;
-                }
+                remove_vertex(source);
+                break;
             }
         }
+    }
 
+    auto supported = urd::Store<urd::sequence<Vertex>> {};
     while (!removed.empty() && !wiped_out)
     {
         const auto target = removed.front();
         removed.pop();
-        const auto target_partition = old_layout.vertex_to_partition[target];
-
-        for (ygg::uint_t source_partition = 0; source_partition < old_layout.num_partitions && !wiped_out; ++source_partition)
+        const auto target_part = matrix.part_of(target);
+        for (size_t source_part = 0; source_part < num_parts && !wiped_out; ++source_part)
         {
-            if (source_partition == target_partition
-                || universal_partition_pairs.contains(pair_rank(old_layout.num_partitions, source_partition, target_partition)))
+            if (!constrained(source_part, target_part))
                 continue;
-
-            const auto& source_info = old_layout.info.infos[source_partition];
-            const auto reverse_supports = adjacency.get_bitset(target, source_partition);
-            auto source_live = live.get_bitset(source_partition);
-            for (auto source_bit = reverse_supports.find_first(); source_bit != urd::bitset_span<const uint64_t>::npos && !wiped_out;
-                 source_bit = reverse_supports.find_next(source_bit))
+            supported.clear();
+            urd::for_each_neighbour_in(matrix, target, source_part, live, [&](Vertex source) { supported.push_back(source); });
+            for (const auto source : supported)
             {
-                if (!source_live.test(source_bit))
+                if (wiped_out)
+                    break;
+                if (!live.contains(source))
                     continue;
-
-                const auto source = source_info.bit_offset + source_bit;
-                auto& count = support_counts[static_cast<size_t>(source) * old_layout.num_partitions + target_partition];
+                auto& count = support_counts[(source.index * num_parts) + target_part];
                 assert(count != 0);
                 if (--count == 0)
                     remove_vertex(source);
@@ -227,57 +130,31 @@ Graph::Graph(bool satisfiable, AdjacencyMatrix adjacency, const urd::Store<urd::
         }
     }
 
-    auto old_to_new = urd::Store<urd::sequence<ygg::uint_t>>(old_layout.num_vertices, std::numeric_limits<ygg::uint_t>::max());
-    auto old_to_new_bit = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(old_layout.num_partitions);
-    auto partition_sizes = urd::Store<urd::sequence<size_t>>(old_layout.num_partitions);
-    auto vertex_labels = urd::Store<urd::sequence<ygg::uint_t>> {};
-    vertex_labels.reserve(old_layout.num_vertices);
-    auto new_vertex = ygg::uint_t { 0 };
-    for (ygg::uint_t partition = 0; partition < old_layout.num_partitions; ++partition)
+    auto kept = urd::induced<CompatibilityMatrix>(matrix, live);
+    for (size_t first = 0; first < num_parts; ++first)
+        for (size_t second = first + 1; second < num_parts; ++second)
+            if (universal.contains((first * num_parts) + second))
+                urd::connect_parts(kept, first, second);
+
+    auto result = Graph();
+    result.m_rows = urd::freeze<StaticRows>(kept);
+    result.m_labels.clear();
+    for (const auto v : live)
+        result.m_labels.push_back(labels[v.index]);
+    result.m_bounds.clear();
+    result.m_bounds.push_back(0);
+    for (size_t p = 0; p < num_parts; ++p)
+        result.m_bounds.push_back(result.m_bounds.back() + static_cast<size_t>(std::ranges::distance(kept.part(p))));
+    for (auto set : result.empty_parts())
     {
-        const auto& info = old_layout.info.infos[partition];
-        auto& bit_mapping = old_to_new_bit[partition];
-        bit_mapping.resize(info.num_bits, std::numeric_limits<ygg::uint_t>::max());
-        const auto live_bits = live.get_bitset(partition);
-        partition_sizes[partition] = live_bits.count();
-        auto compact_bit = ygg::uint_t { 0 };
-        for (auto bit = live_bits.find_first(); bit != urd::bitset_span<const uint64_t>::npos; bit = live_bits.find_next(bit))
-        {
-            vertex_labels.push_back(old_layout.vertex_labels[info.bit_offset + bit]);
-            bit_mapping[bit] = compact_bit++;
-            old_to_new[info.bit_offset + bit] = new_vertex++;
-        }
+        for (const auto v : result.part(result.m_all.size()))
+            set.insert(v);
+        result.m_all.push_back(std::move(set));
     }
-
-    m_satisfiable = satisfiable && std::ranges::all_of(partition_sizes, [](const auto size) { return size != 0; });
-    if (partition_sizes.empty())
-        m_satisfiable = satisfiable;
-    m_layout = create_graph_layout(partition_sizes, vertex_labels);
-
-    auto compact = AdjacencyMatrix(m_layout);
-    for (ygg::uint_t old_source = 0; old_source < old_layout.num_vertices; ++old_source)
-    {
-        const auto compact_source = old_to_new[old_source];
-        if (compact_source == std::numeric_limits<ygg::uint_t>::max())
-            continue;
-        for (ygg::uint_t target_partition = 0; target_partition < old_layout.num_partitions; ++target_partition)
-        {
-            auto new_bits = compact.get_bitset(compact_source, target_partition);
-            const auto source_partition = old_layout.vertex_to_partition[old_source];
-            if (source_partition != target_partition
-                && universal_partition_pairs.contains(pair_rank(old_layout.num_partitions, source_partition, target_partition)))
-            {
-                new_bits.set();
-                continue;
-            }
-
-            const auto old_bits = adjacency.get_bitset(old_source, target_partition);
-            for (auto old_bit = old_bits.find_first(); old_bit != urd::bitset_span<const uint64_t>::npos; old_bit = old_bits.find_next(old_bit))
-                if (const auto compact_bit = old_to_new_bit[target_partition][old_bit]; compact_bit != std::numeric_limits<ygg::uint_t>::max())
-                    new_bits.set(compact_bit);
-        }
-    }
-    m_adjacency = DeduplicatedAdjacencyMatrix(compact);
+    result.m_satisfiable = satisfiable && std::ranges::none_of(result.m_all, [](const auto& set) { return set.empty(); });
+    if (num_parts == 0)
+        result.m_satisfiable = satisfiable;
+    return result;
 }
 
 }

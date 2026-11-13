@@ -53,7 +53,7 @@
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
-#include <urd/bits.hpp>
+#include <urd/graphs.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
@@ -816,17 +816,18 @@ static auto compute_indexed_constraints(formalism::datalog::ConjunctiveCondition
 static auto compute_indexed_literals(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
 { return compute_tagged_indexed_literals(element.get_literals<formalism::FluentTag>(), element.get_arity()); }
 
-static auto classify_adjacency(const kckp::GraphLayout& layout, const formalism::datalog::VariableDependencyGraph& dependency_graph)
+static auto classify_adjacency(const kckp::Graph& graph, const formalism::datalog::VariableDependencyGraph& dependency_graph)
 {
-    assert(layout.num_partitions == dependency_graph.k());
+    const auto num_partitions = graph.num_parts();
+    assert(num_partitions == dependency_graph.k());
     auto result = urd::Store<urd::sequence<kckp::AdjacencyKind>> {};
-    if (layout.num_partitions != 0 && layout.num_partitions > result.max_size() / layout.num_partitions)
+    if (num_partitions != 0 && num_partitions > result.max_size() / num_partitions)
         throw std::overflow_error("StaticConsistencyGraph: partition-pair table size overflow");
-    result.assign(layout.num_partitions * layout.num_partitions, kckp::AdjacencyKind::IMPLICIT);
+    result.assign(num_partitions * num_partitions, kckp::AdjacencyKind::IMPLICIT);
     const auto& dependencies = dependency_graph.binary();
 
-    for (ygg::uint_t pi = 0; pi < layout.num_partitions; ++pi)
-        for (ygg::uint_t pj = 0; pj < layout.num_partitions; ++pj)
+    for (ygg::uint_t pi = 0; pi < num_partitions; ++pi)
+        for (ygg::uint_t pj = 0; pj < num_partitions; ++pj)
         {
             if (!dependencies.has_dependency(pi, pj))
                 continue;
@@ -834,7 +835,7 @@ static auto classify_adjacency(const kckp::GraphLayout& layout, const formalism:
             const auto has_runtime_dependency = dependencies.has_literal_dependency<formalism::FluentTag, formalism::PositiveTag>(pi, pj)
                                                 || dependencies.has_literal_dependency<formalism::FluentTag, formalism::NegativeTag>(pi, pj)
                                                 || dependencies.has_numeric_dependency(pi, pj);
-            result[pi * layout.num_partitions + pj] = has_runtime_dependency ? kckp::AdjacencyKind::RUNTIME : kckp::AdjacencyKind::STATIC_ONLY;
+            result[pi * num_partitions + pj] = has_runtime_dependency ? kckp::AdjacencyKind::RUNTIME : kckp::AdjacencyKind::STATIC_ONLY;
         }
 
     return result;
@@ -849,7 +850,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveCo
     m_unary_overapproximation_vdg(unary_overapproximation_condition),
     m_binary_overapproximation_vdg(binary_overapproximation_condition),
     m_compatibility_graph(std::move(compatibility_graph)),
-    m_partitioned_adjacency_layout(m_compatibility_graph.get_layout(), classify_adjacency(m_compatibility_graph.get_layout(), m_binary_overapproximation_vdg)),
+    m_partitioned_adjacency_layout(m_compatibility_graph, classify_adjacency(m_compatibility_graph, m_binary_overapproximation_vdg)),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_hyperedge_indexed_literals(compute_indexed_literals(hyperedge_condition)),
@@ -859,10 +860,14 @@ StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveCo
 }
 
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
-                                                                   const kckp::GraphLayout& layout,
                                                                    kckp::DeltaGraph& delta_graph,
                                                                    kckp::FullGraph& full_graph) const
 {
+    const auto& graph = m_compatibility_graph;
+    const auto num_partitions = graph.num_parts();
+    const auto vertex_of = [&](ygg::uint_t p, kckp::Vertex v)
+    { return details::Vertex(formalism::ParameterIndex(p), urd::index<formalism::Object>(graph.label(v))); };
+
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
 
     /// 2. Monotonically update full consistent vertices partition
@@ -870,12 +875,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     {
         const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.get_numeric_constraints();
 
-        for (ygg::uint_t p = 0; p < layout.num_partitions; ++p)
+        for (ygg::uint_t p = 0; p < num_partitions; ++p)
         {
-            const auto& info = layout.info.infos[p];
-            auto full_affected_partition = full_graph.affected_partitions.get_bitset(info);
-            auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(info);
-            auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(info);
+            auto& full_affected_partition = full_graph.affected_partitions[p];
+            auto& delta_affected_partition = delta_graph.affected_partitions[p];
+            auto& delta_delta_partition = delta_graph.delta_partitions[p];
 
             // Implicit case doesnt exist for vertices, so we dont need to check for that here.
 
@@ -886,35 +890,31 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
             // Static-only case.
             if (!has_runtime_dependency)
             {
-                delta_affected_partition.set();
-                delta_delta_partition.set();
+                delta_affected_partition = graph.all(p);
                 delta_affected_partition -= full_affected_partition;
-                delta_delta_partition -= full_affected_partition;
-                full_affected_partition.set();
+                delta_delta_partition = delta_affected_partition;
+                full_affected_partition = graph.all(p);
+                continue;
             }
-            else
-            {
-                // Runtime-filtered case.
-                for_each_bit(
-                    [&](auto&& bit)
-                    {
-                        const auto v = info.bit_offset + bit;
-                        const auto vertex = details::Vertex(formalism::ParameterIndex(p), urd::index<formalism::Object>(layout.vertex_labels[v]));
 
-                        if (details::consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
-                            && details::consistent_numeric_constraints(vertex,
-                                                                       unary_overapproximation_constraints,
-                                                                       m_unary_overapproximation_indexed_constraints,
-                                                                       assignment_sets))
-                        {
-                            /// Process delta consistent vertex.
-                            full_affected_partition.set(bit);
-                            delta_affected_partition.set(bit);
-                            delta_delta_partition.set(bit);
-                        }
-                    },
-                    [](auto&& a) noexcept { return ~a; },
-                    full_affected_partition);
+            // Runtime-filtered case.
+            for (const auto v : graph.part(p))
+            {
+                if (full_affected_partition.contains(v))
+                    continue;
+
+                const auto vertex = vertex_of(p, v);
+                if (details::consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                    && details::consistent_numeric_constraints(vertex,
+                                                               unary_overapproximation_constraints,
+                                                               m_unary_overapproximation_indexed_constraints,
+                                                               assignment_sets))
+                {
+                    /// Process delta consistent vertex.
+                    full_affected_partition.insert(v);
+                    delta_affected_partition.insert(v);
+                    delta_delta_partition.insert(v);
+                }
             }
         }
     }
@@ -924,30 +924,25 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     {
         const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
 
-        for (ygg::uint_t pi = 0; pi < layout.num_partitions; ++pi)
+        for (ygg::uint_t pi = 0; pi < num_partitions; ++pi)
         {
-            const auto& info_i = layout.info.infos[pi];
-            auto offset_i = info_i.bit_offset;
+            const auto& full_affected_partition_i = full_graph.affected_partitions[pi];
+            auto& delta_affected_partition_i = delta_graph.affected_partitions[pi];
+            const auto& delta_delta_partition_i = delta_graph.delta_partitions[pi];
 
-            const auto full_affected_partition_i = full_graph.affected_partitions.get_bitset(info_i);
-            auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
-            const auto delta_delta_partition_i = delta_graph.delta_partitions.get_bitset(info_i);
-
-            for (ygg::uint_t pj = pi + 1; pj < layout.num_partitions; ++pj)
+            for (ygg::uint_t pj = pi + 1; pj < num_partitions; ++pj)
             {
-                const auto& info_j = layout.info.infos[pj];
-                auto offset_j = info_j.bit_offset;
-
-                const auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
-                auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
-                const auto delta_delta_partition_j = delta_graph.delta_partitions.get_bitset(info_j);
+                const auto& full_affected_partition_j = full_graph.affected_partitions[pj];
+                auto& delta_affected_partition_j = delta_graph.affected_partitions[pj];
+                const auto& delta_delta_partition_j = delta_graph.delta_partitions[pj];
+                auto& new_edges = delta_graph.scratch[pj];
 
                 if (m_partitioned_adjacency_layout.is_implicit(pi, pj))
                 {
-                    if (delta_delta_partition_i.any())
+                    if (!delta_delta_partition_i.empty())
                         delta_affected_partition_j |= full_affected_partition_j;
 
-                    if (delta_delta_partition_j.any())
+                    if (!delta_delta_partition_j.empty())
                         delta_affected_partition_i |= full_affected_partition_i;
 
                     continue;
@@ -955,89 +950,49 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                 if (m_partitioned_adjacency_layout.is_static_only(pi, pj))
                 {
-                    const auto target_changed = delta_delta_partition_j.any();
-                    if (!target_changed && !delta_delta_partition_i.any())
+                    const auto target_changed = !delta_delta_partition_j.empty();
+                    if (!target_changed && delta_delta_partition_i.empty())
                         continue;
-                    const auto sources = target_changed ? full_affected_partition_i : delta_delta_partition_i;
-                    for (auto bi = sources.find_first(); bi != urd::bitset_span<const uint64_t>::npos; bi = sources.find_next(bi))
+                    for (const auto vi : target_changed ? full_affected_partition_i : delta_delta_partition_i)
                     {
-                        const auto vi = offset_i + bi;
-                        const auto static_blocks = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj).blocks();
-                        const auto target_blocks = (delta_delta_partition_i.test(bi) ? full_affected_partition_j : delta_delta_partition_j).blocks();
-                        auto affected_blocks = delta_affected_partition_j.blocks();
-                        auto source_is_affected = false;
-                        for (size_t block = 0; block < static_blocks.size(); ++block)
-                        {
-                            const auto new_edges = static_blocks[block] & target_blocks[block];
-                            affected_blocks[block] |= new_edges;
-                            source_is_affected |= new_edges != 0;
-                        }
-                        if (source_is_affected)
-                            delta_affected_partition_i.set(bi);
+                        urd::intersect_neighbours(graph.rows(),
+                                                  vi,
+                                                  pj,
+                                                  delta_delta_partition_i.contains(vi) ? full_affected_partition_j : delta_delta_partition_j,
+                                                  new_edges);
+                        if (new_edges.empty())
+                            continue;
+                        delta_affected_partition_j |= new_edges;
+                        delta_affected_partition_i.insert(vi);
                     }
                     continue;
                 }
 
                 assert(m_partitioned_adjacency_layout.is_runtime(pi, pj));
 
-                for (auto bi = full_affected_partition_i.find_first(); bi != urd::bitset_span<const uint64_t>::npos;
-                     bi = full_affected_partition_i.find_next(bi))
+                for (const auto vi : full_affected_partition_i)  ///< vi is consistent + delta
                 {
-                    const auto vi = offset_i + bi;  ///< vi is consistent + delta
+                    // The static neighbours of vi among the consistent vertices, without the edges found before.
+                    urd::intersect_neighbours(graph.rows(), vi, pj, full_affected_partition_j, new_edges);
+                    new_edges -= full_graph.matrix.runtime_neighbours(vi, pj);
 
-                    const auto static_edges = m_compatibility_graph.get_adjacency_matrix().get_bitset(vi, pj);
-                    auto full_edges_i = full_graph.matrix.get_runtime_bitset(vi, pj);
-                    auto delta_edges_i = delta_graph.matrix.get_runtime_bitset(vi, pj);
-
-                    auto process_delta_edge = [&](auto&& bj)
+                    const auto vertex_i = vertex_of(pi, vi);
+                    for (const auto vj : new_edges)
                     {
-                        const auto vj = offset_j + bj;
-
-                        // Set edges
-                        full_edges_i.set(bj);
-                        full_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
-
-                        delta_edges_i.set(bj);
-                        delta_graph.matrix.get_runtime_bitset(vj, pi).set(bi);
-
-                        // Set/test affected partitions
-                        assert(full_affected_partition_i.test(bi));
-                        assert(full_affected_partition_j.test(bj));
-                        delta_affected_partition_i.set(bi);
-                        delta_affected_partition_j.set(bj);
-
-                        // Set touched partitions
-                        delta_graph.matrix.touch_partition(vi, pj);
-                        full_graph.matrix.touch_partition(vi, pj);
-                        delta_graph.matrix.touch_partition(vj, pi);
-                        full_graph.matrix.touch_partition(vj, pi);
-                    };
-
-                    const auto vertex_i = details::Vertex(formalism::ParameterIndex(pi), urd::index<formalism::Object>(layout.vertex_labels[vi]));
-
-                    for_each_bit(
-                        [&](auto&& bj)
+                        const auto edge = details::Edge(vertex_i, vertex_of(pj, vj));
+                        if (details::consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                            && details::consistent_numeric_constraints(edge,
+                                                                       binary_overapproximation_constraints,
+                                                                       m_binary_overapproximation_indexed_constraints,
+                                                                       assignment_sets))
                         {
-                            const auto vj = offset_j + bj;
-
-                            const auto vertex_j = details::Vertex(formalism::ParameterIndex(pj), urd::index<formalism::Object>(layout.vertex_labels[vj]));
-
-                            const auto edge = details::Edge(vertex_i, vertex_j);
-
-                            if (details::consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
-                                && details::consistent_numeric_constraints(edge,
-                                                                           binary_overapproximation_constraints,
-                                                                           m_binary_overapproximation_indexed_constraints,
-                                                                           assignment_sets))
-                            {
-                                /// Process delta consistent edge.
-                                process_delta_edge(bj);
-                            }
-                        },
-                        [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
-                        static_edges,
-                        full_affected_partition_j,
-                        full_edges_i);
+                            /// Process delta consistent edge.
+                            full_graph.matrix.add_edge(vi, vj);
+                            delta_graph.matrix.add_edge(vi, vj);
+                            delta_affected_partition_i.insert(vi);
+                            delta_affected_partition_j.insert(vj);
+                        }
+                    }
                 }
             }
         }
@@ -1049,11 +1004,7 @@ const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_v
 
 const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m_compatibility_graph; }
 
-const kckp::GraphLayout& StaticConsistencyGraph::get_graph_layout() const noexcept { return m_compatibility_graph.get_layout(); }
-
 const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_adjacency_layout() const noexcept { return m_partitioned_adjacency_layout; }
-
-const kckp::DeduplicatedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_compatibility_graph.get_adjacency_matrix(); }
 
 const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& StaticConsistencyGraph::get_hyperedge_indexed_literals() const noexcept
 { return m_hyperedge_indexed_literals; }
