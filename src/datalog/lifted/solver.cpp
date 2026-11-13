@@ -484,7 +484,7 @@ private:
             return;
 
         const auto& graph = cws_rule.get_static_consistency_graph();
-        const auto& infos = graph.get_hyperedge_indexed_literals().infos;
+        const auto& anchors = graph.get_hyperedge_literals();
         const auto& delta_fact_sets = rctx.stratum_out().program().facts().delta_fact_sets;
         auto wrctx = rctx.get_rule_worker_execution_context();
         auto& out = wrctx.out();
@@ -493,9 +493,9 @@ private:
 
         for (size_t i = 0; i < literals.size(); ++i)
         {
-            for (const auto atom : rows(delta_fact_sets, infos[i].predicate.value))
+            for (const auto atom : rows(delta_fact_sets, anchors.heads[i].predicate.value))
             {
-                if (!match_anchor(graph.get_graph(), infos[i], atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
+                if (!match_anchor(graph.get_graph(), anchors, i, atom.template get<urd::index<formalism::Object>>(), out.anchor_vertices()))
                     continue;
 
                 kckp_algorithm.for_each_hyperedge_clique(
@@ -515,26 +515,28 @@ private:
         }
     }
 
-    /// The vertices of the atom's objects at the literal's parameters, if the atom matches its constants and repeated parameters.
+    /// The vertices of the atom's objects at literal `literal`'s parameters, if the atom matches its constants and repeated parameters.
     /// vertices is a per-worker scratch buffer, reused across anchors to avoid allocations.
     static bool match_anchor(const kckp::Graph& graph,
-                             const details::RuleToLiteralInfo<formalism::FluentTag>& info,
+                             const details::Literals<formalism::FluentTag>& literals,
+                             size_t literal,
                              const auto& objects,
                              urd::Store<urd::sequence<kckp::Vertex>>& vertices)
     {
-        for (const auto& [position, object] : info.position_mappings.constant_positions)
-            if (objects[position] != object)
+        const auto terms = literals.terms[literal];
+        for (const auto& term : terms)
+            if (term.constant && objects[term.position] != urd::index<formalism::Object>(term.value))
                 return false;
 
         vertices.clear();
-        const auto& parameter_to_positions = info.position_mappings.parameter_to_positions;
-        for (ygg::uint_t parameter = 0; parameter < parameter_to_positions.size(); ++parameter)
+        for (ygg::uint_t parameter = 0; parameter < literals.arity; ++parameter)
         {
-            const auto& positions = parameter_to_positions[parameter];
-            if (positions.empty())
+            const auto at = [parameter](const details::Term& term) { return !term.constant && term.value == parameter; };
+            const auto first = std::ranges::find_if(terms, at);
+            if (first == terms.end())
                 continue;
-            const auto object = objects[positions.front()];
-            if (!std::ranges::all_of(positions, [&](const auto position) { return objects[position] == object; }))
+            const auto object = objects[first->position];
+            if (!std::ranges::all_of(terms, [&](const details::Term& term) { return !at(term) || objects[term.position] == object; }))
                 return false;
             const auto vertex = graph.find_vertex(parameter, ygg::uint_t(object.value));
             if (!vertex)

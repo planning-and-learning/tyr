@@ -49,13 +49,16 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 
+#include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <urd/graphs.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
 #include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
@@ -67,370 +70,188 @@ namespace details
 namespace
 {
 
-/**
- * Vertex
- */
-
-template<formalism::FactKind T>
-inline bool consistent_literals(const Vertex& vertex,
-                                const TaggedRuleToLiteralInfos<T>& indexed_literals,
-                                const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+/// Where a term's object comes from: the vertex's (or the edge's first vertex's) parameter p, the edge's second vertex's
+/// parameter q, or a constant; or nowhere, a term of another parameter.
+enum class Source : std::uint8_t
 {
-    const auto object_index = vertex.get_object_index();
-    const auto parameter_index = vertex.get_parameter_index();
+    p,
+    q,
+    constant,
+    unbound,
+};
 
-    // std::cout << "Vertex: " << *this << std::endl;
+/// The assignments a check reads, as bits: of one term from source s, and of two terms from sources s and t.
+constexpr std::uint16_t single(Source s) noexcept { return static_cast<std::uint16_t>(1U << static_cast<unsigned>(s)); }
+constexpr std::uint16_t pair(Source s, Source t) noexcept
+{
+    const auto first = static_cast<unsigned>(s);
+    const auto second = static_cast<unsigned>(t);
+    return static_cast<std::uint16_t>(1U << (4U + (3U * std::min(first, second)) + std::max(first, second)));
+}
 
-    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos[parameter_index.value])
+/// A vertex reads its parameter's terms, alone and with each constant, and the constants alone.
+constexpr auto at_vertex = static_cast<std::uint16_t>(single(Source::p) | single(Source::constant) | pair(Source::p, Source::constant));
+/// An edge reads its literals' terms of p with those of q, and of p or q with each constant: what its vertices do not.
+constexpr auto at_edge = static_cast<std::uint16_t>(pair(Source::p, Source::q) | pair(Source::p, Source::constant) | pair(Source::q, Source::constant));
+/// A function term's interval at an edge: everything an edge and both its vertices read, and the constants in pairs.
+constexpr auto at_edge_interval = static_cast<std::uint16_t>(at_vertex | at_edge | single(Source::q) | pair(Source::constant, Source::constant));
+
+inline std::uint16_t interval_assignments(const Vertex&) noexcept { return at_vertex; }
+inline std::uint16_t interval_assignments(const Edge&) noexcept { return at_edge_interval; }
+
+/// Where a term's object comes from at a vertex: its parameter (p) or a constant.
+inline Source source_of(const Term& term, const Vertex& vertex) noexcept
+{
+    if (term.constant)
+        return Source::constant;
+    return term.value == vertex.get_parameter_index().value ? Source::p : Source::unbound;
+}
+/// At an edge: the parameter of its first vertex (p), of its second (q), or a constant.
+inline Source source_of(const Term& term, const Edge& edge) noexcept
+{
+    if (term.constant)
+        return Source::constant;
+    if (term.value == edge.vi().get_parameter_index().value)
+        return Source::p;
+    return term.value == edge.vj().get_parameter_index().value ? Source::q : Source::unbound;
+}
+
+inline urd::index<formalism::Object> object_of(const Term& term, Source from, const Vertex& vertex) noexcept
+{ return from == Source::constant ? urd::index<formalism::Object>(term.value) : vertex.get_object_index(); }
+inline urd::index<formalism::Object> object_of(const Term& term, Source from, const Edge& edge) noexcept
+{
+    if (from == Source::constant)
+        return urd::index<formalism::Object>(term.value);
+    return from == Source::p ? edge.vi().get_object_index() : edge.vj().get_object_index();
+}
+
+/// f(assignment) for each assignment `wanted` names of the terms a vertex or an edge binds, the constants included:
+/// positions in increasing order, so a pair is sorted as an EdgeAssignment is. f returns false to stop; whether none did.
+template<typename Terms, typename GraphStructure, typename F>
+inline bool for_each_assignment(const Terms& terms, const GraphStructure& structure, std::uint16_t wanted, F f) noexcept
+{
+    const auto source = [&](const Term& term) { return source_of(term, structure); };
+    const auto object = [&](const Term& term, Source from) { return object_of(term, from, structure); };
+
+    for (size_t i = 0; i < terms.size(); ++i)
     {
-        const auto& info = indexed_literals.infos[lit_id];
-        const auto predicate = info.predicate;
-        const auto polarity = info.polarity;
-
-        assert(polarity || info.kckp_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
-
-        const auto& pred_set = predicate_assignment_sets.get_set(predicate);
-
-        for (const auto position : info.position_mappings.parameter_to_positions[parameter_index.value])
+        const auto& first = terms[i];
+        const auto first_source = source(first);
+        if (first_source == Source::unbound)
+            continue;
+        const auto first_object = object(first, first_source);
+        if ((wanted & single(first_source)) != 0 && !f(VertexAssignment(formalism::ParameterIndex(first.position), first_object)))
+            return false;
+        for (size_t j = i + 1; j < terms.size(); ++j)
         {
-            {
-                auto assignment = VertexAssignment(formalism::ParameterIndex(position), object_index);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                const auto true_assignment = pred_set.at(assignment);
-
-                if (polarity != true_assignment)
-                    return false;
-            }
-
-            {
-                /// constant c with position pos_c < pos_p or pos_c > pos_p
-                /// E.g. (category_round V0 tharvest)
-                for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-                {
-                    assert(position != pos_c);
-
-                    auto first_pos = position;
-                    auto second_pos = pos_c;
-                    auto first_obj = object_index;
-                    auto second_obj = obj_c;
-
-                    if (first_pos > second_pos)
-                    {
-                        std::swap(first_pos, second_pos);
-                        std::swap(first_obj, second_obj);
-                    }
-
-                    auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                    assert(assignment.is_valid());
-
-                    // std::cout << assignment << std::endl;
-
-                    if (polarity != pred_set.at(assignment))
-                        return false;
-                }
-            }
-        }
-
-        /// constants c,c' with position pos_c < pos_c'
-        if (info.num_constants >= 1)
-        {
-            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-            {
-                auto assignment = VertexAssignment(formalism::ParameterIndex(pos_c), obj_c);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                if (polarity != pred_set.at(assignment))
-                    return false;
-            }
+            const auto& second = terms[j];
+            const auto second_source = source(second);
+            if (second_source == Source::unbound || (wanted & pair(first_source, second_source)) == 0)
+                continue;
+            if (!f(EdgeAssignment(formalism::ParameterIndex(first.position),
+                                  first_object,
+                                  formalism::ParameterIndex(second.position),
+                                  object(second, second_source))))
+                return false;
         }
     }
+    return true;
+}
 
+/// Whether every assignment `wanted` names of the literals filed at `filed` agrees with its literal's polarity.
+template<formalism::FactKind T, typename Filed, typename GraphStructure>
+inline bool consistent_literals(const Literals<T>& literals,
+                                const Filed& filed,
+                                const GraphStructure& structure,
+                                std::uint16_t wanted,
+                                const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+{
+    for (const auto literal : filed)
+    {
+        const auto& [predicate, polarity] = literals.heads[literal];
+        const auto& set = predicate_assignment_sets.get_set(predicate);
+        if (!for_each_assignment(literals.terms[literal], structure, wanted, [&](const auto& assignment) { return set.at(assignment) == polarity; }))
+            return false;
+    }
     return true;
 }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
+inline bool consistent_literals(const Vertex& vertex, const Literals<T>& literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+{ return consistent_literals(literals, literals.by_parameter[vertex.get_parameter_index().value], vertex, at_vertex, predicate_assignment_sets); }
 
 template<formalism::FactKind T>
-ygg::ClosedInterval<ygg::float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
+inline bool consistent_literals(const Edge& edge, const Literals<T>& literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+{
+    const auto i = edge.vi().get_parameter_index().value;
+    const auto j = edge.vj().get_parameter_index().value;
+    return consistent_literals(literals, literals.by_pair[(std::min(i, j) * literals.arity) + std::max(i, j)], edge, at_edge, predicate_assignment_sets);
+}
+
+/// The interval of function term `term` the assignments a vertex or an edge reads allow.
+template<formalism::FactKind T, typename GraphStructure>
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(const FunctionTerms<T>& terms,
+                                                             urd::index<formalism::FunctionTerm<LiftedTag, T>> term,
+                                                             const GraphStructure& structure,
+                                                             const FunctionAssignmentSets<T>& function_assignment_sets)
+{
+    const auto number = terms.number.at(term);
+    const auto& set = function_assignment_sets.get_set(terms.functions[number]);
+    auto bounds = set.at(EmptyAssignment());
+    if (empty(bounds))
+        return bounds;
+    for_each_assignment(terms.terms[number],
+                        structure,
+                        interval_assignments(structure),
+                        [&](const auto& assignment)
+                        {
+                            bounds = intersect(bounds, set.at(assignment));
+                            return !empty(bounds);
+                        });
+    return bounds;
+}
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
-                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
-                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                       const GraphStructure& structure,
-                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
                                                       const GraphStructure& structure,
-                                                      const RuleToConstraintInfo& constraint_info,
+                                                      const ConstraintTerms& constraint_info,
                                                       const AssignmentSets& assignment_sets);
 
 template<typename GraphStructure>
 bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
                                    const GraphStructure& structure,
-                                   const RuleToConstraintInfo& constraint_info,
+                                   const ConstraintTerms& constraint_info,
                                    const AssignmentSets& assignment_sets);
-
-template<formalism::FactKind T>
-inline ygg::ClosedInterval<ygg::float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
-{
-    const auto object_index = vertex.get_object_index();
-    const auto parameter_index = vertex.get_parameter_index();
-
-    const auto function = info.function;
-    const auto& func_set = function_assignment_sets.get_set(function);
-
-    auto bounds = func_set.at(EmptyAssignment());
-    if (empty(bounds))
-        return bounds;  // early exit
-
-    if (info.num_parameters >= 1)
-    {
-        for (const auto position : info.position_mappings.parameter_to_positions[parameter_index.value])
-        {
-            auto assignment = VertexAssignment(formalism::ParameterIndex(position), object_index);
-            assert(assignment.is_valid());
-
-            // std::cout << assignment << std::endl;
-
-            bounds = intersect(bounds, func_set.at(assignment));
-            if (empty(bounds))
-                return bounds;  // early exit
-
-            if (info.num_constants >= 1)
-            {
-                for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-                {
-                    assert(position != pos_c);
-
-                    auto first_pos = position;
-                    auto second_pos = pos_c;
-                    auto first_obj = object_index;
-                    auto second_obj = obj_c;
-
-                    if (first_pos > second_pos)
-                    {
-                        std::swap(first_pos, second_pos);
-                        std::swap(first_obj, second_obj);
-                    }
-
-                    auto edge_assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                    assert(edge_assignment.is_valid());
-
-                    // std::cout << edge_assignment << std::endl;
-
-                    bounds = intersect(bounds, func_set.at(edge_assignment));
-                    if (empty(bounds))
-                        return bounds;  // early exit
-                }
-            }
-        }
-    }
-
-    if (info.num_constants >= 1)
-    {
-        for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-        {
-            auto assignment = VertexAssignment(formalism::ParameterIndex(pos_c), obj_c);
-            assert(assignment.is_valid());
-
-            // std::cout << assignment << std::endl;
-
-            bounds = intersect(bounds, func_set.at(assignment));
-            if (empty(bounds))
-                return bounds;  // early exit
-        }
-    }
-
-    return bounds;
-}
-
-template<formalism::FactKind T>
-inline ygg::ClosedInterval<ygg::float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
-{
-    auto p = edge.vi().get_parameter_index().value;
-    auto q = edge.vj().get_parameter_index().value;
-    auto obj_p = edge.vi().get_object_index();
-    auto obj_q = edge.vj().get_object_index();
-
-    if (p > q)
-    {
-        std::swap(p, q);
-        std::swap(obj_p, obj_q);
-    }
-
-    // std::cout << "Edge: " << p << " " << q << std::endl;
-
-    const auto& func_set = function_assignment_sets.get_set(info.function);
-
-    auto bounds = func_set.at(EmptyAssignment());
-    if (empty(bounds))
-        return bounds;  // early exit
-
-    bounds = intersect(bounds, consistent_interval(info, edge.vi(), function_assignment_sets));
-    if (empty(bounds))
-        return bounds;  // early exit
-
-    bounds = intersect(bounds, consistent_interval(info, edge.vj(), function_assignment_sets));
-    if (empty(bounds))
-        return bounds;  // early exit
-
-    /// positions where p/q occur in that literal
-    if (info.num_parameters >= 2)
-    {
-        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
-        {
-            for (auto pos_q : info.position_mappings.parameter_to_positions[q])
-            {
-                assert(pos_p != pos_q);
-
-                auto first_pos = pos_p;
-                auto second_pos = pos_q;
-                auto first_obj = obj_p;
-                auto second_obj = obj_q;
-
-                if (first_pos > second_pos)
-                {
-                    std::swap(first_pos, second_pos);
-                    std::swap(first_obj, second_obj);
-                }
-
-                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
-            }
-        }
-    }
-
-    /// constant c with position pos_c < pos_p or pos_c > pos_p
-    if (info.num_parameters >= 1 && info.num_constants >= 1)
-    {
-        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
-        {
-            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-            {
-                assert(pos_p != pos_c);
-
-                auto first_pos = pos_p;
-                auto second_pos = pos_c;
-                auto first_obj = obj_p;
-                auto second_obj = obj_c;
-
-                if (first_pos > second_pos)
-                {
-                    std::swap(first_pos, second_pos);
-                    std::swap(first_obj, second_obj);
-                }
-
-                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
-            }
-        }
-    }
-
-    /// constant c with position pos_c < pos_q or pos_c > pos_q
-    if (info.num_parameters >= 1 && info.num_constants >= 1)
-    {
-        for (auto pos_q : info.position_mappings.parameter_to_positions[q])
-        {
-            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-            {
-                assert(pos_q != pos_c);
-
-                auto first_pos = pos_q;
-                auto second_pos = pos_c;
-                auto first_obj = obj_q;
-                auto second_obj = obj_c;
-
-                if (first_pos > second_pos)
-                {
-                    std::swap(first_pos, second_pos);
-                    std::swap(first_obj, second_obj);
-                }
-
-                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
-            }
-        }
-    }
-
-    /// constants c,c' with position pos_c < pos_c'
-    if (info.num_constants >= 2)
-    {
-        for (ygg::uint_t i = 0; i < info.position_mappings.constant_positions.size(); ++i)
-        {
-            const auto& [first_pos_c, first_obj_c] = info.position_mappings.constant_positions[i];
-
-            for (ygg::uint_t j = i + 1; j < info.position_mappings.constant_positions.size(); ++j)
-            {
-                const auto& [second_pos_c, second_obj_c] = info.position_mappings.constant_positions[j];
-                assert(first_pos_c < second_pos_c);
-
-                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos_c), first_obj_c, formalism::ParameterIndex(second_pos_c), second_obj_c);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
-            }
-        }
-    }
-
-    return bounds;
-}
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
-                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 { return apply(element.get_operator(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets)); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
-                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 {
     return apply(element.get_operator(),
@@ -441,7 +262,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
                                                              const GraphStructure& structure,
-                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 {
     const auto child_fexprs = element.get_args();
@@ -454,27 +275,27 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 }
 
 template<typename GraphStructure>
-inline ygg::ClosedInterval<ygg::float_t> consistent_interval(ygg::float_t value, const GraphStructure&, const RuleToConstraintInfo&, const AssignmentSets&)
+inline ygg::ClosedInterval<ygg::float_t> consistent_interval(ygg::float_t value, const GraphStructure&, const ConstraintTerms&, const AssignmentSets&)
 { return ygg::ClosedInterval<ygg::float_t>(value, value); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag> element,
                                                              const GraphStructure& structure,
-                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{ return consistent_interval(constraint_info.static_infos.infos.at(element.index()), structure, assignment_sets.static_sets().function); }
+{ return consistent_interval(constraint_info.static_terms, element.index(), structure, assignment_sets.static_sets().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag> element,
                                                              const GraphStructure& structure,
-                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{ return consistent_interval(constraint_info.fluent_infos.infos.at(element.index()), structure, assignment_sets.fluent_sets().function); }
+{ return consistent_interval(constraint_info.fluent_terms, element.index(), structure, assignment_sets.fluent_sets().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
                                                              const GraphStructure& structure,
-                                                             const RuleToConstraintInfo& constraint_info,
+                                                             const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
 {
     return visit([&](const auto& arg) { return consistent_interval(arg, structure, constraint_info, assignment_sets); }, element);
@@ -483,7 +304,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 template<typename GraphStructure>
 inline bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorView<LiftedTag> element,
                                           const GraphStructure& structure,
-                                          const RuleToConstraintInfo& constraint_info,
+                                          const ConstraintTerms& constraint_info,
                                           const AssignmentSets& assignment_sets)
 {
     return apply_existential(element.get_operator(),
@@ -491,180 +312,18 @@ inline bool consistent_numeric_constraint(formalism::datalog::BooleanOperatorVie
                              consistent_interval(element.get_rhs(), structure, constraint_info, assignment_sets));
 }
 
-inline bool consistent_numeric_constraints(const Vertex& vertex,
+/// Whether a vertex's or an edge's assignments satisfy every numeric constraint (nullary ones are tested separately).
+template<typename GraphStructure>
+inline bool consistent_numeric_constraints(const GraphStructure& structure,
                                            formalism::datalog::BooleanOperatorListView<LiftedTag> numeric_constraints,
-                                           const RuleToRuleToConstraintInfos& indexed_constraints,
+                                           const urd::Store<urd::sequence<ConstraintTerms>>& constraint_terms,
                                            const AssignmentSets& assignment_sets)
 {
-    assert(numeric_constraints.size() == indexed_constraints.infos.size());
+    assert(numeric_constraints.size() == constraint_terms.size());
 
     for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
-    {
-        const auto numeric_constraint = numeric_constraints[i];
-        const auto& info = indexed_constraints.infos[i];
-
-        assert(kckp_arity(numeric_constraint) > 0);  ///< We test nullary constraints separately.
-
-        if (!consistent_numeric_constraint(numeric_constraint, vertex, info, assignment_sets))
+        if (!consistent_numeric_constraint(numeric_constraints[i], structure, constraint_terms[i], assignment_sets))
             return false;
-    }
-
-    return true;
-}
-
-/**
- * Edge
- */
-
-template<formalism::FactKind T>
-inline bool
-consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
-{
-    auto p = edge.vi().get_parameter_index().value;
-    auto q = edge.vj().get_parameter_index().value;
-    auto obj_p = edge.vi().get_object_index();
-    auto obj_q = edge.vj().get_object_index();
-
-    if (p > q)
-    {
-        std::swap(p, q);
-        std::swap(obj_p, obj_q);
-    }
-
-    // std::cout << "Edge: " << p << " " << q << std::endl;
-
-    /// positions where p/q occur in that literal
-    for (const auto lit_id : indexed_literals.info_mappings.parameter_pairs_to_infos[p][q])
-    {
-        const auto& info = indexed_literals.infos[lit_id];
-        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
-        const auto polarity = info.polarity;
-
-        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
-
-        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
-        {
-            for (auto pos_q : info.position_mappings.parameter_to_positions[q])
-            {
-                assert(pos_p != pos_q);
-
-                auto first_pos = pos_p;
-                auto second_pos = pos_q;
-                auto first_obj = obj_p;
-                auto second_obj = obj_q;
-
-                if (first_pos > second_pos)
-                {
-                    std::swap(first_pos, second_pos);
-                    std::swap(first_obj, second_obj);
-                }
-
-                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                const auto true_assignment = pred_set.at(assignment);
-                if (polarity != true_assignment)
-                    return false;
-            }
-        }
-    }
-
-    /// constant c with position pos_c < pos_p or pos_c > pos_p
-    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[p])
-    {
-        const auto& info = indexed_literals.infos[lit_id];
-        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
-        const auto polarity = info.polarity;
-
-        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
-
-        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
-        {
-            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-            {
-                assert(pos_p != pos_c);
-
-                auto first_pos = pos_p;
-                auto second_pos = pos_c;
-                auto first_obj = obj_p;
-                auto second_obj = obj_c;
-
-                if (first_pos > second_pos)
-                {
-                    std::swap(first_pos, second_pos);
-                    std::swap(first_obj, second_obj);
-                }
-
-                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                if (polarity != pred_set.at(assignment))
-                    return false;
-            }
-        }
-    }
-
-    /// constant c with position pos_c < pos_q or pos_c > pos_q
-    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[q])
-    {
-        const auto& info = indexed_literals.infos[lit_id];
-        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
-        const auto polarity = info.polarity;
-
-        assert(polarity || info.kckp_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
-
-        for (auto pos_q : info.position_mappings.parameter_to_positions[q])
-        {
-            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
-            {
-                assert(pos_q != pos_c);
-
-                auto first_pos = pos_q;
-                auto second_pos = pos_c;
-                auto first_obj = obj_q;
-                auto second_obj = obj_c;
-
-                if (first_pos > second_pos)
-                {
-                    std::swap(first_pos, second_pos);
-                    std::swap(first_obj, second_obj);
-                }
-
-                auto assignment = EdgeAssignment(formalism::ParameterIndex(first_pos), first_obj, formalism::ParameterIndex(second_pos), second_obj);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                if (polarity != pred_set.at(assignment))
-                    return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-inline bool consistent_numeric_constraints(const Edge& edge,
-                                           formalism::datalog::BooleanOperatorListView<LiftedTag> numeric_constraints,
-                                           const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const AssignmentSets& assignment_sets)
-{
-    assert(numeric_constraints.size() == indexed_constraints.infos.size());
-
-    for (ygg::uint_t i = 0; i < numeric_constraints.size(); ++i)
-    {
-        const auto numeric_constraint = numeric_constraints[i];
-        const auto& info = indexed_constraints.infos[i];
-
-        assert(kckp_arity(numeric_constraint) > 1);  ///< We test nullary constraints separately.
-
-        if (!consistent_numeric_constraint(numeric_constraint, edge, info, assignment_sets))
-            return false;
-    }
 
     return true;
 }
@@ -672,149 +331,93 @@ inline bool consistent_numeric_constraints(const Edge& edge,
 }
 }
 
-template<typename Mappings>
-static void initialize_info_mappings(Mappings& mappings, size_t arity)
+/// An element's terms (a literal's atom's or a function term's), in position order.
+template<typename Terms>
+static std::vector<details::Term> terms_of(const Terms& terms)
 {
-    mappings.parameter_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-    mappings.parameter_pairs_to_infos = urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>>(
-        arity,
-        urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity));
-    mappings.parameter_to_infos_with_constants = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-    mappings.infos_with_constants = urd::Store<urd::sequence<ygg::uint_t>> {};
-    mappings.infos_with_constant_pairs = urd::Store<urd::sequence<ygg::uint_t>> {};
-}
-
-/// Records where info's element (a literal's atom or a function term) has parameters and constants among its terms,
-/// and files the element under `index` in mappings by the parameters it has and by whether it has constants.
-template<typename Terms, typename Parameters, typename Info, typename Mappings>
-static void index_terms(const Terms& terms, const Parameters& parameters, ygg::uint_t index, size_t arity, Info& info, Mappings& mappings)
-{
-    info.num_parameters = static_cast<ygg::uint_t>(0);
-    info.num_constants = static_cast<ygg::uint_t>(0);
-    info.position_mappings.constant_positions = urd::Store<urd::sequence<std::pair<ygg::uint_t, urd::index<formalism::Object>>>> {};
-    info.position_mappings.parameter_to_positions = urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>(arity);
-
+    auto result = std::vector<details::Term>();
     for (ygg::uint_t position = 0; position < terms.size(); ++position)
-    {
         visit(
             [&]<typename Alternative>(const Alternative& arg)
             {
                 if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
-                {
-                    info.position_mappings.parameter_to_positions[arg.value].push_back(position);
-                    ++info.num_parameters;
-                }
+                    result.push_back({ position, arg.value, false });
                 else  // formalism::datalog::ObjectView
-                {
-                    info.position_mappings.constant_positions.emplace_back(position, arg.index());
-                    ++info.num_constants;
-                }
+                    result.push_back({ position, static_cast<ygg::uint_t>(arg.index().value), true });
             },
             terms[position]);
-    }
-
-    for (const auto param1 : parameters)
-    {
-        mappings.parameter_to_infos[param1.value].push_back(index);
-
-        for (const auto param2 : parameters)
-        {
-            if (param1 >= param2)
-                continue;
-
-            mappings.parameter_pairs_to_infos[param1.value][param2.value].push_back(index);
-        }
-    }
-
-    if (info.num_constants > 0)
-    {
-        mappings.infos_with_constants.push_back(index);
-        if (info.num_constants > 1)
-            mappings.infos_with_constant_pairs.push_back(index);
-
-        if (info.num_parameters > 0)
-        {
-            for (ygg::uint_t param = 0; param < arity; ++param)
-            {
-                if (!info.position_mappings.parameter_to_positions[param].empty())
-                    mappings.parameter_to_infos_with_constants[param].push_back(index);
-            }
-        }
-    }
+    return result;
 }
 
+template<typename T>
+static details::Rows<T> rows_of(const std::vector<std::vector<T>>& rows)
+{ return details::Rows<T>(rows.begin(), rows.end()); }
+
+/// A condition's literals of fact kind T and where a vertex or an edge reads them.
 template<formalism::FactKind T>
-static auto compute_tagged_indexed_literals(formalism::datalog::LiteralListView<LiftedTag, T> literals, size_t arity)
+static details::Literals<T> literals_of(formalism::datalog::LiteralListView<LiftedTag, T> literals, size_t arity)
 {
-    auto result = details::TaggedRuleToLiteralInfos<T> {};
-
-    initialize_info_mappings(result.info_mappings, arity);
-
+    auto result = details::Literals<T> {};
+    result.arity = arity;
+    auto terms = std::vector<std::vector<details::Term>>();
+    auto by_parameter = std::vector<std::vector<ygg::uint_t>>(arity);
+    auto by_pair = std::vector<std::vector<ygg::uint_t>>(arity * arity);
     for (const auto literal : literals)
     {
-        auto info = details::RuleToLiteralInfo<T> {};
-        info.predicate = literal.get_atom().get_predicate().index();
-        info.polarity = literal.get_polarity();
-        info.kckp_arity = kckp_arity(literal);
-        index_terms(literal.get_atom().get_terms(), formalism::datalog::collect_parameters(literal), result.infos.size(), arity, info, result.info_mappings);
+        const auto number = static_cast<ygg::uint_t>(terms.size());
+        result.heads.push_back({ literal.get_atom().get_predicate().index(), literal.get_polarity() });
+        const auto& element = terms.emplace_back(terms_of(literal.get_atom().get_terms()));
 
-        result.infos.push_back(std::move(info));
+        auto has = std::vector<bool>(arity);
+        auto constants = false;
+        for (const auto& term : element)
+        {
+            if (term.constant)
+                constants = true;
+            else
+                has[term.value] = true;
+        }
+        for (size_t p = 0; p < arity; ++p)
+        {
+            if (has[p])
+                by_parameter[p].push_back(number);
+            for (size_t q = p + 1; q < arity; ++q)
+                if ((has[p] && has[q]) || (constants && (has[p] || has[q])))
+                    by_pair[(p * arity) + q].push_back(number);
+        }
     }
-
+    result.terms = rows_of(terms);
+    result.by_parameter = rows_of(by_parameter);
+    result.by_pair = rows_of(by_pair);
     return result;
 }
 
 template<formalism::FactKind T>
-static auto compute_tagged_indexed_fterms(const urd::Store<urd::sequence<formalism::datalog::FunctionTermView<LiftedTag, T>>>& fterms, size_t arity)
+static details::FunctionTerms<T> function_terms_of(const urd::Store<urd::sequence<formalism::datalog::FunctionTermView<LiftedTag, T>>>& fterms)
 {
-    auto result = details::TaggedRuleToFunctionTermInfos<T> {};
-
-    initialize_info_mappings(result.info_mappings, arity);
-
+    auto result = details::FunctionTerms<T> {};
+    auto terms = std::vector<std::vector<details::Term>>();
     for (const auto fterm : fterms)
     {
-        auto info = details::RuleToFunctionTermInfo<T> {};
-        info.function = fterm.get_function().index();
-        info.kckp_arity = kckp_arity(fterm);
-        index_terms(fterm.get_terms(),
-                    formalism::datalog::collect_parameters(fterm),
-                    static_cast<ygg::uint_t>(fterm.index().value),
-                    arity,
-                    info,
-                    result.info_mappings);
-
-        result.infos.emplace(fterm.index(), std::move(info));
+        result.number.emplace(fterm.index(), static_cast<ygg::uint_t>(terms.size()));
+        result.functions.push_back(fterm.get_function().index());
+        terms.push_back(terms_of(fterm.get_terms()));
     }
-
+    result.terms = rows_of(terms);
     return result;
 }
 
-static auto compute_constraint_info(formalism::datalog::BooleanOperatorView<LiftedTag> element, size_t arity)
+static auto constraint_terms_of(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
 {
-    auto result = details::RuleToConstraintInfo {};
-
-    auto static_fterms = formalism::datalog::collect_fterms<LiftedTag, formalism::StaticTag>(element);
-    auto fluent_fterms = formalism::datalog::collect_fterms<LiftedTag, formalism::FluentTag>(element);
-
-    result.static_infos = compute_tagged_indexed_fterms(static_fterms, arity);
-    result.fluent_infos = compute_tagged_indexed_fterms(fluent_fterms, arity);
-
-    result.kckp_arity = kckp_arity(element);
-
-    return result;
-}
-
-static auto compute_indexed_constraints(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
-{
-    auto result = details::RuleToRuleToConstraintInfos {};
-    result.infos = urd::Store<urd::sequence<details::RuleToConstraintInfo>> {};
+    auto result = urd::Store<urd::sequence<details::ConstraintTerms>> {};
     for (const auto constraint : element.get_numeric_constraints())
-        result.infos.push_back(compute_constraint_info(constraint, element.get_arity()));
+        result.push_back({ function_terms_of(formalism::datalog::collect_fterms<LiftedTag, formalism::StaticTag>(constraint)),
+                           function_terms_of(formalism::datalog::collect_fterms<LiftedTag, formalism::FluentTag>(constraint)) });
     return result;
 }
 
-static auto compute_indexed_literals(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
-{ return compute_tagged_indexed_literals(element.get_literals<formalism::FluentTag>(), element.get_arity()); }
+static auto literals_of(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
+{ return literals_of(element.get_literals<formalism::FluentTag>(), element.get_arity()); }
 
 static auto classify_adjacency(const kckp::Graph& graph, const formalism::datalog::VariableDependencyGraph& dependency_graph)
 {
@@ -851,11 +454,11 @@ StaticConsistencyGraph::StaticConsistencyGraph(formalism::datalog::ConjunctiveCo
     m_binary_overapproximation_vdg(binary_overapproximation_condition),
     m_compatibility_graph(std::move(compatibility_graph)),
     m_partitioned_adjacency_layout(m_compatibility_graph, classify_adjacency(m_compatibility_graph, m_binary_overapproximation_vdg)),
-    m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
-    m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
-    m_hyperedge_indexed_literals(compute_indexed_literals(hyperedge_condition)),
-    m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
-    m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition))
+    m_unary_overapproximation_literals(literals_of(m_unary_overapproximation_condition)),
+    m_binary_overapproximation_literals(literals_of(m_binary_overapproximation_condition)),
+    m_hyperedge_literals(literals_of(hyperedge_condition)),
+    m_unary_overapproximation_constraints(constraint_terms_of(m_unary_overapproximation_condition)),
+    m_binary_overapproximation_constraints(constraint_terms_of(m_binary_overapproximation_condition))
 {
 }
 
@@ -904,10 +507,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     continue;
 
                 const auto vertex = vertex_of(p, v);
-                if (details::consistent_literals(vertex, m_unary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                if (details::consistent_literals(vertex, m_unary_overapproximation_literals, assignment_sets.fluent_sets().predicate)
                     && details::consistent_numeric_constraints(vertex,
                                                                unary_overapproximation_constraints,
-                                                               m_unary_overapproximation_indexed_constraints,
+                                                               m_unary_overapproximation_constraints,
                                                                assignment_sets))
                 {
                     /// Process delta consistent vertex.
@@ -980,10 +583,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     for (const auto vj : new_edges)
                     {
                         const auto edge = details::Edge(vertex_i, vertex_of(pj, vj));
-                        if (details::consistent_literals(edge, m_binary_overapproximation_indexed_literals, assignment_sets.fluent_sets().predicate)
+                        if (details::consistent_literals(edge, m_binary_overapproximation_literals, assignment_sets.fluent_sets().predicate)
                             && details::consistent_numeric_constraints(edge,
                                                                        binary_overapproximation_constraints,
-                                                                       m_binary_overapproximation_indexed_constraints,
+                                                                       m_binary_overapproximation_constraints,
                                                                        assignment_sets))
                         {
                             /// Process delta consistent edge.
@@ -1006,8 +609,7 @@ const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m
 
 const kckp::PartitionedAdjacencyLayout& StaticConsistencyGraph::get_partitioned_adjacency_layout() const noexcept { return m_partitioned_adjacency_layout; }
 
-const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& StaticConsistencyGraph::get_hyperedge_indexed_literals() const noexcept
-{ return m_hyperedge_indexed_literals; }
+const details::Literals<formalism::FluentTag>& StaticConsistencyGraph::get_hyperedge_literals() const noexcept { return m_hyperedge_literals; }
 
 std::pair<formalism::datalog::ConjunctiveConditionView<LiftedTag>, bool>
 create_overapproximation_conjunctive_condition(size_t k,

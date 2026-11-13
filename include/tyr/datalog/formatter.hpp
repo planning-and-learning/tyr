@@ -31,7 +31,6 @@
 #include <limits>
 #include <ostream>
 #include <ranges>
-#include <sstream>
 #include <string>
 #include <vector>
 #include <yggdrasil/core/chrono.hpp>
@@ -75,98 +74,6 @@ struct formatter<tyr::datalog::details::Edge, char>
     template<typename FormatContext>
     auto format(const tyr::datalog::details::Edge& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "[{}, {}]", value.vi(), value.vj()); }
-};
-
-template<>
-struct formatter<tyr::datalog::details::RuleToLiteralInfoMappings, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::details::RuleToLiteralInfoMappings& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "RuleToLiteralInfoMappings(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "parameter to literal infos = ", value.parameter_to_infos);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "parameter pairs to literal infos = ", value.parameter_pairs_to_infos);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "parameter to literal infos with constants = ", value.parameter_to_infos_with_constants);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "literal infos with constants = ", value.infos_with_constants);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "literal infos with constant pairs = ", value.infos_with_constant_pairs);
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
-};
-
-template<>
-struct formatter<tyr::datalog::details::RuleToLiteralPositionMappings, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::details::RuleToLiteralPositionMappings& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "RuleToLiteralPositionMappings(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "constant positions = ", value.constant_positions);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "parameter to positions = ", value.parameter_to_positions);
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::datalog::details::RuleToLiteralInfo<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::details::RuleToLiteralInfo<T>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "RuleToLiteralInfo(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "predicate = ", value.predicate);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "polarity = ", value.polarity);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "position mappings = ", value.position_mappings);
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct formatter<tyr::datalog::details::TaggedRuleToLiteralInfos<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::datalog::details::TaggedRuleToLiteralInfos<T>& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "TaggedRuleToLiteralInfos(\n";
-        {
-            ygg::IndentScope scope(os);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "literal infos = ", value.infos);
-            os << ygg::print_indent;
-            fmt::print(os, "{}{}\n", "info mappings = ", value.info_mappings);
-        }
-        os << ")";
-        return fmt::format_to(ctx.out(), "{}", os.view());
-    }
 };
 
 template<>

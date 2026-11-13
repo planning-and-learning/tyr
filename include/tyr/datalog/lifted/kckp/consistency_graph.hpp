@@ -56,83 +56,60 @@ class StaticConsistencyGraph;
 namespace details
 {
 /**
- * For mapping rule bindings to literal bindings
+ * What a rule's condition checks against the assignment sets
  *
- * Fluent assignment sets are rebuilt once per state and shared across rules. These rule-specific mappings translate vertices and edges into those shared sets
- * without materializing a new compatibility table for every rule and state.
+ * Fluent assignment sets are rebuilt once per state and shared across rules. A rule keeps, per element of its condition
+ * (a literal's atom or a function term), the element's terms, and its literals filed by the parameters they have, so
+ * that a vertex or an edge of the consistency graph reads the assignments it makes from the shared sets.
  */
 
-struct RuleToLiteralInfoMappings
+/// A term of an element: its position, and what is there, a rule parameter or a constant.
+struct Term
 {
-    // For building vertex assignments (p/o)
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> parameter_to_infos;
+    ygg::uint_t position = 0;
+    ygg::uint_t value = 0;  ///< the parameter's index, or the constant's object index
+    bool constant = false;
 
-    // For building edge assignments (p/o,q/c)
-    urd::Store<urd::sequence<urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>>>> parameter_pairs_to_infos;
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> parameter_to_infos_with_constants;
-
-    // For global vertex assignments (c) for constant c
-    urd::Store<urd::sequence<ygg::uint_t>> infos_with_constants;
-    // For global edge assignments (c,c') for constants c,c'
-    urd::Store<urd::sequence<ygg::uint_t>> infos_with_constant_pairs;
+    friend bool operator==(const Term&, const Term&) = default;
 };
 
-struct RuleToLiteralPositionMappings
-{
-    urd::Store<urd::sequence<std::pair<ygg::uint_t, urd::index<formalism::Object>>>> constant_positions;
-    urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> parameter_to_positions;
-};
+/// Per element its terms, in position order; or per filing key its element numbers: rows stored compressed.
+template<typename T>
+using Rows = urd::Store<urd::sequence<urd::Store<urd::sequence<T>, urd::frozen>>>;
 
 template<formalism::FactKind T>
-struct RuleToLiteralInfo
+struct LiteralHead
 {
     urd::index<formalism::Predicate<T>> predicate;
     bool polarity = false;
-    size_t kckp_arity = 0;
-    size_t num_parameters = 0;
-    size_t num_constants = 0;
-
-    RuleToLiteralPositionMappings position_mappings;
 };
 
+/// A condition's literals of fact kind T, numbered in its literal order, and filed by their parameters: a vertex of
+/// parameter p reads the literals at by_parameter[p]; an edge of p < q those at by_pair[p * arity + q], the literals
+/// with p and q, or with p or q and a constant.
 template<formalism::FactKind T>
-struct TaggedRuleToLiteralInfos
+struct Literals
 {
-    urd::Store<urd::sequence<RuleToLiteralInfo<T>>> infos;
-
-    RuleToLiteralInfoMappings info_mappings;
+    urd::Store<urd::sequence<LiteralHead<T>>> heads;
+    Rows<Term> terms;
+    Rows<ygg::uint_t> by_parameter;
+    Rows<ygg::uint_t> by_pair;
+    size_t arity = 0;
 };
 
+/// A numeric constraint's function terms of fact kind T: its terms and function, by the function term.
 template<formalism::FactKind T>
-struct RuleToFunctionTermInfo
+struct FunctionTerms
 {
-    urd::index<formalism::Function<T>> function;
-    size_t kckp_arity = 0;
-    size_t num_parameters = 0;
-    size_t num_constants = 0;
-
-    RuleToLiteralPositionMappings position_mappings;
+    urd::Store<urd::map<urd::index<formalism::FunctionTerm<LiftedTag, T>>, ygg::uint_t>> number;
+    urd::Store<urd::sequence<urd::index<formalism::Function<T>>>> functions;
+    Rows<Term> terms;
 };
 
-template<formalism::FactKind T>
-struct TaggedRuleToFunctionTermInfos
+struct ConstraintTerms
 {
-    urd::Store<urd::map<urd::index<formalism::FunctionTerm<LiftedTag, T>>, RuleToFunctionTermInfo<T>>> infos;
-
-    RuleToLiteralInfoMappings info_mappings;
-};
-
-struct RuleToConstraintInfo
-{
-    TaggedRuleToFunctionTermInfos<formalism::StaticTag> static_infos;
-    TaggedRuleToFunctionTermInfos<formalism::FluentTag> fluent_infos;
-
-    size_t kckp_arity = 0;
-};
-
-struct RuleToRuleToConstraintInfos
-{
-    urd::Store<urd::sequence<RuleToConstraintInfo>> infos;
+    FunctionTerms<formalism::StaticTag> static_terms;
+    FunctionTerms<formalism::FluentTag> fluent_terms;
 };
 
 /**
@@ -189,8 +166,8 @@ public:
     [[nodiscard]] const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     [[nodiscard]] const kckp::Graph& get_graph() const noexcept;
     [[nodiscard]] const kckp::PartitionedAdjacencyLayout& get_partitioned_adjacency_layout() const noexcept;
-    /// Term positions of the hyperedge condition's literals, in its literal order.
-    [[nodiscard]] const details::TaggedRuleToLiteralInfos<formalism::FluentTag>& get_hyperedge_indexed_literals() const noexcept;
+    /// The hyperedge condition's literals, in its literal order.
+    [[nodiscard]] const details::Literals<formalism::FluentTag>& get_hyperedge_literals() const noexcept;
 
 private:
     formalism::datalog::ConjunctiveConditionView<LiftedTag> m_unary_overapproximation_condition;
@@ -202,12 +179,12 @@ private:
     kckp::Graph m_compatibility_graph;
     kckp::PartitionedAdjacencyLayout m_partitioned_adjacency_layout;
 
-    details::TaggedRuleToLiteralInfos<formalism::FluentTag> m_unary_overapproximation_indexed_literals;
-    details::TaggedRuleToLiteralInfos<formalism::FluentTag> m_binary_overapproximation_indexed_literals;
-    details::TaggedRuleToLiteralInfos<formalism::FluentTag> m_hyperedge_indexed_literals;
+    details::Literals<formalism::FluentTag> m_unary_overapproximation_literals;
+    details::Literals<formalism::FluentTag> m_binary_overapproximation_literals;
+    details::Literals<formalism::FluentTag> m_hyperedge_literals;
 
-    details::RuleToRuleToConstraintInfos m_unary_overapproximation_indexed_constraints;
-    details::RuleToRuleToConstraintInfos m_binary_overapproximation_indexed_constraints;
+    urd::Store<urd::sequence<details::ConstraintTerms>> m_unary_overapproximation_constraints;
+    urd::Store<urd::sequence<details::ConstraintTerms>> m_binary_overapproximation_constraints;
 };
 
 extern std::pair<formalism::datalog::ConjunctiveConditionView<GroundTag>, bool>

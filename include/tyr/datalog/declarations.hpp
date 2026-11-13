@@ -96,12 +96,8 @@ struct AggregatedRuleWorkerStatistics;
 
 namespace details
 {
-struct RuleToLiteralInfoMappings;
-struct RuleToLiteralPositionMappings;
 template<formalism::FactKind T>
-struct RuleToLiteralInfo;
-template<formalism::FactKind T>
-struct TaggedRuleToLiteralInfos;
+struct Literals;
 }
 
 struct VertexAssignment;
