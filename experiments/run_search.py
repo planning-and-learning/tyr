@@ -23,16 +23,33 @@ from lab.experiment import ARGPARSER, Experiment
 # Run as a script, this directory is on sys.path; imported as `experiments.run_search`, the repository root is.
 if __package__:
     from experiments.parser_datalog import DatalogParser
+    from experiments.parser_lmcut import LMCutParser
+    from experiments.parser_powerlifted import PowerliftedParser
     from experiments.parser_search import SearchParser
     from experiments.report import BaseReport
 else:
     from parser_datalog import DatalogParser
+    from parser_lmcut import LMCutParser
+    from parser_powerlifted import PowerliftedParser
     from parser_search import SearchParser
     from report import BaseReport
 
 EXPERIMENTS_DIR = Path(__file__).resolve().parent
 REPO = EXPERIMENTS_DIR.parent
 STATE_ENV = "TYR_SEARCH_EXPERIMENT_STATE"
+
+# Each planner's entry point below the how config's build directory; for Powerlifted, that directory is its checkout.
+PLANNER_PATHS = {
+    "astar_eager": "exe/astar_eager",
+    "gbfs_lazy": "exe/gbfs_lazy",
+    "powerlifted": "powerlifted.py",
+}
+PARSERS = {
+    "search": SearchParser,
+    "datalog": DatalogParser,
+    "lmcut": LMCutParser,
+    "powerlifted": PowerliftedParser,
+}
 
 # A JSON object as parsed by `json`; validate_what and validate_how check its values.
 JsonObject = dict[str, Any]
@@ -168,8 +185,8 @@ def validate_what(config: object) -> JsonObject:
     config = _object(config, "what config", required)
     _string(config["name"], "what.name")
 
-    if config["planner"] not in {"astar_eager", "gbfs_lazy"}:
-        msg = "what.planner must be 'astar_eager' or 'gbfs_lazy'"
+    if config["planner"] not in PLANNER_PATHS:
+        msg = f"what.planner must be one of: {', '.join(PLANNER_PATHS)}"
         raise ConfigError(msg)
 
     _object(config["suite_sets"], "what.suite_sets", {"local", "arrhenius"})
@@ -177,9 +194,12 @@ def validate_what(config: object) -> JsonObject:
         _string_list(suites, f"what.suite_sets.{environment}", allow_empty=True)
 
     _validate_configurations(config["configurations"])
+    if config["planner"] == "powerlifted" and any(c["task_kind"] != "lifted" for c in config["configurations"]):
+        msg = "what.configurations of powerlifted must have task_kind 'lifted'"
+        raise ConfigError(msg)
 
     _string_list(config["parsers"], "what.parsers")
-    unknown_parsers = set(config["parsers"]) - {"search", "datalog"}
+    unknown_parsers = set(config["parsers"]) - set(PARSERS)
     if unknown_parsers:
         msg = f"unknown parsers: {', '.join(sorted(unknown_parsers))}"
         raise ConfigError(msg)
@@ -331,22 +351,17 @@ def select_configurations(what: JsonObject, requested: list[str] | None) -> list
     return selected
 
 
-def planner_command(configuration: JsonObject) -> list[str]:
+def planner_command(planner: str, configuration: JsonObject) -> list[str]:
     """Return the Lab command that runs the planner with the given configuration on a run's task."""
-    task_kind_args = [] if configuration["task_kind"] == "lifted" else ["-G"]
-    return [
-        "{run_planner}",
-        "{planner_exe}",
-        "{domain}",
-        "{problem}",
-        "plan.out",
-        "-H",
-        configuration["heuristic"],
-        "-R",
-        str(configuration["seed"]),
-        *task_kind_args,
-        *configuration["args"],
-    ]
+    heuristic, seed = configuration["heuristic"], str(configuration["seed"])
+    if planner == "powerlifted":
+        plan = "sas_plan"  # Powerlifted always writes its plan there.
+        command = ["-d", "{domain}", "-i", "{problem}", "-e", heuristic, "--seed", seed]
+    else:
+        plan = "plan.out"
+        task_kind_args = [] if configuration["task_kind"] == "lifted" else ["-G"]
+        command = ["-D", "{domain}", "-P", "{problem}", "-O", plan, "-H", heuristic, "-R", seed, *task_kind_args]
+    return ["{run_planner}", "{domain}", "{problem}", plan, "{planner_exe}", *command, *configuration["args"]]
 
 
 def _repo_path(path: str) -> Path:
@@ -421,23 +436,22 @@ def make_experiment(state: ExperimentState, encoded_state: str) -> Experiment:
     what, how, suites, configurations, output_dir = state
     experiment = Experiment(path=output_dir, environment=make_environment(how, encoded_state))
     attributes = ["run_dir"]
-    parser_types = {
-        "search": SearchParser,
-        "datalog": DatalogParser,
-    }
     for parser_name in what["parsers"]:
-        parser_type = parser_types[parser_name]
+        parser_type = PARSERS[parser_name]
         experiment.add_parser(parser_type())
         attributes += parser_type.get_attributes()
 
-    planner_exe = _repo_path(how["build_dir"]) / "exe" / what["planner"]
-    experiment.add_resource("planner_exe", planner_exe)
+    planner = what["planner"]
+    # Powerlifted's driver finds its build next to itself, so it is linked; the other executables are copied.
+    experiment.add_resource(
+        "planner_exe", _repo_path(how["build_dir"]) / PLANNER_PATHS[planner], symlink=planner == "powerlifted"
+    )
     experiment.add_resource("run_planner", EXPERIMENTS_DIR / "run_planner.sh")
 
     for suite in suites:
         for domain in pypddl_datasets.fetch_suite(suite).domains:
             for configuration in configurations:
-                command = planner_command(configuration)
+                command = planner_command(planner, configuration)
                 for task in domain.tasks:
                     run = experiment.add_run()
                     run.add_resource("domain", task.domain_path, symlink=True)

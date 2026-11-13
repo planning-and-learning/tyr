@@ -9,6 +9,8 @@ import pytest
 pytest.importorskip("lab")
 
 from experiments import run_search
+from experiments.parser_lmcut import LMCutParser
+from experiments.parser_powerlifted import PowerliftedParser
 from experiments.parser_search import SearchParser
 from lab import environments
 
@@ -84,6 +86,7 @@ def test_validate_what_accepts_valid_config() -> None:
         (what(planner="unknown"), "what.planner"),
         (what(configurations=[configuration(task_kind="unknown")]), "task_kind"),
         (what(parsers=["unknown"]), "unknown parsers"),
+        (what(planner="powerlifted", configurations=[configuration(task_kind="ground")]), "task_kind 'lifted'"),
     ],
 )
 def test_validate_what_rejects_invalid_config(config: dict[str, object], message: str) -> None:
@@ -105,8 +108,9 @@ def test_checked_in_presets_are_valid() -> None:
         if config["environment"] == "arrhenius":
             assert config["partition"] == "fat", path
             assert config["cpus_per_task"] in {1, 4, 8, 16}, path
-            assert config["memory_limit_mib"] == 65536, path
-            assert config["cpus_per_task"] * config["memory_per_cpu_mib"] == 67584, path
+            # The planner's limit plus 2 GiB for the launcher.
+            assert config["memory_limit_mib"] in {8192, 65536}, path
+            assert config["cpus_per_task"] * config["memory_per_cpu_mib"] == config["memory_limit_mib"] + 2048, path
 
 
 @pytest.mark.parametrize("config", [local_how(), arrhenius_how()])
@@ -600,7 +604,7 @@ def test_arrhenius_slurm_submission(
         ]
         if cpus_per_task > 1:
             expected_args.append("--collect-destination-lock-statistics")
-        assert run_search.planner_command(config)[5:] == expected_args
+        assert run_search.planner_command("gbfs_lazy", config)[11:] == expected_args
 
     script = Path(command[-1]).read_text(encoding="utf-8")
     assert "#SBATCH --partition=fat\n" in script
@@ -628,11 +632,85 @@ def test_arrhenius_slurm_submission(
     ],
 )
 def test_planner_command(config: dict[str, object], expected: list[str]) -> None:
-    assert run_search.planner_command(config) == [
+    assert run_search.planner_command("gbfs_lazy", config) == [
         "{run_planner}",
-        "{planner_exe}",
         "{domain}",
         "{problem}",
         "plan.out",
+        "{planner_exe}",
+        "-D",
+        "{domain}",
+        "-P",
+        "{problem}",
+        "-O",
+        "plan.out",
         *expected,
     ]
+
+
+def test_powerlifted_command() -> None:
+    config = configuration(heuristic="landmark", seed=1, args=["-s", "astar", "--supporter", "hmax"])
+    assert run_search.planner_command("powerlifted", config) == [
+        "{run_planner}",
+        "{domain}",
+        "{problem}",
+        "sas_plan",
+        "{planner_exe}",
+        "-d",
+        "{domain}",
+        "-i",
+        "{problem}",
+        "-e",
+        "landmark",
+        "--seed",
+        "1",
+        "-s",
+        "astar",
+        "--supporter",
+        "hmax",
+    ]
+
+
+def test_lmcut_parser_derives_time_shares(tmp_path: Path) -> None:
+    (tmp_path / "run.log").write_text(
+        """[LMCut] Number of evaluations: 4
+[LMCut] Number of hmax runs: 10
+[LMCut] Hmax time: 6 ms (6000000 ns)
+[LMCut] Goal zone time: 0 ms (500000 ns)
+[LMCut] Before goal zone time: 3 ms (3000000 ns)
+[LMCut] Cut time: 0 ms (500000 ns)
+""",
+        encoding="utf-8",
+    )
+    LMCutParser().parse(tmp_path, props := {})
+
+    assert props["lmcut_hmax_runs_per_evaluation"] == pytest.approx(2.5)
+    assert props["lmcut_time_ms_per_evaluation"] == pytest.approx(2.5)
+    assert props["lmcut_hmax_time_share"] == pytest.approx(0.6)
+    assert props["lmcut_before_goal_zone_time_share"] == pytest.approx(0.3)
+
+
+def test_powerlifted_parser_reads_search_statistics(tmp_path: Path) -> None:
+    (tmp_path / "run.log").write_text(
+        """Initial heuristic value 10
+Goal found at: 0.000372
+Total time: 0.000376
+Total plan cost: 10
+Plan length: 2 step(s).
+Expanded 3 state(s).
+Generated 7 state(s).
+Peak memory usage: 8040 kB
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "run.err").write_text("", encoding="utf-8")
+    (tmp_path / "driver.log").write_text("", encoding="utf-8")
+    PowerliftedParser().parse(tmp_path, props := {})
+
+    assert props["coverage"] == 1
+    assert props["cost"] == 10
+    assert props["length"] == 2
+    assert props["num_expanded"] == 3
+    assert props["search_time_s"] == pytest.approx(0.000376)
+    assert props["memory_mb"] == pytest.approx(8.04)
+    assert props["out_of_time"] == 0

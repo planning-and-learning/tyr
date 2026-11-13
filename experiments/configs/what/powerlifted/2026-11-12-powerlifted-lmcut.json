@@ -1,0 +1,77 @@
+{
+  "name": "2026-11-12-powerlifted-lmcut",
+  "planner": "powerlifted",
+  "suite_sets": {
+    "local": [
+      "htg-test"
+    ],
+    "arrhenius": [
+      "htg"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "powerlifted-astar-lmc-random",
+      "task_kind": "lifted",
+      "heuristic": "landmark",
+      "seed": 1,
+      "args": [
+        "-s",
+        "astar",
+        "-g",
+        "yannakakis",
+        "--unit-cost",
+        "--supporter",
+        "random"
+      ]
+    },
+    {
+      "name": "powerlifted-astar-lmc-most-gr",
+      "task_kind": "lifted",
+      "heuristic": "landmark",
+      "seed": 1,
+      "args": [
+        "-s",
+        "astar",
+        "-g",
+        "yannakakis",
+        "--unit-cost",
+        "--supporter",
+        "ground"
+      ]
+    },
+    {
+      "name": "powerlifted-astar-lmc-least",
+      "task_kind": "lifted",
+      "heuristic": "landmark",
+      "seed": 1,
+      "args": [
+        "-s",
+        "astar",
+        "-g",
+        "yannakakis",
+        "--unit-cost",
+        "--supporter",
+        "least"
+      ]
+    },
+    {
+      "name": "powerlifted-astar-lmc-hlmax",
+      "task_kind": "lifted",
+      "heuristic": "landmark",
+      "seed": 1,
+      "args": [
+        "-s",
+        "astar",
+        "-g",
+        "yannakakis",
+        "--unit-cost",
+        "--supporter",
+        "hmax"
+      ]
+    }
+  ],
+  "parsers": [
+    "powerlifted"
+  ]
+}

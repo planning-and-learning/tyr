@@ -156,12 +156,58 @@ experiments/data/gbfs_lazy/2026-8-7-gbfs_lazy-lifted-parallel-search-1--arrheniu
 | `2026-8-7-gbfs_lazy-lifted-parallel-search-8` | lifted shared and random hash-distributed search, 8 workers | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-8cpu` |
 | `2026-8-7-gbfs_lazy-lifted-parallel-search-16` | lifted shared and random hash-distributed search, 16 workers | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-16cpu` |
 | `2026-8-8-gbfs_lazy-ground-parallel-search-4` | ground sequential, shared search, random HDA*, and LM-cut HDA* | `local-build-2500m-1s` | `arrhenius-build-65536m-600s-4cpu` |
+| `2026-11-12-astar_eager-lifted-lmcut` | lifted A* with LM-cut and with h^max, unit costs | `local-build-2500m-5s` | `arrhenius-build-8192m-600s-1cpu` |
+| `2026-11-12-powerlifted-lmcut` | Powerlifted A* with the lifted LM-cut of Wichlacz et al. (ECAI 2023), four precondition choices, unit costs | `local-build-2500m-5s` with `--build-dir` | `arrhenius-powerlifted-8192m-600s-1cpu` |
 
 The `build_dir` in the how file must contain the selected planner executable.
 The build-specific `plain-kckp`, `delta-kckp`, and
 `delta-kckp-inner` how files offer the same fixed memory allocation and CPU
 counts with 10-minute limits for implementation comparisons, for example
 `arrhenius-build-delta-kckp-65536m-600s-4cpu.json`.
+
+## LM-cut against Powerlifted
+
+Both presets run length-optimal A* on the HTG suite with 10 minutes and 8 GiB
+per run (10 GiB of Slurm memory):
+
+```console
+cmake --build build --target astar_eager -j16
+
+.venv/bin/python experiments/run_search.py \
+  --what experiments/configs/what/astar_eager/2026-11-12-astar_eager-lifted-lmcut.json \
+  --how experiments/configs/how/arrhenius-build-8192m-600s-1cpu.json \
+  --all
+
+.venv/bin/python experiments/run_search.py \
+  --what experiments/configs/what/powerlifted/2026-11-12-powerlifted-lmcut.json \
+  --how experiments/configs/how/arrhenius-powerlifted-8192m-600s-1cpu.json \
+  --all
+```
+
+The tyr configurations stop their search after 570 seconds (`--max-time`), so
+that a run without a plan still prints its statistics before Lab's limit. The
+`lmcut` parser reads the LM-cut statistics: evaluations, h^max runs, and the
+share of time in h^max, the goal zone, the before-goal zone, and the cut.
+
+The Powerlifted how file expects the planner of the paper in `../powerlifted`,
+next to this repository (`--build-dir` selects another checkout). Its sources
+miss standard includes that current compilers require; a compiler wrapper adds
+them:
+
+```console
+git clone https://github.com/minecraft-saar/powerlifted.git ../powerlifted
+cd ../powerlifted
+git checkout 225c39e5289317aff4ea2982c35fe5641c461b17
+printf '%s\n' '#!/bin/sh' \
+  'exec g++ -include algorithm -include set -include cstdint -include limits -include memory -include string -include functional -include numeric "$@"' \
+  > gxx.sh
+chmod +x gxx.sh
+python3 build.py --cxx-compiler "$PWD/gxx.sh"
+```
+
+The four configurations are the paper's LMC-random, LMC-most-gr, LMC-least,
+and LMC-hLmax (`--supporter random`, `ground`, `least`, `hmax`). Powerlifted
+needs Boost with `program_options`, and its translator runs with the `python3` on `PATH`.
 
 ## Configuration
 
@@ -195,10 +241,11 @@ A what file contains:
 flag; Ground tasks add `-G`. All other planner options are forwarded unchanged
 from `args`, so `--num-datalog-threads` and `--num-search-workers` apply only when explicitly
 present.
-`run_planner.sh` supplies the executable and input/output paths but contains no
-algorithm-specific options. Inner Datalog threads and search workers may both
+`run_planner.sh` runs the planner command and validates the plan; it contains no
+planner-specific options. With the planner `powerlifted`, `heuristic` and `seed`
+become `-e` and `--seed` of `powerlifted.py`, and the task kind must be lifted. Inner Datalog threads and search workers may both
 exceed one; their product is the run's maximum thread capacity. `parsers`
-accepts `search` and `datalog`.
+accepts `search`, `datalog`, `lmcut`, and `powerlifted`.
 
 A local how file contains the common build/output and run limits plus
 `local_processes`. An Arrhenius how file instead contains `account`,

@@ -26,10 +26,14 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
+#include <cstdint>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <ranges>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <urd/elements/flat.hpp>
@@ -42,6 +46,7 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <variant>
+#include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
@@ -88,8 +93,20 @@ struct LMCutImplementation :
     LMCutImplementation(std::shared_ptr<detail::RPGDefinition<Kind>> definition, ygg::ExecutionContextPtr execution_context);
     LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context);
     ygg::float_t evaluate(const urd::data<State<Kind>>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr);
+    void print_summary(size_t verbosity) const;
 
 private:
+    /// How often the evaluations ran h^max, and the time they spent in it and in the three parts of every cut.
+    struct Statistics
+    {
+        std::uint64_t num_evaluations { 0 };
+        std::uint64_t num_hmax_runs { 0 };
+        std::chrono::nanoseconds hmax_time { 0 };
+        std::chrono::nanoseconds goal_zone_time { 0 };
+        std::chrono::nanoseconds before_goal_zone_time { 0 };
+        std::chrono::nanoseconds cut_time { 0 };
+    };
+
     Arc get_arc(const Witness& witness);
     [[nodiscard]] bool is_state_node(Node node) const;
     void mark_goal_zone();
@@ -110,6 +127,7 @@ private:
     /// The cut of the current round and its least residual cost.
     datalog::Cost m_cut_cost;
     urd::Store<urd::set<ActionBinding>> m_cut;
+    Statistics m_statistics;
 };
 
 template<TaskKind Kind>
@@ -133,12 +151,18 @@ ygg::float_t LMCutImplementation<Kind>::evaluate(const urd::data<State<Kind>>& s
     this->begin_state_evaluation();
     auto value = static_cast<datalog::Cost>(0);
     m_action_credits.clear();
+    ++m_statistics.num_evaluations;
     while (true)
     {
-        this->workspace().clear_costs();
-        for (const auto& [action_binding, credit] : m_action_credits)
-            this->set_action_binding_cost(action_binding, credit);
-        const auto hmax = this->evaluate_current_state(state);
+        const auto hmax = [&]
+        {
+            const auto stopwatch = ygg::StopwatchScope(m_statistics.hmax_time);
+            this->workspace().clear_costs();
+            for (const auto& [action_binding, credit] : m_action_credits)
+                this->set_action_binding_cost(action_binding, credit);
+            return this->evaluate_current_state(state);
+        }();
+        ++m_statistics.num_hmax_runs;
         if (hmax == std::numeric_limits<ygg::float_t>::infinity())
             return hmax;
 
@@ -293,9 +317,16 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
     m_base.clear();
     m_cut_cost = std::numeric_limits<datalog::Cost>::max();
     m_cut.clear();
-    mark_goal_zone();
-    mark_before_goal_zone();
+    {
+        const auto stopwatch = ygg::StopwatchScope(m_statistics.goal_zone_time);
+        mark_goal_zone();
+    }
+    {
+        const auto stopwatch = ygg::StopwatchScope(m_statistics.before_goal_zone_time);
+        mark_before_goal_zone();
+    }
 
+    const auto stopwatch = ygg::StopwatchScope(m_statistics.cut_time);
     for (const auto& head : m_goal_zone)
         this->for_each_achiever(head,
                                 [&](const Witness& witness)
@@ -311,6 +342,23 @@ void LMCutImplementation<Kind>::extract_cut(CutFrontierAtoms* cut_frontier_atoms
                                     if (cut_frontier_atoms)
                                         this->append_planning_cut_frontier_atom(head, *cut_frontier_atoms);
                                 });
+}
+
+template<TaskKind Kind>
+void LMCutImplementation<Kind>::print_summary(size_t verbosity) const
+{
+    Base::print_summary(verbosity);
+    if (verbosity < 1)
+        return;
+
+    const auto print_time = [](std::string_view name, std::chrono::nanoseconds time)
+    { std::cout << "[LMCut] " << name << " time: " << ygg::to_ms(time) << " ms (" << ygg::to_ns(time) << " ns)\n"; };
+    std::cout << "[LMCut] Number of evaluations: " << m_statistics.num_evaluations << '\n';
+    std::cout << "[LMCut] Number of hmax runs: " << m_statistics.num_hmax_runs << '\n';
+    print_time("Hmax", m_statistics.hmax_time);
+    print_time("Goal zone", m_statistics.goal_zone_time);
+    print_time("Before goal zone", m_statistics.before_goal_zone_time);
+    print_time("Cut", m_statistics.cut_time);
 }
 
 }

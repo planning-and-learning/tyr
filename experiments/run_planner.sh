@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
-planner_exe=$1
-domain_file=$2
-problem_file=$3
-plan_file=$4
-shift 4
-extra_args=("$@")
+# Usage: run_planner.sh <domain> <problem> <plan> <planner command...>
+# Runs the planner command, which must write its plan to <plan>, and validates that plan.
+domain_file=$1
+problem_file=$2
+plan_file=$3
+shift 3
 
 # Check if the plan file already exists and prompt for removal
 if [ -f "$plan_file" ]; then
@@ -18,17 +18,8 @@ fi
 # Ensure that strings like "CPU time limit exceeded" and "Killed" are in English.
 export LANG=C
 
-cmd=(
-  "$planner_exe"
-  "-D" "$domain_file"
-  "-P" "$problem_file"
-  "-O" "$plan_file"
-)
-
-cmd+=("${extra_args[@]}")
-
 # Run planner
-MALLOC_ARENA_MAX=1 "${cmd[@]}"
+MALLOC_ARENA_MAX=1 "$@"
 
 # Run VAL
 echo -e "\nRun VAL\n"

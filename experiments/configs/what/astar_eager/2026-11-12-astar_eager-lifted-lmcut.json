@@ -1,0 +1,47 @@
+{
+  "name": "2026-11-12-astar_eager-lifted-lmcut",
+  "planner": "astar_eager",
+  "suite_sets": {
+    "local": [
+      "htg-test"
+    ],
+    "arrhenius": [
+      "htg"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "astar-eager-lifted-lmcut",
+      "task_kind": "lifted",
+      "heuristic": "lmcut",
+      "seed": 0,
+      "args": [
+        "--search-cost-type",
+        "unit",
+        "--heuristic-cost-type",
+        "unit",
+        "--max-time",
+        "570"
+      ]
+    },
+    {
+      "name": "astar-eager-lifted-hmax",
+      "task_kind": "lifted",
+      "heuristic": "rpg_max",
+      "seed": 0,
+      "args": [
+        "--search-cost-type",
+        "unit",
+        "--heuristic-cost-type",
+        "unit",
+        "--max-time",
+        "570"
+      ]
+    }
+  ],
+  "parsers": [
+    "search",
+    "datalog",
+    "lmcut"
+  ]
+}
