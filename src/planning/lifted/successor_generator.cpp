@@ -223,8 +223,8 @@ struct SuccessorGenerator<LiftedTag>::Impl
             throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
         const auto indices = objects.base();
         const auto& target_repository = *definition->task->get_repository();
-        if (!std::ranges::all_of(indices, [&](const auto& value) { return objects.context().symbols().contains(value); })
-            || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.symbols().contains(value); }))
+        if (!std::ranges::all_of(indices, [&](const auto& value) { return objects.context().contains(value); })
+            || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.contains(value); }))
             return false;
         if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(target_repository, value); }))
             throw std::invalid_argument("SuccessorGenerator: object does not belong to the task repository.");
@@ -233,7 +233,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
     void validate_binding(formalism::planning::ActionRowDataView binding)
     {
-        if (!binding.context().symbols().contains(binding.data().relation))
+        if (!binding.context().contains(binding.data().relation))
             throw std::invalid_argument("SuccessorGenerator: action schema does not belong to its source repository.");
         // A borrowed binding's action may have no pool yet (no stored types): its values are read as objects directly.
         if (!validate_binding_objects(

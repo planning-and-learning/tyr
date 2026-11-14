@@ -68,8 +68,7 @@ void ProgramWorkspace<LiftedTag, AP, TP, CP>::reset_evaluation()
     delta_annotations.clear();
     annotation_policy.clear_achievers();
     facts.reset();
-    workspace_repository->symbols().clear();
-    workspace_repository->relations().clear();
+    workspace_repository->clear_all();
 }
 
 template struct ProgramWorkspace<LiftedTag, NoAnnotationPolicy, NoTerminationPolicy>;

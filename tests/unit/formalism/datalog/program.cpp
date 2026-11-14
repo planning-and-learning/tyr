@@ -229,7 +229,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());
     EXPECT_EQ(filtered->get_goal().value().get_literals<tyr::formalism::FluentTag>().front().get_atom().get_predicate().get_name().str(), "retained-predicate");
-    EXPECT_EQ((destination.symbols().size<tyr::formalism::datalog::Rule<::tyr::GroundTag>>()), 1);
+    EXPECT_EQ((destination.size<tyr::formalism::datalog::Rule<::tyr::GroundTag>>()), 1);
 }
 
 }

@@ -187,7 +187,13 @@ using TaggedRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<
 
 using RelationRepository = boost::mp11::mp_apply<TaggedRelationRepository, RelationRepositoryTypes>;
 
-using Repository = ::ygg::formalism::Repository<SymbolRepository, RelationRepository>;
+template<typename... Ts>
+using TaggedRelations = ::ygg::formalism::ConcurrentRelations<ObjectTag, Ts...>;
+
+/// Named by what it holds (yggdrasil's Symbols and Relations), not by its stores: a call with a repository argument
+/// then never instantiates them (yggdrasil/formalism/declarations.hpp).
+using Repository = ::ygg::formalism::Repository<boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbols, SymbolRepositoryTypes>,
+                                                boost::mp11::mp_apply<TaggedRelations, RelationRepositoryTypes>>;
 using RepositoryPtr = std::shared_ptr<Repository>;
 
 /**

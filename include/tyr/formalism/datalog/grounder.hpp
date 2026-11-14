@@ -313,7 +313,7 @@ std::pair<PredicateRowIndex<F>, bool> ground_row(AtomView<LiftedTag, F> element,
     binding->relation = element.get_predicate().index();
     ground(element.get_terms(), context, binding->values);
 
-    const auto [row, created] = context.destination().relations().insert(binding->relation, binding->values);
+    const auto [row, created] = context.destination().insert_row(*binding);
     return { PredicateRowIndex<F> { binding->relation, row }, created };
 }
 

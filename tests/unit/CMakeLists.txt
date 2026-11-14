@@ -3,7 +3,7 @@ enable_testing()
 find_package(GTest "1.11.0" REQUIRED COMPONENTS GTest PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 
 function(add_gtest test_name)
-    add_executable(${test_name} ${ARGN} main.cpp)
+    add_executable(${test_name} ${ARGN} "${PROJECT_SOURCE_DIR}/tests/support/main.cpp")
     target_link_libraries(${test_name} PRIVATE tyr::core TBB::tbb GTest::gtest)
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(NAME ${test_name} COMMAND ${test_name})

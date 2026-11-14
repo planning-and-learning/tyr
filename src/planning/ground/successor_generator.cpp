@@ -662,8 +662,8 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     const auto indices = objects.base();
     const auto& source_repository = objects.context();
     const auto& target_repository = *task->get_repository();
-    if (!std::ranges::all_of(indices, [&](const auto& value) { return source_repository.symbols().contains(value); })
-        || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.symbols().contains(value); }))
+    if (!std::ranges::all_of(indices, [&](const auto& value) { return source_repository.contains(value); })
+        || !std::ranges::all_of(indices, [&](const auto& value) { return target_repository.contains(value); }))
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
     if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(target_repository, value); }))
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");

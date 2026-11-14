@@ -18,7 +18,7 @@ from tests.support.generators.planning.algorithms import (
 )
 from tests.support.generators.planning.heuristics import fixture_generation as heuristic_generation
 
-FIXTURES = Path(__file__).resolve().parents[3] / "tests/support/data"
+FIXTURES = Path(__file__).resolve().parents[2] / "tests/support/data"
 CASE_FIELDS = ("name", "domain_file", "task_file", "skipped")
 SEARCH_MODULES: dict[str, algorithm_generation.Algorithm] = {
     "astar": "astar_eager",

@@ -278,7 +278,7 @@ The bindings expose the library types directly:
 - **Lifetimes.** Rows, views and schemas keep their Python owners alive; clearing an owner still invalidates them.
 
 Run the native tests with ``ctest --test-dir <build> -R '^database_' --output-on-failure``; the Python tests are in
-``python/tests/database/``.
+``python/tests/datalog/lifted/database/``.
 
 Tuple distances
 ---------------

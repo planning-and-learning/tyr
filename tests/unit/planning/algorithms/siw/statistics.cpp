@@ -18,6 +18,7 @@
 #include "statistics.hpp"
 
 #include <gtest/gtest.h>
+#include <tyr/planning/algorithms/siw.hpp>
 #include <tyr/planning/declarations.hpp>
 
 namespace tyr::tests

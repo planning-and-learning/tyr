@@ -1,6 +1,7 @@
 #include "applicability_schema.hpp"
 
 #include <gtest/gtest.h>
+#include <tyr/planning/applicability.hpp>
 
 namespace tyr::tests
 {

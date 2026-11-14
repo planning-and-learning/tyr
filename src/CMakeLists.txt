@@ -31,6 +31,8 @@ add_library(
 
     formalism/formatter.cpp
     formalism/repository.cpp
+    formalism/planning/repository.cpp
+    formalism/datalog/repository.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
     formalism/datalog/variable_dependency_graph.cpp
@@ -187,6 +189,8 @@ brokkr_unity_directories(
         planning/state_storage/tree_bitset
 )
 brokkr_unity_directories(core ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 3 DIRECTORIES formalism/planning)
+# Each repository's members, instantiated in their own source: the heaviest of the library's, each alone.
+set_source_files_properties(formalism/planning/repository.cpp formalism/datalog/repository.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
 
 # An executable shares the state of inline functions (a function's static, as yggdrasil's next_layer) with this

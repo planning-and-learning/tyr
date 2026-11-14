@@ -588,9 +588,9 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
         const auto action_static_compatibility = detail::StaticLiteralCompatibility(action.get_condition().template get_literals<formalism::StaticTag>(),
                                                                                     task.get_atoms<formalism::StaticTag>(),
                                                                                     action_variable_domains,
-                                                                                    task.context().symbols().template size<formalism::Object>());
+                                                                                    task.context().template size<formalism::Object>());
         const auto action_compatibility = detail::create_pairwise_compatibility_graph(action_variable_domains,
-                                                                                      task.context().symbols().template size<formalism::Object>(),
+                                                                                      task.context().template size<formalism::Object>(),
                                                                                       { &action_static_compatibility });
         parameter_domains = to_tmp_variable_domain_list(action_compatibility.domains);
 
@@ -620,9 +620,9 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
             const auto effect_static_compatibility = detail::StaticLiteralCompatibility(c_effect.get_condition().template get_literals<formalism::StaticTag>(),
                                                                                         task.get_atoms<formalism::StaticTag>(),
                                                                                         effect_variable_domains,
-                                                                                        task.context().symbols().template size<formalism::Object>());
+                                                                                        task.context().template size<formalism::Object>());
             const auto compatibility = detail::create_pairwise_compatibility_graph(effect_variable_domains,
-                                                                                   task.context().symbols().template size<formalism::Object>(),
+                                                                                   task.context().template size<formalism::Object>(),
                                                                                    { &action_static_compatibility, &effect_static_compatibility });
             c_parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
 
@@ -649,9 +649,9 @@ TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<Lifte
         const auto static_compatibility = detail::StaticLiteralCompatibility(condition.template get_literals<formalism::StaticTag>(),
                                                                              task.get_atoms<formalism::StaticTag>(),
                                                                              domains,
-                                                                             task.context().symbols().template size<formalism::Object>());
+                                                                             task.context().template size<formalism::Object>());
         const auto compatibility =
-            detail::create_pairwise_compatibility_graph(domains, task.context().symbols().template size<formalism::Object>(), { &static_compatibility });
+            detail::create_pairwise_compatibility_graph(domains, task.context().template size<formalism::Object>(), { &static_compatibility });
         parameter_domains = to_tmp_variable_domain_list(compatibility.domains);
     };
 

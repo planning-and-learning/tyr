@@ -71,7 +71,7 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
     {
         auto result = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            result += task->get_repository()->relations().size(action.index());
+            result += task->get_repository()->size(action.index());
         return result;
     };
     const auto num_action_bindings = count_action_bindings();

@@ -1,6 +1,7 @@
 #include "planning_fixtures.hpp"
 
 #include <gtest/gtest.h>
+#include <tyr/serialization/planning/lifted/task.hpp>
 
 namespace tyr::tests
 {

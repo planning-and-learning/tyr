@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 #include <string>
+#include <tyr/datalog/lifted/program.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <yggdrasil/execution/onetbb.hpp>

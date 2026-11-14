@@ -391,7 +391,7 @@ struct InterningEvaluation
         nullary->insert(cells());
         const auto true_view = tyr::datalog::tests::ops::intern(repository, *nullary).first;
         valid &= false_view.empty() && true_view.size() == 1;
-        valid &= repository.symbols().size<ygg::Relation<ygg::Schema>>() == 2 * count + 2;
+        valid &= repository.size<ygg::Relation<ygg::Schema>>() == 2 * count + 2;
         return valid;
     }
 };

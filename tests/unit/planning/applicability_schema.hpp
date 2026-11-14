@@ -157,7 +157,7 @@ void expect_schema_queries_match_filtered_successors()
     {
         auto count = size_t { 0 };
         for (const auto action : task->get_domain().get_domain().get_actions())
-            count += task->get_repository()->relations().size(action.index());
+            count += task->get_repository()->size(action.index());
         return count;
     };
     auto execution_context = ygg::ExecutionContext::create(1);

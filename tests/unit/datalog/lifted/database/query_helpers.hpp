@@ -209,7 +209,7 @@ template<typename V>
 std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repository, const V& source)
 {
     auto relation = checkout<ygg::Relation<ygg::Schema>>(records());
-    relation->pool = repository.schema(source.columns() | std::views::transform(&ygg::ColumnLayout::type));
+    relation->pool = repository.schema(source.columns());
     auto row = checkout<ygg::Row<ygg::Schema>>(records());
     row->relation = relation->pool;
     for (std::size_t i = 0; i < source.size(); ++i)

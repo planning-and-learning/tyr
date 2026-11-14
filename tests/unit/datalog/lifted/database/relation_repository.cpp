@@ -29,6 +29,7 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
+#include <yggdrasil/formalism/relation_repository.hpp>
 
 namespace tyr::datalog::tests
 {
@@ -176,7 +177,7 @@ std::vector<ygg::ColumnLayout> relabeled(std::span<const ygg::ColumnLayout> colu
 }
 
 /// The relations a repository holds.
-size_t relation_count(const Repository& repository) { return repository.symbols().template size<RelationTag>(); }
+size_t relation_count(const Repository& repository) { return repository.template size<RelationTag>(); }
 }  // namespace
 
 TEST(YggdrasilTests, DatabaseColumnsInternOrderedSchemasThroughDataAndIndexViews)
@@ -307,9 +308,9 @@ TEST(YggdrasilTests, DatabaseRelationRepositorySharesRowsAcrossOverlappingRelati
     const auto second = tyr::datalog::tests::ops::intern(repository, builder).first;
 
     EXPECT_NE(first.index(), second.index());
-    EXPECT_EQ(repository.relations().get<ygg::Schema>().size(), 1);
-    EXPECT_EQ(repository.relations().get<ygg::Schema>().at(first.data().pool).size(), 3);
-    EXPECT_EQ(repository.symbols().size<RelationTag>(), 2);
+    EXPECT_EQ(first.data().pool, second.data().pool);  // one pool
+    EXPECT_EQ(repository.size(first.data().pool), 3);
+    EXPECT_EQ(repository.size<RelationTag>(), 2);
     EXPECT_TRUE(first.contains(cells(20, 21)));
     EXPECT_TRUE(second.contains(cells(20, 21)));
     EXPECT_TRUE(same_storage(first.row(1), second.row(0)));
@@ -923,38 +924,40 @@ TEST(YggdrasilTests, HomogeneousRowsRoundTripThroughReusableBuffers)
 
 TEST(YggdrasilTests, DatabasePoolsKeepTheirSchema)
 {
-    Repository repository;
+    // The relation repository of free relations (a repository's rows), on its own.
+    using Relations = ygg::formalism::RelationRepository<void, ygg::Schema>;
+    Relations relations;
     auto unsigned_types = urd::data<ygg::Schema>();
     unsigned_types.types.push_back(ygg::type_id<ygg::uint_t>);
     unsigned_types.types.push_back(ygg::type_id<ygg::uint_t>);
     auto double_types = urd::data<ygg::Schema>();
     double_types.types.push_back(ygg::type_id<double>);
     double_types.types.push_back(ygg::type_id<double>);
-    const auto key = repository.relations().schema(unsigned_types);  // a free relation's pool is keyed by its Schema
-    const auto other = repository.relations().schema(double_types);
-    EXPECT_EQ(repository.relations().schema(unsigned_types), key);  // interned once
+    const auto key = relations.schema(unsigned_types);  // a free relation's pool is keyed by its Schema
+    const auto other = relations.schema(double_types);
+    EXPECT_EQ(relations.schema(unsigned_types), key);  // interned once
     auto values = urd::flat_vector<ygg::Value>();
     values.push_back(1);
     values.push_back(2);
-    EXPECT_TRUE(repository.relations().schema(key).is_none());                           // not declared yet
-    EXPECT_THROW((void) repository.relations().insert(key, values), std::out_of_range);  // rows need a declared pool
-    repository.relations().declare(key, key);
-    repository.relations().declare(key, key);  // again with the same Schema: nothing changes
-    EXPECT_THROW(repository.relations().declare(key, other), std::invalid_argument);
-    EXPECT_EQ(repository.relations().schema(key), key);
-    EXPECT_TRUE(repository.relations().insert(key, values).second);
-    EXPECT_TRUE(std::ranges::equal(repository.relations().types(key), unsigned_types.types));
+    EXPECT_TRUE(relations.schema(key).is_none());                           // not declared yet
+    EXPECT_THROW((void) relations.insert(key, values), std::out_of_range);  // rows need a declared pool
+    relations.declare(key, key);
+    relations.declare(key, key);  // again with the same Schema: nothing changes
+    EXPECT_THROW(relations.declare(key, other), std::invalid_argument);
+    EXPECT_EQ(relations.schema(key), key);
+    EXPECT_TRUE(relations.insert(key, values).second);
+    EXPECT_TRUE(std::ranges::equal(relations.types(key), unsigned_types.types));
     values.push_back(3);
-    EXPECT_THROW((void) repository.relations().insert(key, values), std::invalid_argument);  // checked against the Schema
+    EXPECT_THROW((void) relations.insert(key, values), std::invalid_argument);  // checked against the Schema
     values.pop_back();
-    Repository child(&repository);
-    EXPECT_THROW(child.relations().declare(key, other), std::invalid_argument);  // the parent's declaration
-    EXPECT_EQ(child.relations().schema(key), key);
-    repository.clear();
-    EXPECT_EQ(repository.relations().schema(key), key);  // the declaration and its Schema stay, the rows go
-    EXPECT_TRUE(std::ranges::equal(repository.relations().types(key), unsigned_types.types));
-    EXPECT_EQ(repository.relations().size(key), 0U);
-    EXPECT_TRUE(repository.relations().insert(key, values).second);
+    Relations child(&relations);
+    EXPECT_THROW(child.declare(key, other), std::invalid_argument);  // the parent's declaration
+    EXPECT_EQ(child.schema(key), key);
+    relations.clear();
+    EXPECT_EQ(relations.schema(key), key);  // the declaration and its Schema stay, the rows go
+    EXPECT_TRUE(std::ranges::equal(relations.types(key), unsigned_types.types));
+    EXPECT_EQ(relations.size(key), 0U);
+    EXPECT_TRUE(relations.insert(key, values).second);
 }
 
 TEST(YggdrasilTests, DatabaseBuildersAreNumberedLikeLayers)

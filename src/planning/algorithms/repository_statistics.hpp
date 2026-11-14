@@ -34,14 +34,14 @@ void snapshot_state_repository_statistics(const StateRepository<Kind>& repositor
 
 inline void snapshot_task_repository_statistics(const formalism::planning::Repository& repository, Statistics& statistics)
 {
-    statistics.set_action_bindings_memory_usage(repository.relations().memory_usage<formalism::planning::Action<LiftedTag>>());
-    statistics.set_predicate_bindings_memory_usage(repository.relations().memory_usage<formalism::Predicate<formalism::StaticTag>>()
-                                                   + repository.relations().memory_usage<formalism::Predicate<formalism::FluentTag>>()
-                                                   + repository.relations().memory_usage<formalism::Predicate<formalism::DerivedTag>>());
-    statistics.set_axiom_bindings_memory_usage(repository.relations().memory_usage<formalism::planning::Axiom<LiftedTag>>());
-    statistics.set_function_bindings_memory_usage(repository.relations().memory_usage<formalism::Function<formalism::StaticTag>>()
-                                                  + repository.relations().memory_usage<formalism::Function<formalism::FluentTag>>()
-                                                  + repository.relations().memory_usage<formalism::Function<formalism::AuxiliaryTag>>());
+    statistics.set_action_bindings_memory_usage(repository.row_memory_usage<formalism::planning::Action<LiftedTag>>());
+    statistics.set_predicate_bindings_memory_usage(repository.row_memory_usage<formalism::Predicate<formalism::StaticTag>>()
+                                                   + repository.row_memory_usage<formalism::Predicate<formalism::FluentTag>>()
+                                                   + repository.row_memory_usage<formalism::Predicate<formalism::DerivedTag>>());
+    statistics.set_axiom_bindings_memory_usage(repository.row_memory_usage<formalism::planning::Axiom<LiftedTag>>());
+    statistics.set_function_bindings_memory_usage(repository.row_memory_usage<formalism::Function<formalism::StaticTag>>()
+                                                  + repository.row_memory_usage<formalism::Function<formalism::FluentTag>>()
+                                                  + repository.row_memory_usage<formalism::Function<formalism::AuxiliaryTag>>());
 }
 
 }
