@@ -7,8 +7,8 @@
 
 #include "tyr/datalog/lifted/database/detail/repository_instantiations.hpp"
 
-#include <yggdrasil/formalism/symbol_context_instantiations.hpp>
 #include <yggdrasil/formalism/builder_instantiations.hpp>
+#include <yggdrasil/formalism/symbol_context_instantiations.hpp>
 
 namespace tyr::datalog::database
 {

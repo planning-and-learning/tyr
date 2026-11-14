@@ -51,7 +51,9 @@
 
 namespace tyr::planning
 {
-namespace
+// NOLINTBEGIN(misc-use-internal-linkage): an exported class holds these types, so an anonymous namespace would give it
+// a member of internal linkage (g++ -Wsubobject-linkage in a unity batch)
+namespace lmcut_details
 {
 
 /// LM-cut (Helmert & Domshlak, ICAPS 2009) on the justification graph of the recorded h^max achievers.
@@ -361,12 +363,13 @@ void LMCutImplementation<Kind>::print_summary(size_t verbosity) const
     print_time("Cut", m_statistics.cut_time);
 }
 
-}
+}  // namespace lmcut_details
+// NOLINTEND(misc-use-internal-linkage)
 
 template<TaskKind Kind>
 struct LMCutHeuristic<Kind>::Impl
 {
-    using Implementation = LMCutImplementation<Kind>;
+    using Implementation = lmcut_details::LMCutImplementation<Kind>;
     using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
 
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :

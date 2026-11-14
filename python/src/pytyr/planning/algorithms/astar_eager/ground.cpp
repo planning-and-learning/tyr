@@ -15,9 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "module.hpp"
-
 #include "../astar_eager.hpp"
+#include "module.hpp"
 #include "pytyr/module.hpp"
 
 namespace tyr::planning::astar_eager

@@ -15,9 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "module.hpp"
-
 #include "../brfs.hpp"
+#include "module.hpp"
 #include "pytyr/module.hpp"
 
 namespace tyr::planning::brfs

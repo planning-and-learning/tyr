@@ -56,14 +56,7 @@ urd::data<FDRFact<FluentTag>> copy(FDRFactView<FluentTag> element, WriteContext<
 { return urd::data<FDRFact<FluentTag>>(copy(element.get_variable(), context).first.index(), element.get_value()); }
 }
 
-FDRContext::FDRContext(RepositoryPtr context) :
-    m_context(std::move(context)),
-    m_facts(),
-    m_registration_mutex(),
-    m_builder(),
-    m_variables()
-{
-}
+FDRContext::FDRContext(RepositoryPtr context) : m_context(std::move(context)), m_facts(), m_registration_mutex(), m_builder(), m_variables() {}
 
 FDRContext::FDRContext(const urd::Store<urd::sequence<AtomViewList<GroundTag, FluentTag>>>& mutexes, RepositoryPtr context) :
     m_context(std::move(context)),

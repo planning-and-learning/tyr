@@ -20,9 +20,9 @@
 
 #include "tyr/formalism/datalog/repository.hpp"
 
+#include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/free_relations.hpp>
 #include <yggdrasil/formalism/repository_instantiations.hpp>
-#include <yggdrasil/formalism/builder_instantiations.hpp>
 
 YGG_FORMALISM_REPOSITORY(, tyr::formalism::datalog::Repository, 42, 6, 0)
 

@@ -67,14 +67,16 @@
 #include <variant>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formalism/symbol_context_instantiations.hpp>
-#include <yggdrasil/formalism/builder_instantiations.hpp>
 
 namespace tyr::planning::match_tree
 {
 
-namespace
+// NOLINTBEGIN(misc-use-internal-linkage): an exported class holds these types, so an anonymous namespace would give it
+// a member of internal linkage (g++ -Wsubobject-linkage in a unity batch)
+namespace match_tree_details
 {
 
 using PreconditionVariant = std::variant<urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>>,
@@ -628,7 +630,8 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
     return create_generator_stack_entry(base, builder);
 }
 
-}
+}  // namespace match_tree_details
+// NOLINTEND(misc-use-internal-linkage)
 
 template<typename Tag>
 MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements_,
@@ -636,6 +639,7 @@ MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalis
     m_definition(),
     m_evaluator()
 {
+    using namespace match_tree_details;  // its steps, in this function only
     auto definition = std::make_shared<Definition>(context_);
     m_definition = definition;
 

@@ -111,7 +111,7 @@ jobs:
           name: wheels-macos-${{ matrix.python-version }}-${{ matrix.architecture }}
           path: wheelhouse/*.whl
 
-  publish:
+  github_release:
     needs:
       - build_sdist
       - build_wheels_linux
@@ -121,11 +121,11 @@ jobs:
     if: github.repository_owner == 'planning-and-learning'
 
     permissions:
-      id-token: write
+      contents: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check version matches tag
         run: |
@@ -139,15 +139,50 @@ jobs:
             echo "Version mismatch: pyproject.toml=$VERSION tag=$TAG"
             exit 1
           fi
-          
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+
+      - name: Download wheels
+        uses: actions/download-artifact@v5
         with:
+          pattern: wheels-*
           path: dist
           merge-multiple: true
 
-      - name: Inspect distributions
+      - name: Download source distribution
+        uses: actions/download-artifact@v5
+        with:
+          name: sdist
+          path: dist
+
+      - name: Inspect release assets
         run: find dist -maxdepth 1 -type f
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --generate-notes
+
+  publish:
+    needs: github_release
+    runs-on: ubuntu-latest
+
+    if: github.repository_owner == 'planning-and-learning'
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v5
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+
+      - name: Download source distribution
+        uses: actions/download-artifact@v5
+        with:
+          name: sdist
+          path: dist
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

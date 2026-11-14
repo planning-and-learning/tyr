@@ -102,7 +102,7 @@ public:
 
     [[nodiscard]] Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.label(vertex)); }
 
-    [[nodiscard]] tyr::kckp::Vertex find_vertex(ygg::uint_t partition, Object object) const noexcept
+    [[nodiscard]] tyr::kckp::Vertex find_vertex(ygg::uint_t partition, Object object) const
     {
         if (partition >= m_graph.num_parts())
             return {};
