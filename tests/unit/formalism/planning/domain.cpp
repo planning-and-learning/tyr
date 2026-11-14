@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_domain
+{
+
 using DomainIndex = urd::index<tyr::formalism::planning::Domain>;
 using DomainData = urd::data<tyr::formalism::planning::Domain>;
 using DomainView = urd::index_view<tyr::formalism::planning::Domain, tyr::formalism::planning::Repository>;
@@ -43,3 +46,5 @@ static_assert(requires(const DomainView& view) {
     { view == view } -> std::same_as<bool>;
     { view < view } -> std::same_as<bool>;
 });
+
+}  // namespace tyr::tests::planning_domain

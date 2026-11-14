@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include <type_traits>
+#include <tyr/datalog/lifted/database/optimization/details/structural.hpp>
 #include <tyr/datalog/lifted/database/optimization/optimization.hpp>
 #include <tyr/datalog/lifted/database/semantics/bound/query_evaluation.hpp>
 #include <tyr/datalog/lifted/database/semantics/incremental/query.hpp>

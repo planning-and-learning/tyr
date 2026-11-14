@@ -4,6 +4,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_fdr_fact
+{
+
 template<typename Entity>
 concept FdrFactContract = std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::borrowed_view<Entity, tyr::formalism::planning::Repository>>
                           && requires(urd::data<Entity>& data, const urd::borrowed_view<Entity, tyr::formalism::planning::Repository>& view) {
@@ -28,3 +31,5 @@ static_assert(std::same_as<urd::borrowed_view<tyr::formalism::planning::FDRFact<
                            tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>>);
 // A fact computed on the fly is held by its view; it reads and compares as a stored one.
 static_assert(std::totally_ordered<urd::owning_view<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>>);
+
+}  // namespace tyr::tests::planning_fdr_fact

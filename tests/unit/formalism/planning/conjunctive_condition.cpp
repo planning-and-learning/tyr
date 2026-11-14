@@ -1,3 +1,4 @@
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_data.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -11,6 +12,9 @@
 #include <ranges>
 #include <string>
 #include <utility>
+
+namespace tyr::tests::planning_conjunctive_condition
+{
 
 namespace lifted_tests
 {
@@ -175,3 +179,5 @@ TEST(TyrFormalismPlanningConjunctiveCondition, ProjectsAtomPolarityWithoutBorrow
     expect_condition_atom_projection<tyr::GroundTag>();
     expect_condition_atom_projection<tyr::LiftedTag>();
 }
+
+}  // namespace tyr::tests::planning_conjunctive_condition

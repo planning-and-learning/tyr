@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_function_term_value
+{
+
 template<typename Entity>
 concept GroundFunctionTermValueContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
@@ -33,3 +36,5 @@ static_assert(GroundFunctionTermValueContract<tyr::formalism::FunctionTermValue<
 static_assert(
     std::same_as<urd::index_view<tyr::formalism::FunctionTermValue<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>, tyr::formalism::planning::Repository>,
                  tyr::formalism::planning::FunctionTermValueView<::tyr::GroundTag, tyr::formalism::AuxiliaryTag>>);
+
+}  // namespace tyr::tests::planning_function_term_value

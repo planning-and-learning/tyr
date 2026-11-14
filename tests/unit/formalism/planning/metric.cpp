@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_metric
+{
+
 using MetricIndex = urd::index<tyr::formalism::planning::Metric>;
 using MetricData = urd::data<tyr::formalism::planning::Metric>;
 using MetricView = urd::index_view<tyr::formalism::planning::Metric, tyr::formalism::planning::Repository>;
@@ -31,3 +34,5 @@ static_assert(requires(const MetricView& view) {
 static_assert(std::totally_ordered<tyr::formalism::OptimizationDirection>);
 static_assert(tyr::formalism::OptimizationDirection::Minimize < tyr::formalism::OptimizationDirection::Maximize);
 static_assert(tyr::formalism::to_string(tyr::formalism::OptimizationDirection::Minimize) == "minimize");
+
+}  // namespace tyr::tests::planning_metric

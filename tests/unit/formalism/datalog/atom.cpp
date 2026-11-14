@@ -9,6 +9,9 @@
 #include <gtest/gtest.h>
 #include <string>
 
+namespace tyr::tests::datalog_atom
+{
+
 namespace lifted_tests
 {
 
@@ -98,3 +101,5 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
 }
 
 }
+
+}  // namespace tyr::tests::datalog_atom

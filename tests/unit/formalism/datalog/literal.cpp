@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::datalog_literal
+{
+
 namespace lifted_tests
 {
 
@@ -62,3 +65,5 @@ concept GroundLiteralContract = std::constructible_from<urd::index<Entity>, ygg:
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (GroundLiteralContract<Entities> && ...); }(tyr::formalism::datalog::LiteralTypes<::tyr::GroundTag> {}));
 }
+
+}  // namespace tyr::tests::datalog_literal

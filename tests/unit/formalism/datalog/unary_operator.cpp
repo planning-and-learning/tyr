@@ -7,6 +7,9 @@
 #include <tuple>
 #include <utility>
 
+namespace tyr::tests::datalog_unary_operator
+{
+
 template<typename Entity>
 concept UnaryOperatorContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
@@ -29,3 +32,5 @@ static_assert(std::same_as<urd::index_view<Lifted, tyr::formalism::datalog::Repo
                            tyr::formalism::datalog::UnaryOperatorView<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>>);
 static_assert(std::same_as<urd::index_view<Ground, tyr::formalism::datalog::Repository>,
                            tyr::formalism::datalog::UnaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
+
+}  // namespace tyr::tests::datalog_unary_operator

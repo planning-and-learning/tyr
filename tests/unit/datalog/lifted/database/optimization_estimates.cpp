@@ -2,6 +2,7 @@
 
 #include <array>
 #include <gtest/gtest.h>
+#include <tyr/datalog/lifted/database/optimization/details/estimation.hpp>
 #include <tyr/datalog/lifted/database/optimization/optimization.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/store.hpp>

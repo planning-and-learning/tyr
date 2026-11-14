@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::datalog_function_term_value
+{
+
 template<typename Entity>
 struct GroundFunctionTermValuePublicView;
 
@@ -30,3 +33,5 @@ concept GroundFunctionTermValueContract =
 
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (GroundFunctionTermValueContract<Entities> && ...); }(tyr::formalism::datalog::FunctionTermValueTypes<::tyr::GroundTag> {}));
+
+}  // namespace tyr::tests::datalog_function_term_value

@@ -21,6 +21,7 @@
 #include "tyr/formalism/datalog/copy.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 namespace tyr::datalog
 {

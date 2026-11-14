@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::datalog_rule
+{
+
 namespace lifted_tests
 {
 
@@ -64,3 +67,5 @@ static_assert(requires(Data& data, const View& view) {
 });
 
 }
+
+}  // namespace tyr::tests::datalog_rule

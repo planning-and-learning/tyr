@@ -11,6 +11,9 @@
 #include <type_traits>
 #include <utility>
 
+namespace tyr::tests::planning_atom
+{
+
 namespace lifted_tests
 {
 
@@ -165,3 +168,5 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
 }
 
 }
+
+}  // namespace tyr::tests::planning_atom

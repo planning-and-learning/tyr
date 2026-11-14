@@ -6,6 +6,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_task
+{
+
 namespace lifted_tests
 {
 
@@ -126,3 +129,5 @@ static_assert(!std::constructible_from<ground_tests::TaskIndex, lifted_tests::Ta
 static_assert(!std::same_as<lifted_tests::TaskData, ground_tests::TaskData>);
 static_assert(!std::same_as<lifted_tests::TaskView, ground_tests::TaskView>);
 static_assert(!std::same_as<::tyr::formalism::planning::PlanningTask<::tyr::LiftedTag>, ::tyr::formalism::planning::PlanningTask<::tyr::GroundTag>>);
+
+}  // namespace tyr::tests::planning_task

@@ -61,6 +61,16 @@ nanobind_add_module(
 
 target_link_libraries(_pytyr PRIVATE tyr::core TBB::tbb)
 target_include_directories(_pytyr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# The bindings of one directory bind types of one family and share most of their instantiations: batched, they compile
+# them once (brokkr's template rules, rule 11). formalism and formalism/planning exceed the heaviest translation unit
+# merged whole, so they are batched by at most 11 sources; database repeats file-local names.
+brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} DIRECTORIES pytyr/database/query pytyr/formalism/datalog)
+brokkr_unity_directories(_pytyr ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 11 DIRECTORIES pytyr/formalism pytyr/formalism/planning)
+# The bindings are the build's heaviest translation units: where memory is tight, cap how many compile at once
+# (-DTYR_PYTHON_COMPILE_JOBS=6 at -j12 lowers the peak memory by about 3 GB for 10 s more), so that they do not take
+# every parallel slot at the same time.
+set(TYR_PYTHON_COMPILE_JOBS "" CACHE STRING "Most pytyr translation units compiled at once (Ninja); empty: no limit.")
+brokkr_limit_compile_jobs(_pytyr JOBS "${TYR_PYTHON_COMPILE_JOBS}")
 
 brokkr_python_module_rpaths(PYTYR _pytyr)
 

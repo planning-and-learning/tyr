@@ -10,6 +10,9 @@
 #include <tuple>
 #include <utility>
 
+namespace tyr::tests::planning_numeric_effect
+{
+
 namespace
 {
 template<tyr::TaskKind Kind, tyr::formalism::FactKind Source>
@@ -113,3 +116,5 @@ TEST(TyrFormalismPlanningGroundNumericEffect, RejectsNonIncreaseAuxiliaryEffect)
 }
 
 }
+
+}  // namespace tyr::tests::planning_numeric_effect

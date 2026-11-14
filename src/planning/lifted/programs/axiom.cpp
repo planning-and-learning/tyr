@@ -126,9 +126,9 @@ auto create_axiom_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     return formalism::datalog::insert(context.destination(), *rule);
 }
 
-auto create_program(formalism::planning::TaskView<LiftedTag> task,
-                    TranslationContext<LiftedTag>& translation_context,
-                    formalism::datalog::Repository& repository)
+auto create_axiom_program(formalism::planning::TaskView<LiftedTag> task,
+                          TranslationContext<LiftedTag>& translation_context,
+                          formalism::datalog::Repository& repository)
 {
     auto builder = formalism::datalog::Builder();
     auto context = formalism::WriteContext(builder, repository);
@@ -151,12 +151,12 @@ struct AxiomTables
     AxiomTables remap(SymbolRemapper& remapper) const { return { remapper.translation_context(translation_context) }; }
 };
 
-auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
+auto create_axiom_datalog_program(formalism::planning::TaskView<LiftedTag> task, TranslationContext<LiftedTag>& translation_context)
 {
     const auto num_objects = task.get_num_objects();
     auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     auto tables = AxiomTables {};
-    const auto program = create_program(task, tables.translation_context, *repository);
+    const auto program = create_axiom_program(task, tables.translation_context, *repository);
     auto source = TranslatedProgram<AxiomTables> { program, std::move(repository), std::move(tables) };
 
     auto result = transform(source, num_objects, decompose_static_literals_pass());
@@ -167,7 +167,7 @@ auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task, Trans
 
 AxiomEvaluatorProgram::AxiomEvaluatorProgram(formalism::planning::TaskView<LiftedTag> task) :
     m_translation_context(),
-    m_datalog_program(create_datalog_program(task, m_translation_context))
+    m_datalog_program(create_axiom_datalog_program(task, m_translation_context))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

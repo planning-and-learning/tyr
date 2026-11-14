@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_axiom
+{
+
 namespace lifted_tests
 {
 
@@ -68,3 +71,5 @@ static_assert(requires(const GroundAxiomView& view) {
 });
 
 }
+
+}  // namespace tyr::tests::planning_axiom

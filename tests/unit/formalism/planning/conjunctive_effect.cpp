@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_conjunctive_effect
+{
+
 namespace lifted_tests
 {
 
@@ -66,3 +69,5 @@ static_assert(requires(const GroundConjunctiveEffectView& view) {
 });
 
 }
+
+}  // namespace tyr::tests::planning_conjunctive_effect

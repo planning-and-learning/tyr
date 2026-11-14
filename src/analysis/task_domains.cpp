@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "domain_sets.hpp"
 #include "static_literal_compatibility.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/atom_data.hpp"
@@ -89,38 +90,15 @@
 
 namespace tyr::analysis
 {
+/// The steps of computing the domains of a task's variables, over its formalism's views.
+namespace planning_domains
+{
 namespace
 {
 
 /**
  * Temporary internal representation during computation.
  */
-
-template<typename Element, typename Payload>
-struct TmpScoped
-{
-    urd::index<Element> element;
-    Payload payload;
-};
-
-struct TmpVariableDomain
-{
-    urd::Store<urd::set<urd::index<formalism::Object>>> objects;
-};
-
-using TmpVariableDomainList = urd::Store<urd::sequence<TmpVariableDomain>>;
-
-template<typename Element>
-using TmpSimpleScopedDomain = TmpScoped<Element, TmpVariableDomainList>;
-
-template<typename Element>
-using TmpSimpleScopedDomainMap = urd::Store<urd::map<urd::index<Element>, TmpVariableDomainList>>;
-
-template<formalism::FactKind T>
-using TmpPredicateDomainMap = TmpSimpleScopedDomainMap<formalism::Predicate<T>>;
-
-template<formalism::FactKind T>
-using TmpFunctionDomainMap = TmpSimpleScopedDomainMap<formalism::Function<T>>;
 
 using TmpAxiomDomainMap = TmpSimpleScopedDomainMap<formalism::planning::Axiom<LiftedTag>>;
 
@@ -146,56 +124,6 @@ using TmpActionDomainMap = urd::Store<urd::map<urd::index<formalism::planning::A
 /**
  * Conversion helpers to public representation.
  */
-
-VariableDomain to_variable_domain(const TmpVariableDomain& domain)
-{
-    auto objects = urd::Store<urd::sequence<urd::index<formalism::Object>>>(domain.objects.begin(), domain.objects.end());
-    std::sort(objects.begin(), objects.end());
-    return VariableDomain { std::move(objects) };
-}
-
-VariableDomainList to_variable_domain_list(const TmpVariableDomainList& domains)
-{
-    auto result = VariableDomainList {};
-    result.reserve(domains.size());
-
-    for (const auto& domain : domains)
-        result.push_back(to_variable_domain(domain));
-
-    return result;
-}
-
-TmpVariableDomainList to_tmp_variable_domain_list(const VariableDomainList& domains)
-{
-    auto result = TmpVariableDomainList(domains.size());
-    for (size_t parameter = 0; parameter < domains.size(); ++parameter)
-        result[parameter].objects.insert(domains[parameter].objects.begin(), domains[parameter].objects.end());
-    return result;
-}
-
-template<formalism::FactKind T>
-PredicateDomainMap<T> to_predicate_domain_map(const TmpPredicateDomainMap<T>& domains)
-{
-    auto result = PredicateDomainMap<T> {};
-    result.reserve(domains.size());
-
-    for (const auto& [predicate, variable_domains] : domains)
-        result.emplace(predicate, to_variable_domain_list(variable_domains));
-
-    return result;
-}
-
-template<formalism::FactKind T>
-FunctionDomainMap<T> to_function_domain_map(const TmpFunctionDomainMap<T>& domains)
-{
-    auto result = FunctionDomainMap<T> {};
-    result.reserve(domains.size());
-
-    for (const auto& [function, variable_domains] : domains)
-        result.emplace(function, to_variable_domain_list(variable_domains));
-
-    return result;
-}
 
 AxiomDomainMap to_axiom_domain_map(const TmpAxiomDomainMap& domains)
 {
@@ -549,9 +477,12 @@ void apply_policy(formalism::planning::FunctionExpressionView<LiftedTag> element
 }
 
 }  // namespace
+}  // namespace planning_domains
 
 TaskVariableDomains compute_variable_domains(formalism::planning::TaskView<LiftedTag> task)
 {
+    using namespace planning_domains;  // its steps, in this function only
+
     auto universe = urd::Store<urd::set<urd::index<formalism::Object>>> {};
     for (const auto object : task.get_domain().get_constants())
         universe.insert(object.index());

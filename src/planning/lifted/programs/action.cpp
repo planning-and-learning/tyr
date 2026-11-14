@@ -30,6 +30,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -63,36 +64,11 @@ namespace tyr::planning
 namespace
 {
 
-auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
-                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
-{
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
-
-    predicate->name = create_applicability_name(action);
-    predicate->arity = action.get_arity();
-
-    return formalism::datalog::insert(context.destination(), *predicate);
-}
-
-auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
-                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
-{
-    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
-
-    const auto applicability_predicate = create_applicability_predicate(action, context).first;
-
-    atom->predicate = applicability_predicate.index();
-    for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
-        atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
-
-    return formalism::datalog::insert(context.destination(), *atom);
-}
-
-auto create_program(formalism::planning::TaskView<LiftedTag> task,
-                    TranslationContext<LiftedTag>& translation_context,
-                    AppPredicateToActionMapping& predicate_to_actions,
-                    ConditionalEffectToPredicateMapping& effect_to_predicate,
-                    formalism::datalog::Repository& repository)
+auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
+                           TranslationContext<LiftedTag>& translation_context,
+                           AppPredicateToActionMapping& predicate_to_actions,
+                           ConditionalEffectToPredicateMapping& effect_to_predicate,
+                           formalism::datalog::Repository& repository)
 {
     auto builder = formalism::datalog::Builder();
     auto context = formalism::WriteContext(builder, repository);
@@ -211,16 +187,17 @@ struct ActionTables
     }
 };
 
-auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
-                            TranslationContext<LiftedTag>& translation_context,
-                            AppPredicateToActionMapping& mapping,
-                            ApplicableActionProgram::SchemaPrograms& schema_programs,
-                            ConditionalEffectToPredicateMapping& effect_to_predicate)
+auto create_action_datalog_program(formalism::planning::TaskView<LiftedTag> task,
+                                   TranslationContext<LiftedTag>& translation_context,
+                                   AppPredicateToActionMapping& mapping,
+                                   ApplicableActionProgram::SchemaPrograms& schema_programs,
+                                   ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
     const auto num_objects = task.get_num_objects();
     auto source_repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     auto tables = ActionTables {};
-    const auto source_program = create_program(task, tables.translation_context, tables.predicate_to_actions, tables.effect_to_predicate, *source_repository);
+    const auto source_program =
+        create_action_program(task, tables.translation_context, tables.predicate_to_actions, tables.effect_to_predicate, *source_repository);
     auto source = TranslatedProgram<ActionTables> { source_program, std::move(source_repository), std::move(tables) };
 
     auto result = transform(source, num_objects, decompose_static_literals_pass());
@@ -290,7 +267,7 @@ ApplicableActionProgram::ApplicableActionProgram(formalism::planning::TaskView<L
     m_predicate_to_actions(),
     m_schema_programs(),
     m_conditional_effect_to_predicate(),
-    m_datalog_program(create_datalog_program(task, m_translation_context, m_predicate_to_actions, m_schema_programs, m_conditional_effect_to_predicate))
+    m_datalog_program(create_action_datalog_program(task, m_translation_context, m_predicate_to_actions, m_schema_programs, m_conditional_effect_to_predicate))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

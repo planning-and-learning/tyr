@@ -29,6 +29,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <cassert>
+#include <memory>
 #include <mutex>
 #include <urd/config.hpp>
 #include <urd/elements/flat.hpp>
@@ -55,18 +56,25 @@ urd::data<FDRFact<FluentTag>> copy(FDRFactView<FluentTag> element, WriteContext<
 { return urd::data<FDRFact<FluentTag>>(copy(element.get_variable(), context).first.index(), element.get_value()); }
 }
 
-FDRContext::FDRContext(RepositoryPtr context) : m_context(std::move(context)), m_facts(), m_registration_mutex(), m_builder(), m_variables() {}
+FDRContext::FDRContext(RepositoryPtr context) :
+    m_context(std::move(context)),
+    m_facts(),
+    m_registration_mutex(),
+    m_builder(std::make_unique<Builder>()),
+    m_variables()
+{
+}
 
 FDRContext::FDRContext(const urd::Store<urd::sequence<AtomViewList<GroundTag, FluentTag>>>& mutexes, RepositoryPtr context) :
     m_context(std::move(context)),
     m_facts(),
     m_registration_mutex(),
-    m_builder(),
+    m_builder(std::make_unique<Builder>()),
     m_variables()
 {
     for (const auto& group : mutexes)
     {
-        auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
+        auto variable = planning::checkout<FDRVariable<FluentTag>>(*m_builder);
         for (const auto& atom : group)
             variable->atoms.push_back(atom.index());
         const auto variable_view = planning::insert(*m_context, *variable).first;
@@ -83,12 +91,12 @@ FDRContext::FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, Repo
     m_context(std::move(context)),
     m_facts(),
     m_registration_mutex(),
-    m_builder(),
+    m_builder(std::make_unique<Builder>()),
     m_variables()
 {
     for (const auto& atom : all_atoms)
     {
-        auto variable = planning::checkout<FDRVariable<FluentTag>>(m_builder);
+        auto variable = planning::checkout<FDRVariable<FluentTag>>(*m_builder);
         variable->atoms.push_back(atom.index());
         const auto variable_view = planning::insert(*m_context, *variable).first;
         m_variables.push_back(variable_view);
@@ -101,7 +109,7 @@ FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr 
     m_context(std::move(context)),
     m_facts(),
     m_registration_mutex(),
-    m_builder(),
+    m_builder(std::make_unique<Builder>()),
     m_variables()
 {
     auto merge_context = WriteContext<Builder, Repository> { builder, *m_context };
@@ -131,7 +139,7 @@ FDRFactView<FluentTag> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom)
         return *fact;
 
     // Construct a new binary FDR variable
-    auto variable_data = planning::checkout<FDRVariable<FluentTag>>(m_builder);
+    auto variable_data = planning::checkout<FDRVariable<FluentTag>>(*m_builder);
     variable_data->atoms.push_back(atom.index());
     const auto variable = planning::insert(*m_context, *variable_data).first;
 
@@ -181,6 +189,8 @@ bool FDRContext::publish_fact(AtomView<GroundTag, FluentTag> atom, urd::data<FDR
     slot.ready.store(true, std::memory_order_release);
     return true;
 }
+
+FDRContext::~FDRContext() = default;
 
 const FDRVariableViewList<FluentTag>& FDRContext::get_variables() const noexcept { return m_variables; }
 }

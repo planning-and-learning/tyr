@@ -45,6 +45,9 @@ option(TYR_BUILD_TESTS "Build Tyr tests." OFF)
 option(TYR_BUILD_EXECUTABLES "Build Tyr executables." OFF)
 option(TYR_BUILD_PROFILING "Build Tyr profiling targets." OFF)
 option(TYR_STDLIB_ASSERTIONS "Check bounds and preconditions of the standard library in Debug builds." ON)
+# OFF compiles each source on its own: faster rebuilds after editing one, and compile_commands.json lists each source,
+# which clang-tidy (peachycheck) needs.
+option(TYR_UNITY_BUILD "Compile the sources of some directories as one translation unit each." ON)
 
 # Build configuration
 

@@ -9,6 +9,9 @@
 #include <tuple>
 #include <utility>
 
+namespace tyr::tests::planning_unary_operator
+{
+
 template<typename Entity>
 concept UnaryOperatorContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
@@ -40,3 +43,5 @@ TEST(TyrFormalismPlanningUnaryOperator, RejectsNonUnaryOperator)
     EXPECT_THROW((urd::data<Lifted>(tyr::formalism::ArithmeticOperatorKind::Add, tyr::formalism::FunctionExpression<::tyr::LiftedTag>(ygg::float_t(0)))),
                  std::invalid_argument);
 }
+
+}  // namespace tyr::tests::planning_unary_operator

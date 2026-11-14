@@ -17,6 +17,7 @@
 
 #include "solver_fixtures.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include <algorithm>
 #include <gtest/gtest.h>

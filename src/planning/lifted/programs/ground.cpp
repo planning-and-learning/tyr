@@ -27,6 +27,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -68,56 +69,6 @@ namespace
  * App_c1_pre :- App_pre and ci_pre    forall i=1,...,n
  * e :- App_ci_pre                     forall i=1,...,n forall e in ci_eff
  */
-
-auto create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
-                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
-{
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
-
-    predicate->name = create_applicability_name(action);
-    predicate->arity = action.get_arity();
-
-    return formalism::datalog::insert(context.destination(), *predicate);
-}
-
-auto create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
-                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
-{
-    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
-
-    const auto applicability_predicate = create_applicability_predicate(action, context).first;
-
-    atom->predicate = applicability_predicate.index();
-    for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
-        atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
-
-    return formalism::datalog::insert(context.destination(), *atom);
-}
-
-auto create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
-                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
-{
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
-
-    predicate->name = create_applicability_name(axiom);
-    predicate->arity = axiom.get_arity();
-
-    return formalism::datalog::insert(context.destination(), *predicate);
-}
-
-auto create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
-                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
-{
-    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
-
-    const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
-
-    atom->predicate = applicability_predicate.index();
-    for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
-        atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
-
-    return formalism::datalog::insert(context.destination(), *atom);
-}
 
 void append_from_condition(formalism::planning::ConjunctiveConditionView<LiftedTag> cond,
                            const TranslationContext<LiftedTag>& translation_context,
@@ -204,11 +155,11 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
 }
 
 /// The rule that derives the add atoms of a conditional effect and, given its effect predicate, the atoms for which it fires.
-auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
-                             formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
-                             std::optional<formalism::datalog::PredicateView<formalism::FluentTag>> effect_predicate,
-                             const TranslationContext<LiftedTag>& translation_context,
-                             formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
+                                    formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
+                                    std::optional<formalism::datalog::PredicateView<formalism::FluentTag>> effect_predicate,
+                                    const TranslationContext<LiftedTag>& translation_context,
+                                    formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
@@ -270,12 +221,12 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     return formalism::datalog::insert(context.destination(), *rule);
 }
 
-void translate_action_to_delete_free_rules(formalism::planning::ActionView<LiftedTag> action,
-                                           urd::data<formalism::datalog::Program<LiftedTag>>& program,
-                                           const TranslationContext<LiftedTag>& translation_context,
-                                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                                           AppPredicateToActionMapping& predicate_to_actions,
-                                           ConditionalEffectToPredicateMapping& effect_to_predicate)
+void translate_action_to_ground_rules(formalism::planning::ActionView<LiftedTag> action,
+                                      urd::data<formalism::datalog::Program<LiftedTag>>& program,
+                                      const TranslationContext<LiftedTag>& translation_context,
+                                      formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
+                                      AppPredicateToActionMapping& predicate_to_actions,
+                                      ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -303,7 +254,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
         if (!effect_predicate && std::ranges::none_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
             continue;
 
-        program.rules.push_back(create_cond_effect_rule(action, cond_eff, effect_predicate, translation_context, context).first.index());
+        program.rules.push_back(create_ground_cond_effect_rule(action, cond_eff, effect_predicate, translation_context, context).first.index());
         if (effect_predicate)
             effect_to_predicate.emplace(std::pair(action, cond_eff), *effect_predicate);
     }
@@ -336,12 +287,12 @@ void translate_axiom_to_delete_free_axiom_rules(formalism::planning::AxiomView<L
             .first.index());
 }
 
-auto create_program(formalism::planning::TaskView<LiftedTag> task,
-                    TranslationContext<LiftedTag>& translation_context,
-                    AppPredicateToActionMapping& predicate_to_actions,
-                    GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
-                    ConditionalEffectToPredicateMapping& effect_to_predicate,
-                    formalism::datalog::Repository& destination)
+auto create_ground_program(formalism::planning::TaskView<LiftedTag> task,
+                           TranslationContext<LiftedTag>& translation_context,
+                           AppPredicateToActionMapping& predicate_to_actions,
+                           GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
+                           ConditionalEffectToPredicateMapping& effect_to_predicate,
+                           formalism::datalog::Repository& destination)
 {
     auto builder = formalism::datalog::Builder();
     auto context = formalism::WriteContext(builder, destination);
@@ -350,7 +301,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     translate_task_symbols(task, true, translation_context, context, *program);
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, *program, translation_context, context, predicate_to_actions, effect_to_predicate);
+        translate_action_to_ground_rules(action, *program, translation_context, context, predicate_to_actions, effect_to_predicate);
 
     for (const auto axiom : task.get_domain().get_axioms())
         translate_axiom_to_delete_free_axiom_rules(axiom, *program, translation_context, context, predicate_to_axioms);
@@ -361,14 +312,14 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     return formalism::datalog::insert(destination, *program).first;
 }
 
-static auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
-                                   TranslationContext<LiftedTag>& translation_context,
-                                   AppPredicateToActionMapping& predicate_to_actions,
-                                   GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
-                                   ConditionalEffectToPredicateMapping& effect_to_predicate)
+static auto create_ground_datalog_program(formalism::planning::TaskView<LiftedTag> task,
+                                          TranslationContext<LiftedTag>& translation_context,
+                                          AppPredicateToActionMapping& predicate_to_actions,
+                                          GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms,
+                                          ConditionalEffectToPredicateMapping& effect_to_predicate)
 {
     auto repository = std::make_shared<formalism::datalog::Repository>(task.get_num_objects());
-    auto program = create_program(task, translation_context, predicate_to_actions, predicate_to_axioms, effect_to_predicate, *repository);
+    auto program = create_ground_program(task, translation_context, predicate_to_actions, predicate_to_axioms, effect_to_predicate, *repository);
     return datalog::Program<LiftedTag>(program, std::move(repository));
 }
 
@@ -379,7 +330,8 @@ GroundTaskProgram::GroundTaskProgram(formalism::planning::TaskView<LiftedTag> ta
     m_predicate_to_actions(),
     m_predicate_to_axioms(),
     m_conditional_effect_to_predicate(),
-    m_datalog_program(create_datalog_program(task, m_translation_context, m_predicate_to_actions, m_predicate_to_axioms, m_conditional_effect_to_predicate))
+    m_datalog_program(
+        create_ground_datalog_program(task, m_translation_context, m_predicate_to_actions, m_predicate_to_axioms, m_conditional_effect_to_predicate))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

@@ -51,6 +51,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <urd/elements/flat.hpp>
@@ -78,6 +79,13 @@ public:
     // Copy the FDRContext after concurrent registrations have completed.
     FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context);
 
+    FDRContext(const FDRContext&) = delete;
+    FDRContext& operator=(const FDRContext&) = delete;
+    FDRContext(FDRContext&&) = delete;
+    FDRContext& operator=(FDRContext&&) = delete;
+    /// Defined in the source, where the builder is complete.
+    ~FDRContext();
+
     FDRFactView<FluentTag> get_fact(AtomView<GroundTag, FluentTag> atom);
 
     [[nodiscard]] std::optional<FDRFactView<FluentTag>> get_fact(AtomView<GroundTag, FluentTag> atom) const;
@@ -100,7 +108,9 @@ private:
     // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.
     urd::Store<urd::sequence<FactSlot>, urd::stable_refs, urd::concurrent> m_facts;
     std::mutex m_registration_mutex;
-    Builder m_builder;
+    /// By pointer: a builder holds a slot per record type, which every includer would instantiate (brokkr's template
+    /// rules, rule 4).
+    std::unique_ptr<Builder> m_builder;
     FDRVariableViewList<FluentTag> m_variables;
 };
 

@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::datalog_function_term
+{
+
 namespace lifted_tests
 {
 
@@ -64,3 +67,5 @@ concept GroundFunctionTermContract =
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)
               { return (GroundFunctionTermContract<Entities> && ...); }(tyr::formalism::datalog::FunctionTermTypes<::tyr::GroundTag> {}));
 }
+
+}  // namespace tyr::tests::datalog_function_term

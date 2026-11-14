@@ -13,6 +13,9 @@
 #include <utility>
 #include <vector>
 
+namespace tyr::tests::datalog_multi_operator
+{
+
 template<typename Entity>
 concept MultiOperatorContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
@@ -68,3 +71,5 @@ TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
         EXPECT_EQ(data.index, view.index());
     }
 }
+
+}  // namespace tyr::tests::datalog_multi_operator

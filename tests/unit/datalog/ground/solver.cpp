@@ -22,6 +22,7 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include <fmt/core.h>
 #include <gtest/gtest.h>

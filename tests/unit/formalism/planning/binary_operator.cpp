@@ -7,6 +7,9 @@
 #include <tuple>
 #include <utility>
 
+namespace tyr::tests::planning_binary_operator
+{
+
 template<typename Entity>
 concept BinaryOperatorContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
@@ -46,3 +49,5 @@ static_assert(std::same_as<urd::index_view<GroundArithmetic, tyr::formalism::pla
                            tyr::formalism::planning::BinaryOperatorView<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>>);
 static_assert(std::same_as<urd::index_view<GroundBoolean, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::BinaryOperatorView<::tyr::GroundTag, tyr::formalism::BooleanOperatorKind>>);
+
+}  // namespace tyr::tests::planning_binary_operator

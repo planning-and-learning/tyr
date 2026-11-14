@@ -153,6 +153,40 @@ add_library(
     planning/task_utils.cpp
 )
 add_library(tyr::core ALIAS core)
+
+# The sources of each directory listed share most of their instantiations: batched, they compile them once (brokkr's
+# template rules, rule 11), each batch below the heaviest translation unit of the build. formalism/planning exceeds it
+# merged whole and is batched by three; planning/lifted exceeds it in any batch.
+brokkr_unity_directories(
+    core
+    ENABLED ${TYR_UNITY_BUILD}
+    DIRECTORIES
+        algorithms/kckp
+        analysis
+        datalog
+        datalog/ground/workspaces
+        datalog/lifted
+        datalog/lifted/database/optimization/details
+        datalog/lifted/database/semantics
+        datalog/lifted/database/semantics/bound
+        datalog/lifted/database/semantics/details
+        datalog/lifted/database/semantics/incremental
+        datalog/lifted/database/syntax
+        datalog/lifted/kckp
+        datalog/lifted/kckp/workspaces
+        datalog/lifted/workspaces
+        datalog/policies
+        formalism
+        formalism/datalog
+        formalism/planning/invariants
+        planning
+        planning/algorithms
+        planning/ground
+        planning/heuristics
+        planning/lifted/programs
+        planning/state_storage/tree_bitset
+)
+brokkr_unity_directories(core ENABLED ${TYR_UNITY_BUILD} BATCH_SIZE 3 DIRECTORIES formalism/planning)
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
 
 # An executable shares the state of inline functions (a function's static, as yggdrasil's next_layer) with this

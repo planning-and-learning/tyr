@@ -38,6 +38,21 @@ extern urd::flat_string create_triggered_name(formalism::planning::ActionView<Li
 
 extern urd::flat_string create_applicability_name(formalism::planning::AxiomView<LiftedTag> axiom);
 
+/// The fluent predicate that holds where the action (the axiom) is applicable, and its atom over the action's (the
+/// axiom's) parameters, interned into the context's repository.
+std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
+                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
+                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
+std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
+                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
+                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);
+
 /// The translation context with its Datalog symbols copied into the copy context's repository.
 TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source,
                                                         formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context);

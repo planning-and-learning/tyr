@@ -10,6 +10,7 @@
 #include "tyr/datalog/lifted/database/optimization/details/join_block.hpp"
 #include "tyr/datalog/lifted/database/optimization/details/normalization.hpp"
 #include "tyr/datalog/lifted/database/optimization/details/structural.hpp"
+#include "tyr/datalog/lifted/database/optimization/optimization.hpp"
 
 #include <cassert>
 #include <concepts>
@@ -25,17 +26,6 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-
-namespace tyr::datalog::database
-{
-/// How a root is evaluated: fully, by materializing it, or bound, by the bound evaluator with some columns given per
-/// call (bound::QueryEvaluator).
-enum class Evaluation : std::uint8_t
-{
-    full,
-    bound,
-};
-}  // namespace tyr::datalog::database
 
 namespace tyr::datalog::database::detail
 {
@@ -103,8 +93,6 @@ public:
 
 void validate(std::span<const QueryView<>> roots, const Statistics& statistics);
 
-/// Normalizes the reachable queries, plans each join block of the fully evaluated roots, and compiles the roots.
-QueryPlan optimize(std::span<const QueryView<>> roots, std::span<const Evaluation> evaluations, const Statistics& statistics);
 }  // namespace tyr::datalog::database::detail
 
 #endif

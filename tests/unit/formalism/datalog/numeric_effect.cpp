@@ -7,6 +7,9 @@
 #include <tuple>
 #include <utility>
 
+namespace tyr::tests::datalog_numeric_effect
+{
+
 namespace lifted_tests
 {
 
@@ -54,3 +57,5 @@ static_assert(GroundNumericEffectContract<Fluent>);
 static_assert(std::same_as<urd::index_view<Fluent, tyr::formalism::datalog::Repository>,
                            tyr::formalism::datalog::NumericEffectView<::tyr::GroundTag, tyr::formalism::FluentTag>>);
 }
+
+}  // namespace tyr::tests::datalog_numeric_effect

@@ -10,6 +10,9 @@
 #include <gtest/gtest.h>
 #include <string>
 
+namespace tyr::tests::planning_function_term
+{
+
 namespace lifted_tests
 {
 
@@ -125,3 +128,5 @@ TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
     EXPECT_EQ(urd::to_stored(copied.get_terms()[0]), urd::to_stored(term.get_terms()[0]));
     EXPECT_FALSE(tyr::formalism::copy(term, context).second);
 }
+
+}  // namespace tyr::tests::planning_function_term

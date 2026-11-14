@@ -70,6 +70,13 @@ add_gtest(
     "planning/ground/match_tree/nodes/variable.cpp"
 )
 
+# Type tests of one directory include the same headers and check their types against them: batched, the headers and
+# the types are compiled once (brokkr's template rules, rule 11). Each file has its own namespace, tyr::tests::<path>.
+brokkr_unity_directories(formalism_core_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism)
+brokkr_unity_directories(formalism_datalog_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism/datalog)
+brokkr_unity_directories(formalism_planning_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism/planning)
+brokkr_unity_directories(planning_match_tree_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES planning/ground/match_tree/nodes)
+
 add_gtest(
     planning_state_types
     "planning/ground/state.cpp"

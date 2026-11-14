@@ -31,6 +31,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -112,10 +113,10 @@ auto create_delete_free_goal(formalism::planning::ConjunctiveConditionView<Groun
     return formalism::datalog::insert(context.destination(), *conj_cond);
 }
 
-auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
-                             formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
-                             TranslationContext<LiftedTag>& translation_context,
-                             formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+auto create_rpg_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
+                                 formalism::planning::ConditionalEffectView<LiftedTag> cond_eff,
+                                 TranslationContext<LiftedTag>& translation_context,
+                                 formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder());
 
@@ -136,17 +137,17 @@ auto create_cond_effect_rule(formalism::planning::ActionView<LiftedTag> action,
     return formalism::datalog::insert(context.destination(), *rule);
 }
 
-void translate_action_to_delete_free_rules(formalism::planning::ActionView<LiftedTag> action,
-                                           urd::data<formalism::datalog::Program<LiftedTag>>& program,
-                                           TranslationContext<LiftedTag>& translation_context,
-                                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
-                                           RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
+void translate_action_to_rpg_rules(formalism::planning::ActionView<LiftedTag> action,
+                                   urd::data<formalism::datalog::Program<LiftedTag>>& program,
+                                   TranslationContext<LiftedTag>& translation_context,
+                                   formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
+                                   RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action)
 {
     for (const auto cond_eff : action.get_effects())
     {
         if (std::ranges::any_of(cond_eff.get_effect().get_literals(), [](const auto literal) { return literal.get_polarity(); }))
         {
-            const auto rule = create_cond_effect_rule(action, cond_eff, translation_context, context).first;
+            const auto rule = create_rpg_cond_effect_rule(action, cond_eff, translation_context, context).first;
 
             program.rules.push_back(rule.index());
             rule_to_action[rule.index()].push_back(action);
@@ -154,10 +155,10 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Lifte
     }
 }
 
-auto create_program(formalism::planning::TaskView<LiftedTag> task,
-                    TranslationContext<LiftedTag>& translation_context,
-                    RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action,
-                    formalism::datalog::Repository& destination)
+auto create_rpg_program(formalism::planning::TaskView<LiftedTag> task,
+                        TranslationContext<LiftedTag>& translation_context,
+                        RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action,
+                        formalism::datalog::Repository& destination)
 {
     auto builder = formalism::datalog::Builder();
     auto context = formalism::WriteContext(builder, destination);
@@ -168,7 +169,7 @@ auto create_program(formalism::planning::TaskView<LiftedTag> task,
     program->goal = create_delete_free_goal(task.get_goal(), translation_context, context).first.index();
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, *program, translation_context, context, rule_to_action);
+        translate_action_to_rpg_rules(action, *program, translation_context, context, rule_to_action);
 
     return formalism::datalog::insert(destination, *program).first;
 }
@@ -190,19 +191,19 @@ struct RPGTables
     }
 };
 
-auto create_datalog_program(formalism::planning::TaskView<LiftedTag> task,
-                            CostMode cost_mode,
-                            bool split_rules,
-                            TranslationContext<LiftedTag>& translation_context,
-                            RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action,
-                            datalog::RuleSplitting& rule_splitting)
+auto create_rpg_datalog_program(formalism::planning::TaskView<LiftedTag> task,
+                                CostMode cost_mode,
+                                bool split_rules,
+                                TranslationContext<LiftedTag>& translation_context,
+                                RPGProgram<LiftedTag>::RuleToActionMapping& rule_to_action,
+                                datalog::RuleSplitting& rule_splitting)
 {
     require_unit_cost(cost_mode);
 
     const auto num_objects = task.get_num_objects();
     auto repository = std::make_shared<formalism::datalog::Repository>(num_objects);
     auto tables = RPGTables {};
-    const auto program = create_program(task, tables.translation_context, tables.rule_to_action, *repository);
+    const auto program = create_rpg_program(task, tables.translation_context, tables.rule_to_action, *repository);
     auto result = TranslatedProgram<RPGTables> { program, std::move(repository), std::move(tables) };
 
     if (split_rules)
@@ -230,7 +231,7 @@ RPGProgram<LiftedTag>::RPGProgram(formalism::planning::TaskView<LiftedTag> task,
     m_translation_context(),
     m_rule_to_action(),
     m_rule_splitting(),
-    m_datalog_program(create_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
+    m_datalog_program(create_rpg_datalog_program(task, cost_mode, split_rules, m_translation_context, m_rule_to_action, m_rule_splitting))
 {
     // std::cout << m_datalog_program.get_program() << std::endl;
 }

@@ -1,4 +1,5 @@
 #include "tyr/formalism/copy.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/planning/action_data.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
@@ -11,6 +12,9 @@
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
+
+namespace tyr::tests::planning_action
+{
 
 namespace lifted_tests
 {
@@ -177,3 +181,5 @@ static_assert(requires(const GroundActionView& view) {
 });
 
 }
+
+}  // namespace tyr::tests::planning_action

@@ -22,10 +22,12 @@
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
+#include "tyr/formalism/datalog/interning.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 #include "tyr/formalism/function_term_value_view.hpp"
 #include "tyr/formalism/function_term_view.hpp"
 #include "tyr/formalism/function_view.hpp"
@@ -61,6 +63,60 @@ urd::flat_string create_applicability_name(formalism::planning::ActionView<Lifte
 
 urd::flat_string create_triggered_name(formalism::planning::ActionView<LiftedTag> action, formalism::planning::ConditionalEffectView<LiftedTag> cond_eff)
 { return urd::flat_string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.index().value) }; }
+
+std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+create_applicability_predicate(formalism::planning::ActionView<LiftedTag> action,
+                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+{
+    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
+
+    predicate->name = create_applicability_name(action);
+    predicate->arity = action.get_arity();
+
+    return formalism::datalog::insert(context.destination(), *predicate);
+}
+
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
+                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+{
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+
+    const auto applicability_predicate = create_applicability_predicate(action, context).first;
+
+    atom->predicate = applicability_predicate.index();
+    for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
+        atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
+
+    return formalism::datalog::insert(context.destination(), *atom);
+}
+
+std::pair<formalism::datalog::PredicateView<formalism::FluentTag>, bool>
+create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
+                               formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+{
+    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
+
+    predicate->name = create_applicability_name(axiom);
+    predicate->arity = axiom.get_arity();
+
+    return formalism::datalog::insert(context.destination(), *predicate);
+}
+
+std::pair<formalism::datalog::AtomView<LiftedTag, formalism::FluentTag>, bool>
+create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
+                          formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)
+{
+    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+
+    const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
+
+    atom->predicate = applicability_predicate.index();
+    for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
+        atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
+
+    return formalism::datalog::insert(context.destination(), *atom);
+}
 
 TranslationContext<LiftedTag> remap_translation_context(const TranslationContext<LiftedTag>& source,
                                                         formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context)

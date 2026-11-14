@@ -5,7 +5,6 @@
 #ifndef TYR_DATALOG_DATABASE_OPTIMIZATION_OPTIMIZATION_HPP_
 #define TYR_DATALOG_DATABASE_OPTIMIZATION_OPTIMIZATION_HPP_
 
-#include "tyr/datalog/lifted/database/optimization/details/optimization.hpp"
 #include "tyr/datalog/lifted/database/optimization/statistics.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
@@ -14,6 +13,7 @@
 
 #include <algorithm>
 #include <concepts>
+#include <cstdint>
 #include <ranges>
 #include <span>
 #include <string>
@@ -24,6 +24,22 @@
 
 namespace tyr::datalog::database
 {
+/// How a root is evaluated: fully, by materializing it, or bound, by the bound evaluator with some columns given per
+/// call (bound::QueryEvaluator).
+enum class Evaluation : std::uint8_t
+{
+    full,
+    bound,
+};
+
+namespace detail
+{
+/// Normalizes the reachable queries, plans each join block of the fully evaluated roots, and compiles the roots. The
+/// planner stays in the library (details/optimization.hpp): its members would instantiate the operator builder in
+/// every includer (brokkr's template rules, rule 24).
+QueryPlan optimize(std::span<const QueryView<>> roots, std::span<const Evaluation> evaluations, const Statistics& statistics);
+}  // namespace detail
+
 /// Measures row and per-column distinct counts of the relations bound to each input slot.
 template<RelationViewRange R>
 Statistics collect_statistics(const R& inputs)

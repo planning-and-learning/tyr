@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_conditional_effect
+{
+
 namespace lifted_tests
 {
 
@@ -63,3 +66,5 @@ static_assert(requires(const GroundConditionalEffectView& view) {
 });
 
 }
+
+}  // namespace tyr::tests::planning_conditional_effect

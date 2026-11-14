@@ -5,6 +5,9 @@
 
 #include <concepts>
 
+namespace tyr::tests::planning_literal
+{
+
 namespace lifted_tests
 {
 
@@ -63,3 +66,5 @@ static_assert(GroundLiteralContract<tyr::formalism::Literal<::tyr::GroundTag, ty
 static_assert(std::same_as<urd::index_view<tyr::formalism::Literal<::tyr::GroundTag, tyr::formalism::DerivedTag>, tyr::formalism::planning::Repository>,
                            tyr::formalism::planning::LiteralView<::tyr::GroundTag, tyr::formalism::DerivedTag>>);
 }
+
+}  // namespace tyr::tests::planning_literal

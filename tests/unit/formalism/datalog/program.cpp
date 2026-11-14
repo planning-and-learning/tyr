@@ -4,10 +4,14 @@
 #include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/detail/repository_instantiations.hpp"
 
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
+
+namespace tyr::tests::datalog_program
+{
 
 namespace lifted_tests
 {
@@ -229,3 +233,5 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
 }
 
 }
+
+}  // namespace tyr::tests::datalog_program
