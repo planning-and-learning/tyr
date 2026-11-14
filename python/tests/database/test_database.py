@@ -11,7 +11,7 @@ from pyyggdrasil import formalism
 from relation_utils import intern, rename
 
 import pytyr
-from pytyr import database
+from pytyr.datalog.lifted import database
 
 
 def columns(*labels: int) -> list[formalism.ColumnIndex]:
@@ -29,7 +29,7 @@ def layouts(*labels: int) -> list[formalism.ColumnLayout]:
 
 
 def test_relation_rows_and_validation() -> None:
-    assert database is pytyr.database
+    assert database is pytyr.datalog.lifted.database
     exported: list[str] = vars(database)["__all__"]  # the generated type hints do not list __all__
     assert all(hasattr(database, name) for name in exported)
     relation = formalism.Relation(columns(10, 20))

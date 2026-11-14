@@ -28,7 +28,7 @@ cmake -S . -B build \
   -DCMAKE_PREFIX_PATH="$(.venv/bin/python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')" \
   -DTYR_BUILD_TESTS=ON \
   -DTYR_BUILD_EXECUTABLES=ON \
-  -DTYR_BUILD_PROFILING=ON \
+  -DTYR_BUILD_BENCHMARKS=ON \
   -DTYR_BUILD_PYTYR=ON
 ```
 
@@ -38,7 +38,7 @@ Build options:
 
 - `TYR_BUILD_TESTS`: builds C++ unit tests.
 - `TYR_BUILD_EXECUTABLES`: builds command-line executables.
-- `TYR_BUILD_PROFILING`: builds profiling and benchmark targets.
+- `TYR_BUILD_BENCHMARKS`: builds the benchmark targets.
 - `TYR_BUILD_PYTYR`: builds Python bindings.
 
 Before running a validation target, check whether the existing `build/` directory was configured with the required option. Do not reconfigure CMake unless the needed target is missing or configuration changed.
@@ -50,7 +50,7 @@ Before running a validation target, check whether the existing `build/` director
 - Build Python bindings with `source .venv/bin/activate && uv pip install .` only when Python bindings or exported C++ APIs change.
 - Run Python tests with `.venv/bin/python -m pytest python/tests -q` when Python bindings, parser behavior, or exposed APIs change.
 - Run documented Python examples when Python bindings or example-facing behavior changes.
-- Run profiling suite if available for the coding task, compare with previous results, and print the summary table.
+- Run the benchmark suite if available for the coding task, compare with previous results, and print the summary table.
 
 ## Coding Conventions
 

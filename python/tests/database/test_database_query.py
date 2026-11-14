@@ -9,7 +9,7 @@ import pytest
 from pyyggdrasil import formalism
 from relation_utils import intern
 
-from pytyr import database as db
+from pytyr.datalog.lifted import database as db
 
 QueryRecord = (
     db.QueryInputData

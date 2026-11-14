@@ -105,7 +105,7 @@ TaskPair make_task_pair(tyr::planning::TaskPtr<LiftedTag> lifted)
 
 TaskPair parse_tasks(const std::filesystem::path& domain, const std::filesystem::path& problem)
 {
-    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/algorithms";
     return make_task_pair(tyr::planning::Task<LiftedTag>::create(make_test_parser(fixture_root / domain).parse_task(fixture_root / problem)));
 }
 
@@ -113,7 +113,7 @@ TaskPair parse_tasks(const std::filesystem::path& problem) { return parse_tasks(
 
 TaskPair parse_transport_tasks(const std::filesystem::path& problem)
 {
-    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/algorithms";
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
     return make_task_pair(
         tyr::planning::Task<LiftedTag>::create(make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / problem)));
@@ -1204,7 +1204,7 @@ TEST(TyrPlanningSearchEngineTest, PrunedDuplicatesDoNotCloseAcceptedAStarStates)
 
 TEST(TyrPlanningSearchEngineTest, DuplicateDetectionPrecedesParallelAStarHeuristicEvaluation)
 {
-    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/algorithms";
     const auto task = tyr::planning::Task<LiftedTag>::create(
         make_test_parser(fixture_root / "parallel_search_edge_cases_domain.pddl").parse_task(fixture_root / "parallel_search_diamond.pddl"));
     auto probe = make_search_context(task);

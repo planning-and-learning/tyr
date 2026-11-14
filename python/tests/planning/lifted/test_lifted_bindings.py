@@ -16,7 +16,7 @@ from pytyr.formalism.planning import Parser
 Node = planning.lifted.Node
 State = planning.lifted.State
 Plan = planning.lifted.Plan
-IwStatistics = planning.lifted.iw.Statistics
+IwStatistics = planning.algorithms.iw.lifted.Statistics
 SearchStatus = planning.SearchStatus
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
@@ -48,7 +48,7 @@ def test_lifted_datalog_workspaces_own_independent_repositories() -> None:
 
 
 def test_fact_sets_give_a_predicates_rows() -> None:
-    fixture = Path(__file__).parents[4] / "tests/fixtures/planning/algorithms"
+    fixture = Path(__file__).parents[4] / "tests/support/data/planning/algorithms"
     options = ParserOptions()
     task = planning.lifted.Task(
         Parser(str(fixture / "iw_goal_before_novelty_domain.pddl"), options).parse_task(
@@ -69,7 +69,7 @@ def test_fact_sets_give_a_predicates_rows() -> None:
 
 
 def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None:
-    class AStarEventHandler(planning.lifted.astar_eager.EventHandler):
+    class AStarEventHandler(planning.algorithms.astar_eager.lifted.EventHandler):
         def __init__(self) -> None:
             super().__init__()
 
@@ -85,7 +85,7 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         def on_solved(self, plan: Plan) -> None:
             pass
 
-    class BRFSEventHandler(planning.lifted.brfs.EventHandler):
+    class BRFSEventHandler(planning.algorithms.brfs.lifted.EventHandler):
         def __init__(self) -> None:
             super().__init__()
 
@@ -105,7 +105,7 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         def on_solved(self, plan: Plan) -> None:
             pass
 
-    class GBFSEventHandler(planning.lifted.gbfs_lazy.EventHandler):
+    class GBFSEventHandler(planning.algorithms.gbfs_lazy.lifted.EventHandler):
         def __init__(self) -> None:
             super().__init__()
 
@@ -125,10 +125,10 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         def on_solved(self, plan: Plan) -> None:
             pass
 
-    class IWEventHandler(planning.lifted.iw.EventHandler):
+    class IWEventHandler(planning.algorithms.iw.lifted.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.algorithm_statistics = planning.lifted.iw.Statistics()
+            self.algorithm_statistics = planning.algorithms.iw.lifted.Statistics()
 
         @override
         def on_start_search(self, max_arity: int) -> None:
@@ -151,13 +151,13 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
             pass
 
         @override
-        def get_statistics(self) -> planning.lifted.iw.Statistics:
+        def get_statistics(self) -> planning.algorithms.iw.lifted.Statistics:
             return self.algorithm_statistics
 
-    class SIWEventHandler(planning.lifted.siw.EventHandler):
+    class SIWEventHandler(planning.algorithms.siw.lifted.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.algorithm_statistics = planning.lifted.siw.Statistics()
+            self.algorithm_statistics = planning.algorithms.siw.lifted.Statistics()
 
         @override
         def on_start_search(self) -> None:
@@ -186,15 +186,15 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
             pass
 
         @override
-        def get_statistics(self) -> planning.lifted.siw.Statistics:
+        def get_statistics(self) -> planning.algorithms.siw.lifted.Statistics:
             return self.algorithm_statistics
 
     for event_handler_class, event_handler_base in (
-        (AStarEventHandler, planning.lifted.astar_eager.EventHandler),
-        (BRFSEventHandler, planning.lifted.brfs.EventHandler),
-        (GBFSEventHandler, planning.lifted.gbfs_lazy.EventHandler),
-        (IWEventHandler, planning.lifted.iw.EventHandler),
-        (SIWEventHandler, planning.lifted.siw.EventHandler),
+        (AStarEventHandler, planning.algorithms.astar_eager.lifted.EventHandler),
+        (BRFSEventHandler, planning.algorithms.brfs.lifted.EventHandler),
+        (GBFSEventHandler, planning.algorithms.gbfs_lazy.lifted.EventHandler),
+        (IWEventHandler, planning.algorithms.iw.lifted.EventHandler),
+        (SIWEventHandler, planning.algorithms.siw.lifted.EventHandler),
     ):
         assert isinstance(event_handler_class(), event_handler_base)
 

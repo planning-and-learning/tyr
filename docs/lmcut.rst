@@ -10,40 +10,40 @@ only how the delete relaxation of a state is obtained.
 The algorithm
 -------------
 
-A state is evaluated in two steps.
+A state is evaluated in rounds. Each round runs :math:`h^{max}` on the state, cuts the justification graph of that
+run, and charges the cut; the rounds end when the goal costs nothing.
 
-1. **Relaxed exploration.** The Datalog engine evaluates the delete-relaxed program of the task
-   (``RPGProgram``) on the state, to its fixpoint, with the :math:`h^{max}` annotation policy that records every
-   rule instance as an achiever of its heads. A ground task has a rule per ground action; a lifted task has a rule per
-   action schema and conditional effect, and the engine enumerates its instances. The result is the same in both
-   cases: every fact the state reaches under the delete relaxation, its :math:`h^{max}` value, and every rule instance
-   that reaches it.
+1. **h^max.** The Datalog engine evaluates the delete-relaxed program of the task (``RPGProgram``) on the state, to
+   its fixpoint, with the costs the earlier cuts of this evaluation charged taken off the actions. It aggregates
+   costs by maximum and records every rule instance that reaches a fact as an achiever of it. A ground task has a
+   rule per ground action; a lifted task has a rule per action schema and conditional effect, and the engine
+   enumerates its instances. The engine does not stop at the goal: a cut needs every arc the state reaches.
 
-2. **LM-cut on the relaxed task.** The facts and achievers are turned into an explicit relaxed task
-   (``RelaxedTask`` in ``src/planning/heuristics/lmcut.cpp``): facts, operators with their preconditions and effects,
-   and for each operator the action it is an instance of. The original algorithm then runs on it without asking the
-   engine again:
+2. **The justification graph.** Its vertices are the facts. Every achiever is an arc to its head from its
+   precondition choice, the first precondition of greatest :math:`h^{max}`, weighted by its residual cost: its
+   cost less that precondition's.
 
-   - every operator's *supporter* is a precondition of greatest :math:`h^{max}` (the precondition choice function);
-   - the *goal zone* is the set of facts that reach the goal over operators of cost 0, through their supporters;
-   - the *before-goal zone* is the set of facts the state reaches through supporters outside the goal zone, and the
-     *cut* is the set of operators that lead from it into the goal zone;
-   - the least cost in the cut is added to the heuristic value and taken off the cut's actions;
-   - :math:`h^{max}` is updated incrementally from the operators that got cheaper; an operator keeps its supporter
-     unless another precondition is now strictly more expensive;
-   - the rounds end when the goal's :math:`h^{max}` is 0.
+3. **The cut.**
+
+   - the *goal zone* is the first goal fact of greatest :math:`h^{max}`, closed backwards over the arcs of cost 0;
+   - the *before-goal zone* is the set of facts the state reaches without entering the goal zone. Only the facts
+     the cut asks about are explored: backwards once from the sources of the action arcs into the goal zone, then
+     reachability is propagated forwards from the facts of the state, so that cycles do not cut it off;
+   - the *cut* is every action arc of positive cost from the before-goal zone into the goal zone;
+   - its least residual cost is added to the heuristic value and charged to each action of the cut.
+
+A state from which the goal is unreachable gets an infinite value, and a round without a cut ends the evaluation with
+the goal's :math:`h^{max}` added.
 
 The operators of one action share its cost. That matters where an action has several rule instances: one per
 conditional effect, several for a quantified effect, and in the ground program the applicability rule besides the
-effect rules. A cut charges the action once, however many of its operators cross the cut. Where a rule instance is
-the only operator of its action (an action without conditional effects), no action binding is looked up at all.
+effect rules. A cut charges the action once, however many of its operators cross the cut.
 
 The heuristic value depends on how ties between preconditions of equal :math:`h^{max}` are broken, as in every
 implementation of LM-cut. tyr takes the first such precondition in a fixed order of the facts, so values can differ
 from those of other planners on tasks with ties; on classical tasks every value is admissible.
 
-Numeric tasks are outside [HD09]_ and are handled differently; see `Numeric tasks`_. Their values are not lower
-bounds.
+Numeric tasks are outside [HD09]_; see `Numeric tasks`_.
 
 An evaluation allocates no memory once its buffers have the size a state needs, for classical and for numeric tasks,
 the engine included: ``tests/unit/planning/heuristics/lmcut.cpp`` counts the allocations of an evaluation after a few
@@ -52,8 +52,9 @@ others of the same state, on every fixture task, ground and lifted.
 Where the time goes
 -------------------
 
-``print_summary`` reports the time an LM-cut heuristic and its workers spent in each phase (the search executables
-print it at the default verbosity):
+``print_summary`` reports how often an LM-cut heuristic and its workers evaluated a state and ran :math:`h^{max}`,
+and the time they spent in each phase of an evaluation (the search executables print it at the default verbosity;
+``experiments/parser_lmcut.py`` reads it):
 
 .. list-table::
    :header-rows: 1
@@ -61,270 +62,44 @@ print it at the default verbosity):
 
    * - Phase
      - What it measures
-   * - Exploration
-     - the relaxed exploration of the state by the Datalog engine
-   * - Construction
-     - the relaxed task built from the engine's facts and achievers
-   * - Supporters
-     - the relaxed task's adjacency and every operator's supporter
+   * - :math:`h^{max}`
+     - per round, the costs the cuts have reduced set on the actions and the relaxed exploration of the state by the
+       Datalog engine
    * - Goal zone
      - per round, the goal zone
+   * - Before-goal zone
+     - per round, the before-goal zone
    * - Cut
-     - per round, the before-goal zone and the cut
-   * - Update
-     - per round, the costs reduced and :math:`h^{max}` updated
+     - per round, the cut and its least cost
 
-The figures and the table are from a lifted lazy greedy best-first search with LM-cut on tasks of the hard-to-ground
-benchmark set (one search worker, one Datalog thread, 60 seconds per task, Intel Core i9-12900KF). The search only
-chooses the states; what is shown is the heuristic's own time.
+The figure is from lifted A* with LM-cut and unit costs on the 494 tasks of the hard-to-ground benchmark set that
+printed the statistics (one search worker, one Datalog thread, 600 seconds and 8 GiB per task;
+``2026-11-12-astar_eager-lifted-lmcut`` in ``experiments/README.md``), the time of each phase summed over the tasks.
+``experiments/lmcut_figures.py`` draws it from the evaluation's properties.
 
 .. figure:: lmcut/phases.svg
-   :alt: Share of each phase in the time of LM-cut, per task
+   :alt: Share of each phase in the time of LM-cut, summed over 494 tasks
 
-   Share of each phase in the time LM-cut takes.
+   Share of each phase in the time LM-cut takes, summed over all tasks.
 
-.. figure:: lmcut/per-evaluation.svg
-   :alt: Time of LM-cut per evaluation against the number of operators of the relaxed task, per task
-
-   Time per evaluation against the number of operators of the relaxed task (both axes logarithmic).
-
-.. list-table::
-   :header-rows: 1
-
-   * - Task
-     - Evaluations
-     - Facts
-     - Operators
-     - Rounds
-     - ms per evaluation
-     - Exploration
-     - Construction
-     - Rounds (all)
-   * - blocksworld-100
-     - 38
-     - 10302
-     - 20200
-     - 3.6
-     - 21.23
-     - 76%
-     - 18%
-     - 5%
-   * - childsnack-p0
-     - 708
-     - 36
-     - 134
-     - 4.8
-     - 0.12
-     - 80%
-     - 16%
-     - 4%
-   * - genome-positional
-     - 15
-     - 324
-     - 1301370
-     - 1.0
-     - 4068.65
-     - 90%
-     - 9%
-     - 1%
-   * - genome-split
-     - 9941
-     - 757
-     - 4828
-     - 21.4
-     - 6.00
-     - 66%
-     - 16%
-     - 17%
-   * - genome
-     - 1287
-     - 704
-     - 30770
-     - 14.2
-     - 46.57
-     - 70%
-     - 19%
-     - 11%
-   * - labyrinth-01
-     - 295
-     - 100
-     - 3078
-     - 4.3
-     - 5.67
-     - 77%
-     - 17%
-     - 6%
-   * - logistics-s1000
-     - 79
-     - 11022
-     - 1020020
-     - 4.0
-     - 766.72
-     - 75%
-     - 20%
-     - 5%
-   * - organic-alkene-p10
-     - 6
-     - 62
-     - 5171
-     - 0.8
-     - 13.51
-     - 75%
-     - 21%
-     - 4%
-   * - organic-mit-p10
-     - 2
-     - 397
-     - 2589620
-     - 2.0
-     - 38515.44
-     - 87%
-     - 10%
-     - 3%
-   * - pipesworld-p01
-     - 11
-     - 73
-     - 128
-     - 3.5
-     - 0.40
-     - 85%
-     - 10%
-     - 4%
-   * - rovers-w1000
-     - 8159
-     - 3062
-     - 5650
-     - 9.4
-     - 6.75
-     - 74%
-     - 15%
-     - 11%
-   * - visitall-3dim
-     - 6
-     - 433
-     - 1080
-     - 2.5
-     - 1.51
-     - 86%
-     - 10%
-     - 4%
-
-The last three columns are shares of the heuristic's time: the exploration, the construction, and the four phases of
-the rounds together.
-
-The relaxed exploration takes two thirds to nine tenths of the time on every task, and the construction of the relaxed
-task most of the rest. The rounds of LM-cut proper are a few percent, and more only where a state needs many rounds
-(``genome-split``: 21 per evaluation). The cost of an evaluation follows the number of operators the state reaches
-under the delete relaxation: a hundred for ``childsnack-p0`` (0.1 ms), a million for ``logistics-s1000`` (0.8 s) and
-``genome-positional`` (4 s), two and a half million for ``organic-mit-p10`` (38 s). On
-``organic-synthesis-original/prob01`` the first evaluation does not finish within two minutes.
+Over the 9.1 million evaluations, a state took 8.2 rounds of :math:`h^{max}` and 25 ms on average. The relaxed
+exploration takes three fifths of the time and the before-goal zone most of the rest; the goal zone and the cut are
+under a twentieth each.
 
 This is where the generalization from ground to lifted pays: LM-cut needs every operator the state reaches, not only
 those on the way to the goal, so the exploration cannot stop at the goal as it does for :math:`h^{max}` and
 :math:`h^{FF}`, and its result is the relaxed task grounded for one state. A ground planner pays this once, before the
-search; the lifted evaluation pays it per state.
+search; the lifted evaluation pays it in every round of every state.
 
 
 Numeric tasks
 -------------
 
-The relaxation of a numeric task keeps, for every function, the interval of the values it can take. It has no finite
-fixpoint (a counter that can be increased grows without bound), so the relaxed task of a state cannot be built once.
-Instead the engine evaluates :math:`h^{max}` up to the goal in every round, under the costs the earlier cuts left, and
-the round's cut is taken by the same code (``RelaxedTask::cut``) on a graph built backwards from the goal: the
-:math:`h^{max}`-optimal achievers of that evaluation, one arc from each body atom or numeric support of greatest cost,
-over rule instances and interval transitions instead of actions.
+The delete relaxation holds no values of functions: every numeric constraint of a condition is taken to hold, and a
+numeric goal is dropped. LM-cut then runs on the facts alone, as above, so the operators a state reaches are finitely
+many and every :math:`h^{max}` run reaches its fixpoint. The value is LM-cut of that relaxation and says nothing of
+the numeric part of the task.
 
-The exploration is therefore paid once per round. Lifted A*, 30 seconds, first instance of each IPC 2023 numeric
-domain:
-
-.. list-table::
-   :header-rows: 1
-
-   * - task
-     - evaluations
-     - rounds per evaluation
-     - ms per evaluation
-     - µs per exploration
-     - exploration
-   * - block-grouping
-     - 39197
-     - 4.7
-     - 0.73
-     - 117
-     - 91%
-   * - counters
-     - 2927
-     - 2.7
-     - 0.12
-     - 29
-     - 90%
-   * - sailing
-     - 155
-     - 70.7
-     - 198.56
-     - 2698
-     - 97%
-   * - tpp
-     - 577
-     - 2.7
-     - 0.26
-     - 69
-     - 98%
-   * - zenotravel
-     - 336
-     - 6.0
-     - 2.08
-     - 298
-     - 100%
-
-The graphs are small (5 to 340 facts per round); nine tenths and more of the time is the engine deriving intervals
-again, and inside it no single step stands out. A numeric evaluation costs about as many :math:`h^{max}` evaluations
-as it has rounds. On ``counters``, ``block-grouping`` and ``sailing`` the number of rounds equals the goal's
-:math:`h^{max}`: every cut has cost one and the value is :math:`h^{max}` itself. On ``tpp`` and ``zenotravel`` it is
-above (2.7 rounds against a mean :math:`h^{max}` of 2.0, and 6.0 against 3.3).
-
-The values are not lower bounds
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A cut is a landmark only if it holds every operator that leads from the before-goal zone into the goal zone. The
-graph of a numeric round does not hold every operator, and an action is not one operator in it. Three tasks under
-``tests/docs/lmcut_numeric`` show it, ground and lifted alike, with unit costs (``astar_eager -H lmcut
---search-cost-type unit`` prints the value as the start node's f-value):
-
-.. list-table::
-   :header-rows: 1
-
-   * - task
-     - LM-cut of the initial state
-     - cost of an optimal plan
-     - what is missing
-   * - ``missing_achiever``
-     - 6
-     - 3
-     - An action that reaches all five goal atoms, but one step later than the five actions that reach one each. It
-       is no :math:`h^{max}`-optimal achiever, and an evaluation that stops at the goal never derives it. Five cuts
-       of one action each are counted where two actions suffice. A* returns a plan of cost 4.
-   * - ``two_effects``
-     - 2
-     - 1
-     - One action adds an atom and increases a function; the goal needs both. The atom's rule instance and the
-       interval's transition are cut and paid separately.
-   * - ``interval_achiever``
-     - 4
-     - 3
-     - The engine keeps one achiever per interval. A second action reaches the same interval in one step, behind an
-       atom the goal needs anyway; it is not in the graph, so the two steps of the first action are counted on top
-       of the two actions for the atom.
-
-A sound numeric LM-cut needs three things the present scheme does not have: every achiever of every fact and
-interval in the graph, not the cheapest one; an exploration that goes far enough to contain every optimal relaxed
-plan (up to the cost of some relaxed plan, which bounds the cost of the optimal one), not one that stops at the goal;
-and one cost per application of an action, shared by the rule instances and transitions that one application yields.
-With these the explicit relaxed task of the classical case applies and the exploration is paid once per state.
-Measured with a cost bound added to the solver for this purpose, one exploration up to twice the goal's cost takes 13%
-(``sailing``) to 68% (``tpp``) of what the rounds take now, and up to three times the goal's cost 26% to 97%; the
-operators for every combination of intervals come on top.
 Admissible landmark-cut heuristics for numeric planning are known for tasks with simple conditions [KSPCB22]_ and
 with linear effects [KSB22]_.
 
@@ -392,13 +167,10 @@ of positive cost that add ``P(c)`` are ``b`` and ``a(c ?y)``. The precondition `
 with ``P(c)``, so ``a(c ?y)`` is removed, the cut is ``{b}``, and the heuristic value is 10. ``{b}`` is not a
 landmark: the optimal plan does not contain ``b``.
 
-``tests/docs/lmcut_gap.py`` implements Algorithm 1 as printed and runs it on this task: it reports the value 10, and
-the cost 2 of an optimal plan by uniform-cost search over the ground task. It also checks the graph above.
-
 The implementation published with the paper has the same step (``MyGraph::compute_cut`` in
 ``src/search/heuristics/landmark_heuristic.cc`` of https://github.com/minecraft-saar/powerlifted drops an edge
 whose source atom ``is_unifiable`` with an atom of the goal zone), and the planner shows it. On the task as PDDL
-(``tests/docs/lmcut_gap``; unary predicates in place of the nullary ones and of the constants, which that
+(with unary predicates in place of the nullary ones and of the constants, which that
 implementation does not handle), commit ``225c39e`` gives:
 
 .. list-table::

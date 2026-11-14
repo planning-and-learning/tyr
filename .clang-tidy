@@ -75,7 +75,7 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -cppcoreguidelines-avoid-c-arrays,
   -bugprone-crtp-constructor-accessibility
-HeaderFilterRegex: '.*/(include/tyr|tests|profiling|python/src|exe)/.*'
+HeaderFilterRegex: '.*/(include/tyr|tests|benchmarks|python/src|exe)/.*'
 ExcludeHeaderFilterRegex: '.*/(dependencies-install|dependencies-build|build|site-packages|_deps)/.*'
 CheckOptions:
   # Views are handles (an index or data handle plus a context pointer), passed by value like

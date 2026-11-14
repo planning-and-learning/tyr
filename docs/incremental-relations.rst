@@ -114,7 +114,7 @@ Tests and benchmarks
 --------------------
 
 The ``database_incremental`` tests compare the complete results and the exact output deltas after every update with
-the full operations. With ``YGGDRASIL_BUILD_PROFILING``, ``database_incremental_benchmark`` compares full evaluation
+the full operations. With ``TYR_BUILD_BENCHMARKS``, ``database_incremental_benchmark`` compares full evaluation
 with incremental maintenance for projection and for joins with one or both inputs changing.
 
 References

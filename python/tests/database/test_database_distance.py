@@ -10,7 +10,7 @@ import pytest
 from pyyggdrasil import formalism
 from relation_utils import intern
 
-from pytyr import database
+from pytyr.datalog.lifted import database
 
 Readable = formalism.Relation | formalism.BorrowedRelation | formalism.RelationView
 # Reads the tests' relation builders and evaluator results.

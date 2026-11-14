@@ -32,3 +32,4 @@ from pytyr._pytyr.datalog.lifted import (
     UnannotatedProgramWorkspace as UnannotatedProgramWorkspace,
     compute_model as compute_model,
 )
+from pytyr.datalog.lifted import database as database

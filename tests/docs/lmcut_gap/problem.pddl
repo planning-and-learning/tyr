@@ -1,5 +1,0 @@
-(define (problem gap2-1) (:domain gap2)
-  (:objects c d)
-  (:init (i c) (isc c) (isd d) (= (total-cost) 0))
-  (:goal (g c))
-  (:metric minimize (total-cost)))

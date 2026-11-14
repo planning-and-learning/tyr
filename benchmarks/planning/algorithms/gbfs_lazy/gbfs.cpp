@@ -1,0 +1,167 @@
+/*
+ * Copyright (C) 2025-2026 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "common.hpp"
+#include "tyr/formalism/planning/parser.hpp"
+#include "tyr/planning/algorithms/gbfs_lazy.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
+#include "tyr/planning/ground/successor_generator.hpp"
+#include "tyr/planning/ground/task.hpp"
+#include "tyr/planning/heuristics/lmcut.hpp"
+#include "tyr/planning/heuristics/rpg_add.hpp"
+#include "tyr/planning/heuristics/rpg_ff.hpp"
+#include "tyr/planning/lifted/successor_generator.hpp"
+#include "tyr/planning/lifted/task.hpp"
+#include "tyr/planning/node.hpp"
+
+#include <benchmark/benchmark.h>
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <yggdrasil/execution/onetbb.hpp>
+
+#if defined(TYR_BENCHMARK_GROUND)
+using Kind = tyr::GroundTag;
+#else
+using Kind = tyr::LiftedTag;
+#endif
+using Heuristic = tyr::planning::TYR_BENCHMARK_HEURISTIC<Kind>;
+
+namespace
+{
+class ScopedCoutSilencer
+{
+public:
+    ScopedCoutSilencer() : m_null_stream("/dev/null"), m_old_buffer(std::cout.rdbuf(m_null_stream.rdbuf())) {}
+    ~ScopedCoutSilencer() { std::cout.rdbuf(m_old_buffer); }
+
+    ScopedCoutSilencer(const ScopedCoutSilencer&) = delete;
+    ScopedCoutSilencer& operator=(const ScopedCoutSilencer&) = delete;
+    ScopedCoutSilencer(ScopedCoutSilencer&&) = delete;
+    ScopedCoutSilencer& operator=(ScopedCoutSilencer&&) = delete;
+
+private:
+    std::ofstream m_null_stream;
+    std::streambuf* m_old_buffer;
+};
+
+using tyr::benchmarks::BenchmarkCase;
+
+tyr::planning::TaskPtr<Kind> create_task(const BenchmarkCase& benchmark_case, ygg::ExecutionContext& execution_context)
+{
+    auto lifted = tyr::planning::Task<tyr::LiftedTag>::create(tyr::formalism::planning::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+#if defined(TYR_BENCHMARK_GROUND)
+    auto ground = lifted->instantiate_ground_task(execution_context).task;
+    if (!ground)
+        throw std::runtime_error("Grounding failed.");
+    return ground;
+#else
+    static_cast<void>(execution_context);
+    return lifted;
+#endif
+}
+
+void benchmark_gbfs_lazy(benchmark::State& state, const BenchmarkCase& benchmark_case, std::size_t evaluation_threads)
+try
+{
+    auto execution_context = ygg::ExecutionContext::create(evaluation_threads);
+    auto task = create_task(benchmark_case, *execution_context);
+    auto initial_h_value = static_cast<ygg::float_t>(0);
+    auto cost = static_cast<ygg::float_t>(0);
+    auto length = static_cast<std::size_t>(0);
+    auto num_expanded = static_cast<uint64_t>(0);
+    auto num_generated_successors = static_cast<uint64_t>(0);
+    auto solved = false;
+
+    for ([[maybe_unused]] auto _ : state)
+    {
+        auto axiom_evaluator = std::make_shared<tyr::planning::AxiomEvaluator<Kind>>(task, execution_context);
+        auto state_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(task);
+        auto successor_generator = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
+        auto heuristic = Heuristic::create(task, execution_context);
+        auto options = tyr::planning::gbfs_lazy::Options<Kind>();
+        options.start_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
+        initial_h_value = heuristic->evaluate(options.start_node->get_state());
+
+        auto result = tyr::planning::SearchResult<Kind>();
+        {
+            const auto silence_cout = ScopedCoutSilencer();
+            result = tyr::planning::gbfs_lazy::find_solution(*task, *state_repository, *axiom_evaluator, *successor_generator, *heuristic, options);
+        }
+
+        num_expanded = result.statistics.get_num_expanded();
+        num_generated_successors = result.statistics.get_num_generated_successors();
+        solved = result.status == tyr::planning::SearchStatus::SOLVED;
+        cost = result.plan ? result.plan->get_cost() : static_cast<ygg::float_t>(0);
+        length = result.plan ? result.plan->get_length() : static_cast<std::size_t>(0);
+
+        benchmark::DoNotOptimize(static_cast<int>(result.status));
+        benchmark::DoNotOptimize(initial_h_value);
+        benchmark::DoNotOptimize(cost);
+        benchmark::DoNotOptimize(length);
+        benchmark::DoNotOptimize(num_expanded);
+        benchmark::DoNotOptimize(num_generated_successors);
+        benchmark::DoNotOptimize(solved);
+    }
+
+    state.counters["initial_h_value"] = benchmark::Counter(static_cast<double>(initial_h_value));
+    state.counters["cost"] = benchmark::Counter(static_cast<double>(cost));
+    state.counters["length"] = benchmark::Counter(static_cast<double>(length));
+    state.counters["num_expanded"] = benchmark::Counter(static_cast<double>(num_expanded));
+    state.counters["num_generated_successors"] = benchmark::Counter(static_cast<double>(num_generated_successors));
+    state.counters["solved"] = benchmark::Counter(solved ? 1.0 : 0.0);
+    state.counters["evaluation_threads"] = static_cast<double>(evaluation_threads);
+    state.counters["search_workers"] = 1;
+}
+catch (const std::exception& error)
+{
+    state.SkipWithError(error.what());
+}
+}
+
+int main(int argc, char** argv)
+try
+{
+    const auto suite_path = tyr::benchmarks::extract_suite_path(argc, argv);
+    benchmark::Initialize(&argc, argv);
+    if (benchmark::ReportUnrecognizedArguments(argc, argv))
+        return 1;
+
+    for (const auto& benchmark_case : tyr::benchmarks::load_suite(suite_path))
+    {
+        for (const auto evaluation_threads : { static_cast<std::size_t>(1), static_cast<std::size_t>(8) })
+        {
+            if (evaluation_threads != 1 && !std::is_same_v<Heuristic, tyr::planning::FFRPGHeuristic<Kind>>)
+                continue;
+            const auto name = benchmark_case.name + "/gbfs_lazy/evaluation_threads:" + std::to_string(evaluation_threads);
+            benchmark::RegisterBenchmark(name,
+                                         [benchmark_case, evaluation_threads](benchmark::State& state)
+                                         { benchmark_gbfs_lazy(state, benchmark_case, evaluation_threads); })
+                ->UseRealTime();
+        }
+    }
+
+    benchmark::RunSpecifiedBenchmarks();
+    benchmark::Shutdown();
+}
+catch (const std::exception& error)
+{
+    std::cerr << error.what() << '\n';
+    return 1;
+}

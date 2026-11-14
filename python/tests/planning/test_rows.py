@@ -26,16 +26,18 @@ def test_planning_modules_export_expected_algorithm_submodules() -> None:
     assert hasattr(planning, "ground")
     assert hasattr(planning, "lifted")
 
-    for task_module in (planning.ground, planning.lifted):
+    assert hasattr(planning, "algorithms")
+
+    for kind in ("ground", "lifted"):
         for algorithm_name in ("astar_eager", "brfs", "gbfs_lazy", "iw", "siw"):
-            algorithm_module = getattr(task_module, algorithm_name)
+            algorithm_module = getattr(getattr(planning.algorithms, algorithm_name), kind)
             assert hasattr(algorithm_module, "Options")
             assert hasattr(algorithm_module, "EventHandler")
             assert hasattr(algorithm_module, "DefaultEventHandler")
             assert hasattr(algorithm_module, "find_solution")
 
         for algorithm_name in ("astar_eager", "brfs", "gbfs_lazy", "iw", "siw"):
-            solver = getattr(task_module, algorithm_name).Solver()
+            solver = getattr(getattr(planning.algorithms, algorithm_name), kind).Solver()
             assert solver.options is not None
             if algorithm_name in ("astar_eager", "brfs", "gbfs_lazy"):
                 assert solver.task is None
@@ -598,13 +600,13 @@ def _check_lazy_gbfs_relaxed_plan_requests_ground(task: planning.ground.Task) ->
 
         heuristic = RelaxedPlanHeuristic(plan)
         state_repository, axiom_evaluator, successor_generator = _make_components_ground(task)
-        result = planning.ground.gbfs_lazy.find_solution(
+        result = planning.algorithms.gbfs_lazy.ground.find_solution(
             task,
             state_repository,
             axiom_evaluator,
             successor_generator,
             heuristic,
-            planning.ground.gbfs_lazy.Options(),
+            planning.algorithms.gbfs_lazy.ground.Options(),
         )
 
         assert result.status == planning.SearchStatus.SOLVED
@@ -639,13 +641,13 @@ def _check_lazy_gbfs_relaxed_plan_requests_lifted(task: planning.lifted.Task) ->
 
         heuristic = RelaxedPlanHeuristic(plan)
         state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task)
-        result = planning.lifted.gbfs_lazy.find_solution(
+        result = planning.algorithms.gbfs_lazy.lifted.find_solution(
             task,
             state_repository,
             axiom_evaluator,
             successor_generator,
             heuristic,
-            planning.lifted.gbfs_lazy.Options(),
+            planning.algorithms.gbfs_lazy.lifted.Options(),
         )
 
         assert result.status == planning.SearchStatus.SOLVED
@@ -659,7 +661,7 @@ def test_lazy_gbfs_reads_the_relaxed_plan_of_python_heuristics() -> None:
 
 
 def _check_parallel_search_ground(task: planning.ground.Task) -> None:
-    class EventHandler(planning.ground.gbfs_lazy.EventHandler):
+    class EventHandler(planning.algorithms.gbfs_lazy.ground.EventHandler):
         def __init__(self) -> None:
             super().__init__()
             self.end_status: planning.SearchStatus | None = None
@@ -685,12 +687,12 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
 
     state_repository, axiom_evaluator, successor_generator = _make_components_ground(task, concurrent=True)
     event_handler = EventHandler()
-    options = planning.ground.gbfs_lazy.Options()
+    options = planning.algorithms.gbfs_lazy.ground.Options()
     options.event_handler = event_handler
     options.num_search_workers = 2
     options.collect_destination_lock_statistics = True
 
-    result = planning.ground.gbfs_lazy.find_solution(
+    result = planning.algorithms.gbfs_lazy.ground.find_solution(
         task,
         state_repository,
         axiom_evaluator,
@@ -711,9 +713,9 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
     assert not hasattr(event_handler, "on_expand_node")
     _assert_worker_statistics(result, 2)
 
-    brfs_options = planning.ground.brfs.Options()
+    brfs_options = planning.algorithms.brfs.ground.Options()
     brfs_options.num_search_workers = 2
-    brfs_result = planning.ground.brfs.find_solution(
+    brfs_result = planning.algorithms.brfs.ground.find_solution(
         task,
         state_repository,
         axiom_evaluator,
@@ -725,11 +727,11 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
     assert brfs_result.goal_node.get_state().get_state_repository() == state_repository
     _assert_worker_statistics(brfs_result, 2)
 
-    astar_options = planning.ground.astar_eager.Options()
+    astar_options = planning.algorithms.astar_eager.ground.Options()
     astar_options.num_search_workers = 2
     for mode in (planning.ParallelSearchMode.SYNCHRONOUS, planning.ParallelSearchMode.ASYNCHRONOUS):
         astar_options.parallel_search_mode = mode
-        astar_result = planning.ground.astar_eager.find_solution(
+        astar_result = planning.algorithms.astar_eager.ground.find_solution(
             task,
             state_repository,
             axiom_evaluator,
@@ -742,7 +744,7 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
 
 
 def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
-    class EventHandler(planning.lifted.gbfs_lazy.EventHandler):
+    class EventHandler(planning.algorithms.gbfs_lazy.lifted.EventHandler):
         def __init__(self) -> None:
             super().__init__()
             self.end_status: planning.SearchStatus | None = None
@@ -768,12 +770,12 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
 
     state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task, concurrent=True)
     event_handler = EventHandler()
-    options = planning.lifted.gbfs_lazy.Options()
+    options = planning.algorithms.gbfs_lazy.lifted.Options()
     options.event_handler = event_handler
     options.num_search_workers = 2
     options.collect_destination_lock_statistics = True
 
-    result = planning.lifted.gbfs_lazy.find_solution(
+    result = planning.algorithms.gbfs_lazy.lifted.find_solution(
         task,
         state_repository,
         axiom_evaluator,
@@ -794,9 +796,9 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
     assert not hasattr(event_handler, "on_expand_node")
     _assert_worker_statistics(result, 2)
 
-    brfs_options = planning.lifted.brfs.Options()
+    brfs_options = planning.algorithms.brfs.lifted.Options()
     brfs_options.num_search_workers = 2
-    brfs_result = planning.lifted.brfs.find_solution(
+    brfs_result = planning.algorithms.brfs.lifted.find_solution(
         task,
         state_repository,
         axiom_evaluator,
@@ -808,11 +810,11 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
     assert brfs_result.goal_node.get_state().get_state_repository() == state_repository
     _assert_worker_statistics(brfs_result, 2)
 
-    astar_options = planning.lifted.astar_eager.Options()
+    astar_options = planning.algorithms.astar_eager.lifted.Options()
     astar_options.num_search_workers = 2
     for mode in (planning.ParallelSearchMode.SYNCHRONOUS, planning.ParallelSearchMode.ASYNCHRONOUS):
         astar_options.parallel_search_mode = mode
-        astar_result = planning.lifted.astar_eager.find_solution(
+        astar_result = planning.algorithms.astar_eager.lifted.find_solution(
             task,
             state_repository,
             axiom_evaluator,
@@ -847,11 +849,11 @@ def _check_null_python_heuristic_workers_ground(task: planning.ground.Task) -> N
             return None
 
     state_repository, axiom_evaluator, successor_generator = _make_components_ground(task)
-    options = planning.ground.astar_eager.Options()
+    options = planning.algorithms.astar_eager.ground.Options()
     options.num_search_workers = 2
 
     with pytest.raises(ValueError, match="heuristic does not support worker construction"):
-        planning.ground.astar_eager.find_solution(
+        planning.algorithms.astar_eager.ground.find_solution(
             task,
             state_repository,
             axiom_evaluator,
@@ -878,11 +880,11 @@ def _check_null_python_heuristic_workers_lifted(task: planning.lifted.Task) -> N
             return None
 
     state_repository, axiom_evaluator, successor_generator = _make_components_lifted(task)
-    options = planning.lifted.astar_eager.Options()
+    options = planning.algorithms.astar_eager.lifted.Options()
     options.num_search_workers = 2
 
     with pytest.raises(ValueError, match="heuristic does not support worker construction"):
-        planning.lifted.astar_eager.find_solution(
+        planning.algorithms.astar_eager.lifted.find_solution(
             task,
             state_repository,
             axiom_evaluator,
@@ -955,12 +957,14 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
             callback_indices["pruning"].append(self.worker_index)
             return False
 
-    options = planning.ground.brfs.Options()
+    options = planning.algorithms.brfs.ground.Options()
     options.num_search_workers = 2
     options.goal_strategy = PythonGoalStrategy()
     options.pruning_strategy = PythonPruningStrategy()
 
-    result = planning.ground.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
+    result = planning.algorithms.brfs.ground.find_solution(
+        task, state_repository, axiom_evaluator, successor_generator, options
+    )
 
     assert result.status == planning.SearchStatus.EXHAUSTED
     for strategy in ("goal", "pruning"):
@@ -1032,12 +1036,14 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
             callback_indices["pruning"].append(self.worker_index)
             return False
 
-    options = planning.lifted.brfs.Options()
+    options = planning.algorithms.brfs.lifted.Options()
     options.num_search_workers = 2
     options.goal_strategy = PythonGoalStrategy()
     options.pruning_strategy = PythonPruningStrategy()
 
-    result = planning.lifted.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
+    result = planning.algorithms.brfs.lifted.find_solution(
+        task, state_repository, axiom_evaluator, successor_generator, options
+    )
 
     assert result.status == planning.SearchStatus.EXHAUSTED
     for strategy in ("goal", "pruning"):
@@ -1082,11 +1088,13 @@ def _check_missing_or_null_python_strategy_workers_ground(task: planning.ground.
     )
 
     for field, strategy, error in cases:
-        options = planning.ground.brfs.Options()
+        options = planning.algorithms.brfs.ground.Options()
         options.num_search_workers = 2
         setattr(options, field, strategy)
         with pytest.raises(ValueError, match=error):
-            planning.ground.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
+            planning.algorithms.brfs.ground.find_solution(
+                task, state_repository, axiom_evaluator, successor_generator, options
+            )
 
 
 def _check_missing_or_null_python_strategy_workers_lifted(task: planning.lifted.Task) -> None:
@@ -1113,11 +1121,13 @@ def _check_missing_or_null_python_strategy_workers_lifted(task: planning.lifted.
     )
 
     for field, strategy, error in cases:
-        options = planning.lifted.brfs.Options()
+        options = planning.algorithms.brfs.lifted.Options()
         options.num_search_workers = 2
         setattr(options, field, strategy)
         with pytest.raises(ValueError, match=error):
-            planning.lifted.brfs.find_solution(task, state_repository, axiom_evaluator, successor_generator, options)
+            planning.algorithms.brfs.lifted.find_solution(
+                task, state_repository, axiom_evaluator, successor_generator, options
+            )
 
 
 def test_parallel_search_rejects_missing_or_null_python_strategy_workers() -> None:

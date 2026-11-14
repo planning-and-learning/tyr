@@ -89,8 +89,8 @@ static_assert(tyr::formalism::datalog::SymbolRepository::thread_safe && tyr::for
 
 namespace
 {
-inline constexpr const char* kBottomUpFixture = "tests/fixtures/datalog/algorithms/lifted/bottom_up.json.gz";
-inline constexpr const char* kBenchmarksFixture = "tests/fixtures/planning/benchmarks.json";
+inline constexpr const char* kBottomUpFixture = "tests/support/data/datalog/algorithms/lifted/bottom_up.json.gz";
+inline constexpr const char* kBenchmarksFixture = "tests/support/data/planning/benchmarks.json";
 inline constexpr auto kConfigNames = std::array<std::string_view, 3> { "applicable_action", "axiom_evaluator", "ground_task" };
 
 struct AtomBinding

@@ -1,0 +1,65 @@
+/*
+ * Copyright (C) 2025-2026 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_TESTS_UNIT_PLANNING_ALGORITHMS_ASTAR_EAGER_STATISTICS_HPP_
+#define TYR_TESTS_UNIT_PLANNING_ALGORITHMS_ASTAR_EAGER_STATISTICS_HPP_
+
+#include "planning/algorithms/search_heuristics.hpp"
+#include "planning/algorithms/search_statistics.hpp"
+
+#include <tyr/planning/algorithms/astar_eager.hpp>
+#include <tyr/planning/algorithms/astar_eager/event_handler.hpp>
+
+namespace tyr::tests
+{
+namespace
+{
+template<TaskKind Kind>
+void check_statistics(const SearchStatistics& expected, const SearchCase& test_case, const std::string& heuristic_name, CostMode cost_mode)
+{
+    auto context = create_search_context<Kind>(test_case.domain_file, test_case.task_file);
+    auto heuristic = create_search_heuristic<Kind>(heuristic_name, context, cost_mode);
+
+    auto options = tyr::planning::astar_eager::Options<Kind>();
+    options.cost_mode = cost_mode;
+    const auto result = tyr::planning::astar_eager::find_solution(*context.task,
+                                                                  *context.state_repository,
+                                                                  *context.axiom_evaluator,
+                                                                  *context.successor_generator,
+                                                                  *heuristic,
+                                                                  options);
+
+    expect_statistics(expected, result.statistics, result);
+    expect_repository_statistics(context, result.statistics);
+}
+}
+
+/// Checks every configuration of one fixture case.
+template<TaskKind Kind>
+void check_astar_case(const SearchCase& test_case)
+{
+    for (const auto& [key, expected] : test_case.configs)
+    {
+        SCOPED_TRACE(key);
+        const auto [heuristic_name, cost_mode] = parse_costed_heuristic_key(key);
+        check_statistics<Kind>(expected, test_case, heuristic_name, cost_mode);
+    }
+}
+
+}
+
+#endif

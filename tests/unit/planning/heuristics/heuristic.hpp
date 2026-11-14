@@ -147,7 +147,7 @@ inline bool should_check(const HeuristicExpectation& expectation) { return expec
 template<TaskKind Kind>
 HeuristicContext<Kind> create_preferred_action_reset_context()
 {
-    const auto fixture_dir = ygg::common::root_path() / "tests/fixtures/planning/heuristics/preferred_action_reset";
+    const auto fixture_dir = ygg::common::root_path() / "tests/support/data/planning/heuristics/preferred_action_reset";
     return create_heuristic_context<Kind>(fixture_dir / "domain.pddl", fixture_dir / "problem.pddl");
 }
 

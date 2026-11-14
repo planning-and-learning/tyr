@@ -20,9 +20,15 @@ from typing_extensions import override
 
 from pytyr.formalism.planning import GroundConjunctiveCondition, Parser
 from pytyr.planning import SearchStatus, Statistics
+from pytyr.planning.algorithms.astar_eager.lifted import (
+    DefaultEventHandler,
+    EventHandler,
+    Options,
+    find_solution,
+)
 
 # Note: we can easily switch between lifted and ground planning by swapping the submodule,
-# e.g., from pytyr.planning.ground import ..., and from pytyr.planning.ground.astar_eager import ...
+# e.g., from pytyr.planning.ground import ..., and from pytyr.planning.algorithms.astar_eager.ground import ...
 # However, some heuristics, like MaxRPGHeuristic might not be available yet.
 from pytyr.planning.lifted import (
     AxiomEvaluator,
@@ -38,17 +44,12 @@ from pytyr.planning.lifted import (
     SuccessorGenerator,
     Task,
 )
-from pytyr.planning.lifted.astar_eager import (
-    DefaultEventHandler,
-    EventHandler,
-    Options,
-    find_solution,
-)
 
 # Lazy Greedy Best-First Search (GBFS) exposes an almost identical interface,
 # although some options and EventHandler events differ slightly.
 # To switch the search algorithm, typically only the import above needs to be changed:
-# import Options, EventHandler, DefaultEventHandler, and find_solution from pytyr.planning.lifted.gbfs_lazy instead.
+# import Options, EventHandler, DefaultEventHandler, and find_solution
+# from pytyr.planning.algorithms.gbfs_lazy.lifted instead.
 
 
 class CustomHeuristic(Heuristic):

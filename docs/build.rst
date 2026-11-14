@@ -5,7 +5,7 @@ Tyr consumes native third-party dependencies from Python packages:
 
 - ``pyyggdrasil>=0.7.2,<0.8`` provides shared libraries, headers, and CMake packages for common native dependencies.
 - ``pypddl>=1.8.0,<1.9`` provides Loki's PDDL parser library, headers, and CMake package.
-- ``pypddl-datasets>=0.0.17,<0.1`` provides the PDDL benchmark data used by the C++ test and profiling fixtures
+- ``pypddl-datasets>=0.0.17,<0.1`` provides the PDDL benchmark data used by the C++ tests and benchmarks
   (resolved from its cache at CMake configure time).
 
 Requirements
@@ -55,7 +55,7 @@ Enable optional targets as needed:
      -DCMAKE_PREFIX_PATH="$(.venv/bin/python -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')" \
      -DTYR_BUILD_TESTS=ON \
      -DTYR_BUILD_EXECUTABLES=ON \
-     -DTYR_BUILD_PROFILING=ON
+     -DTYR_BUILD_BENCHMARKS=ON
 
 Install Tyr from a configured build directory with:
 

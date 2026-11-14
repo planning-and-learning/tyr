@@ -115,7 +115,7 @@ Tyr consumes native dependencies from Python packages:
 
 - `pyyggdrasil >= 0.7.1, < 0.8` for shared third-party native dependencies.
 - `pypddl >= 1.8.0, < 1.9` for Loki's PDDL parser library, headers, and CMake package.
-- `pypddl-datasets >= 0.0.17, < 0.1` for the PDDL benchmark data used by the C++ test and profiling fixtures (resolved from its cache at CMake configure time).
+- `pypddl-datasets >= 0.0.17, < 0.1` for the PDDL benchmark data used by the C++ tests and benchmarks (resolved from its cache at CMake configure time).
 
 The shared workspace layout, layered install order, and the common
 build-from-source and CMake-integration patterns are documented in the
@@ -154,7 +154,7 @@ CMake options:
 | --- | --- | --- |
 | `TYR_BUILD_TESTS` | `OFF` | Build Tyr tests. |
 | `TYR_BUILD_EXECUTABLES` | `OFF` | Build Tyr executables. |
-| `TYR_BUILD_PROFILING` | `OFF` | Build Tyr profiling targets. |
+| `TYR_BUILD_BENCHMARKS` | `OFF` | Build Tyr benchmark targets. |
 | `TYR_BUILD_PYTYR` | `OFF` | Build `pytyr` Python bindings. |
 | `TYR_HEADER_INSTANTIATION` | `OFF` | Instantiate templates in in-tree translation units at higher compile-time cost. |
 | `TYR_ENABLE_INNER_PARALLELISM` | `OFF` | Enable inner parallelism for expensive lifted rule evaluation. |

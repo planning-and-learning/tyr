@@ -43,7 +43,7 @@ set_property(CACHE TYR_RELATION_STORAGE_POLICY PROPERTY STRINGS Word Bit)
 option(TYR_BUILD_PYTYR "Build pytyr Python bindings." OFF)
 option(TYR_BUILD_TESTS "Build Tyr tests." OFF)
 option(TYR_BUILD_EXECUTABLES "Build Tyr executables." OFF)
-option(TYR_BUILD_PROFILING "Build Tyr profiling targets." OFF)
+option(TYR_BUILD_BENCHMARKS "Build Tyr benchmark targets." OFF)
 option(TYR_STDLIB_ASSERTIONS "Check bounds and preconditions of the standard library in Debug builds." ON)
 # OFF compiles each source on its own: faster rebuilds after editing one, and compile_commands.json lists each source,
 # which clang-tidy (peachycheck) needs.
@@ -229,7 +229,7 @@ endif()
 
 # Benchmark setup
 
-if(TYR_BUILD_TESTS OR TYR_BUILD_PROFILING)
+if(TYR_BUILD_TESTS OR TYR_BUILD_BENCHMARKS)
     # Benchmark PDDL is resolved from the pypddl-datasets cache and downloaded on demand at configure time.
     find_package(Python 3.11 REQUIRED COMPONENTS Interpreter)
     execute_process(
@@ -259,8 +259,8 @@ if(TYR_BUILD_EXECUTABLES)
     add_subdirectory(exe)
 endif()
 
-if(TYR_BUILD_PROFILING)
-    add_subdirectory(profiling)
+if(TYR_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()
 
 if(TYR_BUILD_TESTS)

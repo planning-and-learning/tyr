@@ -18,6 +18,7 @@
 #include "module.hpp"
 
 #include "../datalog.hpp"
+#include "database/module.hpp"
 #include "pytyr/module.hpp"
 
 namespace tyr::datalog
@@ -44,6 +45,9 @@ void bind_lifted_module_definitions(nb::module_& m)
         .def("get_const_program_workspace", &ProgramT::get_const_program_workspace, nb::rv_policy::reference_internal);
 
     bind_common_configurations<LiftedTag>(m);
+
+    auto database_module = m.def_submodule("database", "Relational operations, queries and their evaluation.");
+    bind_database_module_definitions(database_module);
 }
 
 }

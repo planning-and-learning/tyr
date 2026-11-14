@@ -17,6 +17,11 @@
 
 #include "module.hpp"
 
+#include "algorithms/astar_eager/module.hpp"
+#include "algorithms/brfs/module.hpp"
+#include "algorithms/gbfs_lazy/module.hpp"
+#include "algorithms/iw/module.hpp"
+#include "algorithms/siw/module.hpp"
 #include "ground/module.hpp"
 #include "lifted/module.hpp"
 #include "pytyr/module.hpp"
@@ -84,6 +89,21 @@ void bind_module_definitions(nb::module_& m)
 
     auto lifted_module = m.def_submodule("lifted");
     bind_lifted_module_definitions(lifted_module);
+
+    auto algorithms_module = m.def_submodule("algorithms");
+    const auto bind_algorithm = [&](const char* name, auto bind_ground, auto bind_lifted)
+    {
+        auto algorithm_module = algorithms_module.def_submodule(name);
+        auto ground = algorithm_module.def_submodule("ground");
+        bind_ground(ground);
+        auto lifted = algorithm_module.def_submodule("lifted");
+        bind_lifted(lifted);
+    };
+    bind_algorithm("astar_eager", astar_eager::bind_ground_module_definitions, astar_eager::bind_lifted_module_definitions);
+    bind_algorithm("brfs", brfs::bind_ground_module_definitions, brfs::bind_lifted_module_definitions);
+    bind_algorithm("gbfs_lazy", gbfs_lazy::bind_ground_module_definitions, gbfs_lazy::bind_lifted_module_definitions);
+    bind_algorithm("iw", iw::bind_ground_module_definitions, iw::bind_lifted_module_definitions);
+    bind_algorithm("siw", siw::bind_ground_module_definitions, siw::bind_lifted_module_definitions);
 
     /**
      * Statistics

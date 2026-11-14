@@ -1,8 +1,0 @@
-(define (domain gap2)
-  (:requirements :strips :action-costs)
-  (:predicates (i ?o) (g ?o) (p ?x) (isc ?x) (isd ?x))
-  (:functions (total-cost) - number)
-  (:action z :parameters (?x) :precondition (and (isc ?x) (p ?x)) :effect (and (g ?x) (increase (total-cost) 0)))
-  (:action b :parameters (?x) :precondition (and (isc ?x) (i ?x)) :effect (and (p ?x) (increase (total-cost) 10)))
-  (:action init :parameters (?x ?s) :precondition (and (isd ?x) (isc ?s) (i ?s)) :effect (and (p ?x) (increase (total-cost) 1)))
-  (:action a :parameters (?x ?y) :precondition (p ?y) :effect (and (p ?x) (increase (total-cost) 1))))

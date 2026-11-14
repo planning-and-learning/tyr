@@ -265,7 +265,7 @@ TEST(TyrPlanningStateRoutingTest, RoutesGroundAndLiftedStatesWithoutProducerRegi
 
 TEST(TyrPlanningStateRoutingTest, UsesInitialLMCutFrontierAsStableDistributionFeatures)
 {
-    const auto root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/state_routing";
+    const auto root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/state_routing";
     auto lifted_task = tyr::planning::Task<LiftedTag>::create(make_test_parser(root / "domain.pddl").parse_task(root / "problem.pddl"));
     auto grounding_context = ygg::ExecutionContext::create(1);
     auto ground_task = lifted_task->instantiate_ground_task(*grounding_context).task;

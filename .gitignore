@@ -38,6 +38,7 @@ out
 *.sif
 dependencies-build
 dependencies-install
+benchmark-results
 profiling-results
 .cache
 

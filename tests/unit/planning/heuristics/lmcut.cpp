@@ -98,7 +98,7 @@ TEST(TyrPlanningGroundLMCutHeuristicTest, GeneralCostModeThrows)
 
 TEST(TyrPlanningGroundLMCutHeuristicTest, WeightedAlternativeCountsOneUnitAction)
 {
-    const auto fixture = ygg::common::root_path() / "tests/fixtures/planning/heuristics/lmcut_weighted_alternative";
+    const auto fixture = ygg::common::root_path() / "tests/support/data/planning/heuristics/lmcut_weighted_alternative";
     auto context = tyr::tests::create_heuristic_context<tyr::GroundTag>(fixture / "domain.pddl", fixture / "problem.pddl");
     const auto state = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state();
     auto unit = tyr::planning::LMCutHeuristic<tyr::GroundTag>::create(context.task, context.execution_context, tyr::CostMode::UNIT);
@@ -125,7 +125,7 @@ TEST_P(GroundHeuristicFixtureTest, EvaluationAllocatesNothingAfterWarmup) { expe
 
 INSTANTIATE_TEST_SUITE_P(TyrPlanningGroundHeuristicFixture,
                          GroundHeuristicFixtureTest,
-                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/ground/lmcut.json")),
+                         ::testing::ValuesIn(load_cases("tests/support/data/planning/heuristics/ground/lmcut.json")),
                          [](const testing::TestParamInfo<HeuristicCase>& param_info) { return param_info.param.name; });
 }
 }
@@ -145,7 +145,7 @@ TEST(TyrPlanningLiftedLMCutHeuristicTest, RepeatedEvaluationReusesResetWorkspace
 
 TEST(TyrPlanningLiftedLMCutHeuristicTest, WeightedAlternativeCountsOneUnitAction)
 {
-    const auto fixture = ygg::common::root_path() / "tests/fixtures/planning/heuristics/lmcut_weighted_alternative";
+    const auto fixture = ygg::common::root_path() / "tests/support/data/planning/heuristics/lmcut_weighted_alternative";
     auto context = tyr::tests::create_heuristic_context<tyr::LiftedTag>(fixture / "domain.pddl", fixture / "problem.pddl");
     const auto state = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state();
     auto unit = tyr::planning::LMCutHeuristic<tyr::LiftedTag>::create(context.task, context.execution_context, tyr::CostMode::UNIT);
@@ -172,7 +172,7 @@ TEST_P(LiftedHeuristicFixtureTest, EvaluationAllocatesNothingAfterWarmup) { expe
 
 INSTANTIATE_TEST_SUITE_P(TyrPlanningLiftedHeuristicFixture,
                          LiftedHeuristicFixtureTest,
-                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/lifted/lmcut.json")),
+                         ::testing::ValuesIn(load_cases("tests/support/data/planning/heuristics/lifted/lmcut.json")),
                          [](const testing::TestParamInfo<HeuristicCase>& param_info) { return param_info.param.name; });
 }
 }

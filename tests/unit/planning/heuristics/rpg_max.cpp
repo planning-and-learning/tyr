@@ -36,7 +36,7 @@ TEST_P(GroundHeuristicFixtureTest, InitialStateMatchesFixture) { check_heuristic
 
 INSTANTIATE_TEST_SUITE_P(TyrPlanningGroundHeuristicFixture,
                          GroundHeuristicFixtureTest,
-                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/ground/rpg_max.json")),
+                         ::testing::ValuesIn(load_cases("tests/support/data/planning/heuristics/ground/rpg_max.json")),
                          [](const testing::TestParamInfo<HeuristicCase>& param_info) { return param_info.param.name; });
 }
 }
@@ -58,7 +58,7 @@ TEST_P(LiftedHeuristicFixtureTest, InitialStateMatchesFixture) { check_heuristic
 
 INSTANTIATE_TEST_SUITE_P(TyrPlanningLiftedHeuristicFixture,
                          LiftedHeuristicFixtureTest,
-                         ::testing::ValuesIn(load_cases("tests/fixtures/planning/heuristics/lifted/rpg_max.json")),
+                         ::testing::ValuesIn(load_cases("tests/support/data/planning/heuristics/lifted/rpg_max.json")),
                          [](const testing::TestParamInfo<HeuristicCase>& param_info) { return param_info.param.name; });
 }
 }

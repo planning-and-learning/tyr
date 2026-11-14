@@ -72,7 +72,7 @@ cmake -S . -B build \
   -DCMAKE_PREFIX_PATH="$("$PWD/.venv/bin/python" -c 'import pypddl, pyyggdrasil; print(f"{pypddl.native_prefix()};{pyyggdrasil.native_prefix()}")')" \
   -DTYR_BUILD_EXECUTABLES=ON \
   -DTYR_BUILD_TESTS=OFF \
-  -DTYR_BUILD_PROFILING=OFF \
+  -DTYR_BUILD_BENCHMARKS=OFF \
   -DTYR_BUILD_PYTYR=OFF \
   -DTYR_HEADER_INSTANTIATION=OFF \
   -DTYR_ENABLE_SEMI_NAIVE=ON \
@@ -188,6 +188,13 @@ The tyr configurations stop their search after 570 seconds (`--max-time`), so
 that a run without a plan still prints its statistics before Lab's limit. The
 `lmcut` parser reads the LM-cut statistics: evaluations, h^max runs, and the
 share of time in h^max, the goal zone, the before-goal zone, and the cut.
+
+`lmcut_figures.py` draws the figure of `docs/lmcut.rst` from the evaluation of
+the tyr preset, each phase's time summed over all tasks:
+
+```console
+python experiments/lmcut_figures.py experiments/data/2026-11-12-lmcut-vs-powerlifted-eval/properties
+```
 
 The Powerlifted how file expects the planner of the paper in `../powerlifted`,
 next to this repository (`--build-dir` selects another checkout). Its sources

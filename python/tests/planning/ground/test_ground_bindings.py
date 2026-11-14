@@ -13,7 +13,7 @@ from pytyr.formalism.planning import Parser
 Node = planning.ground.Node
 State = planning.ground.State
 Plan = planning.ground.Plan
-IwStatistics = planning.ground.iw.Statistics
+IwStatistics = planning.algorithms.iw.ground.Statistics
 SearchStatus = planning.SearchStatus
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
@@ -32,7 +32,7 @@ def _ground_task() -> planning.ground.Task:
 
 
 def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None:
-    class AStarEventHandler(planning.ground.astar_eager.EventHandler):
+    class AStarEventHandler(planning.algorithms.astar_eager.ground.EventHandler):
         def __init__(self) -> None:
             super().__init__()
 
@@ -48,7 +48,7 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         def on_solved(self, plan: Plan) -> None:
             pass
 
-    class BRFSEventHandler(planning.ground.brfs.EventHandler):
+    class BRFSEventHandler(planning.algorithms.brfs.ground.EventHandler):
         def __init__(self) -> None:
             super().__init__()
 
@@ -68,7 +68,7 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         def on_solved(self, plan: Plan) -> None:
             pass
 
-    class GBFSEventHandler(planning.ground.gbfs_lazy.EventHandler):
+    class GBFSEventHandler(planning.algorithms.gbfs_lazy.ground.EventHandler):
         def __init__(self) -> None:
             super().__init__()
 
@@ -88,10 +88,10 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
         def on_solved(self, plan: Plan) -> None:
             pass
 
-    class IWEventHandler(planning.ground.iw.EventHandler):
+    class IWEventHandler(planning.algorithms.iw.ground.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.algorithm_statistics = planning.ground.iw.Statistics()
+            self.algorithm_statistics = planning.algorithms.iw.ground.Statistics()
 
         @override
         def on_start_search(self, max_arity: int) -> None:
@@ -114,13 +114,13 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
             pass
 
         @override
-        def get_statistics(self) -> planning.ground.iw.Statistics:
+        def get_statistics(self) -> planning.algorithms.iw.ground.Statistics:
             return self.algorithm_statistics
 
-    class SIWEventHandler(planning.ground.siw.EventHandler):
+    class SIWEventHandler(planning.algorithms.siw.ground.EventHandler):
         def __init__(self) -> None:
             super().__init__()
-            self.algorithm_statistics = planning.ground.siw.Statistics()
+            self.algorithm_statistics = planning.algorithms.siw.ground.Statistics()
 
         @override
         def on_start_search(self) -> None:
@@ -149,15 +149,15 @@ def test_algorithm_event_handler_subclasses_can_call_super_constructor() -> None
             pass
 
         @override
-        def get_statistics(self) -> planning.ground.siw.Statistics:
+        def get_statistics(self) -> planning.algorithms.siw.ground.Statistics:
             return self.algorithm_statistics
 
     for event_handler_class, event_handler_base in (
-        (AStarEventHandler, planning.ground.astar_eager.EventHandler),
-        (BRFSEventHandler, planning.ground.brfs.EventHandler),
-        (GBFSEventHandler, planning.ground.gbfs_lazy.EventHandler),
-        (IWEventHandler, planning.ground.iw.EventHandler),
-        (SIWEventHandler, planning.ground.siw.EventHandler),
+        (AStarEventHandler, planning.algorithms.astar_eager.ground.EventHandler),
+        (BRFSEventHandler, planning.algorithms.brfs.ground.EventHandler),
+        (GBFSEventHandler, planning.algorithms.gbfs_lazy.ground.EventHandler),
+        (IWEventHandler, planning.algorithms.iw.ground.EventHandler),
+        (SIWEventHandler, planning.algorithms.siw.ground.EventHandler),
     ):
         assert isinstance(event_handler_class(), event_handler_base)
 

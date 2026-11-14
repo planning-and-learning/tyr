@@ -1424,7 +1424,7 @@ TEST(TyrPlanningPlanReconstructionTest, LazyGBFSWorkerEventsMatchResultStatistic
 TEST(TyrPlanningPlanReconstructionTest, ParallelSearchDetectsGlobalExhaustion)
 {
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
-    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/algorithms";
     auto lifted_task = tyr::planning::Task<LiftedTag>::create(
         make_test_parser(benchmark_root / "classical/tests/gripper/domain.pddl").parse_task(fixture_root / "parallel_gripper_unsolvable.pddl"));
     auto grounding_context = ygg::ExecutionContext::create(1);
@@ -1445,7 +1445,7 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelSearchDetectsGlobalExhaustion)
 TEST(TyrPlanningPlanReconstructionTest, ParallelAStarDoesNotStopAtTheFirstGoal)
 {
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
-    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/algorithms";
     auto lifted_task = tyr::planning::Task<LiftedTag>::create(
         make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / "parallel_astar_weighted.pddl"));
     auto grounding_context = ygg::ExecutionContext::create(1);
@@ -1465,7 +1465,7 @@ TEST(TyrPlanningPlanReconstructionTest, ParallelAStarDoesNotStopAtTheFirstGoal)
 TEST(TyrPlanningPlanReconstructionTest, ParallelAStarSelectsFLayerCoordination)
 {
     const auto benchmark_root = std::filesystem::path(BENCHMARKS_DIR);
-    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/fixtures/planning/algorithms";
+    const auto fixture_root = std::filesystem::path(ROOT_DIR) / "tests/support/data/planning/algorithms";
     auto lifted_task = tyr::planning::Task<LiftedTag>::create(
         make_test_parser(benchmark_root / "classical/tests/transport/domain.pddl").parse_task(fixture_root / "parallel_astar_weighted.pddl"));
     auto grounding_context = ygg::ExecutionContext::create(1);

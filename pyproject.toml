@@ -70,14 +70,14 @@ exclude = [
     "build*/**",
     "python/src/pytyr.egg-info/**",
     "*.egg-info/**",
-    "profiling-results/**",
+    "benchmark-results/**",
 ]
 
 [tool.scikit-build.cmake.define]
 TYR_BUILD_PYTYR = true
 TYR_BUILD_TESTS = false
 TYR_BUILD_EXECUTABLES = false
-TYR_BUILD_PROFILING = false
+TYR_BUILD_BENCHMARKS = false
 TYR_USE_LLD = false
 TYR_ENABLE_LTO = {env = "TYR_ENABLE_LTO", default = false}
 CMAKE_INSTALL_LIBDIR = "lib"

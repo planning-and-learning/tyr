@@ -15,6 +15,7 @@ from pytyr._pytyr.planning import (
     WorkerIndex as WorkerIndex,
 )
 from pytyr.planning import (
+    algorithms as algorithms,
     ground as ground,
     lifted as lifted,
 )

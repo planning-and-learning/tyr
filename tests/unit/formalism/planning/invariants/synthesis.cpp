@@ -230,13 +230,13 @@ void check_orders(const std::filesystem::path& fixture)
 }
 }
 
-TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis) { check_suite("tests/fixtures/formalism/invariants/synthesis.json"); }
+TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesis) { check_suite("tests/support/data/formalism/invariants/synthesis.json"); }
 
 /// One domain file per IPC domain directory (up to five for directories with a domain file per problem).
-TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisIpc) { check_suite("tests/fixtures/formalism/invariants/ipc.json"); }
+TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisIpc) { check_suite("tests/support/data/formalism/invariants/ipc.json"); }
 
 /// Every domain of ipc.json and synthesis.json, so that any change to an order shows up in review.
-TEST(TyrTests, TyrFormalismPlanningInvariantOrders) { check_orders("tests/fixtures/formalism/invariants/orders.json"); }
+TEST(TyrTests, TyrFormalismPlanningInvariantOrders) { check_orders("tests/support/data/formalism/invariants/orders.json"); }
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderTakesFewestStolenPredicatesFirst)
 {

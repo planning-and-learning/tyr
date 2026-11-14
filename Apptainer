@@ -47,7 +47,7 @@ Stage: build
         -DCMAKE_BUILD_TYPE=Release \
         -DPython_EXECUTABLE=/opt/tyr/.venv/bin/python \
         -DTYR_BUILD_TESTS=OFF \
-        -DTYR_BUILD_PROFILING=OFF \
+        -DTYR_BUILD_BENCHMARKS=OFF \
         -DTYR_BUILD_PYTYR=OFF \
         -DTYR_BUILD_EXECUTABLES=ON \
         -DTYR_HEADER_INSTANTIATION=OFF \

@@ -18,6 +18,7 @@ from typing_extensions import TypeIs
 
 from pytyr.formalism import planning as fp
 from pytyr.planning import SearchStatus, ground, lifted
+from pytyr.planning.algorithms import brfs
 from pytyr.serialization import register_table, serialize, table
 
 DOMAIN = """(define (domain serialize)
@@ -107,14 +108,14 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
         repository = ground.StateRepository(task)
         evaluator = ground.AxiomEvaluator(task, execution)
         generator = ground.SuccessorGenerator(task, execution)
-        result = ground.brfs.find_solution(task, repository, evaluator, generator, ground.brfs.Options())
+        result = brfs.ground.find_solution(task, repository, evaluator, generator, brfs.ground.Options())
         state_type = ground.State
         node_type = ground.Node
     else:
         repository = lifted.StateRepository(task)
         evaluator = lifted.AxiomEvaluator(task, execution)
         generator = lifted.SuccessorGenerator(task, execution)
-        result = lifted.brfs.find_solution(task, repository, evaluator, generator, lifted.brfs.Options())
+        result = brfs.lifted.find_solution(task, repository, evaluator, generator, brfs.lifted.Options())
         state_type = lifted.State
         node_type = lifted.Node
     assert result.status == SearchStatus.SOLVED

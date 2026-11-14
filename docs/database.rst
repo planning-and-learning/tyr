@@ -240,7 +240,7 @@ Python
 .. code:: python
 
    from pyyggdrasil import formalism
-   from pytyr import database as db
+   from pytyr.datalog.lifted import database as db
 
    columns = [
        formalism.ColumnLayout(formalism.ColumnIndex(0), formalism.ColumnType.UINT32),
@@ -278,7 +278,7 @@ The bindings expose the library types directly:
 - **Lifetimes.** Rows, views and schemas keep their Python owners alive; clearing an owner still invalidates them.
 
 Run the native tests with ``ctest --test-dir <build> -R '^database_' --output-on-failure``; the Python tests are in
-``python/tests/test_database.py``.
+``python/tests/database/``.
 
 Tuple distances
 ---------------
@@ -392,7 +392,7 @@ historical vertex count; adjacency, tuple bytes, heaps, the output and its delta
 includes retained pool chunks and excludes the plan and the caller's inputs.
 
 The ``database_distance`` tests compare full and incremental evaluation with an independent pairwise search. With
-``YGGDRASIL_BUILD_PROFILING``, ``database_distance_benchmark`` compares them for tuple arities 1, 2, 4 and 8; an
+``TYR_BUILD_BENCHMARKS``, ``database_distance_benchmark`` compares them for tuple arities 1, 2, 4 and 8; an
 update iteration measures one forward batch and its undo (``updates_per_iteration = 2``).
 
 Minimum distance
@@ -452,7 +452,7 @@ input of the call is interned. Read a ``Relation`` with ``repository.view(relati
 .. code:: python
 
    from pyyggdrasil import formalism
-   from pytyr import database as db
+   from pytyr.datalog.lifted import database as db
 
    def columns(*labels):
        return [formalism.ColumnIndex(label) for label in labels]
@@ -692,7 +692,7 @@ Python query API
 .. code:: python
 
    from pyyggdrasil import formalism
-   from pytyr import database as db
+   from pytyr.datalog.lifted import database as db
 
    x, y, z = formalism.ColumnIndex(0), formalism.ColumnIndex(1), formalism.ColumnIndex(2)
    left = formalism.Relation([x, y])

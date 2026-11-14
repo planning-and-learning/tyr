@@ -1,0 +1,90 @@
+# Copyright (C) 2026 Dominik Drexler
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""Regenerate the iw search-statistics fixture (ground + lifted).
+
+Each per-kind object records the search outcome (status, plan, solution_arity) plus the
+four counters aggregated across width iterations in the search result. The suite-level
+``max_arity`` is preserved and used for the runs.
+
+Usage:
+    .venv/bin/python -m tests.support.generators.planning.algorithms.generate_iw [CASE ...]
+"""
+
+from __future__ import annotations
+
+from datetime import timedelta
+from pathlib import Path
+from typing import Protocol, cast
+
+from tests.support.generators.planning.algorithms.fixture_generation import (
+    MAX_NUM_STATES,
+    MAX_TIME,
+    RECORDED_STATUSES,
+    ROOT,
+    SEARCH_STATUS_NAMES,
+    ConfigResult,
+    ConfigRun,
+    ConfigSpec,
+    SearchResultLike,
+    TaskKind,
+    counters_of,
+    generate_main,
+    make_context,
+    plan_of,
+    planning_module,
+)
+
+from pytyr.planning import SearchBudget
+
+FIXTURES: dict[TaskKind, Path] = {
+    "ground": ROOT / "tests/support/data/planning/algorithms/ground/iw.json",
+    "lifted": ROOT / "tests/support/data/planning/algorithms/lifted/iw.json",
+}
+CONFIGS: list[ConfigSpec] = [(None, None)]
+
+
+class _IwStatistics(Protocol):
+    def get_solution_arity(self) -> int | None: ...
+
+
+class _IwEventHandler(Protocol):
+    def get_statistics(self) -> _IwStatistics: ...
+
+
+def run_config(run: ConfigRun) -> ConfigResult | str:
+    max_arity = cast("int", run.suite["max_arity"])
+    context = make_context(run.kind, run.domain_file, run.task_file)
+    planning = planning_module(context)  # runtime-selected module (see fixture_generation docstring)
+
+    brfs_solver = planning.brfs.Solver()
+    brfs_solver.task = context.task
+    brfs_solver.state_repository = context.state_repository
+    brfs_solver.axiom_evaluator = context.axiom_evaluator
+    brfs_solver.successor_generator = context.successor_generator
+    brfs_solver.options.event_handler = planning.brfs.DefaultEventHandler()
+
+    handler = cast("_IwEventHandler", planning.iw.DefaultEventHandler())
+    options = planning.iw.Options()
+    options.event_handler = handler
+    if run.apply_limits:
+        options.search_budget = SearchBudget(MAX_NUM_STATES, timedelta(seconds=MAX_TIME))
+
+    result = cast("SearchResultLike", planning.iw.find_solution(brfs_solver, max_arity, options))
+
+    if result.status not in RECORDED_STATUSES:
+        return f"status {SEARCH_STATUS_NAMES[result.status]} within {MAX_TIME}s/{MAX_NUM_STATES} states"
+
+    config: ConfigResult = {"status": SEARCH_STATUS_NAMES[result.status]}
+    plan = result.plan
+    if plan is not None:
+        config["plan"] = plan_of(plan)
+    solution_arity = handler.get_statistics().get_solution_arity()
+    if solution_arity is not None:
+        config["solution_arity"] = solution_arity
+    config.update(counters_of(result.statistics))
+    return config
+
+
+if __name__ == "__main__":
+    generate_main(Path(__file__).resolve(), FIXTURES, CONFIGS, run_config)
