@@ -12,6 +12,7 @@
 
 #include "tyr/algorithms/kckp/kckp.hpp"
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/variable_domains.hpp"
 
 namespace tyr::analysis
 {

@@ -28,11 +28,11 @@ from tests.support.generators.planning.algorithms.fixture_generation import (
     ConfigSpec,
     SearchResultLike,
     TaskKind,
+    algorithm_module,
     counters_of,
     generate_main,
     make_context,
     plan_of,
-    planning_module,
 )
 
 from pytyr.planning import SearchBudget
@@ -55,22 +55,21 @@ class _IwEventHandler(Protocol):
 def run_config(run: ConfigRun) -> ConfigResult | str:
     max_arity = cast("int", run.suite["max_arity"])
     context = make_context(run.kind, run.domain_file, run.task_file)
-    planning = planning_module(context)  # runtime-selected module (see fixture_generation docstring)
 
-    brfs_solver = planning.brfs.Solver()
+    brfs_solver = algorithm_module(context, "brfs").Solver()
     brfs_solver.task = context.task
     brfs_solver.state_repository = context.state_repository
     brfs_solver.axiom_evaluator = context.axiom_evaluator
     brfs_solver.successor_generator = context.successor_generator
-    brfs_solver.options.event_handler = planning.brfs.DefaultEventHandler()
+    brfs_solver.options.event_handler = algorithm_module(context, "brfs").DefaultEventHandler()
 
-    handler = cast("_IwEventHandler", planning.iw.DefaultEventHandler())
-    options = planning.iw.Options()
+    handler = cast("_IwEventHandler", algorithm_module(context, "iw").DefaultEventHandler())
+    options = algorithm_module(context, "iw").Options()
     options.event_handler = handler
     if run.apply_limits:
         options.search_budget = SearchBudget(MAX_NUM_STATES, timedelta(seconds=MAX_TIME))
 
-    result = cast("SearchResultLike", planning.iw.find_solution(brfs_solver, max_arity, options))
+    result = cast("SearchResultLike", algorithm_module(context, "iw").find_solution(brfs_solver, max_arity, options))
 
     if result.status not in RECORDED_STATUSES:
         return f"status {SEARCH_STATUS_NAMES[result.status]} within {MAX_TIME}s/{MAX_NUM_STATES} states"

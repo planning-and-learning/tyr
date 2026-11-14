@@ -18,8 +18,6 @@
 #ifndef TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
 #define TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
 
-#include "tyr/analysis/declarations.hpp"
-#include "tyr/analysis/domains_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
@@ -27,9 +25,16 @@
 #include "tyr/formalism/planning/task_view.hpp"
 
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <type_traits>
 #include <variant>
+
+namespace tyr::analysis
+{
+struct TaskVariableDomains;
+struct TaskVariableDomainsView;
+}
 
 namespace tyr::formalism::planning
 {
@@ -49,19 +54,14 @@ public:
     [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_fdr_context; }
     [[nodiscard]] const auto& get_domain() const noexcept { return m_domain; }
     [[nodiscard]] const auto& get_path() const noexcept { return m_path; }
-    [[nodiscard]] const auto& get_variable_domains() const noexcept
-        requires std::same_as<T, LiftedTag>
-    { return m_variable_domains.domains; }
-    [[nodiscard]] const auto& get_variable_domains_view() const noexcept
-        requires std::same_as<T, LiftedTag>
-    { return m_variable_domains.view; }
+    [[nodiscard]] const analysis::TaskVariableDomains& get_variable_domains() const noexcept
+        requires std::same_as<T, LiftedTag>;
+    [[nodiscard]] const analysis::TaskVariableDomainsView& get_variable_domains_view() const noexcept
+        requires std::same_as<T, LiftedTag>;
 
-    /// The variable domains of a lifted task; a ground task has none.
-    struct VariableDomains
-    {
-        analysis::TaskVariableDomains domains;
-        analysis::TaskVariableDomainsView view;
-    };
+    /// The variable domains of a lifted task, and their views; a ground task has none. Defined in planning_task.cpp, so
+    /// that the sources including this header complete none of their maps (brokkr's template rules, rule 6).
+    struct VariableDomains;
 
 private:
     std::shared_ptr<Repository> m_repository;
@@ -69,7 +69,7 @@ private:
     FDRContextPtr m_fdr_context;
     PlanningDomain m_domain;
     std::optional<std::filesystem::path> m_path;
-    [[no_unique_address]] std::conditional_t<std::same_as<T, LiftedTag>, VariableDomains, std::monostate> m_variable_domains;
+    [[no_unique_address]] std::conditional_t<std::same_as<T, LiftedTag>, std::shared_ptr<const VariableDomains>, std::monostate> m_variable_domains;
 };
 
 }

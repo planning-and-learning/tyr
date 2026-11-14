@@ -43,6 +43,7 @@ from pytyr.planning import (
     SearchBudget,
     SearchStatus,
     Statistics,
+    algorithms,
     ground as ground_planning,
     lifted as lifted_planning,
 )
@@ -183,6 +184,11 @@ def planning_module(context: Context) -> ModuleType:
     return lifted_planning if context.kind == "lifted" else ground_planning
 
 
+def algorithm_module(context: Context, name: str) -> ModuleType:
+    """The runtime-selected bindings of algorithm `name` for this context's kind (see module docstring)."""
+    return getattr(getattr(algorithms, name), context.kind)
+
+
 def make_context(kind: TaskKind, domain_file: Path, task_file: Path) -> Context:
     execution_context = ExecutionContext(1)
     lifted_task = lifted_planning.Task(parse_task(domain_file, task_file))
@@ -246,7 +252,7 @@ def config_label(heuristic_name: HeuristicName | None, cost_suffix: CostSuffix |
 def run_search_config(algorithm: Algorithm, run: ConfigRun) -> ConfigResult | str:
     """Run one plain-search configuration and return its fixture object (counters + plan)."""
     context = make_context(run.kind, run.domain_file, run.task_file)
-    module = getattr(planning_module(context), algorithm)  # runtime-selected submodule (see module docstring)
+    module = algorithm_module(context, algorithm)
     options = cast("SearchOptionsLike", module.Options())
     if run.apply_limits:
         options.search_budget = SearchBudget(MAX_NUM_STATES, timedelta(seconds=MAX_TIME))

@@ -71,45 +71,19 @@ using ConjunctiveConditionDomain = SimpleScopedDomain<formalism::planning::Conju
 
 using ConjunctiveEffectDomain = SimpleScopedDomain<formalism::planning::ConjunctiveEffect<LiftedTag>>;
 
-struct ConditionalEffectDomainData
-{
-    ConjunctiveConditionDomain condition_domain;
-    ConjunctiveEffectDomain effect_domain;
-};
+/// Defined in variable_domains.hpp, so that the sources including this header complete none of their maps.
+struct ConditionalEffectDomainData;
+struct ActionDomainData;
+struct ProgramVariableDomains;
+struct TaskVariableDomains;
 
 using ConditionalEffectDomain = Scoped<formalism::planning::ConditionalEffect<LiftedTag>, ConditionalEffectDomainData>;
 
 using ConditionalEffectDomainMap = urd::Store<urd::map<urd::index<formalism::planning::ConditionalEffect<LiftedTag>>, ConditionalEffectDomain>>;
 
-struct ActionDomainData
-{
-    ConjunctiveConditionDomain precondition_domain;
-    ConditionalEffectDomainMap effect_domains;
-};
-
 using ActionDomain = Scoped<formalism::planning::Action<LiftedTag>, ActionDomainData>;
 
 using ActionDomainMap = urd::Store<urd::map<urd::index<formalism::planning::Action<LiftedTag>>, ActionDomain>>;
-
-struct ProgramVariableDomains
-{
-    PredicateDomainMap<formalism::StaticTag> static_predicate_domains;
-    PredicateDomainMap<formalism::FluentTag> fluent_predicate_domains;
-    FunctionDomainMap<formalism::StaticTag> static_function_domains;
-    FunctionDomainMap<formalism::FluentTag> fluent_function_domains;
-    RuleDomainMap rule_domains;
-};
-
-struct TaskVariableDomains
-{
-    PredicateDomainMap<formalism::StaticTag> static_predicate_domains;
-    PredicateDomainMap<formalism::FluentTag> fluent_predicate_domains;
-    PredicateDomainMap<formalism::DerivedTag> derived_predicate_domains;
-    FunctionDomainMap<formalism::StaticTag> static_function_domains;
-    FunctionDomainMap<formalism::FluentTag> fluent_function_domains;
-    ActionDomainMap action_domains;
-    AxiomDomainMap axiom_domains;
-};
 
 /**
  * View based external representation of variable domains.

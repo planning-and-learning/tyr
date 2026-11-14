@@ -22,6 +22,7 @@
 
 #include <yggdrasil/formalism/free_relations.hpp>
 #include <yggdrasil/formalism/repository_instantiations.hpp>
+#include <yggdrasil/formalism/builder_instantiations.hpp>
 
 YGG_FORMALISM_REPOSITORY(, tyr::formalism::datalog::Repository, 42, 6, 0)
 
@@ -29,3 +30,4 @@ YGG_FORMALISM_REPOSITORY(, tyr::formalism::datalog::Repository, 42, 6, 0)
 // yggdrasil has no library of its own to instantiate it in.
 YGG_FORMALISM_REPOSITORY(, ygg::FreeRelationRepository, 2, 1, 1)
 YGG_FORMALISM_REPOSITORY_SCHEMA(, ygg::FreeRelationRepository)
+YGG_FORMALISM_BUILDER(, tyr::formalism::datalog::Builder, 48)

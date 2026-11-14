@@ -68,6 +68,8 @@
 #include <vector>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
+#include <yggdrasil/formalism/symbol_context_instantiations.hpp>
+#include <yggdrasil/formalism/builder_instantiations.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -144,7 +146,7 @@ struct AtomStackEntry
     ElementSpan<Tag> false_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    urd::unique_slot_ptr<urd::data<AtomSelectorNode<Tag>>> result;
+    ygg::formalism::BuilderHandle<AtomSelectorNode<Tag>> result;
 
     AtomStackEntry(Builder<Tag>& builder,
                    BaseEntry<Tag> base_,
@@ -174,7 +176,7 @@ struct VariableStackEntry
     ElementSpan<Tag> dontcare_elements;
     size_t forward_pos = 0;
 
-    urd::unique_slot_ptr<urd::data<VariableSelectorNode<Tag>>> result;
+    ygg::formalism::BuilderHandle<VariableSelectorNode<Tag>> result;
 
     VariableStackEntry(Builder<Tag>& builder,
                        BaseEntry<Tag> base_,
@@ -205,7 +207,7 @@ struct NegativeFactStackEntry
     ElementSpan<Tag> true_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    urd::unique_slot_ptr<urd::data<NegativeFactSelectorNode<Tag>>> result;
+    ygg::formalism::BuilderHandle<NegativeFactSelectorNode<Tag>> result;
 
     NegativeFactStackEntry(Builder<Tag>& builder,
                            BaseEntry<Tag> base_,
@@ -230,7 +232,7 @@ struct ConstraintStackEntry
     ElementSpan<Tag> true_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    urd::unique_slot_ptr<urd::data<NumericConstraintSelectorNode<Tag>>> result;
+    ygg::formalism::BuilderHandle<NumericConstraintSelectorNode<Tag>> result;
 
     ConstraintStackEntry(Builder<Tag>& builder,
                          BaseEntry<Tag> base_,
@@ -252,7 +254,7 @@ struct GeneratorStackEntry
 {
     BaseEntry<Tag> base;
 
-    urd::unique_slot_ptr<urd::data<planning::match_tree::ElementGeneratorNode<Tag>>> result;
+    ygg::formalism::BuilderHandle<planning::match_tree::ElementGeneratorNode<Tag>> result;
 
     GeneratorStackEntry(Builder<Tag>& builder, BaseEntry<Tag> base_) :
         base(base_),
@@ -860,3 +862,9 @@ template class MatchTree<formalism::planning::Axiom<GroundTag>>;
 }
 
 TYR_MATCH_TREE_INTERNS()
+
+// The repositories' symbols, which the library's other sources only declare (yggdrasil/formalism/symbol_context.hpp).
+YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::planning::Action<tyr::GroundTag>>, 5)
+YGG_FORMALISM_SYMBOL_CONTEXT(, tyr::planning::match_tree::Repository<tyr::formalism::planning::Axiom<tyr::GroundTag>>, 5)
+YGG_FORMALISM_BUILDER(, tyr::planning::match_tree::GroundActionBuilder, 5)
+YGG_FORMALISM_BUILDER(, tyr::planning::match_tree::GroundAxiomBuilder, 5)

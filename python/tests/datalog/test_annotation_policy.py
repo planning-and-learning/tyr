@@ -36,7 +36,6 @@ def test_annotation_policy_api_is_unified(module: ModuleType) -> None:
     for workspace in (module.UnannotatedProgramWorkspace, module.SumProgramWorkspace, module.MaxProgramWorkspace):
         assert hasattr(workspace, "get_annotation_policy")
         assert hasattr(workspace, "get_annotations")
-        assert hasattr(workspace, "get_numeric_annotations")
 
 
 @pytest.mark.parametrize("module", [datalog.ground, datalog.lifted])

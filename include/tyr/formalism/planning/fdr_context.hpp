@@ -108,9 +108,7 @@ private:
     // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.
     urd::Store<urd::sequence<FactSlot>, urd::stable_refs, urd::concurrent> m_facts;
     std::mutex m_registration_mutex;
-    /// By pointer: a builder holds a slot per record type, which every includer would instantiate (brokkr's template
-    /// rules, rule 4).
-    std::unique_ptr<Builder> m_builder;
+    Builder m_builder;
     FDRVariableViewList<FluentTag> m_variables;
 };
 

@@ -5,6 +5,7 @@ import gc
 from collections import Counter
 from collections.abc import Callable, Sequence
 from datetime import timedelta
+from types import ModuleType
 from typing import Never, Self, TypeVar
 
 import pytest
@@ -20,6 +21,11 @@ from pytyr.formalism.planning import Parser
 SearchResult = planning.lifted.SearchResult | planning.ground.SearchResult
 
 GRIPPER = fetch_task("classical/tests/gripper/test-1.pddl")
+
+
+def algorithm_bindings(task_module: ModuleType, name: str) -> ModuleType:
+    """The bindings of algorithm `name` on the tasks of `task_module` (ground or lifted)."""
+    return getattr(getattr(planning.algorithms, name), task_module.__name__.rsplit(".", 1)[-1])
 
 
 def test_planning_modules_export_expected_algorithm_submodules() -> None:
@@ -149,25 +155,37 @@ def test_planning_statistics_bindings_expose_counters_and_progress_snapshots() -
     assert "deadend" in str(progress_statistics)
 
     for task_module in (planning.ground, planning.lifted):
-        for algorithm_module in (task_module.astar_eager, task_module.gbfs_lazy):
+        for algorithm_module in (
+            algorithm_bindings(task_module, "astar_eager"),
+            algorithm_bindings(task_module, "gbfs_lazy"),
+        ):
             event_handler = algorithm_module.DefaultEventHandler()
             assert not hasattr(event_handler, "on_expand_node")
             assert not hasattr(event_handler, "get_statistics")
 
-        for event_handler in (task_module.brfs.DefaultEventHandler(), task_module.brfs.DefaultEventHandler(0)):
+        for event_handler in (
+            algorithm_bindings(task_module, "brfs").DefaultEventHandler(),
+            algorithm_bindings(task_module, "brfs").DefaultEventHandler(0),
+        ):
             assert isinstance(event_handler.get_progress_statistics(), planning.ProgressStatistics)
             assert not hasattr(event_handler, "on_expand_node")
 
-        for event_handler in (task_module.iw.DefaultEventHandler(), task_module.iw.DefaultEventHandler(0)):
-            assert isinstance(event_handler.get_statistics(), task_module.iw.Statistics)
+        for event_handler in (
+            algorithm_bindings(task_module, "iw").DefaultEventHandler(),
+            algorithm_bindings(task_module, "iw").DefaultEventHandler(0),
+        ):
+            assert isinstance(event_handler.get_statistics(), algorithm_bindings(task_module, "iw").Statistics)
 
-        for event_handler in (task_module.siw.DefaultEventHandler(), task_module.siw.DefaultEventHandler(0)):
-            assert isinstance(event_handler.get_statistics(), task_module.siw.Statistics)
+        for event_handler in (
+            algorithm_bindings(task_module, "siw").DefaultEventHandler(),
+            algorithm_bindings(task_module, "siw").DefaultEventHandler(0),
+        ):
+            assert isinstance(event_handler.get_statistics(), algorithm_bindings(task_module, "siw").Statistics)
 
 
 def test_default_event_handler_statistics_keep_handlers_alive() -> None:
     for task_module in (planning.ground, planning.lifted):
-        event_handler = task_module.brfs.DefaultEventHandler()
+        event_handler = algorithm_bindings(task_module, "brfs").DefaultEventHandler()
         progress_statistics = event_handler.get_progress_statistics()
 
         del event_handler
@@ -175,7 +193,7 @@ def test_default_event_handler_statistics_keep_handlers_alive() -> None:
 
         assert progress_statistics.empty()
 
-        event_handler = task_module.iw.DefaultEventHandler()
+        event_handler = algorithm_bindings(task_module, "iw").DefaultEventHandler()
         statistics = event_handler.get_statistics()
 
         del event_handler
@@ -183,7 +201,7 @@ def test_default_event_handler_statistics_keep_handlers_alive() -> None:
 
         assert statistics.get_solution_arity() is None
 
-        event_handler = task_module.siw.DefaultEventHandler()
+        event_handler = algorithm_bindings(task_module, "siw").DefaultEventHandler()
         statistics = event_handler.get_statistics()
 
         del event_handler
@@ -194,7 +212,7 @@ def test_default_event_handler_statistics_keep_handlers_alive() -> None:
 
 def test_algorithm_statistics_are_constructible_and_mutable() -> None:
     for task_module in (planning.ground, planning.lifted):
-        iw_statistics = task_module.iw.Statistics()
+        iw_statistics = algorithm_bindings(task_module, "iw").Statistics()
 
         assert iw_statistics.get_solution_arity() is None
         assert repr(iw_statistics) == str(iw_statistics)
@@ -205,7 +223,7 @@ def test_algorithm_statistics_are_constructible_and_mutable() -> None:
         iw_statistics.clear()
         assert iw_statistics.get_solution_arity() is None
 
-        siw_statistics = task_module.siw.Statistics()
+        siw_statistics = algorithm_bindings(task_module, "siw").Statistics()
 
         assert siw_statistics.get_maximum_effective_width() is None
         assert siw_statistics.get_average_effective_width() is None
@@ -230,9 +248,9 @@ def test_nested_width_search_solvers_expose_expected_defaults() -> None:
     iw_max_arity = 5
 
     for task_module in (planning.ground, planning.lifted):
-        iw_solver = task_module.iw.Solver()
+        iw_solver = algorithm_bindings(task_module, "iw").Solver()
 
-        assert isinstance(iw_solver.brfs_solver, task_module.brfs.Solver)
+        assert isinstance(iw_solver.brfs_solver, algorithm_bindings(task_module, "brfs").Solver)
         assert iw_solver.brfs_solver.task is None
         assert iw_solver.brfs_solver.state_repository is None
         assert iw_solver.brfs_solver.axiom_evaluator is None
@@ -240,10 +258,10 @@ def test_nested_width_search_solvers_expose_expected_defaults() -> None:
         assert iw_solver.max_arity == iw_max_arity
         assert iw_solver.options is not None
 
-        siw_solver = task_module.siw.Solver()
+        siw_solver = algorithm_bindings(task_module, "siw").Solver()
 
-        assert isinstance(siw_solver.iw_solver, task_module.iw.Solver)
-        assert isinstance(siw_solver.iw_solver.brfs_solver, task_module.brfs.Solver)
+        assert isinstance(siw_solver.iw_solver, algorithm_bindings(task_module, "iw").Solver)
+        assert isinstance(siw_solver.iw_solver.brfs_solver, algorithm_bindings(task_module, "brfs").Solver)
         assert siw_solver.iw_solver.brfs_solver.task is None
         assert siw_solver.iw_solver.brfs_solver.state_repository is None
         assert siw_solver.iw_solver.brfs_solver.axiom_evaluator is None
@@ -348,7 +366,12 @@ def test_search_budget_defaults_arguments_and_mutable_fields() -> None:
 
 def test_algorithm_options_copy_budgets_and_keep_mutable_members_local() -> None:
     for task_module in (planning.ground, planning.lifted):
-        for algorithm in (task_module.brfs, task_module.astar_eager, task_module.gbfs_lazy, task_module.iw):
+        for algorithm in (
+            algorithm_bindings(task_module, "brfs"),
+            algorithm_bindings(task_module, "astar_eager"),
+            algorithm_bindings(task_module, "gbfs_lazy"),
+            algorithm_bindings(task_module, "iw"),
+        ):
             budget = planning.SearchBudget(50, timedelta(seconds=2))
             first, second = algorithm.Options(), algorithm.Options()
             first.search_budget = budget
@@ -485,7 +508,7 @@ def test_algorithm_options_are_default_constructible_with_expected_fields() -> N
 
     for task_module in (planning.ground, planning.lifted):
         for algorithm_name, expected_fields in expected_fields_by_algorithm.items():
-            options = getattr(task_module, algorithm_name).Options()
+            options = algorithm_bindings(task_module, algorithm_name).Options()
 
             for field in expected_fields:
                 assert hasattr(options, field)
@@ -1175,7 +1198,10 @@ def test_cost_mode_is_bound_for_cost_sensitive_algorithms() -> None:
     assert planning.CostMode.UNIT != planning.CostMode.GENERAL
 
     for task_module in (planning.ground, planning.lifted):
-        for algorithm_module in (task_module.astar_eager, task_module.gbfs_lazy):
+        for algorithm_module in (
+            algorithm_bindings(task_module, "astar_eager"),
+            algorithm_bindings(task_module, "gbfs_lazy"),
+        ):
             options = algorithm_module.Options()
 
             assert options.cost_mode == planning.CostMode.GENERAL
@@ -1187,7 +1213,7 @@ def test_parallel_astar_search_mode_is_bound() -> None:
     assert planning.ParallelSearchMode.SYNCHRONOUS != planning.ParallelSearchMode.ASYNCHRONOUS
 
     for task_module in (planning.ground, planning.lifted):
-        options = task_module.astar_eager.Options()
+        options = algorithm_bindings(task_module, "astar_eager").Options()
         assert options.parallel_search_mode == planning.ParallelSearchMode.SYNCHRONOUS
         options.parallel_search_mode = planning.ParallelSearchMode.ASYNCHRONOUS
         assert options.parallel_search_mode == planning.ParallelSearchMode.ASYNCHRONOUS
@@ -1209,9 +1235,9 @@ def test_dist_hash_mode_is_bound() -> None:
 
     for task_module in (planning.ground, planning.lifted):
         for algorithm_module in (
-            task_module.astar_eager,
-            task_module.brfs,
-            task_module.gbfs_lazy,
+            algorithm_bindings(task_module, "astar_eager"),
+            algorithm_bindings(task_module, "brfs"),
+            algorithm_bindings(task_module, "gbfs_lazy"),
         ):
             options = algorithm_module.Options()
             assert options.dist_hash_mode == planning.DistHashMode.RANDOM

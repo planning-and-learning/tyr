@@ -74,7 +74,7 @@ struct GroundProgramBuildContext
         urd::Store<urd::map<formalism::planning::PredicateView<formalism::FluentTag>, formalism::datalog::PredicateView<formalism::FluentTag>>>;
     formalism::datalog::Builder builder;
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository> merge_context;
-    urd::unique_slot_ptr<urd::data<formalism::datalog::Program<GroundTag>>> program;
+    ygg::formalism::BuilderHandle<formalism::datalog::Program<GroundTag>> program;
     StaticPredicateMapping static_predicates;
     FluentPredicateMapping fluent_predicates;
     ygg::uint_t next_rule_id = 0;

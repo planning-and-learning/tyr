@@ -18,6 +18,7 @@
 #include "planning/bindings.hpp"
 #include "planning/module.hpp"
 #include "pytyr/module.hpp"
+#include "tyr/analysis/domains_view.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"

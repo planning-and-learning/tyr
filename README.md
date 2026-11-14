@@ -28,14 +28,7 @@ The library consists of a **formalism** and a **planning** component. The formal
 
 ## Python Interface
 
-Pytyr is available at [PyPI](https://pypi.org/project/pytyr/) and can be installed with `pip install pytyr`. 
-
-[`pytyr.serialization`](https://planning-and-learning.github.io/tyr/serialization/index.html) provides structured native
-representations with caller-selected dictionary tables and reference prefixes.
-
-Formalism repositories publish compatible payloads with `view, inserted = repository.insert(data)`.
-The boolean reports whether publication created a new entity. Returned views retain their
-repository, including views extracted from insertion tuples and iterators.
+Pytyr is available at [PyPI](https://pypi.org/project/pytyr/) and can be installed with `pip install pytyr`.
 
 Detailed examples are available in the `python/examples` directory:
 
@@ -97,15 +90,15 @@ auto execution_context = ygg::ExecutionContext::create(1);
 
 // Instantiate the planning objects. Each state repository has its own number, so
 // state views from different state repositories hash and compare correctly.
-auto axiom_evaluator = std::make_shared<tp::AxiomEvaluator<tyr::LiftedTag>>(task, execution_context);
-auto state_repository = std::make_shared<tp::StateRepository<tyr::LiftedTag>>(task);
-auto successor_generator = std::make_shared<tp::SuccessorGenerator<tyr::LiftedTag>>(task, execution_context);
+auto axiom_evaluator = tp::AxiomEvaluator<tyr::LiftedTag>(task, execution_context);
+auto state_repository = tp::StateRepository<tyr::LiftedTag>(task);
+auto successor_generator = tp::SuccessorGenerator<tyr::LiftedTag>(task, execution_context);
 
 // Get the initial node (state + metric value).
-auto initial_node = successor_generator->get_initial_node(*state_repository, *axiom_evaluator);
+auto initial_node = successor_generator.get_initial_node(state_repository, axiom_evaluator);
 
 // Get the labeled successor nodes (sequence of action binding + node).
-auto labeled_successor_nodes = successor_generator->get_labeled_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
+auto labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(initial_node, state_repository, axiom_evaluator);
 
 ```
 

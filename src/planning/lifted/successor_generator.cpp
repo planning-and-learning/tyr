@@ -150,7 +150,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
 
         ygg::ExecutionContextPtr execution_context;
         formalism::planning::Builder scratch_builder;
-        urd::unique_slot_ptr<urd::data<ygg::Row<formalism::planning::Action<LiftedTag>>>> scratch_action_binding;
+        ygg::formalism::BuilderHandle<ygg::Row<formalism::planning::Action<LiftedTag>>> scratch_action_binding;
         ActionBindingMap action_binding_to_ground_action;
         urd::data<ygg::Row<formalism::planning::Action<LiftedTag>>> checked_binding;
         /// The objects of scratch_action_binding and checked_binding, as the grounder binds parameters to them.

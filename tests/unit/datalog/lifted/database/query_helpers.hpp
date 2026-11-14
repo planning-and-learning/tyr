@@ -17,7 +17,7 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
-#include <yggdrasil/formalism/builder.hpp>
+#include <yggdrasil/formalism/builder_impl.hpp>  // the tests' own storage, RelationRecords, is no library's
 #include <yggdrasil/formalism/free_relations.hpp>
 
 /// Test-only query construction on top of checkout + insert_query.

@@ -36,7 +36,7 @@
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/builder.hpp>
 #include <yggdrasil/formalism/interning.hpp>
-#include <yggdrasil/formalism/symbol_repository.hpp>
+#include <yggdrasil/formalism/symbol_context.hpp>
 
 namespace tyr::planning::match_tree
 {
@@ -48,7 +48,7 @@ using ygg::formalism::checkout;
 using ygg::formalism::insert;
 
 template<typename Tag>
-class Repository : public ygg::formalism::SymbolRepositoryBase<Repository<Tag>, RepositoryTypes<Tag>>
+class Repository : public ygg::formalism::SymbolContext<Repository<Tag>, RepositoryTypes<Tag>>
 {
 private:
     const formalism::planning::Repository* m_formalism_repository;
