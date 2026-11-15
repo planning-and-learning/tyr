@@ -90,7 +90,7 @@ Delta and lifetime contract
   sequential and nonreentrant.
 - **Initialization** produces the baseline and an empty delta, and keeps reusable capacities when repeated.
   ``update`` before it throws ``std::logic_error``.
-- **Results.** ``get_result()`` returns a ``BuilderRelationView`` and ``get_delta()`` a const reference; do not keep
+- **Results.** ``get_result()`` returns a ``RelationBuilderView`` and ``get_delta()`` a const reference; do not keep
   their contents across the evaluator's next mutation. Keep the input changes yourself if you need them for undo, and
   feed an upstream output delta to downstream operators before updating the upstream operator again.
 - **Exceptions.** Validation failures before mutation preserve the prior result. An exception after mutation started

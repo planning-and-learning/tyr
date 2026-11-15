@@ -23,6 +23,7 @@
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/domain_data.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 
 #include <urd/elements/flat.hpp>
@@ -36,13 +37,17 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    const auto& get_name() const noexcept { return self().data().name; }
+    decltype(auto) get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
     template<::tyr::formalism::FactKind T>
     auto get_predicates() const noexcept
-    { return urd::resolve(self().data().template get_predicates<T>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::planning::predicates_of<T>>();
+    }
     template<::tyr::formalism::FactKind T>
     auto get_functions() const noexcept
-    { return urd::resolve(self().data().template get_functions<T>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::planning::functions_of<T>>();
+    }
     auto get_auxiliary_function() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_function>(); }
     auto get_constants() const noexcept { return self().template member<&urd::record_of<V>::constants>(); }
     auto get_actions() const noexcept { return self().template member<&urd::record_of<V>::actions>(); }

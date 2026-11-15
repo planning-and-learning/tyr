@@ -11,7 +11,7 @@ void bind_query_select_equal(nb::module_& m, QueryRepositoryBinding& repository)
     {
         using V = QueryData<tyr::datalog::database::QuerySelectEqualTag>;
         urd::python::bind_data<V>(m, "QuerySelectEqualData")
-            .def(urd::python::init_from_views<QueryView, Column, Column>(), "arg"_a, "lhs_column"_a, "rhs_column"_a)
+            .def(init_without_derived<QueryView, Column, Column>(), "arg"_a, "lhs_column"_a, "rhs_column"_a)
             .def_rw("arg", &V::arg)
             .def_rw("lhs_column", &V::lhs_column)
             .def_rw("rhs_column", &V::rhs_column);

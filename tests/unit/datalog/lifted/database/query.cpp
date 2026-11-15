@@ -19,7 +19,7 @@ namespace
 using Column = urd::index<ygg::Column>;
 using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
 using Delta = tyr::datalog::database::incremental::Delta;
-using Change = std::pair<ygg::FreeBuilderRelationView, ygg::FreeBuilderRelationView>;
+using Change = std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView>;
 
 /// The layer the tests read their builders through.
 const ygg::FreeRelationRepository& layer()
@@ -28,7 +28,7 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 const Column x(0), y(1), z(2), d(3);
 
 auto rows(const auto& relation)
@@ -143,21 +143,32 @@ TEST(DatabaseQuery, RecordConstructorsMatchFieldsAndValidateConstantTypes)
         return tyr::datalog::database::insert(repository, erased).first;
     };
 
-    const urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryJoinTag>> by_index(a.index(), b.index());
+    auto by_index = urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryJoinTag>>(a.index(), b.index(), {});
     EXPECT_EQ(by_index.lhs, a.index());
     EXPECT_EQ(by_index.rhs, b.index());
-    EXPECT_EQ(insert(by_index).index(), tyr::datalog::tests::qb::join(repository, a, b).index());
+    EXPECT_EQ(insert(std::move(by_index)).index(), tyr::datalog::tests::qb::join(repository, a, b).index());
 
     const std::array labels { x };
-    EXPECT_EQ(insert(urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTag>>(a.index(), labels)).index(),
+    EXPECT_EQ(insert(urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTag>>(a.index(), labels, {})).index(),
               tyr::datalog::tests::qb::project(repository, a, { x }).index());
-    EXPECT_EQ(insert(urd::data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>(a.index(), x, ygg::uint_t(7))).index(),
+    EXPECT_EQ(insert(urd::data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>(a.index(),
+                                                                                                           x,
+                                                                                                           ygg::encode_value(ygg::uint_t(7)),
+                                                                                                           ygg::type_id<ygg::uint_t>,
+                                                                                                           {}))
+                  .index(),
               tyr::datalog::tests::qb::select_value(repository, a, x, ygg::uint_t(7)).index());
-    const auto generic = insert(
-        urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>>(std::array { a.index(), b.index() }, std::array { y, x, z }));
+    const auto generic = insert(urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJoinTag>>(std::array { a.index(), b.index() },
+                                                                                                                      std::array { y, x, z },
+                                                                                                                      {},
+                                                                                                                      {}));
     EXPECT_TRUE(std::ranges::equal(generic.columns() | std::views::transform(&ygg::ColumnLayout::label), std::array { x, y, z }));
 
-    auto mismatched = urd::data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>(a.index(), x, static_cast<std::int32_t>(7));
+    auto mismatched = urd::data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>(a.index(),
+                                                                                                            x,
+                                                                                                            ygg::encode_value(static_cast<std::int32_t>(7)),
+                                                                                                            ygg::type_id<std::int32_t>,
+                                                                                                            {});
     EXPECT_EQ(mismatched.constant_type, (ygg::type_id<std::int32_t>) );
     EXPECT_THROW(static_cast<void>(tyr::datalog::database::insert(repository, mismatched)), std::invalid_argument);
 }
@@ -502,7 +513,7 @@ TEST(DatabaseQuery, NullaryGenericJoinIsIdentityInBothModes)
     EXPECT_EQ(plan.roots().front(), plan.roots().back());
     tyr::datalog::database::QueryEvaluator full(layer(), plan);
     tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
-    const std::array<ygg::FreeBuilderRelationView, 0> no_inputs;
+    const std::array<ygg::FreeRelationBuilderView, 0> no_inputs;
     full.evaluate(no_inputs);
     incremental.initialize(no_inputs);
     ASSERT_EQ(full.get_result().size(), 1);

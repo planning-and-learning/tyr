@@ -11,7 +11,7 @@ void bind_query_union(nb::module_& m, QueryRepositoryBinding& repository)
     {
         using V = QueryData<tyr::datalog::database::QueryUnionTag>;
         urd::python::bind_data<V>(m, "QueryUnionData")
-            .def(urd::python::init_from_views<QueryView, QueryView>(), "lhs"_a, "rhs"_a)
+            .def(init_without_derived<QueryView, QueryView>(), "lhs"_a, "rhs"_a)
             .def_rw("lhs", &V::lhs)
             .def_rw("rhs", &V::rhs);
     }

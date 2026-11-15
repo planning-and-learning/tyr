@@ -57,9 +57,17 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"literals", &data::literals>,
+                           urd::field<"numeric_effects", &data::numeric_effects>,
+                           urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {};
+    }
 };
 
 template<>
@@ -89,16 +97,37 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    template<::tyr::formalism::PolarityKind T>
-    [[nodiscard]] const auto& get_facts() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::PositiveNegativeTags, T, &data::add_facts, &data::del_facts>(*this); }
-
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"add_facts", &data::add_facts>,
+                           urd::field<"del_facts", &data::del_facts>,
+                           urd::field<"numeric_effects", &data::numeric_effects>,
+                           urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
+    }
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+    {
+        return urd::Members<&data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {};
+    }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {};
+    }
 };
 
+}
+
+namespace tyr::formalism::planning
+{
+/// The member holding the P-facts of a ground conjunctive effect: add (positive) or delete (negative).
+template<PolarityKind P>
+inline constexpr auto effect_facts_of =
+    tagged_member_pointer<PositiveNegativeTags, P, &urd::data<ConjunctiveEffect<GroundTag>>::add_facts, &urd::data<ConjunctiveEffect<GroundTag>>::del_facts>;
+
+template<PolarityKind P>
+[[nodiscard]] const auto& facts(const urd::data<ConjunctiveEffect<GroundTag>>& effect) noexcept
+{
+    return effect.*effect_facts_of<P>;
+}
 }
 
 #endif

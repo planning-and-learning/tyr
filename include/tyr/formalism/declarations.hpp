@@ -83,6 +83,10 @@ struct AuxiliaryTag
 template<typename T>
 concept FactKind = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || std::same_as<T, DerivedTag> || std::same_as<T, AuxiliaryTag>;
 
+/// The fact kinds a numeric effect changes.
+template<typename T>
+concept NumericEffectFactKind = std::same_as<T, FluentTag> || std::same_as<T, AuxiliaryTag>;
+
 using StaticFluentTags = boost::mp11::mp_list<StaticTag, FluentTag>;
 using StaticFluentDerivedTags = boost::mp11::mp_list<StaticTag, FluentTag, DerivedTag>;
 using StaticFluentAuxiliaryTags = boost::mp11::mp_list<StaticTag, FluentTag, AuxiliaryTag>;
@@ -109,6 +113,10 @@ using PredicateFunctionTags = boost::mp11::mp_list<PredicateTag, FunctionTag>;
 
 template<typename T>
 concept OperatorKind = std::same_as<T, BooleanOperatorKind> || std::same_as<T, ArithmeticOperatorKind>;
+
+/// The operator kind of the operators that only occur in arithmetic (unary and multi operators).
+template<typename T>
+concept ArithmeticOperatorKindOnly = std::same_as<T, ArithmeticOperatorKind>;
 
 /**
  * Formalism tag
@@ -221,12 +229,16 @@ concept PolarityKind = std::same_as<T, PositiveTag> || std::same_as<T, NegativeT
 
 using PositiveNegativeTags = boost::mp11::mp_list<PositiveTag, NegativeTag>;
 
-/// The member of self that Tag selects: Tag's position in Tags (a boost::mp11 list) picks one of Members.
+/// The pointer to the member that Tag selects: Tag's position in Tags (a boost::mp11 list) picks one of Members.
+template<typename Tags, typename Tag, auto... Members>
+    requires boost::mp11::mp_contains<Tags, Tag>::value
+inline constexpr auto tagged_member_pointer = std::get<boost::mp11::mp_find<Tags, Tag>::value>(std::tuple(Members...));
+
+/// The member of self that Tag selects (see tagged_member_pointer).
 template<typename Tags, typename Tag, auto... Members, typename Self>
 constexpr auto& tagged_member(Self& self) noexcept
 {
-    static_assert(boost::mp11::mp_contains<Tags, Tag>::value, "Missing case");
-    return self.*std::get<boost::mp11::mp_find<Tags, Tag>::value>(std::tuple(Members...));
+    return self.*tagged_member_pointer<Tags, Tag, Members...>;
 }
 
 }

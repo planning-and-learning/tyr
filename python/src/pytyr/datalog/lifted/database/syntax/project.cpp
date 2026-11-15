@@ -15,7 +15,7 @@ void bind_query_project(nb::module_& m, QueryRepositoryBinding& repository)
     {
         using V = QueryData<tyr::datalog::database::QueryProjectTag>;
         urd::python::bind_data<V>(m, "QueryProjectData")
-            .def(urd::python::init_from_views<QueryView, urd::Store<urd::sequence<Column>>>(), "arg"_a, "labels"_a)
+            .def(init_without_derived<QueryView, urd::Store<urd::sequence<Column>>>(), "arg"_a, "labels"_a)
             .def_rw("arg", &V::arg)
             .def_rw("labels", &V::labels);
     }

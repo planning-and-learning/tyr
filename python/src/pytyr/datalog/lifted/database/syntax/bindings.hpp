@@ -20,6 +20,19 @@ using QueryRepositoryBinding = nb::class_<tyr::datalog::database::QueryRepositor
 
 template<typename Tag>
 using QueryData = urd::data<tyr::datalog::database::Query<Tag>>;
+/// __init__ from the identifying fields as Python passes them (urd::python::init_from_views); the record's last field,
+/// derived (a plan or the columns), starts empty: inserting the record prepares it.
+template<typename... Args>
+struct init_without_derived : nb::def_visitor<init_without_derived<Args...>>
+{
+    template<typename Class, typename... Extra>
+    void execute(Class& cls, const Extra&... extra) const
+    {
+        using Record = typename Class::Type;
+        cls.def("__init__", [](Record* self, Args... arguments) { new (self) Record(urd::to_stored(arguments)..., {}); }, extra...);
+    }
+};
+
 template<typename Tag>
 using ConcreteQueryView = tyr::datalog::database::QueryView<Tag>;
 

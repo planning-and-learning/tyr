@@ -168,7 +168,7 @@ public:
         }
         m_ready = true;
     }
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result(size_t root = 0) const&
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t root = 0) const&
     {
         if (!m_ready)
             throw std::logic_error("Query: evaluate before reading results.");
@@ -176,7 +176,7 @@ public:
             throw std::out_of_range("Query: invalid root.");
         return m_layer->view(m_nodes.at(m_plan.roots()[root]).result);
     }
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result(size_t = 0) const&& = delete;
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t = 0) const&& = delete;
     /// Retained runtime storage; excludes the immutable query plan.
     [[nodiscard]] size_t memory_usage() const noexcept;
 };

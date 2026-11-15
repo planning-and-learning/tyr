@@ -11,7 +11,7 @@ void bind_query_distance(nb::module_& m, QueryRepositoryBinding& repository)
     {
         using V = QueryData<tyr::datalog::database::QueryDistanceTag>;
         urd::python::bind_data<V>(m, "QueryDistanceData")
-            .def(urd::python::init_from_views<QueryView, QueryView, QueryView, Column>(), "sources"_a, "edges"_a, "targets"_a, "distance_column"_a)
+            .def(init_without_derived<QueryView, QueryView, QueryView, Column>(), "sources"_a, "edges"_a, "targets"_a, "distance_column"_a)
             .def_rw("sources", &V::sources)
             .def_rw("edges", &V::edges)
             .def_rw("targets", &V::targets)

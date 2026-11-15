@@ -31,12 +31,12 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const Relation& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const Relation& relation) { return layer().view(relation); }
 
 /// Evaluates a query over the given inputs.
 Relation evaluate(View query, const urd::Store<urd::sequence<const Relation*>>& inputs)
 {
-    auto bindings = urd::Store<urd::sequence<ygg::FreeBuilderRelationView>>();
+    auto bindings = urd::Store<urd::sequence<ygg::FreeRelationBuilderView>>();
     for (const auto* input : inputs)
         bindings.push_back(borrow(*input));
     auto evaluator = tyr::datalog::database::QueryEvaluator(layer(), tyr::datalog::database::compile({ query }));

@@ -46,8 +46,9 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::function, &data::terms> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"function", &data::function>, urd::field<"terms", &data::terms>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::function, &data::terms> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::function, &data::terms> {}; }
 };
 
 template<::tyr::formalism::FactKind F>
@@ -58,9 +59,15 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>
 
     data() = default;
     data(ygg::RowIndex<::tyr::formalism::Function<F>> row_) : index(), row(row_) {}
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &data::row>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row> {}; }
 };
 
 }

@@ -281,13 +281,13 @@ urd::builder<ygg::Relation<ygg::Schema>> distances(const S& sources, const E& ed
 /// Shared by the min-distance tests: relations borrowed as views, rows decoded to uint_t values, reference distances.
 namespace tyr::datalog::tests::distances
 {
-inline ygg::FreeBuilderRelationView borrow(const ygg::FreeRelationRepository& repository, const urd::builder<ygg::Relation<ygg::Schema>>& relation)
+inline ygg::FreeRelationBuilderView borrow(const ygg::FreeRelationRepository& repository, const urd::builder<ygg::Relation<ygg::Schema>>& relation)
 { return repository.view(relation); }
 
-inline urd::Store<urd::sequence<ygg::FreeBuilderRelationView>> borrow_all(const ygg::FreeRelationRepository& repository,
+inline urd::Store<urd::sequence<ygg::FreeRelationBuilderView>> borrow_all(const ygg::FreeRelationRepository& repository,
                                                                           const urd::Store<urd::sequence<urd::builder<ygg::Relation<ygg::Schema>>>>& relations)
 {
-    urd::Store<urd::sequence<ygg::FreeBuilderRelationView>> views;
+    urd::Store<urd::sequence<ygg::FreeRelationBuilderView>> views;
     views.reserve(relations.size());
     for (const auto& relation : relations)
         views.push_back(borrow(repository, relation));
@@ -327,7 +327,7 @@ struct HalfDistance
 
 /// Backward breadth-first distances to the targets over materialized edges.
 inline urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>>
-distances_to(ygg::FreeBuilderRelationView edges, ygg::FreeBuilderRelationView targets, size_t k)
+distances_to(ygg::FreeRelationBuilderView edges, ygg::FreeRelationBuilderView targets, size_t k)
 {
     urd::Store<urd::map<urd::Store<urd::sequence<ygg::uint_t>>, ygg::uint_t>> result;
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> frontier;

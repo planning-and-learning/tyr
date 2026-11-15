@@ -155,12 +155,12 @@ public:
         apply(lhs, rhs);
     }
 
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result() const&
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&
     {
         detail::require_initialized(m_initialized);
         return m_layer->view(m_result);
     }
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result() const&& = delete;
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
     [[nodiscard]] const Delta& get_delta() const&
     {
         detail::require_initialized(m_initialized);

@@ -58,7 +58,7 @@ void bind_inputs(nb::class_<Evaluator>& evaluator, nb::module_& m)
 
 void bind_database_distance(nb::module_& m)
 {
-    using Borrowed = ygg::FreeBuilderRelationView;
+    using Borrowed = ygg::FreeRelationBuilderView;
 
     nb::class_<Plan>(m, "DistancePlan", "Validated schemas for directed, unweighted distances between endpoint tuples.")
         .def(nb::init<ColumnIndices, ColumnIndices, ColumnIndices, Column>(),

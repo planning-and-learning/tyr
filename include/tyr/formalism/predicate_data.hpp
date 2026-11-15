@@ -44,8 +44,9 @@ struct data<::tyr::formalism::Predicate<T>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name, &data::arity> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &data::name>, urd::field<"arity", &data::arity>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::name, &data::arity> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name, &data::arity> {}; }
 };
 
 }

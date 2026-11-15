@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/binary_operator_view.hpp"
 #include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
@@ -39,15 +40,23 @@ private:
 public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template member<&urd::record_of<V>::variables>(); }
+    {
+        return self().template member<&urd::record_of<V>::variables>();
+    }
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    { return urd::resolve(self().data().template get_literals<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::planning::literals_of<F, T>>();
+    }
     auto get_numeric_constraints() const noexcept(std::same_as<T, ::tyr::GroundTag>)
-    { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
+    {
+        return self().template member<&urd::record_of<V>::numeric_constraints>();
+    }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().data().variables.size(); }
+    {
+        return get_variables().size();
+    }
     /// Whether the condition has no literals and no numeric constraints, i.e., holds in every state.
     [[nodiscard]] bool empty() const
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -59,7 +68,9 @@ public:
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return urd::resolve(self().data().template get_facts<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::planning::condition_facts_of<F>>();
+    }
 
     /// Projects represented atoms of the requested polarity, borrowing the repository.
     template<::tyr::formalism::FactKind F>

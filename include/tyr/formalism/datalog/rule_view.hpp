@@ -41,7 +41,9 @@ private:
 public:
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return get_body().get_arity(); }
+    {
+        return get_body().get_arity();
+    }
     /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
     auto get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -51,17 +53,23 @@ public:
     }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template member<&urd::record_of<V>::variables>(); }
+    {
+        return self().template member<&urd::record_of<V>::variables>();
+    }
     auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
     auto get_heads() const noexcept { return self().template member<&urd::record_of<V>::heads>(); }
     auto get_cost() const noexcept { return self().data().cost; }
 
     auto get_rule() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_relation(); }
+    {
+        return get_row().get_relation();
+    }
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return self().template member<&urd::record_of<V>::row>(); }
+    {
+        return self().template member<&urd::record_of<V>::row>();
+    }
     /// Its objects: its row's columns read as objects (checked against its pool's types), resolved through the row's
     /// context.
     auto get_objects() const
@@ -72,7 +80,9 @@ public:
     }
     auto get_key() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_key(); }
+    {
+        return get_row().get_key();
+    }
 };
 }  // namespace urd
 

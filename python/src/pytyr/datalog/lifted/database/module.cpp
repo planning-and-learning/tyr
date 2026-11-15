@@ -149,14 +149,14 @@ void bind_binary(nb::module_& m)
 void bind_database_module_definitions(nb::module_& m)
 {
     using RelationView = ygg::FreeRelationView;
-    using BuilderRelationView = ygg::FreeBuilderRelationView;
+    using RelationBuilderView = ygg::FreeRelationBuilderView;
     bind_plans(m);
     bind_unary<RelationView>(m);
-    bind_unary<BuilderRelationView>(m);
+    bind_unary<RelationBuilderView>(m);
     bind_binary<RelationView, RelationView>(m);
-    bind_binary<RelationView, BuilderRelationView>(m);
-    bind_binary<BuilderRelationView, RelationView>(m);
-    bind_binary<BuilderRelationView, BuilderRelationView>(m);
+    bind_binary<RelationView, RelationBuilderView>(m);
+    bind_binary<RelationBuilderView, RelationView>(m);
+    bind_binary<RelationBuilderView, RelationBuilderView>(m);
     bind_database_queries(m);
     bind_database_optimization(m);
     bind_database_evaluation(m);

@@ -44,7 +44,7 @@ namespace
 {
 using Column = urd::index<ygg::Column>;
 using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
-using View = ygg::FreeBuilderRelationView;
+using View = ygg::FreeRelationBuilderView;
 using ygg::uint_t;
 namespace qb = tyr::datalog::tests::qb;
 

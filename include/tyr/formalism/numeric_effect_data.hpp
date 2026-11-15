@@ -25,19 +25,21 @@
 #include <urd/elements/flat.hpp>
 #include <utility>
 
+namespace tyr::formalism
+{
+/// The operator of a default-constructed NumericEffect<T, F>: auxiliary effects only increase.
+template<FactKind F>
+inline constexpr auto default_numeric_effect_operator = std::same_as<F, AuxiliaryTag> ? NumericEffectOperatorKind::Increase : NumericEffectOperatorKind::Assign;
+}
+
 namespace urd
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F>
+template<::tyr::TaskKind T, ::tyr::formalism::NumericEffectFactKind F>
 struct data<::tyr::formalism::NumericEffect<T, F>>
 {
-    static_assert(std::same_as<F, ::tyr::formalism::FluentTag> || std::same_as<F, ::tyr::formalism::AuxiliaryTag>,
-                  "Unsupported NumericEffect<F> specialization.");
-    static constexpr auto default_operator = std::same_as<F, ::tyr::formalism::AuxiliaryTag> ? ::tyr::formalism::NumericEffectOperatorKind::Increase :
-                                                                                               ::tyr::formalism::NumericEffectOperatorKind::Assign;
-
     urd::index<::tyr::formalism::NumericEffect<T, F>> index;
-    ::tyr::formalism::NumericEffectOperatorKind operator_kind = default_operator;
+    ::tyr::formalism::NumericEffectOperatorKind operator_kind = ::tyr::formalism::default_numeric_effect_operator<F>;
     urd::index<::tyr::formalism::FunctionTerm<T, F>> fterm;
     ::tyr::formalism::FunctionExpression<T> fexpr;
 
@@ -51,12 +53,21 @@ struct data<::tyr::formalism::NumericEffect<T, F>>
         fexpr(fexpr_)
     {
         if constexpr (std::same_as<F, ::tyr::formalism::AuxiliaryTag>)
-            if (operator_kind != default_operator)
+            if (operator_kind != ::tyr::formalism::default_numeric_effect_operator<F>)
                 throw std::invalid_argument("auxiliary numeric effect must be Increase");
     }
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::fterm, &data::fexpr> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"operator_kind", &data::operator_kind>, urd::field<"fterm", &data::fterm>, urd::field<"fexpr", &data::fexpr>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::fterm, &data::fexpr> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::fterm, &data::fexpr> {}; }
 };
 
 }

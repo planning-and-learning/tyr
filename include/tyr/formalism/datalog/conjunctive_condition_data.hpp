@@ -59,14 +59,21 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    template<::tyr::formalism::FactKind F>
-    [[nodiscard]] const auto& get_literals() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_literals, &data::fluent_literals>(*this); }
-
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"variables", &data::variables>,
+                           urd::field<"static_literals", &data::static_literals>,
+                           urd::field<"fluent_literals", &data::fluent_literals>,
+                           urd::field<"numeric_constraints", &data::numeric_constraints>> {};
+    }
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    {
+        return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {};
+    }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {};
+    }
 };
 
 template<>
@@ -93,15 +100,33 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    template<::tyr::formalism::FactKind F>
-    [[nodiscard]] const auto& get_literals() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_literals, &data::fluent_literals>(*this); }
-
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"static_literals", &data::static_literals>,
+                           urd::field<"fluent_literals", &data::fluent_literals>,
+                           urd::field<"numeric_constraints", &data::numeric_constraints>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {};
+    }
 };
 
+}
+
+namespace tyr::formalism::datalog
+{
+/// The member holding the F-literals of a conjunctive condition.
+template<FactKind F, TaskKind T>
+inline constexpr auto literals_of =
+    tagged_member_pointer<StaticFluentTags, F, &urd::data<ConjunctiveCondition<T>>::static_literals, &urd::data<ConjunctiveCondition<T>>::fluent_literals>;
+
+template<FactKind F, TaskKind T>
+[[nodiscard]] const auto& literals(const urd::data<ConjunctiveCondition<T>>& condition) noexcept
+{
+    return condition.*literals_of<F, T>;
+}
 }
 
 #endif

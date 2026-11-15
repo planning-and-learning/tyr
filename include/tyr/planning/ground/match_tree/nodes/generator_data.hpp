@@ -47,8 +47,9 @@ struct data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::elements> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"elements", &data::elements>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::elements> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::elements> {}; }
 };
 }
 

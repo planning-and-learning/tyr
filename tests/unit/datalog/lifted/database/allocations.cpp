@@ -48,7 +48,7 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
 using tyr::datalog::tests::ops::cols;
 

@@ -44,8 +44,9 @@ struct data<::tyr::formalism::planning::FDRVariable<T>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atoms> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atoms", &data::atoms>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::atoms> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atoms> {}; }
 };
 
 }

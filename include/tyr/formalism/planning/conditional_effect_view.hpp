@@ -36,10 +36,14 @@ private:
 public:
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return get_variables().size(); }
+    {
+        return get_variables().size();
+    }
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template member<&urd::record_of<V>::variables>(); }
+    {
+        return self().template member<&urd::record_of<V>::variables>();
+    }
     auto get_condition() const noexcept { return self().template member<&urd::record_of<V>::condition>(); }
     auto get_effect() const noexcept { return self().template member<&urd::record_of<V>::effect>(); }
 };

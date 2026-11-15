@@ -52,7 +52,7 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const RelationBuilder& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const RelationBuilder& relation) { return layer().view(relation); }
 
 /// The distances of the sources and targets over `edges`, fully evaluated.
 RelationBuilder full_distance(const RelationBuilder& sources, const RelationBuilder& edges, const RelationBuilder& targets, const database::DistancePlan& plan)
@@ -189,7 +189,7 @@ struct Trace
     }
 };
 
-bool equal_rows(ygg::FreeBuilderRelationView actual, const RelationBuilder& expected)
+bool equal_rows(ygg::FreeRelationBuilderView actual, const RelationBuilder& expected)
 {
     if (actual.size() != expected.size())
         return false;
@@ -248,7 +248,7 @@ void distance_changes(benchmark::State& state)
         else
             database::distance(borrow(trace.sources), borrow(forward ? trace.changed_edges : trace.edges), borrow(trace.targets), plan, evaluation, workspace);
     };
-    const auto result = [&]() -> ygg::FreeBuilderRelationView
+    const auto result = [&]() -> ygg::FreeRelationBuilderView
     {
         if constexpr (Incremental)
             return evaluation.get_result();
@@ -328,7 +328,7 @@ void distance_initialize_warm(benchmark::State& state)
         else
             database::distance(borrow(trace.sources), borrow(trace.edges), borrow(trace.targets), plan, evaluation, workspace);
     };
-    const auto result = [&]() -> ygg::FreeBuilderRelationView
+    const auto result = [&]() -> ygg::FreeRelationBuilderView
     {
         if constexpr (Incremental)
             return evaluation.get_result();

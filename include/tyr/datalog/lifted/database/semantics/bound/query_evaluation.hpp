@@ -69,7 +69,7 @@ public:
 
     [[nodiscard]] size_t input_count() const noexcept { return m_query.input_columns.size(); }
     [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const noexcept { return m_columns; }
-    [[nodiscard]] ygg::FreeBuilderRelationView input(size_t slot) const { return m_layer->view(*m_inputs.at(slot)); }
+    [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_layer->view(*m_inputs.at(slot)); }
     [[nodiscard]] bool bound() const noexcept { return m_bound.size() == input_count(); }
     /// Increases whenever an input changes.
     [[nodiscard]] uint64_t version() const noexcept { return m_version; }

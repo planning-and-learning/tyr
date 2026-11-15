@@ -73,7 +73,7 @@ public:
     }
 
     [[nodiscard]] size_t input_count() const noexcept { return m_edges.evaluator().input_count(); }
-    [[nodiscard]] ygg::FreeBuilderRelationView input(size_t slot) const { return m_edges.evaluator().input(slot); }
+    [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_edges.evaluator().input(slot); }
 
     /// Binds every input as a new baseline: input(slot) returns slot's relation view (see
     /// incremental::bound::QueryEvaluator::initialize). The stored search is discarded.

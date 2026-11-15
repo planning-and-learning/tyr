@@ -47,20 +47,6 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
 
     data() = default;
     data(urd::flat_string name_,
-         ygg::uint_t original_arity_,
-         urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
-         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
-         urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects_) :
-        index(),
-        name(std::move(name_)),
-        original_name(name),
-        original_arity(original_arity_),
-        variables(std::move(variables_)),
-        condition(condition_),
-        effects(std::move(effects_))
-    {
-    }
-    data(urd::flat_string name_,
          urd::flat_string original_name_,
          ygg::uint_t original_arity_,
          urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
@@ -81,10 +67,23 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
     data& operator=(data&& other) noexcept = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&data::index, &data::name, &data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"name", &data::name>,
+                           urd::field<"original_name", &data::original_name>,
+                           urd::field<"original_arity", &data::original_arity>,
+                           urd::field<"variables", &data::variables>,
+                           urd::field<"condition", &data::condition>,
+                           urd::field<"effects", &data::effects>> {};
+    }
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
+    {
+        return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {};
+    }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index, &data::name, &data::original_name, &data::original_arity, &data::variables, &data::condition, &data::effects> {};
+    }
 };
 
 template<>
@@ -111,9 +110,13 @@ struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::condition, &data::effects> {}; }
     // Have to include effects because row only binds objects to non-effect quantified variables.
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"row", &data::row>, urd::field<"condition", &data::condition>, urd::field<"effects", &data::effects>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row, &data::condition, &data::effects> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::condition, &data::effects> {}; }
 };
 
 }

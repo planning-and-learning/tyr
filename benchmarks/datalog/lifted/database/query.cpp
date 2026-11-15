@@ -33,7 +33,7 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const Relation& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const Relation& relation) { return layer().view(relation); }
 
 /// ygg::Columns of type ygg::uint_t with these labels.
 std::vector<ygg::ColumnLayout> cols(std::initializer_list<Column> labels)
@@ -45,7 +45,7 @@ std::vector<ygg::ColumnLayout> cols(std::initializer_list<Column> labels)
 }
 
 /// The relations as views.
-std::array<ygg::FreeBuilderRelationView, 3> borrow_all(const std::array<Relation, 3>& relations)
+std::array<ygg::FreeRelationBuilderView, 3> borrow_all(const std::array<Relation, 3>& relations)
 { return { borrow(relations[0]), borrow(relations[1]), borrow(relations[2]) }; }
 
 struct Triangle
@@ -101,7 +101,7 @@ struct Triangle
 
     [[nodiscard]] auto deltas(bool forward) const
     {
-        using Change = std::pair<ygg::FreeBuilderRelationView, ygg::FreeBuilderRelationView>;
+        using Change = std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView>;
         const auto& a = forward ? added : removed;
         const auto& r = forward ? removed : added;
         return std::array { Change { borrow(a[0]), borrow(r[0]) }, Change { borrow(a[1]), borrow(r[1]) }, Change { borrow(a[2]), borrow(r[2]) } };
@@ -110,7 +110,7 @@ struct Triangle
     [[nodiscard]] database::Statistics statistics() const { return database::collect_statistics(borrow_all(initial)); }
 };
 
-bool equal(ygg::FreeBuilderRelationView left, ygg::FreeBuilderRelationView right)
+bool equal(ygg::FreeRelationBuilderView left, ygg::FreeRelationBuilderView right)
 {
     if (left.size() != right.size() || !std::ranges::equal(left.columns(), right.columns()))
         return false;

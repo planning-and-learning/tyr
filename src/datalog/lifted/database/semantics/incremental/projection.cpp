@@ -59,7 +59,7 @@ ProjectionEvaluator::ProjectionEvaluator(const ygg::FreeRelationRepository& laye
 
 namespace tyr::datalog::database::incremental
 {
-ygg::FreeBuilderRelationView ProjectionEvaluator::get_result() const&
+ygg::FreeRelationBuilderView ProjectionEvaluator::get_result() const&
 {
     detail::require_initialized(m_initialized);
     return m_layer->view(m_result);

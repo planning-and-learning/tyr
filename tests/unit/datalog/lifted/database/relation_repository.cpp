@@ -62,12 +62,12 @@ bool same_values(const L& lhs, const R& rhs)
 using RelationTag = ygg::Relation<ygg::Schema>;
 using RelationBuilder = urd::builder<RelationTag>;
 using Repository = ygg::FreeRelationRepository;
-using BuilderView = ygg::FreeBuilderRelationView;
+using BuilderView = ygg::FreeRelationBuilderView;
 using DataView = urd::borrowed_view<RelationTag, Repository>;
 using IndexView = urd::index_view<RelationTag, Repository>;
 using ColumnsIndex = urd::index<ygg::Columns>;
 using RowIndex = urd::index<ygg::Row<ygg::Schema>>;
-using BuilderRowView = ygg::RowView<ygg::Schema, RelationBuilder>;
+using RowBuilderView = ygg::RowView<ygg::Schema, RelationBuilder>;
 using LayerRowView = ygg::RowView<ygg::Schema, Repository>;
 using ColumnsIndexView = urd::index_view<ygg::Columns, Repository>;
 
@@ -77,14 +77,14 @@ struct AliasFreeRelationView
     [[nodiscard]] size_t size() const;
     [[nodiscard]] bool empty() const;
     [[nodiscard]] ygg::RelationIdentity relation_identity() const;
-    [[nodiscard]] BuilderRowView row(size_t) const;
+    [[nodiscard]] RowBuilderView row(size_t) const;
     [[nodiscard]] bool contains(std::span<const ygg::Value>) const;
-    [[nodiscard]] bool contains(BuilderRowView) const;
+    [[nodiscard]] bool contains(RowBuilderView) const;
 };
 
 struct MutableRelationView : AliasFreeRelationView
 {
-    BuilderRowView row(size_t);
+    RowBuilderView row(size_t);
 };
 
 static_assert(database::RelationViewConcept<AliasFreeRelationView>);
@@ -107,11 +107,11 @@ static_assert(::ygg::formalism::SupportsSymbol<Repository, ygg::Columns>);
 static_assert(::ygg::formalism::SupportsSymbol<Repository, RelationTag>);
 static_assert(!::ygg::formalism::SupportsSymbol<Repository, ygg::Column>);
 
-static_assert(std::same_as<decltype(std::declval<const BuilderView&>().row(0)), BuilderRowView>);
+static_assert(std::same_as<decltype(std::declval<const BuilderView&>().row(0)), RowBuilderView>);
 static_assert(std::same_as<decltype(std::declval<const DataView&>().row(0)), LayerRowView>);
 static_assert(std::same_as<decltype(std::declval<const IndexView&>().row(0)), LayerRowView>);
 static_assert(std::same_as<decltype(std::declval<const IndexView&>().row(0).get_values()), ygg::RowPool::row_type>);
-static_assert(ygg::RowViewConcept<BuilderRowView, ygg::Schema> && ygg::RowViewConcept<LayerRowView, ygg::Schema>);
+static_assert(ygg::RowViewConcept<RowBuilderView, ygg::Schema> && ygg::RowViewConcept<LayerRowView, ygg::Schema>);
 
 static_assert(::ygg::formalism::HasRows<Repository, ygg::Schema> && ::ygg::formalism::HasRelations<Repository, ygg::Schema>);
 static_assert(std::same_as<decltype(std::declval<const BuilderView&>().data()), const RelationBuilder&>);
@@ -149,7 +149,7 @@ const Repository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const RelationBuilder& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const RelationBuilder& relation) { return layer().view(relation); }
 
 template<typename ViewType>
 void expect_rows(const ViewType& view, std::initializer_list<std::initializer_list<ygg::uint_t>> rows)

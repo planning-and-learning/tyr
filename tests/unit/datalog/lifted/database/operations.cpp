@@ -33,7 +33,7 @@ using ColumnIndex = urd::index<ygg::Column>;
 static_assert(!std::is_copy_constructible_v<urd::builder<ygg::Relation<ygg::Schema>>>);
 static_assert(std::is_move_constructible_v<urd::builder<ygg::Relation<ygg::Schema>>>);
 static_assert(!database::RelationViewConcept<urd::builder<ygg::Relation<ygg::Schema>>>);
-static_assert(database::RelationViewConcept<ygg::FreeBuilderRelationView>);
+static_assert(database::RelationViewConcept<ygg::FreeRelationBuilderView>);
 
 static_assert(!std::same_as<ColumnIndex, ygg::uint_t>);
 static_assert(!std::is_convertible_v<ygg::uint_t, ColumnIndex> && !std::is_convertible_v<ColumnIndex, ygg::uint_t>);
@@ -54,7 +54,7 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
 using Layouts = std::vector<ygg::ColumnLayout>;
 

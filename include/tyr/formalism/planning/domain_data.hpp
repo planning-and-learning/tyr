@@ -79,30 +79,18 @@ struct data<::tyr::formalism::planning::Domain>
     data& operator=(data&& other) noexcept = default;
     ~data() = default;
 
-    template<::tyr::formalism::FactKind T>
-    [[nodiscard]] const auto& get_predicates() const
+    static constexpr auto fields() noexcept
     {
-        return ::tyr::formalism::
-            tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_predicates, &data::fluent_predicates, &data::derived_predicates>(*this);
-    }
-
-    template<::tyr::formalism::FactKind T>
-    [[nodiscard]] const auto& get_functions() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_functions, &data::fluent_functions>(*this); }
-
-    static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::name,
-                            &data::static_predicates,
-                            &data::fluent_predicates,
-                            &data::derived_predicates,
-                            &data::static_functions,
-                            &data::fluent_functions,
-                            &data::auxiliary_function,
-                            &data::constants,
-                            &data::actions,
-                            &data::axioms> {};
+        return urd::Fields<urd::field<"name", &data::name>,
+                           urd::field<"static_predicates", &data::static_predicates>,
+                           urd::field<"fluent_predicates", &data::fluent_predicates>,
+                           urd::field<"derived_predicates", &data::derived_predicates>,
+                           urd::field<"static_functions", &data::static_functions>,
+                           urd::field<"fluent_functions", &data::fluent_functions>,
+                           urd::field<"auxiliary_function", &data::auxiliary_function>,
+                           urd::field<"constants", &data::constants>,
+                           urd::field<"actions", &data::actions>,
+                           urd::field<"axioms", &data::axioms>> {};
     }
     static constexpr auto identifying_members() noexcept
     {
@@ -117,8 +105,49 @@ struct data<::tyr::formalism::planning::Domain>
                             &data::actions,
                             &data::axioms> {};
     }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index,
+                            &data::name,
+                            &data::static_predicates,
+                            &data::fluent_predicates,
+                            &data::derived_predicates,
+                            &data::static_functions,
+                            &data::fluent_functions,
+                            &data::auxiliary_function,
+                            &data::constants,
+                            &data::actions,
+                            &data::axioms> {};
+    }
 };
 
+}
+
+namespace tyr::formalism::planning
+{
+/// The member holding the F-predicates of a domain.
+template<FactKind F>
+inline constexpr auto predicates_of = tagged_member_pointer<StaticFluentDerivedTags,
+                                                            F,
+                                                            &urd::data<Domain>::static_predicates,
+                                                            &urd::data<Domain>::fluent_predicates,
+                                                            &urd::data<Domain>::derived_predicates>;
+
+template<FactKind F>
+[[nodiscard]] const auto& predicates(const urd::data<Domain>& domain) noexcept
+{
+    return domain.*predicates_of<F>;
+}
+
+/// The member holding the F-functions of a domain.
+template<FactKind F>
+inline constexpr auto functions_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Domain>::static_functions, &urd::data<Domain>::fluent_functions>;
+
+template<FactKind F>
+[[nodiscard]] const auto& functions(const urd::data<Domain>& domain) noexcept
+{
+    return domain.*functions_of<F>;
+}
 }
 
 #endif

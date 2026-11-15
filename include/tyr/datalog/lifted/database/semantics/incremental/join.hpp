@@ -128,8 +128,8 @@ public:
     template<RelationChange L, RelationChange R>
     void update(const L& lhs, const R& rhs, Workspace& workspace);
 
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result() const&;
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result() const&& = delete;
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&;
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
     [[nodiscard]] const Delta& get_delta() const&;
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 

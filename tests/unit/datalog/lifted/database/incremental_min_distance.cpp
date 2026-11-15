@@ -27,8 +27,8 @@ using namespace tyr::datalog::tests::distances;
 /// An input slot's exact change, read through a layer (SlotChanges).
 struct ChangeView
 {
-    ygg::FreeBuilderRelationView added;
-    ygg::FreeBuilderRelationView removed;
+    ygg::FreeRelationBuilderView added;
+    ygg::FreeRelationBuilderView removed;
 };
 
 /// Runs `steps` states; each mutates the inputs and maybe the sources and targets, then compares guided distances

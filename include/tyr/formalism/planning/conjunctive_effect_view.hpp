@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 
@@ -36,14 +37,18 @@ private:
 public:
     auto get_literals() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template member<&urd::record_of<V>::literals>(); }
+    {
+        return self().template member<&urd::record_of<V>::literals>();
+    }
     auto get_numeric_effects() const noexcept { return self().template member<&urd::record_of<V>::numeric_effects>(); }
     auto get_auxiliary_numeric_effect() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_numeric_effect>(); }
 
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
-    { return urd::resolve(self().data().template get_facts<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::planning::effect_facts_of<F>>();
+    }
 };
 }  // namespace urd
 

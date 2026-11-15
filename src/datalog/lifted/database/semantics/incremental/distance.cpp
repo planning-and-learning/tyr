@@ -212,7 +212,7 @@ void DistanceEvaluator::clear_changes()
 
 namespace tyr::datalog::database::incremental
 {
-ygg::FreeBuilderRelationView DistanceEvaluator::get_result() const&
+ygg::FreeRelationBuilderView DistanceEvaluator::get_result() const&
 {
     detail::require_initialized(m_initialized);
     return m_layer->view(m_result);
@@ -242,7 +242,7 @@ size_t DistanceEvaluator::memory_usage() const noexcept
 
 namespace tyr::datalog::database::incremental
 {
-void SourceMinDistance::count(ygg::FreeBuilderRelationView rows, bool add)
+void SourceMinDistance::count(ygg::FreeRelationBuilderView rows, bool add)
 {
     for (size_t i = 0; i < rows.size(); ++i)
     {

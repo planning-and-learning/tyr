@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_DATALOG_PROGRAM_VIEW_HPP_
 
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/program_data.hpp"
 #include "tyr/formalism/datalog/rule_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -35,17 +36,25 @@ private:
 public:
     template<::tyr::formalism::FactKind F>
     auto get_predicates() const noexcept
-    { return urd::resolve(self().data().template get_predicates<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::datalog::predicates_of<F, T>>();
+    }
     template<::tyr::formalism::FactKind F>
     auto get_functions() const noexcept
-    { return urd::resolve(self().data().template get_functions<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::datalog::functions_of<F, T>>();
+    }
     auto get_objects() const noexcept { return self().template member<&urd::record_of<V>::objects>(); }
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept
-    { return urd::resolve(self().data().template get_atoms<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::datalog::atoms_of<F, T>>();
+    }
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values() const noexcept
-    { return urd::resolve(self().data().template get_fterm_values<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::datalog::fterm_values_of<F, T>>();
+    }
     auto get_goal() const noexcept { return self().template member<&urd::record_of<V>::goal>(); }
     auto get_rules() const noexcept { return self().template member<&urd::record_of<V>::rules>(); }
 };

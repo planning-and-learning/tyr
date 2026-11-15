@@ -66,7 +66,7 @@ void bind_database_evaluation(nb::module_& m)
             nb::rv_policy::reference_internal)
         .def("memory_usage", &IncrementalEvaluator::memory_usage);
 
-    bind_inputs<ygg::FreeBuilderRelationView>(full, incremental, m);
+    bind_inputs<ygg::FreeRelationBuilderView>(full, incremental, m);
     bind_inputs<ygg::FreeRelationView>(full, incremental, m);
 }
 }  // namespace tyr

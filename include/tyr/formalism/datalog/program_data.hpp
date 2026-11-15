@@ -80,39 +80,19 @@ struct data<::tyr::formalism::datalog::Program<T>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    auto& get_rules() noexcept { return rules; }
-    const auto& get_rules() const noexcept { return rules; }
-
-    template<::tyr::formalism::FactKind F>
-    const auto& get_predicates() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_predicates, &data::fluent_predicates>(*this); }
-
-    template<::tyr::formalism::FactKind F>
-    const auto& get_functions() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_functions, &data::fluent_functions>(*this); }
-
-    template<::tyr::formalism::FactKind F>
-    const auto& get_atoms() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_atoms, &data::fluent_atoms>(*this); }
-
-    template<::tyr::formalism::FactKind F>
-    const auto& get_fterm_values() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, F, &data::static_fterm_values, &data::fluent_fterm_values>(*this); }
-
-    static constexpr auto cista_members() noexcept
+    static constexpr auto fields() noexcept
     {
-        return urd::Members<&data::index,
-                            &data::static_predicates,
-                            &data::fluent_predicates,
-                            &data::static_functions,
-                            &data::fluent_functions,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::goal,
-                            &data::rules> {};
+        return urd::Fields<urd::field<"static_predicates", &data::static_predicates>,
+                           urd::field<"fluent_predicates", &data::fluent_predicates>,
+                           urd::field<"static_functions", &data::static_functions>,
+                           urd::field<"fluent_functions", &data::fluent_functions>,
+                           urd::field<"objects", &data::objects>,
+                           urd::field<"static_atoms", &data::static_atoms>,
+                           urd::field<"fluent_atoms", &data::fluent_atoms>,
+                           urd::field<"static_fterm_values", &data::static_fterm_values>,
+                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values>,
+                           urd::field<"goal", &data::goal>,
+                           urd::field<"rules", &data::rules>> {};
     }
     static constexpr auto identifying_members() noexcept
     {
@@ -128,8 +108,69 @@ struct data<::tyr::formalism::datalog::Program<T>>
                             &data::goal,
                             &data::rules> {};
     }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index,
+                            &data::static_predicates,
+                            &data::fluent_predicates,
+                            &data::static_functions,
+                            &data::fluent_functions,
+                            &data::objects,
+                            &data::static_atoms,
+                            &data::fluent_atoms,
+                            &data::static_fterm_values,
+                            &data::fluent_fterm_values,
+                            &data::goal,
+                            &data::rules> {};
+    }
 };
 
+}
+
+namespace tyr::formalism::datalog
+{
+/// The member holding the F-predicates of a program.
+template<FactKind F, TaskKind T>
+inline constexpr auto predicates_of =
+    tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_predicates, &urd::data<Program<T>>::fluent_predicates>;
+
+template<FactKind F, TaskKind T>
+[[nodiscard]] const auto& predicates(const urd::data<Program<T>>& program) noexcept
+{
+    return program.*predicates_of<F, T>;
+}
+
+/// The member holding the F-functions of a program.
+template<FactKind F, TaskKind T>
+inline constexpr auto functions_of =
+    tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_functions, &urd::data<Program<T>>::fluent_functions>;
+
+template<FactKind F, TaskKind T>
+[[nodiscard]] const auto& functions(const urd::data<Program<T>>& program) noexcept
+{
+    return program.*functions_of<F, T>;
+}
+
+/// The member holding the F-atoms of a program.
+template<FactKind F, TaskKind T>
+inline constexpr auto atoms_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_atoms, &urd::data<Program<T>>::fluent_atoms>;
+
+template<FactKind F, TaskKind T>
+[[nodiscard]] const auto& atoms(const urd::data<Program<T>>& program) noexcept
+{
+    return program.*atoms_of<F, T>;
+}
+
+/// The member holding the F-function term values of a program.
+template<FactKind F, TaskKind T>
+inline constexpr auto fterm_values_of =
+    tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_fterm_values, &urd::data<Program<T>>::fluent_fterm_values>;
+
+template<FactKind F, TaskKind T>
+[[nodiscard]] const auto& fterm_values(const urd::data<Program<T>>& program) noexcept
+{
+    return program.*fterm_values_of<F, T>;
+}
 }
 
 #endif

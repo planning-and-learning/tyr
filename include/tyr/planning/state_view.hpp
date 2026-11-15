@@ -112,7 +112,7 @@ public:
     {
         return get_fluent_facts()
                | std::views::transform([repository = get_formalism_repository().get()](auto fact)
-                                       { return ::tyr::formalism::planning::computed_fact_view(fact, *repository); });
+                                       { return ::tyr::formalism::planning::computed_fact_view(std::move(fact), *repository); });
     }
     template<::tyr::formalism::FactKind F>
     [[nodiscard]] auto get_fterm_values_view() const noexcept;

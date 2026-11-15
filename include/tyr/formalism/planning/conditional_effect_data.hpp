@@ -55,8 +55,12 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::condition, &data::effect> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"variables", &data::variables>, urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::condition, &data::effect> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::condition, &data::effect> {}; }
 };
 
 template<>
@@ -74,9 +78,15 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
         effect(effect_)
     {
     }
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::condition, &data::effect> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::condition, &data::effect> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::condition, &data::effect> {}; }
 };
 
 }

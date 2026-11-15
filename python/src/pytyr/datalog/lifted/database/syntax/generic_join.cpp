@@ -15,7 +15,7 @@ void bind_query_generic_join(nb::module_& m, QueryRepositoryBinding& repository)
     {
         using V = QueryData<tyr::datalog::database::QueryGenericJoinTag>;
         urd::python::bind_data<V>(m, "QueryGenericJoinData")
-            .def(urd::python::init_from_views<urd::Store<urd::sequence<QueryView>>, urd::Store<urd::sequence<Column>>, urd::Store<urd::sequence<Column>>>(),
+            .def(init_without_derived<urd::Store<urd::sequence<QueryView>>, urd::Store<urd::sequence<Column>>, urd::Store<urd::sequence<Column>>>(),
                  "inputs"_a,
                  "variable_order"_a,
                  "output_order"_a = urd::Store<urd::sequence<Column>> {})

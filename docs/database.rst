@@ -45,7 +45,7 @@ representation, not a portable wire format.
    paths->insert(first);
    paths->insert(second);
 
-   const auto view = repository.view(*paths);  // a BuilderRelationView
+   const auto view = repository.view(*paths);  // a RelationBuilderView
    const auto length = ygg::decode_value<double>(view.row(0).value(2));
    const std::array labels { source, target };
    const ProjectionPlan plan(view.columns(), labels);
@@ -75,11 +75,11 @@ pools).
 **Builders.** ``urd::builder<Relation<F>>`` owns its columns (``urd::data<Columns>``) and a pool of its rows
 (``RowPool``), nothing else: no index and no content identity. The pool key is given where it is interned:
 ``insert(builder)`` for ``Schema``, ``insert(pool, builder)`` for other families. A builder is read through a layer
-(``repository.view(builder)`` or ``urd::resolve(builder, repository)``, a ``BuilderRelationView``), and operations
+(``repository.view(builder)`` or ``urd::resolve(builder, repository)``, a ``RelationBuilderView``), and operations
 take only views. It draws its number (``layer()``, the context number of its rows' views and of its
 ``relation_identity()``) at construction from the process-wide counter of the repository layers.
 
-**Views.** An interned ``urd::index_view<Relation<F>, Context>`` and a ``BuilderRelationView`` give ``columns()``,
+**Views.** An interned ``urd::index_view<Relation<F>, Context>`` and a ``RelationBuilderView`` give ``columns()``,
 ``size()``, ``row(i)``, ``rows()``, ``contains(row)`` and ``relation_identity()`` (an interned relation's layer number
 and index, or a builder's address, valid while it is unchanged; alias checks and the join cache use it). An interned
 view reads its row set over its pool through ``urd::subset_view``; a builder's view reads the builder's pool by
@@ -180,7 +180,7 @@ Reuse and interning
 
 Keep a ``Workspace`` (an output row and a join index) and the output builders across evaluations: they retain their
 capacity. Each evaluator or thread needs its own workspace. Evaluators take the layer (``const Repository&``) their
-builders are read through, and return their results as ``BuilderRelationView``\ s.
+builders are read through, and return their results as ``RelationBuilderView``\ s.
 
 ``Repository::get_relation_builder<F>(columns)`` hands out builders as a ``std::shared_ptr`` from the layer's slots,
 keyed by column widths. A slot goes back with its last owner and keeps its row storage, so it is reused only for
@@ -231,7 +231,7 @@ added and removed rows, in the same typed schemas and rows:
 
 Every evaluator takes the layer first, and its ``update`` takes one change per input: an ``(added, removed)`` pair
 read with ``std::get``, such as ``Delta::change()`` or ``std::tie(added, removed)`` of views
-(``incremental::RelationChange`` states the requirement). Results are ``BuilderRelationView``\ s. See
+(``incremental::RelationChange`` states the requirement). Results are ``RelationBuilderView``\ s. See
 :doc:`incremental-relations`.
 
 Python
@@ -534,13 +534,13 @@ Include ``<tyr/datalog/lifted/database/syntax/formatter.hpp>`` to format a plan 
    join->rhs = input(1, right_relation).index();
    const auto query = insert_query(repository, builder, *join);
 
-   // Any range of relation views: interned RelationView or BuilderRelationView over builders.
+   // Any range of relation views: interned RelationView or RelationBuilderView over builders.
    const std::array bindings { left_view, right_view };
    const auto structural = optimize(query);                                   // structure only
    const auto measured = optimize(query, collect_statistics<DefaultColumnTypes>(bindings));
    QueryEvaluator<> evaluator(repository, measured);
    evaluator.evaluate(bindings);
-   const auto result = evaluator.get_result();  // a BuilderRelationView
+   const auto result = evaluator.get_result();  // a RelationBuilderView
 
 ``optimize(roots, statistics = {})`` returns a ``QueryPlan`` with every root's ordered schema; the roots belong to one
 repository. It implements established algorithms as published:

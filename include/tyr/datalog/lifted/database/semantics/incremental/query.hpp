@@ -34,7 +34,7 @@ struct QueryValue
     QueryValue(const ygg::FreeRelationRepository& layer_, std::span<const ygg::ColumnLayout> columns) : layer(&layer_), result(columns), delta(layer_, columns)
     {
     }
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result() const noexcept { return layer->view(result); }
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const noexcept { return layer->view(result); }
     [[nodiscard]] const auto& get_delta() const noexcept { return delta; }
     [[nodiscard]] size_t memory_usage() const noexcept { return result.memory_usage() + delta.memory_usage(); }
 
@@ -245,11 +245,11 @@ class QueryEvaluator
     template<typename>
     friend struct detail::NodeRules;
 
-    [[nodiscard]] ygg::FreeBuilderRelationView result(NodeId id) const
+    [[nodiscard]] ygg::FreeRelationBuilderView result(NodeId id) const
     {
-        return std::visit([](const auto& node) -> ygg::FreeBuilderRelationView { return node.state.get_result(); }, m_nodes[id]);
+        return std::visit([](const auto& node) -> ygg::FreeRelationBuilderView { return node.state.get_result(); }, m_nodes[id]);
     }
-    [[nodiscard]] ygg::FreeBuilderRelationView result(QueryView<> query) const { return result(query.index()); }
+    [[nodiscard]] ygg::FreeRelationBuilderView result(QueryView<> query) const { return result(query.index()); }
     [[nodiscard]] const Delta& delta(NodeId id) const
     {
         return std::visit([](const auto& node) -> const Delta& { return node.state.get_delta(); }, m_nodes[id]);
@@ -322,14 +322,14 @@ public:
                 m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
         m_initialized = true;
     }
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result(size_t root = 0) const&
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t root = 0) const&
     {
         detail::require_initialized(m_initialized);
         if (root >= m_plan.root_count())
             throw std::out_of_range("Incremental query: invalid root.");
         return result(m_plan.roots()[root]);
     }
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result(size_t = 0) const&& = delete;
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t = 0) const&& = delete;
     [[nodiscard]] const Delta& get_delta(size_t root = 0) const&
     {
         detail::require_initialized(m_initialized);

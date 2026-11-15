@@ -33,22 +33,22 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
-static_assert(database::RelationViewConcept<ygg::FreeBuilderRelationView>);
+static_assert(database::RelationViewConcept<ygg::FreeRelationBuilderView>);
 
-struct ThrowingRelation : ygg::FreeBuilderRelationView
+struct ThrowingRelation : ygg::FreeRelationBuilderView
 {
     size_t fail_on_row;
     mutable size_t row_calls = 0;
 
-    ThrowingRelation(const RelationBuilder& input, size_t fail_on) : ygg::FreeBuilderRelationView(borrow(input)), fail_on_row(fail_on) {}
+    ThrowingRelation(const RelationBuilder& input, size_t fail_on) : ygg::FreeRelationBuilderView(borrow(input)), fail_on_row(fail_on) {}
 
     auto row(size_t position) const
     {
         if (++row_calls == fail_on_row)
             throw std::runtime_error("Injected relation read failure.");
-        return ygg::FreeBuilderRelationView::row(position);
+        return ygg::FreeRelationBuilderView::row(position);
     }
 };
 
@@ -211,10 +211,10 @@ TEST(YggdrasilTests, DatabaseGenericJoinHandlesDisconnectedAndNullaryInputs)
     database::generic_join(inputs, plan, result, workspace);
     EXPECT_TRUE(result.empty());
 
-    const auto empty_plan = plan_for(std::array<ygg::FreeBuilderRelationView, 0> {}, {}, {});
+    const auto empty_plan = plan_for(std::array<ygg::FreeRelationBuilderView, 0> {}, {}, {});
     database::GenericJoinWorkspace empty_workspace(empty_plan);
     RelationBuilder empty_result;
-    database::generic_join(std::array<ygg::FreeBuilderRelationView, 0> {}, empty_plan, empty_result, empty_workspace);
+    database::generic_join(std::array<ygg::FreeRelationBuilderView, 0> {}, empty_plan, empty_result, empty_workspace);
     EXPECT_EQ(empty_result.size(), 1);
     EXPECT_TRUE(empty_result.contains(std::array<ygg::Value, 0> {}));
     const std::array nullary_inputs { borrow(truth), borrow(truth) };
@@ -487,7 +487,7 @@ TEST(YggdrasilTests, DatabaseGenericJoinRejectsInvalidBatchesBeforeMutationAndGu
     // Validation and the delta trie read successfully; mutation then fails after
     // the new output has already been appended to the internal delta relation.
     const ThrowingRelation unstable(insertion.added, 4);
-    const std::array broken { std::pair<ThrowingRelation, ygg::FreeBuilderRelationView> { unstable, borrow(insertion.removed) } };
+    const std::array broken { std::pair<ThrowingRelation, ygg::FreeRelationBuilderView> { unstable, borrow(insertion.removed) } };
     EXPECT_THROW(failing.update(broken), std::runtime_error);
     EXPECT_THROW((void) failing.get_result(), std::logic_error);
     EXPECT_THROW((void) failing.get_delta(), std::logic_error);

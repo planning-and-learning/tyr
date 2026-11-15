@@ -54,8 +54,14 @@ struct data<::tyr::planning::match_tree::NumericConstraintSelectorNode<Tag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::constraint, &data::true_child, &data::dontcare_child> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"constraint", &data::constraint>,
+                           urd::field<"true_child", &data::true_child>,
+                           urd::field<"dontcare_child", &data::dontcare_child>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::constraint, &data::true_child, &data::dontcare_child> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::constraint, &data::true_child, &data::dontcare_child> {}; }
 };
 }
 

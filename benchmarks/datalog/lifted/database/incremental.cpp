@@ -78,7 +78,7 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
 /// The transitions of a trace, which return it to its initial rows.
 constexpr size_t num_transitions = 6;
@@ -183,7 +183,7 @@ struct JoinTrace
     }
 };
 
-bool equal_rows(ygg::FreeBuilderRelationView lhs, const urd::builder<ygg::Relation<ygg::Schema>>& rhs)
+bool equal_rows(ygg::FreeRelationBuilderView lhs, const urd::builder<ygg::Relation<ygg::Schema>>& rhs)
 {
     if (lhs.size() != rhs.size())
         return false;
@@ -306,7 +306,7 @@ void projection(benchmark::State& state)
         else
             database::project(borrow(transition.snapshot), plan, evaluation, workspace);
     };
-    const auto result = [&]() -> ygg::FreeBuilderRelationView
+    const auto result = [&]() -> ygg::FreeRelationBuilderView
     {
         if constexpr (Incremental)
             return evaluation.get_result();
@@ -372,7 +372,7 @@ void fixed_input_join(benchmark::State& state)
         else
             database::join(borrow(transition.snapshot), borrow(*fixed), plan, index, database::JoinReuse { .rhs = true }, evaluation, workspace);
     };
-    const auto result = [&]() -> ygg::FreeBuilderRelationView
+    const auto result = [&]() -> ygg::FreeRelationBuilderView
     {
         if constexpr (Incremental)
             return evaluation.get_result();
@@ -436,7 +436,7 @@ void changing_join(benchmark::State& state)
             // hash index in retained storage using the already prepared plan.
             database::join(borrow(left.snapshot), borrow(right.snapshot), plan, evaluation, workspace);
     };
-    const auto result = [&]() -> ygg::FreeBuilderRelationView
+    const auto result = [&]() -> ygg::FreeRelationBuilderView
     {
         if constexpr (Incremental)
             return evaluation.get_result();

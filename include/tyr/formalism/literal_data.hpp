@@ -36,9 +36,15 @@ struct data<::tyr::formalism::Literal<T, F>>
 
     data() = default;
     data(urd::index<::tyr::formalism::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atom, &data::polarity> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atom", &data::atom>, urd::field<"polarity", &data::polarity>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::polarity> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atom, &data::polarity> {}; }
 };
 
 }

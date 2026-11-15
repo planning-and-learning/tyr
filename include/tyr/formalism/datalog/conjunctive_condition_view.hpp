@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_DATALOG_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/datalog/conjunctive_condition_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
@@ -36,14 +37,20 @@ private:
 public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().template member<&urd::record_of<V>::variables>(); }
+    {
+        return self().template member<&urd::record_of<V>::variables>();
+    }
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    { return urd::resolve(self().data().template get_literals<F>(), self().context()); }
+    {
+        return self().template member<::tyr::formalism::datalog::literals_of<F, T>>();
+    }
     auto get_numeric_constraints() const noexcept { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    { return self().data().variables.size(); }
+    {
+        return get_variables().size();
+    }
 };
 }  // namespace urd
 

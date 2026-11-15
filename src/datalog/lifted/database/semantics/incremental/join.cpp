@@ -20,7 +20,7 @@ JoinEvaluator::JoinEvaluator(const ygg::FreeRelationRepository& layer, JoinPlan 
 
 namespace tyr::datalog::database::incremental
 {
-ygg::FreeBuilderRelationView JoinEvaluator::get_result() const&
+ygg::FreeRelationBuilderView JoinEvaluator::get_result() const&
 {
     detail::require_initialized(m_initialized);
     return m_layer->view(m_result);

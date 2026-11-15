@@ -130,8 +130,8 @@ public:
     template<RelationChange S, RelationChange E, RelationChange T>
     void update(const S& sources, const E& edges, const T& targets);
 
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result() const&;
-    [[nodiscard]] ygg::FreeBuilderRelationView get_result() const&& = delete;
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&;
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
     [[nodiscard]] const Delta& get_delta() const&;
     [[nodiscard]] const Delta& get_delta() const&& = delete;
     /// Retained storage, including inactive reusable source arrays; excludes the plan.
@@ -365,7 +365,7 @@ class SourceMinDistance
     DistanceEvaluator m_evaluator;
     urd::Store<urd::sequence<size_t>> m_counts;
 
-    void count(ygg::FreeBuilderRelationView rows, bool add);
+    void count(ygg::FreeRelationBuilderView rows, bool add);
 
 public:
     /// Its builders are read through `layer`, which must outlive it.

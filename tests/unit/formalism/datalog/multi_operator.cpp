@@ -20,12 +20,12 @@ template<typename Entity>
 concept MultiOperatorContract =
     std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
     && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, typename urd::data<Entity>::OperatorType>
+    && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, std::remove_cvref_t<decltype(urd::data<Entity>::operator_kind)>>
     && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
-           { data.operator_kind } -> std::same_as<typename urd::data<Entity>::OperatorType&>;
+           { data.operator_kind } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operator_kind)>&>;
            view.index();
-           { view.get_operator() } -> std::same_as<typename urd::data<Entity>::OperatorType>;
+           { view.get_operator() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operator_kind)>>;
            view.get_args();
        };
 

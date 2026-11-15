@@ -80,7 +80,7 @@ public:
 
     [[nodiscard]] size_t input_count() const noexcept { return m_base.input_count(); }
     [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const noexcept { return m_base.columns(); }
-    [[nodiscard]] ygg::FreeBuilderRelationView input(size_t slot) const { return m_base.input(slot); }
+    [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_base.input(slot); }
     [[nodiscard]] bool bound() const noexcept { return m_base.bound(); }
     [[nodiscard]] bool is_static(size_t slot) const noexcept { return m_base.is_static(slot); }
     /// Increases whenever a change can remove output rows (see the class comment).
@@ -127,7 +127,7 @@ public:
         return m_changed;
     }
     /// The (added, removed) change of a slot that the last bind() returned, as views.
-    [[nodiscard]] std::pair<ygg::FreeBuilderRelationView, ygg::FreeBuilderRelationView> change(size_t slot) const
+    [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change(size_t slot) const
     {
         const auto& change = m_changes.at(slot);
         return { m_layer->view(change.added), m_layer->view(change.removed) };

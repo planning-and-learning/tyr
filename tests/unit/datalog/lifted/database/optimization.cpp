@@ -26,7 +26,7 @@ using Column = urd::index<ygg::Column>;
 using PlanId = urd::index<tyr::datalog::database::Query<>>;
 using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
 using Delta = tyr::datalog::database::incremental::Delta;
-using Change = std::pair<ygg::FreeBuilderRelationView, ygg::FreeBuilderRelationView>;
+using Change = std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView>;
 
 /// The layer the tests read their builders through.
 const ygg::FreeRelationRepository& layer()
@@ -35,7 +35,7 @@ const ygg::FreeRelationRepository& layer()
     return repository;
 }
 
-ygg::FreeBuilderRelationView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 const Column w(3), x(0), y(1), z(2);
 
 auto rows(const auto& relation)
@@ -322,7 +322,7 @@ TEST(DatabaseOptimization, NullaryGenericJoinHasOneRow)
          { tyr::datalog::database::optimize(root), tyr::datalog::database::optimize(root, tyr::datalog::database::Statistics { 4, {}, {} }) })
     {
         tyr::datalog::database::QueryEvaluator evaluator(layer(), plan);
-        evaluator.evaluate(std::array<ygg::FreeBuilderRelationView, 0> {});
+        evaluator.evaluate(std::array<ygg::FreeRelationBuilderView, 0> {});
         EXPECT_EQ(evaluator.get_result().size(), 1);
     }
 }

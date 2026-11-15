@@ -31,19 +31,15 @@
 namespace urd
 {
 
-template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
+template<::tyr::TaskKind T, ::tyr::formalism::ArithmeticOperatorKindOnly O>
 struct data<::tyr::formalism::MultiOperator<T, O>>
 {
-    static_assert(std::same_as<O, ::tyr::formalism::ArithmeticOperatorKind>);
-    using Operand = ::tyr::formalism::FunctionExpression<T>;
-    using OperatorType = O;
-
     urd::index<::tyr::formalism::MultiOperator<T, O>> index;
-    OperatorType operator_kind = OperatorType::Add;
-    urd::flat_vector<Operand> args;
+    O operator_kind = O::Add;
+    urd::flat_vector<::tyr::formalism::FunctionExpression<T>> args;
 
     data() = default;
-    data(OperatorType operator_kind_, urd::flat_vector<Operand> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
+    data(O operator_kind_, urd::flat_vector<::tyr::formalism::FunctionExpression<T>> args_) : index(), operator_kind(operator_kind_), args(std::move(args_))
     {
         if (!is_multi(operator_kind))
             throw std::invalid_argument("multi operator must be Add or Mul");
@@ -54,8 +50,9 @@ struct data<::tyr::formalism::MultiOperator<T, O>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::args> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operator_kind", &data::operator_kind>, urd::field<"args", &data::args>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::args> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::args> {}; }
 };
 
 }

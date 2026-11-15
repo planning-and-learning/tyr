@@ -59,8 +59,15 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::heads, &data::cost> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"variables", &data::variables>,
+                           urd::field<"body", &data::body>,
+                           urd::field<"heads", &data::heads>,
+                           urd::field<"cost", &data::cost>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::heads, &data::cost> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::heads, &data::cost> {}; }
 };
 
 template<>
@@ -84,9 +91,19 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
         cost(cost_)
     {
     }
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, &data::heads, &data::cost> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::
+            Fields<urd::field<"row", &data::row>, urd::field<"body", &data::body>, urd::field<"heads", &data::heads>, urd::field<"cost", &data::cost>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, &data::heads, &data::cost> {}; }
 };
 }
 

@@ -86,18 +86,24 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     data& operator=(data&& other) noexcept = default;
     ~data() = default;
 
-    template<::tyr::formalism::FactKind T>
-    [[nodiscard]] const auto& get_atoms() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_atoms, &data::fluent_atoms>(*this); }
-
-    template<::tyr::formalism::FactKind T>
-    [[nodiscard]] const auto& get_fterm_values() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_fterm_values, &data::fluent_fterm_values>(*this); }
-
-    static constexpr auto cista_members() noexcept
+    static constexpr auto fields() noexcept
     {
-        return urd::Members<&data::index,
-                            &data::name,
+        return urd::Fields<urd::field<"name", &data::name>,
+                           urd::field<"domain", &data::domain>,
+                           urd::field<"derived_predicates", &data::derived_predicates>,
+                           urd::field<"objects", &data::objects>,
+                           urd::field<"static_atoms", &data::static_atoms>,
+                           urd::field<"fluent_atoms", &data::fluent_atoms>,
+                           urd::field<"static_fterm_values", &data::static_fterm_values>,
+                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values>,
+                           urd::field<"auxiliary_fterm_value", &data::auxiliary_fterm_value>,
+                           urd::field<"goal", &data::goal>,
+                           urd::field<"metric", &data::metric>,
+                           urd::field<"axioms", &data::axioms>> {};
+    }
+    static constexpr auto identifying_members() noexcept
+    {
+        return urd::Members<&data::name,
                             &data::domain,
                             &data::derived_predicates,
                             &data::objects,
@@ -110,9 +116,10 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
                             &data::metric,
                             &data::axioms> {};
     }
-    static constexpr auto identifying_members() noexcept
+    static constexpr auto cista_members() noexcept
     {
-        return urd::Members<&data::name,
+        return urd::Members<&data::index,
+                            &data::name,
                             &data::domain,
                             &data::derived_predicates,
                             &data::objects,
@@ -195,39 +202,25 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     data& operator=(data&& other) noexcept = default;
     ~data() = default;
 
-    template<::tyr::formalism::FactKind T>
-    [[nodiscard]] const auto& get_atoms() const
+    static constexpr auto fields() noexcept
     {
-        return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentDerivedTags, T, &data::static_atoms, &data::fluent_atoms, &data::derived_atoms>(
-            *this);
-    }
-
-    template<::tyr::formalism::FactKind T>
-    [[nodiscard]] const auto& get_fterm_values() const
-    { return ::tyr::formalism::tagged_member<::tyr::formalism::StaticFluentTags, T, &data::static_fterm_values, &data::fluent_fterm_values>(*this); }
-
-    [[nodiscard]] const auto& get_fluent_variables() const { return fluent_variables; }
-
-    static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index,
-                            &data::name,
-                            &data::domain,
-                            &data::derived_predicates,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::derived_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::auxiliary_fterm_value,
-                            &data::metric,
-                            &data::axioms,
-                            &data::fluent_variables,
-                            &data::fluent_facts,
-                            &data::goal,
-                            &data::ground_actions,
-                            &data::ground_axioms> {};
+        return urd::Fields<urd::field<"name", &data::name>,
+                           urd::field<"domain", &data::domain>,
+                           urd::field<"derived_predicates", &data::derived_predicates>,
+                           urd::field<"objects", &data::objects>,
+                           urd::field<"static_atoms", &data::static_atoms>,
+                           urd::field<"fluent_atoms", &data::fluent_atoms>,
+                           urd::field<"derived_atoms", &data::derived_atoms>,
+                           urd::field<"static_fterm_values", &data::static_fterm_values>,
+                           urd::field<"fluent_fterm_values", &data::fluent_fterm_values>,
+                           urd::field<"auxiliary_fterm_value", &data::auxiliary_fterm_value>,
+                           urd::field<"metric", &data::metric>,
+                           urd::field<"axioms", &data::axioms>,
+                           urd::field<"fluent_variables", &data::fluent_variables>,
+                           urd::field<"fluent_facts", &data::fluent_facts>,
+                           urd::field<"goal", &data::goal>,
+                           urd::field<"ground_actions", &data::ground_actions>,
+                           urd::field<"ground_axioms", &data::ground_axioms>> {};
     }
     static constexpr auto identifying_members() noexcept
     {
@@ -249,8 +242,59 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
                             &data::ground_actions,
                             &data::ground_axioms> {};
     }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index,
+                            &data::name,
+                            &data::domain,
+                            &data::derived_predicates,
+                            &data::objects,
+                            &data::static_atoms,
+                            &data::fluent_atoms,
+                            &data::derived_atoms,
+                            &data::static_fterm_values,
+                            &data::fluent_fterm_values,
+                            &data::auxiliary_fterm_value,
+                            &data::metric,
+                            &data::axioms,
+                            &data::fluent_variables,
+                            &data::fluent_facts,
+                            &data::goal,
+                            &data::ground_actions,
+                            &data::ground_axioms> {};
+    }
 };
 
+}
+
+namespace tyr::formalism::planning
+{
+/// The member holding the F-atoms of a task: a ground task also holds derived atoms.
+template<FactKind F, TaskKind T>
+inline constexpr auto atoms_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Task<T>>::static_atoms, &urd::data<Task<T>>::fluent_atoms>;
+template<FactKind F>
+inline constexpr auto atoms_of<F, GroundTag> = tagged_member_pointer<StaticFluentDerivedTags,
+                                                                     F,
+                                                                     &urd::data<Task<GroundTag>>::static_atoms,
+                                                                     &urd::data<Task<GroundTag>>::fluent_atoms,
+                                                                     &urd::data<Task<GroundTag>>::derived_atoms>;
+
+template<FactKind F, TaskKind T>
+[[nodiscard]] const auto& atoms(const urd::data<Task<T>>& task) noexcept
+{
+    return task.*atoms_of<F, T>;
+}
+
+/// The member holding the F-function term values of a task.
+template<FactKind F, TaskKind T>
+inline constexpr auto fterm_values_of =
+    tagged_member_pointer<StaticFluentTags, F, &urd::data<Task<T>>::static_fterm_values, &urd::data<Task<T>>::fluent_fterm_values>;
+
+template<FactKind F, TaskKind T>
+[[nodiscard]] const auto& fterm_values(const urd::data<Task<T>>& task) noexcept
+{
+    return task.*fterm_values_of<F, T>;
+}
 }
 
 #endif

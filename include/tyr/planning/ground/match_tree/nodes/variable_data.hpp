@@ -56,8 +56,14 @@ struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variable, &data::domain_children, &data::dontcare_child> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"variable", &data::variable>,
+                           urd::field<"domain_children", &data::domain_children>,
+                           urd::field<"dontcare_child", &data::dontcare_child>> {};
+    }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::domain_children, &data::dontcare_child> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variable, &data::domain_children, &data::dontcare_child> {}; }
 };
 }
 

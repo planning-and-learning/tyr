@@ -36,9 +36,15 @@ struct data<::tyr::formalism::planning::FDRFact<T>>
 
     data() = default;
     data(urd::index<::tyr::formalism::planning::FDRVariable<T>> variable_, ::tyr::formalism::planning::FDRValue value_) : variable(variable_), value(value_) {}
+    data(const data& other) = delete;
+    data& operator=(const data& other) = delete;
+    data(data&& other) = default;
+    data& operator=(data&& other) = default;
+    ~data() = default;
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variable", &data::variable>, urd::field<"value", &data::value>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
 };
 
 }
