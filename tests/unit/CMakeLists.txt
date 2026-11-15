@@ -129,6 +129,7 @@ foreach(heuristic rpg_max rpg_add rpg_ff lmcut)
     add_gtest(planning_heuristics_${heuristic} "planning/heuristics/${heuristic}.cpp")
     target_link_libraries(planning_heuristics_${heuristic} PRIVATE Boost::json)
 endforeach()
+target_link_libraries(planning_heuristics_lmcut PRIVATE urd::count_allocations)
 
 foreach(algorithm brfs astar_eager gbfs_lazy iw siw)
     add_gtest(planning_algorithms_${algorithm}_statistics "planning/algorithms/${algorithm}/statistics.cpp")

@@ -10,7 +10,7 @@ every experiment.
 
 import argparse
 
-import lab.experiment  # noqa: F401  # lab.fetcher imports only after lab.experiment.
+import lab.experiment  # pyright: ignore[reportUnusedImport]  # noqa: F401  # lab.fetcher imports only after lab.experiment.
 from lab.fetcher import Fetcher
 
 # Run as a script, this directory is on sys.path; imported as `experiments.merge_reports`, the repository root is.

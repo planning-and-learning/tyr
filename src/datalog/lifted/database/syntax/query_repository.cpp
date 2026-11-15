@@ -6,6 +6,7 @@
 #include "tyr/datalog/lifted/database/syntax/query_repository.hpp"
 
 #include "tyr/datalog/lifted/database/detail/repository_instantiations.hpp"
+#include "tyr/datalog/lifted/database/syntax/query_construction.hpp"
 
 #include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/symbol_context_instantiations.hpp>

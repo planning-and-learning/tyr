@@ -50,7 +50,7 @@ struct FactUnpackedStorage<LiftedTag>
             indices.erase(index);
     }
     /// One past the last variable set: variables past it are none.
-    [[nodiscard]] std::size_t num_variables() const noexcept { return indices.significant_words().size_bytes() * CHAR_BIT; }
+    [[nodiscard]] std::size_t num_variables() const { return indices.significant_words().size_bytes() * CHAR_BIT; }
     /// The facts set (value 1), by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {

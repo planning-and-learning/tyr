@@ -123,13 +123,13 @@ struct BinaryDependencies
      */
 
     template<FactKind F, PolarityKind P>
-    [[nodiscard]] bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    [[nodiscard]] bool has_literal_dependency(ygg::uint_t pi, ygg::uint_t pj) const
     { return get_literal_dependency<F, P>().adjacent(ParameterIndex { pi }, ParameterIndex { pj }); }
 
-    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    [[nodiscard]] bool has_numeric_dependency(ygg::uint_t pi, ygg::uint_t pj) const
     { return numeric_constraint.adjacent(ParameterIndex { pi }, ParameterIndex { pj }); }
 
-    [[nodiscard]] bool has_dependency(ygg::uint_t pi, ygg::uint_t pj) const noexcept
+    [[nodiscard]] bool has_dependency(ygg::uint_t pi, ygg::uint_t pj) const
     {
         return has_literal_dependency<StaticTag, PositiveTag>(pi, pj) || has_literal_dependency<StaticTag, NegativeTag>(pi, pj)
                || has_literal_dependency<FluentTag, PositiveTag>(pi, pj) || has_literal_dependency<FluentTag, NegativeTag>(pi, pj)

@@ -25,10 +25,10 @@ PARTS = (("Hmax", "hmax"), ("Goal zone", "goal_zone"), ("Before goal zone", "bef
 
 def add_derived(_content: str, props: MutableMapping[str, Any]) -> None:
     """Derive the total time, the per-evaluation averages, and each part's share of the total time."""
-    times = [props.get(f"lmcut_{part}_time_ns") for _, part in PARTS]
     evaluations = props.get("lmcut_num_evaluations")
-    if None in times or not evaluations:
+    if not evaluations or any(props.get(f"lmcut_{part}_time_ns") is None for _, part in PARTS):
         return
+    times: list[int] = [props[f"lmcut_{part}_time_ns"] for _, part in PARTS]
     total = sum(times)
     props["lmcut_time_s"] = total / 1_000_000_000
     props["lmcut_time_ms_per_evaluation"] = total / 1_000_000 / evaluations

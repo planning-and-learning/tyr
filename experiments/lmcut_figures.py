@@ -1,5 +1,7 @@
 # Copyright (C) 2026 Dominik Drexler
 # SPDX-License-Identifier: GPL-3.0-or-later
+# matplotlib's methods take numpy's ArrayLike, which pyright reads as partially unknown.
+# pyright: reportUnknownMemberType=false
 """The figure of docs/lmcut.rst, from the properties of an LM-cut evaluation (experiments/README.md).
 
     python experiments/lmcut_figures.py experiments/data/2026-11-12-lmcut-vs-powerlifted-eval/properties
@@ -11,11 +13,10 @@ configuration that printed its statistics, and prints the numbers the page quote
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
-import matplotlib as mpl
-
-mpl.use("svg")
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.ticker import PercentFormatter
 
 # The phases, in the order of an evaluation: the name in the figure and in the property names (parser_lmcut.py).
 PHASES = (
@@ -27,9 +28,11 @@ PHASES = (
 CONFIGURATION = "astar-eager-lifted-lmcut"
 FIGURE = Path(__file__).resolve().parents[1] / "docs" / "lmcut" / "phases.svg"
 INK, MUTED, BAR = "#1f2328", "#59636e", "#2f6fb3"
+# A run of the evaluation: its properties.
+Run = dict[str, Any]
 
 
-def runs(properties: dict[str, dict]) -> list[dict]:
+def runs(properties: dict[str, Run]) -> list[Run]:
     """The runs of the configuration with every phase's time."""
     return [
         run
@@ -43,12 +46,13 @@ def runs(properties: dict[str, dict]) -> list[dict]:
 def draw(shares: list[float], tasks: int) -> None:
     """One bar per phase, its share labeled at its end, the first phase on top."""
     names = [name for name, _ in PHASES]
-    figure, axes = plt.subplots(figsize=(7, 2.6))
+    figure = Figure(figsize=(7, 2.6))
+    axes = figure.add_subplot()
     bars = axes.barh(names, shares, color=BAR, height=0.6)
     axes.bar_label(bars, labels=[f"{share:.1%}" for share in shares], padding=4, color=INK, fontsize=10)
     axes.invert_yaxis()
     axes.set_xlim(0, 1)
-    axes.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
+    axes.xaxis.set_major_formatter(PercentFormatter(1.0))
     axes.set_xlabel(f"share of LM-cut's time, summed over {tasks} tasks", color=MUTED)
     axes.tick_params(colors=MUTED, length=0)
     axes.tick_params(axis="y", colors=INK)
@@ -67,7 +71,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=(__doc__ or "").partition("\n\n")[0])
     parser.add_argument("properties", type=Path, help="the properties file of the evaluation (Lab's -eval directory)")
     arguments = parser.parse_args()
-    measured = runs(json.loads(arguments.properties.read_text()))
+    properties: dict[str, Run] = json.loads(arguments.properties.read_text())
+    measured = runs(properties)
     if not measured:
         msg = f"{arguments.properties} has no run of {CONFIGURATION} with LM-cut's statistics"
         raise SystemExit(msg)

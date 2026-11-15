@@ -21,46 +21,9 @@
 #include "tyr/planning/ground/successor_generator.hpp"
 #include "tyr/planning/lifted/successor_generator.hpp"
 
-#include <atomic>
-#include <cstddef>
-#include <cstdlib>
-#include <new>
+#include <cstdint>
+#include <urd/testing/allocations.hpp>
 #include <utility>
-
-namespace
-{
-/// The allocations of this program while it counts them: its operator new does.
-struct AllocationCounter
-{
-    std::atomic<std::size_t> allocations { 0 };
-    std::atomic<bool> counting { false };
-};
-
-AllocationCounter& allocation_counter() noexcept
-{
-    static AllocationCounter counter;
-    return counter;
-}
-
-void* counted(void* block)
-{
-    auto& counter = allocation_counter();
-    if (counter.counting.load(std::memory_order_relaxed))
-        counter.allocations.fetch_add(1, std::memory_order_relaxed);
-    if (block == nullptr)
-        throw std::bad_alloc();
-    return block;
-}
-}
-
-// NOLINTBEGIN(cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc): the replaced allocation functions
-void* operator new(std::size_t size) { return counted(std::malloc(size)); }
-void* operator new(std::size_t size, std::align_val_t alignment) { return counted(std::aligned_alloc(static_cast<std::size_t>(alignment), size)); }
-void operator delete(void* block) noexcept { std::free(block); }
-void operator delete(void* block, std::size_t /*size*/) noexcept { std::free(block); }
-void operator delete(void* block, std::align_val_t /*alignment*/) noexcept { std::free(block); }
-void operator delete(void* block, std::size_t /*size*/, std::align_val_t /*alignment*/) noexcept { std::free(block); }
-// NOLINTEND(cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc)
 
 namespace tyr::tests
 {
@@ -76,19 +39,16 @@ void expect_evaluation_allocates_nothing_after_warmup(const HeuristicCase& test_
     const auto state = context.successor_generator->get_initial_node(*context.state_repository, *context.axiom_evaluator).get_state();
     const auto evaluate = [&]
     {
-        auto& counter = allocation_counter();
-        counter.allocations = 0;
-        counter.counting = true;
+        const urd::testing::Counted counted;
         const auto value = heuristic->evaluate(state);
-        counter.counting = false;
-        return std::pair { value, counter.allocations.load() };
+        return std::pair { value, urd::testing::counts().allocations };
     };
 
     const auto [value, first] = evaluate();
-    EXPECT_GT(first, 0U);
+    EXPECT_GT(first, 0);
     for (int warmup = 0; warmup < 3; ++warmup)
         EXPECT_EQ(evaluate().first, value);
-    EXPECT_EQ(evaluate(), (std::pair { value, std::size_t { 0 } }));
+    EXPECT_EQ(evaluate(), (std::pair { value, std::int64_t { 0 } }));
 }
 }
 }
