@@ -46,7 +46,7 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
 {
     const auto k = sources.columns().size();
     const ygg::FreeRelationRepository layer;
-    const auto plan = tyr::datalog::database::DistancePlan(sources.columns(), edges.columns(), targets.columns(), Column(99));
+    const auto plan = tyr::datalog::database::DistancePlan(sources.columns(), columns_of(edges), targets.columns(), Column(99));
     auto blind = tyr::datalog::database::incremental::MinDistance(layer, edges, plan, static_slots);
     auto guided = tyr::datalog::database::incremental::MinDistance<HalfDistance>(layer, edges, plan, static_slots);
     // Fed the exact changes of its inputs (update()) instead of diffing them (bind()).
@@ -58,7 +58,7 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
         Relation removed;
     };
     auto changes = urd::Store<urd::sequence<Change>>();
-    auto evaluator = tyr::datalog::database::QueryEvaluator(layer, tyr::datalog::database::compile({ edges }));
+    auto evaluator = tyr::datalog::database::QueryEvaluator(layer, tyr::datalog::database::compile_plan({ edges }));
     evaluator.evaluate(borrow_all(layer, maximal));
     auto supergraph = Relation(evaluator.get_result().columns());
     for (size_t i = 0; i < evaluator.get_result().size(); ++i)
@@ -91,10 +91,10 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
             for (size_t slot = 0; slot < inputs.size(); ++slot)
             {
                 auto& change = changes.emplace_back(Change { Relation(inputs[slot].columns()), Relation(inputs[slot].columns()) });
-                for (const auto row : layer.view(inputs[slot]).rows())
+                for (const auto row : layer.view(inputs[slot]).get_rows())
                     if (!previous[slot].contains(row))
                         change.added.insert(row);
-                for (const auto row : layer.view(previous[slot]).rows())
+                for (const auto row : layer.view(previous[slot]).get_rows())
                     if (!inputs[slot].contains(row))
                         change.removed.insert(row);
                 if (!static_slots.contains(slot) && (!change.added.empty() || !change.removed.empty()))
@@ -106,7 +106,7 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
         for (const auto& relation : inputs)
         {
             auto& copy = previous.emplace_back(relation.columns());
-            for (const auto row : layer.view(relation).rows())
+            for (const auto row : layer.view(relation).get_rows())
                 copy.insert(row);
         }
         heuristic.distances = distances_to(borrow(layer, supergraph), borrow(layer, targets), k);
@@ -377,7 +377,7 @@ struct TwoSlotEdges
                                                                                 tyr::datalog::tests::qb::input(repository, 1, { x, y }));
     Relation sources = Relation(tyr::datalog::tests::ops::cols({ x }));
     Relation targets = Relation(tyr::datalog::tests::ops::cols({ y }));
-    tyr::datalog::database::DistancePlan plan = tyr::datalog::database::DistancePlan(sources.columns(), edges.columns(), targets.columns(), Column(99));
+    tyr::datalog::database::DistancePlan plan = tyr::datalog::database::DistancePlan(sources.columns(), columns_of(edges), targets.columns(), Column(99));
     urd::Store<urd::sequence<Relation>> inputs;
 
     TwoSlotEdges()

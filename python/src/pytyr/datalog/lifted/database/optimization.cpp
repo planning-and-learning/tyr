@@ -29,7 +29,10 @@ void bind_database_optimization(nb::module_& m)
         .def_prop_ro("node_count", &Plan::node_count)
         .def_prop_ro("root_count", &Plan::root_count)
         .def("explain", &tyr::datalog::database::explain);
-    m.def("compile", &tyr::datalog::database::compile<Roots>, nb::arg("roots"), "Copy the queries reachable from the roots into an independent plan.");
+    m.def("compile_plan",
+          &tyr::datalog::database::compile_plan<Roots>,
+          nb::arg("roots"),
+          "Copy the queries reachable from the roots into an independent plan.");
 
     using Distinct = urd::Store<urd::map<Column, double>>;
     nb::class_<tyr::datalog::database::RelationStatistics>(m, "RelationStatistics")

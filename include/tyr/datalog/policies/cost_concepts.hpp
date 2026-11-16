@@ -34,8 +34,8 @@ concept RuleCostPolicyFor = requires(T& policy, const T& const_policy, RuleInsta
 };
 
 template<typename T>
-concept RuleCostPolicyConcept = RuleCostPolicyFor<T, RuleKey<GroundTag>, RuleKey<GroundTag>>
-                                || RuleCostPolicyFor<T, formalism::datalog::RuleRowView, RuleKey<LiftedTag>>;
+concept RuleCostPolicyConcept =
+    RuleCostPolicyFor<T, RuleKey<GroundTag>, RuleKey<GroundTag>> || RuleCostPolicyFor<T, formalism::datalog::RuleRowView, RuleKey<LiftedTag>>;
 
 }
 

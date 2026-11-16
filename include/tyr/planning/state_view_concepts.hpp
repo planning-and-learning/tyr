@@ -53,10 +53,10 @@ concept FunctionTermValueRangeConcept =
 
 template<typename T>
 concept IterableStateConcept = requires(const std::remove_reference_t<T>& cs) {
-    { cs.template get_atoms<formalism::StaticTag>() } -> AtomRangeConcept<formalism::StaticTag>;
+    { cs.template get_atom_indices<formalism::StaticTag>() } -> AtomRangeConcept<formalism::StaticTag>;
     { cs.get_fluent_facts() } -> FactRangeConcept<formalism::FluentTag>;
-    { cs.template get_atoms<formalism::FluentTag>() } -> AtomRangeConcept<formalism::FluentTag>;
-    { cs.template get_atoms<formalism::DerivedTag>() } -> AtomRangeConcept<formalism::DerivedTag>;
+    { cs.template get_atom_indices<formalism::FluentTag>() } -> AtomRangeConcept<formalism::FluentTag>;
+    { cs.template get_atom_indices<formalism::DerivedTag>() } -> AtomRangeConcept<formalism::DerivedTag>;
     { cs.template get_fterm_values<formalism::StaticTag>() } -> FunctionTermValueRangeConcept<formalism::StaticTag>;
     { cs.template get_fterm_values<formalism::FluentTag>() } -> FunctionTermValueRangeConcept<formalism::FluentTag>;
 };
@@ -81,10 +81,10 @@ concept FunctionTermViewValueRangeConcept =
 
 template<typename T>
 concept IterableViewStateConcept = requires(const std::remove_reference_t<T>& cs) {
-    { cs.template get_atoms_view<formalism::StaticTag>() } -> AtomViewRangeConcept<formalism::StaticTag>;
+    { cs.template get_atoms<formalism::StaticTag>() } -> AtomViewRangeConcept<formalism::StaticTag>;
     { cs.get_fluent_facts_view() } -> FactViewRangeConcept<formalism::FluentTag>;
-    { cs.template get_atoms_view<formalism::FluentTag>() } -> AtomViewRangeConcept<formalism::FluentTag>;
-    { cs.template get_atoms_view<formalism::DerivedTag>() } -> AtomViewRangeConcept<formalism::DerivedTag>;
+    { cs.template get_atoms<formalism::FluentTag>() } -> AtomViewRangeConcept<formalism::FluentTag>;
+    { cs.template get_atoms<formalism::DerivedTag>() } -> AtomViewRangeConcept<formalism::DerivedTag>;
     { cs.template get_fterm_values_view<formalism::StaticTag>() } -> FunctionTermViewValueRangeConcept<formalism::StaticTag>;
     { cs.template get_fterm_values_view<formalism::FluentTag>() } -> FunctionTermViewValueRangeConcept<formalism::FluentTag>;
 };
@@ -121,9 +121,9 @@ concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && Iterable
                                   { state.test(static_atom_view) } -> std::same_as<bool>;
                                   { state.test(fluent_atom_view) } -> std::same_as<bool>;
                                   { state.test(derived_atom_view) } -> std::same_as<bool>;
-                                  { state.get_atoms_view(static_predicate) } -> AtomViewRangeConcept<formalism::StaticTag>;
-                                  { state.get_atoms_view(fluent_predicate) } -> AtomViewRangeConcept<formalism::FluentTag>;
-                                  { state.get_atoms_view(derived_predicate) } -> AtomViewRangeConcept<formalism::DerivedTag>;
+                                  { state.get_atoms(static_predicate) } -> AtomViewRangeConcept<formalism::StaticTag>;
+                                  { state.get_atoms(fluent_predicate) } -> AtomViewRangeConcept<formalism::FluentTag>;
+                                  { state.get_atoms(derived_predicate) } -> AtomViewRangeConcept<formalism::DerivedTag>;
                               };
 
 }

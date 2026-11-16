@@ -153,9 +153,7 @@ private:
 
     template<formalism::FactKind F>
     [[nodiscard]] Parameters parameters_of(urd::index<formalism::Literal<LiftedTag, F>> literal) const
-    {
-        return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()));
-    }
+    { return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination())); }
 
     [[nodiscard]] Parameters parameters_of(const Body& body) const
     {

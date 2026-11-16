@@ -11,11 +11,11 @@ from pyyggdrasil.execution import ExecutionContext
 
 from pytyr.formalism.planning import (
     GroundPlanningTask,
-    TaskGround,
     LiftedPlanningTask,
-    TaskLifted,
     Parser,
     PlanningDomain,
+    TaskGround,
+    TaskLifted,
 )
 from pytyr.planning import lifted
 

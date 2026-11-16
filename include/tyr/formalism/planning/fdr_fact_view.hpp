@@ -39,9 +39,7 @@ public:
     auto get_value() const noexcept { return self().template member<&urd::record_of<V>::value>(); }
     auto has_value() const noexcept { return get_value() != ::tyr::formalism::planning::FDRValue::none(); }
     auto get_atom_index() const noexcept
-    {
-        return has_value() ? std::make_optional(self().context()[get_variable().index()].atoms[get_value().value - 1]) : std::nullopt;
-    }
+    { return has_value() ? std::make_optional(self().context()[get_variable().index()].atoms[get_value().value - 1]) : std::nullopt; }
     auto get_atom() const noexcept { return urd::resolve(get_atom_index(), self().context()); }
 };
 
@@ -66,9 +64,7 @@ namespace tyr::formalism::planning
 /// A fact computed on the fly (a state's): its view holds it, through the context that owns its variable.
 template<FactKind T, typename C>
 urd::owning_view<FDRFact<T>, C> computed_fact_view(urd::data<FDRFact<T>> fact, const C& context)
-{
-    return { fact, &context.view(fact.variable).context() };
-}
+{ return { fact, &context.view(fact.variable).context() }; }
 }  // namespace tyr::formalism::planning
 
 static_assert(std::is_trivially_copyable_v<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>>);

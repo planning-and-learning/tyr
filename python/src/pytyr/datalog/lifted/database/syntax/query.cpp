@@ -7,7 +7,7 @@ void bind_query(nb::module_& m, QueryRepositoryBinding& repository)
 {
     using Query = tyr::datalog::database::Query<>;
     urd::python::bind_data<Query>(m);
-    urd::python::bind_view<QueryView>(m).def("columns", &QueryView::columns);
+    urd::python::bind_view<QueryView>(m);
     ygg::bind_insert<Query>(repository);
 }
 

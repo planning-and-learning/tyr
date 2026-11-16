@@ -53,7 +53,7 @@ public:
     QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryView<> query, const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         m_layer(&layer),
         m_query(union_normal_form(query)),
-        m_columns(query.columns().begin(), query.columns().end()),
+        m_columns(columns_of(query).begin(), columns_of(query).end()),
         m_static(static_slots)
     {
         m_frame.resize(m_query.variables.size());

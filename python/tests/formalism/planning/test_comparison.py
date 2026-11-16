@@ -4,8 +4,7 @@
 import pytest
 
 from pytyr import formalism
-from pytyr.formalism import datalog, planning
-from pytyr.formalism import ObjectData
+from pytyr.formalism import ObjectData, datalog, planning
 from pytyr.formalism.planning import OptimizationDirection
 
 

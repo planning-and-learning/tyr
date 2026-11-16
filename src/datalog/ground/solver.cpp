@@ -67,8 +67,7 @@ private:
                                             out.cost_policy());
         // The rule's heads as the keys of their rows, which key the predicate annotations.
         const auto heads = input.rule_instance.get_heads() | std::views::transform([&](auto head) { return input.rule_instance.resolve(head).index(); });
-        const auto result =
-            fire_propositional_update(heads, input, scratch.predicate_updates, scratch.delta_annotations, scheduler().support(rule));
+        const auto result = fire_propositional_update(heads, input, scratch.predicate_updates, scratch.delta_annotations, scheduler().support(rule));
         if (result.status == RuleUpdateStatus::Completed)
             ++scheduler().statistics().num_rules_fired;
 
@@ -92,8 +91,9 @@ compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggr
 template void compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostPolicy>& ctx);
 template void
 compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx);
-template void
-compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx);
+template void compute_model(
+    ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>&
+        ctx);
 template void
 compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(
@@ -117,9 +117,9 @@ template void execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotation
                             ygg::ExecutionContext& execution_context);
 template void execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx,
                             ygg::ExecutionContext& execution_context);
-template void
-execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx,
-              ygg::ExecutionContext& execution_context);
+template void execute_model(
+    ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx,
+    ygg::ExecutionContext& execution_context);
 template void
 execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx,
               ygg::ExecutionContext& execution_context);

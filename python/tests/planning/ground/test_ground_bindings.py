@@ -12,6 +12,7 @@ from pytyr.formalism.planning import Parser
 
 Node = planning.ground.Node
 State = planning.ground.State
+StateBuilder = planning.ground.StateBuilder
 Plan = planning.ground.Plan
 IwStatistics = planning.algorithms.iw.ground.Statistics
 SearchStatus = planning.SearchStatus
@@ -196,7 +197,7 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: State, state: State) -> bool:
+        def is_dynamic_goal_satisfied(self, seed_state: State, state: State | StateBuilder) -> bool:
             self.saw_state = isinstance(state, planning.ground.State)
             return False
 
@@ -227,7 +228,7 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
 
         @override
         def evaluate(self, state: State) -> float:
-            self.saw_state = isinstance(state, planning.ground.State)
+            self.saw_state = type(state) is planning.ground.State
             return 7.0
 
     heuristic = PythonHeuristic()

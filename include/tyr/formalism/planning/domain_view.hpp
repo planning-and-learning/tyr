@@ -38,20 +38,23 @@ private:
 
 public:
     decltype(auto) get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
-    template<::tyr::formalism::FactKind T>
-    auto get_predicates() const noexcept
-    {
-        return self().template member<::tyr::formalism::planning::predicates_of<T>>();
-    }
-    template<::tyr::formalism::FactKind T>
-    auto get_functions() const noexcept
-    {
-        return self().template member<::tyr::formalism::planning::functions_of<T>>();
-    }
+    auto get_static_predicates() const noexcept { return self().template member<&urd::record_of<V>::static_predicates>(); }
+    auto get_fluent_predicates() const noexcept { return self().template member<&urd::record_of<V>::fluent_predicates>(); }
+    auto get_derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
+    auto get_static_functions() const noexcept { return self().template member<&urd::record_of<V>::static_functions>(); }
+    auto get_fluent_functions() const noexcept { return self().template member<&urd::record_of<V>::fluent_functions>(); }
     auto get_auxiliary_function() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_function>(); }
     auto get_constants() const noexcept { return self().template member<&urd::record_of<V>::constants>(); }
     auto get_actions() const noexcept { return self().template member<&urd::record_of<V>::actions>(); }
     auto get_axioms() const noexcept { return self().template member<&urd::record_of<V>::axioms>(); }
+    // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
+    template<::tyr::formalism::FactKind T>
+    auto get_predicates() const noexcept
+    { return self().template member<::tyr::formalism::planning::predicates_of<T>>(); }
+    // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
+    template<::tyr::formalism::FactKind T>
+    auto get_functions() const noexcept
+    { return self().template member<::tyr::formalism::planning::functions_of<T>>(); }
 };
 }  // namespace urd
 

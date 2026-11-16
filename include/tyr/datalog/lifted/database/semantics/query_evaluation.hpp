@@ -39,7 +39,7 @@ void validate_bindings(const QueryPlan& plan, const R& bindings, IsInternal is_i
             throw std::invalid_argument("Query: missing input binding.");
         if (is_internal(bindings[slot]))
             throw std::invalid_argument("Query: input aliases evaluator storage.");
-        assert(std::ranges::equal(bindings[slot].columns(), query.columns()));
+        assert(std::ranges::equal(bindings[slot].columns(), columns_of(query)));
     }
 }
 
@@ -93,7 +93,7 @@ class QueryEvaluator
         urd::builder<ygg::Relation<ygg::Schema>> result;
         State state;
         explicit Node(QueryView<> query) :
-            result(query.columns()),
+            result(columns_of(query)),
             state(std::visit(
                 []<typename Tag>(QueryView<Tag> operation) -> State
                 {

@@ -48,9 +48,7 @@ struct data<::tyr::formalism::planning::Metric>
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"optimization_direction", &data::optimization_direction>, urd::field<"fexpr", &data::fexpr>> {};
-    }
+    { return urd::Fields<urd::field<"optimization_direction", &data::optimization_direction>, urd::field<"fexpr", &data::fexpr>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::optimization_direction, &data::fexpr> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::optimization_direction, &data::fexpr> {}; }
 };

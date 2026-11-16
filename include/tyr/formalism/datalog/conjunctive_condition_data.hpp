@@ -67,13 +67,9 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {};
-    }
+    { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {};
-    }
+    { return urd::Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
 };
 
 template<>
@@ -108,9 +104,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {};
-    }
+    { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
 };
 
 }

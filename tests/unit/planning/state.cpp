@@ -67,16 +67,12 @@ struct StateFormattingView
     const State* state;
 
     template<tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atoms_view() const
-    {
-        return state->template get_atoms_view<F>();
-    }
+    [[nodiscard]] auto get_atoms() const
+    { return state->template get_atoms<F>(); }
     [[nodiscard]] auto get_fluent_facts_view() const { return state->get_fluent_facts_view(); }
     template<tyr::formalism::FactKind F>
     [[nodiscard]] auto get_fterm_values_view() const
-    {
-        return state->template get_fterm_values_view<F>();
-    }
+    { return state->template get_fterm_values_view<F>(); }
 };
 
 struct StateWithMutableTask : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
@@ -92,10 +88,8 @@ struct StateWithTaskValue : StateWithoutMetadata<tyr::planning::StateView<tyr::G
 struct StateWithMutableAtoms : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
 {
     template<tyr::formalism::FactKind F>
-    auto get_atoms()
-    {
-        return tyr::planning::StateView<tyr::GroundTag>::get_atoms<F>();
-    }
+    auto get_atom_indices()
+    { return tyr::planning::StateView<tyr::GroundTag>::get_atom_indices<F>(); }
 };
 
 template<tyr::TaskKind Kind>
@@ -105,9 +99,7 @@ struct StateWithThrowingMove : tyr::planning::BuilderStateView<Kind>
     StateWithThrowingMove(const StateWithThrowingMove&) = default;
     // Throws by design: the tests check that a throwing state move propagates.
     StateWithThrowingMove(StateWithThrowingMove&& other) noexcept(false) : tyr::planning::BuilderStateView<Kind>(other)
-    {
-        throw std::runtime_error("state move");
-    }
+    { throw std::runtime_error("state move"); }
     StateWithThrowingMove& operator=(const StateWithThrowingMove&) = delete;
     StateWithThrowingMove& operator=(StateWithThrowingMove&&) = delete;
     ~StateWithThrowingMove() = default;
@@ -218,7 +210,8 @@ template<typename T>
 concept Packable = requires(const T& value) { value.pack(); };
 
 static_assert(
-    []<typename... Kinds>(boost::mp11::mp_list<Kinds...>) {
+    []<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
+    {
         return ((std::totally_ordered<tyr::planning::Node<Kinds>> && Packable<tyr::planning::Node<Kinds>> && Packable<tyr::planning::LabeledNode<Kinds>>)
                 && ...);
     }(StateKinds {}));
@@ -242,22 +235,25 @@ namespace
 template<TaskKind Kind>
 void expect_packed_state_identity()
 {
-    using Data = tyr::planning::PackedState<Kind>;
-    auto facts = typename Data::FactStorage {};
-    auto derived = typename Data::AtomStorage {};
-    auto numeric = typename Data::NumericStorage {};
+    using Data = urd::data<tyr::planning::PackedState<Kind>>;
+    using FactStorage = tyr::planning::FactPackedStorage<Kind>;
+    using AtomStorage = tyr::planning::AtomPackedStorage<Kind>;
+    using NumericStorage = tyr::planning::NumericPackedStorage<Kind>;
+    auto facts = FactStorage {};
+    auto derived = AtomStorage {};
+    auto numeric = NumericStorage {};
     const auto base = Data(facts, derived, numeric);
     const auto hash = urd::Hash<Data> {};
-    derived = typename Data::AtomStorage(1);
+    derived = AtomStorage(1);
     const auto extended = Data(facts, derived, numeric);
     EXPECT_NE(base.atom_storage, extended.atom_storage);
     EXPECT_EQ(base, extended);
     EXPECT_EQ(hash(base), hash(extended));
 
-    facts = typename Data::FactStorage(1);
+    facts = FactStorage(1);
     const auto changed_facts = Data(facts, derived, numeric);
     EXPECT_NE(base, changed_facts);
-    numeric = typename Data::NumericStorage(1);
+    numeric = NumericStorage(1);
     const auto changed_numeric = Data(base.fact_storage, derived, numeric);
     EXPECT_NE(base, changed_numeric);
 }
@@ -361,7 +357,7 @@ template<TaskKind Kind>
 auto derived_names(const tyr::planning::StateView<Kind>& state)
 {
     auto result = urd::Store<urd::sequence<std::string>> {};
-    for (const auto atom : state.template get_atoms_view<formalism::DerivedTag>())
+    for (const auto atom : state.template get_atoms<formalism::DerivedTag>())
         result.push_back(atom.get_predicate().get_name().str());
     std::ranges::sort(result);
     return result;
@@ -377,8 +373,8 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     auto owned = pool.make_unique();
     owned->assign(registered);
     const auto state = urd::resolve(*owned, registered.get_state_repository());
-    EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::FluentTag>(), registered.template get_atoms_view<formalism::FluentTag>()));
-    EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::DerivedTag>(), registered.template get_atoms_view<formalism::DerivedTag>()));
+    EXPECT_TRUE(std::ranges::equal(state.template get_atoms<formalism::FluentTag>(), registered.template get_atoms<formalism::FluentTag>()));
+    EXPECT_TRUE(std::ranges::equal(state.template get_atoms<formalism::DerivedTag>(), registered.template get_atoms<formalism::DerivedTag>()));
     EXPECT_TRUE(
         std::ranges::equal(state.template get_fterm_values_view<formalism::FluentTag>(), registered.template get_fterm_values_view<formalism::FluentTag>()));
     static_assert(std::same_as<decltype(state), const tyr::planning::BuilderStateView<Kind>>);
@@ -389,7 +385,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     const auto markerless_state = StateWithoutMetadata(state);
     const auto markerless_node = tyr::planning::Node<Kind, StateWithoutMetadata<tyr::planning::BuilderStateView<Kind>>>(markerless_state, 3);
     EXPECT_EQ(&markerless_node.get_state().get_task(), task.get());
-    EXPECT_TRUE(std::ranges::equal(markerless_state.template get_atoms_view<formalism::FluentTag>(), state.template get_atoms_view<formalism::FluentTag>()));
+    EXPECT_TRUE(std::ranges::equal(markerless_state.template get_atoms<formalism::FluentTag>(), state.template get_atoms<formalism::FluentTag>()));
     const auto node = tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(state, 3);
     const auto labeled = tyr::planning::LabeledNode<Kind, tyr::planning::BuilderStateView<Kind>> { label, node };
     const auto nodes = tyr::planning::NodeList<Kind, tyr::planning::BuilderStateView<Kind>> { node };
@@ -435,22 +431,24 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_EQ(&state.context(), &registered.get_state_repository());
     EXPECT_EQ(&state.get_task(), &registered.get_task());
     EXPECT_EQ(state.get_formalism_repository(), registered.get_formalism_repository());
-    EXPECT_TRUE(std::ranges::equal(state.template get_atoms<::tyr::formalism::StaticTag>(), registered.template get_atoms<::tyr::formalism::StaticTag>()));
+    EXPECT_TRUE(std::ranges::equal(state.template get_atom_indices<::tyr::formalism::StaticTag>(),
+                                   registered.template get_atom_indices<::tyr::formalism::StaticTag>()));
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_facts(), registered.get_fluent_facts()));
-    EXPECT_TRUE(std::ranges::equal(state.template get_atoms<::tyr::formalism::DerivedTag>(), registered.template get_atoms<::tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(std::ranges::equal(state.template get_atom_indices<::tyr::formalism::DerivedTag>(),
+                                   registered.template get_atom_indices<::tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(std::ranges::equal(state.template get_fterm_values<::tyr::formalism::StaticTag>(),
                                    registered.template get_fterm_values<::tyr::formalism::StaticTag>()));
     EXPECT_TRUE(std::ranges::equal(state.template get_fterm_values<::tyr::formalism::FluentTag>(),
                                    registered.template get_fterm_values<::tyr::formalism::FluentTag>()));
-    EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::StaticTag>(), registered.template get_atoms_view<formalism::StaticTag>()));
+    EXPECT_TRUE(std::ranges::equal(state.template get_atoms<formalism::StaticTag>(), registered.template get_atoms<formalism::StaticTag>()));
     EXPECT_TRUE(std::ranges::equal(state.get_fluent_facts_view(), registered.get_fluent_facts_view()));
-    EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::FluentTag>(), registered.template get_atoms_view<formalism::FluentTag>()));
-    EXPECT_TRUE(std::ranges::equal(state.template get_atoms_view<formalism::DerivedTag>(), registered.template get_atoms_view<formalism::DerivedTag>()));
+    EXPECT_TRUE(std::ranges::equal(state.template get_atoms<formalism::FluentTag>(), registered.template get_atoms<formalism::FluentTag>()));
+    EXPECT_TRUE(std::ranges::equal(state.template get_atoms<formalism::DerivedTag>(), registered.template get_atoms<formalism::DerivedTag>()));
     const auto check_filtered = [&]<formalism::FactKind F>()
     {
-        auto indices = registered.template get_atoms_view<F>() | std::views::transform([](auto atom) { return atom.index(); });
-        EXPECT_TRUE(std::ranges::equal(registered.template get_atoms<F>(), indices));
-        EXPECT_TRUE(std::ranges::equal(state.template get_atoms<F>(), indices));
+        auto indices = registered.template get_atoms<F>() | std::views::transform([](auto atom) { return atom.index(); });
+        EXPECT_TRUE(std::ranges::equal(registered.template get_atom_indices<F>(), indices));
+        EXPECT_TRUE(std::ranges::equal(state.template get_atom_indices<F>(), indices));
         if constexpr (!std::same_as<F, formalism::StaticTag>)
         {
             if constexpr (std::same_as<F, formalism::FluentTag>)
@@ -458,22 +456,22 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
             else
                 EXPECT_TRUE(std::ranges::equal(owned->atom_storage.atoms(), indices));
         }
-        for (const auto atom : registered.template get_atoms_view<F>())
+        for (const auto atom : registered.template get_atoms<F>())
         {
             auto expected = urd::Store<urd::sequence<tyr::formalism::planning::AtomView<GroundTag, F>>> {};
-            for (const auto candidate : registered.template get_atoms_view<F>())
+            for (const auto candidate : registered.template get_atoms<F>())
                 if (candidate.get_predicate() == atom.get_predicate())
                     expected.push_back(candidate);
             // The temporary state and predicate wrappers expire before traversal.
-            auto borrowed = urd::resolve(*owned, registered.get_state_repository()).get_atoms_view(atom.get_predicate());
-            auto indexed = tyr::planning::StateView<Kind>(registered).get_atoms_view(atom.get_predicate());
+            auto borrowed = urd::resolve(*owned, registered.get_state_repository()).get_atoms(atom.get_predicate());
+            auto indexed = tyr::planning::StateView<Kind>(registered).get_atoms(atom.get_predicate());
             EXPECT_TRUE(std::ranges::equal(borrowed, expected));
             EXPECT_TRUE(std::ranges::equal(indexed, expected));
         }
         auto foreign_repository = tyr::formalism::planning::Repository();
         auto foreign_data = urd::data<formalism::Predicate<F>>(std::string("foreign"), 0);
         const auto foreign = tyr::formalism::planning::insert(foreign_repository, foreign_data).first;
-        auto absent = state.get_atoms_view(foreign);
+        auto absent = state.get_atoms(foreign);
         EXPECT_TRUE(absent.begin() == absent.end());
     };
     check_filtered.template operator()<formalism::StaticTag>();
@@ -483,7 +481,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
                                    registered.template get_fterm_values_view<::tyr::formalism::StaticTag>()));
     EXPECT_TRUE(std::ranges::equal(state.template get_fterm_values_view<::tyr::formalism::FluentTag>(),
                                    registered.template get_fterm_values_view<::tyr::formalism::FluentTag>()));
-    for (const auto atom : registered.template get_atoms_view<formalism::StaticTag>())
+    for (const auto atom : registered.template get_atoms<formalism::StaticTag>())
     {
         EXPECT_EQ(state.test(atom.index()), registered.test(atom));
         EXPECT_EQ(state.test(atom), registered.test(atom));
@@ -501,7 +499,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
         EXPECT_FALSE(unassigned.get_atom_index());
         EXPECT_FALSE(unassigned.get_atom());
     }
-    for (const auto atom : registered.template get_atoms_view<formalism::DerivedTag>())
+    for (const auto atom : registered.template get_atoms<formalism::DerivedTag>())
     {
         EXPECT_EQ(state.test(atom.index()), registered.test(atom));
         EXPECT_EQ(state.test(atom), registered.test(atom));
@@ -549,9 +547,9 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     else
         moved->fact_storage.indices.clear();
     EXPECT_TRUE(std::ranges::empty(tyr::planning::fluent_atoms(moved->fact_storage, *task->get_repository())));
-    for (const auto atom : registered.template get_atoms_view<formalism::FluentTag>())
+    for (const auto atom : registered.template get_atoms<formalism::FluentTag>())
     {
-        auto filtered = state.get_atoms_view(atom.get_predicate());
+        auto filtered = state.get_atoms(atom.get_predicate());
         EXPECT_TRUE(filtered.begin() == filtered.end());
         EXPECT_FALSE(state.test(atom));
         EXPECT_TRUE(registered.test(atom));
@@ -643,7 +641,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     {
         const auto packed_state = state.pack();
         const auto unpacked = packed_state.unpack();
-        EXPECT_EQ(packed_state.index(), state.index());
+        EXPECT_EQ(repository->state_index(packed_state.index()), state.index());
         EXPECT_EQ(&packed_state.get_state_repository(), repository.get());
         EXPECT_EQ(unpacked, state);
         EXPECT_EQ(unpacked.pack(), packed_state);
@@ -769,8 +767,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         {
             EXPECT_EQ(actual.get_metric(), expected.get_metric());
             EXPECT_TRUE(std::ranges::equal(actual.get_state().get_fluent_facts(), expected.get_state().get_fluent_facts()));
-            EXPECT_TRUE(std::ranges::equal(actual.get_state().template get_atoms<::tyr::formalism::DerivedTag>(),
-                                           expected.get_state().template get_atoms<::tyr::formalism::DerivedTag>()));
+            EXPECT_TRUE(std::ranges::equal(actual.get_state().template get_atom_indices<::tyr::formalism::DerivedTag>(),
+                                           expected.get_state().template get_atom_indices<::tyr::formalism::DerivedTag>()));
             EXPECT_TRUE(std::ranges::equal(actual.get_state().template get_fterm_values<::tyr::formalism::FluentTag>(),
                                            expected.get_state().template get_fterm_values<::tyr::formalism::FluentTag>()));
         };
@@ -869,8 +867,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         axioms->compute_extended_state(*generated);
         const auto generated_view = urd::resolve(*generated, *repository);
         EXPECT_TRUE(std::ranges::equal(generated_view.get_fluent_facts(), raised.get_state().get_fluent_facts()));
-        EXPECT_TRUE(std::ranges::equal(generated_view.template get_atoms<::tyr::formalism::DerivedTag>(),
-                                       raised.get_state().template get_atoms<::tyr::formalism::DerivedTag>()));
+        EXPECT_TRUE(std::ranges::equal(generated_view.template get_atom_indices<::tyr::formalism::DerivedTag>(),
+                                       raised.get_state().template get_atom_indices<::tyr::formalism::DerivedTag>()));
         EXPECT_TRUE(std::ranges::equal(generated_view.template get_fterm_values<::tyr::formalism::FluentTag>(),
                                        raised.get_state().template get_fterm_values<::tyr::formalism::FluentTag>()));
         EXPECT_TRUE(owned->index.is_none());

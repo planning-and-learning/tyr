@@ -79,25 +79,15 @@ public:
     [[nodiscard]] const auto& get_formalism_repository() const noexcept { return get_task().get_repository(); }
 
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-    {
-        return get_task().get_static_state().test(index);
-    }
+    { return get_task().get_static_state().test(index); }
     [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>> index) const
-    {
-        return get_task().get_static_state().get(index);
-    }
+    { return get_task().get_static_state().get(index); }
     [[nodiscard]] ::tyr::formalism::planning::FDRValue value(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> index) const
-    {
-        return get_fact_storage().get(index);
-    }
+    { return get_fact_storage().get(index); }
     [[nodiscard]] ygg::float_t value(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index) const
-    {
-        return get_numeric_storage().get(index);
-    }
+    { return get_numeric_storage().get(index); }
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) const
-    {
-        return get_atom_storage().test(index);
-    }
+    { return get_atom_storage().test(index); }
 
     [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const { return test(view.index()); }
     [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
@@ -106,24 +96,18 @@ public:
         return fact && value(fact->get_variable().index()) == fact->get_value();
     }
     [[nodiscard]] ygg::float_t value(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag> view) const
-    {
-        return value(view.index());
-    }
+    { return value(view.index()); }
     [[nodiscard]] ::tyr::formalism::planning::FDRValue value(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-    {
-        return value(view.index());
-    }
+    { return value(view.index()); }
     [[nodiscard]] ygg::float_t value(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-    {
-        return value(view.index());
-    }
+    { return value(view.index()); }
     [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
 
     /// Its fluent facts, as its fact storage holds them.
     [[nodiscard]] auto get_fluent_facts() const noexcept { return get_fact_storage().facts(); }
-    /// Its atoms of kind F: static ones its task's, fluent ones those of its facts, derived ones its atom storage's.
+    /// The indices of its atoms of kind F: static ones its task's, fluent ones those of its facts, derived ones its atom storage's.
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atoms() const noexcept
+    [[nodiscard]] auto get_atom_indices() const noexcept
     {
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return get_task().get_static_state().get_atoms();
@@ -147,14 +131,15 @@ public:
     }
 
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atoms_view() const noexcept
+    [[nodiscard]] auto get_atoms() const noexcept
     {
-        return get_atoms<F>() | std::views::transform([repository = get_formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
+        return get_atom_indices<F>()
+               | std::views::transform([repository = get_formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
     }
     template<::tyr::formalism::FactKind F, typename C>
-    [[nodiscard]] auto get_atoms_view(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const
+    [[nodiscard]] auto get_atoms(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const
     {
-        return get_atoms_view<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
+        return get_atoms<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
     }
     /// The facts, computed on the fly: each view owns its fact.
     [[nodiscard]] auto get_fluent_facts_view() const noexcept
@@ -181,26 +166,27 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    /// Its packed form, read through its index.
+    /// Its packed form: its index, resolved through its repository (StateRepository::view).
     [[nodiscard]] ::tyr::planning::PackedStateView<Kind> pack() const noexcept { return self().template member<&urd::record_of<V>::index>(); }
-    [[nodiscard]] urd::index<::tyr::planning::State<Kind>> index() const noexcept { return pack().index(); }
+    [[nodiscard]] urd::index<::tyr::planning::State<Kind>> index() const noexcept { return get_state_repository().state_index(pack().index()); }
     [[nodiscard]] const ::tyr::planning::StateRepository<Kind>& get_state_repository() const noexcept { return self().context(); }
 };
 
-/// A registered state, packed (PackedStateView: its index; the view gives index()): its repository, and the state
-/// unpacked.
-template<::tyr::TaskKind Kind>
-struct urd::view_mixin<::tyr::planning::State<Kind>, ::tyr::planning::PackedStateView<Kind>>
+/// A registered state, packed (PackedStateView): its packed storages, its repository, and the state unpacked.
+template<::tyr::TaskKind Kind, typename V>
+struct urd::view_mixin<::tyr::planning::PackedState<Kind>, V>
 {
 private:
-    [[nodiscard]] const ::tyr::planning::PackedStateView<Kind>& self() const noexcept
-    {
-        return static_cast<const ::tyr::planning::PackedStateView<Kind>&>(*this);
-    }
+    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
+    [[nodiscard]] decltype(auto) get_fact_storage() const noexcept { return self().template member<&urd::record_of<V>::fact_storage>(); }
+    [[nodiscard]] decltype(auto) get_atom_storage() const noexcept { return self().template member<&urd::record_of<V>::atom_storage>(); }
+    [[nodiscard]] decltype(auto) get_numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
+
     [[nodiscard]] const ::tyr::planning::StateRepository<Kind>& get_state_repository() const noexcept { return self().context(); }
-    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const { return self().context().get_registered_state(self().index()); }
+    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const
+    { return get_state_repository().get_registered_state(get_state_repository().state_index(self().index())); }
 };
 
 #endif

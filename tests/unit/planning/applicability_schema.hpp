@@ -322,7 +322,8 @@ void expect_schema_queries_match_filtered_successors()
         const auto& left = lhs.get_state();
         const auto& right = rhs.get_state();
         return lhs.get_metric() == rhs.get_metric() && std::ranges::equal(left.get_fluent_facts(), right.get_fluent_facts())
-               && std::ranges::equal(left.template get_atoms<::tyr::formalism::DerivedTag>(), right.template get_atoms<::tyr::formalism::DerivedTag>())
+               && std::ranges::equal(left.template get_atom_indices<::tyr::formalism::DerivedTag>(),
+                                     right.template get_atom_indices<::tyr::formalism::DerivedTag>())
                && std::ranges::equal(left.template get_fterm_values<formalism::FluentTag>(), right.template get_fterm_values<formalism::FluentTag>());
     };
     const auto num_action_bindings = count_action_bindings(task);

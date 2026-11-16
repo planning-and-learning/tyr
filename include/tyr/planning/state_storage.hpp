@@ -81,9 +81,7 @@ struct AtomUnpackedStorage
     StateBits indices;
 
     [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) const
-    {
-        return indices.contains(static_cast<ygg::uint_t>(index.value));
-    }
+    { return indices.contains(static_cast<ygg::uint_t>(index.value)); }
     /// Its derived atoms, by their bits.
     [[nodiscard]] auto atoms() const noexcept
     {
@@ -112,9 +110,7 @@ struct NumericUnpackedStorage
     urd::Store<urd::sequence<ygg::float_t>> values;
 
     [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
-    {
-        return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN());
-    }
+    { return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
     void set(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
     {
         tyr::set(static_cast<ygg::uint_t>(index.value),

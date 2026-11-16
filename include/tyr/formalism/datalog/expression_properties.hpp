@@ -102,9 +102,7 @@ inline void collect_fterms(const std::variant<Vs...>& element, urd::Store<urd::s
 
 template<TaskKind T, FactKind F>
 inline void collect_fterms(UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
-{
-    collect_fterms(element.get_arg(), result);
-}
+{ collect_fterms(element.get_arg(), result); }
 
 template<TaskKind T, FactKind F, OperatorKind O>
 inline void collect_fterms(BinaryOperatorView<T, O> element, urd::Store<urd::set<FunctionTermView<T, F>>>& result)
@@ -139,9 +137,7 @@ void collect_effect_reads(Effect effect, bool reads_target, Result& result)
 
 template<TaskKind T, typename Result>
 void collect_semantic_head_reads(NumericEffectOperatorView<T, FluentTag> head, Result& result)
-{
-    collect_effect_reads(head, head.get_operation() != NumericEffectOperatorKind::Assign, result);
-}
+{ collect_effect_reads(head, head.get_operation() != NumericEffectOperatorKind::Assign, result); }
 
 template<typename Rule, typename Result>
 void collect_rule_fluent_reads(Rule rule, Result& result)

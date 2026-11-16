@@ -45,9 +45,9 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
 #include "tyr/planning/lifted/state_storage.hpp"
+#include "tyr/planning/state_data.hpp"
 
 #include <concepts>
 #include <cstddef>
@@ -86,33 +86,23 @@ public:
 
     /// What it holds, as a state's view reads it (the builder is the mutable record: it reads its own storages).
     [[nodiscard]] ::tyr::formalism::planning::FDRValue get(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable) const
-    {
-        return this->fact_storage.get(variable);
-    }
+    { return this->fact_storage.get(variable); }
     [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
-    {
-        return this->numeric_storage.get(fterm);
-    }
+    { return this->numeric_storage.get(fterm); }
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const
-    {
-        return this->atom_storage.test(atom);
-    }
+    { return this->atom_storage.test(atom); }
     [[nodiscard]] auto get_fluent_facts() const noexcept { return this->fact_storage.facts(); }
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { this->index = state; }
     void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact) { this->fact_storage.set(fact); }
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
-    {
-        this->numeric_storage.set(fterm, value);
-    }
+    { this->numeric_storage.set(fterm, value); }
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { this->atom_storage.set(atom); }
     /// A fact's view (borrowed or computed): its fact set.
     template<typename V>
         requires std::same_as<typename V::value_type, ::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>
     void set(const V& fact)
-    {
-        set(urd::make<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
-    }
+    { set(urd::make<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>(fact.get_variable(), fact.get_value())); }
     void set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value) { set(view.index(), value); }
     void set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) { set(view.index()); }
 
@@ -185,9 +175,7 @@ private:
 public:
     void resize_fluent_facts(size_t size)
         requires std::same_as<Kind, ::tyr::GroundTag>
-    {
-        this->fact_storage.resize(size);
-    }
+    { this->fact_storage.resize(size); }
 
     static constexpr auto identifying_members() noexcept
     {

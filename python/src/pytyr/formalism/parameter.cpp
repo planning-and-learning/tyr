@@ -15,9 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "binding_utils.hpp"
 #include "bindings.hpp"
-#include "pytyr/module.hpp"
+
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/variant.h>
+#include <nanobind/stl/vector.h>
+#include <tyr/formalism/parameter_index.hpp>
+#include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::formalism
 {

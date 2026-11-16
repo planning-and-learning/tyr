@@ -67,7 +67,7 @@ public:
     /// Keeps the query's columns with the given labels, in that order.
     QueryView<> project(QueryView<> query, std::span<const urd::index<ygg::Column>> labels)
     {
-        if (std::ranges::equal(query.columns(), labels, {}, &ygg::ColumnLayout::label))
+        if (std::ranges::equal(columns_of(query), labels, {}, &ygg::ColumnLayout::label))
             return query;
         return relabel<QueryProjectTag>(query, labels);
     }
@@ -75,7 +75,7 @@ public:
     QueryView<> restrict(QueryView<> query, std::span<const urd::index<ygg::Column>> keep)
     {
         urd::Store<urd::sequence<urd::index<ygg::Column>>> labels;
-        for (const auto& column : query.columns())
+        for (const auto& column : columns_of(query))
             if (std::ranges::binary_search(keep, column.label))
                 labels.push_back(column.label);
         return project(query, labels);

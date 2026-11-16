@@ -40,9 +40,7 @@ namespace
 {
 template<typename T = ygg::uint_t, typename... Args>
 auto cells(Args... values)
-{
-    return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... };
-}
+{ return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... }; }
 
 template<typename T>
 auto packed(std::span<const T> values)
@@ -56,14 +54,10 @@ auto packed(std::span<const T> values)
 /// Whether two row views read the same stored row (the same storage), or have the same values.
 template<typename L, typename R>
 bool same_storage(const L& lhs, const R& rhs)
-{
-    return lhs.get_values().data() == rhs.get_values().data() && lhs.get_values().first_bit() == rhs.get_values().first_bit();
-}
+{ return lhs.get_values().data() == rhs.get_values().data() && lhs.get_values().first_bit() == rhs.get_values().first_bit(); }
 template<typename L, typename R>
 bool same_values(const L& lhs, const R& rhs)
-{
-    return std::ranges::equal(lhs.get_values(), rhs.get_values());
-}
+{ return std::ranges::equal(lhs.get_values(), rhs.get_values()); }
 
 using RelationTag = ygg::Relation<ygg::Schema>;
 using RelationBuilder = urd::builder<RelationTag>;
@@ -105,9 +99,9 @@ static_assert(!database::RelationViewConcept<RelationBuilder>);
 static_assert(!database::RelationViewConcept<DataView>);
 static_assert(database::RelationViewConcept<IndexView>);
 
-static_assert(std::ranges::random_access_range<decltype(std::declval<const IndexView&>().rows())>);
-static_assert(std::ranges::borrowed_range<decltype(std::declval<const BuilderView&>().rows())>);
-static_assert(std::ranges::borrowed_range<decltype(std::declval<const IndexView&>().rows())>);
+static_assert(std::ranges::random_access_range<decltype(std::declval<const IndexView&>().get_rows())>);
+static_assert(std::ranges::borrowed_range<decltype(std::declval<const BuilderView&>().get_rows())>);
+static_assert(std::ranges::borrowed_range<decltype(std::declval<const IndexView&>().get_rows())>);
 static_assert(std::same_as<Repository::SymbolTypes, boost::mp11::mp_list<ygg::Columns, RelationTag>>);
 static_assert(::ygg::formalism::SupportsSymbol<Repository, ygg::Columns>);
 static_assert(::ygg::formalism::SupportsSymbol<Repository, RelationTag>);
@@ -344,8 +338,8 @@ TEST(YggdrasilTests, DatabaseRelationViewsMixBuildersDataAndInternedIndicesInOpe
     // The record holds its row ids, so it is not trivially copyable: its view is borrowed.
     static_assert(!std::is_trivially_copyable_v<urd::data<RelationTag>>);
     EXPECT_TRUE(std::ranges::equal(
-        right_data_view.rows(),
-        right_index_view.rows(),
+        right_data_view.get_rows(),
+        right_index_view.get_rows(),
         {},
         [](const auto& row) { return row.index(); },
         [](const auto& row) { return row.index(); }));
@@ -382,8 +376,8 @@ TEST(YggdrasilTests, DatabaseRelationViewsMixBuildersDataAndInternedIndicesInOpe
     const auto renamed = tyr::datalog::tests::ops::rename(repository, right_index_view, labels);
     EXPECT_NE(renamed, right_index_view);  // another relation over the same rows
     EXPECT_TRUE(std::ranges::equal(
-        renamed.rows(),
-        right_index_view.rows(),
+        renamed.get_rows(),
+        right_index_view.get_rows(),
         {},
         [](const auto& row) { return row.index(); },
         [](const auto& row) { return row.index(); }));
@@ -602,12 +596,12 @@ TEST(YggdrasilTests, DatabaseRelationIteratorsSupportRandomAccessThroughTemporar
     const auto check = [](auto view)
     {
         using V = decltype(view);
-        using Iterator = std::ranges::iterator_t<decltype(view.rows())>;
+        using Iterator = std::ranges::iterator_t<decltype(view.get_rows())>;
         static_assert(std::random_access_iterator<Iterator>);
         static_assert(std::same_as<typename std::iterator_traits<Iterator>::pointer, void>);
         EXPECT_EQ(Iterator {}, Iterator {});
-        const auto begin = V(view).rows().begin();
-        const auto end = V(view).rows().end();
+        const auto begin = V(view).get_rows().begin();
+        const auto end = V(view).get_rows().end();
         EXPECT_EQ(end - begin, 3);
         EXPECT_EQ(begin - end, -3);
         EXPECT_EQ(std::ranges::distance(begin, end), 3);
@@ -642,8 +636,8 @@ TEST(YggdrasilTests, DatabaseRelationIteratorsSupportRandomAccessThroughTemporar
     auto nullary = RelationBuilder {};
     const auto check_empty = [](auto view)
     {
-        EXPECT_EQ(view.rows().begin(), view.rows().end());
-        EXPECT_EQ(view.rows().end() - view.rows().begin(), 0);
+        EXPECT_EQ(view.get_rows().begin(), view.get_rows().end());
+        EXPECT_EQ(view.get_rows().end() - view.get_rows().begin(), 0);
     };
     const auto empty = tyr::datalog::tests::ops::intern(repository, nullary).first;
     check_empty(urd::resolve(nullary, repository));
@@ -654,9 +648,9 @@ TEST(YggdrasilTests, DatabaseRelationIteratorsSupportRandomAccessThroughTemporar
     const auto check_unit = [](auto view)
     {
         using V = decltype(view);
-        const auto it = V(view).rows().end() - 1;
+        const auto it = V(view).get_rows().end() - 1;
         EXPECT_EQ((*it).size(), 0);
-        EXPECT_EQ(it + 1, view.rows().end());
+        EXPECT_EQ(it + 1, view.get_rows().end());
     };
     check_unit(urd::resolve(nullary, repository));
     check_unit(urd::resolve(repository[unit.index()], repository));
@@ -668,9 +662,7 @@ namespace
 /// Columns store indices as uint_t; their owner resolves them.
 template<typename Repository>
 auto resolve_in(ygg::uint_t value, const Repository& repository)
-{
-    return urd::resolve(ColumnsIndex(value), repository);
-}
+{ return urd::resolve(ColumnsIndex(value), repository); }
 }
 
 TEST(YggdrasilTests, TypedRelationRowsLeaveIndicesOfOtherRepositoriesRaw)
@@ -700,7 +692,7 @@ TEST(YggdrasilTests, TypedRelationRowsLeaveIndicesOfOtherRepositoriesRaw)
         EXPECT_EQ(resolve_in(ygg::decode_value<ygg::uint_t>(view.row(0).value(0)), entities), first);
         EXPECT_EQ(resolve_in(ygg::decode_value<ygg::uint_t>(view.row(0).value(1)), entities), second);
         size_t count = 0;
-        for (auto objects : view.rows())
+        for (auto objects : view.get_rows())
         {
             EXPECT_EQ(resolve_in(ygg::decode_value<ygg::uint_t>(objects.value(0)), entities), first);
             EXPECT_EQ(resolve_in(ygg::decode_value<ygg::uint_t>(objects.value(1)), entities), second);
@@ -711,15 +703,19 @@ TEST(YggdrasilTests, TypedRelationRowsLeaveIndicesOfOtherRepositoriesRaw)
     check(index_view);
     check(data_view);
     check(builder_view);
-    const auto iterator = index_view.rows().begin();
+    const auto iterator = index_view.get_rows().begin();
     EXPECT_EQ(ygg::decode_value<ygg::uint_t>((*iterator).value(1)), second_value);
 
     const auto labels = relabeled(index_view.columns(), { ColumnIndex(3), ColumnIndex(4) });
     const auto renamed = tyr::datalog::tests::ops::rename(rows, index_view, labels);
     static_assert(std::same_as<decltype(renamed), decltype(index_view)>);
     EXPECT_EQ(&renamed.context(), &rows);
-    EXPECT_TRUE(
-        std::ranges::equal(renamed.rows(), index_view.rows(), {}, [](const auto& row) { return row.index(); }, [](const auto& row) { return row.index(); }));
+    EXPECT_TRUE(std::ranges::equal(
+        renamed.get_rows(),
+        index_view.get_rows(),
+        {},
+        [](const auto& row) { return row.index(); },
+        [](const auto& row) { return row.index(); }));
     EXPECT_EQ(ygg::decode_value<ygg::uint_t>(renamed.row(0).value(0)), first_value);
     Repository other_rows;
     EXPECT_THROW(tyr::datalog::tests::ops::rename(other_rows, index_view, labels), std::out_of_range);  // its pool is not declared there
@@ -740,10 +736,10 @@ TEST(YggdrasilTests, TypedRelationRowsLeaveIndicesOfOtherRepositoriesRaw)
     auto truth = urd::builder<ygg::Relation<ygg::Schema>>();
     truth.insert(cells<ygg::uint_t>());
     const auto truth_view = urd::resolve(truth, entities);
-    EXPECT_EQ((*truth_view.rows().begin()).size(), 0);
-    EXPECT_EQ(std::ranges::distance(truth_view.rows()), 1);
+    EXPECT_EQ((*truth_view.get_rows().begin()).size(), 0);
+    EXPECT_EQ(std::ranges::distance(truth_view.get_rows()), 1);
     truth.clear();
-    EXPECT_EQ(truth_view.rows().begin(), truth_view.rows().end());
+    EXPECT_EQ(truth_view.get_rows().begin(), truth_view.get_rows().end());
 }
 
 namespace

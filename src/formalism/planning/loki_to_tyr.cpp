@@ -114,13 +114,9 @@ void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::F
     prepare(function_expression.get_right());
 }
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression)
-{
-    this->prepare(function_expression.get_args());
-}
+{ this->prepare(function_expression.get_args()); }
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression)
-{
-    this->prepare(function_expression.get_expression());
-}
+{ this->prepare(function_expression.get_expression()); }
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_expression)
 {
     m_fexpr_functions.insert(function_expression.get_function().get_name().str());
@@ -286,9 +282,7 @@ urd::index<Object> LokiToTyrTranslator::translate_common(loki::formalism::Object
 }
 
 urd::index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context)
-{
-    return translate_common(element.get_variable(), builder, context);
-}
+{ return translate_common(element.get_variable(), builder, context); }
 
 PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::PredicateView element, Builder& builder, Repository& context)
 {
@@ -379,9 +373,7 @@ FunctionExpression<LiftedTag>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                       Builder&,
                                       Repository&)
-{
-    return FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(element.get_value()));
-}
+{ return FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(element.get_value())); }
 
 FunctionExpression<LiftedTag>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
@@ -916,9 +908,7 @@ FunctionExpression<GroundTag>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                         Builder&,
                                         Repository&)
-{
-    return FunctionExpression<GroundTag>(static_cast<ygg::float_t>(element.get_value()));
-}
+{ return FunctionExpression<GroundTag>(static_cast<ygg::float_t>(element.get_value())); }
 
 FunctionExpression<GroundTag>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,

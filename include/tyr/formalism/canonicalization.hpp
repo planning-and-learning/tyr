@@ -82,9 +82,7 @@ void canonicalize(urd::data<BinaryOperator<T, O>>& data)
 
 template<TaskKind T>
 void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{
-    ygg::canonicalize<false>(data.args);
-}
+{ ygg::canonicalize<false>(data.args); }
 
 template<TaskKind T, FactKind F>
 void canonicalize(urd::data<Atom<T, F>>&)

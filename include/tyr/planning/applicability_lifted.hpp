@@ -146,9 +146,7 @@ bool is_applicable(formalism::planning::AxiomView<LiftedTag> element, const Appl
 inline ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext&) { return element; }
 
 inline ygg::float_t evaluate(formalism::planning::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
-{
-    return formalism::apply(element.get_operation(), evaluate(element.get_arg(), context));
-}
+{ return formalism::apply(element.get_operation(), evaluate(element.get_arg(), context)); }
 
 inline ygg::float_t evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
 {
@@ -198,9 +196,7 @@ inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, fo
 }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::AuxiliaryTag>, const ApplicabilityContext& context)
-{
-    return context.state().auxiliary_value();
-}
+{ return context.state().auxiliary_value(); }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
@@ -260,9 +256,7 @@ bool is_applicable(formalism::planning::LiteralListView<LiftedTag, T> elements, 
 }
 
 inline bool is_applicable(formalism::planning::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{
-    return evaluate(element, context);
-}
+{ return evaluate(element, context); }
 
 inline bool is_applicable(formalism::planning::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {
@@ -340,9 +334,7 @@ inline bool is_applicable(formalism::planning::ConjunctiveEffectView<LiftedTag> 
 // Axiom
 
 inline bool is_applicable(formalism::planning::AxiomView<LiftedTag> element, const ApplicabilityContext& context)
-{
-    return is_applicable(element.get_body(), context);
-}
+{ return is_applicable(element.get_body(), context); }
 
 }
 

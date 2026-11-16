@@ -77,13 +77,9 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
                            urd::field<"effects", &data::effects>> {};
     }
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {};
-    }
+    { return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::name, &data::original_name, &data::original_arity, &data::variables, &data::condition, &data::effects> {};
-    }
+    { return urd::Members<&data::index, &data::name, &data::original_name, &data::original_arity, &data::variables, &data::condition, &data::effects> {}; }
 };
 
 template<>
@@ -112,9 +108,7 @@ struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
 
     // Have to include effects because row only binds objects to non-effect quantified variables.
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"row", &data::row>, urd::field<"condition", &data::condition>, urd::field<"effects", &data::effects>> {};
-    }
+    { return urd::Fields<urd::field<"row", &data::row>, urd::field<"condition", &data::condition>, urd::field<"effects", &data::effects>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row, &data::condition, &data::effects> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::condition, &data::effects> {}; }
 };

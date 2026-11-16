@@ -22,6 +22,7 @@
 
 #include <concepts>
 #include <memory>
+#include <string_view>
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/execution/declarations.hpp>
 
@@ -65,10 +66,19 @@ struct PackedLabeledNode;
 
 class StaticState;
 
+/// The tag of a state: its record is urd::data<State<Kind>> (state_data.hpp).
 template<TaskKind Kind>
-class State;
+struct State
+{
+    static constexpr std::string_view name = "State";
+};
+/// The tag of a registered state as its repository stores it, packed: its record is urd::data<PackedState<Kind>>
+/// (state_data.hpp).
 template<TaskKind Kind>
-struct PackedState;
+struct PackedState
+{
+    static constexpr std::string_view name = "PackedState";
+};
 
 template<TaskKind Kind>
 class StateContext;
@@ -92,10 +102,10 @@ using StateView = urd::shared_view<State<Kind>, StateRepository<Kind>>;
 /// A state builder, borrowed, read through a state repository of its task.
 template<TaskKind Kind>
 using BuilderStateView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>>>;
-/// A registered state, packed: its index, through its repository, which must outlive it (a PackedNode keeps it alive;
-/// unpack() gives its StateView).
+/// A registered state, packed: the view of its packed record's index, through its repository, which must outlive it (a
+/// PackedNode keeps it alive; unpack() gives its StateView).
 template<TaskKind Kind>
-using PackedStateView = urd::index_view<State<Kind>, StateRepository<Kind>>;
+using PackedStateView = urd::index_view<PackedState<Kind>, StateRepository<Kind>>;
 
 template<TaskKind Kind>
 class AxiomEvaluator;

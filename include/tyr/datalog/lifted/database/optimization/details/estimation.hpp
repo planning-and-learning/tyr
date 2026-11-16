@@ -100,14 +100,10 @@ Estimate estimate_operation(QueryView<QueryInputTag> query, FactorIdentity, GetE
 }
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryEmptyTag> query, FactorIdentity identity, GetEstimate&&, const Statistics&)
-{
-    return factor({ 0, {} }, query.columns(), identity);
-}
+{ return factor({ 0, {} }, query.columns(), identity); }
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryJoinTag> query, FactorIdentity, GetEstimate child, const Statistics&)
-{
-    return conjunction(combine(child(query.get_left_operand()), child(query.get_right_operand())), query.columns());
-}
+{ return conjunction(combine(child(query.get_left_operand()), child(query.get_right_operand())), query.columns()); }
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryGenericJoinTag> query, FactorIdentity identity, GetEstimate child, const Statistics&)
 {
@@ -139,7 +135,7 @@ Estimate estimate_operation(QueryView<QueryRenameTag> query, FactorIdentity, Get
 {
     auto result = child(query.get_operand());
     urd::Store<urd::map<urd::index<ygg::Column>, urd::index<ygg::Column>>> renamed;
-    const auto before = query.get_operand().columns(), after = query.columns();
+    const auto before = columns_of(query.get_operand()), after = query.columns();
     for (size_t i = 0; i < before.size(); ++i)
         renamed[before[i].label] = after[i].label;
     for (auto& single : result.factors)
@@ -165,7 +161,7 @@ template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryProjectTag> query, FactorIdentity identity, GetEstimate child, const Statistics&)
 {
     auto argument = child(query.get_operand());
-    if (query.columns().size() == query.get_operand().columns().size())
+    if (query.columns().size() == columns_of(query.get_operand()).size())
         return argument;
     RelationStatistics result { 0, {} };
     double combinations = 1;
@@ -207,9 +203,7 @@ Estimate estimate_operation(QueryView<Tag> query, FactorIdentity identity, GetEs
 /// The literature has no estimate for distances; they are only known when observed.
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryDistanceTag>, FactorIdentity, GetEstimate&&, const Statistics&)
-{
-    throw std::logic_error("Optimizer: distances have no estimate unless observed.");
-}
+{ throw std::logic_error("Optimizer: distances have no estimate unless observed."); }
 
 /// The System R estimate of a query from its children's estimates. An observation of
 /// the equivalent caller query replaces the derivation (LEO, VLDB 2001).
@@ -219,7 +213,7 @@ Estimate estimate(QueryView<> query, std::type_identity_t<std::optional<urd::ind
     const FactorIdentity identity = QueryFactorIdentity { query.index().value };
     if (source)
         if (const auto it = statistics.expressions.find(*source); it != statistics.expressions.end())
-            return factor(with_default_distinct(it->second, query.columns(), statistics.objects), query.columns(), identity);
+            return factor(with_default_distinct(it->second, columns_of(query), statistics.objects), columns_of(query), identity);
     return std::visit([&]<typename Child>(Child operation) { return estimate_operation(operation, identity, child, statistics); }, query.get_variant());
 }
 }  // namespace tyr::datalog::database::detail

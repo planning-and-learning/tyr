@@ -15,12 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "binding_utils.hpp"
 #include "bindings.hpp"
-#include "pytyr/module.hpp"
 
-#include <tyr/formalism/planning/fdr_fact_data.hpp>
-#include <tyr/formalism/planning/fdr_fact_view.hpp>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/pair.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/variant.h>
+#include <nanobind/stl/vector.h>
+#include <tyr/formalism/declarations.hpp>
+#include <tyr/formalism/planning/declarations.hpp>
+#include <tyr/formalism/planning/formatter.hpp>
+#include <tyr/formalism/planning/interning.hpp>
+#include <urd/elements/view.hpp>
+#include <urd/python/bindings.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -30,9 +37,7 @@ namespace
 /// A fact's view: borrowed (a stored fact) or owning (a state's, computed on the fly).
 template<typename V>
 void bind_fdr_fact_view(nb::module_& m)
-{
-    urd::python::bind_view<V>(m).def("has_value", &V::has_value).def("get_atom", &V::get_atom);
-}
+{ urd::python::bind_view<V>(m).def("has_value", &V::has_value).def("get_atom", &V::get_atom); }
 }  // namespace
 
 void bind_fdr_fact(nb::module_& m, RepositoryBinding& /*repository*/)

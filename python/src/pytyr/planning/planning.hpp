@@ -79,6 +79,7 @@
 #include <tyr/planning/state_storage/tree_bitset/fact.hpp>
 #include <tyr/planning/task.hpp>
 #include <tyr/planning/worker_state_index.hpp>
+#include <urd/python/bindings.hpp>
 #include <urd/python/sequences/sequence.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -135,113 +136,98 @@ nb::typed<nb::iterator, Value> make_owning_iterator(nb::handle scope, const char
     return nb::borrow<nb::typed<nb::iterator, Value>>(nb::cast(Iterator(std::move(range))));
 }
 
-template<TaskKind Kind>
-void bind_packed_state(nb::module_& m, const std::string& name)
-{
-    using T = PackedStateView<Kind>;
-
-    auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("index", &T::index, nb::rv_policy::copy)
-                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
-                   .def("unpack", &T::unpack);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
 /// The reads of a state, registered or being built (urd::view_mixin<State>).
 template<typename T>
 nb::class_<T> bind_state_reads(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
 
-    auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
-                   // AccessibleStateConcept
-                   .def("test",
-                        nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
-                        nb::rv_policy::copy,
-                        "static_atom"_a)
-                   .def("test",
-                        nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(&T::test, nb::const_),
-                        nb::rv_policy::copy,
-                        "fluent_atom"_a)
-                   .def("test",
-                        nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_),
-                        nb::rv_policy::copy,
-                        "derived_atom"_a)
-                   .def("get",
-                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>(&T::value, nb::const_),
-                        nb::rv_policy::copy,
-                        "static_fterm"_a)
-                   .def("get",
-                        nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::value, nb::const_),
-                        nb::rv_policy::copy,
-                        "fluent_variable"_a)
-                   .def("get",
-                        nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>(&T::value, nb::const_),
-                        nb::rv_policy::copy,
-                        "fluent_fterm"_a)
-                   // IterableStateConcept
-                   .def(
-                       "static_atoms",
-                       [](const T& s)
-                       {
-                           return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(
-                               nb::type<T>(),
-                               "static atom iterator",
-                               s.template get_atoms_view<formalism::StaticTag>());
-                       },
-                       nb::keep_alive<0, 1>())
-                   .def(
-                       "fluent_facts",
-                       [](const T& s)
-                       {
-                           return make_owning_iterator<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>(
-                               nb::type<T>(),
-                               "fluent facts iterator",
-                               s.get_fluent_facts_view());
-                       },
-                       nb::keep_alive<0, 1>())
-                   .def(
-                       "fluent_atoms",
-                       [](const T& s)
-                       {
-                           return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(
-                               nb::type<T>(),
-                               "fluent atom iterator",
-                               s.template get_atoms_view<formalism::FluentTag>());
-                       },
-                       nb::keep_alive<0, 1>())
-                   .def(
-                       "derived_atoms",
-                       [](const T& s)
-                       {
-                           return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(
-                               nb::type<T>(),
-                               "derived atom iterator",
-                               s.template get_atoms_view<formalism::DerivedTag>());
-                       },
-                       nb::keep_alive<0, 1>())
-                   .def(
-                       "static_fterm_values",
-                       [](const T& s)
-                       {
-                           return make_owning_iterator<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::StaticTag>>(
-                               nb::type<T>(),
-                               "static function term value iterator",
-                               s.template get_fterm_values_view<::tyr::formalism::StaticTag>());
-                       },
-                       nb::keep_alive<0, 1>())
-                   .def(
-                       "fluent_fterm_values",
-                       [](const T& s)
-                       {
-                           return make_owning_iterator<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>(
-                               nb::type<T>(),
-                               "fluent function term value iterator",
-                               s.template get_fterm_values_view<::tyr::formalism::FluentTag>());
-                       },
-                       nb::keep_alive<0, 1>());
+    auto cls =
+        nb::class_<T>(m, name.c_str())  //
+            .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
+            // AccessibleStateConcept
+            .def("test",
+                 nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
+                 nb::rv_policy::copy,
+                 "static_atom"_a)
+            .def("test",
+                 nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(&T::test, nb::const_),
+                 nb::rv_policy::copy,
+                 "fluent_atom"_a)
+            .def("test",
+                 nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_),
+                 nb::rv_policy::copy,
+                 "derived_atom"_a)
+            .def("get",
+                 nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::StaticTag>>(&T::value, nb::const_),
+                 nb::rv_policy::copy,
+                 "static_fterm"_a)
+            .def("get",
+                 nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::value, nb::const_),
+                 nb::rv_policy::copy,
+                 "fluent_variable"_a)
+            .def("get",
+                 nb::overload_cast<formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag>>(&T::value, nb::const_),
+                 nb::rv_policy::copy,
+                 "fluent_fterm"_a)
+            // IterableStateConcept
+            .def(
+                "static_atoms",
+                [](const T& s)
+                {
+                    return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(nb::type<T>(),
+                                                                                                                "static atom iterator",
+                                                                                                                s.template get_atoms<formalism::StaticTag>());
+                },
+                nb::keep_alive<0, 1>())
+            .def(
+                "fluent_facts",
+                [](const T& s)
+                {
+                    return make_owning_iterator<urd::owning_view<formalism::planning::FDRFact<formalism::FluentTag>, formalism::planning::Repository>>(
+                        nb::type<T>(),
+                        "fluent facts iterator",
+                        s.get_fluent_facts_view());
+                },
+                nb::keep_alive<0, 1>())
+            .def(
+                "fluent_atoms",
+                [](const T& s)
+                {
+                    return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::FluentTag>>(nb::type<T>(),
+                                                                                                                "fluent atom iterator",
+                                                                                                                s.template get_atoms<formalism::FluentTag>());
+                },
+                nb::keep_alive<0, 1>())
+            .def(
+                "derived_atoms",
+                [](const T& s)
+                {
+                    return make_owning_iterator<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(nb::type<T>(),
+                                                                                                                 "derived atom iterator",
+                                                                                                                 s.template get_atoms<formalism::DerivedTag>());
+                },
+                nb::keep_alive<0, 1>())
+            .def(
+                "static_fterm_values",
+                [](const T& s)
+                {
+                    return make_owning_iterator<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::StaticTag>>(
+                        nb::type<T>(),
+                        "static function term value iterator",
+                        s.template get_fterm_values_view<::tyr::formalism::StaticTag>());
+                },
+                nb::keep_alive<0, 1>())
+            .def(
+                "fluent_fterm_values",
+                [](const T& s)
+                {
+                    return make_owning_iterator<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>(
+                        nb::type<T>(),
+                        "fluent function term value iterator",
+                        s.template get_fterm_values_view<::tyr::formalism::FluentTag>());
+                },
+                nb::keep_alive<0, 1>());
     ygg::add_print(cls);
     return cls;
 }
@@ -263,9 +249,7 @@ void bind_state(nb::module_& m, const std::string& name)
 /// A state being built: its reads, valid while the call that passes it runs.
 template<TaskKind Kind>
 void bind_builder_state(nb::module_& m, const std::string& name)
-{
-    bind_state_reads<BuilderStateView<Kind>>(m, name);
-}
+{ bind_state_reads<BuilderStateView<Kind>>(m, name); }
 
 template<TaskKind Kind>
 void bind_node(nb::module_& m, const std::string& name)
@@ -714,13 +698,9 @@ public:
     bool is_static_goal_satisfied(const Task<Kind>& task) override { NB_OVERRIDE_PURE(is_static_goal_satisfied, task); }
 
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
-    {
-        NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state);
-    }
+    { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override
-    {
-        NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state);
-    }
+    { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
 };
 
 template<TaskKind Kind>
@@ -777,9 +757,7 @@ public:
     bool should_prune_state(const StateView<Kind>& state) override { NB_OVERRIDE(should_prune_state, state); }
 
     bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ_state) override
-    {
-        NB_OVERRIDE(should_prune_successor_state, state, succ_state, is_new_succ_state);
-    }
+    { NB_OVERRIDE(should_prune_successor_state, state, succ_state, is_new_succ_state); }
 };
 
 template<TaskKind Kind>
@@ -888,8 +866,11 @@ void bind_task_heuristic(nb::module_& m, const std::string& name)
 template<TaskKind Kind>
 void bind_kind_definitions(nb::module_& m)
 {
-    urd::python::bind_index<urd::index<State<Kind>>>(m, "StateIndex");
-    bind_packed_state<Kind>(m, "PackedState");
+    urd::python::bind_data<State<Kind>>(m);
+    urd::python::bind_data<PackedState<Kind>>(m);
+    urd::python::bind_view<PackedStateView<Kind>>(m)
+        .def("get_state_repository", &PackedStateView<Kind>::get_state_repository, nb::rv_policy::reference)
+        .def("unpack", &PackedStateView<Kind>::unpack);
     bind_state<Kind>(m, "State");
     bind_builder_state<Kind>(m, "StateBuilder");
     bind_node<Kind>(m, "Node");

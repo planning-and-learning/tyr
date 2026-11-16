@@ -930,7 +930,9 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
     factory_indices: dict[str, list[tuple[type[object], int]]] = {"goal": [], "pruning": []}
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}
-    retained_snapshots: list[tuple[planning.ground.State, tuple[formalism_planning.FDRValue, ...]]] = []
+    retained_snapshots: list[
+        tuple[planning.ground.State | planning.ground.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
+    ] = []
 
     class PythonGoalStrategy(planning.ground.GoalStrategy):
         def __init__(self, worker_index: int | None = None) -> None:
@@ -950,7 +952,9 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: planning.ground.State, state: planning.ground.State) -> bool:
+        def is_dynamic_goal_satisfied(
+            self, seed_state: planning.ground.State, state: planning.ground.State | planning.ground.StateBuilder
+        ) -> bool:
             callback_indices["goal"].append(self.worker_index)
             if len(callback_indices["goal"]) > 2 and not retained_snapshots:
                 retained_snapshots.append((state, tuple(state.get(variable) for variable in fluent_variables)))
@@ -1008,7 +1012,9 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
     factory_indices: dict[str, list[tuple[type[object], int]]] = {"goal": [], "pruning": []}
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}
-    retained_snapshots: list[tuple[planning.lifted.State, tuple[formalism_planning.FDRValue, ...]]] = []
+    retained_snapshots: list[
+        tuple[planning.lifted.State | planning.lifted.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
+    ] = []
 
     class PythonGoalStrategy(planning.lifted.GoalStrategy):
         def __init__(self, worker_index: int | None = None) -> None:
@@ -1028,7 +1034,9 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: planning.lifted.State, state: planning.lifted.State) -> bool:
+        def is_dynamic_goal_satisfied(
+            self, seed_state: planning.lifted.State, state: planning.lifted.State | planning.lifted.StateBuilder
+        ) -> bool:
             callback_indices["goal"].append(self.worker_index)
             if len(callback_indices["goal"]) > 2 and not retained_snapshots:
                 retained_snapshots.append((state, tuple(state.get(variable) for variable in fluent_variables)))
@@ -1092,7 +1100,9 @@ def _check_missing_or_null_python_strategy_workers_ground(task: planning.ground.
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: planning.ground.State, state: planning.ground.State) -> bool:
+        def is_dynamic_goal_satisfied(
+            self, seed_state: planning.ground.State, state: planning.ground.State | planning.ground.StateBuilder
+        ) -> bool:
             return False
 
     class MissingWorkerPruningStrategy(planning.ground.PruningStrategy):
@@ -1125,7 +1135,9 @@ def _check_missing_or_null_python_strategy_workers_lifted(task: planning.lifted.
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: planning.lifted.State, state: planning.lifted.State) -> bool:
+        def is_dynamic_goal_satisfied(
+            self, seed_state: planning.lifted.State, state: planning.lifted.State | planning.lifted.StateBuilder
+        ) -> bool:
             return False
 
     class MissingWorkerPruningStrategy(planning.lifted.PruningStrategy):
@@ -1354,8 +1366,8 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
     state_text = str(state)
     packed = state.pack()
 
-    assert type(packed) is planning.ground.PackedState
-    assert packed.index() == state_index
+    assert type(packed) is planning.ground.PackedStateGround
+    assert packed.index().value == state_index.value
     assert packed.get_state_repository() == state_repository
     assert packed.unpack() == state
     assert packed == state.pack()
@@ -1382,8 +1394,8 @@ def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
     state_text = str(state)
     packed = state.pack()
 
-    assert type(packed) is planning.lifted.PackedState
-    assert packed.index() == state_index
+    assert type(packed) is planning.lifted.PackedStateLifted
+    assert packed.index().value == state_index.value
     assert packed.get_state_repository() == state_repository
     assert packed.unpack() == state
     assert packed == state.pack()
@@ -1421,7 +1433,7 @@ def _check_packed_nodes_ground(task: planning.ground.Task) -> None:
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.ground.PackedNode
-    assert type(packed.get_state()) is planning.ground.PackedState
+    assert type(packed.get_state()) is planning.ground.PackedStateGround
     assert packed.get_metric() == 17.5
     assert packed == planning.ground.PackedNode(node.get_state().pack(), 17.5)
     assert hash(packed) == hash(node.pack())
@@ -1458,7 +1470,7 @@ def _check_packed_nodes_lifted(task: planning.lifted.Task) -> None:
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.lifted.PackedNode
-    assert type(packed.get_state()) is planning.lifted.PackedState
+    assert type(packed.get_state()) is planning.lifted.PackedStateLifted
     assert packed.get_metric() == 17.5
     assert packed == planning.lifted.PackedNode(node.get_state().pack(), 17.5)
     assert hash(packed) == hash(node.pack())
@@ -1564,7 +1576,7 @@ def _check_create_state_ground(task: planning.ground.Task) -> None:
     value_recreated_state = state_repository.create_state(
         axiom_evaluator,
         [
-            formalism_planning.FDRFactFluentData(fact.get_variable(), fact.get_value())
+            formalism_planning.FDRFactFluentData(fact.get_variable().index(), fact.get_value())
             for fact in initial_state.fluent_facts()
         ],
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],
@@ -1596,7 +1608,7 @@ def _check_create_state_lifted(task: planning.lifted.Task) -> None:
     value_recreated_state = state_repository.create_state(
         axiom_evaluator,
         [
-            formalism_planning.FDRFactFluentData(fact.get_variable(), fact.get_value())
+            formalism_planning.FDRFactFluentData(fact.get_variable().index(), fact.get_value())
             for fact in initial_state.fluent_facts()
         ],
         [(fterm.index(), value) for fterm, value in initial_state.fluent_fterm_values()],

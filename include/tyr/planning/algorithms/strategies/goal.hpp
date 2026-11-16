@@ -64,9 +64,7 @@ public:
 
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(task); }
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-    {
-        return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal);
-    }
+    { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return create(m_goal); }
 
@@ -94,9 +92,7 @@ public:
 
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<SerializedGoalStrategy<Kind>>(task); }
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-    {
-        return std::make_shared<SerializedGoalStrategy<Kind>>(goal);
-    }
+    { return std::make_shared<SerializedGoalStrategy<Kind>>(goal); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return create(m_goal); }
 

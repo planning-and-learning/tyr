@@ -137,9 +137,7 @@ public:
         m_targets(&targets),
         m_storage(&storage),
         m_version(version)
-    {
-        m_storage->clear();
-    }
+    { m_storage->clear(); }
     AStar(const AStar&) = delete;
     AStar& operator=(const AStar&) = delete;
     AStar(AStar&&) = delete;  // One search, run in place.
@@ -265,9 +263,7 @@ private:
     AStarStorage::Node& node(VertexSet::handle_type index) noexcept { return m_storage->m_nodes[index]; }
 
     void enqueue(VertexSet::handle_type index)
-    {
-        m_storage->m_open_list.push(OpenEntry { node(index).g + node(index).h, node(index).g, m_storage->m_pushes++, index });
-    }
+    { m_storage->m_open_list.push(OpenEntry { node(index).g + node(index).h, node(index).g, m_storage->m_pushes++, index }); }
 
     /// The tree's vertex of a generated vertex, or none. A vertex not stored when generated is looked up again: the
     /// backward frontier may have stored it since.

@@ -107,9 +107,7 @@ struct InstanceGroup : urd::compared_by_identity<InstanceGroup>
     }
 
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {};
-    }
+    { return urd::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {}; }
 };
 
 struct GroupKey : urd::compared_by_identity<GroupKey>

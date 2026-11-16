@@ -40,9 +40,7 @@ public:
     [[nodiscard]] bool should_terminate(const FactSets&) const noexcept { return false; }
     template<TaskKind Kind>
     [[nodiscard]] Cost get_total_cost(const FactSets&, const PredicateAnnotations<Kind>&) const noexcept
-    {
-        return static_cast<Cost>(0);
-    }
+    { return static_cast<Cost>(0); }
     void reset() noexcept {}
     void clear() noexcept {}
 };

@@ -16,9 +16,9 @@ void validate(std::span<const QueryView<>> roots, const Statistics& statistics)
     {
         if (is<QueryInputTag>(query))
             if (const auto it = statistics.inputs.find(as<QueryInputTag>(query).get_input_slot()); it != statistics.inputs.end())
-                validate_statistics(it->second, query.columns());
+                validate_statistics(it->second, columns_of(query));
         if (const auto it = statistics.expressions.find(query.index()); it != statistics.expressions.end())
-            validate_statistics(it->second, query.columns());
+            validate_statistics(it->second, columns_of(query));
     }
 }
 }
@@ -48,9 +48,9 @@ QueryPlan optimize(std::span<const QueryView<>> roots, std::span<const Evaluatio
         // The bound evaluator orders each binding's joins itself, so a bound root keeps its normalized join structure.
         outputs.push_back(
             evaluations[i] == Evaluation::bound ? copy(normalize(root), [](size_t slot) { return slot; }, plans, builder) : planner.plan(normalize(root)));
-        assert(std::ranges::equal(outputs.back().columns(), root.columns()) && "Plans preserve ordered schemas.");
+        assert(std::ranges::equal(columns_of(outputs.back()), columns_of(root)) && "Plans preserve ordered schemas.");
     }
-    return compile(std::span<const QueryView<>>(outputs));
+    return compile_plan(std::span<const QueryView<>>(outputs));
 }
 }
 
@@ -106,11 +106,11 @@ QueryView<> Planner::plan(QueryView<> normalized)
     QueryView<> result = [&]
     {
         if (joins(normalized))
-            return plan_block(normalized, normalized.columns());
+            return plan_block(normalized, columns_of(normalized));
         if (is<QueryProjectTag>(normalized))
         {
             if (const auto projection = as<QueryProjectTag>(normalized); joins(projection.get_operand()))
-                return plan_block(projection.get_operand(), normalized.columns());
+                return plan_block(projection.get_operand(), columns_of(normalized));
         }
         urd::Store<urd::sequence<QueryView<>>> children;
         for_each_child(normalized, [&](QueryView<> child) { children.push_back(plan(child)); });

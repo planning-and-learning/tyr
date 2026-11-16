@@ -326,15 +326,11 @@ void filter_matches(const L& left_operand,
 
 template<RelationViewConcept L, RelationViewConcept R>
 void semijoin(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
-{
-    detail::filter_matches(left_operand, right_operand, plan, true, out, workspace);
-}
+{ detail::filter_matches(left_operand, right_operand, plan, true, out, workspace); }
 
 template<RelationViewConcept L, RelationViewConcept R>
 void antijoin(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
-{
-    detail::filter_matches(left_operand, right_operand, plan, false, out, workspace);
-}
+{ detail::filter_matches(left_operand, right_operand, plan, false, out, workspace); }
 
 }  // namespace tyr::datalog::database
 

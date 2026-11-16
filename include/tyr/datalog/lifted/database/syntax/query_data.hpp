@@ -169,9 +169,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTa
     data(urd::index<tyr::datalog::database::Query<>> operand_, std::span<const urd::index<ygg::Column>> labels_, tyr::datalog::database::ProjectionPlan plan_) :
         operand(operand_),
         plan(std::move(plan_))
-    {
-        labels.set(labels_.begin(), labels_.end());
-    }
+    { labels.set(labels_.begin(), labels_.end()); }
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -179,9 +177,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTa
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"plan", &data::plan>> {};
-    }
+    { return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"plan", &data::plan>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::labels> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operand, &data::labels, &data::plan> {}; }
 };
@@ -208,9 +204,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"columns", &data::columns>> {};
-    }
+    { return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"columns", &data::columns>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::labels> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operand, &data::labels, &data::columns> {}; }
 };
@@ -250,9 +244,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqu
     }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::left_column, &data::right_column> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::operand, &data::left_column, &data::right_column, &data::plan> {};
-    }
+    { return urd::Members<&data::index, &data::operand, &data::left_column, &data::right_column, &data::plan> {}; }
 };
 
 template<>
@@ -296,9 +288,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
     }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::column, &data::constant, &data::constant_type> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::operand, &data::column, &data::constant, &data::constant_type, &data::plan> {};
-    }
+    { return urd::Members<&data::index, &data::operand, &data::column, &data::constant, &data::constant_type, &data::plan> {}; }
 };
 
 template<>
@@ -340,9 +330,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceT
     }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::sources, &data::edges, &data::targets, &data::distance_column> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::sources, &data::edges, &data::targets, &data::distance_column, &data::plan> {};
-    }
+    { return urd::Members<&data::index, &data::sources, &data::edges, &data::targets, &data::distance_column, &data::plan> {}; }
 };
 
 template<>
@@ -381,9 +369,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJo
     }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::inputs, &data::variable_order, &data::output_order> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::inputs, &data::variable_order, &data::output_order, &data::plan> {};
-    }
+    { return urd::Members<&data::index, &data::inputs, &data::variable_order, &data::output_order, &data::plan> {}; }
 };
 }  // namespace urd
 

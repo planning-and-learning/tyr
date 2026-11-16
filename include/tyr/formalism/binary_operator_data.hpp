@@ -50,9 +50,7 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>> {};
-    }
+    { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::lhs, &data::rhs> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::lhs, &data::rhs> {}; }
 };

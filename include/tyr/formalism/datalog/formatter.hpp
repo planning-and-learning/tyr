@@ -41,9 +41,7 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::datalog::VariableDependencyGraph& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 
 }  // namespace fmt
@@ -75,9 +73,7 @@ struct formatter<urd::index_view<T, tyr::formalism::datalog::Repository, K>, cha
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     auto format(const urd::index_view<T, tyr::formalism::datalog::Repository, K>& value, format_context& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 template<typename T, typename R>
     requires requires(const urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
@@ -85,9 +81,7 @@ struct formatter<urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>, 
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     auto format(const urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 template<typename T, typename R>
     requires requires(const urd::owning_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
@@ -95,9 +89,7 @@ struct formatter<urd::owning_view<T, tyr::formalism::datalog::Repository, R>, ch
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     auto format(const urd::owning_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 template<typename T, typename R>
     requires requires(const urd::shared_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
@@ -105,9 +97,7 @@ struct formatter<urd::shared_view<T, tyr::formalism::datalog::Repository, R>, ch
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     auto format(const urd::shared_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
 };
 
 }  // namespace fmt

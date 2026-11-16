@@ -161,9 +161,7 @@ struct AtomStackEntry
         false_elements(false_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
-    {
-        result->atom = atom;
-    }
+    { result->atom = atom; }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     [[nodiscard]] bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
@@ -222,9 +220,7 @@ struct NegativeFactStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
-    {
-        result->fact = fact;
-    }
+    { result->fact = fact; }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
@@ -249,9 +245,7 @@ struct ConstraintStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
-    {
-        result->constraint = std::move(constraint);
-    }
+    { result->constraint = std::move(constraint); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
@@ -284,9 +278,7 @@ auto store_result(Entry& entry, Repository<Tag>& repository)
 
 template<typename Tag>
 bool explored(const AtomStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>>
@@ -317,9 +309,7 @@ void push_result(AtomStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const VariableStackEntry<Tag>& el) noexcept
-{
-    return el.explored_children() && el.explored_dontcare_child();
-}
+{ return el.explored_children() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
@@ -354,9 +344,7 @@ void push_result(VariableStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const NegativeFactStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
@@ -385,9 +373,7 @@ void push_result(NegativeFactStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const ConstraintStackEntry<Tag>& el) noexcept
-{
-    return el.explored_true_child() && el.explored_dontcare_child();
-}
+{ return el.explored_true_child() && el.explored_dontcare_child(); }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
@@ -416,21 +402,15 @@ void push_result(ConstraintStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const GeneratorStackEntry<Tag>&) noexcept
-{
-    return true;
-}
+{ return true; }
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>&, const SortedPreconditions<Tag>&, const PreconditionDetails<Tag>&, Builder<Tag>&)
-{
-    return std::nullopt;
-}
+{ return std::nullopt; }
 
 template<typename Tag>
 void push_result(GeneratorStackEntry<Tag>&, const Node<Tag>&)
-{
-    throw std::logic_error("Unexpected case.");
-}
+{ throw std::logic_error("Unexpected case."); }
 
 inline auto get_condition(formalism::planning::AxiomView<GroundTag> el) { return el.get_body(); }
 
@@ -794,15 +774,11 @@ MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_defi
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
                                          const formalism::planning::Repository& context)
-{
-    return std::make_unique<MatchTree<Tag>>(std::move(elements), context);
-}
+{ return std::make_unique<MatchTree<Tag>>(std::move(elements), context); }
 
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
-{
-    return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition));
-}
+{ return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition)); }
 
 template<typename Tag>
 void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,

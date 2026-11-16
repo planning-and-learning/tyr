@@ -343,17 +343,13 @@ const AppPredicateToActionMapping& GroundTaskProgram::get_predicate_to_action_ma
 const GroundTaskProgram::AppPredicateToAxiomMapping& GroundTaskProgram::get_predicate_to_axiom_mapping() const noexcept { return m_predicate_to_axioms; }
 
 const ConditionalEffectToPredicateMapping& GroundTaskProgram::get_conditional_effect_to_predicate_mapping() const noexcept
-{
-    return m_conditional_effect_to_predicate;
-}
+{ return m_conditional_effect_to_predicate; }
 
 datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& GroundTaskProgram::get_const_program_workspace() const noexcept
-{
-    return m_datalog_program.get_const_program_workspace();
-}
+{ return m_datalog_program.get_const_program_workspace(); }
 
 }

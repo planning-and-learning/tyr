@@ -188,7 +188,8 @@ struct GroundQueueFixture
 
     /// As distinct_true_condition, with the fluent literals of `fluent_literals`.
     tyr::formalism::datalog::ConjunctiveConditionView<GroundTag>
-    distinct_true_condition(const std::string& name, std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals)
+    distinct_true_condition(const std::string& name,
+                            std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals)
     {
         const auto atom = static_atom(name);
         initial_static_atoms.push_back(atom);
@@ -578,7 +579,8 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
                                                 datalog::TerminationPolicy<datalog::MaxAggregation>,
                                                 datalog::RuleCostOverridePolicy<GroundTag>>;
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(), termination_policy, cost_policy);
+    auto workspace =
+        Workspace(const_workspace, datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(), termination_policy, cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);

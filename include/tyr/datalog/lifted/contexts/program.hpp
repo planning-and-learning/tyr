@@ -101,15 +101,11 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     /// Schedulers must use the workspace's repository and a subset of its rules.
     ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, urd::Store<urd::sequence<Scheduler<LiftedTag>>>& schedulers, size_t num_threads = 1) :
         ProgramExecutionContext(In(*ws.const_workspace), Out(ws, schedulers), num_threads)
-    {
-        clear();
-    }
+    { clear(); }
 
     /// The caller has reset the workspace and inserted this evaluation's input facts.
     static ProgramExecutionContext from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, size_t num_threads = 1)
-    {
-        return from_reset_workspace(ws, ws.schedulers, num_threads);
-    }
+    { return from_reset_workspace(ws, ws.schedulers, num_threads); }
 
     static ProgramExecutionContext
     from_reset_workspace(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, urd::Store<urd::sequence<Scheduler<LiftedTag>>>& schedulers, size_t num_threads = 1)
@@ -184,9 +180,8 @@ template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicy
 ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, size_t) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&,
-                        urd::Store<urd::sequence<Scheduler<LiftedTag>>>&,
-                        size_t = 1) -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
+ProgramExecutionContext(ProgramWorkspace<LiftedTag, AP, TP, CP>&, urd::Store<urd::sequence<Scheduler<LiftedTag>>>&, size_t = 1)
+    -> ProgramExecutionContext<LiftedTag, AP, TP, CP>;
 }
 
 #endif

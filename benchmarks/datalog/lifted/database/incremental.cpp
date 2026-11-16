@@ -39,7 +39,7 @@ std::vector<ygg::ColumnLayout> cols(std::initializer_list<ColumnIndex> labels)
 {
     std::vector<ygg::ColumnLayout> result;
     for (const auto label : labels)
-        result.push_back({ label, ygg::type_id<ygg::uint_t> });
+        result.emplace_back(label, ygg::type_id<ygg::uint_t>);
     return result;
 }
 
@@ -187,7 +187,7 @@ bool equal_rows(ygg::FreeRelationBuilderView lhs, const urd::builder<ygg::Relati
 {
     if (lhs.size() != rhs.size())
         return false;
-    for (const auto row : lhs.rows())
+    for (const auto row : lhs.get_rows())
         if (!rhs.contains(row))
             return false;
     return true;
@@ -196,9 +196,9 @@ bool equal_rows(ygg::FreeRelationBuilderView lhs, const urd::builder<ygg::Relati
 size_t changed_rows(const urd::builder<ygg::Relation<ygg::Schema>>& before, const urd::builder<ygg::Relation<ygg::Schema>>& after)
 {
     size_t result = 0;
-    for (const auto row : borrow(before).rows())
+    for (const auto row : borrow(before).get_rows())
         result += !after.contains(row);
-    for (const auto row : borrow(after).rows())
+    for (const auto row : borrow(after).get_rows())
         result += !before.contains(row);
     return result;
 }
@@ -209,14 +209,14 @@ bool equal_delta(const database::incremental::Delta& delta,
 {
     size_t added = 0;
     size_t removed = 0;
-    for (const auto row : borrow(before).rows())
+    for (const auto row : borrow(before).get_rows())
         if (!after.contains(row))
         {
             ++removed;
             if (!delta.removed.contains(row))
                 return false;
         }
-    for (const auto row : borrow(after).rows())
+    for (const auto row : borrow(after).get_rows())
         if (!before.contains(row))
         {
             ++added;

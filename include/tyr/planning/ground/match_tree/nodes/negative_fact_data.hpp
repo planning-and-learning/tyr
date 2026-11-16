@@ -43,7 +43,7 @@ struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
         index(),
-        fact(std::move(fact_)),
+        fact(fact_),
         true_child(std::move(true_child_)),
         dontcare_child(std::move(dontcare_child_))
     {

@@ -35,7 +35,7 @@ auto rows(const auto& relation)
 {
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>> result;
     result.reserve(relation.size());
-    for (const auto row : relation.rows())
+    for (const auto row : relation.get_rows())
     {
         auto& values = result.emplace_back();
         for (size_t c = 0; c < row.size(); ++c)
@@ -53,9 +53,9 @@ auto minus(const auto& left_operand, const auto& right_operand)
 void apply(Relation& relation, const Delta& change)
 {
     const auto [added, removed] = change.change();
-    for (const auto row : removed.rows())
+    for (const auto row : removed.get_rows())
         relation.erase(relation.find(row).value());
-    for (const auto row : added.rows())
+    for (const auto row : added.get_rows())
         relation.insert(row);
 }
 void reverse(Delta& change) { std::swap(change.added, change.removed); }
@@ -97,7 +97,7 @@ TEST(DatabaseQuery, TypedLogicalAlternativesKeepOperandsAndRootProvenance)
     const auto distance = tyr::datalog::tests::qb::distance(repository, projected, a, targets, d);
     const auto roots = std::array { a, empty, joined, projected, renamed, equal, selected, united, difference, distance };
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryInputTag>(a).get_input_slot(), 0);
-    EXPECT_TRUE(std::ranges::equal(tyr::datalog::database::as<tyr::datalog::database::QueryEmptyTag>(empty).columns(), a.columns()));
+    EXPECT_TRUE(std::ranges::equal(tyr::datalog::database::as<tyr::datalog::database::QueryEmptyTag>(empty).columns(), columns_of(a)));
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).get_left_operand().index(), a.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).get_right_operand().index(), b.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryProjectTag>(projected).get_operand().index(), a.index());
@@ -123,11 +123,11 @@ TEST(DatabaseQuery, TypedLogicalAlternativesKeepOperandsAndRootProvenance)
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryInputTag>(a).index().value,
               tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).index().value);
     EXPECT_NE(a.index(), joined.index());
-    const auto plan = tyr::datalog::database::compile(roots);
+    const auto plan = tyr::datalog::database::compile_plan(roots);
     for (size_t i = 0; i < roots.size(); ++i)
     {
-        std::visit([&](auto operation) { EXPECT_TRUE(std::ranges::equal(operation.columns(), roots[i].columns())); }, roots[i].get_variant());
-        EXPECT_TRUE(std::ranges::equal(plan[plan.roots()[i]].columns(), roots[i].columns()));
+        std::visit([&](auto operation) { EXPECT_TRUE(std::ranges::equal(operation.columns(), columns_of(roots[i]))); }, roots[i].get_variant());
+        EXPECT_TRUE(std::ranges::equal(columns_of(plan[plan.roots()[i]]), columns_of(roots[i])));
     }
 }
 
@@ -162,7 +162,7 @@ TEST(DatabaseQuery, RecordConstructorsMatchFieldsAndValidateConstantTypes)
                                                                                                                       std::array { y, x, z },
                                                                                                                       {},
                                                                                                                       {}));
-    EXPECT_TRUE(std::ranges::equal(generic.columns() | std::views::transform(&ygg::ColumnLayout::label), std::array { x, y, z }));
+    EXPECT_TRUE(std::ranges::equal(columns_of(generic) | std::views::transform(&ygg::ColumnLayout::label), std::array { x, y, z }));
 
     auto mismatched = urd::data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>(a.index(),
                                                                                                             x,
@@ -202,10 +202,10 @@ TEST(DatabaseQuery, InternsValidatedNodesAndCompilesIndependentReachablePlan)
         EXPECT_EQ(p.index(), tyr::datalog::tests::qb::project(repository, a, { x }).index());
         tyr::datalog::tests::qb::input(repository, 9, { z });  // Unreachable inputs must not require bindings.
         const auto renamed = tyr::datalog::tests::qb::rename(repository, p, { z });
-        plan = tyr::datalog::database::compile({ p, renamed, p });
+        plan = tyr::datalog::database::compile_plan({ p, renamed, p });
         ASSERT_EQ(plan.node_count(), 3);
         EXPECT_EQ(plan.roots()[0], plan.roots()[2]);
-        EXPECT_EQ(plan[plan.roots()[1]].columns()[0].label, z);
+        EXPECT_EQ(columns_of(plan[plan.roots()[1]])[0].label, z);
     }
     Relation input { tyr::datalog::tests::ops::cols({ x, y }) };
     input.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
@@ -241,7 +241,7 @@ TEST(DatabaseQuery, IncrementalDagMatchesFullAndExactDeltasForwardBackward)
                                     tyr::datalog::tests::qb::empty(repository, { x }),
                                     tyr::datalog::tests::qb::semijoin(repository, a, c),
                                     tyr::datalog::tests::qb::antijoin(repository, a, c) };
-    const auto plan = tyr::datalog::database::compile(roots);
+    const auto plan = tyr::datalog::database::compile_plan(roots);
     tyr::datalog::database::QueryEvaluator full(layer(), plan);
     tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
     Relation first(tyr::datalog::tests::ops::cols({ x, y })), second(tyr::datalog::tests::ops::cols({ x, y })), third(tyr::datalog::tests::ops::cols({ y, z }));
@@ -258,7 +258,7 @@ TEST(DatabaseQuery, IncrementalDagMatchesFullAndExactDeltasForwardBackward)
         for (size_t i = 0; i < roots.size(); ++i)
         {
             EXPECT_EQ(rows(incremental.get_result(i)), rows(full.get_result(i)));
-            EXPECT_TRUE(std::ranges::equal(incremental.get_result(i).columns(), roots[i].columns()));
+            EXPECT_TRUE(std::ranges::equal(incremental.get_result(i).columns(), columns_of(roots[i])));
         }
     };
     compare();
@@ -314,7 +314,7 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     TypedRelation relation(schema);
     relation.insert(std::array { ygg::encode_value(static_cast<std::uint32_t>(4)), ygg::encode_value(0.0) });
     relation.insert(std::array { ygg::encode_value(static_cast<std::uint32_t>(5)), ygg::encode_value(2.0) });
-    tyr::datalog::database::QueryEvaluator evaluator(layer(), tyr::datalog::database::compile({ tyr::datalog::tests::qb::project(mixed, selected, { y, x }) }));
+    tyr::datalog::database::QueryEvaluator evaluator(layer(), tyr::datalog::database::compile_plan({ tyr::datalog::tests::qb::project(mixed, selected, { y, x }) }));
     evaluator.evaluate(std::array { borrow(relation) });
     EXPECT_TRUE(evaluator.get_result().contains(std::array { ygg::encode_value(0.0), ygg::encode_value(std::uint32_t(4)) }));
 
@@ -323,7 +323,7 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     const auto edges = tyr::datalog::tests::qb::input(graph, 1, { x, y });
     const auto targets = tyr::datalog::tests::qb::input(graph, 2, { z });
     const auto distance = tyr::datalog::tests::qb::distance(graph, sources, edges, targets, d);
-    const auto plan = tyr::datalog::database::compile({ distance, tyr::datalog::tests::qb::select_value(graph, distance, d, static_cast<ygg::uint_t>(2)) });
+    const auto plan = tyr::datalog::database::compile_plan({ distance, tyr::datalog::tests::qb::select_value(graph, distance, d, static_cast<ygg::uint_t>(2)) });
     Relation s(tyr::datalog::tests::ops::cols({ x })), e(tyr::datalog::tests::ops::cols({ x, y })), t(tyr::datalog::tests::ops::cols({ z }));
     s.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     e.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
@@ -357,7 +357,7 @@ TEST(DatabaseQuery, RejectsInvalidBatchesBeforeMutatingAndSupportsNonDistanceTyp
     const auto input = tyr::datalog::tests::qb::input(repository, 0, schema);
     urd::builder<ygg::Relation<ygg::Schema>> relation(schema);
     relation.insert(std::array { ygg::encode_value(1.0) });
-    const auto plan = tyr::datalog::database::compile({ tyr::datalog::tests::qb::select_value(repository, input, x, 1.0) });
+    const auto plan = tyr::datalog::database::compile_plan({ tyr::datalog::tests::qb::select_value(repository, input, x, 1.0) });
     tyr::datalog::database::QueryEvaluator full(layer(), plan);
     tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
     const auto inputs = std::array { borrow(relation) };
@@ -405,7 +405,7 @@ TEST(DatabaseQuery, RandomizedSharedSetDagMaintainsExactNetChanges)
                                     tyr::datalog::tests::qb::project(repository, tyr::datalog::tests::qb::join(repository, u, edges), { x, y }),
                                     u };
     constexpr size_t semijoin_root = 12, antijoin_root = 13, reference_root = 17, union_root = 18;
-    const auto plan = tyr::datalog::database::compile(roots);
+    const auto plan = tyr::datalog::database::compile_plan(roots);
     std::array<Relation, 4> inputs { Relation(tyr::datalog::tests::ops::cols({ x, y })),
                                      Relation(tyr::datalog::tests::ops::cols({ x, y })),
                                      Relation(tyr::datalog::tests::ops::cols({ y, z })),
@@ -479,7 +479,7 @@ TEST(DatabaseQuery, GenericJoinPlanExecutesInBothModesAndPrunesAlternatives)
     const auto ci = tyr::datalog::tests::qb::input(repository, 2, { z, x });
     tyr::datalog::tests::qb::input(repository, 8, { x, y });
     const auto root = tyr::datalog::tests::qb::generic_join(repository, { ai, bi, ci }, { z, x, y });
-    const auto plan = tyr::datalog::database::compile({ root });
+    const auto plan = tyr::datalog::database::compile_plan({ root });
     ASSERT_EQ(plan.node_count(), 4);
     tyr::datalog::database::QueryEvaluator full(layer(), plan);
     tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
@@ -508,7 +508,7 @@ TEST(DatabaseQuery, NullaryGenericJoinIsIdentityInBothModes)
 {
     auto repository = tyr::datalog::tests::qb::repository();
     const auto root = tyr::datalog::tests::qb::generic_join(repository, {}, {});
-    const auto plan = tyr::datalog::database::compile({ root, root });
+    const auto plan = tyr::datalog::database::compile_plan({ root, root });
     ASSERT_EQ(plan.node_count(), 1);
     EXPECT_EQ(plan.roots().front(), plan.roots().back());
     tyr::datalog::database::QueryEvaluator full(layer(), plan);
@@ -559,7 +559,7 @@ TEST(DatabaseQuery, CachedPlansSurviveRepositoryGrowthAndCistaRelocation)
     for (size_t slot = 2; slot < 260; ++slot)
         tyr::datalog::tests::qb::join(repository, tyr::datalog::tests::qb::input(repository, slot, { x, y }), b);
     EXPECT_EQ(&view.get_plan(), original);
-    EXPECT_TRUE(std::ranges::equal(view.get_plan().output_columns(), joined.columns()));
+    EXPECT_TRUE(std::ranges::equal(view.get_plan().output_columns(), columns_of(joined)));
 
     const auto round_trip = []<typename Concrete>(Concrete query)
     {
@@ -595,7 +595,7 @@ TEST(DatabaseQuery, FactoriesRejectMalformedQueriesBeforePublishingPlans)
     auto other = tyr::datalog::tests::qb::repository();
     const auto input = tyr::datalog::tests::qb::input(repository, 0, { x });
     const auto foreign = tyr::datalog::tests::qb::input(other, 0, { x });
-    EXPECT_THROW(tyr::datalog::database::compile({ input, foreign }), std::invalid_argument);
+    EXPECT_THROW(tyr::datalog::database::compile_plan({ input, foreign }), std::invalid_argument);
     EXPECT_THROW(tyr::datalog::tests::qb::generic_join(repository, { input }, { y }), std::invalid_argument);
     EXPECT_THROW(tyr::datalog::tests::qb::generic_join(repository, { input }, { x, x }), std::invalid_argument);
     EXPECT_THROW(tyr::datalog::tests::qb::generic_join(repository, { input }, { x }, { y }), std::invalid_argument);
@@ -605,7 +605,7 @@ TEST(DatabaseQuery, FactoriesRejectMalformedQueriesBeforePublishingPlans)
     malformed[0].type = static_cast<ygg::TypeId>(std::variant_size_v<ygg::ColumnValue>);
     EXPECT_THROW(tyr::datalog::tests::qb::input(repository, 1, malformed), std::invalid_argument);
     EXPECT_THROW(tyr::datalog::tests::qb::input(repository, 0, malformed), std::invalid_argument);
-    const auto plan = tyr::datalog::database::compile({ input });
+    const auto plan = tyr::datalog::database::compile_plan({ input });
     EXPECT_THROW(plan[urd::index<tyr::datalog::database::Query<>>(99)], std::out_of_range);
     EXPECT_EQ(repository.size(), 1);
 }

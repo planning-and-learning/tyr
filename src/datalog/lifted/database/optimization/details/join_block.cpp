@@ -13,7 +13,7 @@ namespace tyr::datalog::database::detail
 urd::Store<urd::sequence<urd::index<ygg::Column>>> variables(QueryView<> query)
 {
     auto labels = urd::Store<urd::sequence<urd::index<ygg::Column>>>();
-    for (const auto& column : query.columns())
+    for (const auto& column : columns_of(query))
         labels.push_back(column.label);
     return ygg::canonicalized(std::move(labels));
 }
@@ -22,9 +22,7 @@ urd::Store<urd::sequence<urd::index<ygg::Column>>> variables(QueryView<> query)
 namespace tyr::datalog::database::detail
 {
 QueryView<> semijoin(OperatorBuilder& build, QueryView<> left_operand, QueryView<> right_operand)
-{
-    return build.join(left_operand, build.restrict(right_operand, variables(left_operand)));
-}
+{ return build.join(left_operand, build.restrict(right_operand, variables(left_operand))); }
 }
 
 namespace tyr::datalog::database::detail

@@ -57,9 +57,7 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"variables", &data::variables>, urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {};
-    }
+    { return urd::Fields<urd::field<"variables", &data::variables>, urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::condition, &data::effect> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::condition, &data::effect> {}; }
 };

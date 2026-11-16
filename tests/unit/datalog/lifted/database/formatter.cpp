@@ -39,7 +39,7 @@ TEST(YggdrasilTests, DatabaseQueryPlanFormatterPreservesExplanation)
     const auto input = qb::input(repository, 7, columns);
     const auto nullary = qb::input(repository, 2, std::initializer_list<Column> {});
     const auto join = qb::generic_join(repository, { input, nullary }, { Column(3), Column(8) }, { Column(8), Column(3) });
-    const auto plan = tyr::datalog::database::compile({ join, input });
+    const auto plan = tyr::datalog::database::compile_plan({ join, input });
     const std::string expected = "0: input() columns=[3:5,8:2] slot=7\n"
                                  "1: input() columns=[] slot=2\n"
                                  "2: generic_join(0,1) columns=[8:2,3:5] variables=[3,8]\n"

@@ -39,11 +39,15 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
+    auto get_variables() const noexcept
+        requires std::same_as<T, ::tyr::LiftedTag>
+    { return self().template member<&urd::record_of<V>::variables>(); }
+    auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
+    auto get_heads() const noexcept { return self().template member<&urd::record_of<V>::heads>(); }
+    auto get_cost() const noexcept { return self().template member<&urd::record_of<V>::cost>(); }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return get_body().get_arity();
-    }
+    { return get_body().get_arity(); }
     /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
     auto get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -51,14 +55,6 @@ public:
         return std::views::iota(std::size_t { 0 }, std::size_t(get_arity()))
                | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; });
     }
-    auto get_variables() const noexcept
-        requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return self().template member<&urd::record_of<V>::variables>();
-    }
-    auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
-    auto get_heads() const noexcept { return self().template member<&urd::record_of<V>::heads>(); }
-    auto get_cost() const noexcept { return self().template member<&urd::record_of<V>::cost>(); }
 };
 }  // namespace urd
 

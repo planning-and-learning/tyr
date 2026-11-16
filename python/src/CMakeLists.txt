@@ -45,6 +45,7 @@ nanobind_add_module(
     pytyr/datalog/lifted/module.cpp
     pytyr/planning/module.cpp
     pytyr/planning/ground/module.cpp
+    pytyr/planning/ground/match_tree.cpp
     pytyr/planning/lifted/module.cpp
     pytyr/planning/algorithms/astar_eager/ground.cpp
     pytyr/planning/algorithms/brfs/ground.cpp

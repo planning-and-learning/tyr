@@ -69,7 +69,7 @@ public:
     static Labels labels(QueryView<> query)
     {
         auto result = Labels();
-        for (const auto& column : query.columns())
+        for (const auto& column : columns_of(query))
             result.push_back(column.label);
         return result;
     }
@@ -176,7 +176,7 @@ private:
             return relax(concrete.get_operand(), needed, polarity);
         else if constexpr (std::same_as<Tag, QueryRenameTag>)
         {
-            const auto before = concrete.get_operand().columns();
+            const auto before = columns_of(concrete.get_operand());
             const auto after = concrete.columns();
             auto inner = Labels();
             for (const auto label : needed)
@@ -186,7 +186,7 @@ private:
                 return std::nullopt;
             // The relaxed columns keep their labels' positions in the argument's schema.
             auto renamed = Labels();
-            for (const auto& column : arg->columns())
+            for (const auto& column : columns_of(*arg))
                 renamed.push_back(after[static_cast<size_t>(std::ranges::find(before, column.label, &ygg::ColumnLayout::label) - before.begin())].label);
             return m_build.template relabel<QueryRenameTag>(*arg, renamed);
         }
@@ -330,9 +330,7 @@ Relaxation relax(std::span<const QueryView<>> roots, Known&& known, QueryReposit
 /// The relaxation of one query; see the overload for several roots.
 template<std::predicate<size_t> Known>
 Relaxation relax(QueryView<> query, Known&& known, QueryRepository& repository, QueryBuilder& builder)
-{
-    return relax(std::span<const QueryView<>>(&query, 1), std::forward<Known>(known), repository, builder);
-}
+{ return relax(std::span<const QueryView<>>(&query, 1), std::forward<Known>(known), repository, builder); }
 
 }  // namespace tyr::datalog::database
 

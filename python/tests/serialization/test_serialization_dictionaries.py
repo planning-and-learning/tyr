@@ -257,7 +257,7 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
     )
     (action,) = parser.get_domain().get_domain().get_actions()
     (item,) = task.get_task().get_objects()
-    binding = task.get_repository().insert(fp.RowActionLiftedData(action, [item.index()]))[0]
+    binding = task.get_repository().insert(fp.RowActionLiftedData(action.index(), [item.index().value]))[0]
     calls: list[fp.RowActionLifted] = []
     payload: dict[str, object] = {
         "scalars": [None, True, False, -(2**63), 2**63 - 1, 2**64 - 1, 1.25],
@@ -269,7 +269,11 @@ def test_projected_binding_collects_only_selected_output_fields(fields: list[str
 
     def project(value: fp.RowActionLifted) -> dict[str, object]:
         calls.append(value)
-        return {"name": value.get_relation().get_name(), "objects": [objects[v] for v in value.get_values()], "details\0": payload}
+        return {
+            "name": value.get_relation().get_name(),
+            "objects": [objects[v] for v in value.get_values()],
+            "details\0": payload,
+        }
 
     dictionaries = Dictionaries()
     register_table(dictionaries, fp.RowActionLifted, "bindings", "b", fields=fields, project=project)

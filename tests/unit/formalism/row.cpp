@@ -80,9 +80,7 @@ concept RowContract =
 
 template<typename Repository, typename... Relations>
 consteval bool row_contracts(boost::mp11::mp_list<Relations...>)
-{
-    return (RowContract<Relations, Repository> && ...);
-}
+{ return (RowContract<Relations, Repository> && ...); }
 
 static_assert(row_contracts<tyr::formalism::datalog::Repository>(tyr::formalism::datalog::RelationRepositoryTypes {}));
 static_assert(row_contracts<tyr::formalism::planning::Repository>(tyr::formalism::planning::RelationRepositoryTypes {}));

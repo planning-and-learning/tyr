@@ -52,9 +52,7 @@ bool TerminationPolicy<AggregationFunction>::check(const FactSets& fact_sets) co
 
 template<typename AggregationFunction>
 bool TerminationPolicy<AggregationFunction>::should_terminate(const FactSets& fact_sets) const
-{
-    return early_termination && check(fact_sets);
-}
+{ return early_termination && check(fact_sets); }
 
 template<typename AggregationFunction>
 template<TaskKind Kind>

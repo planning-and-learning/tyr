@@ -27,6 +27,7 @@
 
 #include <concepts>
 #include <tuple>
+#include <type_traits>
 #include <urd/elements/flat.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
@@ -34,43 +35,64 @@
 
 namespace tyr::planning
 {
-/// A registered state as its repository stores it, packed (StateRepository::packed): its index and its packed
-/// storage. It compares by its fluent facts and numeric values, by which the repository deduplicates states; its
-/// derived atoms follow from them.
 template<TaskKind Kind>
-struct PackedState
+using FactPackedStorage = typename FactStorageBackend<Kind, StateStoragePolicyTag>::Packed;
+template<TaskKind Kind>
+using AtomPackedStorage = typename AtomStorageBackend<Kind, StateStoragePolicyTag>::Packed;
+template<TaskKind Kind>
+using NumericPackedStorage = typename NumericStorageBackend<Kind, StateStoragePolicyTag>::Packed;
+}
+
+namespace urd
 {
-    using FactStorage = typename FactStorageBackend<Kind, StateStoragePolicyTag>::Packed;
-    using AtomStorage = typename AtomStorageBackend<Kind, StateStoragePolicyTag>::Packed;
-    using NumericStorage = typename NumericStorageBackend<Kind, StateStoragePolicyTag>::Packed;
 
-    urd::index<State<Kind>> index;
-    FactStorage fact_storage;
-    AtomStorage atom_storage;
-    NumericStorage numeric_storage;
+/// A registered state as its repository stores it, packed (StateRepository::packed): its index and its packed
+/// storage. It is identified by its fluent facts and numeric values, by which the repository deduplicates states; its
+/// derived atoms follow from them.
+template<::tyr::TaskKind Kind>
+struct data<::tyr::planning::PackedState<Kind>>
+{
+    urd::index<::tyr::planning::PackedState<Kind>> index;
+    ::tyr::planning::FactPackedStorage<Kind> fact_storage;
+    ::tyr::planning::AtomPackedStorage<Kind> atom_storage;
+    ::tyr::planning::NumericPackedStorage<Kind> numeric_storage;
 
-    PackedState() = default;
-    PackedState(FactStorage fact_storage_, AtomStorage atom_storage_, NumericStorage numeric_storage_) :
+    data() = default;
+    data(::tyr::planning::FactPackedStorage<Kind> fact_storage_,
+         ::tyr::planning::AtomPackedStorage<Kind> atom_storage_,
+         ::tyr::planning::NumericPackedStorage<Kind> numeric_storage_) :
         index(),
         fact_storage(fact_storage_),
         atom_storage(atom_storage_),
         numeric_storage(numeric_storage_)
     {
     }
+    static constexpr bool copyable() noexcept
+    {
+        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
+        return true;
+    }
 
-    friend bool operator==(const PackedState& lhs, const PackedState& rhs) { return urd::EqualTo<PackedState> {}(lhs, rhs); }
-
-    static constexpr auto cista_members() noexcept
-    { return urd::Members<&PackedState::index, &PackedState::fact_storage, &PackedState::atom_storage, &PackedState::numeric_storage> {}; }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&PackedState::fact_storage, &PackedState::numeric_storage> {}; }
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"fact_storage", &data::fact_storage>,
+                           urd::field<"atom_storage", &data::atom_storage>,
+                           urd::field<"numeric_storage", &data::numeric_storage>> {};
+    }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact_storage, &data::numeric_storage> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
 };
 
+}  // namespace urd
+
+namespace tyr::planning
+{
 template<TaskKind Kind>
-bool is_canonical(const PackedState<Kind>&) noexcept
+bool is_canonical(const urd::data<PackedState<Kind>>&) noexcept
 { return true; }
 
 template<TaskKind Kind>
-void canonicalize(PackedState<Kind>&) noexcept
+void canonicalize(urd::data<PackedState<Kind>>&) noexcept
 {
 }
 }
@@ -80,7 +102,7 @@ namespace urd
 
 /// A registered state, unpacked: its index and its storage, read only. A view of an index reads it, and so does the
 /// builder that filled it, whose storage it is (builder<State<Kind>> derives from it). The repository's packed record of
-/// a state is tyr::planning::PackedState.
+/// a state is data<tyr::planning::PackedState<Kind>>.
 template<::tyr::TaskKind Kind>
 struct data<::tyr::planning::State<Kind>>
 {

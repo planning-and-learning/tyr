@@ -40,9 +40,7 @@ ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema
 using tyr::datalog::tests::qb::columns_of;
 template<typename T = ygg::uint_t, typename... Args>
 auto cells(Args... values)
-{
-    return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... };
-}
+{ return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... }; }
 
 template<typename T, size_t N>
 auto packed(const std::array<T, N>& values)
@@ -93,9 +91,9 @@ void apply_batch(urd::builder<ygg::Relation<ygg::Schema>>& input,
                  const urd::builder<ygg::Relation<ygg::Schema>>& added,
                  const urd::builder<ygg::Relation<ygg::Schema>>& removed)
 {
-    for (const auto row : borrow(removed).rows())
+    for (const auto row : borrow(removed).get_rows())
         input.erase(input.find(row.get_values()).value());
-    for (const auto row : borrow(added).rows())
+    for (const auto row : borrow(added).get_rows())
         input.insert(row.get_values());
 }
 }  // namespace
@@ -159,7 +157,7 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionTracksSupportAcrossCompactionA
     // The position of the result's row of these values.
     const auto position = [&](const auto& values)
     {
-        const auto rows = evaluator.get_result().rows();
+        const auto rows = evaluator.get_result().get_rows();
         const auto found = std::ranges::find_if(rows, [&](const auto& row) { return std::ranges::equal(row.get_values(), values); });
         EXPECT_NE(found, rows.end());
         return static_cast<size_t>(std::ranges::distance(rows.begin(), found));

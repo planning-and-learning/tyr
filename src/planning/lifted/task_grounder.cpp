@@ -113,9 +113,7 @@ RemapStatus classify_literal(formalism::planning::AtomView<GroundTag, T> atom,
 template<formalism::FactKind T>
 RemapStatus classify_literal(formalism::planning::LiteralView<GroundTag, T> literal,
                              const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, T>>>& atoms)
-{
-    return classify_literal(literal.get_atom(), literal.get_polarity(), atoms);
-}
+{ return classify_literal(literal.get_atom(), literal.get_polarity(), atoms); }
 
 struct RemappedFDRFact
 {

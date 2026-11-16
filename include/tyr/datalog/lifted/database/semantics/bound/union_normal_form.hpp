@@ -91,7 +91,7 @@ public:
     /// The union normal form of a query.
     UnionNormalForm build(QueryView<> query) &&
     {
-        for (const auto& column : query.columns())
+        for (const auto& column : columns_of(query))
             m_result.output.push_back(fresh(column));
         m_result.branches = flatten(query, m_result.output);
         return std::move(m_result);

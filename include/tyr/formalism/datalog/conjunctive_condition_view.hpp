@@ -37,20 +37,17 @@ private:
 public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return self().template member<&urd::record_of<V>::variables>();
-    }
+    { return self().template member<&urd::record_of<V>::variables>(); }
+    auto get_static_literals() const noexcept { return self().template member<&urd::record_of<V>::static_literals>(); }
+    auto get_fluent_literals() const noexcept { return self().template member<&urd::record_of<V>::fluent_literals>(); }
+    auto get_numeric_constraints() const noexcept { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
+    // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
-    {
-        return self().template member<::tyr::formalism::datalog::literals_of<F, T>>();
-    }
-    auto get_numeric_constraints() const noexcept { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
+    { return self().template member<::tyr::formalism::datalog::literals_of<F, T>>(); }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
-    {
-        return get_variables().size();
-    }
+    { return get_variables().size(); }
 };
 }  // namespace urd
 

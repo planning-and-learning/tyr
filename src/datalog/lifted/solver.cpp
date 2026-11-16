@@ -254,7 +254,8 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]() {
+        const auto statically_applicable = [&]()
+        {
             return applicability_cache.static_nullary
                    && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
         };
@@ -274,9 +275,7 @@ private:
 
     [[maybe_unused]] static bool ensure_novel_binding(const urd::flat_vector<urd::index<formalism::Object>>& binding,
                                                       urd::Store<urd::set<urd::flat_vector<urd::index<formalism::Object>>>>& set)
-    {
-        return set.insert(binding).second;
-    }
+    { return set.insert(binding).second; }
 
     template<typename Callback>
     void for_each_relevant_clique(kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, [[maybe_unused]] bool enumerate_all)
@@ -419,7 +418,8 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]() {
+        const auto statically_applicable = [&]()
+        {
             return applicability_cache.static_nullary
                    && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
         };
@@ -672,7 +672,8 @@ template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotation
 template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx);
-template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx);
+template void
+compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx);
 template void
 compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(
@@ -695,8 +696,9 @@ template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotation
                             ygg::ExecutionContext& execution_context);
 template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
                             ygg::ExecutionContext& execution_context);
-template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
-                            ygg::ExecutionContext& execution_context);
+template void
+execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
+              ygg::ExecutionContext& execution_context);
 template void
 execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx,
               ygg::ExecutionContext& execution_context);

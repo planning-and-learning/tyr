@@ -33,6 +33,8 @@
 #include <ostream>
 #include <ranges>
 #include <sstream>
+#include <urd/format.hpp>
+#include <urd/repr/pools/tree_vector.hpp>
 #include <utility>
 #include <yggdrasil/core/chrono.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
@@ -47,9 +49,7 @@ struct formatter<tyr::planning::Task<::tyr::LiftedTag>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const tyr::planning::Task<::tyr::LiftedTag>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_task());
-    }
+    { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
 };
 
 template<>
@@ -58,9 +58,7 @@ struct formatter<tyr::planning::Task<::tyr::GroundTag>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const tyr::planning::Task<::tyr::GroundTag>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", value.get_task());
-    }
+    { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
 };
 
 template<>
@@ -69,9 +67,7 @@ struct formatter<urd::data<tyr::planning::State<::tyr::LiftedTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -80,9 +76,7 @@ struct formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -91,9 +85,7 @@ struct formatter<urd::data<tyr::planning::State<::tyr::GroundTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -102,9 +94,7 @@ struct formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>>, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
-    {
-        return ctx.out();
-    }
+    { return ctx.out(); }
 };
 
 template<>
@@ -237,13 +227,13 @@ struct state_formatter
                 fmt::print(os, "{}{}\n", "index = ", value.index());
             }
             os << ygg::print_indent;
-            fmt::print(os, "static atoms = [{}]\n", fmt::join(value.template get_atoms_view<::tyr::formalism::StaticTag>(), ", "));
+            fmt::print(os, "static atoms = [{}]\n", fmt::join(value.template get_atoms<::tyr::formalism::StaticTag>(), ", "));
             os << ygg::print_indent;
             fmt::print(os,
                        "fluent atoms = [{}]\n",
                        fmt::join(value.get_fluent_facts_view() | std::views::filter([](const auto& fact) { return fact.has_value(); }), ", "));
             os << ygg::print_indent;
-            fmt::print(os, "derived atoms = [{}]\n", fmt::join(value.template get_atoms_view<::tyr::formalism::DerivedTag>(), ", "));
+            fmt::print(os, "derived atoms = [{}]\n", fmt::join(value.template get_atoms<::tyr::formalism::DerivedTag>(), ", "));
             os << ygg::print_indent;
             fmt::print(os, "static numeric variables = [{}]\n", fmt::join(value.template get_fterm_values_view<::tyr::formalism::StaticTag>(), ", "));
             os << ygg::print_indent;
@@ -312,9 +302,7 @@ struct formatter<tyr::planning::PackedNode<Kind>, char> : formatter<tyr::plannin
 {
     template<typename FormatContext>
     auto format(const tyr::planning::PackedNode<Kind>& value, FormatContext& ctx) const
-    {
-        return formatter<tyr::planning::Node<Kind>, char>::format(value.unpack(), ctx);
-    }
+    { return formatter<tyr::planning::Node<Kind>, char>::format(value.unpack(), ctx); }
 };
 
 template<::tyr::TaskKind Kind>
@@ -322,9 +310,7 @@ struct formatter<tyr::planning::PackedLabeledNode<Kind>, char> : formatter<tyr::
 {
     template<typename FormatContext>
     auto format(const tyr::planning::PackedLabeledNode<Kind>& value, FormatContext& ctx) const
-    {
-        return formatter<tyr::planning::LabeledNode<Kind>, char>::format(value.unpack(), ctx);
-    }
+    { return formatter<tyr::planning::LabeledNode<Kind>, char>::format(value.unpack(), ctx); }
 };
 
 template<::tyr::TaskKind Kind>

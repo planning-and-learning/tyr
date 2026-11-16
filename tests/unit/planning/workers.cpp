@@ -210,7 +210,9 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
     building->assign(source_initial.get_state());
     const auto built = urd::resolve(*building, *source_state_repository);
     static_assert(std::same_as<std::remove_cvref_t<decltype(built)>, tyr::planning::BuilderStateView<Kind>>);
-    for (const auto& goal : { tyr::planning::GoalStrategyPtr<Kind>(conjunctive_goal), tyr::planning::GoalStrategyPtr<Kind>(serialized_goal), tyr::planning::GoalStrategyPtr<Kind>(exhaustive_goal) })
+    for (const auto& goal : { tyr::planning::GoalStrategyPtr<Kind>(conjunctive_goal),
+                              tyr::planning::GoalStrategyPtr<Kind>(serialized_goal),
+                              tyr::planning::GoalStrategyPtr<Kind>(exhaustive_goal) })
         EXPECT_EQ(goal->is_dynamic_goal_satisfied(source_initial.get_state(), built),
                   goal->is_dynamic_goal_satisfied(source_initial.get_state(), source_initial.get_state()));
 }

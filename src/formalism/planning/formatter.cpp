@@ -43,9 +43,7 @@ namespace tyr::formalism::node_format
 {
 template<FactKind T>
 static std::string format(const urd::data<planning::FDRFact<T>>& value)
-{
-    return fmt::format("<{},{}>", value.variable, value.value);
-}
+{ return fmt::format("<{},{}>", value.variable, value.value); }
 
 /// A fact's view, borrowed (a stored fact) or owned (a state's, computed on the fly).
 template<typename V>
@@ -72,9 +70,7 @@ static std::string format(planning::AxiomRowView value) { return ygg::values_tex
 static std::string format(const planning::PlanningDomain& value) { return fmt::format("{}", value.get_domain()); }
 template<TaskKind T>
 static std::string format(const planning::PlanningTask<T>& value)
-{
-    return fmt::format("{}", value.get_task());
-}
+{ return fmt::format("{}", value.get_task()); }
 
 /// A plan's step: the action's original name and its original arguments' names.
 static std::string format(const std::pair<planning::ActionRowView, planning::PlanFormatting>& value)
@@ -87,9 +83,7 @@ static std::string format(const std::pair<planning::ActionRowView, planning::Pla
     return result;
 }
 static std::string format(const std::pair<planning::ActionView<GroundTag>, planning::PlanFormatting>& value)
-{
-    return format(std::make_pair(value.first.get_row(), value.second));
-}
+{ return format(std::make_pair(value.first.get_row(), value.second)); }
 }  // namespace tyr::formalism::node_format
 
 namespace tyr::formalism::planning
@@ -128,9 +122,7 @@ std::string to_string(urd::index_view<T, Repository> value)
 template<typename R>
     requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
 std::string to_string(ygg::RowView<R, Repository> value)
-{
-    return node_format::format(value);
-}
+{ return node_format::format(value); }
 
 TYR_VIEW_TO_STRINGS(57, 8)
 

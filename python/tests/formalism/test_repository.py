@@ -19,13 +19,13 @@ def test_ground_facts_expose_their_bindings() -> None:
     repository = datalog.Repository()
 
     predicate = repository.insert(formalism.PredicateFluentData("predicate", 0))[0]
-    predicate_binding = repository.insert(formalism.RowPredicateFluentData(predicate, []))[0]
-    atom = repository.insert(formalism.AtomGroundFluentData(predicate_binding))[0]
+    predicate_binding = repository.insert(formalism.RowPredicateFluentData(predicate.index(), []))[0]
+    atom = repository.insert(formalism.AtomGroundFluentData(predicate_binding.index()))[0]
     assert atom.get_row() == predicate_binding
 
     function = repository.insert(formalism.FunctionFluentData("function", 0))[0]
-    function_binding = repository.insert(formalism.RowFunctionFluentData(function, []))[0]
-    term = repository.insert(formalism.FunctionTermGroundFluentData(function_binding))[0]
+    function_binding = repository.insert(formalism.RowFunctionFluentData(function.index(), []))[0]
+    term = repository.insert(formalism.FunctionTermGroundFluentData(function_binding.index()))[0]
     assert term.get_row() == function_binding
 
 

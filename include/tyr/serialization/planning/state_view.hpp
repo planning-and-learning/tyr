@@ -11,8 +11,8 @@ namespace ygg::serialization
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::planning::StateView<T>>)
 {
-    ar.field("fluent_ground_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms_view<::tyr::formalism::FluentTag>()); });
-    ar.field("derived_ground_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms_view<::tyr::formalism::DerivedTag>()); });
+    ar.field("fluent_ground_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<::tyr::formalism::FluentTag>()); });
+    ar.field("derived_ground_atoms", [](const auto& value) -> decltype(auto) { return (value.template get_atoms<::tyr::formalism::DerivedTag>()); });
     ar.field("fluent_ground_function_term_values",
              [](const auto& value) -> decltype(auto) { return (value.template get_fterm_values_view<::tyr::formalism::FluentTag>()); });
 }

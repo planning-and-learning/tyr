@@ -72,9 +72,7 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>>
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {};
-    }
+    { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::derived_literals, &data::numeric_constraints> {}; }
     static constexpr auto cista_members() noexcept
     {
         return urd::
@@ -121,9 +119,7 @@ struct data<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>>
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::positive_facts, &data::negative_facts, &data::static_literals, &data::derived_literals, &data::numeric_constraints> {};
-    }
+    { return urd::Members<&data::positive_facts, &data::negative_facts, &data::static_literals, &data::derived_literals, &data::numeric_constraints> {}; }
     static constexpr auto cista_members() noexcept
     {
         return urd::

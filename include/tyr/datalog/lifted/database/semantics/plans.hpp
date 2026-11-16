@@ -52,9 +52,7 @@ public:
     [[nodiscard]] std::span<const ColumnSlice> positions() const noexcept { return { m_positions.data(), m_positions.size() }; }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&ProjectionPlan::m_input, &ProjectionPlan::m_output, &ProjectionPlan::m_positions> {};
-    }
+    { return urd::Members<&ProjectionPlan::m_input, &ProjectionPlan::m_output, &ProjectionPlan::m_positions> {}; }
 };
 
 /// Natural join (and semijoin, antijoin) keys and payload: common labels must have the same type. The output is the left
@@ -137,9 +135,7 @@ public:
     [[nodiscard]] ygg::Value value() const noexcept { return m_value; }
 
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&SelectValuePlan::m_columns, &SelectValuePlan::m_position, &SelectValuePlan::m_value> {};
-    }
+    { return urd::Members<&SelectValuePlan::m_columns, &SelectValuePlan::m_position, &SelectValuePlan::m_value> {}; }
 };
 
 }  // namespace tyr::datalog::database

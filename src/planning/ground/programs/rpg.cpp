@@ -110,9 +110,7 @@ formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condi
 formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal,
                                                                                 TranslationContext<GroundTag>& translation_context,
                                                                                 GroundProgramBuildContext& context)
-{
-    return create_delete_free_condition(goal, translation_context, context);
-}
+{ return create_delete_free_condition(goal, translation_context, context); }
 
 /// The body of a conditional effect's rule: the action's precondition and the effect's condition, delete-free.
 formalism::datalog::ConjunctiveConditionView<GroundTag>
@@ -142,9 +140,7 @@ create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> 
 }
 
 formalism::datalog::ProgramView<GroundTag> finish_program(GroundProgramBuildContext& context)
-{
-    return formalism::datalog::insert(context.merge_context.destination(), *context.program).first;
-}
+{ return formalism::datalog::insert(context.merge_context.destination(), *context.program).first; }
 
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<GroundTag> action,
                                            urd::data<formalism::datalog::Program<GroundTag>>& program,

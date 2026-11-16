@@ -98,7 +98,7 @@ urd::Store<urd::sequence<QueryView<>>> copy(std::span<const QueryView<>> roots, 
         {
             auto data = checkout<Query<QueryInputTag>>(builder);
             data->input_slot = slot_of(as<QueryInputTag>(query).get_input_slot());
-            const auto columns = query.columns();
+            const auto columns = columns_of(query);
             data->columns.set(columns.begin(), columns.end());
             copied = insert_query(destination, builder, *data);
             continue;
@@ -124,13 +124,13 @@ QueryView<> copy(QueryView<> root, SlotOf&& slot_of, QueryRepository& destinatio
 { return database::copy(std::span<const QueryView<>>(&root, 1), std::forward<SlotOf>(slot_of), destination, builder).front(); }
 
 /// Copies the queries reachable from the roots into a fresh owning snapshot.
-QueryPlan compile(std::span<const QueryView<>> roots);
+QueryPlan compile_plan(std::span<const QueryView<>> roots);
 
 template<std::ranges::contiguous_range R>
-auto compile(const R& roots)
-{ return compile(std::span<const std::ranges::range_value_t<R>>(roots)); }
+auto compile_plan(const R& roots)
+{ return compile_plan(std::span<const std::ranges::range_value_t<R>>(roots)); }
 
-QueryPlan compile(std::initializer_list<QueryView<>> roots);
+QueryPlan compile_plan(std::initializer_list<QueryView<>> roots);
 }  // namespace tyr::datalog::database
 
 #endif

@@ -95,9 +95,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"body", &data::body>, urd::field<"heads", &data::heads>, urd::field<"cost", &data::cost>> {};
-    }
+    { return urd::Fields<urd::field<"body", &data::body>, urd::field<"heads", &data::heads>, urd::field<"cost", &data::cost>> {}; }
     /// Identified by its content: identical ground rules are one rule.
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::body, &data::heads, &data::cost> {}; }

@@ -80,7 +80,7 @@ take only views. It draws its number (``layer()``, the context number of its row
 process-wide counter of the repository layers.
 
 **Views.** An interned ``urd::index_view<Relation<F>, Context>`` and a ``RelationBuilderView`` give ``columns()``,
-``size()``, ``row(i)``, ``rows()`` and ``contains(row)``; a ``RelationBuilderView`` also gives the builder it reads
+``size()``, ``row(i)``, ``get_rows()`` and ``contains(row)``; a ``RelationBuilderView`` also gives the builder it reads
 (``get_builder()``). An interned relation is immutable, so only a builder's view can read an operation's output:
 ``reads_builder(view, builder)`` is what alias checks ask, and an interned view reads no builder. Interned views are
 told apart as urd views are, by their index and layer. An interned view reads its row set over its pool through
@@ -420,7 +420,7 @@ vertex contains an object if one of its columns of the probes' type holds it:
 .. code:: cpp
 
    // sources (key…, vertex), edges (key…, from, to), targets (key…, vertex), probes (object)
-   MustPassPlan<> plan(sources.columns(), edge_query.columns(), targets.columns(), probes.columns(), keys);
+   MustPassPlan<> plan(sources.columns(), columns_of(edge_query), targets.columns(), probes.columns(), keys);
    MustPass<> must_pass(repository, edge_query, plan);
    urd::builder<Relation<Schema>> out(plan.output_columns());   // (key…, object)
    must_pass.must_pass(input, sources, targets, probes, out);
@@ -489,22 +489,23 @@ input relation.
   record and its heterogeneous root. ``prepare_for_insert`` validates operands, schemas, constants and execution
   orders. Records hold plain indices, so operands stay in the repository they are inserted into.
 - **Records.** ``Query<Tag>`` is a concrete operation holding only its own operands and parameters (``QueryJoinTag``
-  has ``left_operand`` and ``right_operand``; ``QuerySelectValueTag`` has ``operand``, ``column`` and an encoded ``constant``). ``Query<>``
-  is the heterogeneous root, a variant of concrete query indices. Data, views and the repository are in
-  ``query_data.hpp``, ``query_view.hpp`` and ``query_repository.hpp``.
+  has ``left_operand`` and ``right_operand``; ``QuerySelectValueTag`` has ``operand``, ``column`` and an encoded
+  ``constant``). ``Query<>`` is the heterogeneous root, a variant of concrete query indices. Data, views and the
+  repository are in ``query_data.hpp``, ``query_view.hpp`` and ``query_repository.hpp``.
 - **Identity.** Input and empty schemas and the ordered labels of projection and rename are part of a record's
   identity. Derived output columns and prepared plans (of join, projection, distance and Generic Join; the resolved
   positions of selections) are cached and are not.
 - **Views.** ``insert_query`` returns a ``QueryView``; ``get_variant()`` gives the concrete view with its getters
-  (``get_left_operand()``, ``get_operand()``, ``get_constant()``). Every view has ``columns()`` and borrows its repository.
+  (``get_left_operand()``, ``get_operand()``, ``get_constant()``). Every concrete view has ``columns()``; a
+  ``QueryView``'s are its concrete view's, ``columns_of(view)``. Every view borrows its repository.
   ``size()`` counts the root queries.
 - **Generic Join** is a query constructor with input queries, a variable order and an independent output order; an
   empty output order becomes the natural union of the input columns.
 
-``compile(roots)`` produces a copyable, read-only ``QueryPlan`` that owns its query repository and stays valid after
-the source repository is destroyed. It copies only reachable queries, children before parents, keeps shared queries
-shared, and preserves the root order and the ordered, typed output schemas. ``node_count()``, ``root_count()`` and
-``roots()`` give its shape; indexing by a root query index returns a ``QueryView``. Row enumeration order is not
+``compile_plan(roots)`` produces a copyable, read-only ``QueryPlan`` that owns its query repository and stays valid
+after the source repository is destroyed. It copies only reachable queries, children before parents, keeps shared
+queries shared, and preserves the root order and the ordered, typed output schemas. ``node_count()``, ``root_count()``
+and ``roots()`` give its shape; indexing by a root query index returns a ``QueryView``. Row enumeration order is not
 guaranteed.
 
 Include ``<tyr/datalog/lifted/database/syntax/formatter.hpp>`` to format a plan with ``fmt::format("{}", plan)``,
@@ -722,14 +723,14 @@ type-erased ``Query`` that operators take as operands. The records:
 - ``QueryJoinData``, ``QueryUnionData``, ``QueryDifferenceData``, ``QuerySemijoinData``,
   ``QueryAntijoinData(left_operand, right_operand)``
 - ``QueryProjectData``, ``QueryRenameData(operand, labels)``
-- ``QuerySelectEqualData(operand, left_column, right_column)``, ``QuerySelectValueData(operand, column, type, value)`` (the constant must have
-  the selected column's type)
+- ``QuerySelectEqualData(operand, left_column, right_column)``, ``QuerySelectValueData(operand, column, type, value)``
+  (the constant must have the selected column's type)
 - ``QueryDistanceData(sources, edges, targets, distance_column)``
 - ``QueryGenericJoinData(inputs, variable_order, output_order=[])``
 
-``compile(roots)`` and ``optimize(roots, statistics=Statistics())`` take a list of roots and return a ``QueryPlan``.
-``IncrementalQueryEvaluator(repository, plan)`` has ``initialize(inputs)`` and ``update(changes)`` with one
-``(added, removed)`` pair per input slot; its results and ``RelationDelta`` relations are read-only
+``compile_plan(roots)`` and ``optimize(roots, statistics=Statistics())`` take a list of roots and return a
+``QueryPlan``. ``IncrementalQueryEvaluator(repository, plan)`` has ``initialize(inputs)`` and ``update(changes)`` with
+one ``(added, removed)`` pair per input slot; its results and ``RelationDelta`` relations are read-only
 ``BorrowedRelation`` views that keep the evaluator alive (``db.assign(formalism.Relation(), relation)`` copies one).
 Query handles keep their repository alive; compiled plans and evaluators are independent of it. With sparse slot
 numbers, an unused slot takes an empty ``Relation()``. Dictionary-valued statistics fields are converted by value:

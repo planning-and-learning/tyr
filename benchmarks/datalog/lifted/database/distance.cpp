@@ -41,7 +41,7 @@ std::vector<ygg::ColumnLayout> columns(size_t arity, ygg::uint_t first_label)
     std::vector<ygg::ColumnLayout> result;
     result.reserve(arity);
     for (size_t i = 0; i < arity; ++i)
-        result.push_back({ ColumnIndex(first_label + static_cast<ygg::uint_t>(i)), ygg::type_id<ygg::uint_t> });
+        result.emplace_back(ColumnIndex(first_label + static_cast<ygg::uint_t>(i)), ygg::type_id<ygg::uint_t>);
     return result;
 }
 
@@ -193,7 +193,7 @@ bool equal_rows(ygg::FreeRelationBuilderView actual, const RelationBuilder& expe
 {
     if (actual.size() != expected.size())
         return false;
-    for (const auto row : borrow(expected).rows())
+    for (const auto row : borrow(expected).get_rows())
         if (!actual.contains(row))
             return false;
     return true;
@@ -202,14 +202,14 @@ bool equal_rows(ygg::FreeRelationBuilderView actual, const RelationBuilder& expe
 bool equal_delta(const database::incremental::Delta& actual, const RelationBuilder& before, const RelationBuilder& after)
 {
     size_t added = 0, removed = 0;
-    for (const auto row : borrow(after).rows())
+    for (const auto row : borrow(after).get_rows())
         if (!before.contains(row))
         {
             ++added;
             if (!actual.added.contains(row))
                 return false;
         }
-    for (const auto row : borrow(before).rows())
+    for (const auto row : borrow(before).get_rows())
         if (!after.contains(row))
         {
             ++removed;

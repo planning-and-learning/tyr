@@ -64,9 +64,7 @@ struct data<::tyr::formalism::planning::Invariant>
     }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {};
-    }
+    { return urd::Members<&data::index, &data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
 };
 
 }

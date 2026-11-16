@@ -65,9 +65,7 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {};
-    }
+    { return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
 };
 
 template<>
@@ -105,13 +103,9 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
                            urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
     }
     static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {};
-    }
+    { return urd::Members<&data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
     static constexpr auto cista_members() noexcept
-    {
-        return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {};
-    }
+    { return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
 };
 
 }

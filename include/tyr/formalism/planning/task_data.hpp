@@ -148,13 +148,13 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values;
     urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values;
     urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value;
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal;
     urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
 
     /// FDR-related
     urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables;
     urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts;
-    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>>> ground_actions;
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>> ground_axioms;
 
@@ -169,11 +169,11 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_fterm_values_,
          urd::flat_vector<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_fterm_values_,
          urd::flat_optional<urd::index<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
+         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal_,
          urd::flat_optional<urd::index<::tyr::formalism::planning::Metric>> metric_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>> fluent_variables_,
          urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> fluent_facts_,
-         urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> goal_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Action<::tyr::GroundTag>>> ground_actions_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>> ground_axioms_) :
         index(),
@@ -187,11 +187,11 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
         static_fterm_values(std::move(static_fterm_values_)),
         fluent_fterm_values(std::move(fluent_fterm_values_)),
         auxiliary_fterm_value(std::move(auxiliary_fterm_value_)),
+        goal(goal_),
         metric(std::move(metric_)),
         axioms(std::move(axioms_)),
         fluent_variables(std::move(fluent_variables_)),
         fluent_facts(std::move(fluent_facts_)),
-        goal(goal_),
         ground_actions(std::move(ground_actions_)),
         ground_axioms(std::move(ground_axioms_))
     {
@@ -214,34 +214,15 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
                            urd::field<"static_fterm_values", &data::static_fterm_values>,
                            urd::field<"fluent_fterm_values", &data::fluent_fterm_values>,
                            urd::field<"auxiliary_fterm_value", &data::auxiliary_fterm_value>,
+                           urd::field<"goal", &data::goal>,
                            urd::field<"metric", &data::metric>,
                            urd::field<"axioms", &data::axioms>,
                            urd::field<"fluent_variables", &data::fluent_variables>,
                            urd::field<"fluent_facts", &data::fluent_facts>,
-                           urd::field<"goal", &data::goal>,
                            urd::field<"ground_actions", &data::ground_actions>,
                            urd::field<"ground_axioms", &data::ground_axioms>> {};
     }
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<&data::name,
-                            &data::domain,
-                            &data::derived_predicates,
-                            &data::objects,
-                            &data::static_atoms,
-                            &data::fluent_atoms,
-                            &data::derived_atoms,
-                            &data::static_fterm_values,
-                            &data::fluent_fterm_values,
-                            &data::auxiliary_fterm_value,
-                            &data::metric,
-                            &data::axioms,
-                            &data::fluent_variables,
-                            &data::fluent_facts,
-                            &data::goal,
-                            &data::ground_actions,
-                            &data::ground_axioms> {};
-    }
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
     static constexpr auto cista_members() noexcept
     {
         return urd::Members<&data::index,
@@ -255,11 +236,11 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
                             &data::static_fterm_values,
                             &data::fluent_fterm_values,
                             &data::auxiliary_fterm_value,
+                            &data::goal,
                             &data::metric,
                             &data::axioms,
                             &data::fluent_variables,
                             &data::fluent_facts,
-                            &data::goal,
                             &data::ground_actions,
                             &data::ground_axioms> {};
     }

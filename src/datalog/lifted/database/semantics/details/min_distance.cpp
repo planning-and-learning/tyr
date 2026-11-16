@@ -23,7 +23,7 @@ namespace tyr::datalog::database::detail
 {
 QueryView<> checked_edges(QueryView<> edges, const DistancePlan& plan)
 {
-    if (!std::ranges::equal(edges.columns(), plan.edge_columns()))
+    if (!std::ranges::equal(columns_of(edges), plan.edge_columns()))
         throw std::invalid_argument("Relational operation: input schema does not match prepared plan.");
     return edges;
 }

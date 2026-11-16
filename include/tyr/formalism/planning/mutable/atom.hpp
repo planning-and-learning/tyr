@@ -88,9 +88,7 @@ struct structure_traits<planning::MutableAtom<T>>
 
     template<typename F>
     static Type transform_terms(const Type& value, F f)
-    {
-        return Type(value.predicate, unification::transform_terms(value.terms, f));
-    }
+    { return Type(value.predicate, unification::transform_terms(value.terms, f)); }
 };
 
 }

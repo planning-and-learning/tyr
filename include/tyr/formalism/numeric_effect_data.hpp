@@ -63,9 +63,7 @@ struct data<::tyr::formalism::NumericEffect<T, F>>
     ~data() = default;
 
     static constexpr auto fields() noexcept
-    {
-        return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"fterm", &data::fterm>, urd::field<"fexpr", &data::fexpr>> {};
-    }
+    { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"fterm", &data::fterm>, urd::field<"fexpr", &data::fexpr>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::fterm, &data::fexpr> {}; }
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::fterm, &data::fexpr> {}; }
 };

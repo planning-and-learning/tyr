@@ -112,8 +112,8 @@ struct StateRepository<Kind>::Impl
     struct Storage
     {
         /// The packed states, interned whole in a urd pool (references stay valid; thread-safe where ThreadSafe): its
-        /// handle is the state's index.
-        using PackedStates = urd::Store<urd::pool<PackedState<Kind>, urd::index<State<Kind>>>,
+        /// handle is the packed state's index (StateRepository::state_index gives the state's).
+        using PackedStates = urd::Store<urd::pool<urd::data<PackedState<Kind>>, urd::index<PackedState<Kind>>>,
                                         urd::stable_refs,
                                         std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
@@ -146,7 +146,7 @@ struct StateRepository<Kind>::Impl
         urd::Store<urd::slots<urd::builder<State<Kind>>>, urd::concurrent> state_builder_pool;
 
         /// Inserts the fluent facts of `state`, as `delta` to `parent` if given.
-        auto insert_fluents(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const StateDelta* delta)
+        auto insert_fluents(const urd::data<State<Kind>>& state, const urd::data<PackedState<Kind>>* parent, const StateDelta* delta)
         {
             const auto& unpacked = state.fact_storage;
             return parent ? fluent_backend.insert(unpacked, parent->fact_storage, std::span(delta->fluents)) : fluent_backend.insert(unpacked);
@@ -154,14 +154,14 @@ struct StateRepository<Kind>::Impl
 
         /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given.
         /// Axioms recompute derived atoms, so their changes are not part of a StateDelta.
-        auto insert_derived(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const StateView<Kind>* parent_state)
+        auto insert_derived(const urd::data<State<Kind>>& state, const urd::data<PackedState<Kind>>* parent, const StateView<Kind>* parent_state)
         {
             const auto& unpacked = state.atom_storage;
             return parent ? derived_backend.insert(unpacked, parent->atom_storage, parent_state->get_atom_storage()) : derived_backend.insert(unpacked);
         }
 
         /// Inserts the numeric values of `state`, as `delta` to `parent` if given.
-        auto insert_numeric(urd::builder<State<Kind>>& state, const PackedState<Kind>* parent, const StateDelta* delta)
+        auto insert_numeric(urd::builder<State<Kind>>& state, const urd::data<PackedState<Kind>>* parent, const StateDelta* delta)
         {
             auto& unpacked = state.numeric_storage;
             return parent ? numeric_backend.insert(unpacked, parent->numeric_storage, std::span(delta->numerics)) : numeric_backend.insert(unpacked);
@@ -186,35 +186,35 @@ struct StateRepository<Kind>::Impl
             }
 #endif
             auto& packed_states = storage->packed_states;
-            const auto* parent = parent_state ? &packed_states[parent_state->index()] : nullptr;
+            const auto* parent = parent_state ? &packed_states[StateRepository::packed_index(parent_state->index())] : nullptr;
             const auto fluent = insert_fluents(state, parent, delta);
             const auto numeric = insert_numeric(state, parent, delta);
-            const auto key = PackedState<Kind>(fluent, {}, numeric);
-            const auto hash = urd::Hash<PackedState<Kind>> {}(key);
-            const auto found = packed_states.find(urd::prehashed<PackedState<Kind>> { key, hash });
-            auto state_index = found.is_none() ? std::optional<urd::index<State<Kind>>>() : std::optional(found);
+            const auto key = urd::data<PackedState<Kind>>(fluent, {}, numeric);
+            const auto hash = urd::Hash<urd::data<PackedState<Kind>>> {}(key);
+            const auto found = packed_states.find(urd::prehashed<urd::data<PackedState<Kind>>> { key, hash });
+            auto packed_index = found.is_none() ? std::optional<urd::index<PackedState<Kind>>>() : std::optional(found);
 
-            if (!state_index)
+            if (!packed_index)
             {
                 std::forward<ExtendState>(extend_state)();
                 const auto derived = insert_derived(state, parent, parent_state);
-                const auto [inserted_index, inserted] = packed_states.insert(urd::prehashed<PackedState<Kind>> { key, hash },
-                                                                             [&](urd::index<State<Kind>> new_index)
+                const auto [inserted_index, inserted] = packed_states.insert(urd::prehashed<urd::data<PackedState<Kind>>> { key, hash },
+                                                                             [&](urd::index<PackedState<Kind>> new_index)
                                                                              {
-                                                                                 auto data = PackedState<Kind>(fluent, derived, numeric);
+                                                                                 auto data = urd::data<PackedState<Kind>>(fluent, derived, numeric);
                                                                                  data.index = new_index;
                                                                                  return data;
                                                                              });
-                state_index = inserted_index;
+                packed_index = inserted_index;
                 if (inserted)
                 {
-                    state.set(inserted_index);
+                    state.set(StateRepository::state_index(inserted_index));
                     return;
                 }
             }
 
-            derived_backend.unpack(packed_states[*state_index].atom_storage, state.atom_storage);
-            state.set(*state_index);
+            derived_backend.unpack(packed_states[*packed_index].atom_storage, state.atom_storage);
+            state.set(StateRepository::state_index(*packed_index));
         }
     };
 
@@ -309,7 +309,7 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(urd::index<State<Kin
     m_impl->visit_evaluator(
         [&](auto& evaluator)
         {
-            const auto& packed_state = packed(state_index);
+            const auto& packed_state = (*this)[packed_index(state_index)];
             evaluator.fluent_backend.unpack(packed_state.fact_storage, state_builder->fact_storage);
             evaluator.derived_backend.unpack(packed_state.atom_storage, state_builder->atom_storage);
             evaluator.numeric_backend.unpack(packed_state.numeric_storage, state_builder->numeric_storage);
@@ -353,9 +353,10 @@ StateView<Kind> StateRepository<Kind>::create_state(
 }
 
 template<TaskKind Kind>
-const PackedState<Kind>& StateRepository<Kind>::packed(urd::index<State<Kind>> state_index) const
+const urd::data<PackedState<Kind>>& StateRepository<Kind>::operator[](urd::index<PackedState<Kind>> packed_index) const
 {
-    return m_impl->visit_evaluator([&](const auto& evaluator) -> const PackedState<Kind>& { return evaluator.storage->packed_states[state_index]; });
+    return m_impl->visit_evaluator([&](const auto& evaluator) -> const urd::data<PackedState<Kind>>&
+                                   { return evaluator.storage->packed_states[packed_index]; });
 }
 
 template<TaskKind Kind>
@@ -420,33 +421,23 @@ size_t StateRepository<Kind>::memory_usage() const noexcept
 
 template<TaskKind Kind>
 const TaskPtr<Kind>& StateRepository<Kind>::get_task() const noexcept
-{
-    return m_impl->task;
-}
+{ return m_impl->task; }
 
 template<TaskKind Kind>
 bool StateRepository<Kind>::shares_storage_with(const StateRepository& other) const noexcept
-{
-    return m_impl->storage_identity == other.m_impl->storage_identity;
-}
+{ return m_impl->storage_identity == other.m_impl->storage_identity; }
 
 template<TaskKind Kind>
 bool StateRepository<Kind>::is_concurrent() const noexcept
-{
-    return static_cast<bool>(m_impl->shared_evaluator);
-}
+{ return static_cast<bool>(m_impl->shared_evaluator); }
 
 template<TaskKind Kind>
 ygg::uint_t StateRepository<Kind>::get_worker_index() const noexcept
-{
-    return m_impl->index;
-}
+{ return m_impl->index; }
 
 template<TaskKind Kind>
 std::size_t StateRepository<Kind>::layer() const noexcept
-{
-    return m_impl->storage_identity;
-}
+{ return m_impl->storage_identity; }
 
 template<TaskKind Kind>
 size_t StateRepository<Kind>::num_states() const noexcept

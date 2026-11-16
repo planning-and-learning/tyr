@@ -24,6 +24,8 @@ namespace tyr::planning
 {
 
 void bind_ground_module_definitions(nb::module_& m);
+/// The records of the ground match trees (match_tree.cpp).
+void bind_match_tree(nb::module_& m);
 
 }  // namespace tyr::planning
 

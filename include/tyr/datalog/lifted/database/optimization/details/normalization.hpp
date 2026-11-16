@@ -39,7 +39,7 @@ class Normalizer
     QueryView<> join(QueryView<> left_operand, QueryView<> right_operand)
     {
         const auto result = m_build.join(left_operand, right_operand);
-        return is<QueryEmptyTag>(left_operand) || is<QueryEmptyTag>(right_operand) ? m_build.empty(result.columns()) : result;
+        return is<QueryEmptyTag>(left_operand) || is<QueryEmptyTag>(right_operand) ? m_build.empty(columns_of(result)) : result;
     }
     QueryView<> union_(QueryView<> left_operand, QueryView<> right_operand)
     {
@@ -62,13 +62,13 @@ class Normalizer
         if (is<QueryEmptyTag>(left_operand))
             return left_operand;
         if (is<QueryEmptyTag>(right_operand))
-            return std::same_as<Tag, QuerySemijoinTag> ? m_build.empty(left_operand.columns()) : left_operand;
+            return std::same_as<Tag, QuerySemijoinTag> ? m_build.empty(columns_of(left_operand)) : left_operand;
         return m_build.template binary<Tag>(left_operand, right_operand);
     }
     /// Labels of the renamed query's argument for the given renamed labels.
     static urd::Store<urd::sequence<urd::index<ygg::Column>>> inverse(QueryView<QueryRenameTag> rename, std::span<const urd::index<ygg::Column>> renamed)
     {
-        const auto before = rename.get_operand().columns(), after = rename.columns();
+        const auto before = columns_of(rename.get_operand()), after = rename.columns();
         urd::Store<urd::sequence<urd::index<ygg::Column>>> result;
         for (const auto label : renamed)
             result.push_back(before[static_cast<size_t>(std::ranges::find(after, label, &ygg::ColumnLayout::label) - after.begin())].label);
@@ -76,16 +76,16 @@ class Normalizer
     }
     QueryView<> rename(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns)
     {
-        if (std::ranges::equal(arg.columns(), columns, {}, &ygg::ColumnLayout::label))
+        if (std::ranges::equal(columns_of(arg), columns, {}, &ygg::ColumnLayout::label))
             return arg;
         const auto result = m_build.template relabel<QueryRenameTag>(arg, columns);
-        return is<QueryEmptyTag>(arg) ? m_build.empty(result.columns()) : result;
+        return is<QueryEmptyTag>(arg) ? m_build.empty(columns_of(result)) : result;
     }
     QueryView<> project(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns);
     QueryView<> finish_project(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns)
     {
         const auto result = m_build.template relabel<QueryProjectTag>(arg, columns);
-        return is<QueryEmptyTag>(arg) ? m_build.empty(result.columns()) : result;
+        return is<QueryEmptyTag>(arg) ? m_build.empty(columns_of(result)) : result;
     }
 
     /// The labels of `arg` in `columns` or in `extra`, in the order of `arg`.
@@ -93,7 +93,7 @@ class Normalizer
     kept_labels(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns, std::span<const ygg::ColumnLayout> extra)
     {
         urd::Store<urd::sequence<urd::index<ygg::Column>>> labels;
-        for (const auto& column : arg.columns())
+        for (const auto& column : columns_of(arg))
             if (std::ranges::find(columns, column.label) != columns.end() || std::ranges::find(extra, column.label, &ygg::ColumnLayout::label) != extra.end())
                 labels.push_back(column.label);
         return labels;
@@ -103,9 +103,9 @@ class Normalizer
     {
         const auto operation = as<Tag>(arg);
         const auto left_operand = operation.get_left_operand();
-        const auto kept = kept_labels(left_operand, columns, operation.get_right_operand().columns());
+        const auto kept = kept_labels(left_operand, columns, columns_of(operation.get_right_operand()));
         // Nothing to drop below: the projection stays above.
-        if (kept.size() == left_operand.columns().size())
+        if (kept.size() == columns_of(left_operand).size())
             return finish_project(arg, columns);
         return project(filter_join<Tag>(project(left_operand, kept), operation.get_right_operand()), columns);
     }
@@ -129,22 +129,14 @@ class Normalizer
     }
     static Operation<QuerySelectEqualTag> condition(const Operation<QuerySelectEqualTag>& data) { return condition(data.left_column, data.right_column); }
     static Operation<QuerySelectValueTag> condition(const Operation<QuerySelectValueTag>& data)
-    {
-        return condition(data.column, data.constant, data.constant_type);
-    }
+    { return condition(data.column, data.constant, data.constant_type); }
     static Operation<QuerySelectEqualTag> condition(QueryView<QuerySelectEqualTag> query)
-    {
-        return condition(query.get_left_column(), query.get_right_column());
-    }
+    { return condition(query.get_left_column(), query.get_right_column()); }
     static Operation<QuerySelectValueTag> condition(QueryView<QuerySelectValueTag> query)
-    {
-        return condition(query.get_column(), query.get_constant(), query.get_constant_type());
-    }
+    { return condition(query.get_column(), query.get_constant(), query.get_constant_type()); }
 
     static urd::Store<urd::sequence<urd::index<ygg::Column>>> tested(const Operation<QuerySelectEqualTag>& data)
-    {
-        return { data.left_column, data.right_column };
-    }
+    { return { data.left_column, data.right_column }; }
     static urd::Store<urd::sequence<urd::index<ygg::Column>>> tested(const Operation<QuerySelectValueTag>& data) { return { data.column }; }
     static void retarget(Operation<QuerySelectEqualTag>& data, QueryView<QueryRenameTag> rename)
     {
@@ -167,7 +159,7 @@ class Normalizer
             return std::ranges::all_of(columns,
                                        [&](urd::index<ygg::Column> label)
                                        {
-                                           const auto schema = query.columns();
+                                           const auto schema = columns_of(query);
                                            return std::ranges::find(schema, label, &ygg::ColumnLayout::label) != schema.end();
                                        });
         };
@@ -254,7 +246,7 @@ class Normalizer
             const auto result = m_build.clone(source, children);
             if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
                 if (absent)
-                    return m_build.empty(result.columns());
+                    return m_build.empty(columns_of(result));
             return result;
         }
     }

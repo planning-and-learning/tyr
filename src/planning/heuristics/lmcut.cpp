@@ -145,9 +145,7 @@ template<TaskKind Kind>
 LMCutImplementation<Kind>::LMCutImplementation(const LMCutImplementation& source, ygg::ExecutionContextPtr execution_context) :
     Base(source, std::move(execution_context)),
     m_cut_cost(std::numeric_limits<datalog::Cost>::max())
-{
-    this->workspace().tp.set_early_termination(false);
-}
+{ this->workspace().tp.set_early_termination(false); }
 
 template<TaskKind Kind>
 ygg::float_t LMCutImplementation<Kind>::evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms)
@@ -384,17 +382,13 @@ struct LMCutHeuristic<Kind>::Impl
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) { m_implementation.set_goal(goal); }
 
     ygg::float_t evaluate(const StateView<Kind>& state, CutFrontierAtoms* cut_frontier_atoms = nullptr)
-    {
-        return m_implementation.evaluate(state, cut_frontier_atoms);
-    }
+    { return m_implementation.evaluate(state, cut_frontier_atoms); }
 
     void print_summary(size_t verbosity) const { m_implementation.print_summary(verbosity); }
 
 private:
     static Implementation make_implementation(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-    {
-        return Implementation(std::make_shared<detail::RPGDefinition<Kind>>(std::move(task), cost_mode), std::move(execution_context));
-    }
+    { return Implementation(std::make_shared<detail::RPGDefinition<Kind>>(std::move(task), cost_mode), std::move(execution_context)); }
 
     Implementation m_implementation;
 };
@@ -421,21 +415,15 @@ LMCutHeuristic<Kind>& LMCutHeuristic<Kind>::operator=(LMCutHeuristic&&) noexcept
 
 template<TaskKind Kind>
 LMCutHeuristicPtr<Kind> LMCutHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{
-    return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode);
-}
+{ return std::make_shared<LMCutHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
 
 template<TaskKind Kind>
 void LMCutHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-{
-    m_impl->set_goal(goal);
-}
+{ m_impl->set_goal(goal); }
 
 template<TaskKind Kind>
 ygg::float_t LMCutHeuristic<Kind>::evaluate(const StateView<Kind>& state)
-{
-    return m_impl->evaluate(state);
-}
+{ return m_impl->evaluate(state); }
 
 template<TaskKind Kind>
 formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristic<Kind>::compute_cut_frontier_atoms(const StateView<Kind>& state)
@@ -449,15 +437,11 @@ formalism::planning::AtomViewList<GroundTag, formalism::FluentTag> LMCutHeuristi
 
 template<TaskKind Kind>
 HeuristicPtr<Kind> LMCutHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{
-    return HeuristicPtr<Kind>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
-}
+{ return HeuristicPtr<Kind>(new LMCutHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
 
 template<TaskKind Kind>
 void LMCutHeuristic<Kind>::print_summary(size_t verbosity) const
-{
-    m_impl->print_summary(verbosity);
-}
+{ m_impl->print_summary(verbosity); }
 
 template class LMCutHeuristic<GroundTag>;
 template class LMCutHeuristic<LiftedTag>;

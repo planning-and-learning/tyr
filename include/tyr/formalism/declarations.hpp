@@ -241,17 +241,16 @@ concept PolarityKind = std::same_as<T, PositiveTag> || std::same_as<T, NegativeT
 
 using PositiveNegativeTags = boost::mp11::mp_list<PositiveTag, NegativeTag>;
 
-/// The pointer to the member that Tag selects: Tag's position in Tags (a boost::mp11 list) picks one of Members.
+/// The pointer to the member that Tag selects: Tag's position in Tags (a boost::mp11 list) picks one of Members, one per
+/// tag.
 template<typename Tags, typename Tag, auto... Members>
-    requires boost::mp11::mp_contains<Tags, Tag>::value
+    requires(boost::mp11::mp_contains<Tags, Tag>::value && boost::mp11::mp_size<Tags>::value == sizeof...(Members))
 inline constexpr auto tagged_member_pointer = std::get<boost::mp11::mp_find<Tags, Tag>::value>(std::tuple(Members...));
 
 /// The member of self that Tag selects (see tagged_member_pointer).
 template<typename Tags, typename Tag, auto... Members, typename Self>
 constexpr auto& tagged_member(Self& self) noexcept
-{
-    return self.*tagged_member_pointer<Tags, Tag, Members...>;
-}
+{ return self.*tagged_member_pointer<Tags, Tag, Members...>; }
 
 }
 

@@ -141,7 +141,8 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     EXPECT_TRUE(saw_implicit);
 
     auto kckp = tyr::kckp::DeltaKCKP(static_graph.get_graph(), adjacency_layout);
-    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets) {
+    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets)
+    {
         kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
     update(tyr::datalog::AssignmentSets(static_assignments, empty_assignments));
@@ -435,7 +436,8 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     second_expected.push_back({ "truck-2", "city-loc-1", "city-loc-3" });
     std::ranges::sort(second_expected);
 
-    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets) {
+    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets)
+    {
         kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
     update(tyr::datalog::AssignmentSets(static_assignments, first_assignments));

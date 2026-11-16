@@ -34,8 +34,8 @@
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
-#include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
@@ -79,9 +79,7 @@ namespace
 /// their parents: the Task does, through m_task, which it declares first and so destroys last.
 template<TaskKind Kind>
 formalism::planning::RepositoryPtr layer_over(const formalism::planning::PlanningTask<Kind>& task)
-{
-    return std::make_shared<formalism::planning::Repository>(task.get_task().get_num_objects(), task.get_repository().get());
-}
+{ return std::make_shared<formalism::planning::Repository>(task.get_task().get_num_objects(), task.get_repository().get()); }
 }
 
 Task<LiftedTag>::Task(formalism::planning::PlanningTask<LiftedTag> task) :

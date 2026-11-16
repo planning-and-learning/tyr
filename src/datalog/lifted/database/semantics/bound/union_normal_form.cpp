@@ -36,7 +36,7 @@ namespace tyr::datalog::database::bound::detail
 {
 urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(QueryView<> query, std::span<const uint32_t> mapping)
 {
-    const auto columns = query.columns();
+    const auto columns = columns_of(query);
     return std::visit(
         [&]<typename Tag>(QueryView<Tag> concrete) -> urd::Store<urd::sequence<ConjunctiveBranch>>
         {
@@ -59,8 +59,8 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 // A semijoin's right-only columns are not in the output, so they get fresh variables.
                 const auto left_operand = concrete.get_left_operand();
                 const auto right_operand = concrete.get_right_operand();
-                return product(flatten(left_operand, by_label(left_operand.columns(), columns, mapping)),
-                               flatten(right_operand, by_label(right_operand.columns(), columns, mapping)));
+                return product(flatten(left_operand, by_label(columns_of(left_operand), columns, mapping)),
+                               flatten(right_operand, by_label(columns_of(right_operand), columns, mapping)));
             }
             else if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
             {
@@ -72,20 +72,20 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 for (const auto input : concrete.get_inputs())
                 {
                     const auto child = input;
-                    for (const auto& column : child.columns())
+                    for (const auto& column : columns_of(child))
                         if (std::ranges::find(labels, column.label, &ygg::ColumnLayout::label) == labels.end())
                         {
                             labels.push_back(column);
                             variables.push_back(fresh(column));
                         }
-                    result = product(result, flatten(child, by_label(child.columns(), labels, variables)));
+                    result = product(result, flatten(child, by_label(columns_of(child), labels, variables)));
                 }
                 return result;
             }
             else if constexpr (std::same_as<Tag, QueryProjectTag>)
             {
                 const auto arg = concrete.get_operand();
-                return flatten(arg, by_label(arg.columns(), columns, mapping));
+                return flatten(arg, by_label(columns_of(arg), columns, mapping));
             }
             else if constexpr (std::same_as<Tag, QueryRenameTag>)
                 return flatten(concrete.get_operand(), mapping);
@@ -107,8 +107,8 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
             {
                 const auto left_operand = concrete.get_left_operand();
                 const auto right_operand = concrete.get_right_operand();
-                auto result = flatten(left_operand, by_label(left_operand.columns(), columns, mapping));
-                auto right = flatten(right_operand, by_label(right_operand.columns(), columns, mapping));
+                auto result = flatten(left_operand, by_label(columns_of(left_operand), columns, mapping));
+                auto right = flatten(right_operand, by_label(columns_of(right_operand), columns, mapping));
                 result.insert(result.end(), std::make_move_iterator(right.begin()), std::make_move_iterator(right.end()));
                 return result;
             }
@@ -117,9 +117,9 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 // An antijoin's right-only columns get fresh variables inside the negation.
                 const auto left_operand = concrete.get_left_operand();
                 const auto right_operand = concrete.get_right_operand();
-                auto result = flatten(left_operand, by_label(left_operand.columns(), columns, mapping));
+                auto result = flatten(left_operand, by_label(columns_of(left_operand), columns, mapping));
                 auto negation = ConjunctiveNegation { urd::Store<urd::sequence<uint32_t>>(mapping.begin(), mapping.end()),
-                                                      flatten(right_operand, by_label(right_operand.columns(), columns, mapping)) };
+                                                      flatten(right_operand, by_label(columns_of(right_operand), columns, mapping)) };
                 for (auto& branch : result)
                     branch.negations.push_back(negation);
                 return result;

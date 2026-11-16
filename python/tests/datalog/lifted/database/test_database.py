@@ -81,7 +81,7 @@ def test_nullary_relation() -> None:
     assert relation.columns() == []
     repository = formalism.RelationRepository()
     view = repository.view(relation)
-    assert view.rows() == []
+    assert view.get_rows() == []
     relation.insert([])
     relation.insert([])
     assert relation.size() == 1
@@ -123,7 +123,7 @@ def test_row_lists_keep_pooled_rows_alive() -> None:
     relation = repository.get_relation_builder(layouts(0, 1))
     insert(relation, [3, 4])
     insert(relation, [5, 6])
-    rows = repository.view(relation).rows()
+    rows = repository.view(relation).get_rows()
     assert isinstance(rows, list)
     del relation, repository
     gc.collect()
@@ -184,7 +184,7 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
     # Every borrowed layer must keep the repository alive, without keeping the
     # mutable builder alive or depending on its buffers.
     row = relation.row(0)
-    rows = renamed.rows()
+    rows = renamed.get_rows()
     del relation, duplicate, renamed, repository, other_repository, builder
     gc.collect()
     assert values(row) == (3, 4)
@@ -198,7 +198,7 @@ def test_interned_nullary_relations_and_repository_reset() -> None:
     builder.insert([])
     true = intern(repository, builder)[0]
     assert false.empty()
-    assert false.rows() == []
+    assert false.get_rows() == []
     assert tuples(true) == [()]
     assert false != true
     assert len(repository) == 2

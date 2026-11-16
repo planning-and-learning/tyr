@@ -117,9 +117,7 @@ inline Source source_of(const Term& term, const Edge& edge) noexcept
 }
 
 inline urd::index<formalism::Object> object_of(const Term& term, Source from, const Vertex& vertex) noexcept
-{
-    return from == Source::constant ? urd::index<formalism::Object>(term.value) : vertex.get_object_index();
-}
+{ return from == Source::constant ? urd::index<formalism::Object>(term.value) : vertex.get_object_index(); }
 inline urd::index<formalism::Object> object_of(const Term& term, Source from, const Edge& edge) noexcept
 {
     if (from == Source::constant)
@@ -180,9 +178,7 @@ inline bool consistent_literals(const Literals<T>& literals,
 
 template<formalism::FactKind T>
 inline bool consistent_literals(const Vertex& vertex, const Literals<T>& literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
-{
-    return consistent_literals(literals, literals.by_parameter[vertex.get_parameter_index().value], vertex, at_vertex, predicate_assignment_sets);
-}
+{ return consistent_literals(literals, literals.by_parameter[vertex.get_parameter_index().value], vertex, at_vertex, predicate_assignment_sets); }
 
 template<formalism::FactKind T>
 inline bool consistent_literals(const Edge& edge, const Literals<T>& literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
@@ -250,9 +246,7 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{
-    return apply(element.get_operation(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets));
-}
+{ return apply(element.get_operation(), consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets)); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element,
@@ -282,27 +276,21 @@ inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog:
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(ygg::float_t value, const GraphStructure&, const ConstraintTerms&, const AssignmentSets&)
-{
-    return ygg::ClosedInterval<ygg::float_t>(value, value);
-}
+{ return ygg::ClosedInterval<ygg::float_t>(value, value); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::StaticTag> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{
-    return consistent_interval(constraint_info.static_terms, element.index(), structure, assignment_sets.static_sets().function);
-}
+{ return consistent_interval(constraint_info.static_terms, element.index(), structure, assignment_sets.static_sets().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionTermView<LiftedTag, formalism::FluentTag> element,
                                                              const GraphStructure& structure,
                                                              const ConstraintTerms& constraint_info,
                                                              const AssignmentSets& assignment_sets)
-{
-    return consistent_interval(constraint_info.fluent_terms, element.index(), structure, assignment_sets.fluent_sets().function);
-}
+{ return consistent_interval(constraint_info.fluent_terms, element.index(), structure, assignment_sets.fluent_sets().function); }
 
 template<typename GraphStructure>
 inline ygg::ClosedInterval<ygg::float_t> consistent_interval(formalism::datalog::FunctionExpressionView<LiftedTag> element,
@@ -363,9 +351,7 @@ static std::vector<details::Term> terms_of(const Terms& terms)
 
 template<typename T>
 static details::Rows<T> rows_of(const std::vector<std::vector<T>>& rows)
-{
-    return details::Rows<T>(rows.begin(), rows.end());
-}
+{ return details::Rows<T>(rows.begin(), rows.end()); }
 
 /// A condition's literals of fact kind T and where a vertex or an edge reads them.
 template<formalism::FactKind T>
@@ -431,9 +417,7 @@ static auto constraint_terms_of(formalism::datalog::ConjunctiveConditionView<Lif
 }
 
 static auto literals_of(formalism::datalog::ConjunctiveConditionView<LiftedTag> element)
-{
-    return literals_of(element.get_literals<formalism::FluentTag>(), element.get_arity());
-}
+{ return literals_of(element.get_literals<formalism::FluentTag>(), element.get_arity()); }
 
 static auto classify_adjacency(const kckp::Graph& graph, const formalism::datalog::VariableDependencyGraph& dependency_graph)
 {
@@ -619,9 +603,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 }
 
 const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept
-{
-    return m_binary_overapproximation_vdg;
-}
+{ return m_binary_overapproximation_vdg; }
 
 const kckp::Graph& StaticConsistencyGraph::get_graph() const noexcept { return m_compatibility_graph; }
 

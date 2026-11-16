@@ -34,27 +34,27 @@ from pytyr.formalism import (
 from pytyr.formalism.planning import (
     ActionLifted,
     ActionLiftedData,
+    AtomGroundFluent,
+    AtomGroundStatic,
+    AtomLiftedFluent,
+    AtomLiftedStatic,
     ConditionalEffectLiftedData,
+    ConjunctiveConditionGroundData,
     ConjunctiveConditionLifted,
     ConjunctiveConditionLiftedData,
     ConjunctiveEffectLiftedData,
     DomainData,
     FDRContext,
     FDRFactFluentData,
-    AtomLiftedFluent,
-    AtomGroundFluent,
-    LiteralLiftedFluent,
-    PredicateFluent,
-    ConjunctiveConditionGroundData,
     LiftedPlanningTask,
-    TaskLiftedData,
+    LiteralLiftedFluent,
+    LiteralLiftedStatic,
     Object,
     PlanningDomain,
-    Repository,
-    AtomLiftedStatic,
-    AtomGroundStatic,
-    LiteralLiftedStatic,
+    PredicateFluent,
     PredicateStatic,
+    Repository,
+    TaskLiftedData,
     Variable,
 )
 from pytyr.planning.lifted import (
@@ -85,28 +85,32 @@ def make_action(
         ),
     )[0]
     conditional_effect = repository.insert(
-        ConditionalEffectLiftedData(variables=[], condition=empty_condition, effect=effect),
+        ConditionalEffectLiftedData(variables=[], condition=empty_condition.index(), effect=effect.index()),
     )[0]
     return repository.insert(
         ActionLiftedData(
             name=name,
             original_name=name,
             original_arity=len(variables),
-            variables=variables,
-            condition=condition,
-            effects=[conditional_effect],
+            variables=[each.index() for each in variables],
+            condition=condition.index(),
+            effects=[conditional_effect.index()],
         ),
     )[0]
 
 
 def make_static_atom(repository: Repository, predicate: PredicateStatic, terms: Sequence[Term]) -> AtomLiftedStatic:
     """Insert the static atom of `predicate` over `terms`."""
-    return repository.insert(AtomLiftedStaticData(predicate, terms))[0]
+    return repository.insert(
+        AtomLiftedStaticData(predicate.index(), [term.index() if isinstance(term, Object) else term for term in terms])
+    )[0]
 
 
 def make_fluent_atom(repository: Repository, predicate: PredicateFluent, terms: Sequence[Term]) -> AtomLiftedFluent:
     """Insert the fluent atom of `predicate` over `terms`."""
-    return repository.insert(AtomLiftedFluentData(predicate, terms))[0]
+    return repository.insert(
+        AtomLiftedFluentData(predicate.index(), [term.index() if isinstance(term, Object) else term for term in terms])
+    )[0]
 
 
 def make_static_literal(
@@ -118,7 +122,7 @@ def make_static_literal(
 ) -> LiteralLiftedStatic:
     """Insert the static literal of `predicate` over `terms` with the given polarity."""
     atom = make_static_atom(repository, predicate, terms)
-    return repository.insert(LiteralLiftedStaticData(atom, polarity))[0]
+    return repository.insert(LiteralLiftedStaticData(atom.index(), polarity))[0]
 
 
 def make_fluent_literal(
@@ -130,23 +134,23 @@ def make_fluent_literal(
 ) -> LiteralLiftedFluent:
     """Insert the fluent literal of `predicate` over `terms` with the given polarity."""
     atom = make_fluent_atom(repository, predicate, terms)
-    return repository.insert(LiteralLiftedFluentData(atom, polarity))[0]
+    return repository.insert(LiteralLiftedFluentData(atom.index(), polarity))[0]
 
 
 def make_static_ground_atom(
     repository: Repository, predicate: PredicateStatic, objects: Sequence[Object]
 ) -> AtomGroundStatic:
     """Insert the static ground atom of `predicate` over `objects`."""
-    binding = repository.insert(RowPredicateStaticData(predicate, [obj.index() for obj in objects]))[0]
-    return repository.insert(AtomGroundStaticData(binding))[0]
+    binding = repository.insert(RowPredicateStaticData(predicate.index(), [obj.index().value for obj in objects]))[0]
+    return repository.insert(AtomGroundStaticData(binding.index()))[0]
 
 
 def make_fluent_ground_atom(
     repository: Repository, predicate: PredicateFluent, objects: Sequence[Object]
 ) -> AtomGroundFluent:
     """Insert the fluent ground atom of `predicate` over `objects`."""
-    binding = repository.insert(RowPredicateFluentData(predicate, [obj.index() for obj in objects]))[0]
-    return repository.insert(AtomGroundFluentData(binding))[0]
+    binding = repository.insert(RowPredicateFluentData(predicate.index(), [obj.index().value for obj in objects]))[0]
+    return repository.insert(AtomGroundFluentData(binding.index()))[0]
 
 
 def main() -> None:
@@ -202,13 +206,13 @@ def main() -> None:
 
     move_condition = domain_repository.insert(
         ConjunctiveConditionLiftedData(
-            variables=[v_from, v_to],
+            variables=[v_from.index(), v_to.index()],
             static_literals=[
-                make_static_literal(domain_repository, room, [t_from], polarity=True),
-                make_static_literal(domain_repository, room, [t_to], polarity=True),
+                make_static_literal(domain_repository, room, [t_from], polarity=True).index(),
+                make_static_literal(domain_repository, room, [t_to], polarity=True).index(),
             ],
             fluent_literals=[
-                make_fluent_literal(domain_repository, at_robby, [t_from], polarity=True),
+                make_fluent_literal(domain_repository, at_robby, [t_from], polarity=True).index(),
             ],
             derived_literals=[],
             numeric_constraints=[],
@@ -222,8 +226,8 @@ def main() -> None:
         move_condition,
         ConjunctiveEffectLiftedData(
             literals=[
-                make_fluent_literal(domain_repository, at_robby, [t_to], polarity=True),
-                make_fluent_literal(domain_repository, at_robby, [t_from], polarity=False),
+                make_fluent_literal(domain_repository, at_robby, [t_to], polarity=True).index(),
+                make_fluent_literal(domain_repository, at_robby, [t_from], polarity=False).index(),
             ],
             numeric_effects=[],
             auxiliary_numeric_effect=None,
@@ -243,16 +247,16 @@ def main() -> None:
 
     pick_condition = domain_repository.insert(
         ConjunctiveConditionLiftedData(
-            variables=[v_obj, v_room, v_gripper],
+            variables=[v_obj.index(), v_room.index(), v_gripper.index()],
             static_literals=[
-                make_static_literal(domain_repository, ball, [t_obj], polarity=True),
-                make_static_literal(domain_repository, room, [t_room], polarity=True),
-                make_static_literal(domain_repository, gripper, [t_gripper], polarity=True),
+                make_static_literal(domain_repository, ball, [t_obj], polarity=True).index(),
+                make_static_literal(domain_repository, room, [t_room], polarity=True).index(),
+                make_static_literal(domain_repository, gripper, [t_gripper], polarity=True).index(),
             ],
             fluent_literals=[
-                make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=True),
-                make_fluent_literal(domain_repository, at_robby, [t_room], polarity=True),
-                make_fluent_literal(domain_repository, free, [t_gripper], polarity=True),
+                make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=True).index(),
+                make_fluent_literal(domain_repository, at_robby, [t_room], polarity=True).index(),
+                make_fluent_literal(domain_repository, free, [t_gripper], polarity=True).index(),
             ],
             derived_literals=[],
             numeric_constraints=[],
@@ -266,9 +270,9 @@ def main() -> None:
         pick_condition,
         ConjunctiveEffectLiftedData(
             literals=[
-                make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=True),
-                make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=False),
-                make_fluent_literal(domain_repository, free, [t_gripper], polarity=False),
+                make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=True).index(),
+                make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=False).index(),
+                make_fluent_literal(domain_repository, free, [t_gripper], polarity=False).index(),
             ],
             numeric_effects=[],
             auxiliary_numeric_effect=None,
@@ -288,15 +292,15 @@ def main() -> None:
 
     drop_condition = domain_repository.insert(
         ConjunctiveConditionLiftedData(
-            variables=[v_obj, v_room, v_gripper],
+            variables=[v_obj.index(), v_room.index(), v_gripper.index()],
             static_literals=[
-                make_static_literal(domain_repository, ball, [t_obj], polarity=True),
-                make_static_literal(domain_repository, room, [t_room], polarity=True),
-                make_static_literal(domain_repository, gripper, [t_gripper], polarity=True),
+                make_static_literal(domain_repository, ball, [t_obj], polarity=True).index(),
+                make_static_literal(domain_repository, room, [t_room], polarity=True).index(),
+                make_static_literal(domain_repository, gripper, [t_gripper], polarity=True).index(),
             ],
             fluent_literals=[
-                make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=True),
-                make_fluent_literal(domain_repository, at_robby, [t_room], polarity=True),
+                make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=True).index(),
+                make_fluent_literal(domain_repository, at_robby, [t_room], polarity=True).index(),
             ],
             derived_literals=[],
             numeric_constraints=[],
@@ -310,9 +314,9 @@ def main() -> None:
         drop_condition,
         ConjunctiveEffectLiftedData(
             literals=[
-                make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=True),
-                make_fluent_literal(domain_repository, free, [t_gripper], polarity=True),
-                make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=False),
+                make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=True).index(),
+                make_fluent_literal(domain_repository, free, [t_gripper], polarity=True).index(),
+                make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=False).index(),
             ],
             numeric_effects=[],
             auxiliary_numeric_effect=None,
@@ -322,14 +326,14 @@ def main() -> None:
     domain = domain_repository.insert(
         DomainData(
             name="gripper-strips",
-            static_predicates=[room, ball, gripper],
-            fluent_predicates=[at_robby, at, free, carry],
+            static_predicates=[room.index(), ball.index(), gripper.index()],
+            fluent_predicates=[at_robby.index(), at.index(), free.index(), carry.index()],
             derived_predicates=[],
             static_functions=[],
             fluent_functions=[],
             auxiliary_function=None,
-            constants=[rooma, roomb],
-            actions=[move, pick, drop],
+            constants=[rooma.index(), roomb.index()],
+            actions=[move.index(), pick.index(), drop.index()],
             axioms=[],
         ),
     )[0]
@@ -386,7 +390,9 @@ def main() -> None:
         ConjunctiveConditionGroundData(
             static_literals=[],
             derived_literals=[],
-            positive_facts=[FDRFactFluentData(goal_at_ball1_roomb.get_variable(), goal_at_ball1_roomb.get_value())],
+            positive_facts=[
+                FDRFactFluentData(goal_at_ball1_roomb.get_variable().index(), goal_at_ball1_roomb.get_value())
+            ],
             negative_facts=[],
             numeric_constraints=[],
         ),
@@ -395,15 +401,15 @@ def main() -> None:
     task = task_repository.insert(
         TaskLiftedData(
             name="gripper-1",
-            domain=domain,
+            domain=domain.index(),
             derived_predicates=[],
-            objects=[left, right, ball1],
-            static_atoms=static_atoms,
-            fluent_atoms=fluent_atoms,
+            objects=[left.index(), right.index(), ball1.index()],
+            static_atoms=[each.index() for each in static_atoms],
+            fluent_atoms=[each.index() for each in fluent_atoms],
             static_fterm_values=[],
             fluent_fterm_values=[],
             auxiliary_fterm_value=None,
-            goal=goal,
+            goal=goal.index(),
             metric=None,
             axioms=[],
         ),

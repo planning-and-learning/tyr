@@ -199,7 +199,11 @@ void bind_task_policies(nb::module_& m)
     nb::class_<CostPolicy>(m, "RuleCostOverridePolicy")
         .def(nb::init<>())
         .def("clear", &CostPolicy::clear)
-        .def("set_cost", [](CostPolicy& self, RuleKey<Kind> rule, Cost cost) { self.set_cost(rule, cost); }, "rule"_a, "cost"_a)
+        .def(
+            "set_cost",
+            [](CostPolicy& self, RuleKey<Kind> rule, Cost cost) { self.set_cost(rule, cost); },
+            "rule"_a,
+            "cost"_a)
         .def("get_cost", [](const CostPolicy& self, typename CostPolicy::RuleInstanceKey rule) { return self.get_cost(rule); }, "rule"_a);
 }
 
@@ -353,7 +357,8 @@ void bind_common_configurations(nb::module_& m)
     bind_configuration<Kind, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<Kind>>(m, "SumGoalOverride");
     bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<Kind>>(m, "MaxOverride");
     bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<Kind>>(m, "MaxGoalOverride");
-    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>(m, "MaxAchieverGoal");
+    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>(m,
+                                                                                                                                            "MaxAchieverGoal");
     bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<Kind>>(
         m,
         "MaxAchieverGoalOverride");

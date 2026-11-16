@@ -21,10 +21,7 @@
 #include <urd/store.hpp>
 #include <vector>
 
-namespace tyr::datalog::database
-{
-
-namespace detail
+namespace tyr::datalog::database::detail
 {
 /// The value of a row's field: a stored row's, or a row of values' (a query's frame of variables).
 inline ygg::Value field_value(const ygg::RowPool::row_type& row, size_t position) noexcept { return row.get(position); }
@@ -54,8 +51,6 @@ void build_join_index(const V& build, std::span<const ColumnSlice> keys, urd::St
     for (size_t i = 0; i < build.size(); ++i)
         index.insert({ join_key_hash(build.row(i).get_values(), keys), i });
 }
-}  // namespace detail
-
-}  // namespace tyr::datalog::database
+}  // namespace tyr::datalog::database::detail
 
 #endif

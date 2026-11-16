@@ -146,7 +146,9 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
     plan = plan_for(source, edges, target)
     evaluator = database.DistanceEvaluator(RELATIONS, plan)
     repository = formalism.RelationRepository()
-    evaluator.initialize(*borrow(source, database.assign(formalism.RelationBuilder(), intern(repository, edges)[0]), target))
+    evaluator.initialize(
+        *borrow(source, database.assign(formalism.RelationBuilder(), intern(repository, edges)[0]), target)
+    )
     expected = {(0, 0, 0), (0, 2, 2), (0, 3, 1), (2, 2, 0), (2, 3, 1)}
     assert rows(evaluator.get_result()) == expected
     assert evaluator.get_delta().added.empty()
@@ -262,7 +264,7 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
         case "removed_columns":
             retained = delta.removed.columns()
         case "rows":
-            retained = result.rows()
+            retained = result.get_rows()
         case _:
             raise AssertionError(leaf)
     del evaluator, delta, result, plan, source, edges, target

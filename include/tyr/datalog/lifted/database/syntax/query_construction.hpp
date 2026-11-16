@@ -37,16 +37,12 @@ void derive(urd::data<Query<Tag>>& /*data*/, const QueryRepository& /*repository
 template<typename Tag>
     requires boost::mp11::mp_contains<QueryJoinTags, Tag>::value
 void derive(urd::data<Query<Tag>>& data, const QueryRepository& repository)
-{
-    data.plan = JoinPlan(child_columns(data.left_operand, repository), child_columns(data.right_operand, repository));
-}
+{ data.plan = JoinPlan(child_columns(data.left_operand, repository), child_columns(data.right_operand, repository)); }
 
 template<typename Tag>
     requires boost::mp11::mp_contains<QuerySetTags, Tag>::value
 void derive(urd::data<Query<Tag>>& data, const QueryRepository& repository)
-{
-    data.plan = SetPlan(child_columns(data.left_operand, repository), child_columns(data.right_operand, repository));
-}
+{ data.plan = SetPlan(child_columns(data.left_operand, repository), child_columns(data.right_operand, repository)); }
 
 void derive(urd::data<Query<QueryProjectTag>>& data, const QueryRepository& repository);
 

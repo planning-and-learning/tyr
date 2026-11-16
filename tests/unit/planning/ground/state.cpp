@@ -43,15 +43,15 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     builder.atom_storage.atoms();
     builder.numeric_storage.fterm_values();
     view.index();
-    view.template get_atoms<::tyr::formalism::StaticTag>();
+    view.template get_atom_indices<::tyr::formalism::StaticTag>();
     view.get_fluent_facts();
-    view.template get_atoms<tyr::formalism::FluentTag>();
-    view.template get_atoms<::tyr::formalism::DerivedTag>();
+    view.template get_atom_indices<tyr::formalism::FluentTag>();
+    view.template get_atom_indices<::tyr::formalism::DerivedTag>();
     view.template get_fterm_values<tyr::formalism::StaticTag>();
     view.template get_fterm_values<tyr::formalism::FluentTag>();
-    view.template get_atoms_view<::tyr::formalism::StaticTag>();
+    view.template get_atoms<::tyr::formalism::StaticTag>();
     view.get_fluent_facts_view();
-    view.template get_atoms_view<::tyr::formalism::DerivedTag>();
+    view.template get_atoms<::tyr::formalism::DerivedTag>();
     view.template get_fterm_values_view<tyr::formalism::StaticTag>();
     view.template get_fterm_values_view<tyr::formalism::FluentTag>();
     view.get_formalism_repository();
@@ -104,7 +104,7 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     auto axioms = std::make_shared<tyr::planning::AxiomEvaluator<tyr::GroundTag>>(task, execution_context);
     auto source_repository = std::make_shared<tyr::planning::StateRepository<tyr::GroundTag>>(task);
     const auto initial = source_repository->get_initial_state(*axioms);
-    const auto derived = initial.template get_atoms<::tyr::formalism::DerivedTag>();
+    const auto derived = initial.template get_atom_indices<::tyr::formalism::DerivedTag>();
     ASSERT_FALSE(derived.begin() == derived.end());
     auto source = urd::builder<tyr::planning::State<tyr::GroundTag>>();
     source.assign(initial);
@@ -124,7 +124,7 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     EXPECT_EQ(retained.get_numeric_storage().values.capacity(), capacity);
     EXPECT_TRUE(source.index.is_none());
     EXPECT_TRUE(std::ranges::equal(source.get_fluent_facts(), initial.get_fluent_facts()));
-    EXPECT_TRUE(std::ranges::equal(source.atom_storage.atoms(), initial.template get_atoms<tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(std::ranges::equal(source.atom_storage.atoms(), initial.template get_atom_indices<tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(std::ranges::equal(source.numeric_storage.fterm_values(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
     EXPECT_EQ(target->register_extended_state(borrowed), retained);
     EXPECT_EQ(target->num_states(), 1);
@@ -134,7 +134,8 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
 
     source.clear();
     EXPECT_TRUE(std::ranges::equal(retained.get_fluent_facts(), initial.get_fluent_facts()));
-    EXPECT_TRUE(std::ranges::equal(retained.template get_atoms<::tyr::formalism::DerivedTag>(), initial.template get_atoms<::tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(std::ranges::equal(retained.template get_atom_indices<::tyr::formalism::DerivedTag>(),
+                                   initial.template get_atom_indices<::tyr::formalism::DerivedTag>()));
     EXPECT_TRUE(
         std::ranges::equal(retained.template get_fterm_values<tyr::formalism::FluentTag>(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
 }
@@ -169,8 +170,8 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
     const auto successors = generator->get_labeled_successor_nodes(tyr::planning::Node<tyr::GroundTag>(initial, 0), *repository, *axioms);
     ASSERT_EQ(successors.size(), 1);
     const auto target = successors[0].node.get_state();
-    const auto source_atom = *initial.get_atoms_view<tyr::formalism::FluentTag>().begin();
-    const auto target_atom = *target.get_atoms_view<tyr::formalism::FluentTag>().begin();
+    const auto source_atom = *initial.get_atoms<tyr::formalism::FluentTag>().begin();
+    const auto target_atom = *target.get_atoms<tyr::formalism::FluentTag>().begin();
     const auto source_fact = std::as_const(*task->get_fdr_context()).get_fact(source_atom);
     const auto target_fact = std::as_const(*task->get_fdr_context()).get_fact(target_atom);
     ASSERT_TRUE(source_fact && target_fact);

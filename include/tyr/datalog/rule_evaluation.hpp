@@ -166,9 +166,7 @@ RuleUpdateInput<Kind, AP, CP> make_rule_update_input(RuleInstance<Kind> rule_ins
                                                      const PredicateAnnotations<Kind>& predicate_annotations,
                                                      AP& annotation_policy,
                                                      const CP& cost_policy)
-{
-    return { std::move(rule_instance), RuleEvaluationInput<Kind> { fact_sets, predicate_annotations }, &annotation_policy, &cost_policy };
-}
+{ return { std::move(rule_instance), RuleEvaluationInput<Kind> { fact_sets, predicate_annotations }, &annotation_policy, &cost_policy }; }
 
 enum class RuleUpdateStatus : std::uint8_t
 {
@@ -313,8 +311,8 @@ auto evaluate_propositional_candidate(RuleInstance<Kind>& rule_instance,
 
 /// The heads of a rule instance as the keys of its predicate annotations, a range read more than once.
 template<typename R>
-concept PredicateHeads = std::ranges::forward_range<R>
-                         && std::same_as<std::ranges::range_value_t<R>, formalism::datalog::PredicateRowIndex<formalism::FluentTag>>;
+concept PredicateHeads =
+    std::ranges::forward_range<R> && std::same_as<std::ranges::range_value_t<R>, formalism::datalog::PredicateRowIndex<formalism::FluentTag>>;
 
 /// The cost below which a candidate improves some head of the instance: each head's best cost, committed or staged,
 /// the most of them. A candidate at or above it improves none.
@@ -339,9 +337,7 @@ auto evaluate_propositional_candidate(const Heads& heads,
 
 template<TaskKind Kind, typename Candidate>
 WitnessAnnotation<Kind> materialize_witness(RuleInstance<Kind>& instance, const Candidate& candidate)
-{
-    return WitnessAnnotation<Kind>(instance.witness_key(), candidate.cost);
-}
+{ return WitnessAnnotation<Kind>(instance.witness_key(), candidate.cost); }
 
 /// Updates each head of the rule instance with its candidate (none where it is pruned or not available), sharing one
 /// witness.

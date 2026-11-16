@@ -38,11 +38,11 @@ static_assert(requires(ConjunctiveConditionData& data) {
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const ConjunctiveConditionView& view) {
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms_view<tyr::formalism::StaticTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::StaticTag>(true))>,
                           tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::StaticTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms_view<tyr::formalism::FluentTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::FluentTag>(true))>,
                           tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::FluentTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms_view<tyr::formalism::DerivedTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::DerivedTag>(true))>,
                           tyr::formalism::planning::AtomView<::tyr::LiftedTag, tyr::formalism::DerivedTag>>;
     view.index();
     view.get_variables();
@@ -78,11 +78,11 @@ static_assert(requires(GroundConjunctiveConditionData& data) {
     { data == data } -> std::same_as<bool>;
 });
 static_assert(requires(const GroundConjunctiveConditionView& view) {
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms_view<tyr::formalism::StaticTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::StaticTag>(true))>,
                           tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms_view<tyr::formalism::FluentTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::FluentTag>(true))>,
                           tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag>>;
-    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms_view<tyr::formalism::DerivedTag>(true))>,
+    requires std::same_as<std::ranges::range_value_t<decltype(view.template get_atoms<tyr::formalism::DerivedTag>(true))>,
                           tyr::formalism::planning::AtomView<::tyr::GroundTag, tyr::formalism::DerivedTag>>;
     view.index();
     view.template get_literals<tyr::formalism::StaticTag>();
@@ -150,22 +150,22 @@ void expect_condition_atom_projection()
     {
         // Both the condition argument and its container-view wrappers have expired
         // before iteration starts; only the repository must remain alive.
-        auto positive = repository.view(condition.index()).template get_atoms_view<F>(true);
-        auto negative = repository.view(condition.index()).template get_atoms_view<F>(false);
+        auto positive = repository.view(condition.index()).template get_atoms<F>(true);
+        auto negative = repository.view(condition.index()).template get_atoms<F>(false);
         EXPECT_TRUE(std::ranges::equal(positive, std::array { pair.first }));
         EXPECT_TRUE(std::ranges::equal(negative, std::array { pair.second }));
-        auto filtered_positive = repository.view(condition.index()).template get_atoms_view<F>(true, pair.first.get_predicate());
-        auto filtered_negative = repository.view(condition.index()).template get_atoms_view<F>(false, pair.second.get_predicate());
+        auto filtered_positive = repository.view(condition.index()).template get_atoms<F>(true, pair.first.get_predicate());
+        auto filtered_negative = repository.view(condition.index()).template get_atoms<F>(false, pair.second.get_predicate());
         EXPECT_TRUE(std::ranges::equal(filtered_positive, std::array { pair.first }));
         EXPECT_TRUE(std::ranges::equal(filtered_negative, std::array { pair.second }));
-        auto opposite = condition.template get_atoms_view<F>(true, pair.second.get_predicate());
+        auto opposite = condition.template get_atoms<F>(true, pair.second.get_predicate());
         EXPECT_TRUE(opposite.begin() == opposite.end());
         auto foreign_repository = tyr::formalism::planning::Repository();
         auto foreign_data = urd::data<tyr::formalism::Predicate<F>>(std::string("positive"), 0);
         const auto foreign = tyr::formalism::planning::insert(foreign_repository, foreign_data).first;
         ASSERT_EQ(foreign.index(), pair.first.get_predicate().index());
         ASSERT_NE(foreign, pair.first.get_predicate());
-        auto absent = condition.template get_atoms_view<F>(true, foreign);
+        auto absent = condition.template get_atoms<F>(true, foreign);
         EXPECT_TRUE(absent.begin() == absent.end());
     };
     check.template operator()<tyr::formalism::StaticTag>(static_atoms);

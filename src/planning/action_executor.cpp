@@ -214,18 +214,14 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{
-    return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state);
-}
+{ return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state); }
 
 template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{
-    return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families);
-}
+{ return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families); }
 
 template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
@@ -295,7 +291,8 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                               auto applicability_context = ApplicabilityContext { tmp_state_context, grounder, fdr };
                                               for (const auto cond_effect : action.get_effects())
                                                   for_each_effect_binding(cond_effect,
-                                                                          [&] {
+                                                                          [&]
+                                                                          {
                                                                               apply_lifted_effect(cond_effect,
                                                                                                   out_state,
                                                                                                   tmp_state_context,

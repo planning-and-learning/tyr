@@ -25,7 +25,7 @@ urd::Store<urd::sequence<size_t>> input_slots(std::span<const QueryView<>> roots
 
 namespace tyr::datalog::database
 {
-QueryPlan compile(std::span<const QueryView<>> roots)
+QueryPlan compile_plan(std::span<const QueryView<>> roots)
 {
     if (roots.empty())
         return QueryPlan {};
@@ -40,5 +40,5 @@ QueryPlan compile(std::span<const QueryView<>> roots)
 
 namespace tyr::datalog::database
 {
-QueryPlan compile(std::initializer_list<QueryView<>> roots) { return compile(std::span<const QueryView<>>(roots)); }
+QueryPlan compile_plan(std::initializer_list<QueryView<>> roots) { return compile_plan(std::span<const QueryView<>>(roots)); }
 }

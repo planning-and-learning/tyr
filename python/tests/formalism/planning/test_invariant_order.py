@@ -9,9 +9,9 @@ from pypddl_datasets import fetch_task
 from pyyggdrasil.execution import ExecutionContext
 
 from pytyr.formalism.planning import (
+    AtomGroundFluent,
     FDRFactFluent,
     FDRVariableFluent,
-    AtomGroundFluent,
     Invariant,
     InvariantOrderCriterion,
     InvariantOrderOptions,

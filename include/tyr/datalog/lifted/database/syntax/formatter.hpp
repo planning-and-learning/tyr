@@ -62,9 +62,7 @@ struct formatter<tyr::datalog::database::QueryPlan, char>
 
     template<typename FormatContext>
     auto format(const tyr::datalog::database::QueryPlan& plan, FormatContext& ctx) const
-    {
-        return tyr::datalog::database::detail::format_query_plan(ctx.out(), plan);
-    }
+    { return tyr::datalog::database::detail::format_query_plan(ctx.out(), plan); }
 };
 
 /// An operation's plan, as the columns it produces: how a query's record writes it.
@@ -83,9 +81,7 @@ struct formatter<Plan, char>
 
     template<typename FormatContext>
     auto format(const Plan& plan, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "[{}]", fmt::join(plan.output_columns(), ", "));
-    }
+    { return fmt::format_to(ctx.out(), "[{}]", fmt::join(plan.output_columns(), ", ")); }
 };
 }  // namespace fmt
 #endif

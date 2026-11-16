@@ -40,15 +40,13 @@ std::vector<ygg::ColumnLayout> cols(std::initializer_list<Column> labels)
 {
     std::vector<ygg::ColumnLayout> result;
     for (const auto label : labels)
-        result.push_back({ label, ygg::type_id<ygg::uint_t> });
+        result.emplace_back(label, ygg::type_id<ygg::uint_t>);
     return result;
 }
 
 /// The relations as views.
 std::array<ygg::FreeRelationBuilderView, 3> borrow_all(const std::array<Relation, 3>& relations)
-{
-    return { borrow(relations[0]), borrow(relations[1]), borrow(relations[2]) };
-}
+{ return { borrow(relations[0]), borrow(relations[1]), borrow(relations[2]) }; }
 
 struct Triangle
 {
@@ -116,7 +114,7 @@ bool equal(ygg::FreeRelationBuilderView left, ygg::FreeRelationBuilderView right
 {
     if (left.size() != right.size() || !std::ranges::equal(left.columns(), right.columns()))
         return false;
-    for (const auto row : left.rows())
+    for (const auto row : left.get_rows())
         if (!right.contains(row))
             return false;
     return true;
@@ -125,14 +123,14 @@ bool equal(ygg::FreeRelationBuilderView left, ygg::FreeRelationBuilderView right
 bool exact_delta(const database::incremental::Delta& delta, const Relation& before, const Relation& after)
 {
     size_t added = 0, removed = 0;
-    for (const auto row : borrow(after).rows())
+    for (const auto row : borrow(after).get_rows())
         if (!before.contains(row))
         {
             ++added;
             if (!delta.added.contains(row))
                 return false;
         }
-    for (const auto row : borrow(before).rows())
+    for (const auto row : borrow(before).get_rows())
         if (!after.contains(row))
         {
             ++removed;
@@ -154,7 +152,7 @@ database::QueryPlan plan(const Triangle& trace, Planning planning, const databas
     switch (planning)
     {
         case Planning::original:
-            return database::compile({ trace.root });
+            return database::compile_plan({ trace.root });
         case Planning::structural:
             return database::optimize(trace.root);
         case Planning::measured:
@@ -181,7 +179,7 @@ void query_updates(benchmark::State& state)
     const auto initial = borrow_all(trace.initial);
     const auto changed = borrow_all(trace.changed);
     const auto forward = trace.deltas(true), backward = trace.deltas(false);
-    database::QueryEvaluator reference(layer(), database::compile({ trace.root }));
+    database::QueryEvaluator reference(layer(), database::compile_plan({ trace.root }));
     reference.evaluate(initial);
     Relation before(reference.get_result().columns());
     database::assign(before, reference.get_result());
@@ -258,7 +256,7 @@ void generic_join_full(benchmark::State& state)
     database::GenericJoinWorkspace workspace(plan);
     Relation output(plan.output_columns());
     database::generic_join(input, plan, output, workspace);
-    database::QueryEvaluator reference(layer(), database::compile({ trace.root }));
+    database::QueryEvaluator reference(layer(), database::compile_plan({ trace.root }));
     reference.evaluate(input);
     if (!equal(borrow(output), reference.get_result()))
     {

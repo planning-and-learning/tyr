@@ -42,10 +42,10 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
 {
     const auto k = sources.columns().size();
     const ygg::FreeRelationRepository layer;
-    const auto plan = tyr::datalog::database::DistancePlan(sources.columns(), edges.columns(), targets.columns(), Column(99));
+    const auto plan = tyr::datalog::database::DistancePlan(sources.columns(), columns_of(edges), targets.columns(), Column(99));
     auto blind = tyr::datalog::database::MinDistance(layer, edges, plan, static_slots);
     auto guided = tyr::datalog::database::MinDistance<HalfDistance>(layer, edges, plan, static_slots);
-    auto evaluator = tyr::datalog::database::QueryEvaluator(layer, tyr::datalog::database::compile({ edges }));
+    auto evaluator = tyr::datalog::database::QueryEvaluator(layer, tyr::datalog::database::compile_plan({ edges }));
     evaluator.evaluate(borrow_all(layer, maximal));
     auto supergraph = Relation(evaluator.get_result().columns());
     for (size_t i = 0; i < evaluator.get_result().size(); ++i)

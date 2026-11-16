@@ -282,8 +282,8 @@ TEST(YggdrasilTests, DatabaseGenericJoinIncrementalConsolidatesMixedAliasChanges
     const auto first = tyr::datalog::tests::ops::intern(repository, edge).first;
     const auto second = tyr::datalog::tests::ops::rename(repository, first, tyr::datalog::tests::ops::cols({ ColumnIndex(2), ColumnIndex(3) }));
     ASSERT_TRUE(std::ranges::equal(
-        first.rows(),
-        second.rows(),
+        first.get_rows(),
+        second.get_rows(),
         {},
         [](const auto& row) { return row.index(); },
         [](const auto& row) { return row.index(); }));  // a rename keeps the rows

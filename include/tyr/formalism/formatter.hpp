@@ -119,9 +119,7 @@ struct formatter<tyr::formalism::ParameterIndex, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::ParameterIndex& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "V{}", value.value);
-    }
+    { return fmt::format_to(ctx.out(), "V{}", value.value); }
 };
 
 template<>
@@ -130,9 +128,7 @@ struct formatter<tyr::formalism::BooleanOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::BooleanOperatorKind value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
 
 template<>
@@ -141,9 +137,7 @@ struct formatter<tyr::formalism::ArithmeticOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::ArithmeticOperatorKind value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
 
 template<>
@@ -152,9 +146,7 @@ struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::NumericEffectOperatorKind value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
 
 /// A record as tyr writes it (its to_string, PDDL-like): this subsumes urd's field-by-field formatter (HasFields), so it
@@ -167,9 +159,7 @@ struct formatter<urd::data<T>, char>
 
     template<typename FormatContext>
     auto format(const urd::data<T>& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", tyr::formalism::detail::text(value));
-    }
+    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::detail::text(value)); }
 };
 
 }  // namespace fmt

@@ -60,9 +60,7 @@ public:
 
     template<typename RuleKey>
     [[nodiscard]] Cost get_cost(RuleKey) const noexcept
-    {
-        return static_cast<Cost>(0);
-    }
+    { return static_cast<Cost>(0); }
 
     void clear() noexcept {}
     template<typename RuleKey>

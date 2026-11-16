@@ -394,9 +394,9 @@ TEST(YggdrasilTests, DatabaseDistanceMixedTupleTypesShareCanonicalVertices)
         std::vector<ygg::ColumnLayout> result;
         for (size_t i = 0; i < tuples; ++i)
         {
-            result.push_back({ ColumnIndex(label++), ygg::type_id<ygg::uint_t> });
-            result.push_back({ ColumnIndex(label++), ygg::type_id<double> });
-            result.push_back({ ColumnIndex(label++), ygg::type_id<bool> });
+            result.emplace_back(ColumnIndex(label++), ygg::type_id<ygg::uint_t>);
+            result.emplace_back(ColumnIndex(label++), ygg::type_id<double>);
+            result.emplace_back(ColumnIndex(label++), ygg::type_id<bool>);
         }
         return result;
     };

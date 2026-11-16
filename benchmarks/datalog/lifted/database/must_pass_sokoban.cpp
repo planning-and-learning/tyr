@@ -249,7 +249,7 @@ int run(std::span<char*> args)
     const auto input = [&](const Relation& relation, std::initializer_list<Column> labels)
     {
         auto& rows = slots.emplace_back(qb::columns_of(labels));
-        for (const auto row : borrow(relation).rows())
+        for (const auto row : borrow(relation).get_rows())
             rows.insert(row);
         return qb::input(queries, slots.size() - 1, labels);
     };
@@ -287,7 +287,7 @@ int run(std::span<char*> args)
                 targets.insert(std::array { ygg::encode_value(b), ygg::encode_value(location), ygg::encode_value(task.goal.at(b)) });
         probes.insert(std::array { ygg::encode_value(task.goal.at(b)) });
     }
-    const auto plan = tyr::datalog::database::MustPassPlan(sources.columns(), edges.columns(), targets.columns(), probes.columns(), 1);
+    const auto plan = tyr::datalog::database::MustPassPlan(sources.columns(), columns_of(edges), targets.columns(), probes.columns(), 1);
     auto must_pass = tyr::datalog::database::MustPass<PushDistance>(layer(), edges, plan);
     auto heuristic = PushDistance(task, environment("STATIC_HEURISTIC") == nullptr);
     auto views = urd::Store<urd::sequence<View>>();

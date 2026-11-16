@@ -40,6 +40,7 @@ from pytyr.planning.lifted import (
     Plan,
     PruningStrategy,
     State,
+    StateBuilder,
     StateRepository,
     SuccessorGenerator,
     Task,
@@ -95,7 +96,7 @@ class CustomGoalStrategy(GoalStrategy):
         raise NotImplementedError
 
     @override
-    def is_dynamic_goal_satisfied(self, seed_state: State, state: State) -> bool:
+    def is_dynamic_goal_satisfied(self, seed_state: State, state: State | StateBuilder) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 

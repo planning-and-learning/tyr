@@ -112,9 +112,7 @@ std::string to_string(urd::index_view<T, Repository> value)
 template<typename R>
     requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
 std::string to_string(ygg::RowView<R, Repository> value)
-{
-    return node_format::format(value);
-}
+{ return node_format::format(value); }
 
 TYR_VIEW_TO_STRINGS(42, 6)
 

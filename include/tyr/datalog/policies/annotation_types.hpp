@@ -97,7 +97,8 @@ struct PendingPredicateAchievers
     using Buckets = PendingPredicateAchieverBuckets<Kind>;
 
     Buckets buckets;
-    urd::Store<urd::map<PredicateAchieverKey<Kind>, PredicateAchiever<Kind>>> by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
+    urd::Store<urd::map<PredicateAchieverKey<Kind>, PredicateAchiever<Kind>>>
+        by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
 
     urd::Store<urd::sequence<PredicateAchieverKey<Kind>>>& bucket(Cost cost) { return buckets[cost]; }
 

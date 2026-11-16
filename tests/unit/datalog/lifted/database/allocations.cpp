@@ -54,9 +54,7 @@ using tyr::datalog::tests::ops::cols;
 
 template<typename T = ygg::uint_t, typename... Args>
 auto cells(Args... values)
-{
-    return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... };
-}
+{ return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... }; }
 
 template<typename T, size_t N>
 auto packed(const std::array<T, N>& values)
@@ -347,8 +345,8 @@ struct InterningEvaluation
             valid &= original.index() == duplicate.index();
             valid &= original.index() != renamed.index();
             valid &= std::ranges::equal(
-                original.rows(),
-                renamed.rows(),
+                original.get_rows(),
+                renamed.get_rows(),
                 {},
                 [](const auto& row) { return row.index(); },
                 [](const auto& row) { return row.index(); });
@@ -735,9 +733,7 @@ struct ChangingJoinEvaluation
     }
 
     [[nodiscard]] size_t memory_usage() const
-    {
-        return joining.memory_usage() + left_delta.memory_usage() + right_delta.memory_usage() + urd::memory_usage(workspace.join_index);
-    }
+    { return joining.memory_usage() + left_delta.memory_usage() + right_delta.memory_usage() + urd::memory_usage(workspace.join_index); }
 };
 }  // namespace
 

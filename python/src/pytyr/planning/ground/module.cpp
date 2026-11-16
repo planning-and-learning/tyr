@@ -33,6 +33,7 @@ void bind_ground_module_definitions(nb::module_& m)
     ygg::add_print(task);
 
     bind_kind_definitions<GroundTag>(m);
+    bind_match_tree(m);
 }
 
 }  // namespace tyr::planning

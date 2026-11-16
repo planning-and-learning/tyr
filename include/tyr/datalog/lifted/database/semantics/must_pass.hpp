@@ -203,7 +203,7 @@ private:
 
     static QueryView<> checked(QueryView<> edges, const MustPassPlan& plan)
     {
-        if (!std::ranges::equal(edges.columns(), plan.edge_columns()))
+        if (!std::ranges::equal(columns_of(edges), plan.edge_columns()))
             throw std::invalid_argument("Relational operation: input schema does not match prepared plan.");
         return edges;
     }

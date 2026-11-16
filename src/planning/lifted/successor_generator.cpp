@@ -540,9 +540,7 @@ SuccessorGenerator<LiftedTag>::SuccessorGenerator(SuccessorGenerator&&) noexcept
 SuccessorGenerator<LiftedTag>& SuccessorGenerator<LiftedTag>::operator=(SuccessorGenerator&&) noexcept = default;
 
 SuccessorGeneratorPtr<LiftedTag> SuccessorGenerator<LiftedTag>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{
-    return SuccessorGeneratorPtr<LiftedTag>(new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context))));
-}
+{ return SuccessorGeneratorPtr<LiftedTag>(new SuccessorGenerator<LiftedTag>(std::make_unique<Impl>(m_impl->definition, std::move(execution_context)))); }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_initial_node(StateRepository<LiftedTag>& state_repository, AxiomEvaluator<LiftedTag>& axiom_evaluator)
 {
@@ -873,33 +871,25 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& 
                                                                   formalism::planning::ActionView<GroundTag> action,
                                                                   StateRepository<LiftedTag>& storage,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return m_impl->successor(*this, node, action, storage, axiom_evaluator);
-}
+{ return m_impl->successor(*this, node, action, storage, axiom_evaluator); }
 
 BuilderNode SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                               formalism::planning::ActionView<GroundTag> action,
                                                               Builder& storage,
                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return m_impl->successor(*this, node, action, storage, axiom_evaluator);
-}
+{ return m_impl->successor(*this, node, action, storage, axiom_evaluator); }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                                   formalism::planning::ActionRowView binding,
                                                                   StateRepository<LiftedTag>& storage,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator);
-}
+{ return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator); }
 
 BuilderNode SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                               formalism::planning::ActionRowView binding,
                                                               Builder& storage,
                                                               AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator);
-}
+{ return get_successor_node(node, m_impl->stage(binding), storage, axiom_evaluator); }
 
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node,
                                                                   formalism::planning::ActionRowDataView binding,
@@ -929,39 +919,29 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Source& 
                                                                   const BindingData& binding,
                                                                   StateRepository<LiftedTag>& storage,
                                                                   AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return m_impl->successor(*this, node, binding, storage, axiom_evaluator);
-}
+{ return m_impl->successor(*this, node, binding, storage, axiom_evaluator); }
 
 BuilderNode
 SuccessorGenerator<LiftedTag>::get_successor_node(const Source& node, const BindingData& binding, Builder& storage, AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return m_impl->successor(*this, node, binding, storage, axiom_evaluator);
-}
+{ return m_impl->successor(*this, node, binding, storage, axiom_evaluator); }
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionRowView binding,
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
-}
+{ return get_successor_node(node, binding, state_repository, axiom_evaluator).pack(); }
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionView<GroundTag> action,
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return get_successor_node(node, action, state_repository, axiom_evaluator).pack();
-}
+{ return get_successor_node(node, action, state_repository, axiom_evaluator).pack(); }
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_successor_node(const Source& node,
                                                                                const BindingData& binding,
                                                                                StateRepository<LiftedTag>& state_repository,
                                                                                AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
-}
+{ return get_successor_node(node, binding, state_repository, axiom_evaluator).pack(); }
 
 template<typename Objects>
 ActionBindingStatus
@@ -1136,14 +1116,10 @@ bool SuccessorGenerator<LiftedTag>::for_each_borrowed_applicable_action_binding(
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_initial_node(StateRepository<LiftedTag>& state_repository,
                                                                              AxiomEvaluator<LiftedTag>& axiom_evaluator)
-{
-    return get_initial_node(state_repository, axiom_evaluator).pack();
-}
+{ return get_initial_node(state_repository, axiom_evaluator).pack(); }
 
 PackedNode<LiftedTag> SuccessorGenerator<LiftedTag>::get_packed_node(StateRepository<LiftedTag>& state_repository, urd::index<State<LiftedTag>> state_index)
-{
-    return get_node(state_repository, state_index).pack();
-}
+{ return get_node(state_repository, state_index).pack(); }
 
 formalism::planning::ActionView<GroundTag> SuccessorGenerator<LiftedTag>::ground_action(formalism::planning::ActionRowView binding)
 {

@@ -32,9 +32,9 @@ void expect_same_rows(const auto& actual, const auto& expected)
 void apply_changes(RelationBuilder& input, const database::incremental::Delta& delta, bool undo = false)
 {
     const auto [added, removed] = delta.change();
-    for (const auto row : (undo ? added : removed).rows())
+    for (const auto row : (undo ? added : removed).get_rows())
         input.erase(input.find(row).value());
-    for (const auto row : (undo ? removed : added).rows())
+    for (const auto row : (undo ? removed : added).get_rows())
         input.insert(row);
 }
 

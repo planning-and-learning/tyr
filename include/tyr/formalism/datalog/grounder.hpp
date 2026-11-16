@@ -308,9 +308,7 @@ std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> eleme
 
 template<FactKind F>
 std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
-{
-    return ground(element.get_terms(), element.get_function(), context);
-}
+{ return ground(element.get_terms(), element.get_function(), context); }
 
 inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context)
 {

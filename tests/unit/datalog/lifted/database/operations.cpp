@@ -69,9 +69,7 @@ Layouts columns_of(std::span<const ColumnIndex> labels)
 }
 template<ygg::ColumnValueType T = ygg::uint_t>
 Layouts columns_of(std::initializer_list<ColumnIndex> labels)
-{
-    return columns_of<T>(std::span<const ColumnIndex>(labels));
-}
+{ return columns_of<T>(std::span<const ColumnIndex>(labels)); }
 /// uint_t columns labeled `labels`.
 Layouts cols(std::initializer_list<ColumnIndex> labels) { return columns_of(labels); }
 
@@ -120,9 +118,7 @@ urd::builder<ygg::Relation<ygg::Schema>> selected(const V& input, Predicate pred
 
 template<typename T = ygg::uint_t, typename... Args>
 auto cells(Args... values)
-{
-    return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... };
-}
+{ return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... }; }
 
 template<typename T>
 auto packed(std::span<const T> values)

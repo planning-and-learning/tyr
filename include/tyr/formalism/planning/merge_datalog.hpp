@@ -182,9 +182,7 @@ template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::PredicateRowView<T_DST>, bool> merge_p2d(PredicateRowView<T_SRC> element,  //
                                                             const urd::Store<urd::map<PredicateView<T_SRC>, datalog::PredicateView<T_DST>>>& predicate_mapping,
                                                             WriteContext<datalog::Builder, datalog::Repository>& context)
-{
-    return merge_p2d(element, predicate_mapping.at(element.get_relation()), context);
-}
+{ return merge_p2d(element, predicate_mapping.at(element.get_relation()), context); }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::PredicateRowView<T_DST>, bool>
@@ -304,9 +302,7 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::FunctionRowView<T_DST>, bool> merge_p2d(FunctionRowView<T_SRC> element, WriteContext<datalog::Builder, datalog::Repository>& context)
-{
-    return merge_p2d(element, merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first, context);
-}
+{ return merge_p2d(element, merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first, context); }
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::FunctionRowView<T_DST>, bool>

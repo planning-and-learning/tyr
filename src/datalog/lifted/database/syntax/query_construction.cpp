@@ -16,16 +16,14 @@ std::span<const ygg::ColumnLayout> child_columns(urd::index<Query<>> child, cons
 {
     if (child.value >= repository.size())
         throw std::invalid_argument("Query: children must precede their parent.");
-    return repository.view(child).columns();
+    return columns_of(repository.view(child));
 }
 }
 
 namespace tyr::datalog::database::detail
 {
 void derive(urd::data<Query<QueryProjectTag>>& data, const QueryRepository& repository)
-{
-    data.plan = ProjectionPlan(child_columns(data.operand, repository), { data.labels.data(), data.labels.size() });
-}
+{ data.plan = ProjectionPlan(child_columns(data.operand, repository), { data.labels.data(), data.labels.size() }); }
 }
 
 namespace tyr::datalog::database::detail
@@ -45,17 +43,13 @@ void derive(urd::data<Query<QueryRenameTag>>& data, const QueryRepository& repos
 namespace tyr::datalog::database::detail
 {
 void derive(urd::data<Query<QuerySelectEqualTag>>& data, const QueryRepository& repository)
-{
-    data.plan = SelectEqualPlan(child_columns(data.operand, repository), data.left_column, data.right_column);
-}
+{ data.plan = SelectEqualPlan(child_columns(data.operand, repository), data.left_column, data.right_column); }
 }
 
 namespace tyr::datalog::database::detail
 {
 void derive(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& repository)
-{
-    data.plan = SelectValuePlan(child_columns(data.operand, repository), data.column, data.constant_type, data.constant);
-}
+{ data.plan = SelectValuePlan(child_columns(data.operand, repository), data.column, data.constant_type, data.constant); }
 }
 
 namespace tyr::datalog::database::detail

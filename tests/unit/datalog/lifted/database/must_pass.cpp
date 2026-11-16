@@ -47,14 +47,14 @@ Pairs must_pass(const Relation& edges, const Relation& sources, const Relation& 
 {
     auto queries = qb::repository();
     const auto query = qb::input(queries, 0, edges.columns());
-    const auto plan = tyr::datalog::database::MustPassPlan(sources.columns(), query.columns(), targets.columns(), probes.columns(), 1);
+    const auto plan = tyr::datalog::database::MustPassPlan(sources.columns(), columns_of(query), targets.columns(), probes.columns(), 1);
     const ygg::FreeRelationRepository layer;
     auto computation = tyr::datalog::database::MustPass(layer, query, plan);
     auto out = Relation(plan.output_columns());
     const auto view = borrow(layer, edges);
     computation.must_pass([&](size_t) { return view; }, borrow(layer, sources), borrow(layer, targets), borrow(layer, probes), out);
     auto result = Pairs();
-    for (const auto row : layer.view(out).rows())
+    for (const auto row : layer.view(out).get_rows())
         result.emplace(ygg::decode_value<ygg::uint_t>(row.value(0)), ygg::decode_value<ygg::uint_t>(row.value(1)));
     EXPECT_EQ(result.size(), out.size()) << "every must-pass object is reported once";
     return result;

@@ -44,9 +44,7 @@ struct Delta
     }
     /// The (added, removed) change, as views.
     [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change() const noexcept
-    {
-        return { layer->view(added), layer->view(removed) };
-    }
+    { return { layer->view(added), layer->view(removed) }; }
     [[nodiscard]] size_t memory_usage() const noexcept { return added.memory_usage() + removed.memory_usage(); }
 };
 

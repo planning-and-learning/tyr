@@ -140,9 +140,7 @@ public:
 template<RelationViewConcept L, RelationViewConcept R>
 void JoinEvaluator::join(const L& left_operand, const R& right_operand, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace)
     const
-{
-    database::detail::join_rows(left_operand, right_operand, m_plan, build_left, build_left ? m_left_index : m_right_index, output, workspace);
-}
+{ database::detail::join_rows(left_operand, right_operand, m_plan, build_left, build_left ? m_left_index : m_right_index, output, workspace); }
 
 template<RelationViewConcept L, RelationViewConcept R>
 void JoinEvaluator::initialize(const L& left_operand, const R& right_operand, Workspace& workspace)
