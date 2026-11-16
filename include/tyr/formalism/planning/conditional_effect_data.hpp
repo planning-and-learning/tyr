@@ -22,6 +22,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
+#include <type_traits>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -78,11 +79,11 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
         effect(effect_)
     {
     }
-    data(const data& other) = delete;
-    data& operator=(const data& other) = delete;
-    data(data&& other) = default;
-    data& operator=(data&& other) = default;
-    ~data() = default;
+    static constexpr bool copyable() noexcept
+    {
+        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
+        return true;
+    }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::condition, &data::effect> {}; }

@@ -55,10 +55,9 @@ std::pair<urd::index_view<T, R>, bool> copy(urd::index_view<T, S> element, Write
 {
     auto record = ygg::formalism::checkout<T>(context.builder());
 
-    [&]<auto... Ms>(const urd::data<T>& source, urd::Members<Ms...>) { (((*record).*Ms = source.*Ms), ...); }(element.data(), urd::data<T>::cista_members());
-    *record = urd::map_children<typename B::Types, T>(std::move(*record), element.context(), [&](auto child) { return copy(child, context).first.index(); });
+    urd::map_children<typename B::Types, T>(element, *record, [&](auto child) { return copy(child, context).first; });
     if constexpr (requires { record->row; })
-        record->row = copy(element.context().view(record->row), context).first.data();
+        urd::store(record->row, copy(element.context().view(record->row), context).first);
 
     return ygg::formalism::insert(context.destination(), *record);
 }

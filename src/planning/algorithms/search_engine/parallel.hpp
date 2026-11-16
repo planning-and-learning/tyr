@@ -79,7 +79,7 @@ public:
     std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
     {
         m_dist_hash.initialize(start_state);
-        const auto owner = m_dist_hash.owner(start_state.data(), engine.num_workers());
+        const auto owner = m_dist_hash.owner(StateContext<Kind> { start_state.get_task(), start_state, ygg::float_t { 0 } }, engine.num_workers());
         auto& worker = engine.get_worker(owner);
         return { owner, materialize_state(start_state, *worker.state_repository, *worker.axiom_evaluator) };
     }
@@ -93,7 +93,7 @@ public:
                                   ygg::float_t metric,
                                   size_t num_workers)
     {
-        const auto owner = m_dist_hash.owner(*target, num_workers);
+        const auto owner = m_dist_hash.owner(StateContext<Kind> { parent.get_task(), *target, ygg::float_t { 0 } }, num_workers);
         const auto owner_index = static_cast<size_t>(static_cast<ygg::uint_t>(owner.value));
         assert(owner_index < sender.registration_repositories.size());
         auto& repository = *sender.registration_repositories[owner_index];
@@ -211,11 +211,15 @@ public:
 
     template<typename ExecutionPolicy, typename WorkerData>
     static bool can_expand(const ExecutionPolicy&, const WorkerData& worker) noexcept
-    { return !worker.search.empty(); }
+    {
+        return !worker.search.empty();
+    }
 
     template<typename ExecutionPolicy, typename Engine, typename WorkerData>
     static void wait_for_work(ExecutionPolicy& execution, Engine& engine, WorkerData& worker)
-    { execution.wait_for_open(engine, worker); }
+    {
+        execution.wait_for_open(engine, worker);
+    }
 };
 
 template<typename SearchPolicy>
@@ -394,18 +398,26 @@ public:
 
     template<typename Options>
     static size_t num_workers(const Options& options) noexcept
-    { return options.num_search_workers; }
+    {
+        return options.num_search_workers;
+    }
 
     template<typename Options>
     static size_t search_node_divisor(const Options& options) noexcept
-    { return StatePolicy::search_node_divisor(num_workers(options)); }
+    {
+        return StatePolicy::search_node_divisor(num_workers(options));
+    }
 
     static urd::index<State<Kind>> search_node_index(urd::index<State<Kind>> state, urd::index<Worker> worker, size_t num_workers) noexcept
-    { return StatePolicy::search_node_index(state, worker, num_workers); }
+    {
+        return StatePolicy::search_node_index(state, worker, num_workers);
+    }
 
     template<typename Engine>
     auto prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
-    { return m_state_policy.prepare_start_state(engine, start_state); }
+    {
+        return m_state_policy.prepare_start_state(engine, start_state);
+    }
 
     void initialize_best_h(ygg::float_t value) noexcept { m_best_h_value.store(value, std::memory_order_relaxed); }
 
@@ -465,7 +477,9 @@ public:
 
     template<typename Engine, typename WorkerData>
     bool begin_iteration(Engine&, WorkerData&) const noexcept
-    { return running(); }
+    {
+        return running();
+    }
 
     bool running() const noexcept { return m_status.load(std::memory_order_acquire) == SearchStatus::IN_PROGRESS; }
     bool timed_out() const noexcept { return m_deadline && std::chrono::steady_clock::now() >= *m_deadline; }
@@ -511,7 +525,9 @@ public:
 
     template<typename Engine, typename WorkerData>
     bool can_expand_locked(Engine&, WorkerData& worker) const noexcept
-    { return m_coordination.can_expand(*this, worker); }
+    {
+        return m_coordination.can_expand(*this, worker);
+    }
 
     template<typename WorkerData, typename Callback>
     static decltype(auto) with_worker_lock(WorkerData& worker, Callback&& callback)
@@ -607,15 +623,21 @@ public:
 
     template<typename Engine, typename WorkerData>
     static constexpr bool is_generated_goal(Engine&, WorkerData&, const RoutedSuccessorT<Engine>& routed_successor, const StateView<Kind>&) noexcept
-    { return routed_successor.is_goal; }
+    {
+        return routed_successor.is_goal;
+    }
 
     template<typename Engine>
     static void snapshot_worker_state_statistics(Engine& engine)
-    { StatePolicy::snapshot_worker_state_statistics(engine); }
+    {
+        StatePolicy::snapshot_worker_state_statistics(engine);
+    }
 
     template<typename Engine, typename WorkerData>
     void wait_for_work(Engine& engine, WorkerData& worker)
-    { m_coordination.wait_for_work(*this, engine, worker); }
+    {
+        m_coordination.wait_for_work(*this, engine, worker);
+    }
 
     bool reserve_state(ygg::uint_t max_num_states) noexcept
     {

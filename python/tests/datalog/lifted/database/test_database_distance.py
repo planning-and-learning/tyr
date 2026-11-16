@@ -8,11 +8,11 @@ from typing import Any, TypeAlias, cast
 
 import pytest
 from pyyggdrasil import formalism
-from relation_utils import intern
+from relation_utils import insert, intern, labels, tuples, values
 
 from pytyr.datalog.lifted import database
 
-Readable = formalism.Relation | formalism.BorrowedRelation | formalism.RelationView
+Readable = formalism.RelationBuilder | formalism.RelationBuilderView | formalism.RelationSchema
 # Reads the tests' relation builders and evaluator results.
 RELATIONS = formalism.RelationRepository()
 
@@ -20,60 +20,60 @@ RELATIONS = formalism.RelationRepository()
 Rows: TypeAlias = Iterable[Sequence[object]]
 
 
-def columns(*labels: int) -> tuple[formalism.ColumnIndex, ...]:
-    return tuple(formalism.ColumnIndex(label) for label in labels)
+def columns(*numbers: int) -> list[formalism.ColumnIndex]:
+    return [formalism.ColumnIndex(number) for number in numbers]
 
 
 def relation(
     labels: Sequence[int], rows: Iterable[Sequence[object]] = (), types: Sequence[formalism.ColumnType] = ()
-) -> formalism.Relation:
-    result = formalism.Relation(
+) -> formalism.RelationBuilder:
+    result = formalism.RelationBuilder(
         [
             formalism.ColumnLayout(formalism.ColumnIndex(label), types[index] if types else formalism.ColumnType.UINT32)
             for index, label in enumerate(labels)
         ]
     )
     for row in rows:
-        result.insert(row)
+        insert(result, row)
     return result
 
 
-def rows(value: Iterable[formalism.RelationRow]) -> set[tuple[object, ...]]:
-    return {tuple(row) for row in value}
+def rows(value: formalism.RelationBuilderView | formalism.RelationSchema) -> set[tuple[object, ...]]:
+    return set(tuples(value))
 
 
 def borrow(
-    source: formalism.Relation, edges: formalism.Relation, target: formalism.Relation
-) -> tuple[formalism.BorrowedRelation, formalism.BorrowedRelation, formalism.BorrowedRelation]:
+    source: formalism.RelationBuilder, edges: formalism.RelationBuilder, target: formalism.RelationBuilder
+) -> tuple[formalism.RelationBuilderView, formalism.RelationBuilderView, formalism.RelationBuilderView]:
     return RELATIONS.view(source), RELATIONS.view(edges), RELATIONS.view(target)
 
 
 def change(
-    added: formalism.Relation, removed: formalism.Relation
-) -> tuple[formalism.BorrowedRelation, formalism.BorrowedRelation]:
+    added: formalism.RelationBuilder, removed: formalism.RelationBuilder
+) -> tuple[formalism.RelationBuilderView, formalism.RelationBuilderView]:
     return RELATIONS.view(added), RELATIONS.view(removed)
 
 
 def distance(
-    source: formalism.BorrowedRelation,
-    edges: formalism.BorrowedRelation,
-    target: formalism.BorrowedRelation,
+    source: formalism.RelationBuilderView,
+    edges: formalism.RelationBuilderView,
+    target: formalism.RelationBuilderView,
     plan: database.DistancePlan,
-) -> formalism.Relation:
+) -> formalism.RelationBuilder:
     """The distances of borrowed inputs into a fresh relation of the plan's output columns."""
-    result = formalism.Relation(plan.output_columns())
+    result = formalism.RelationBuilder(plan.output_columns())
     database.distance(source, edges, target, plan, result, database.DistanceWorkspace(plan))
     return result
 
 
 def distance_of_interned(
-    source: formalism.RelationView,
-    edges: formalism.RelationView,
-    target: formalism.RelationView,
+    source: formalism.RelationSchema,
+    edges: formalism.RelationSchema,
+    target: formalism.RelationSchema,
     plan: database.DistancePlan,
-) -> formalism.Relation:
+) -> formalism.RelationBuilder:
     """As distance(), of interned inputs."""
-    result = formalism.Relation(plan.output_columns())
+    result = formalism.RelationBuilder(plan.output_columns())
     database.distance(source, edges, target, plan, result, database.DistanceWorkspace(plan))
     return result
 
@@ -91,12 +91,12 @@ def test_distance_mixed_inputs_and_independent_output(interned_mask: int) -> Non
     target = relation([30, 31], [a, c, d], types)
     plan = plan_for(source, edges, target)
     assert plan.arity() == 2
-    assert tuple(plan.output_columns()) == columns(20, 21, 22, 23, 99)
+    assert labels(plan.output_columns()) == columns(20, 21, 22, 23, 99)
     repository = formalism.RelationRepository()
     interned = [intern(repository, value)[0] for value in (source, edges, target)]
     # Interned inputs are accepted without copying only when all are interned; otherwise they are copied out.
     copied = [
-        database.assign(formalism.Relation(), view) if interned_mask & (1 << index) else value
+        database.assign(formalism.RelationBuilder(), view) if interned_mask & (1 << index) else value
         for index, (value, view) in enumerate(zip((source, edges, target), interned, strict=True))
     ]
     borrowed = borrow(copied[0], copied[1], copied[2])
@@ -106,11 +106,11 @@ def test_distance_mixed_inputs_and_independent_output(interned_mask: int) -> Non
         result, other = (distance_of_interned(interned[0], interned[1], interned[2], plan) for _ in range(2))
     else:
         result, other = (distance(borrowed[0], borrowed[1], borrowed[2], plan) for _ in range(2))
-    assert isinstance(result, formalism.Relation)
+    assert isinstance(result, formalism.RelationBuilder)
     expected = {a + a + (0,), a + c + (2,), c + c + (0,)}
     assert rows(RELATIONS.view(result)) == expected
-    assert tuple(result.columns()) == columns(20, 21, 22, 23, 99)
-    assert [result.columns().type(i) for i in range(5)] == types * 2 + [formalism.ColumnType.UINT32]
+    assert labels(result.columns()) == columns(20, 21, 22, 23, 99)
+    assert [column.type for column in result.columns()] == types * 2 + [formalism.ColumnType.UINT32]
 
     other.clear()
     source.clear()
@@ -129,7 +129,7 @@ def test_distance_canonical_nan_boolean_and_zero_length_paths() -> None:
     result = distance(*borrow(source, edges, target), plan_for(source, edges, target))
     normalized = {
         tuple("nan" if isinstance(value, float) and math.isnan(value) else value for value in row)
-        for row in RELATIONS.view(result)
+        for row in tuples(RELATIONS.view(result))
     }
     assert normalized == {
         (True, "nan", True, "nan", 0),
@@ -146,7 +146,7 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
     plan = plan_for(source, edges, target)
     evaluator = database.DistanceEvaluator(RELATIONS, plan)
     repository = formalism.RelationRepository()
-    evaluator.initialize(*borrow(source, database.assign(formalism.Relation(), intern(repository, edges)[0]), target))
+    evaluator.initialize(*borrow(source, database.assign(formalism.RelationBuilder(), intern(repository, edges)[0]), target))
     expected = {(0, 0, 0), (0, 2, 2), (0, 3, 1), (2, 2, 0), (2, 3, 1)}
     assert rows(evaluator.get_result()) == expected
     assert evaluator.get_delta().added.empty()
@@ -169,7 +169,7 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
         ]
         for index in range(6):
             if (index % 2 == 0) == intern_added:
-                changes[index] = database.assign(formalism.Relation(), intern(repository, changes[index])[0])
+                changes[index] = database.assign(formalism.RelationBuilder(), intern(repository, changes[index])[0])
         evaluator.update(change(changes[0], changes[1]), change(changes[2], changes[3]), change(changes[4], changes[5]))
 
     before = expected
@@ -203,7 +203,7 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
         "result_columns",
         "added_columns",
         "removed_columns",
-        "iterator",
+        "rows",
     ],
 )
 def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -> None:
@@ -220,20 +220,17 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
     )
     result = evaluator.get_result()
     delta = evaluator.get_delta()
-    assert isinstance(result, formalism.BorrowedRelation)
+    assert isinstance(result, formalism.RelationBuilderView)
     assert isinstance(delta, database.RelationDelta)
 
-    def check_read_only(value: formalism.BorrowedRelation) -> None:
+    def check_read_only(value: formalism.RelationBuilderView) -> None:
         assert not hasattr(value, "insert")
         assert not hasattr(value, "clear")
         assert not hasattr(value, "erase")
         assert value.arity() == 3
-        assert tuple(value.columns()) == columns(20, 21, 99)
+        assert labels(value.columns()) == columns(20, 21, 99)
         with pytest.raises(IndexError):
-            value.at(len(value))
-        for index in (-len(value) - 1, len(value)):
-            with pytest.raises(IndexError):
-                value[index]
+            value.row(value.size())
 
     for value in (result, delta.added, delta.removed):
         check_read_only(value)
@@ -241,7 +238,7 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
     with pytest.raises(AttributeError):
         cast("Any", delta).added = source
     with pytest.raises(TypeError):
-        cast("Any", formalism.BorrowedRelation)()
+        cast("Any", formalism.RelationBuilderView)()
     with pytest.raises(TypeError):
         database.RelationDelta()
     retained: Any  # each leaf is a different borrowed type
@@ -253,32 +250,34 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
         case "delta":
             retained = delta
         case "result_row":
-            retained = result[-1]
+            retained = result.row(result.size() - 1)
         case "added_row":
-            retained = delta.added.at(0)
+            retained = delta.added.row(0)
         case "removed_row":
-            retained = delta.removed[0]
+            retained = delta.removed.row(0)
         case "result_columns":
             retained = result.columns()
         case "added_columns":
             retained = delta.added.columns()
         case "removed_columns":
             retained = delta.removed.columns()
-        case "iterator":
-            retained = iter(result)
+        case "rows":
+            retained = result.rows()
         case _:
             raise AssertionError(leaf)
     del evaluator, delta, result, plan, source, edges, target
     gc.collect()
     if leaf.endswith("columns"):
-        assert tuple(retained) == columns(20, 21, 99)
+        assert labels(retained) == columns(20, 21, 99)
     elif leaf.endswith("row"):
-        assert tuple(retained) == (0, 2, 2 if leaf == "removed_row" else 1)
+        assert values(retained) == (0, 2, 2 if leaf == "removed_row" else 1)
     elif leaf == "delta":
         assert rows(retained.added) == {(0, 2, 1)}
         assert rows(retained.removed) == {(0, 2, 2)}
+    elif leaf == "rows":
+        assert [values(row) for row in retained] == [(0, 2, 1)]
     else:
-        assert [tuple(row) for row in retained] == [(0, 2, 1)]
+        assert tuples(retained) == [(0, 2, 1)]
 
 
 def test_borrowed_relations_can_feed_another_distance_evaluation() -> None:

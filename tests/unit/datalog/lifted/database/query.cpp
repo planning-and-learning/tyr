@@ -44,10 +44,10 @@ auto rows(const auto& relation)
     std::ranges::sort(result);
     return result;
 }
-auto minus(const auto& lhs, const auto& rhs)
+auto minus(const auto& left_operand, const auto& right_operand)
 {
-    std::remove_cvref_t<decltype(lhs)> result;
-    std::ranges::set_difference(lhs, rhs, std::back_inserter(result));
+    std::remove_cvref_t<decltype(left_operand)> result;
+    std::ranges::set_difference(left_operand, right_operand, std::back_inserter(result));
     return result;
 }
 void apply(Relation& relation, const Delta& change)
@@ -61,11 +61,11 @@ void apply(Relation& relation, const Delta& change)
 void reverse(Delta& change) { std::swap(change.added, change.removed); }
 
 template<typename T>
-concept HasArgument = requires(T view) { view.get_arg(); };
+concept HasArgument = requires(T view) { view.get_operand(); };
 template<typename T>
 concept HasOperands = requires(T view) {
-    view.get_lhs();
-    view.get_rhs();
+    view.get_left_operand();
+    view.get_right_operand();
 };
 template<typename T>
 concept HasSources = requires(T view) { view.get_sources(); };
@@ -98,17 +98,17 @@ TEST(DatabaseQuery, TypedLogicalAlternativesKeepOperandsAndRootProvenance)
     const auto roots = std::array { a, empty, joined, projected, renamed, equal, selected, united, difference, distance };
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryInputTag>(a).get_input_slot(), 0);
     EXPECT_TRUE(std::ranges::equal(tyr::datalog::database::as<tyr::datalog::database::QueryEmptyTag>(empty).columns(), a.columns()));
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).get_lhs().index(), a.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).get_rhs().index(), b.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryProjectTag>(projected).get_arg().index(), a.index());
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).get_left_operand().index(), a.index());
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined).get_right_operand().index(), b.index());
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryProjectTag>(projected).get_operand().index(), a.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryProjectTag>(projected).get_labels().front(), x);
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryRenameTag>(renamed).get_labels().front(), y);
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QuerySelectEqualTag>(equal).get_lhs_column(), x);
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QuerySelectEqualTag>(equal).get_rhs_column(), y);
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QuerySelectEqualTag>(equal).get_left_column(), x);
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QuerySelectEqualTag>(equal).get_right_column(), y);
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QuerySelectValueTag>(selected).get_column(), x);
     EXPECT_EQ(ygg::decode_value<ygg::uint_t>(tyr::datalog::database::as<tyr::datalog::database::QuerySelectValueTag>(selected).get_constant()), 7);
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryUnionTag>(united).get_rhs().index(), empty.index());
-    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDifferenceTag>(difference).get_lhs().index(), a.index());
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryUnionTag>(united).get_right_operand().index(), empty.index());
+    EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDifferenceTag>(difference).get_left_operand().index(), a.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance).get_sources().index(), projected.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance).get_edges().index(), a.index());
     EXPECT_EQ(tyr::datalog::database::as<tyr::datalog::database::QueryDistanceTag>(distance).get_targets().index(), targets.index());
@@ -138,14 +138,14 @@ TEST(DatabaseQuery, RecordConstructorsMatchFieldsAndValidateConstantTypes)
     const auto b = tyr::datalog::tests::qb::input(repository, 1, { y, z });
     const auto insert = [&]<typename Tag>(urd::data<tyr::datalog::database::Query<Tag>> data)
     {
-        const auto concrete = tyr::datalog::database::insert(repository, data).first;
+        const auto concrete = tyr::datalog::database::derive_and_insert(repository, data).first;
         auto erased = urd::data<tyr::datalog::database::Query<>>(concrete.index());
         return tyr::datalog::database::insert(repository, erased).first;
     };
 
     auto by_index = urd::data<tyr::datalog::database::Query<tyr::datalog::database::QueryJoinTag>>(a.index(), b.index(), {});
-    EXPECT_EQ(by_index.lhs, a.index());
-    EXPECT_EQ(by_index.rhs, b.index());
+    EXPECT_EQ(by_index.left_operand, a.index());
+    EXPECT_EQ(by_index.right_operand, b.index());
     EXPECT_EQ(insert(std::move(by_index)).index(), tyr::datalog::tests::qb::join(repository, a, b).index());
 
     const std::array labels { x };
@@ -170,7 +170,7 @@ TEST(DatabaseQuery, RecordConstructorsMatchFieldsAndValidateConstantTypes)
                                                                                                             ygg::type_id<std::int32_t>,
                                                                                                             {});
     EXPECT_EQ(mismatched.constant_type, (ygg::type_id<std::int32_t>) );
-    EXPECT_THROW(static_cast<void>(tyr::datalog::database::insert(repository, mismatched)), std::invalid_argument);
+    EXPECT_THROW(static_cast<void>(tyr::datalog::database::derive_and_insert(repository, mismatched)), std::invalid_argument);
 }
 
 TEST(DatabaseQuery, InternsValidatedNodesAndCompilesIndependentReachablePlan)
@@ -555,16 +555,16 @@ TEST(DatabaseQuery, CachedPlansSurviveRepositoryGrowthAndCistaRelocation)
                                                             tyr::datalog::tests::qb::project(repository, b, { z }),
                                                             d);
     const auto view = tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(joined);
-    const auto* original = &view.data();
+    const auto* original = &view.get_plan();
     for (size_t slot = 2; slot < 260; ++slot)
         tyr::datalog::tests::qb::join(repository, tyr::datalog::tests::qb::input(repository, slot, { x, y }), b);
-    EXPECT_EQ(&view.data(), original);
-    EXPECT_TRUE(std::ranges::equal(view.data().plan.output_columns(), joined.columns()));
+    EXPECT_EQ(&view.get_plan(), original);
+    EXPECT_TRUE(std::ranges::equal(view.get_plan().output_columns(), joined.columns()));
 
     const auto round_trip = []<typename Concrete>(Concrete query)
     {
-        using Record = std::remove_cvref_t<decltype(query.data())>;
-        auto original_bytes = cista::serialize(query.data());
+        using Record = urd::record_of<Concrete>;
+        auto original_bytes = cista::serialize(query.context()[query.index()]);
         auto relocated = original_bytes;
         original_bytes.clear();
         original_bytes.shrink_to_fit();
@@ -572,7 +572,7 @@ TEST(DatabaseQuery, CachedPlansSurviveRepositoryGrowthAndCistaRelocation)
         EXPECT_TRUE(std::ranges::equal(restored->plan.output_columns(), query.columns()));
         if constexpr (std::same_as<Concrete, tyr::datalog::database::QueryView<tyr::datalog::database::QueryGenericJoinTag>>)
         {
-            const auto& expected = query.data().plan;
+            const auto& expected = query.get_plan();
             EXPECT_TRUE(std::ranges::equal(restored->plan.variable_order(), expected.variable_order()));
             for (size_t input = 0; input < expected.input_count(); ++input)
             {
@@ -607,8 +607,6 @@ TEST(DatabaseQuery, FactoriesRejectMalformedQueriesBeforePublishingPlans)
     EXPECT_THROW(tyr::datalog::tests::qb::input(repository, 0, malformed), std::invalid_argument);
     const auto plan = tyr::datalog::database::compile({ input });
     EXPECT_THROW(plan[urd::index<tyr::datalog::database::Query<>>(99)], std::out_of_range);
-    using Typed = decltype(tyr::datalog::database::as<tyr::datalog::database::QueryInputTag>(plan[plan.roots().front()]));
-    static_assert(std::is_const_v<std::remove_reference_t<decltype(std::declval<const Typed&>().data())>>);
     EXPECT_EQ(repository.size(), 1);
 }
 }  // namespace

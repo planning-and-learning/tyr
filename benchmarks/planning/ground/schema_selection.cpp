@@ -138,7 +138,7 @@ try
     auto repository = std::make_shared<tyr::planning::StateRepository<GroundTag>>(task);
     auto generator = prepared.generator->make_worker(execution_context);
     const auto node = generator->get_initial_node(*repository, *evaluator);
-    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state().data(), node.get_metric());
+    const auto context = tyr::planning::StateContext<GroundTag>(*task, node.get_state(), node.get_metric());
     auto applicable = tyr::formalism::planning::ActionViewList<GroundTag> {};
     auto scratch = tyr::formalism::planning::ActionViewList<GroundTag> {};
     auto expected = tyr::formalism::planning::ActionViewList<GroundTag> {};

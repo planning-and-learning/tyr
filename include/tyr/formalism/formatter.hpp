@@ -23,6 +23,7 @@
 
 #include <fmt/format.h>
 #include <string>
+#include <yggdrasil/formalism/formatter.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
 
 #if !YGG_ENABLE_FMT_FORMATTERS
@@ -32,17 +33,7 @@
 namespace tyr::formalism
 {
 
-std::string to_string(const urd::data<Variable>& value);
-std::string to_string(const urd::data<Object>& value);
 std::string to_string(const Term& value);
-
-std::string to_string(const urd::data<Predicate<StaticTag>>& value);
-std::string to_string(const urd::data<Predicate<FluentTag>>& value);
-std::string to_string(const urd::data<Predicate<DerivedTag>>& value);
-
-std::string to_string(const urd::data<Function<StaticTag>>& value);
-std::string to_string(const urd::data<Function<FluentTag>>& value);
-std::string to_string(const urd::data<Function<AuxiliaryTag>>& value);
 
 std::string to_string(const urd::data<ygg::Row<Predicate<StaticTag>>>& value);
 std::string to_string(const urd::data<ygg::Row<Predicate<FluentTag>>>& value);
@@ -88,6 +79,36 @@ std::string to_string(const urd::data<NumericEffect<GroundTag, AuxiliaryTag>>& v
 
 }  // namespace tyr::formalism
 
+/// The names of the formalism's records whose tags are named otherwise (urd::name): the operator kinds an operator is
+/// of (enums, which hold no name), and the objects (yggdrasil's Object of tyr's ObjectTag).
+template<>
+struct urd::name_of<tyr::formalism::BooleanOperatorKind>
+{
+    static std::string named() { return "Boolean"; }
+};
+template<>
+struct urd::name_of<tyr::formalism::ArithmeticOperatorKind>
+{
+    static std::string named() { return "Arithmetic"; }
+};
+template<>
+struct urd::name_of<ygg::formalism::Object<tyr::formalism::ObjectTag>>
+{
+    static std::string named() { return "Object"; }
+};
+
+namespace tyr::formalism::detail
+{
+/// Whether tyr writes the record of T itself: a to_string of tyr's (here or by ADL in its record's namespace), never
+/// fmt::to_string, which would format the record with the formatter that asks.
+template<typename T>
+concept has_text = requires(const urd::data<T>& value) { to_string(value); };
+
+template<typename T>
+std::string text(const urd::data<T>& value)
+{ return to_string(value); }
+}  // namespace tyr::formalism::detail
+
 namespace fmt
 {
 
@@ -98,7 +119,9 @@ struct formatter<tyr::formalism::ParameterIndex, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::ParameterIndex& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "V{}", value.value); }
+    {
+        return fmt::format_to(ctx.out(), "V{}", value.value);
+    }
 };
 
 template<>
@@ -107,7 +130,9 @@ struct formatter<tyr::formalism::BooleanOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::BooleanOperatorKind value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
+    }
 };
 
 template<>
@@ -116,7 +141,9 @@ struct formatter<tyr::formalism::ArithmeticOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::ArithmeticOperatorKind value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
+    }
 };
 
 template<>
@@ -125,27 +152,24 @@ struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
     auto format(tyr::formalism::NumericEffectOperatorKind value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
+    }
 };
 
+/// A record as tyr writes it (its to_string, PDDL-like): this subsumes urd's field-by-field formatter (HasFields), so it
+/// is the one chosen.
 template<typename T>
+    requires urd::HasFields<urd::data<T>> && tyr::formalism::detail::has_text<T>
 struct formatter<urd::data<T>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template<typename FormatContext>
     auto format(const urd::data<T>& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", to_string(value)); }
-};
-
-template<typename Tag>
-struct formatter<ygg::RowIndex<Tag>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const ygg::RowIndex<Tag>& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "<{},{}>", value.relation, value.row); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::detail::text(value));
+    }
 };
 
 }  // namespace fmt

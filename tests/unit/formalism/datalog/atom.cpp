@@ -89,7 +89,7 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
-    auto ground_atom_data = urd::data<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.data());
+    auto ground_atom_data = urd::data<tyr::formalism::Atom<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
     const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 

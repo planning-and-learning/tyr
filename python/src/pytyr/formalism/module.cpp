@@ -24,121 +24,15 @@
 
 namespace tyr::formalism
 {
-namespace
-{
-void alias_shared_types(nb::module_& source, nb::module_& target)
-{
-    for (const auto* name : { "ParameterIndex",
-                              "BooleanOperatorKind",
-                              "ArithmeticOperatorKind",
-                              "NumericEffectOperatorKind",
-                              "ObjectIndex",
-                              "ObjectData",
-                              "VariableIndex",
-                              "VariableData",
-                              "StaticPredicateRowIndex",
-                              "StaticPredicateRowData",
-                              "FluentPredicateRowIndex",
-                              "FluentPredicateRowData",
-                              "StaticFunctionRowIndex",
-                              "StaticFunctionRowData",
-                              "FluentFunctionRowIndex",
-                              "FluentFunctionRowData",
-                              "AuxiliaryFunctionRowIndex",
-                              "AuxiliaryFunctionRowData",
-                              "StaticPredicateIndex",
-                              "StaticPredicateData",
-                              "FluentPredicateIndex",
-                              "FluentPredicateData",
-                              "StaticFunctionIndex",
-                              "StaticFunctionData",
-                              "FluentFunctionIndex",
-                              "FluentFunctionData",
-                              "AuxiliaryFunctionIndex",
-                              "AuxiliaryFunctionData",
-                              "StaticAtomIndex",
-                              "StaticAtomData",
-                              "StaticLiteralIndex",
-                              "StaticLiteralData",
-                              "StaticGroundAtomIndex",
-                              "StaticGroundAtomData",
-                              "StaticGroundLiteralIndex",
-                              "StaticGroundLiteralData",
-                              "FluentAtomIndex",
-                              "FluentAtomData",
-                              "FluentLiteralIndex",
-                              "FluentLiteralData",
-                              "FluentGroundAtomIndex",
-                              "FluentGroundAtomData",
-                              "FluentGroundLiteralIndex",
-                              "FluentGroundLiteralData",
-                              "DerivedAtomIndex",
-                              "DerivedAtomData",
-                              "DerivedLiteralIndex",
-                              "DerivedLiteralData",
-                              "DerivedGroundAtomIndex",
-                              "DerivedGroundAtomData",
-                              "DerivedGroundLiteralIndex",
-                              "DerivedGroundLiteralData",
-                              "StaticFunctionTermIndex",
-                              "StaticFunctionTermData",
-                              "StaticGroundFunctionTermIndex",
-                              "StaticGroundFunctionTermData",
-                              "StaticGroundFunctionTermValueIndex",
-                              "StaticGroundFunctionTermValueData",
-                              "FluentFunctionTermIndex",
-                              "FluentFunctionTermData",
-                              "FluentGroundFunctionTermIndex",
-                              "FluentGroundFunctionTermData",
-                              "FluentGroundFunctionTermValueIndex",
-                              "FluentGroundFunctionTermValueData",
-                              "AuxiliaryFunctionTermIndex",
-                              "AuxiliaryFunctionTermData",
-                              "AuxiliaryGroundFunctionTermIndex",
-                              "AuxiliaryGroundFunctionTermData",
-                              "AuxiliaryGroundFunctionTermValueIndex",
-                              "AuxiliaryGroundFunctionTermValueData",
-                              "UnaryOperatorIndex",
-                              "UnaryOperatorData",
-                              "GroundUnaryOperatorIndex",
-                              "GroundUnaryOperatorData",
-                              "BinaryArithmeticOperatorIndex",
-                              "BinaryArithmeticOperatorData",
-                              "BinaryBooleanOperatorIndex",
-                              "BinaryBooleanOperatorData",
-                              "GroundBinaryArithmeticOperatorIndex",
-                              "GroundBinaryArithmeticOperatorData",
-                              "GroundBinaryBooleanOperatorIndex",
-                              "GroundBinaryBooleanOperatorData",
-                              "MultiOperatorIndex",
-                              "MultiOperatorData",
-                              "GroundMultiOperatorIndex",
-                              "GroundMultiOperatorData",
-                              "FluentNumericEffectIndex",
-                              "FluentNumericEffectData",
-                              "FluentGroundNumericEffectIndex",
-                              "FluentGroundNumericEffectData",
-                              "AuxiliaryNumericEffectIndex",
-                              "AuxiliaryNumericEffectData",
-                              "AuxiliaryGroundNumericEffectIndex",
-                              "AuxiliaryGroundNumericEffectData" })
-    {
-        target.attr(name) = source.attr(name);
-    }
-}
-}
-
 void bind_module_definitions(nb::module_& m)
 {
     bind_formalism(m);
 
     auto planning_module = m.def_submodule("planning");
     planning::bind_module_definitions(planning_module);
-    alias_shared_types(m, planning_module);
 
     auto datalog_module = m.def_submodule("datalog");
     datalog::bind_module_definitions(datalog_module);
-    alias_shared_types(m, datalog_module);
 }
 
 }  // namespace tyr::formalism

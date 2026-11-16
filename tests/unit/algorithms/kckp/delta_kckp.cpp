@@ -141,8 +141,7 @@ TEST(TyrKCKPDelta, DeltaEdgesSupportRoundRobinAnchorReplay)
     EXPECT_TRUE(saw_implicit);
 
     auto kckp = tyr::kckp::DeltaKCKP(static_graph.get_graph(), adjacency_layout);
-    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets)
-    {
+    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets) {
         kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
     update(tyr::datalog::AssignmentSets(static_assignments, empty_assignments));
@@ -436,8 +435,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
     second_expected.push_back({ "truck-2", "city-loc-1", "city-loc-3" });
     std::ranges::sort(second_expected);
 
-    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets)
-    {
+    const auto update = [&](const tyr::datalog::AssignmentSets& assignment_sets) {
         kckp.update([&](auto& delta_graph, auto& full_graph) { static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_graph, full_graph); });
     };
     update(tyr::datalog::AssignmentSets(static_assignments, first_assignments));
@@ -498,7 +496,10 @@ TEST(TyrKCKPDelta, InnerParallelismMatchesSequentialRPG)
     {
         workspace.tp.set_goals(program.get_goal());
         workspace.facts.reset();
-        tyr::planning::insert_unextended_state(initial_state.data(), *task->get_repository(), program.get_translation_context().p2d, workspace);
+        tyr::planning::insert_unextended_state(tyr::planning::StateContext { initial_state.get_task(), initial_state, ygg::float_t { 0 } },
+                                               *task->get_repository(),
+                                               program.get_translation_context().p2d,
+                                               workspace);
 
         auto context = tyr::datalog::ProgramExecutionContext(workspace);
         tyr::datalog::execute_model(context, *execution_context);

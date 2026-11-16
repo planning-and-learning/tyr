@@ -77,21 +77,29 @@ struct TaggedFactSets
 /// The facts of the predicate at `index`, as row views.
 template<formalism::FactKind T>
 [[nodiscard]] auto rows(const TaggedFactSets<T>& facts, ygg::uint_t index)
-{ return ygg::rows_view(urd::index<formalism::Predicate<T>>(index), facts.predicate[index], *facts.repository); }
+{
+    return ygg::rows_view(urd::index<formalism::Predicate<T>>(index), facts.predicate[index], *facts.repository);
+}
 
 /// The fact of the function at `index` with row `row`, as a row view.
 template<formalism::FactKind T>
 [[nodiscard]] auto row(const TaggedFactSets<T>& facts, ygg::uint_t index, urd::index<ygg::Row<formalism::Function<T>>> id)
-{ return facts.repository->view(formalism::datalog::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(index), id }); }
+{
+    return facts.repository->view(formalism::datalog::FunctionRowIndex<T> { urd::index<formalism::Function<T>>(index), id });
+}
 
 /// Adds the fact; whether it is new.
 template<formalism::FactKind T>
 bool insert(TaggedFactSets<T>& facts, formalism::datalog::PredicateRowIndex<T> fact)
-{ return facts.predicate[fact.relation.value].insert(fact.row).second; }
+{
+    return facts.predicate[fact.relation.value].insert(fact.row).second;
+}
 
 template<formalism::FactKind T>
 [[nodiscard]] bool contains(const TaggedFactSets<T>& facts, formalism::datalog::PredicateRowIndex<T> fact)
-{ return facts.predicate[fact.relation.value].contains(fact.row); }
+{
+    return facts.predicate[fact.relation.value].contains(fact.row);
+}
 
 /// Widens the fact's interval by `interval` (its hull), adding it where it has none; whether the interval changed.
 template<formalism::FactKind T>
@@ -164,9 +172,9 @@ TaggedFactSets<T>::TaggedFactSets(formalism::datalog::PredicateListView<T> predi
     TaggedFactSets(predicates, functions, repository_)
 {
     for (const auto atom : atoms)
-        insert(*this, atom.get_row().data());
+        insert(*this, atom.get_row().index());
     for (const auto fterm_value : fterm_values)
-        insert(*this, fterm_value.get_fterm().get_row().data(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+        insert(*this, fterm_value.get_fterm().get_row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
 }
 
 class FactSets

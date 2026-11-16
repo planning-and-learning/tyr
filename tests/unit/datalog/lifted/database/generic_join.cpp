@@ -281,7 +281,12 @@ TEST(YggdrasilTests, DatabaseGenericJoinIncrementalConsolidatesMixedAliasChanges
     edge.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(3)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     const auto first = tyr::datalog::tests::ops::intern(repository, edge).first;
     const auto second = tyr::datalog::tests::ops::rename(repository, first, tyr::datalog::tests::ops::cols({ ColumnIndex(2), ColumnIndex(3) }));
-    ASSERT_TRUE(std::ranges::equal(first.data().rows, second.data().rows));  // a rename keeps the rows
+    ASSERT_TRUE(std::ranges::equal(
+        first.rows(),
+        second.rows(),
+        {},
+        [](const auto& row) { return row.index(); },
+        [](const auto& row) { return row.index(); }));  // a rename keeps the rows
     const std::array inputs { first, second, first };
     const auto plan = plan_for(inputs, { ColumnIndex(2), ColumnIndex(1), ColumnIndex(3) }, { ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) });
     database::incremental::GenericJoinEvaluator evaluator(layer(), plan);

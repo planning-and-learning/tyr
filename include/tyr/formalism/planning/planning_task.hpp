@@ -43,9 +43,11 @@ template<TaskKind T>
 class PlanningTask
 {
 public:
+    /// The task as parsed or grounded, frozen: its repository and FDR context are shared and never written again (a
+    /// planning Task writes into its own layers over them).
     PlanningTask(TaskView<T> task,
-                 FDRContextPtr fdr_context,
-                 std::shared_ptr<Repository> repository,
+                 std::shared_ptr<const FDRContext> fdr_context,
+                 std::shared_ptr<const Repository> repository,
                  PlanningDomain domain,
                  std::optional<std::filesystem::path> path = std::nullopt);
 
@@ -64,9 +66,9 @@ public:
     struct VariableDomains;
 
 private:
-    std::shared_ptr<Repository> m_repository;
+    std::shared_ptr<const Repository> m_repository;
     TaskView<T> m_task;
-    FDRContextPtr m_fdr_context;
+    std::shared_ptr<const FDRContext> m_fdr_context;
     PlanningDomain m_domain;
     std::optional<std::filesystem::path> m_path;
     [[no_unique_address]] std::conditional_t<std::same_as<T, LiftedTag>, std::shared_ptr<const VariableDomains>, std::monostate> m_variable_domains;

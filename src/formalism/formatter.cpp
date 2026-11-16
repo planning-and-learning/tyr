@@ -34,52 +34,19 @@
 namespace tyr::formalism
 {
 
-namespace
-{
-
-template<FactKind T>
-std::string to_string_impl(const urd::data<Predicate<T>>& value)
-{ return fmt::format("{}/{}", value.name, value.arity); }
-
-template<FactKind T>
-std::string to_string_impl(const urd::data<Function<T>>& value)
-{ return fmt::format("{}/{}", value.name, value.arity); }
-
-template<typename T>
-std::string to_string_impl(const urd::data<ygg::Row<T>>& value)
-{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
-
-}  // namespace
-
-std::string to_string(const urd::data<Variable>& value) { return fmt::format("{}", value.name); }
-
-std::string to_string(const urd::data<Object>& value) { return fmt::format("{}", value.name); }
-
 std::string to_string(const Term& value) { return fmt::format("{}", value); }
 
-std::string to_string(const urd::data<Predicate<StaticTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Predicate<StaticTag>>>& value) { return node_format::format(value); }
 
-std::string to_string(const urd::data<Predicate<FluentTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Predicate<FluentTag>>>& value) { return node_format::format(value); }
 
-std::string to_string(const urd::data<Predicate<DerivedTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Predicate<DerivedTag>>>& value) { return node_format::format(value); }
 
-std::string to_string(const urd::data<Function<StaticTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Function<StaticTag>>>& value) { return node_format::format(value); }
 
-std::string to_string(const urd::data<Function<FluentTag>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Function<FluentTag>>>& value) { return node_format::format(value); }
 
-std::string to_string(const urd::data<Function<AuxiliaryTag>>& value) { return to_string_impl(value); }
-
-std::string to_string(const urd::data<ygg::Row<Predicate<StaticTag>>>& value) { return to_string_impl(value); }
-
-std::string to_string(const urd::data<ygg::Row<Predicate<FluentTag>>>& value) { return to_string_impl(value); }
-
-std::string to_string(const urd::data<ygg::Row<Predicate<DerivedTag>>>& value) { return to_string_impl(value); }
-
-std::string to_string(const urd::data<ygg::Row<Function<StaticTag>>>& value) { return to_string_impl(value); }
-
-std::string to_string(const urd::data<ygg::Row<Function<FluentTag>>>& value) { return to_string_impl(value); }
-
-std::string to_string(const urd::data<ygg::Row<Function<AuxiliaryTag>>>& value) { return to_string_impl(value); }
+std::string to_string(const urd::data<ygg::Row<Function<AuxiliaryTag>>>& value) { return node_format::format(value); }
 
 std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }
 std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value) { return node_format::format(value); }

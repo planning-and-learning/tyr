@@ -181,7 +181,7 @@ TEST(DatabaseOptimizationEstimates, FactorIdentitySeparatesInputsAndQueries)
 
 namespace
 {
-TEST(DatabaseOptimizationEstimates, SemijoinAndAntijoinPartitionTheirLhs)
+TEST(DatabaseOptimizationEstimates, SemijoinAndAntijoinPartitionTheirLeftOperand)
 {
     auto queries = tyr::datalog::tests::qb::repository();
     const auto a = tyr::datalog::tests::qb::input(queries, 0, { x, y });

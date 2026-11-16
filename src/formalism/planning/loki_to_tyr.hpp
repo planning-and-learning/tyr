@@ -24,7 +24,11 @@
 #include <algorithm>
 #include <filesystem>
 #include <iterator>
+#include <loki/formalism/conditions.hpp>
 #include <loki/formalism/declarations.hpp>
+#include <loki/formalism/effects.hpp>
+#include <loki/formalism/function_expressions.hpp>
+#include <loki/formalism/term.hpp>
 #include <optional>
 #include <ranges>
 #include <string>

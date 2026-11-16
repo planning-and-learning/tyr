@@ -36,11 +36,11 @@ private:
 
 public:
     auto get_variable() const noexcept { return self().template member<&urd::record_of<V>::variable>(); }
-    auto get_value() const noexcept { return self().data().value; }
+    auto get_value() const noexcept { return self().template member<&urd::record_of<V>::value>(); }
     auto has_value() const noexcept { return get_value() != ::tyr::formalism::planning::FDRValue::none(); }
     auto get_atom_index() const noexcept
     {
-        return has_value() ? std::make_optional(self().context()[self().data().variable].atoms[get_value().value - 1]) : std::nullopt;
+        return has_value() ? std::make_optional(self().context()[get_variable().index()].atoms[get_value().value - 1]) : std::nullopt;
     }
     auto get_atom() const noexcept { return urd::resolve(get_atom_index(), self().context()); }
 };
@@ -50,10 +50,12 @@ public:
 template<::tyr::formalism::FactKind T>
 struct urd::resolution<urd::data<::tyr::formalism::planning::FDRFact<T>>>
 {
+    /// Through the context that owns its variable (the formalism repository, also where `context` passes it on).
     template<typename C>
-    static urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, C> of(const urd::data<::tyr::formalism::planning::FDRFact<T>>& fact, const C& context)
+    static auto of(const urd::data<::tyr::formalism::planning::FDRFact<T>>& fact, const C& context)
     {
-        return { &fact, &context.view(fact.variable).context() };
+        const auto& owner = context.view(fact.variable).context();
+        return urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, std::remove_cvref_t<decltype(owner)>> { &fact, &owner };
     }
     template<typename C>
     static void of(const urd::data<::tyr::formalism::planning::FDRFact<T>>&& fact, const C& context) = delete;

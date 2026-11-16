@@ -37,8 +37,8 @@ TEST(TyrFormalismObject, ExposesOwnedContract)
 {
     auto data = ObjectData(std::string("truck"));
     EXPECT_EQ(data.name, "truck");
-    EXPECT_EQ(tyr::formalism::to_string(data), "truck");
-    EXPECT_EQ(fmt::format("{}", data), "truck");
+    // An object prints as urd writes a record: its name field.
+    EXPECT_EQ(fmt::format("{}", data), "Object(\n    name=truck\n)");
 
     auto other = ObjectData(std::string("van"));
     EXPECT_LT(data, other);
@@ -76,7 +76,7 @@ TEST(TyrFormalismObject, ReadsThroughRepositoryContext)
     auto data = ObjectData(std::string("truck"));
     const auto object = tyr::formalism::planning::insert(repository, data).first;
     const auto view = repository.view(object.index());
-    EXPECT_EQ(&view.data(), &object.data());
+    EXPECT_EQ(view, object);
     EXPECT_EQ(&view.context(), &repository);
     EXPECT_EQ(view.get_name(), "truck");
     EXPECT_EQ(view, view);

@@ -58,7 +58,7 @@ std::pair<AtomView<GroundTag, T_DST>, bool> merge_atom_d2p(datalog::PredicateRow
 {
     auto atom = planning::checkout<Atom<GroundTag, T_DST>>(context.builder());
 
-    atom->row = merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first.data();
+    urd::store(atom->row, merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first);
 
     return planning::insert(context.destination(), *atom);
 }

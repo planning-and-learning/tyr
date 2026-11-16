@@ -32,13 +32,13 @@ template<::tyr::TaskKind T, ::tyr::formalism::ArithmeticOperatorKindOnly O>
 struct data<::tyr::formalism::UnaryOperator<T, O>>
 {
     urd::index<::tyr::formalism::UnaryOperator<T, O>> index;
-    O operator_kind = O::Sub;
+    O operation = O::Sub;
     ::tyr::formalism::FunctionExpression<T> arg;
 
     data() = default;
-    data(O operator_kind_, ::tyr::formalism::FunctionExpression<T> arg_) : index(), operator_kind(operator_kind_), arg(arg_)
+    data(O operation_, ::tyr::formalism::FunctionExpression<T> arg_) : index(), operation(operation_), arg(arg_)
     {
-        if (!is_unary(operator_kind))
+        if (!is_unary(operation))
             throw std::invalid_argument("unary operator must be Sub");
     }
     data(const data& other) = delete;
@@ -47,9 +47,9 @@ struct data<::tyr::formalism::UnaryOperator<T, O>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operator_kind", &data::operator_kind>, urd::field<"arg", &data::arg>> {}; }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::arg> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::arg> {}; }
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"arg", &data::arg>> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::arg> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::arg> {}; }
 };
 
 }

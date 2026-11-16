@@ -52,33 +52,38 @@ public:
     [[nodiscard]] std::span<const ColumnSlice> positions() const noexcept { return { m_positions.data(), m_positions.size() }; }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&ProjectionPlan::m_input, &ProjectionPlan::m_output, &ProjectionPlan::m_positions> {}; }
+    {
+        return urd::Members<&ProjectionPlan::m_input, &ProjectionPlan::m_output, &ProjectionPlan::m_positions> {};
+    }
 };
 
-/// Natural join (and semijoin, antijoin) keys and payload: common labels must have the same type. The output is the lhs
-/// columns followed by the rhs-only ones. The smaller hash-build side is selected from current input sizes at runtime.
+/// Natural join (and semijoin, antijoin) keys and payload: common labels must have the same type. The output is the left
+/// columns followed by the right-only ones. The smaller hash-build side is selected from current input sizes at runtime.
 class JoinPlan
 {
-    urd::flat_vector<ygg::ColumnLayout> m_lhs;
-    urd::flat_vector<ygg::ColumnLayout> m_rhs;
+    urd::flat_vector<ygg::ColumnLayout> m_left;
+    urd::flat_vector<ygg::ColumnLayout> m_right;
     urd::flat_vector<ygg::ColumnLayout> m_output;
-    urd::flat_vector<ColumnSlice> m_lhs_keys;
-    urd::flat_vector<ColumnSlice> m_rhs_keys;
-    urd::flat_vector<ColumnSlice> m_rhs_payload;
+    urd::flat_vector<ColumnSlice> m_left_keys;
+    urd::flat_vector<ColumnSlice> m_right_keys;
+    urd::flat_vector<ColumnSlice> m_right_payload;
 
 public:
     JoinPlan() = default;
-    JoinPlan(std::span<const ygg::ColumnLayout> lhs, std::span<const ygg::ColumnLayout> rhs);
+    JoinPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::ColumnLayout> right);
 
-    [[nodiscard]] std::span<const ygg::ColumnLayout> lhs_columns() const noexcept { return { m_lhs.data(), m_lhs.size() }; }
-    [[nodiscard]] std::span<const ygg::ColumnLayout> rhs_columns() const noexcept { return { m_rhs.data(), m_rhs.size() }; }
+    [[nodiscard]] std::span<const ygg::ColumnLayout> left_columns() const noexcept { return { m_left.data(), m_left.size() }; }
+    [[nodiscard]] std::span<const ygg::ColumnLayout> right_columns() const noexcept { return { m_right.data(), m_right.size() }; }
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
-    [[nodiscard]] std::span<const ColumnSlice> lhs_keys() const noexcept { return { m_lhs_keys.data(), m_lhs_keys.size() }; }
-    [[nodiscard]] std::span<const ColumnSlice> rhs_keys() const noexcept { return { m_rhs_keys.data(), m_rhs_keys.size() }; }
-    [[nodiscard]] std::span<const ColumnSlice> rhs_payload() const noexcept { return { m_rhs_payload.data(), m_rhs_payload.size() }; }
+    [[nodiscard]] std::span<const ColumnSlice> left_keys() const noexcept { return { m_left_keys.data(), m_left_keys.size() }; }
+    [[nodiscard]] std::span<const ColumnSlice> right_keys() const noexcept { return { m_right_keys.data(), m_right_keys.size() }; }
+    [[nodiscard]] std::span<const ColumnSlice> right_payload() const noexcept { return { m_right_payload.data(), m_right_payload.size() }; }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&JoinPlan::m_lhs, &JoinPlan::m_rhs, &JoinPlan::m_output, &JoinPlan::m_lhs_keys, &JoinPlan::m_rhs_keys, &JoinPlan::m_rhs_payload> {}; }
+    {
+        return urd::
+            Members<&JoinPlan::m_left, &JoinPlan::m_right, &JoinPlan::m_output, &JoinPlan::m_left_keys, &JoinPlan::m_right_keys, &JoinPlan::m_right_payload> {};
+    }
 };
 
 /// Union and difference: both inputs have the same columns in the same order (project one first to align them).
@@ -88,7 +93,7 @@ class SetPlan
 
 public:
     SetPlan() = default;
-    SetPlan(std::span<const ygg::ColumnLayout> lhs, std::span<const ygg::ColumnLayout> rhs);
+    SetPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::ColumnLayout> right);
 
     /// The columns of both inputs and of the output.
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_columns.data(), m_columns.size() }; }
@@ -96,23 +101,23 @@ public:
     static constexpr auto cista_members() noexcept { return urd::Members<&SetPlan::m_columns> {}; }
 };
 
-/// The rows whose columns `lhs` and `rhs` (of the same type) hold equal values.
+/// The rows whose columns `left` and `right` (of the same type) hold equal values.
 class SelectEqualPlan
 {
     urd::flat_vector<ygg::ColumnLayout> m_columns;
-    size_t m_lhs = 0;
-    size_t m_rhs = 0;
+    size_t m_left = 0;
+    size_t m_right = 0;
 
 public:
     SelectEqualPlan() = default;
-    SelectEqualPlan(std::span<const ygg::ColumnLayout> input, urd::index<ygg::Column> lhs, urd::index<ygg::Column> rhs);
+    SelectEqualPlan(std::span<const ygg::ColumnLayout> input, urd::index<ygg::Column> left, urd::index<ygg::Column> right);
 
     /// The columns of the input and of the output.
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_columns.data(), m_columns.size() }; }
-    [[nodiscard]] size_t lhs_position() const noexcept { return m_lhs; }
-    [[nodiscard]] size_t rhs_position() const noexcept { return m_rhs; }
+    [[nodiscard]] size_t left_position() const noexcept { return m_left; }
+    [[nodiscard]] size_t right_position() const noexcept { return m_right; }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&SelectEqualPlan::m_columns, &SelectEqualPlan::m_lhs, &SelectEqualPlan::m_rhs> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&SelectEqualPlan::m_columns, &SelectEqualPlan::m_left, &SelectEqualPlan::m_right> {}; }
 };
 
 /// The rows whose column `column` holds `value` (canonical, encode_value) of type `type`, the column's.
@@ -132,7 +137,9 @@ public:
     [[nodiscard]] ygg::Value value() const noexcept { return m_value; }
 
     static constexpr auto cista_members() noexcept
-    { return urd::Members<&SelectValuePlan::m_columns, &SelectValuePlan::m_position, &SelectValuePlan::m_value> {}; }
+    {
+        return urd::Members<&SelectValuePlan::m_columns, &SelectValuePlan::m_position, &SelectValuePlan::m_value> {};
+    }
 };
 
 }  // namespace tyr::datalog::database

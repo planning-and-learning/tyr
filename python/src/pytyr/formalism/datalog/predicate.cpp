@@ -29,23 +29,17 @@ namespace tyr::formalism::datalog
 namespace
 {
 template<FactKind T>
-void bind_predicate_view(nb::module_& m, const char* name)
+void bind_predicate_view(nb::module_& m, RepositoryBinding& repository)
 {
-    using V = PredicateView<T>;
-    auto cls = nb::class_<V>(m, name).def("index", &V::index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
+    urd::python::bind_view<PredicateView<T>>(m);
+    ygg::bind_insert<Predicate<T>>(repository);
 }
 }  // namespace
 
 void bind_predicate(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_predicate_view<StaticTag>(m, "StaticPredicate");
-    bind_predicate_view<FluentTag>(m, "FluentPredicate");
-
-    ygg::bind_insert<Predicate<StaticTag>>(repository);
-    ygg::bind_insert<Predicate<FluentTag>>(repository);
+    bind_predicate_view<StaticTag>(m, repository);
+    bind_predicate_view<FluentTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::datalog

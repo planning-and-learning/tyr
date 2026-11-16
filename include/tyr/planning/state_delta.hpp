@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
+#include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <urd/elements/equal_to.hpp>
@@ -51,7 +52,9 @@ struct StateDelta
         ygg::float_t to;
 
         friend bool operator==(const NumericChange& lhs, const NumericChange& rhs) noexcept
-        { return lhs.fterm == rhs.fterm && urd::EqualTo<ygg::float_t> {}(lhs.from, rhs.from) && urd::EqualTo<ygg::float_t> {}(lhs.to, rhs.to); }
+        {
+            return lhs.fterm == rhs.fterm && urd::EqualTo<ygg::float_t> {}(lhs.from, rhs.from) && urd::EqualTo<ygg::float_t> {}(lhs.to, rhs.to);
+        }
     };
 
     urd::Store<urd::sequence<FluentChange>> fluents;    ///< Sorted by variable, unique.
@@ -69,7 +72,7 @@ struct StateDelta
 /// Computes the delta from `parent` to `successor` by comparing every fluent variable and function term.
 /// Linear in the state size, so it is meant for tests and debug checks only.
 template<TaskKind Kind>
-void compute_state_delta(const urd::data<State<Kind>>& parent, const urd::data<State<Kind>>& successor, StateDelta& out);
+void compute_state_delta(const StateContext<Kind>& parent, const StateContext<Kind>& successor, StateDelta& out);
 
 }
 

@@ -48,7 +48,9 @@ struct formatter<tyr::formalism::planning::PlanningDomain, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningDomain& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
 };
 
 template<tyr::TaskKind T>
@@ -58,7 +60,9 @@ struct formatter<tyr::formalism::planning::PlanningTask<T>, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::PlanningTask<T>& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
 };
 
 }  // namespace fmt
@@ -66,25 +70,8 @@ struct formatter<tyr::formalism::planning::PlanningTask<T>, char>
 namespace tyr::formalism::planning
 {
 
-std::string to_string(const urd::data<FDRVariable<FluentTag>>& value);
-
-std::string to_string(const urd::data<Invariant>& value);
 std::string to_string(const urd::data<FDRFact<FluentTag>>& value);
-
-std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value);
-std::string to_string(const urd::data<ConjunctiveCondition<GroundTag>>& value);
-std::string to_string(const urd::data<ConditionalEffect<LiftedTag>>& value);
-std::string to_string(const urd::data<ConditionalEffect<GroundTag>>& value);
-std::string to_string(const urd::data<ConjunctiveEffect<LiftedTag>>& value);
-std::string to_string(const urd::data<ConjunctiveEffect<GroundTag>>& value);
-std::string to_string(const urd::data<Action<LiftedTag>>& value);
-std::string to_string(const urd::data<Action<GroundTag>>& value);
-std::string to_string(const urd::data<Axiom<LiftedTag>>& value);
-std::string to_string(const urd::data<Axiom<GroundTag>>& value);
 std::string to_string(const urd::data<Metric>& value);
-std::string to_string(const urd::data<Task<LiftedTag>>& value);
-std::string to_string(const urd::data<Domain>& value);
-std::string to_string(const urd::data<Task<GroundTag>>& value);
 std::string to_string(const urd::data<ygg::Row<Action<LiftedTag>>>& value);
 std::string to_string(const urd::data<ygg::Row<Axiom<LiftedTag>>>& value);
 
@@ -108,17 +95,45 @@ namespace fmt
 {
 
 /// Every view through the repository prints as its to_string: urd's (of an index or a held record), and binding views.
-template<template<typename, typename, typename...> typename V, typename H, typename... Rest>
-    requires requires(const V<H, tyr::formalism::planning::Repository, Rest...>& value) { tyr::formalism::planning::to_string(value); }
-struct formatter<V<H, tyr::formalism::planning::Repository, Rest...>, char>
+template<typename T, typename K>
+    requires requires(const urd::index_view<T, tyr::formalism::planning::Repository, K>& value) { tyr::formalism::planning::to_string(value); }
+struct formatter<urd::index_view<T, tyr::formalism::planning::Repository, K>, char>
 {
-    using View = V<H, tyr::formalism::planning::Repository, Rest...>;
-
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const View& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    auto format(const urd::index_view<T, tyr::formalism::planning::Repository, K>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
+};
+template<typename T, typename R>
+    requires requires(const urd::borrowed_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
+struct formatter<urd::borrowed_view<T, tyr::formalism::planning::Repository, R>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    auto format(const urd::borrowed_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
+};
+template<typename T, typename R>
+    requires requires(const urd::owning_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
+struct formatter<urd::owning_view<T, tyr::formalism::planning::Repository, R>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    auto format(const urd::owning_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
+};
+template<typename T, typename R>
+    requires requires(const urd::shared_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
+struct formatter<urd::shared_view<T, tyr::formalism::planning::Repository, R>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    auto format(const urd::shared_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
 };
 
 template<>
@@ -128,7 +143,9 @@ struct formatter<tyr::formalism::planning::FDRValue, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::FDRValue& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", value.value); }
+    {
+        return fmt::format_to(ctx.out(), "{}", value.value);
+    }
 };
 
 template<>
@@ -138,7 +155,9 @@ struct formatter<tyr::formalism::OptimizationDirection, char>
 
     template<typename FormatContext>
     auto format(tyr::formalism::OptimizationDirection value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value));
+    }
 };
 
 }  // namespace fmt
@@ -165,7 +184,9 @@ public:
 
     template<typename FormatContext>
     auto format(const Value& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value));
+    }
 };
 
 }  // namespace fmt

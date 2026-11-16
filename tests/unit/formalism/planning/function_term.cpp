@@ -90,7 +90,7 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     const auto [binding, binding_created] = ygg::formalism::insert(repository, binding_data);
     ASSERT_TRUE(binding_created);
 
-    auto ground_function_term_data = urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.data());
+    auto ground_function_term_data = urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, tyr::formalism::FluentTag>>(binding.index());
     const auto [ground_function_term, ground_function_term_created] = ygg::formalism::insert(repository, ground_function_term_data);
     ASSERT_TRUE(ground_function_term_created);
 
@@ -125,7 +125,7 @@ TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
     const auto [copied, inserted] = tyr::formalism::copy(term, context);
     EXPECT_TRUE(inserted);
     EXPECT_EQ(copied.get_function(), target_function);
-    EXPECT_EQ(urd::to_stored(copied.get_terms()[0]), urd::to_stored(term.get_terms()[0]));
+    EXPECT_EQ(urd::stored<tyr::formalism::Term>(copied.get_terms()[0]), urd::stored<tyr::formalism::Term>(term.get_terms()[0]));
     EXPECT_FALSE(tyr::formalism::copy(term, context).second);
 }
 

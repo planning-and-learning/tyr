@@ -114,7 +114,7 @@ auto create_applicability_rule(formalism::planning::ActionView<LiftedTag> action
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
     for (const auto variable : new_conj_cond.get_variables())
-        rule->variables.push_back(urd::to_stored(variable));
+        urd::append(rule->variables, variable);
     rule->body = new_conj_cond.index();
     rule->heads.push_back(create_applicability_atom(action, context).first.index());
 
@@ -147,7 +147,7 @@ auto create_applicability_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
     for (const auto variable : new_conj_cond.get_variables())
-        rule->variables.push_back(urd::to_stored(variable));
+        urd::append(rule->variables, variable);
     rule->body = new_conj_cond.index();
     rule->heads.push_back(create_applicability_atom(axiom, context).first.index());
 
@@ -178,7 +178,7 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
     for (const auto variable : new_conj_cond.get_variables())
-        rule->variables.push_back(urd::to_stored(variable));
+        urd::append(rule->variables, variable);
     rule->body = new_conj_cond.index();
     for (const auto literal : cond_eff.get_effect().get_literals())
         if (literal.get_polarity())  /// ignore delete effects
@@ -214,7 +214,7 @@ auto create_effect_rule(formalism::planning::AxiomView<LiftedTag> axiom,
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
     for (const auto variable : new_conj_cond.get_variables())
-        rule->variables.push_back(urd::to_stored(variable));
+        urd::append(rule->variables, variable);
     rule->body = new_conj_cond.index();
     rule->heads.push_back(effect.index());
 
@@ -343,13 +343,17 @@ const AppPredicateToActionMapping& GroundTaskProgram::get_predicate_to_action_ma
 const GroundTaskProgram::AppPredicateToAxiomMapping& GroundTaskProgram::get_predicate_to_axiom_mapping() const noexcept { return m_predicate_to_axioms; }
 
 const ConditionalEffectToPredicateMapping& GroundTaskProgram::get_conditional_effect_to_predicate_mapping() const noexcept
-{ return m_conditional_effect_to_predicate; }
+{
+    return m_conditional_effect_to_predicate;
+}
 
 datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() noexcept { return m_datalog_program; }
 
 const datalog::Program<LiftedTag>& GroundTaskProgram::get_datalog_program() const noexcept { return m_datalog_program; }
 
 const datalog::ConstProgramWorkspace<LiftedTag>& GroundTaskProgram::get_const_program_workspace() const noexcept
-{ return m_datalog_program.get_const_program_workspace(); }
+{
+    return m_datalog_program.get_const_program_workspace();
+}
 
 }

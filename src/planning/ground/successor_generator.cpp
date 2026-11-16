@@ -101,7 +101,7 @@ void validate_storage(const TaskPtr<GroundTag>& task, const Source&, const State
 
 void validate_storage(const TaskPtr<GroundTag>&, const Source& node, const Builder& storage)
 {
-    if (&storage == &node.data())
+    if (&storage.fact_storage == &node.state().fact_storage())
         throw std::invalid_argument("SuccessorGenerator: source and successor builder must be distinct.");
 }
 
@@ -177,7 +177,9 @@ struct SuccessorGenerator<GroundTag>::Impl
 
     /// The match tree of the action schema, or of all actions.
     MatchTree& get_match_tree(std::optional<formalism::planning::ActionView<LiftedTag>> action)
-    { return action ? get_schema_match_tree(*action) : *evaluator.action_match_tree; }
+    {
+        return action ? get_schema_match_tree(*action) : *evaluator.action_match_tree;
+    }
 
     template<typename Objects>
     ActionBindingResult try_get_applicable_action_binding(const Source& node, formalism::planning::ActionView<LiftedTag> action, Objects objects);
@@ -193,7 +195,7 @@ struct SuccessorGenerator<GroundTag>::Impl
     {
         if (stop())
             return false;
-        const auto state_context = StateContext<GroundTag>(*definition->task, node.data(), node.get_metric());
+        const auto state_context = node.state();
         tree.generate(state_context, evaluator.applicable_actions);
         for (const auto action : evaluator.applicable_actions)
         {
@@ -234,7 +236,7 @@ struct SuccessorGenerator<GroundTag>::Impl
     /// The core: writes the successor of `node` by `action` into `out_state`, without axiom closure.
     ygg::float_t generate(const Source& node, formalism::planning::ActionView<GroundTag> action, Builder& out_state, StateDelta& out_delta)
     {
-        const auto state_context = StateContext<GroundTag>(*definition->task, node.data(), node.get_metric());
+        const auto state_context = node.state();
         return evaluator.executor.apply_action_unregistered(state_context, action, out_state, out_delta);
     }
 
@@ -308,7 +310,9 @@ SuccessorGenerator<GroundTag>::Impl::Evaluator::Evaluator(const Definition& defi
 
 SuccessorGenerator<GroundTag>::SuccessorGenerator(TaskPtr<GroundTag> task, const ygg::ExecutionContextPtr& execution_context) :
     m_impl(std::make_unique<Impl>(std::move(task)))
-{ static_cast<void>(execution_context); }
+{
+    static_cast<void>(execution_context);
+}
 
 SuccessorGenerator<GroundTag>::SuccessorGenerator(std::unique_ptr<Impl> impl) noexcept : m_impl(std::move(impl)) {}
 
@@ -328,7 +332,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_initial_node(StateRepository<
     validate_task(m_impl->definition->task, axiom_evaluator);
     auto initial_state = state_repository.get_initial_state(axiom_evaluator);
 
-    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, initial_state.data(), 0);
+    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, initial_state, 0);
 
     const auto state_metric =
         evaluate_metric(m_impl->definition->task->get_task().get_metric(), m_impl->definition->task->get_task().get_auxiliary_fterm_value(), state_context);
@@ -668,10 +672,11 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(target_repository, value); }))
         throw std::invalid_argument("SuccessorGenerator::check_action_binding(...): object does not belong to the task repository.");
 
-    const auto& constants = task->get_task().get_domain().data().constants;
-    const auto& task_objects = task->get_task().data().objects;
+    const auto constants = task->get_task().get_domain().get_constants();
+    const auto task_objects = task->get_task().get_objects();
+    const auto by_index = [](const auto view) { return view.index(); };
     for (const auto object : indices)
-        if (!std::binary_search(constants.begin(), constants.end(), object) && !std::binary_search(task_objects.begin(), task_objects.end(), object))
+        if (!std::ranges::binary_search(constants, object, {}, by_index) && !std::ranges::binary_search(task_objects, object, {}, by_index))
             return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
 
     auto& scratch = evaluator.checked_binding;
@@ -685,7 +690,7 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
     const auto found = definition->action_binding_to_ground_action.find(*binding);
     if (found == definition->action_binding_to_ground_action.end())
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
-    const auto state = StateContext<GroundTag>(*task, node.data(), node.get_metric());
+    const auto state = node.state();
     if (!evaluator.executor.is_applicable(found->second, state))
         return { ActionBindingStatus::INAPPLICABLE, std::nullopt };
     return { ActionBindingStatus::APPLICABLE, binding };
@@ -694,8 +699,8 @@ SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Sou
 template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
 ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_binding(const Source& node, Binding binding)
 {
-    if constexpr (requires { binding.context().owner(binding.data()); })
-        if (binding.context().owner(binding.data()) == nullptr)
+    if constexpr (requires { binding.context().owner(binding.index()); })
+        if (binding.context().owner(binding.index()) == nullptr)
             throw std::invalid_argument("SuccessorGenerator: action binding does not belong to its source repository.");
     return m_impl->try_get_applicable_action_binding(
         node,
@@ -706,7 +711,9 @@ ActionBindingResult SuccessorGenerator<GroundTag>::try_get_applicable_action_bin
 
 template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
 ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, Binding binding)
-{ return try_get_applicable_action_binding(node, binding).status; }
+{
+    return try_get_applicable_action_binding(node, binding).status;
+}
 
 formalism::planning::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_binding(BorrowedActionRowView<GroundTag> binding)
 {
@@ -730,13 +737,17 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_successor_node(const Source& 
                                                                   formalism::planning::ActionRowView binding,
                                                                   StateRepository<GroundTag>& storage,
                                                                   AxiomEvaluator<GroundTag>& axiom_evaluator)
-{ return get_successor_node(node, ground_action(binding), storage, axiom_evaluator); }
+{
+    return get_successor_node(node, ground_action(binding), storage, axiom_evaluator);
+}
 
 BuilderNode SuccessorGenerator<GroundTag>::get_successor_node(const Source& node,
                                                               formalism::planning::ActionRowView binding,
                                                               Builder& storage,
                                                               AxiomEvaluator<GroundTag>& axiom_evaluator)
-{ return get_successor_node(node, ground_action(binding), storage, axiom_evaluator); }
+{
+    return get_successor_node(node, ground_action(binding), storage, axiom_evaluator);
+}
 
 /// The registering wrapper: a fresh builder of the repository, the core, then registration, which closes the state under
 /// the axioms only if it is new.
@@ -817,12 +828,16 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Sou
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
-{ return for_each_applicable_action_binding(node, callback); }
+{
+    return for_each_applicable_action_binding(node, callback);
+}
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
                                                                                 const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
-{ return for_each_applicable_action_binding(node, action, callback); }
+{
+    return for_each_applicable_action_binding(node, action, callback);
+}
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
@@ -842,22 +857,30 @@ bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_initial_node(StateRepository<GroundTag>& state_repository,
                                                                              AxiomEvaluator<GroundTag>& axiom_evaluator)
-{ return get_initial_node(state_repository, axiom_evaluator).pack(); }
+{
+    return get_initial_node(state_repository, axiom_evaluator).pack();
+}
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_node(StateRepository<GroundTag>& state_repository, urd::index<State<GroundTag>> state_index)
-{ return get_node(state_repository, state_index).pack(); }
+{
+    return get_node(state_repository, state_index).pack();
+}
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionRowView binding,
                                                                                StateRepository<GroundTag>& state_repository,
                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator)
-{ return get_successor_node(node, binding, state_repository, axiom_evaluator).pack(); }
+{
+    return get_successor_node(node, binding, state_repository, axiom_evaluator).pack();
+}
 
 PackedNode<GroundTag> SuccessorGenerator<GroundTag>::get_packed_successor_node(const Source& node,
                                                                                formalism::planning::ActionView<GroundTag> action,
                                                                                StateRepository<GroundTag>& state_repository,
                                                                                AxiomEvaluator<GroundTag>& axiom_evaluator)
-{ return get_successor_node(node, action, state_repository, axiom_evaluator).pack(); }
+{
+    return get_successor_node(node, action, state_repository, axiom_evaluator).pack();
+}
 
 ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Source& node,
                                                                      formalism::planning::ActionRowView binding,
@@ -903,7 +926,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::get_node(StateRepository<GroundTa
 {
     validate_task(m_impl->definition->task, state_repository);
     auto state = state_repository.get_registered_state(state_index);
-    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, state.data(), 0);
+    const auto state_context = StateContext<GroundTag>(*m_impl->definition->task, state, 0);
     const auto state_metric =
         evaluate_metric(m_impl->definition->task->get_task().get_metric(), m_impl->definition->task->get_task().get_auxiliary_fterm_value(), state_context);
 

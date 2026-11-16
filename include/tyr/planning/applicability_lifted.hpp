@@ -146,7 +146,9 @@ bool is_applicable(formalism::planning::AxiomView<LiftedTag> element, const Appl
 inline ygg::float_t evaluate(ygg::float_t element, const ApplicabilityContext&) { return element; }
 
 inline ygg::float_t evaluate(formalism::planning::UnaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
-{ return formalism::apply(element.get_operator(), evaluate(element.get_arg(), context)); }
+{
+    return formalism::apply(element.get_operation(), evaluate(element.get_arg(), context));
+}
 
 inline ygg::float_t evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
 {
@@ -154,7 +156,7 @@ inline ygg::float_t evaluate(formalism::planning::BinaryOperatorView<LiftedTag, 
     // is unspecified (gcc and clang disagree). rhs-first preserves the historical gcc order.
     const auto rhs = evaluate(element.get_rhs(), context);
     const auto lhs = evaluate(element.get_lhs(), context);
-    return formalism::apply(element.get_operator(), lhs, rhs);
+    return formalism::apply(element.get_operation(), lhs, rhs);
 }
 
 inline bool evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalism::BooleanOperatorKind> element, const ApplicabilityContext& context)
@@ -163,7 +165,7 @@ inline bool evaluate(formalism::planning::BinaryOperatorView<LiftedTag, formalis
     // is unspecified (gcc and clang disagree). rhs-first preserves the historical gcc order.
     const auto rhs = evaluate(element.get_rhs(), context);
     const auto lhs = evaluate(element.get_lhs(), context);
-    return formalism::apply(element.get_operator(), lhs, rhs);
+    return formalism::apply(element.get_operation(), lhs, rhs);
 }
 
 inline ygg::float_t evaluate(formalism::planning::MultiOperatorView<LiftedTag, formalism::ArithmeticOperatorKind> element, const ApplicabilityContext& context)
@@ -174,7 +176,7 @@ inline ygg::float_t evaluate(formalism::planning::MultiOperatorView<LiftedTag, f
                            child_fexprs.end(),
                            evaluate(child_fexprs.front(), context),
                            [&](const auto& value, const auto& child_expr)
-                           { return formalism::apply(element.get_operator(), value, evaluate(child_expr, context)); });
+                           { return formalism::apply(element.get_operation(), value, evaluate(child_expr, context)); });
 }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::StaticTag> element, const ApplicabilityContext& context)
@@ -192,11 +194,13 @@ inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, fo
     if (!fterm_or_nullopt.has_value())
         return std::numeric_limits<ygg::float_t>::quiet_NaN();
 
-    return context.state().state_data().get(fterm_or_nullopt->index());
+    return context.state().numeric_storage().get(fterm_or_nullopt->index());
 }
 
 inline ygg::float_t evaluate(formalism::planning::FunctionTermView<LiftedTag, formalism::AuxiliaryTag>, const ApplicabilityContext& context)
-{ return context.state().auxiliary_value(); }
+{
+    return context.state().auxiliary_value();
+}
 
 inline ygg::float_t evaluate(formalism::planning::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
 {
@@ -209,7 +213,7 @@ ygg::float_t evaluate(formalism::planning::NumericEffectView<LiftedTag, T> eleme
     // Sequenced for the same reason as the arithmetic binary operator above.
     const auto fexpr_value = evaluate(element.get_fexpr(), context);
     const auto fterm_value = evaluate(element.get_fterm(), context);
-    return formalism::apply(element.get_operator(), fterm_value, fexpr_value);
+    return formalism::apply(element.get_operation(), fterm_value, fexpr_value);
 }
 
 /**
@@ -237,7 +241,7 @@ inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism:
         return !element.get_polarity();
 
     const auto& fact = *fact_or_nullopt;
-    return (context.state().state_data().get(fact.get_variable()) == fact.get_value()) == element.get_polarity();
+    return (context.state().fact_storage().get(fact.get_variable().index()) == fact.get_value()) == element.get_polarity();
 }
 
 inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism::DerivedTag> element, const ApplicabilityContext& context)
@@ -246,7 +250,7 @@ inline bool is_applicable(formalism::planning::LiteralView<LiftedTag, formalism:
     if (!atom_or_nullopt.has_value())
         return !element.get_polarity();
 
-    return context.state().state_data().test(atom_or_nullopt->index()) == element.get_polarity();
+    return context.state().atom_storage().test(atom_or_nullopt->index()) == element.get_polarity();
 }
 
 template<formalism::FactKind T>
@@ -256,7 +260,9 @@ bool is_applicable(formalism::planning::LiteralListView<LiftedTag, T> elements, 
 }
 
 inline bool is_applicable(formalism::planning::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(element, context); }
+{
+    return evaluate(element, context);
+}
 
 inline bool is_applicable(formalism::planning::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {
@@ -270,7 +276,7 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
     auto fterm = formalism::planning::try_ground(element.get_fterm(), context.grounder());
     if (!fterm.has_value())
     {
-        if (element.get_operator() == formalism::NumericEffectOperatorKind::Assign)
+        if (element.get_operation() == formalism::NumericEffectOperatorKind::Assign)
             fterm = formalism::planning::ground(element.get_fterm(), context.grounder()).first;
         else
             return false;
@@ -281,16 +287,16 @@ inline bool is_applicable(formalism::planning::NumericEffectView<LiftedTag, form
         ref_fluent_effect_families.resize(fterm_index.value + 1, formalism::EffectFamily::None);
 
     // Check non-conflicting effects
-    const auto family = formalism::effect_family(element.get_operator());
+    const auto family = formalism::effect_family(element.get_operation());
     if (!formalism::planning::is_compatible_effect_family(family, ref_fluent_effect_families[fterm_index.value]))
         return false;  /// incompatible effects
 
     ref_fluent_effect_families[fterm_index.value] = family;
 
     // Check fterm is well-defined in context
-    if (element.get_operator() != formalism::NumericEffectOperatorKind::Assign)
+    if (element.get_operation() != formalism::NumericEffectOperatorKind::Assign)
     {
-        if (std::isnan(context.state().state_data().get(fterm_index)))
+        if (std::isnan(context.state().numeric_storage().get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
     }
 
@@ -334,7 +340,9 @@ inline bool is_applicable(formalism::planning::ConjunctiveEffectView<LiftedTag> 
 // Axiom
 
 inline bool is_applicable(formalism::planning::AxiomView<LiftedTag> element, const ApplicabilityContext& context)
-{ return is_applicable(element.get_body(), context); }
+{
+    return is_applicable(element.get_body(), context);
+}
 
 }
 

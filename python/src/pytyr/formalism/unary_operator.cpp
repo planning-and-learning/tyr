@@ -31,46 +31,25 @@ namespace tyr::formalism
 
 namespace
 {
-template<TaskKind T>
-void bind_unary_operator_data(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<UnaryOperator<T, ArithmeticOperatorKind>>>(m, name + "Index");
-
-    using V = urd::data<UnaryOperator<T, ArithmeticOperatorKind>>;
-    auto cls = nb::class_<V>(m, (name + "Data").c_str());
-    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, datalog::FunctionExpressionView<T>>(), "operator"_a, "arg"_a);
-    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, planning::FunctionExpressionView<T>>(), "operator"_a, "arg"_a);
-    cls.def(nb::init<ArithmeticOperatorKind, FunctionExpression<T>>(), "operator"_a, "arg"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
 template<TaskKind T, typename C>
-void bind_unary_operator_view(nb::module_& m, nb::class_<C>& repository, const std::string& name)
+void bind_unary_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
-    using V = urd::index_view<UnaryOperator<T, ArithmeticOperatorKind>, C>;
-    auto cls = nb::class_<V>(m, name.c_str()).def("index", &V::index).def("get_operator", &V::get_operator).def("get_arg", &V::get_arg);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-
+    urd::python::bind_view<urd::index_view<UnaryOperator<T, ArithmeticOperatorKind>, C>>(m);
     ygg::bind_insert<UnaryOperator<T, ArithmeticOperatorKind>>(repository);
 }
 
 template<typename C>
 void bind_unary_operator_views(nb::module_& m, nb::class_<C>& repository)
 {
-    bind_unary_operator_view<LiftedTag>(m, repository, "UnaryOperator");
-    bind_unary_operator_view<GroundTag>(m, repository, "GroundUnaryOperator");
+    bind_unary_operator_view<LiftedTag>(m, repository);
+    bind_unary_operator_view<GroundTag>(m, repository);
 }
 }  // namespace
 
 void bind_unary_operator(nb::module_& m)
 {
-    bind_unary_operator_data<LiftedTag>(m, "UnaryOperator");
-    bind_unary_operator_data<GroundTag>(m, "GroundUnaryOperator");
+    urd::python::bind_data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(m);
 }
 
 }  // namespace tyr::formalism

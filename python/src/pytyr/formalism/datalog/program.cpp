@@ -25,92 +25,19 @@ namespace tyr::formalism::datalog
 namespace
 {
 template<TaskKind T>
-void bind_program_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+void bind_program_kind(nb::module_& m, RepositoryBinding& repository)
 {
-    using namespace nb::literals;
-    using Tag = Program<T>;
-    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
-
-    {
-        using V = urd::data<Tag>;
-        auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        cls.def(urd::python::init_from_views<const PredicateViewList<StaticTag>&,
-                                             const PredicateViewList<FluentTag>&,
-                                             const FunctionViewList<StaticTag>&,
-                                             const FunctionViewList<FluentTag>&,
-                                             const ObjectViewList&,
-                                             const AtomViewList<GroundTag, StaticTag>&,
-                                             const AtomViewList<GroundTag, FluentTag>&,
-                                             const FunctionTermValueViewList<GroundTag, StaticTag>&,
-                                             const FunctionTermValueViewList<GroundTag, FluentTag>&,
-                                             const std::optional<ConjunctiveConditionView<GroundTag>>&,
-                                             const RuleViewList<T>&>(),
-                "static_predicates"_a,
-                "fluent_predicates"_a,
-                "static_functions"_a,
-                "fluent_functions"_a,
-                "objects"_a,
-                "static_atoms"_a,
-                "fluent_atoms"_a,
-                "static_fterm_values"_a,
-                "fluent_fterm_values"_a,
-                "goal"_a,
-                nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"));
-        cls.def(nb::init<urd::flat_vector<urd::index<Predicate<StaticTag>>>,
-                         urd::flat_vector<urd::index<Predicate<FluentTag>>>,
-                         urd::flat_vector<urd::index<Function<StaticTag>>>,
-                         urd::flat_vector<urd::index<Function<FluentTag>>>,
-                         urd::flat_vector<urd::index<Object>>,
-                         urd::flat_vector<urd::index<Atom<GroundTag, StaticTag>>>,
-                         urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
-                         urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
-                         urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
-                         urd::flat_optional<urd::index<ConjunctiveCondition<GroundTag>>>,
-                         urd::flat_vector<urd::index<Rule<T>>>>(),
-                "static_predicates"_a,
-                "fluent_predicates"_a,
-                "static_functions"_a,
-                "fluent_functions"_a,
-                "objects"_a,
-                "static_atoms"_a,
-                "fluent_atoms"_a,
-                "static_fterm_values"_a,
-                "fluent_fterm_values"_a,
-                "goal"_a,
-                nb::arg(std::same_as<T, GroundTag> ? "ground_rules" : "rules"));
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    {
-        using V = ProgramView<T>;
-        auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("index", &V::index);
-        cls.def("get_static_predicates", &V::template get_predicates<StaticTag>);
-        cls.def("get_fluent_predicates", &V::template get_predicates<FluentTag>);
-        cls.def("get_static_functions", &V::template get_functions<StaticTag>);
-        cls.def("get_fluent_functions", &V::template get_functions<FluentTag>);
-        cls.def("get_objects", &V::get_objects);
-        cls.def("get_static_atoms", &V::template get_atoms<StaticTag>);
-        cls.def("get_fluent_atoms", &V::template get_atoms<FluentTag>);
-        cls.def("get_static_fterm_values", &V::template get_fterm_values<StaticTag>);
-        cls.def("get_fluent_fterm_values", &V::template get_fterm_values<FluentTag>);
-        cls.def("get_goal", &V::get_goal);
-        cls.def("get_rules", &V::get_rules);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    ygg::bind_insert<Tag>(repository);
+    urd::python::bind_view<ProgramView<T>>(m);
+    ygg::bind_insert<Program<T>>(repository);
 }
 }  // namespace
 
 void bind_program(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_program_kind<LiftedTag>(m, repository, "Program");
-    bind_program_kind<GroundTag>(m, repository, "GroundProgram");
+    urd::python::bind_data<Program<LiftedTag>>(m);
+    bind_program_kind<LiftedTag>(m, repository);
+    urd::python::bind_data<Program<GroundTag>>(m);
+    bind_program_kind<GroundTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::datalog

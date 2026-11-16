@@ -27,6 +27,7 @@
 #include <concepts>
 #include <memory>
 #include <span>
+#include <string_view>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -60,55 +61,66 @@ inline bool is_compatible_effect_family(EffectFamily lhs, EffectFamily rhs)
 template<TaskKind T>
 struct ConditionalEffect
 {
+    static constexpr std::string_view name = "ConditionalEffect";
 };
 
 template<TaskKind T>
 struct ConjunctiveEffect
 {
+    static constexpr std::string_view name = "ConjunctiveEffect";
 };
 
 template<TaskKind T>
 struct Action
 {
+    static constexpr std::string_view name = "Action";
     using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>
 struct Axiom
 {
+    static constexpr std::string_view name = "Axiom";
     using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 struct Metric
 {
+    static constexpr std::string_view name = "Metric";
 };
 
 template<TaskKind T>
 struct Task
 {
+    static constexpr std::string_view name = "Task";
 };
 
 struct Domain
 {
+    static constexpr std::string_view name = "Domain";
 };
 
 template<FactKind T>
 struct FDRVariable
 {
+    static constexpr std::string_view name = "FDRVariable";
 };
 
 struct Invariant
 {
+    static constexpr std::string_view name = "Invariant";
 };
 
 template<FactKind T>
 struct FDRFact
 {
+    static constexpr std::string_view name = "FDRFact";
 };
 
 template<TaskKind T>
 struct ConjunctiveCondition
 {
+    static constexpr std::string_view name = "ConjunctiveCondition";
 };
 
 struct FDRAction

@@ -127,7 +127,7 @@ auto create_rpg_cond_effect_rule(formalism::planning::ActionView<LiftedTag> acti
     const auto new_conj_cond = formalism::datalog::insert(context.destination(), *conj_cond).first;
 
     for (const auto variable : new_conj_cond.get_variables())
-        rule->variables.push_back(urd::to_stored(variable));
+        urd::append(rule->variables, variable);
     rule->body = new_conj_cond.index();
     for (const auto literal : cond_eff.get_effect().get_literals())
         if (literal.get_polarity())  /// ignore delete effects

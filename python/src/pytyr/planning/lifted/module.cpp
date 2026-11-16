@@ -53,7 +53,7 @@ void bind_lifted_module_definitions(nb::module_& m)
 
     auto task =
         nb::class_<Task<LiftedTag>>(m, "Task")  //
-            .def(nb::new_([](formalism::planning::PlanningTask<LiftedTag>&& source_task) { return std::make_shared<Task<LiftedTag>>(std::move(source_task)); }),
+            .def(nb::new_([](const formalism::planning::PlanningTask<LiftedTag>& source_task) { return std::make_shared<Task<LiftedTag>>(source_task); }),
                  "formalism_task"_a,
                  R"doc(
 Create a planning task from a formalism task.
@@ -65,14 +65,16 @@ formalism_task : formalism.planning.LiftedPlanningTask
 
 Notes
 -----
-The `formalism_task` is **moved** into the planning task. After calling this
-constructor, the original formalism task should be considered consumed and
-should not be used further.
+The formalism task stays usable and is shared, not copied: its repository and
+FDR context are frozen. The planning task grounds and registers into layers of
+its own over them (get_repository, get_fdr_context), so several planning tasks
+of one formalism task do not see each other's writes. Do not insert into the
+formalism task's repository afterwards.
         )doc")
             .def("get_formalism_task", &Task<LiftedTag>::get_formalism_task, nb::rv_policy::reference_internal)
             .def("get_repository", &Task<LiftedTag>::get_repository)
             .def("get_task", &Task<LiftedTag>::get_task)
-            .def("get_fdr_context", nb::overload_cast<>(&Task<LiftedTag>::get_fdr_context, nb::const_), nb::rv_policy::reference_internal)
+            .def("get_fdr_context", &Task<LiftedTag>::get_fdr_context, nb::rv_policy::reference_internal)
             .def("instantiate_ground_task", &Task<LiftedTag>::instantiate_ground_task, "execution_context"_a, "options"_a = GroundTaskInstantiationOptions());
     ygg::add_print(task);
 

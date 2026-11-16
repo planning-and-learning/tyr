@@ -136,7 +136,7 @@ formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicabili
     const auto new_binding = formalism::datalog::insert(context.merge_context.destination(), *binding).first;
 
     auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(context.builder);
-    atom->row = new_binding.data();
+    atom->row = new_binding.index();
     return formalism::datalog::insert(context.merge_context.destination(), *atom).first;
 }
 
@@ -174,7 +174,9 @@ formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_condi
 formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal,
                                                                                 TranslationContext<GroundTag>& translation_context,
                                                                                 GroundProgramBuildContext& context)
-{ return create_delete_free_condition(goal, translation_context, context); }
+{
+    return create_delete_free_condition(goal, translation_context, context);
+}
 
 formalism::datalog::ConjunctiveConditionView<GroundTag>
 create_delete_free_effect_condition(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> applicability_atom,
@@ -194,7 +196,7 @@ formalism::datalog::RuleView<GroundTag> create_ground_atom_rule(formalism::datal
                                                                 ygg::float_t cost = 0)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag>>(context.builder);
-    rule->row = create_rule_binding(context).data();
+    rule->row = create_rule_binding(context).index();
     rule->body = body.index();
     rule->heads = heads;
     rule->cost = cost;
@@ -212,7 +214,9 @@ formalism::datalog::RuleView<GroundTag> create_applicability_rule(formalism::pla
 }
 
 formalism::datalog::ProgramView<GroundTag> finish_program(GroundProgramBuildContext& context)
-{ return formalism::datalog::insert(context.merge_context.destination(), *context.program).first; }
+{
+    return formalism::datalog::insert(context.merge_context.destination(), *context.program).first;
+}
 
 void translate_action_to_delete_free_rules(formalism::planning::ActionView<GroundTag> action,
                                            urd::data<formalism::datalog::Program<GroundTag>>& program,
@@ -237,7 +241,7 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
         {
             const auto rule = create_ground_atom_rule(body, heads, context, 1);
             program.rules.push_back(rule.index());
-            rule_to_action[rule.get_row().data()].push_back(action);
+            rule_to_action[rule.get_row().index()].push_back(action);
         }
     }
 }
@@ -367,7 +371,7 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping& sour
         const auto [result_rule, inserted] = formalism::copy(*source_rule, context);
         if (inserted)
             throw std::logic_error("Static rule filtering omitted a retained rule");
-        auto& result_actions = result_mapping[result_rule.get_row().data()];
+        auto& result_actions = result_mapping[result_rule.get_row().index()];
         result_actions.insert(result_actions.end(), actions.begin(), actions.end());
     }
 }

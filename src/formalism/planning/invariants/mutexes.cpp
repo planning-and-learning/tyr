@@ -74,7 +74,7 @@ extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, Ato
                     static_assert(false, "Unhandled case");
                 }
             },
-            urd::to_stored(terms[static_cast<std::ptrdiff_t>(position)]));
+            urd::stored<Term>(terms[static_cast<std::ptrdiff_t>(position)]));
         if (!matches)
             return std::nullopt;
     }
@@ -107,7 +107,9 @@ struct InstanceGroup : urd::compared_by_identity<InstanceGroup>
     }
 
     static constexpr auto identifying_members() noexcept
-    { return urd::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {}; }
+    {
+        return urd::Members<&InstanceGroup::inv_index, &InstanceGroup::rigid_values, &InstanceGroup::atoms> {};
+    }
 };
 
 struct GroupKey : urd::compared_by_identity<GroupKey>

@@ -163,7 +163,9 @@ RuleUpdateInput<Kind, AP, CP> make_rule_update_input(RuleInstance<Kind> rule_ins
                                                      const PredicateAnnotations<>& predicate_annotations,
                                                      AP& annotation_policy,
                                                      const CP& cost_policy)
-{ return { std::move(rule_instance), RuleEvaluationInput { fact_sets, predicate_annotations }, &annotation_policy, &cost_policy }; }
+{
+    return { std::move(rule_instance), RuleEvaluationInput { fact_sets, predicate_annotations }, &annotation_policy, &cost_policy };
+}
 
 enum class RuleUpdateStatus : std::uint8_t
 {
@@ -321,7 +323,9 @@ auto evaluate_propositional_candidate(std::span<const formalism::datalog::Predic
 
 template<TaskKind Kind, typename Candidate>
 WitnessAnnotation materialize_witness(RuleInstance<Kind>& instance, const Candidate& candidate)
-{ return WitnessAnnotation(instance.witness_key().data(), candidate.cost); }
+{
+    return WitnessAnnotation(instance.witness_key().index(), candidate.cost);
+}
 
 /// Evaluates the rule instance once and updates each of its heads with the shared witness.
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations>

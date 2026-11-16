@@ -31,48 +31,27 @@ namespace tyr::formalism
 
 namespace
 {
-template<FactKind F>
-void bind_function_term_value_data(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<FunctionTermValue<GroundTag, F>>>(m, name + "Index");
-
-    using V = urd::data<FunctionTermValue<GroundTag, F>>;
-    auto cls = nb::class_<V>(m, (name + "Data").c_str());
-    cls.def(urd::python::init_from_views<datalog::FunctionTermView<GroundTag, F>, ygg::float_t>(), "fterm"_a, "value"_a);
-    cls.def(urd::python::init_from_views<planning::FunctionTermView<GroundTag, F>, ygg::float_t>(), "fterm"_a, "value"_a);
-    cls.def(nb::init<urd::index<FunctionTerm<GroundTag, F>>, ygg::float_t>(), "fterm"_a, "value"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
 template<FactKind F, typename C>
-void bind_function_term_value_view(nb::module_& m, nb::class_<C>& repository, const std::string& name)
+void bind_function_term_value_view(nb::module_& m, nb::class_<C>& repository)
 {
-    using V = urd::index_view<FunctionTermValue<GroundTag, F>, C>;
-    auto cls = nb::class_<V>(m, name.c_str()).def("index", &V::index).def("get_fterm", &V::get_fterm).def("get_value", &V::get_value);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-
+    urd::python::bind_view<urd::index_view<FunctionTermValue<GroundTag, F>, C>>(m);
     ygg::bind_insert<FunctionTermValue<GroundTag, F>>(repository);
 }
 
 template<typename C>
 void bind_function_term_value_views(nb::module_& m, nb::class_<C>& repository)
 {
-    bind_function_term_value_view<StaticTag>(m, repository, "StaticGroundFunctionTermValue");
-    bind_function_term_value_view<FluentTag>(m, repository, "FluentGroundFunctionTermValue");
-    bind_function_term_value_view<AuxiliaryTag>(m, repository, "AuxiliaryGroundFunctionTermValue");
+    bind_function_term_value_view<StaticTag>(m, repository);
+    bind_function_term_value_view<FluentTag>(m, repository);
+    bind_function_term_value_view<AuxiliaryTag>(m, repository);
 }
 }  // namespace
 
 void bind_function_term_value(nb::module_& m)
 {
-    bind_function_term_value_data<StaticTag>(m, "StaticGroundFunctionTermValue");
-    bind_function_term_value_data<FluentTag>(m, "FluentGroundFunctionTermValue");
-    bind_function_term_value_data<AuxiliaryTag>(m, "AuxiliaryGroundFunctionTermValue");
+    urd::python::bind_data<FunctionTermValue<GroundTag, StaticTag>>(m);
+    urd::python::bind_data<FunctionTermValue<GroundTag, FluentTag>>(m);
+    urd::python::bind_data<FunctionTermValue<GroundTag, AuxiliaryTag>>(m);
 }
 
 }  // namespace tyr::formalism

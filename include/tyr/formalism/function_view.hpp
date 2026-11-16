@@ -33,8 +33,8 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    const auto& get_name() const noexcept { return self().data().name; }
-    auto get_arity() const noexcept { return self().data().arity; }
+    const auto& get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
+    auto get_arity() const noexcept { return self().template member<&urd::record_of<V>::arity>(); }
     /// Its rows' column types: one object per argument (a key of row pools, as the repository declares its pool).
     auto get_column_types() const
     {

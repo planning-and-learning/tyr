@@ -95,15 +95,15 @@ Estimate conjunction(Estimate result, std::span<const urd::index<ygg::Column>> l
 
 namespace tyr::datalog::database::detail
 {
-Estimate combine(Estimate lhs, const Estimate& rhs)
+Estimate combine(Estimate left, const Estimate& right)
 {
-    for (const auto& single : rhs.factors)
-        if (std::ranges::none_of(lhs.factors,
+    for (const auto& single : right.factors)
+        if (std::ranges::none_of(left.factors,
                                  [&](const auto& existing) { return existing.identity == single.identity && existing.attributes == single.attributes; }))
-            lhs.factors.push_back(single);
-    lhs.equalities.insert(rhs.equalities.begin(), rhs.equalities.end());
-    lhs.constants.insert(rhs.constants.begin(), rhs.constants.end());
-    return lhs;
+            left.factors.push_back(single);
+    left.equalities.insert(right.equalities.begin(), right.equalities.end());
+    left.constants.insert(right.constants.begin(), right.constants.end());
+    return left;
 }
 }
 

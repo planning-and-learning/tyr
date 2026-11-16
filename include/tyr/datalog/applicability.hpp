@@ -98,10 +98,14 @@ bool is_statically_applicable(formalism::datalog::RuleView<GroundTag> element, c
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, T> element, const FactSets& fact_sets)
-{ return value(fact_sets.template get<T>(), element.get_row().data()); }
+{
+    return value(fact_sets.template get<T>(), element.get_row().index());
+}
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<GroundTag, formalism::AuxiliaryTag>, const FactSets&)
-{ throw std::logic_error("Auxiliary function terms are not stored in datalog fact sets."); }
+{
+    throw std::logic_error("Auxiliary function terms are not stored in datalog fact sets.");
+}
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<GroundTag> element, const FactSets& fact_sets)
 {
@@ -119,7 +123,9 @@ inline bool evaluate(formalism::datalog::BooleanOperatorView<GroundTag> element,
 
 template<formalism::FactKind T>
 bool is_applicable(formalism::datalog::LiteralView<GroundTag, T> element, const FactSets& fact_sets)
-{ return contains(fact_sets.template get<T>(), element.get_atom().get_row().data()) == element.get_polarity(); }
+{
+    return contains(fact_sets.template get<T>(), element.get_atom().get_row().index()) == element.get_polarity();
+}
 
 template<formalism::FactKind T>
 bool is_applicable(formalism::datalog::LiteralListView<GroundTag, T> elements, const FactSets& fact_sets)
@@ -142,7 +148,9 @@ inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<GroundTag
 }
 
 inline bool is_dynamically_applicable(formalism::datalog::ConjunctiveConditionView<GroundTag> element, const FactSets& fact_sets)
-{ return is_applicable(element.template get_literals<formalism::FluentTag>(), fact_sets) && is_applicable(element.get_numeric_constraints(), fact_sets); }
+{
+    return is_applicable(element.template get_literals<formalism::FluentTag>(), fact_sets) && is_applicable(element.get_numeric_constraints(), fact_sets);
+}
 
 // GroundRule
 
@@ -155,12 +163,16 @@ inline bool is_applicable(formalism::datalog::RuleView<GroundTag> element, const
 // GroundConjunctiveCondition
 
 inline bool is_statically_applicable(formalism::datalog::ConjunctiveConditionView<GroundTag> element, const FactSets& fact_sets)
-{ return is_applicable(element.template get_literals<formalism::StaticTag>(), fact_sets); }
+{
+    return is_applicable(element.template get_literals<formalism::StaticTag>(), fact_sets);
+}
 
 // GroundRule
 
 inline bool is_statically_applicable(formalism::datalog::RuleView<GroundTag> element, const FactSets& fact_sets)
-{ return is_statically_applicable(element.get_body(), fact_sets); }
+{
+    return is_statically_applicable(element.get_body(), fact_sets);
+}
 
 }
 

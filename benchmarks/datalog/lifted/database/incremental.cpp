@@ -155,20 +155,20 @@ struct Trace
 
 struct JoinTrace
 {
-    Trace lhs;
-    Trace rhs;
+    Trace left;
+    Trace right;
     size_t rows;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers): the positions of the transitions, 0 to 5
     std::array<size_t, num_transitions> transitions { 0, 1, 2, 3, 4, 5 };
 
     JoinTrace(size_t rows_, size_t changed_rows, size_t witnesses) :
-        lhs(rows_, changed_rows, witnesses, true),
-        rhs(rows_, changed_rows, witnesses, true),
+        left(rows_, changed_rows, witnesses, true),
+        right(rows_, changed_rows, witnesses, true),
         rows(rows_)
     {
         const auto columns = cols({ ColumnIndex(1), ColumnIndex(3) });
-        rhs.initial.rename(columns);
-        for (auto& transition : rhs.transitions)
+        right.initial.rename(columns);
+        for (auto& transition : right.transitions)
         {
             transition.delta.added.rename(columns);
             transition.delta.removed.rename(columns);
@@ -178,8 +178,8 @@ struct JoinTrace
 
     void refresh(ygg::uint_t generation)
     {
-        lhs.refresh(generation);
-        rhs.refresh(generation);
+        left.refresh(generation);
+        right.refresh(generation);
     }
 };
 
@@ -257,7 +257,7 @@ void measure(benchmark::State& state, TraceType& trace, Update update, Result re
             {
                 const auto begin = std::chrono::steady_clock::now();
                 update(transition);
-                benchmark::DoNotOptimize(result().relation_identity());
+                benchmark::DoNotOptimize(result().size());
                 benchmark::ClobberMemory();
                 const auto duration = std::chrono::steady_clock::now() - begin;
                 maximum = std::max(maximum, duration);
@@ -266,7 +266,7 @@ void measure(benchmark::State& state, TraceType& trace, Update update, Result re
             else
             {
                 update(transition);
-                benchmark::DoNotOptimize(result().relation_identity());
+                benchmark::DoNotOptimize(result().size());
                 benchmark::ClobberMemory();
             }
         }
@@ -361,8 +361,6 @@ void fixed_input_join(benchmark::State& state)
         else
             return urd::builder<ygg::Relation<ygg::Schema>>(plan.output_columns());
     }();
-    // Full recomputation also retains its index on the unchanged input.
-    database::JoinIndexCache index;
     if constexpr (Incremental)
         evaluation.initialize(borrow(trace.initial), borrow(*fixed), workspace);
     const auto update = [&](const Transition& transition)
@@ -370,7 +368,7 @@ void fixed_input_join(benchmark::State& state)
         if constexpr (Incremental)
             evaluation.update(transition.delta.change(), std::pair { borrow(unchanged), borrow(unchanged) }, workspace);
         else
-            database::join(borrow(transition.snapshot), borrow(*fixed), plan, index, database::JoinReuse { .rhs = true }, evaluation, workspace);
+            database::join(borrow(transition.snapshot), borrow(*fixed), plan, evaluation, workspace);
     };
     const auto result = [&]() -> ygg::FreeRelationBuilderView
     {
@@ -382,12 +380,12 @@ void fixed_input_join(benchmark::State& state)
     urd::builder<ygg::Relation<ygg::Schema>> reference(plan.output_columns());
     urd::builder<ygg::Relation<ygg::Schema>> previous(plan.output_columns());
     database::Workspace reference_workspace;
-    database::join(borrow(trace.initial), borrow(*fixed), plan, index, database::JoinReuse { .rhs = true }, previous, reference_workspace);
+    database::join(borrow(trace.initial), borrow(*fixed), plan, previous, reference_workspace);
     size_t output_delta_rows = 0;
     for (const auto& transition : trace.transitions)
     {
         update(transition);
-        database::join(borrow(transition.snapshot), borrow(*fixed), plan, index, database::JoinReuse { .rhs = true }, reference, reference_workspace);
+        database::join(borrow(transition.snapshot), borrow(*fixed), plan, reference, reference_workspace);
         if (!equal_rows(result(), reference))
         {
             state.SkipWithError("fixed-input join trace disagrees with full recomputation");
@@ -414,7 +412,7 @@ template<bool Incremental, bool Latency>
 void changing_join(benchmark::State& state)
 {
     JoinTrace trace(static_cast<size_t>(state.range(0)), static_cast<size_t>(state.range(1)), static_cast<size_t>(state.range(2)));
-    const database::JoinPlan plan(trace.lhs.initial.columns(), trace.rhs.initial.columns());
+    const database::JoinPlan plan(trace.left.initial.columns(), trace.right.initial.columns());
     database::Workspace workspace;
     auto evaluation = [&]
     {
@@ -424,11 +422,11 @@ void changing_join(benchmark::State& state)
             return urd::builder<ygg::Relation<ygg::Schema>>(plan.output_columns());
     }();
     if constexpr (Incremental)
-        evaluation.initialize(borrow(trace.lhs.initial), borrow(trace.rhs.initial), workspace);
+        evaluation.initialize(borrow(trace.left.initial), borrow(trace.right.initial), workspace);
     const auto update = [&](size_t position)
     {
-        const auto& left = trace.lhs.transitions[position];
-        const auto& right = trace.rhs.transitions[position];
+        const auto& left = trace.left.transitions[position];
+        const auto& right = trace.right.transitions[position];
         if constexpr (Incremental)
             evaluation.update(left.delta.change(), right.delta.change(), workspace);
         else
@@ -446,13 +444,13 @@ void changing_join(benchmark::State& state)
     urd::builder<ygg::Relation<ygg::Schema>> reference(plan.output_columns());
     urd::builder<ygg::Relation<ygg::Schema>> previous(plan.output_columns());
     database::Workspace reference_workspace;
-    database::join(borrow(trace.lhs.initial), borrow(trace.rhs.initial), plan, previous, reference_workspace);
+    database::join(borrow(trace.left.initial), borrow(trace.right.initial), plan, previous, reference_workspace);
     size_t output_delta_rows = 0;
     for (const auto position : trace.transitions)
     {
         update(position);
-        database::join(borrow(trace.lhs.transitions[position].snapshot),
-                       borrow(trace.rhs.transitions[position].snapshot),
+        database::join(borrow(trace.left.transitions[position].snapshot),
+                       borrow(trace.right.transitions[position].snapshot),
                        plan,
                        reference,
                        reference_workspace);

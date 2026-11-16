@@ -39,7 +39,9 @@ namespace ygg::serialization
 {
 
 inline void tag_invoke(boost::json::value_from_tag, boost::json::value& result, const ::tyr::formalism::ParameterIndex& value, Dictionaries*)
-{ result = value.value; }
+{
+    result = value.value;
+}
 
 template<class Archive>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::ObjectView>)
@@ -132,7 +134,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::BinaryOperatorView<T, O>>)
 {
-    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("lhs", [](const auto& value) -> decltype(auto) { return (value.get_lhs()); });
     ar.field("rhs", [](const auto& value) -> decltype(auto) { return (value.get_rhs()); });
 }
@@ -260,14 +262,14 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::MultiOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)
 {
-    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("args", [](const auto& value) -> decltype(auto) { return (value.get_args()); });
 }
 
 template<class Archive, ::tyr::TaskKind T, ::tyr::formalism::FactKind F>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::NumericEffectView<T, F>>)
 {
-    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("function_term", [](const auto& value) -> decltype(auto) { return (value.get_fterm()); });
     ar.field("function_expression", [](const auto& value) -> decltype(auto) { return (value.get_fexpr()); });
 }
@@ -318,7 +320,7 @@ void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning:
 template<class Archive, ::tyr::TaskKind T>
 void describe_fields(Archive& ar, std::type_identity<::tyr::formalism::planning::UnaryOperatorView<T, ::tyr::formalism::ArithmeticOperatorKind>>)
 {
-    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operator()); });
+    ar.field("operator", [](const auto& value) -> decltype(auto) { return (value.get_operation()); });
     ar.field("arg", [](const auto& value) -> decltype(auto) { return (value.get_arg()); });
 }
 

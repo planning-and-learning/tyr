@@ -67,7 +67,7 @@ void bind_database_distance(nb::module_& m)
              nb::arg("target_columns"),
              nb::arg("distance_column"))
         .def("arity", &Plan::arity)
-        .def("output_columns", [](const Plan& plan) { return plan.output_columns(); }, nb::keep_alive<0, 1>());
+        .def("output_columns", &Plan::output_columns);
 
     nb::class_<Workspace>(m, "DistanceWorkspace", "Scratch storage of distance for one plan's vertex size; reuse one, never concurrently.")
         .def(nb::init<const Plan&>(), nb::arg("plan"))

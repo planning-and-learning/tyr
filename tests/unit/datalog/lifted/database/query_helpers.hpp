@@ -34,7 +34,9 @@ std::vector<ygg::ColumnLayout> columns_of(std::span<const urd::index<ygg::Column
 }
 template<ygg::ColumnValueType T = ygg::uint_t>
 std::vector<ygg::ColumnLayout> columns_of(std::initializer_list<urd::index<ygg::Column>> labels)
-{ return columns_of<T>(std::span<const urd::index<ygg::Column>>(labels)); }
+{
+    return columns_of<T>(std::span<const urd::index<ygg::Column>>(labels));
+}
 
 inline database::QueryRepository repository() { return database::QueryRepository(); }
 
@@ -59,9 +61,13 @@ inline database::QueryView<> input(database::QueryRepository& repository, size_t
     return database::insert_query(repository, builder(), *data);
 }
 inline database::QueryView<> input(database::QueryRepository& repository, size_t slot, std::span<const urd::index<ygg::Column>> columns)
-{ return input(repository, slot, columns_of(columns)); }
+{
+    return input(repository, slot, columns_of(columns));
+}
 inline database::QueryView<> input(database::QueryRepository& repository, size_t slot, std::initializer_list<urd::index<ygg::Column>> columns)
-{ return input(repository, slot, std::span<const urd::index<ygg::Column>>(columns)); }
+{
+    return input(repository, slot, std::span<const urd::index<ygg::Column>>(columns));
+}
 
 inline database::QueryView<> empty(database::QueryRepository& repository, std::span<const ygg::ColumnLayout> columns)
 {
@@ -70,61 +76,83 @@ inline database::QueryView<> empty(database::QueryRepository& repository, std::s
     return database::insert_query(repository, builder(), *data);
 }
 inline database::QueryView<> empty(database::QueryRepository& repository, std::span<const urd::index<ygg::Column>> columns)
-{ return empty(repository, columns_of(columns)); }
+{
+    return empty(repository, columns_of(columns));
+}
 inline database::QueryView<> empty(database::QueryRepository& repository, std::initializer_list<urd::index<ygg::Column>> columns)
-{ return empty(repository, std::span<const urd::index<ygg::Column>>(columns)); }
+{
+    return empty(repository, std::span<const urd::index<ygg::Column>>(columns));
+}
 
 template<typename Tag>
-database::QueryView<> binary(database::QueryRepository& repository, database::QueryView<> lhs, database::QueryView<> rhs)
+database::QueryView<> binary(database::QueryRepository& repository, database::QueryView<> left_operand, database::QueryView<> right_operand)
 {
     auto data = database::checkout<database::Query<Tag>>(builder());
-    data->lhs = require(repository, lhs);
-    data->rhs = require(repository, rhs);
+    data->left_operand = require(repository, left_operand);
+    data->right_operand = require(repository, right_operand);
     return database::insert_query(repository, builder(), *data);
 }
-inline database::QueryView<> join(database::QueryRepository& repository, database::QueryView<> lhs, database::QueryView<> rhs)
-{ return binary<database::QueryJoinTag>(repository, lhs, rhs); }
-inline database::QueryView<> union_(database::QueryRepository& repository, database::QueryView<> lhs, database::QueryView<> rhs)
-{ return binary<database::QueryUnionTag>(repository, lhs, rhs); }
-inline database::QueryView<> difference(database::QueryRepository& repository, database::QueryView<> lhs, database::QueryView<> rhs)
-{ return binary<database::QueryDifferenceTag>(repository, lhs, rhs); }
+inline database::QueryView<> join(database::QueryRepository& repository, database::QueryView<> left_operand, database::QueryView<> right_operand)
+{
+    return binary<database::QueryJoinTag>(repository, left_operand, right_operand);
+}
+inline database::QueryView<> union_(database::QueryRepository& repository, database::QueryView<> left_operand, database::QueryView<> right_operand)
+{
+    return binary<database::QueryUnionTag>(repository, left_operand, right_operand);
+}
+inline database::QueryView<> difference(database::QueryRepository& repository, database::QueryView<> left_operand, database::QueryView<> right_operand)
+{
+    return binary<database::QueryDifferenceTag>(repository, left_operand, right_operand);
+}
 
-inline database::QueryView<> semijoin(database::QueryRepository& repository, database::QueryView<> lhs, database::QueryView<> rhs)
-{ return binary<database::QuerySemijoinTag>(repository, lhs, rhs); }
-inline database::QueryView<> antijoin(database::QueryRepository& repository, database::QueryView<> lhs, database::QueryView<> rhs)
-{ return binary<database::QueryAntijoinTag>(repository, lhs, rhs); }
+inline database::QueryView<> semijoin(database::QueryRepository& repository, database::QueryView<> left_operand, database::QueryView<> right_operand)
+{
+    return binary<database::QuerySemijoinTag>(repository, left_operand, right_operand);
+}
+inline database::QueryView<> antijoin(database::QueryRepository& repository, database::QueryView<> left_operand, database::QueryView<> right_operand)
+{
+    return binary<database::QueryAntijoinTag>(repository, left_operand, right_operand);
+}
 
 template<typename Tag>
 database::QueryView<> relabel(database::QueryRepository& repository, database::QueryView<> arg, std::span<const urd::index<ygg::Column>> labels)
 {
     auto data = database::checkout<database::Query<Tag>>(builder());
-    data->arg = require(repository, arg);
+    data->operand = require(repository, arg);
     data->labels.set(labels.begin(), labels.end());
     return database::insert_query(repository, builder(), *data);
 }
 inline database::QueryView<> project(database::QueryRepository& repository, database::QueryView<> arg, std::span<const urd::index<ygg::Column>> labels)
-{ return relabel<database::QueryProjectTag>(repository, arg, labels); }
+{
+    return relabel<database::QueryProjectTag>(repository, arg, labels);
+}
 inline database::QueryView<> project(database::QueryRepository& repository, database::QueryView<> arg, std::initializer_list<urd::index<ygg::Column>> labels)
-{ return project(repository, arg, std::span<const urd::index<ygg::Column>>(labels)); }
+{
+    return project(repository, arg, std::span<const urd::index<ygg::Column>>(labels));
+}
 inline database::QueryView<> rename(database::QueryRepository& repository, database::QueryView<> arg, std::span<const urd::index<ygg::Column>> labels)
-{ return relabel<database::QueryRenameTag>(repository, arg, labels); }
+{
+    return relabel<database::QueryRenameTag>(repository, arg, labels);
+}
 inline database::QueryView<> rename(database::QueryRepository& repository, database::QueryView<> arg, std::initializer_list<urd::index<ygg::Column>> labels)
-{ return rename(repository, arg, std::span<const urd::index<ygg::Column>>(labels)); }
+{
+    return rename(repository, arg, std::span<const urd::index<ygg::Column>>(labels));
+}
 
 inline database::QueryView<>
-select_equal(database::QueryRepository& repository, database::QueryView<> arg, urd::index<ygg::Column> lhs, urd::index<ygg::Column> rhs)
+select_equal(database::QueryRepository& repository, database::QueryView<> arg, urd::index<ygg::Column> left, urd::index<ygg::Column> right)
 {
     auto data = database::checkout<database::Query<database::QuerySelectEqualTag>>(builder());
-    data->arg = require(repository, arg);
-    data->lhs_column = lhs;
-    data->rhs_column = rhs;
+    data->operand = require(repository, arg);
+    data->left_column = left;
+    data->right_column = right;
     return database::insert_query(repository, builder(), *data);
 }
 inline database::QueryView<>
 select_encoded(database::QueryRepository& repository, database::QueryView<> arg, urd::index<ygg::Column> column, ygg::Value value, ygg::TypeId type)
 {
     auto data = database::checkout<database::Query<database::QuerySelectValueTag>>(builder());
-    data->arg = require(repository, arg);
+    data->operand = require(repository, arg);
     data->column = column;
     data->constant = value;
     data->constant_type = type;
@@ -216,18 +244,20 @@ std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repos
     {
         const auto values = source.row(i).get_values();
         row->values.set(values.begin(), values.end());
-        relation->rows.push_back(repository.insert(*row).first.data().row);
+        urd::append(relation->rows, repository.insert(*row).first);
     }
     return intern_relation(repository, *relation, source.columns());
 }
 inline std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repository, const urd::builder<ygg::Relation<ygg::Schema>>& source)
-{ return intern(repository, repository.view(source)); }
+{
+    return intern(repository, repository.view(source));
+}
 /// `source` (of `repository`) under new columns: the same pool and rows.
 inline ygg::FreeRelationView rename(ygg::FreeRelationRepository& repository, ygg::FreeRelationView source, std::span<const ygg::ColumnLayout> labels)
 {
     auto relation = checkout<ygg::Relation<ygg::Schema>>(records());
-    relation->pool = source.data().pool;
-    relation->rows.set(source.data().rows.begin(), source.data().rows.end());
+    relation->pool = repository[source.index()].pool;
+    urd::store(relation->rows, source.get_rows());
     return intern_relation(repository, *relation, labels).first;
 }
 
@@ -242,30 +272,32 @@ urd::builder<ygg::Relation<ygg::Schema>> projected(const V& input, std::span<con
 }
 template<typename V>
 urd::builder<ygg::Relation<ygg::Schema>> projected(const V& input, std::initializer_list<urd::index<ygg::Column>> labels)
-{ return projected(input, std::span<const urd::index<ygg::Column>>(labels)); }
-template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> joined(const L& lhs, const R& rhs)
 {
-    const database::JoinPlan plan(lhs.columns(), rhs.columns());
+    return projected(input, std::span<const urd::index<ygg::Column>>(labels));
+}
+template<typename L, typename R>
+urd::builder<ygg::Relation<ygg::Schema>> joined(const L& left_operand, const R& right_operand)
+{
+    const database::JoinPlan plan(left_operand.columns(), right_operand.columns());
     urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
     database::Workspace workspace;
-    database::join(lhs, rhs, plan, out, workspace);
+    database::join(left_operand, right_operand, plan, out, workspace);
     return out;
 }
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> unioned(const L& lhs, const R& rhs)
+urd::builder<ygg::Relation<ygg::Schema>> unioned(const L& left_operand, const R& right_operand)
 {
-    const database::SetPlan plan(lhs.columns(), rhs.columns());
+    const database::SetPlan plan(left_operand.columns(), right_operand.columns());
     urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
-    database::union_(lhs, rhs, plan, out);
+    database::union_(left_operand, right_operand, plan, out);
     return out;
 }
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> subtracted(const L& lhs, const R& rhs)
+urd::builder<ygg::Relation<ygg::Schema>> subtracted(const L& left_operand, const R& right_operand)
 {
-    const database::SetPlan plan(lhs.columns(), rhs.columns());
+    const database::SetPlan plan(left_operand.columns(), right_operand.columns());
     urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
-    database::difference(lhs, rhs, plan, out);
+    database::difference(left_operand, right_operand, plan, out);
     return out;
 }
 template<typename S, typename E, typename T>
@@ -282,7 +314,9 @@ urd::builder<ygg::Relation<ygg::Schema>> distances(const S& sources, const E& ed
 namespace tyr::datalog::tests::distances
 {
 inline ygg::FreeRelationBuilderView borrow(const ygg::FreeRelationRepository& repository, const urd::builder<ygg::Relation<ygg::Schema>>& relation)
-{ return repository.view(relation); }
+{
+    return repository.view(relation);
+}
 
 inline urd::Store<urd::sequence<ygg::FreeRelationBuilderView>> borrow_all(const ygg::FreeRelationRepository& repository,
                                                                           const urd::Store<urd::sequence<urd::builder<ygg::Relation<ygg::Schema>>>>& relations)

@@ -22,6 +22,7 @@
 #include "tyr/formalism/planning/fdr_value.hpp"
 
 #include <tuple>
+#include <type_traits>
 #include <urd/elements/flat.hpp>
 #include <utility>
 
@@ -36,11 +37,11 @@ struct data<::tyr::formalism::planning::FDRFact<T>>
 
     data() = default;
     data(urd::index<::tyr::formalism::planning::FDRVariable<T>> variable_, ::tyr::formalism::planning::FDRValue value_) : variable(variable_), value(value_) {}
-    data(const data& other) = delete;
-    data& operator=(const data& other) = delete;
-    data(data&& other) = default;
-    data& operator=(data&& other) = default;
-    ~data() = default;
+    static constexpr bool copyable() noexcept
+    {
+        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
+        return true;
+    }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variable", &data::variable>, urd::field<"value", &data::value>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }

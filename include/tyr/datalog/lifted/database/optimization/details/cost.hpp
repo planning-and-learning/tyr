@@ -35,7 +35,7 @@ class CostBasedPlanner
     struct Split
     {
         double cost;
-        std::uint64_t lhs;
+        std::uint64_t left;
     };
     const JoinBlock* m_block;
     OperatorBuilder* m_build;
@@ -100,8 +100,8 @@ class CostBasedPlanner
     {
         if (std::has_single_bit(subset))
             return add({ subset, std::nullopt });
-        const auto lhs = m_best.at(subset).lhs;
-        const auto left = tree(lhs), right = tree(subset ^ lhs);
+        const auto left_subset = m_best.at(subset).left;
+        const auto left = tree(left_subset), right = tree(subset ^ left_subset);
         return add({ subset, std::pair(left, right) });
     }
     /// Algorithm 4 of M. Freitag et al., "Adopting Worst-Case Optimal Joins in Relational

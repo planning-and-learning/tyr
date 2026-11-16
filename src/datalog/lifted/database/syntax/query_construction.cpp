@@ -22,15 +22,17 @@ std::span<const ygg::ColumnLayout> child_columns(urd::index<Query<>> child, cons
 
 namespace tyr::datalog::database::detail
 {
-void prepare(urd::data<Query<QueryProjectTag>>& data, const QueryRepository& repository)
-{ data.plan = ProjectionPlan(child_columns(data.arg, repository), { data.labels.data(), data.labels.size() }); }
+void derive(urd::data<Query<QueryProjectTag>>& data, const QueryRepository& repository)
+{
+    data.plan = ProjectionPlan(child_columns(data.operand, repository), { data.labels.data(), data.labels.size() });
+}
 }
 
 namespace tyr::datalog::database::detail
 {
-void prepare(urd::data<Query<QueryRenameTag>>& data, const QueryRepository& repository)
+void derive(urd::data<Query<QueryRenameTag>>& data, const QueryRepository& repository)
 {
-    const auto schema = child_columns(data.arg, repository);
+    const auto schema = child_columns(data.operand, repository);
     if (data.labels.size() != schema.size())
         throw std::invalid_argument("Columns: renaming must preserve arity.");
     data.columns.set(schema.begin(), schema.end());
@@ -42,19 +44,23 @@ void prepare(urd::data<Query<QueryRenameTag>>& data, const QueryRepository& repo
 
 namespace tyr::datalog::database::detail
 {
-void prepare(urd::data<Query<QuerySelectEqualTag>>& data, const QueryRepository& repository)
-{ data.plan = SelectEqualPlan(child_columns(data.arg, repository), data.lhs_column, data.rhs_column); }
+void derive(urd::data<Query<QuerySelectEqualTag>>& data, const QueryRepository& repository)
+{
+    data.plan = SelectEqualPlan(child_columns(data.operand, repository), data.left_column, data.right_column);
+}
 }
 
 namespace tyr::datalog::database::detail
 {
-void prepare(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& repository)
-{ data.plan = SelectValuePlan(child_columns(data.arg, repository), data.column, data.constant_type, data.constant); }
+void derive(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& repository)
+{
+    data.plan = SelectValuePlan(child_columns(data.operand, repository), data.column, data.constant_type, data.constant);
+}
 }
 
 namespace tyr::datalog::database::detail
 {
-void prepare(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& repository)
+void derive(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& repository)
 {
     data.plan = DistancePlan(child_columns(data.sources, repository),
                              child_columns(data.edges, repository),
@@ -65,7 +71,7 @@ void prepare(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& re
 
 namespace tyr::datalog::database::detail
 {
-void prepare(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository)
+void derive(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository)
 {
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::ColumnLayout>>>> schemas;
     for (const auto child : data.inputs)

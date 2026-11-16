@@ -105,18 +105,15 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const urd::data<tyr::planning::State<GroundTag>>& state) override
-    {
-        static_cast<void>(seed_state);
-        static_cast<void>(state);
-        return false;
-    }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::BuilderStateView<GroundTag>&) override { return false; }
 };
 
 class SatisfiedGoalStrategy : public NeverSatisfiedGoalStrategy
 {
 public:
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const urd::data<tyr::planning::State<GroundTag>>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::BuilderStateView<GroundTag>&) override { return true; }
 };
 
 class StaticallyImpossibleGoalStrategy : public NeverSatisfiedGoalStrategy
@@ -138,12 +135,13 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const urd::data<tyr::planning::State<GroundTag>>&) override
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const tyr::planning::StateView<GroundTag>&) override
     {
         seed_repositories.push_back(&seed_state.get_state_repository());
         seed_indices.push_back(seed_state.index());
         return false;
     }
+    using NeverSatisfiedGoalStrategy::is_dynamic_goal_satisfied;
 };
 
 class AlwaysPruningStrategy : public tyr::planning::PruningStrategy<GroundTag>

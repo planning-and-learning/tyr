@@ -85,7 +85,9 @@ enum class RepositoryMode : std::uint8_t
 
 template<TaskKind Kind>
 tyr::planning::StateRepositoryPtr<Kind> make_repository(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode mode)
-{ return std::make_shared<tyr::planning::StateRepository<Kind>>(task, mode == RepositoryMode::SHARED); }
+{
+    return std::make_shared<tyr::planning::StateRepository<Kind>>(task, mode == RepositoryMode::SHARED);
+}
 
 template<TaskKind Kind>
 struct SequentialSearchNode
@@ -130,7 +132,8 @@ class UnsupportedParallelGoalStrategy final : public tyr::planning::GoalStrategy
 {
 public:
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return true; }
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const urd::data<tyr::planning::State<Kind>>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::BuilderStateView<Kind>&) override { return false; }
 };
 
 template<TaskKind Kind>
@@ -299,7 +302,7 @@ private:
     {
         if (m_mode == RepositoryMode::SHARED)
             return urd::index<tyr::planning::Worker>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state.index().value) % num_workers));
-        return m_hash.owner(state.data(), num_workers);
+        return m_hash.owner(tyr::planning::StateContext { state.get_task(), state, ygg::float_t { 0 } }, num_workers);
     }
 
     void observe_repository(Lane& lane, const tyr::planning::StateView<Kind>& state) const
@@ -360,7 +363,9 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::brfs::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker> worker) override
-    { return std::make_unique<GuardedBrFSWorkerEventHandler<Kind>>(worker, m_guard); }
+    {
+        return std::make_unique<GuardedBrFSWorkerEventHandler<Kind>>(worker, m_guard);
+    }
 
 private:
     std::shared_ptr<OwnerAccessGuard<Kind>> m_guard;
@@ -379,7 +384,9 @@ public:
     }
 
     [[nodiscard]] tyr::planning::PruningStrategyPtr<Kind> make_worker(urd::index<tyr::planning::Worker> worker) const override
-    { return std::make_shared<GuardedPruningStrategy>(worker, m_guard); }
+    {
+        return std::make_shared<GuardedPruningStrategy>(worker, m_guard);
+    }
 
     bool should_prune_state(const tyr::planning::StateView<Kind>& state) override
     {
@@ -443,7 +450,9 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
-    { return std::make_unique<GatedAStarWorkerEventHandler<Kind>>(gate); }
+    {
+        return std::make_unique<GatedAStarWorkerEventHandler<Kind>>(gate);
+    }
 
     AStarGoalGate gate;
 };
@@ -491,7 +500,9 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
-    { return std::make_unique<LayeredAStarWorkerEventHandler<Kind>>(gate); }
+    {
+        return std::make_unique<LayeredAStarWorkerEventHandler<Kind>>(gate);
+    }
 
     AStarLayerGate gate;
     urd::Store<urd::sequence<ygg::float_t>> finished_f_layers;
@@ -513,7 +524,9 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
-    { return std::make_unique<ThrowingAStarWorkerEventHandler<Kind>>(); }
+    {
+        return std::make_unique<ThrowingAStarWorkerEventHandler<Kind>>();
+    }
 };
 
 template<typename SearchNode>
@@ -530,7 +543,7 @@ tyr::planning::StateView<Kind> copy_state(const tyr::planning::StateView<Kind>& 
                                           tyr::planning::AxiomEvaluator<Kind>& axiom_evaluator)
 {
     auto builder = destination.get_state_builder();
-    builder->assign_unextended_part(source.data());
+    builder->assign_unextended_part(source);
     return destination.register_state(axiom_evaluator, std::move(builder));
 }
 
@@ -539,10 +552,11 @@ auto find_successor(const tyr::planning::LabeledNodeList<Kind>& successors,
                     std::string_view action,
                     std::optional<urd::index<tyr::planning::State<Kind>>> excluded_state = std::nullopt)
 {
-    return std::ranges::find_if(
-        successors,
-        [&](const auto& successor)
-        { return successor.label.get_relation().get_name().str() == action && (!excluded_state || successor.node.get_state().index() != *excluded_state); });
+    return std::ranges::find_if(successors,
+                                [&](const auto& successor) {
+                                    return successor.label.get_relation().get_name().str() == action
+                                           && (!excluded_state || successor.node.get_state().index() != *excluded_state);
+                                });
 }
 
 template<TaskKind Kind>
@@ -739,7 +753,6 @@ void expect_parallel_lazy_gbfs(const tyr::planning::TaskPtr<Kind>& task, Reposit
     {
         const auto& state = node.get_state();
         EXPECT_EQ(&state.get_state_repository(), repository.get());
-        EXPECT_EQ(state.data().index, state.index());
         EXPECT_EQ(repository->get_registered_state(state.index()), state);
     };
     expect_caller_state(result.plan.value().get_start_node());
@@ -1079,8 +1092,9 @@ std::optional<uint64_t> find_weighted_astar_seed(tyr::planning::SuccessorGenerat
     for (uint64_t seed = 0; seed < 1024; ++seed)
     {
         const auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(seed);
-        const auto start_owner = hash.owner(start.get_state().data(), 2);
-        if (hash.owner(**direct, 2) == start_owner && hash.owner(**via, 2) != start_owner)
+        const auto start_owner = hash.owner(tyr::planning::StateContext { start.get_state().get_task(), start.get_state(), ygg::float_t { 0 } }, 2);
+        if (hash.owner(tyr::planning::StateContext { start.get_state().get_task(), **direct, ygg::float_t { 0 } }, 2) == start_owner
+            && hash.owner(tyr::planning::StateContext { start.get_state().get_task(), **via, ygg::float_t { 0 } }, 2) != start_owner)
             return seed;
     }
     return std::nullopt;

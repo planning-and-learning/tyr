@@ -113,7 +113,9 @@ RemapStatus classify_literal(formalism::planning::AtomView<GroundTag, T> atom,
 template<formalism::FactKind T>
 RemapStatus classify_literal(formalism::planning::LiteralView<GroundTag, T> literal,
                              const urd::Store<urd::set<formalism::planning::AtomView<GroundTag, T>>>& atoms)
-{ return classify_literal(literal.get_atom(), literal.get_polarity(), atoms); }
+{
+    return classify_literal(literal.get_atom(), literal.get_polarity(), atoms);
+}
 
 struct RemappedFDRFact
 {
@@ -221,7 +223,8 @@ create_ground_fdr_conjunctive_condition(formalism::planning::ConjunctiveConditio
 
         URD_ASSUME(remapped_fdr_fact.fact.has_value());  // Mapped facts are present.
 
-        fdr_conj_cond->positive_facts.push_back(remapped_fdr_fact.fact->data());
+        fdr_conj_cond->positive_facts.push_back(
+            urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()));
     }
 
     for (const auto fact : element.get_facts<formalism::NegativeTag>())
@@ -236,7 +239,8 @@ create_ground_fdr_conjunctive_condition(formalism::planning::ConjunctiveConditio
 
         URD_ASSUME(remapped_fdr_fact.fact.has_value());  // Mapped facts are present.
 
-        fdr_conj_cond->negative_facts.push_back(remapped_fdr_fact.fact->data());
+        fdr_conj_cond->negative_facts.push_back(
+            urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(remapped_fdr_fact.fact->get_variable(), remapped_fdr_fact.fact->get_value()));
     }
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
@@ -280,9 +284,9 @@ ground_pruned(formalism::planning::ConjunctiveConditionView<LiftedTag> element,
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_cond->positive_facts.push_back(new_fact->data());
+            conj_cond->positive_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
         else
-            conj_cond->negative_facts.push_back(new_fact->data());
+            conj_cond->negative_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
     }
 
     for (const auto literal : element.template get_literals<formalism::DerivedTag>())
@@ -327,9 +331,9 @@ ground_pruned(formalism::planning::ConjunctiveEffectView<LiftedTag> element,
             return std::nullopt;
 
         if (literal.get_polarity())
-            conj_eff->add_facts.push_back(new_fact->data());
+            conj_eff->add_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
         else
-            conj_eff->del_facts.push_back(new_fact->data());
+            conj_eff->del_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(new_fact->get_variable(), new_fact->get_value()));
     }
     for (const auto numeric_effect : element.get_numeric_effects())
         conj_eff->numeric_effects.push_back(ground(numeric_effect, context).first.index());
@@ -388,7 +392,7 @@ ground_pruned(formalism::planning::ActionView<LiftedTag> element,
     auto action = formalism::planning::checkout<formalism::planning::Action<GroundTag>>(context.builder());
 
     // Fill data
-    action->row = ground(element, context).first.data();
+    urd::store(action->row, ground(element, context).first);
 
     const auto new_condition_or_nullopt = ground_pruned(element.get_condition(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_condition_or_nullopt)
@@ -425,7 +429,7 @@ ground_pruned(formalism::planning::AxiomView<LiftedTag> element,
     auto axiom = formalism::planning::checkout<formalism::planning::Axiom<GroundTag>>(context.builder());
 
     // Fill data
-    axiom->row = ground(element, context).first.data();
+    urd::store(axiom->row, ground(element, context).first);
 
     const auto new_body_or_nullopt = ground_pruned(element.get_body(), fluent_atoms, derived_atoms, static_state, context, fdr_context);
     if (!new_body_or_nullopt.has_value())
@@ -565,7 +569,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                            binding,
                                            ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
                                            merge_planning_context)
-                                           .first.data();
+                                           .first.index();
                     fluent_atoms.push_back(formalism::planning::insert(*repository, *fluent_atom).first);
                 }
                 else if (ground_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
@@ -575,7 +579,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
                                             binding,
                                             ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
                                             merge_planning_context)
-                                            .first.data();
+                                            .first.index();
                     derived_atoms.push_back(formalism::planning::insert(*repository, *derived_atom).first);
                 }
             });
@@ -628,7 +632,7 @@ GroundTaskInstantiationResult instantiate_ground_task(Task<LiftedTag>& lifted_ta
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<formalism::FluentTag>())
         if (const auto fact = std::as_const(*fdr_context).get_fact(copy(atom, merge_context).first))
-            ground_task->fluent_facts.push_back(fact->data());
+            ground_task->fluent_facts.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact->get_variable(), fact->get_value()));
 
     const auto static_state = StaticState(urd::resolve(ground_task->static_atoms, *repository), urd::resolve(ground_task->static_fterm_values, *repository));
 

@@ -75,14 +75,16 @@ void canonicalize(urd::data<BinaryOperator<T, O>>& data)
 {
     if constexpr (std::same_as<O, ArithmeticOperatorKind>)
     {
-        if ((data.operator_kind == ArithmeticOperatorKind::Add || data.operator_kind == ArithmeticOperatorKind::Mul) && data.lhs > data.rhs)
+        if ((data.operation == ArithmeticOperatorKind::Add || data.operation == ArithmeticOperatorKind::Mul) && data.lhs > data.rhs)
             std::swap(data.lhs, data.rhs);
     }
 }
 
 template<TaskKind T>
 void canonicalize(urd::data<MultiOperator<T, ArithmeticOperatorKind>>& data)
-{ ygg::canonicalize<false>(data.args); }
+{
+    ygg::canonicalize<false>(data.args);
+}
 
 template<TaskKind T, FactKind F>
 void canonicalize(urd::data<Atom<T, F>>&)

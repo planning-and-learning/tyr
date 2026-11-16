@@ -47,7 +47,7 @@ struct evaluation_of
     using type = ygg::ClosedInterval<ygg::float_t>;
 };
 template<typename Expression>
-    requires requires(const Expression& expression) { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operator())>, BooleanOperatorKind>; }
+    requires requires(const Expression& expression) { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operation())>, BooleanOperatorKind>; }
 struct evaluation_of<Expression>
 {
     using type = bool;
@@ -69,21 +69,21 @@ evaluation_t<Expression> evaluate(const Expression& expression, ResolveTerm& res
         return std::visit([&](const auto& child) { return evaluate(child, resolve_term); }, expression);
     }
     else if constexpr (requires {
-                           expression.get_operator();
+                           expression.get_operation();
                            expression.get_lhs();
                            expression.get_rhs();
                        })
     {
         const auto rhs = evaluate(expression.get_rhs(), resolve_term);
         const auto lhs = evaluate(expression.get_lhs(), resolve_term);
-        if constexpr (requires { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operator())>, BooleanOperatorKind>; })
-            return apply_existential(expression.get_operator(), lhs, rhs);
+        if constexpr (requires { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operation())>, BooleanOperatorKind>; })
+            return apply_existential(expression.get_operation(), lhs, rhs);
         else
-            return apply(expression.get_operator(), lhs, rhs);
+            return apply(expression.get_operation(), lhs, rhs);
     }
     else if constexpr (requires { expression.get_arg(); })
     {
-        return apply(expression.get_operator(), evaluate(expression.get_arg(), resolve_term));
+        return apply(expression.get_operation(), evaluate(expression.get_arg(), resolve_term));
     }
     else if constexpr (requires { expression.get_args(); })
     {
@@ -95,7 +95,7 @@ evaluation_t<Expression> evaluate(const Expression& expression, ResolveTerm& res
         auto value = evaluate(*it, resolve_term);
         ++it;
         for (; it != args.end(); ++it)
-            value = apply(expression.get_operator(), value, evaluate(*it, resolve_term));
+            value = apply(expression.get_operation(), value, evaluate(*it, resolve_term));
         return value;
     }
     else
@@ -110,7 +110,9 @@ evaluation_t<Expression> evaluate(const Expression& expression, ResolveTerm& res
 /// fact lookup, lazy grounding, and support selection share one deterministic traversal.
 template<typename Expression, typename ResolveTerm>
 auto evaluate_numeric_expression(const Expression& expression, ResolveTerm resolve_term)
-{ return numeric_evaluation_detail::evaluate(expression, resolve_term); }
+{
+    return numeric_evaluation_detail::evaluate(expression, resolve_term);
+}
 
 /// Evaluates the right-hand side before resolving the target. Assign never resolves its target.
 template<typename Effect, typename ResolveTerm>
@@ -120,14 +122,14 @@ ygg::ClosedInterval<ygg::float_t> evaluate_numeric_effect(const Effect& effect, 
     if (empty(rhs))
         return {};
 
-    if (effect.get_operator() == formalism::NumericEffectOperatorKind::Assign)
+    if (effect.get_operation() == formalism::NumericEffectOperatorKind::Assign)
         return rhs;
 
     const auto lhs = numeric_evaluation_detail::evaluate(effect.get_fterm(), resolve_term);
     if (empty(lhs))
         return {};
 
-    return apply(effect.get_operator(), lhs, rhs);
+    return apply(effect.get_operation(), lhs, rhs);
 }
 
 }

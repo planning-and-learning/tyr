@@ -66,13 +66,13 @@ struct FFRPGHeuristic<Kind>::Impl :
         m_relaxed_plan.clear();
     }
 
-    ygg::float_t evaluate(const urd::data<State<Kind>>& state)
+    ygg::float_t evaluate(const StateView<Kind>& state)
     {
         m_relaxed_plan.clear();
         return Base::evaluate(state);
     }
 
-    ygg::float_t compute_result(const urd::data<State<Kind>>&)
+    ygg::float_t compute_result(const StateView<Kind>&)
     {
         for (auto& markings : m_predicate_markings)
             markings.clear();
@@ -94,11 +94,11 @@ struct FFRPGHeuristic<Kind>::Impl :
 private:
     void extract_relaxed_plan(PredicateHead head)
     {
-        assert(static_cast<ygg::uint_t>(head.data().relation.value) < m_predicate_markings.size());
-        if (!m_predicate_markings[static_cast<ygg::uint_t>(head.data().relation.value)].insert(head.data().row).second)
+        assert(static_cast<ygg::uint_t>(head.index().relation.value) < m_predicate_markings.size());
+        if (!m_predicate_markings[static_cast<ygg::uint_t>(head.index().relation.value)].insert(head.index().row).second)
             return;
 
-        const auto* annotation = this->workspace().annotations.find(head.data());
+        const auto* annotation = this->workspace().annotations.find(head.index());
         if (!annotation)
             return;
 
@@ -142,27 +142,39 @@ FFRPGHeuristic<Kind>& FFRPGHeuristic<Kind>::operator=(FFRPGHeuristic&&) noexcept
 
 template<TaskKind Kind>
 FFRPGHeuristicPtr<Kind> FFRPGHeuristic<Kind>::create(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode)
-{ return std::make_shared<FFRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode); }
+{
+    return std::make_shared<FFRPGHeuristic<Kind>>(std::move(task), std::move(execution_context), cost_mode);
+}
 
 template<TaskKind Kind>
 void FFRPGHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-{ m_impl->set_goal(goal); }
+{
+    m_impl->set_goal(goal);
+}
 
 template<TaskKind Kind>
-ygg::float_t FFRPGHeuristic<Kind>::evaluate(const urd::data<State<Kind>>& state)
-{ return m_impl->evaluate(state); }
+ygg::float_t FFRPGHeuristic<Kind>::evaluate(const StateView<Kind>& state)
+{
+    return m_impl->evaluate(state);
+}
 
 template<TaskKind Kind>
 HeuristicPtr<Kind> FFRPGHeuristic<Kind>::make_worker(ygg::ExecutionContextPtr execution_context) const
-{ return HeuristicPtr<Kind>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context)))); }
+{
+    return HeuristicPtr<Kind>(new FFRPGHeuristic(std::make_unique<Impl>(*m_impl, std::move(execution_context))));
+}
 
 template<TaskKind Kind>
 const urd::Store<urd::set<formalism::planning::ActionRowView>>* FFRPGHeuristic<Kind>::get_relaxed_plan() const
-{ return &m_impl->get_relaxed_plan(); }
+{
+    return &m_impl->get_relaxed_plan();
+}
 
 template<TaskKind Kind>
 void FFRPGHeuristic<Kind>::print_summary(size_t verbosity) const
-{ m_impl->print_summary(verbosity); }
+{
+    m_impl->print_summary(verbosity);
+}
 
 template class FFRPGHeuristic<GroundTag>;
 template class FFRPGHeuristic<LiftedTag>;

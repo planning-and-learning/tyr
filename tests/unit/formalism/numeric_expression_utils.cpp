@@ -42,7 +42,7 @@ struct BinaryExpression
     NumericLeaf lhs;
     NumericLeaf rhs;
 
-    [[nodiscard]] auto get_operator() const noexcept { return op; }
+    [[nodiscard]] auto get_operation() const noexcept { return op; }
     [[nodiscard]] auto get_lhs() const noexcept { return lhs; }
     [[nodiscard]] auto get_rhs() const noexcept { return rhs; }
 };
@@ -54,7 +54,7 @@ struct ReferenceBooleanExpression
     NumericLeaf lhs;
     NumericLeaf rhs;
 
-    [[nodiscard]] const auto& get_operator() const noexcept { return op; }
+    [[nodiscard]] const auto& get_operation() const noexcept { return op; }
     [[nodiscard]] auto get_lhs() const noexcept { return lhs; }
     [[nodiscard]] auto get_rhs() const noexcept { return rhs; }
 };
@@ -64,7 +64,7 @@ struct MultiExpression
     formalism::ArithmeticOperatorKind op {};
     urd::Store<urd::sequence<NumericLeaf>> args;
 
-    [[nodiscard]] auto get_operator() const noexcept { return op; }
+    [[nodiscard]] auto get_operation() const noexcept { return op; }
     [[nodiscard]] const auto& get_args() const noexcept { return args; }
 };
 
@@ -74,7 +74,7 @@ struct NumericEffect
     NumericLeaf target;
     NumericLeaf rhs;
 
-    [[nodiscard]] auto get_operator() const noexcept { return op; }
+    [[nodiscard]] auto get_operation() const noexcept { return op; }
     [[nodiscard]] auto get_fterm() const noexcept { return target; }
     [[nodiscard]] auto get_fexpr() const noexcept { return rhs; }
 };

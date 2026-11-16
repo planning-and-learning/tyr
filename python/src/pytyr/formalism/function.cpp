@@ -26,30 +26,11 @@
 namespace tyr::formalism
 {
 
-namespace
-{
-template<FactKind T>
-void bind_function_data(nb::module_& m, const char* name)
-{
-    using namespace nb::literals;
-    using V = urd::data<Function<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
-    cls.def(nb::init<urd::flat_string, ygg::uint_t>(), "name"_a, "arity"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-}  // namespace
-
 void bind_function(nb::module_& m)
 {
-    urd::python::bind_index<urd::index<Function<StaticTag>>>(m, "StaticFunctionIndex");
-    urd::python::bind_index<urd::index<Function<FluentTag>>>(m, "FluentFunctionIndex");
-    urd::python::bind_index<urd::index<Function<AuxiliaryTag>>>(m, "AuxiliaryFunctionIndex");
-
-    bind_function_data<StaticTag>(m, "StaticFunctionData");
-    bind_function_data<FluentTag>(m, "FluentFunctionData");
-    bind_function_data<AuxiliaryTag>(m, "AuxiliaryFunctionData");
+    urd::python::bind_data<Function<StaticTag>>(m);
+    urd::python::bind_data<Function<FluentTag>>(m);
+    urd::python::bind_data<Function<AuxiliaryTag>>(m);
 }
 
 }  // namespace tyr::formalism

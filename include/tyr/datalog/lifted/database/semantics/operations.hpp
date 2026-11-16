@@ -51,13 +51,6 @@ struct Workspace
     [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(join_index); }
 };
 
-/// Marks inputs whose row storage remains immutable for the cache lifetime.
-struct JoinReuse
-{
-    bool lhs = false;
-    bool rhs = false;
-};
-
 /// The operations take their inputs, a plan built from the inputs' columns, and an output builder whose columns are the
 /// plan's output columns (initialize it with them); those using scratch storage take a Workspace. Each replaces the
 /// output's rows, retaining capacity, and throws std::invalid_argument where the output is an input. Result row order
@@ -86,40 +79,29 @@ void select_equal_columns(const V& input, const SelectEqualPlan& plan, urd::buil
 template<RelationViewConcept V>
 void select_equal_value(const V& input, const SelectValuePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out);
 
-/// Natural join: lhs columns followed by rhs-only columns; disjoint schemas produce the Cartesian product. Hashes the
+/// Natural join: left columns followed by right-only columns; disjoint schemas produce the Cartesian product. Hashes the
 /// smaller input, retaining only hashes and row indices in the transient index; collisions are resolved by comparing
 /// the actual values.
 template<RelationViewConcept L, RelationViewConcept R>
-void join(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace);
-
-/// As join, reusing the cache's index of the one marked input, or of the smaller input when both are marked; with
-/// neither marked, an ordinary transient index. Empty inputs and Cartesian products create no cached index.
-template<RelationViewConcept L, RelationViewConcept R>
-void join(const L& lhs,
-          const R& rhs,
-          const JoinPlan& plan,
-          JoinIndexCache& cache,
-          JoinReuse reuse,
-          urd::builder<ygg::Relation<ygg::Schema>>& out,
-          Workspace& workspace);
+void join(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace);
 
 /// The rows of either input. The trailing underscore avoids the C++ keyword union.
 template<RelationViewConcept L, RelationViewConcept R>
-void union_(const L& lhs, const R& rhs, const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out);
+void union_(const L& left_operand, const R& right_operand, const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out);
 
-/// The lhs rows not in rhs.
+/// The left rows not in right.
 template<RelationViewConcept L, RelationViewConcept R>
-void difference(const L& lhs, const R& rhs, const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out);
+void difference(const L& left_operand, const R& right_operand, const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out);
 
-/// Semijoin lhs ⋉ rhs: the lhs rows with a match in rhs on the plan's keys. Without shared columns, lhs if rhs is
-/// nonempty. Hashes rhs. The output has the lhs columns.
+/// Semijoin left ⋉ right: the left rows with a match in right on the plan's keys. Without shared columns, left if right is
+/// nonempty. Hashes right. The output has the left columns.
 template<RelationViewConcept L, RelationViewConcept R>
-void semijoin(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace);
+void semijoin(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace);
 
-/// Antijoin lhs ▷ rhs: the lhs rows without a match in rhs on the plan's keys. Without shared columns, lhs if rhs is
-/// empty. Hashes rhs. The output has the lhs columns.
+/// Antijoin left ▷ right: the left rows without a match in right on the plan's keys. Without shared columns, left if right is
+/// empty. Hashes right. The output has the left columns.
 template<RelationViewConcept L, RelationViewConcept R>
-void antijoin(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace);
+void antijoin(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace);
 
 }  // namespace tyr::datalog::database
 
@@ -139,7 +121,7 @@ inline void copy_fields(ygg::RowPool::row_builder_type& output, size_t first, co
 template<RelationViewConcept... Vs>
 void prepare_output(urd::builder<ygg::Relation<ygg::Schema>>& out, const Vs&... inputs)
 {
-    if (((inputs.relation_identity() == out.relation_identity()) || ...))
+    if ((reads_builder(inputs, out) || ...))
         throw std::invalid_argument("Relational operation: output aliases an input.");
     out.clear();
 }
@@ -169,7 +151,7 @@ void project(const V& input, const ProjectionPlan& plan, urd::builder<ygg::Relat
 template<RelationViewConcept V>
 urd::builder<ygg::Relation<ygg::Schema>>& assign(urd::builder<ygg::Relation<ygg::Schema>>& destination, const V& source)
 {
-    if (source.relation_identity() == destination.relation_identity())
+    if (reads_builder(source, destination))
         return destination;
     destination.initialize(source.columns());
     for (size_t i = 0; i < source.size(); ++i)
@@ -192,7 +174,7 @@ template<RelationViewConcept V>
 void select_equal_columns(const V& input, const SelectEqualPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out)
 {
     assert(std::ranges::equal(input.columns(), plan.output_columns()));
-    select(input, [lhs = plan.lhs_position(), rhs = plan.rhs_position()](const auto& row) { return row.value(lhs) == row.value(rhs); }, out);
+    select(input, [left = plan.left_position(), right = plan.right_position()](const auto& row) { return row.value(left) == row.value(right); }, out);
 }
 
 template<RelationViewConcept V>
@@ -207,32 +189,32 @@ namespace detail
 /// Appends joined rows. Lookup values are row positions in the selected build input for a key hash; actual key
 /// equality resolves hash collisions.
 template<RelationViewConcept L, RelationViewConcept R, typename Index>
-void join_rows(const L& lhs,
-               const R& rhs,
+void join_rows(const L& left_operand,
+               const R& right_operand,
                const JoinPlan& plan,
                bool build_left,
                const Index& index,  ///< urd::Store<urd::map<hash_t, position>, urd::multi, urd::retains>
                urd::builder<ygg::Relation<ygg::Schema>>& out,
                Workspace& workspace)
 {
-    if (lhs.empty() || rhs.empty())
+    if (left_operand.empty() || right_operand.empty())
         return;
 
     auto& row = workspace.row;
     row.reset(out.widths());
-    const auto emit = [&](const ygg::RowPool::row_type& left, const ygg::RowPool::row_type& right)
+    const auto emit = [&](const ygg::RowPool::row_type& left_row, const ygg::RowPool::row_type& right_row)
     {
-        for (size_t c = 0; c < left.size(); ++c)
-            row.copy(c, left, c);
-        copy_fields(row, left.size(), right, plan.rhs_payload());
+        for (size_t c = 0; c < left_row.size(); ++c)
+            row.copy(c, left_row, c);
+        copy_fields(row, left_row.size(), right_row, plan.right_payload());
         out.insert(row.row());
     };
 
-    if (plan.lhs_keys().empty())
+    if (plan.left_keys().empty())
     {
-        for (size_t i = 0; i < lhs.size(); ++i)
-            for (size_t j = 0; j < rhs.size(); ++j)
-                emit(lhs.row(i).get_values(), rhs.row(j).get_values());
+        for (size_t i = 0; i < left_operand.size(); ++i)
+            for (size_t j = 0; j < right_operand.size(); ++j)
+                emit(left_operand.row(i).get_values(), right_operand.row(j).get_values());
         return;
     }
 
@@ -250,124 +232,109 @@ void join_rows(const L& lhs,
                 const auto build_row = build.row(match).get_values();
                 if (!join_keys_equal(build_row, build_keys, probe_row, probe_keys))
                     continue;
-                const auto left = build_left ? build_row : probe_row;
-                const auto right = build_left ? probe_row : build_row;
-                emit(left, right);
+                const auto left_row = build_left ? build_row : probe_row;
+                const auto right_row = build_left ? probe_row : build_row;
+                emit(left_row, right_row);
             }
         }
     };
     if (build_left)
-        probe_rows(lhs, rhs, plan.lhs_keys(), plan.rhs_keys());
+        probe_rows(left_operand, right_operand, plan.left_keys(), plan.right_keys());
     else
-        probe_rows(rhs, lhs, plan.rhs_keys(), plan.lhs_keys());
+        probe_rows(right_operand, left_operand, plan.right_keys(), plan.left_keys());
 }
 
 template<RelationViewConcept L, RelationViewConcept R>
-void assert_planned(const L& lhs, const R& rhs, const JoinPlan& plan) noexcept
+void assert_planned(const L& left_operand, const R& right_operand, const JoinPlan& plan) noexcept
 {
-    assert(std::ranges::equal(lhs.columns(), plan.lhs_columns()) && std::ranges::equal(rhs.columns(), plan.rhs_columns()));
-    (void) lhs, (void) rhs, (void) plan;  // read only by the assert
+    assert(std::ranges::equal(left_operand.columns(), plan.left_columns()) && std::ranges::equal(right_operand.columns(), plan.right_columns()));
+    (void) left_operand, (void) right_operand, (void) plan;  // read only by the assert
 }
 }  // namespace detail
 
 template<RelationViewConcept L, RelationViewConcept R>
-void join(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
+void join(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
 {
-    detail::assert_planned(lhs, rhs, plan);
+    detail::assert_planned(left_operand, right_operand, plan);
     assert(std::ranges::equal(out.columns(), plan.output_columns()));
-    detail::prepare_output(out, lhs, rhs);
-    const bool build_left = lhs.size() <= rhs.size();
-    if (!plan.lhs_keys().empty() && !lhs.empty() && !rhs.empty())
+    detail::prepare_output(out, left_operand, right_operand);
+    const bool build_left = left_operand.size() <= right_operand.size();
+    if (!plan.left_keys().empty() && !left_operand.empty() && !right_operand.empty())
     {
         if (build_left)
-            detail::build_join_index(lhs, plan.lhs_keys(), workspace.join_index);
+            detail::build_join_index(left_operand, plan.left_keys(), workspace.join_index);
         else
-            detail::build_join_index(rhs, plan.rhs_keys(), workspace.join_index);
+            detail::build_join_index(right_operand, plan.right_keys(), workspace.join_index);
     }
-    detail::join_rows(lhs, rhs, plan, build_left, workspace.join_index, out, workspace);
+    detail::join_rows(left_operand, right_operand, plan, build_left, workspace.join_index, out, workspace);
 }
 
 template<RelationViewConcept L, RelationViewConcept R>
-void join(const L& lhs,
-          const R& rhs,
-          const JoinPlan& plan,
-          JoinIndexCache& cache,
-          JoinReuse reuse,
-          urd::builder<ygg::Relation<ygg::Schema>>& out,
-          Workspace& workspace)
+void union_(const L& left_operand, const R& right_operand, [[maybe_unused]] const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out)
 {
-    if (!reuse.lhs && !reuse.rhs)
-        return join(lhs, rhs, plan, out, workspace);
-    detail::assert_planned(lhs, rhs, plan);
-    assert(std::ranges::equal(out.columns(), plan.output_columns()));
-    // Build on a reused input, the smaller one if both are reused.
-    const bool build_left = reuse.lhs && (!reuse.rhs || lhs.size() <= rhs.size());
-    detail::prepare_output(out, lhs, rhs);
-    if (lhs.empty() || rhs.empty())
-        return;
-    const auto* index = &workspace.join_index;
-    if (!plan.lhs_keys().empty())
-        index = &(build_left ? cache.get_or_create(lhs, plan.lhs_keys()) : cache.get_or_create(rhs, plan.rhs_keys())).index();
-    detail::join_rows(lhs, rhs, plan, build_left, *index, out, workspace);
+    assert(std::ranges::equal(left_operand.columns(), plan.output_columns()) && std::ranges::equal(right_operand.columns(), plan.output_columns()));
+    detail::prepare_output(out, left_operand, right_operand);
+    for (size_t i = 0; i < left_operand.size(); ++i)
+        out.insert(left_operand.row(i).get_values());
+    for (size_t i = 0; i < right_operand.size(); ++i)
+        out.insert(right_operand.row(i).get_values());
 }
 
 template<RelationViewConcept L, RelationViewConcept R>
-void union_(const L& lhs, const R& rhs, [[maybe_unused]] const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out)
+void difference(const L& left_operand, const R& right_operand, [[maybe_unused]] const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out)
 {
-    assert(std::ranges::equal(lhs.columns(), plan.output_columns()) && std::ranges::equal(rhs.columns(), plan.output_columns()));
-    detail::prepare_output(out, lhs, rhs);
-    for (size_t i = 0; i < lhs.size(); ++i)
-        out.insert(lhs.row(i).get_values());
-    for (size_t i = 0; i < rhs.size(); ++i)
-        out.insert(rhs.row(i).get_values());
-}
-
-template<RelationViewConcept L, RelationViewConcept R>
-void difference(const L& lhs, const R& rhs, [[maybe_unused]] const SetPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out)
-{
-    assert(std::ranges::equal(lhs.columns(), plan.output_columns()) && std::ranges::equal(rhs.columns(), plan.output_columns()));
-    detail::prepare_output(out, lhs, rhs);
-    for (size_t i = 0; i < lhs.size(); ++i)
-        if (const auto row = lhs.row(i); !rhs.contains(row))
+    assert(std::ranges::equal(left_operand.columns(), plan.output_columns()) && std::ranges::equal(right_operand.columns(), plan.output_columns()));
+    detail::prepare_output(out, left_operand, right_operand);
+    for (size_t i = 0; i < left_operand.size(); ++i)
+        if (const auto row = left_operand.row(i); !right_operand.contains(row))
             out.insert(row.get_values());
 }
 
 namespace detail
 {
-/// Keeps the lhs rows whose match in rhs on the plan's keys exists (`matching`) or does not.
+/// Keeps the left rows whose match in right on the plan's keys exists (`matching`) or does not.
 template<RelationViewConcept L, RelationViewConcept R>
-void filter_matches(const L& lhs, const R& rhs, const JoinPlan& plan, bool matching, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
+void filter_matches(const L& left_operand,
+                    const R& right_operand,
+                    const JoinPlan& plan,
+                    bool matching,
+                    urd::builder<ygg::Relation<ygg::Schema>>& out,
+                    Workspace& workspace)
 {
-    assert_planned(lhs, rhs, plan);
-    assert(std::ranges::equal(out.columns(), plan.lhs_columns()));
-    prepare_output(out, lhs, rhs);
-    const auto lhs_keys = plan.lhs_keys();
-    const auto rhs_keys = plan.rhs_keys();
-    if (!lhs_keys.empty() && !rhs.empty())
-        build_join_index(rhs, rhs_keys, workspace.join_index);
+    assert_planned(left_operand, right_operand, plan);
+    assert(std::ranges::equal(out.columns(), plan.left_columns()));
+    prepare_output(out, left_operand, right_operand);
+    const auto left_keys = plan.left_keys();
+    const auto right_keys = plan.right_keys();
+    if (!left_keys.empty() && !right_operand.empty())
+        build_join_index(right_operand, right_keys, workspace.join_index);
     const auto matched = [&](const ygg::RowPool::row_type& row)
     {
-        if (rhs.empty() || lhs_keys.empty())
-            return !rhs.empty();
-        for (const auto [first, last] = workspace.join_index.equal_range(join_key_hash(row, lhs_keys));
+        if (right_operand.empty() || left_keys.empty())
+            return !right_operand.empty();
+        for (const auto [first, last] = workspace.join_index.equal_range(join_key_hash(row, left_keys));
              const auto match : std::ranges::subrange(first, last) | std::views::values)
-            if (join_keys_equal(rhs.row(match).get_values(), rhs_keys, row, lhs_keys))
+            if (join_keys_equal(right_operand.row(match).get_values(), right_keys, row, left_keys))
                 return true;
         return false;
     };
-    for (size_t i = 0; i < lhs.size(); ++i)
-        if (const auto row = lhs.row(i).get_values(); matched(row) == matching)
+    for (size_t i = 0; i < left_operand.size(); ++i)
+        if (const auto row = left_operand.row(i).get_values(); matched(row) == matching)
             out.insert(row);
 }
 }  // namespace detail
 
 template<RelationViewConcept L, RelationViewConcept R>
-void semijoin(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
-{ detail::filter_matches(lhs, rhs, plan, true, out, workspace); }
+void semijoin(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
+{
+    detail::filter_matches(left_operand, right_operand, plan, true, out, workspace);
+}
 
 template<RelationViewConcept L, RelationViewConcept R>
-void antijoin(const L& lhs, const R& rhs, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
-{ detail::filter_matches(lhs, rhs, plan, false, out, workspace); }
+void antijoin(const L& left_operand, const R& right_operand, const JoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, Workspace& workspace)
+{
+    detail::filter_matches(left_operand, right_operand, plan, false, out, workspace);
+}
 
 }  // namespace tyr::datalog::database
 

@@ -30,8 +30,8 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
-    auto get_num_rigid_variables() const noexcept { return self().data().num_rigid_variables; }
-    auto get_num_counted_variables() const noexcept { return self().data().num_counted_variables; }
+    auto get_num_rigid_variables() const noexcept { return self().template member<&urd::record_of<V>::num_rigid_variables>(); }
+    auto get_num_counted_variables() const noexcept { return self().template member<&urd::record_of<V>::num_counted_variables>(); }
     auto get_atoms() const noexcept { return self().template member<&urd::record_of<V>::atoms>(); }
 };
 }  // namespace urd

@@ -39,14 +39,6 @@ static_assert(requires(Data& data, const View& view) {
     data.fluent_fterm_values;
     data.goal;
     data.rules;
-    data.template get_predicates<tyr::formalism::StaticTag>();
-    data.template get_predicates<tyr::formalism::FluentTag>();
-    data.template get_functions<tyr::formalism::StaticTag>();
-    data.template get_functions<tyr::formalism::FluentTag>();
-    data.template get_atoms<tyr::formalism::StaticTag>();
-    data.template get_atoms<tyr::formalism::FluentTag>();
-    data.template get_fterm_values<tyr::formalism::StaticTag>();
-    data.template get_fterm_values<tyr::formalism::FluentTag>();
     view.index();
     view.template get_predicates<tyr::formalism::StaticTag>();
     view.template get_predicates<tyr::formalism::FluentTag>();
@@ -90,16 +82,6 @@ static_assert(requires(Data& data, const View& view) {
     data.fluent_fterm_values;
     data.goal;
     data.rules;
-    data.template get_predicates<tyr::formalism::StaticTag>();
-    data.template get_predicates<tyr::formalism::FluentTag>();
-    data.template get_functions<tyr::formalism::StaticTag>();
-    data.template get_functions<tyr::formalism::FluentTag>();
-    data.template get_atoms<tyr::formalism::StaticTag>();
-    data.template get_atoms<tyr::formalism::FluentTag>();
-    data.template get_fterm_values<tyr::formalism::StaticTag>();
-    data.template get_fterm_values<tyr::formalism::FluentTag>();
-    data.get_rules();
-    data.get_rules();
     view.index();
     view.template get_predicates<tyr::formalism::StaticTag>();
     view.template get_predicates<tyr::formalism::FluentTag>();
@@ -133,14 +115,14 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             auto binding = urd::data<ygg::Row<tyr::formalism::Predicate<T>>> {};
             binding.relation = predicate_.index();
             const auto binding_view = intern(std::move(binding));
-            return intern(urd::data<tyr::formalism::Atom<::tyr::GroundTag, T>> { binding_view.data() });
+            return intern(urd::data<tyr::formalism::Atom<::tyr::GroundTag, T>> { binding_view.index() });
         };
         const auto ground_fterm = [&]<tyr::formalism::FactKind T>(tyr::formalism::datalog::FunctionView<T> function_)
         {
             auto binding = urd::data<ygg::Row<tyr::formalism::Function<T>>> {};
             binding.relation = function_.index();
             const auto binding_view = intern(std::move(binding));
-            return intern(urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>> { binding_view.data() });
+            return intern(urd::data<tyr::formalism::FunctionTerm<::tyr::GroundTag, T>> { binding_view.index() });
         };
         const auto static_literal = [&](tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::StaticTag> atom, bool polarity)
         { return intern(urd::data<tyr::formalism::Literal<::tyr::GroundTag, tyr::formalism::StaticTag>> { atom.index(), polarity }); };
@@ -178,7 +160,7 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
             const auto binding = intern(std::move(binding_data));
 
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag>> {};
-            rule_data.row = binding.data();
+            rule_data.row = binding.index();
             rule_data.body = body.index();
             rule_data.heads.push_back(head.index());
             return intern(std::move(rule_data));

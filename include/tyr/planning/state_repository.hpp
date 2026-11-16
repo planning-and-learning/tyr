@@ -126,7 +126,7 @@ StateView<Kind> materialize_state(const StateView<Kind>& source, StateRepository
         return target.get_registered_state(source.index());
 
     auto builder = target.get_state_builder();
-    builder->assign_unextended_part(source.data());
+    builder->assign_unextended_part(source);
     return target.register_state(axiom_evaluator, std::move(builder));
 }
 

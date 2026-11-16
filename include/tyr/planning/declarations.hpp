@@ -48,6 +48,13 @@ struct PlanReconstructionPolicy;
 
 template<TaskKind Kind>
 class Task;
+/// A state's storages, unpacked: its fluent facts, its derived atoms and its numeric values (state_storage.hpp).
+template<TaskKind Kind>
+struct FactUnpackedStorage;
+template<TaskKind Kind>
+struct AtomUnpackedStorage;
+template<TaskKind Kind>
+struct NumericUnpackedStorage;
 template<TaskKind Kind>
 using TaskPtr = std::shared_ptr<Task<Kind>>;
 

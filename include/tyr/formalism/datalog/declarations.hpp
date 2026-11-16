@@ -26,6 +26,7 @@
 #include <cista/containers/vector.h>
 #include <concepts>
 #include <memory>
+#include <string_view>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -44,23 +45,27 @@ namespace tyr::formalism::datalog
 template<TaskKind T>
 struct ConjunctiveCondition
 {
+    static constexpr std::string_view name = "ConjunctiveCondition";
 };
 
 template<TaskKind T>
 struct ConjunctiveEffect
 {
+    static constexpr std::string_view name = "ConjunctiveEffect";
 };
 
 /// A rule: its heads, fluent atoms, are derived from one instantiation of its body.
 template<TaskKind T>
 struct Rule
 {
+    static constexpr std::string_view name = "Rule";
     using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>
 struct Program
 {
+    static constexpr std::string_view name = "Program";
 };
 
 using CoreTypes = boost::mp11::mp_list<Variable, Object>;

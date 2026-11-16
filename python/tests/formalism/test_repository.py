@@ -6,25 +6,26 @@ from types import ModuleType
 
 import pytest
 
+from pytyr import formalism
 from pytyr.formalism import datalog, planning
 
 
 def test_ground_program_rule_accessors() -> None:
-    assert hasattr(datalog.GroundProgram, "get_rules")
-    assert not hasattr(datalog.GroundProgram, "get_ground_rules")
+    assert hasattr(datalog.ProgramGround, "get_rules")
+    assert not hasattr(datalog.ProgramGround, "get_ground_rules")
 
 
 def test_ground_facts_expose_their_bindings() -> None:
     repository = datalog.Repository()
 
-    predicate = repository.insert(datalog.FluentPredicateData("predicate", 0))[0]
-    predicate_binding = repository.insert(datalog.FluentPredicateRowData(predicate, []))[0]
-    atom = repository.insert(datalog.FluentGroundAtomData(predicate_binding))[0]
+    predicate = repository.insert(formalism.PredicateFluentData("predicate", 0))[0]
+    predicate_binding = repository.insert(formalism.RowPredicateFluentData(predicate, []))[0]
+    atom = repository.insert(formalism.AtomGroundFluentData(predicate_binding))[0]
     assert atom.get_row() == predicate_binding
 
-    function = repository.insert(datalog.FluentFunctionData("function", 0))[0]
-    function_binding = repository.insert(datalog.FluentFunctionRowData(function, []))[0]
-    term = repository.insert(datalog.FluentGroundFunctionTermData(function_binding))[0]
+    function = repository.insert(formalism.FunctionFluentData("function", 0))[0]
+    function_binding = repository.insert(formalism.RowFunctionFluentData(function, []))[0]
+    term = repository.insert(formalism.FunctionTermGroundFluentData(function_binding))[0]
     assert term.get_row() == function_binding
 
 
@@ -33,22 +34,22 @@ def test_repository_accepts_object_counts(module: ModuleType) -> None:
     assert module.Repository(num_objects=None) is not None
 
     parent = module.Repository(num_objects=2)
-    parent.insert(module.ObjectData("first"))[0]
-    second = parent.insert(module.ObjectData("second"))[0]
-    predicate = parent.insert(module.StaticPredicateData("predicate", 1))[0]
-    binding = parent.insert(module.StaticPredicateRowData(predicate, [second]))[0]
-    assert list(binding.get_objects()) == [second]
+    parent.insert(formalism.ObjectData("first"))[0]
+    second = parent.insert(formalism.ObjectData("second"))[0]
+    predicate = parent.insert(formalism.PredicateStaticData("predicate", 1))[0]
+    binding = parent.insert(formalism.RowPredicateStaticData(predicate, [second.index()]))[0]
+    assert list(binding.get_values()) == [second.index().value]
 
     child = module.Repository(parent, num_objects=3)
-    third = child.insert(module.ObjectData("third"))[0]
-    binding = child.insert(module.StaticPredicateRowData(predicate, [third]))[0]
-    assert list(binding.get_objects()) == [third]
+    third = child.insert(formalism.ObjectData("third"))[0]
+    binding = child.insert(formalism.RowPredicateStaticData(predicate, [third.index()]))[0]
+    assert list(binding.get_values()) == [third.index().value]
 
 
 @pytest.mark.parametrize("module", [datalog, planning])
 def test_insert_reports_deduplication_and_retains_repository(module: ModuleType) -> None:
     repository = module.Repository()
-    data = module.ObjectData("retained")
+    data = formalism.ObjectData("retained")
     value, inserted = repository.insert(data)
     assert inserted is True
     duplicate, inserted = repository.insert(data)
@@ -64,15 +65,15 @@ def test_insert_reports_deduplication_and_retains_repository(module: ModuleType)
 @pytest.mark.parametrize("module", [datalog, planning])
 def test_inserted_binding_children_retain_repository(module: ModuleType) -> None:
     repository = module.Repository()
-    obj, _ = repository.insert(module.ObjectData("retained"))
-    predicate, _ = repository.insert(module.StaticPredicateData("p", 1))
-    binding, inserted = repository.insert(module.StaticPredicateRowData(predicate, [obj]))
+    obj, _ = repository.insert(formalism.ObjectData("retained"))
+    predicate, _ = repository.insert(formalism.PredicateStaticData("p", 1))
+    binding, inserted = repository.insert(formalism.RowPredicateStaticData(predicate, [obj.index()]))
     assert inserted is True
-    duplicate, inserted = repository.insert(module.StaticPredicateRowData(predicate, [obj]))
+    duplicate, inserted = repository.insert(formalism.RowPredicateStaticData(predicate, [obj.index()]))
     assert inserted is False
     assert duplicate == binding
-    child = next(iter(binding.get_objects()))
+    child = binding.get_relation()  # a child view of the row: its predicate
 
     del duplicate, binding, predicate, obj, repository
     gc.collect()
-    assert child.get_name() == "retained"
+    assert child.get_name() == "p"

@@ -132,7 +132,7 @@ std::string invariant_text(tyr::formalism::planning::InvariantView invariant)
     {
         auto terms = urd::Store<urd::sequence<std::string>> {};
         for (const auto term : atom.get_terms())
-            terms.push_back(fmt::format("{}", urd::to_stored(term)));
+            terms.push_back(fmt::format("{}", urd::stored<tyr::formalism::Term>(term)));
         atoms.push_back(fmt::format("({} {})", atom.get_predicate().get_name(), fmt::join(terms, " ")));
     }
     return invariant_text(invariant.get_num_rigid_variables(), invariant.get_num_counted_variables(), std::move(atoms));
@@ -181,7 +181,8 @@ void check_suite(const std::filesystem::path& fixture)
 
         auto lifted_task =
             parser.parse_task(ygg::common::resolve_path(std::filesystem::path(BENCHMARKS_DIR), ygg::common::as_string(case_object, "task_file", "case")));
-        auto& repository = *lifted_task.get_repository();
+        // The expected invariants go into a layer of the test's own: the parsed task's repository is frozen.
+        auto repository = tyr::formalism::planning::Repository(lifted_task.get_task().get_num_objects(), lifted_task.get_repository().get());
 
         expect_invariant_sets_equal(actual, parse_invariants(repository, case_object, "invariants"));
     }

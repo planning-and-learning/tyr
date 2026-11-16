@@ -3,36 +3,12 @@
 
 namespace tyr::database_python
 {
-namespace
-{
-template<typename... Tags>
-void bind_query_data_constructors(nb::class_<urd::data<tyr::datalog::database::Query<>>>& cls, boost::mp11::mp_list<Tags...>)
-{
-    using namespace nb::literals;
-    (cls.def(urd::python::init_from_views<ConcreteQueryView<Tags>>(), "query"_a), ...);
-}
-}  // namespace
-
 void bind_query(nb::module_& m, QueryRepositoryBinding& repository)
 {
-    urd::python::bind_index<urd::index<tyr::datalog::database::Query<>>>(m, "QueryIndex");
-
-    {
-        using V = urd::data<tyr::datalog::database::Query<>>;
-        auto cls = urd::python::bind_data<V>(m, "QueryData");
-        bind_query_data_constructors(cls, tyr::datalog::database::QueryConstructorTags {});
-        cls.def_rw("variant", &V::variant);
-    }
-
-    {
-        using V = QueryView;
-        auto cls = nb::class_<V>(m, "Query", "Immutable interned query. Keeps its repository alive.");
-        cls.def("index", &V::index).def("get_variant", &V::get_variant).def("columns", &V::columns, nb::keep_alive<0, 1>());
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    ygg::bind_insert<tyr::datalog::database::Query<>>(repository);
+    using Query = tyr::datalog::database::Query<>;
+    urd::python::bind_data<Query>(m);
+    urd::python::bind_view<QueryView>(m).def("columns", &QueryView::columns);
+    ygg::bind_insert<Query>(repository);
 }
 
 }  // namespace tyr::database_python

@@ -44,7 +44,9 @@ struct Delta
     }
     /// The (added, removed) change, as views.
     [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change() const noexcept
-    { return { layer->view(added), layer->view(removed) }; }
+    {
+        return { layer->view(added), layer->view(removed) };
+    }
     [[nodiscard]] size_t memory_usage() const noexcept { return added.memory_usage() + removed.memory_usage(); }
 };
 
@@ -87,8 +89,7 @@ void require_initialized(bool initialized);
 template<RelationViewConcept V>
 void require_unaliased(const V& input, const urd::builder<ygg::Relation<ygg::Schema>>& result, const Delta& delta)
 {
-    const auto storage = input.relation_identity();
-    if (storage == result.relation_identity() || storage == delta.added.relation_identity() || storage == delta.removed.relation_identity())
+    if (reads_builder(input, result) || reads_builder(input, delta.added) || reads_builder(input, delta.removed))
         throw std::invalid_argument("Incremental evaluation: input aliases the evaluator's result or delta.");
 }
 

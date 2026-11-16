@@ -22,116 +22,17 @@
 namespace tyr::formalism::planning
 {
 
-namespace
-{
-template<TaskKind T>
-void bind_action_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
-{
-    using namespace nb::literals;
-    using Tag = Action<T>;
-    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
-
-    {
-        using V = urd::data<Tag>;
-        auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        if constexpr (std::same_as<T, LiftedTag>)
-        {
-            cls.def(urd::python::init_from_views<const std::string&,
-                                                 ygg::uint_t,
-                                                 const VariableViewList&,
-                                                 ConjunctiveConditionView<T>,
-                                                 const ConditionalEffectViewList<T>&>(),
-                    "name"_a,
-                    "original_arity"_a,
-                    "variables"_a,
-                    "condition"_a,
-                    "effects"_a);
-            cls.def(nb::init<urd::flat_string,
-                             ygg::uint_t,
-                             urd::flat_vector<urd::index<Variable>>,
-                             urd::index<ConjunctiveCondition<LiftedTag>>,
-                             urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>>(),
-                    "name"_a,
-                    "original_arity"_a,
-                    "variables"_a,
-                    "condition"_a,
-                    "effects"_a);
-            cls.def(urd::python::init_from_views<const std::string&,
-                                                 const std::string&,
-                                                 ygg::uint_t,
-                                                 const VariableViewList&,
-                                                 ConjunctiveConditionView<T>,
-                                                 const ConditionalEffectViewList<T>&>(),
-                    "name"_a,
-                    "original_name"_a,
-                    "original_arity"_a,
-                    "variables"_a,
-                    "condition"_a,
-                    "effects"_a);
-            cls.def(nb::init<urd::flat_string,
-                             urd::flat_string,
-                             ygg::uint_t,
-                             urd::flat_vector<urd::index<Variable>>,
-                             urd::index<ConjunctiveCondition<LiftedTag>>,
-                             urd::flat_vector<urd::index<ConditionalEffect<LiftedTag>>>>(),
-                    "name"_a,
-                    "original_name"_a,
-                    "original_arity"_a,
-                    "variables"_a,
-                    "condition"_a,
-                    "effects"_a);
-        }
-        else
-        {
-            cls.def(urd::python::init_from_views<ActionRowView, ConjunctiveConditionView<T>, const ConditionalEffectViewList<T>&>(),
-                    "binding"_a,
-                    "condition"_a,
-                    "effects"_a);
-            cls.def(nb::init<ygg::RowIndex<Action<LiftedTag>>,
-                             urd::index<ConjunctiveCondition<GroundTag>>,
-                             urd::flat_vector<urd::index<ConditionalEffect<GroundTag>>>>(),
-                    "binding"_a,
-                    "condition"_a,
-                    "effects"_a);
-        }
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    {
-        using V = ActionView<T>;
-        auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("index", &V::index);
-        if constexpr (std::same_as<T, LiftedTag>)
-        {
-            cls.def("get_name", &V::get_name);
-            cls.def("get_original_name", &V::get_original_name);
-            cls.def("get_original_arity", &V::get_original_arity);
-            cls.def("get_arity", &V::get_arity);
-            cls.def("get_variables", &V::get_variables);
-        }
-        else
-        {
-            cls.def("get_action", &V::get_action);
-            cls.def("get_row", &V::get_row);
-            cls.def("get_objects", &V::get_objects);
-        }
-        cls.def("get_condition", &V::get_condition);
-        cls.def("get_effects", &V::get_effects);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    ygg::bind_insert<Tag>(repository);
-}
-}  // namespace
-
 void bind_action(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_action_kind<LiftedTag>(m, repository, "Action");
-    bind_action_kind<GroundTag>(m, repository, "GroundAction");
+    urd::python::bind_data<Action<LiftedTag>>(m);
+    urd::python::bind_view<ActionView<LiftedTag>>(m).def("get_arity", &ActionView<LiftedTag>::get_arity);
+    ygg::bind_insert<Action<LiftedTag>>(repository);
+
+    urd::python::bind_data<Action<GroundTag>>(m);
+    urd::python::bind_view<ActionView<GroundTag>>(m)
+        .def("get_action", &ActionView<GroundTag>::get_action)
+        .def("get_objects", &ActionView<GroundTag>::get_objects);
+    ygg::bind_insert<Action<GroundTag>>(repository);
 }
 
 }  // namespace tyr::formalism::planning

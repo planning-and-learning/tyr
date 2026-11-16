@@ -62,6 +62,5 @@ TEST(TyrMatchTreeRepository, SharedInterningKeepsTheMatchTreeContext)
     const auto found = repository.find(*data);
     ASSERT_TRUE(found);
     EXPECT_EQ(&found.value().context(), &repository);
-    EXPECT_EQ(&repository[urd::index<Generator>(0)], &view.data());
     EXPECT_EQ(repository.size<Generator>(), 1);
 }

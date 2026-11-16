@@ -80,26 +80,26 @@ private:
     urd::Store<urd::sequence<size_t>> m_slots;  ///< The original slot of each relaxed input.
 
     static bool contains(const Labels& labels, urd::index<ygg::Column> label) { return std::ranges::find(labels, label) != labels.end(); }
-    /// The labels of `lhs` also in `rhs`, in the order of `lhs`.
-    static Labels intersection(const Labels& lhs, const Labels& rhs)
+    /// The labels of `left_operand` also in `right_operand`, in the order of `left_operand`.
+    static Labels intersection(const Labels& left_operand, const Labels& right_operand)
     {
         auto result = Labels();
-        for (const auto label : lhs)
-            if (contains(rhs, label))
+        for (const auto label : left_operand)
+            if (contains(right_operand, label))
                 result.push_back(label);
         return result;
     }
-    /// `lhs` followed by the labels of `rhs` not in it.
-    static Labels united(Labels lhs, const Labels& rhs)
+    /// `left_operand` followed by the labels of `right_operand` not in it.
+    static Labels united(Labels left_operand, const Labels& right_operand)
     {
-        for (const auto label : rhs)
-            if (!contains(lhs, label))
-                lhs.push_back(label);
-        return lhs;
+        for (const auto label : right_operand)
+            if (!contains(left_operand, label))
+                left_operand.push_back(label);
+        return left_operand;
     }
-    static bool subset(const Labels& lhs, const Labels& rhs)
+    static bool subset(const Labels& left_operand, const Labels& right_operand)
     {
-        return std::ranges::all_of(lhs, [&](urd::index<ygg::Column> label) { return contains(rhs, label); });
+        return std::ranges::all_of(left_operand, [&](urd::index<ygg::Column> label) { return contains(right_operand, label); });
     }
 
     /// The relaxed input of a known slot.
@@ -128,20 +128,20 @@ private:
     /// A conjunction (⋈, ⋉) of relaxed operands: an unknown side is its identity ⊤ when over and absorbs it as ∅ when
     /// under.
     template<typename Tag>
-    std::optional<QueryView<>> conjoin(std::optional<QueryView<>> lhs, std::optional<QueryView<>> rhs, Polarity polarity)
+    std::optional<QueryView<>> conjoin(std::optional<QueryView<>> left_operand, std::optional<QueryView<>> right_operand, Polarity polarity)
     {
-        if (!lhs || !rhs)
-            return polarity == Polarity::over ? (lhs ? lhs : rhs) : std::nullopt;
-        return m_build.template binary<Tag>(*lhs, *rhs);
+        if (!left_operand || !right_operand)
+            return polarity == Polarity::over ? (left_operand ? left_operand : right_operand) : std::nullopt;
+        return m_build.template binary<Tag>(*left_operand, *right_operand);
     }
     /// A union of relaxed operands: an unknown side absorbs it as ⊤ when over and is its identity ∅ when under. Only
     /// labels both sides constrain stay constrained.
-    std::optional<QueryView<>> disjoin(std::optional<QueryView<>> lhs, std::optional<QueryView<>> rhs, Polarity polarity)
+    std::optional<QueryView<>> disjoin(std::optional<QueryView<>> left_operand, std::optional<QueryView<>> right_operand, Polarity polarity)
     {
-        if (!lhs || !rhs)
-            return polarity == Polarity::over ? std::nullopt : (lhs ? lhs : rhs);
-        const auto common = intersection(labels(*lhs), labels(*rhs));
-        return m_build.template binary<QueryUnionTag>(m_build.project(*lhs, common), m_build.project(*rhs, common));
+        if (!left_operand || !right_operand)
+            return polarity == Polarity::over ? std::nullopt : (left_operand ? left_operand : right_operand);
+        const auto common = intersection(labels(*left_operand), labels(*right_operand));
+        return m_build.template binary<QueryUnionTag>(m_build.project(*left_operand, common), m_build.project(*right_operand, common));
     }
 
     template<typename Tag>
@@ -155,10 +155,10 @@ private:
         {
             auto conjuncts = urd::Store<urd::sequence<QueryView<>>>();
             if constexpr (std::same_as<Tag, QueryJoinTag>)
-                conjuncts = { concrete.get_lhs(), concrete.get_rhs() };
+                conjuncts = { concrete.get_left_operand(), concrete.get_right_operand() };
             else
                 for (const auto input : concrete.get_inputs())
-                    conjuncts.emplace_back(input, &concrete.context());
+                    conjuncts.push_back(input);
             // A conjunct needs its labels that are needed above or shared with another conjunct (early elimination).
             auto result = std::optional<QueryView<>>();
             for (size_t k = 0; k < conjuncts.size(); ++k)
@@ -173,15 +173,15 @@ private:
             return result;
         }
         else if constexpr (std::same_as<Tag, QueryProjectTag>)
-            return relax(concrete.get_arg(), needed, polarity);
+            return relax(concrete.get_operand(), needed, polarity);
         else if constexpr (std::same_as<Tag, QueryRenameTag>)
         {
-            const auto before = concrete.get_arg().columns();
+            const auto before = concrete.get_operand().columns();
             const auto after = concrete.columns();
             auto inner = Labels();
             for (const auto label : needed)
                 inner.push_back(before[static_cast<size_t>(std::ranges::find(after, label, &ygg::ColumnLayout::label) - after.begin())].label);
-            const auto arg = relax(concrete.get_arg(), inner, polarity);
+            const auto arg = relax(concrete.get_operand(), inner, polarity);
             if (!arg)
                 return std::nullopt;
             // The relaxed columns keep their labels' positions in the argument's schema.
@@ -192,15 +192,14 @@ private:
         }
         else if constexpr (std::same_as<Tag, QuerySelectEqualTag> || std::same_as<Tag, QuerySelectValueTag>)
         {
-            const auto& data = concrete.data();
             const auto selected = [&]
             {
                 if constexpr (std::same_as<Tag, QuerySelectEqualTag>)
-                    return Labels { data.lhs_column, data.rhs_column };
+                    return Labels { concrete.get_left_column(), concrete.get_right_column() };
                 else
-                    return Labels { data.column };
+                    return Labels { concrete.get_column() };
             }();
-            const auto arg = relax(concrete.get_arg(), united(needed, selected), polarity);
+            const auto arg = relax(concrete.get_operand(), united(needed, selected), polarity);
             if (!arg)
                 return std::nullopt;
             // A selection on an unconstrained column is dropped.
@@ -209,41 +208,41 @@ private:
             return m_build.template make<Tag>(
                 [&](auto& filtered)
                 {
-                    filtered = data;
-                    filtered.arg = arg->index();
+                    // The same selection over the relaxed operand.
+                    urd::map_children<boost::mp11::mp_list<Query<>>, Query<Tag>>(concrete, filtered, [&](QueryView<>) { return *arg; });
                 });
         }
         else if constexpr (std::same_as<Tag, QueryUnionTag>)
-            return disjoin(relax(concrete.get_lhs(), needed, polarity), relax(concrete.get_rhs(), needed, polarity), polarity);
+            return disjoin(relax(concrete.get_left_operand(), needed, polarity), relax(concrete.get_right_operand(), needed, polarity), polarity);
         else if constexpr (std::same_as<Tag, QuerySemijoinTag>)
         {
-            const auto shared = intersection(labels(concrete.get_lhs()), labels(concrete.get_rhs()));
-            return conjoin<QuerySemijoinTag>(relax(concrete.get_lhs(), united(needed, shared), polarity),
-                                             relax(concrete.get_rhs(), shared, polarity),
+            const auto shared = intersection(labels(concrete.get_left_operand()), labels(concrete.get_right_operand()));
+            return conjoin<QuerySemijoinTag>(relax(concrete.get_left_operand(), united(needed, shared), polarity),
+                                             relax(concrete.get_right_operand(), shared, polarity),
                                              polarity);
         }
         else if constexpr (std::same_as<Tag, QueryDifferenceTag> || std::same_as<Tag, QueryAntijoinTag>)
         {
             // A \ B is A ▷ B on all of A's labels. The subtrahend is bounded on the other side: B̂ ⊇ B when under,
             // B̌ ⊆ B when over.
-            const auto shared = intersection(labels(concrete.get_lhs()), labels(concrete.get_rhs()));
-            const auto lhs = relax(concrete.get_lhs(), polarity == Polarity::under ? united(needed, shared) : needed, polarity);
-            const auto rhs = relax(concrete.get_rhs(), shared, flip(polarity));
+            const auto shared = intersection(labels(concrete.get_left_operand()), labels(concrete.get_right_operand()));
+            const auto left_operand = relax(concrete.get_left_operand(), polarity == Polarity::under ? united(needed, shared) : needed, polarity);
+            const auto right_operand = relax(concrete.get_right_operand(), shared, flip(polarity));
             if (polarity == Polarity::under)
             {
                 // B ⊆ B̂ × U: a row matching no row of B̂ on its labels matches none of B. Subtracting ⊤ leaves ∅.
-                if (!lhs || !rhs)
+                if (!left_operand || !right_operand)
                     return std::nullopt;
-                return m_build.template binary<QueryAntijoinTag>(*lhs, *rhs);
+                return m_build.template binary<QueryAntijoinTag>(*left_operand, *right_operand);
             }
-            // Kept only as a filter on needed labels the relaxed lhs constrains; filtering on labels eliminated above
-            // would require all their values (relational division). Subtracting ∅ leaves the lhs.
-            if (!lhs || !rhs || !subset(shared, needed) || !subset(shared, labels(*lhs)))
-                return lhs;
+            // Kept only as a filter on needed labels the relaxed left operand constrains; filtering on labels eliminated above
+            // would require all their values (relational division). Subtracting ∅ leaves the left operand.
+            if (!left_operand || !right_operand || !subset(shared, needed) || !subset(shared, labels(*left_operand)))
+                return left_operand;
             if constexpr (std::same_as<Tag, QueryDifferenceTag>)
-                return m_build.template binary<Tag>(*lhs, m_build.project(*rhs, labels(*lhs)));
+                return m_build.template binary<Tag>(*left_operand, m_build.project(*right_operand, labels(*left_operand)));
             else
-                return m_build.template binary<Tag>(*lhs, *rhs);
+                return m_build.template binary<Tag>(*left_operand, *right_operand);
         }
         else
         {
@@ -295,7 +294,7 @@ private:
 /// Each rule keeps the contract: ⊤ is the identity of ⋈ and ⋉ and absorbs ∪, ∅ the reverse; eliminating a label no
 /// one needs is exact (π_L(A ⋈ B) = π_L(A) ⋈ π_∅(B) when B shares nothing with A or L); a union may only stay
 /// constrained where both sides are; a selection is checkable only on constrained columns. Subtracting B̌ ⊆ B removes
-/// no row of A \ B, if done on needed labels the relaxed lhs constrains; and as B ⊆ B̂ × U^(S_B \ S'_B), a row
+/// no row of A \ B, if done on needed labels the relaxed left operand constrains; and as B ⊆ B̂ × U^(S_B \ S'_B), a row
 /// matching no row of B̂ on S'_B matches none of B, so Ǎ ▷ B̂ ⊆ A \ B. With every input known and no difference or
 /// antijoin below a projection that eliminates labels it shares, R̂ = Ř = R.
 ///
@@ -331,7 +330,9 @@ Relaxation relax(std::span<const QueryView<>> roots, Known&& known, QueryReposit
 /// The relaxation of one query; see the overload for several roots.
 template<std::predicate<size_t> Known>
 Relaxation relax(QueryView<> query, Known&& known, QueryRepository& repository, QueryBuilder& builder)
-{ return relax(std::span<const QueryView<>>(&query, 1), std::forward<Known>(known), repository, builder); }
+{
+    return relax(std::span<const QueryView<>>(&query, 1), std::forward<Known>(known), repository, builder);
+}
 
 }  // namespace tyr::datalog::database
 

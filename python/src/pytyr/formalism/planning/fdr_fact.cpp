@@ -27,38 +27,19 @@ namespace tyr::formalism::planning
 
 namespace
 {
-template<FactKind T>
-void bind_fdr_fact_data(nb::module_& m, const char* name)
-{
-    using namespace nb::literals;
-    using V = urd::data<FDRFact<T>>;
-    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<FDRVariableView<T>, FDRValue>(), "variable"_a, "value"_a);
-    cls.def(nb::init<urd::index<FDRVariable<T>>, FDRValue>(), "variable"_a, "value"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
 /// A fact's view: borrowed (a stored fact) or owning (a state's, computed on the fly).
 template<typename V>
-void bind_fdr_fact_view(nb::module_& m, const char* name)
+void bind_fdr_fact_view(nb::module_& m)
 {
-    auto cls = nb::class_<V>(m, name)
-                   .def("get_variable", &V::get_variable)
-                   .def("get_value", &V::get_value)
-                   .def("has_value", &V::has_value)
-                   .def("get_atom", &V::get_atom);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
+    urd::python::bind_view<V>(m).def("has_value", &V::has_value).def("get_atom", &V::get_atom);
 }
 }  // namespace
 
-void bind_fdr_fact(nb::module_& m, RepositoryBinding&)
+void bind_fdr_fact(nb::module_& m, RepositoryBinding& /*repository*/)
 {
-    bind_fdr_fact_data<FluentTag>(m, "FluentFDRFactData");
-    bind_fdr_fact_view<FDRFactView<FluentTag>>(m, "FluentFDRFact");
-    bind_fdr_fact_view<urd::owning_view<FDRFact<FluentTag>, Repository>>(m, "OwnedFluentFDRFact");
+    urd::python::bind_data<FDRFact<FluentTag>>(m);
+    bind_fdr_fact_view<FDRFactView<FluentTag>>(m);
+    bind_fdr_fact_view<urd::owning_view<FDRFact<FluentTag>, Repository>>(m);
 }
 
 }  // namespace tyr::formalism::planning

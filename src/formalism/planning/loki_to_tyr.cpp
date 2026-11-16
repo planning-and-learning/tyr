@@ -114,9 +114,13 @@ void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::F
     prepare(function_expression.get_right());
 }
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression)
-{ this->prepare(function_expression.get_args()); }
+{
+    this->prepare(function_expression.get_args());
+}
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression)
-{ this->prepare(function_expression.get_expression()); }
+{
+    this->prepare(function_expression.get_expression());
+}
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_expression)
 {
     m_fexpr_functions.insert(function_expression.get_function().get_name().str());
@@ -282,7 +286,9 @@ urd::index<Object> LokiToTyrTranslator::translate_common(loki::formalism::Object
 }
 
 urd::index<Variable> LokiToTyrTranslator::translate_common(loki::formalism::ParameterView element, Builder& builder, Repository& context)
-{ return translate_common(element.get_variable(), builder, context); }
+{
+    return translate_common(element.get_variable(), builder, context);
+}
 
 PredicateViewVariant LokiToTyrTranslator::translate_common(loki::formalism::PredicateView element, Builder& builder, Repository& context)
 {
@@ -373,23 +379,25 @@ FunctionExpression<LiftedTag>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                       Builder&,
                                       Repository&)
-{ return FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(element.get_value())); }
+{
+    return FunctionExpression<LiftedTag>(static_cast<ygg::float_t>(element.get_value()));
+}
 
 FunctionExpression<LiftedTag>
 LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
                                       Builder& builder,
                                       Repository& context)
 {
-    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> FunctionExpression<LiftedTag>
+    auto build_binary_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<LiftedTag>
     {
         auto binary = planning::checkout<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
-        binary->operator_kind = operator_kind;
+        binary->operation = operation;
         binary->lhs = translate_lifted(element.get_left(), builder, context);
         binary->rhs = translate_lifted(element.get_right(), builder, context);
         return FunctionExpression<LiftedTag>(planning::insert(context, *binary).first.index());
     };
 
-    switch (element.get_operator())
+    switch (element.get_operation())
     {
         case loki::formalism::BinaryArithmeticOperator::Add:
             return build_binary_op(ArithmeticOperatorKind::Add);
@@ -409,15 +417,15 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
                                       Builder& builder,
                                       Repository& context)
 {
-    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> FunctionExpression<LiftedTag>
+    auto build_multi_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<LiftedTag>
     {
         auto multi = planning::checkout<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
-        multi->operator_kind = operator_kind;
+        multi->operation = operation;
         translate_lifted(element.get_args(), builder, context, multi->args);
         return FunctionExpression<LiftedTag>(planning::insert(context, *multi).first.index());
     };
 
-    switch (element.get_operator())
+    switch (element.get_operation())
     {
         case loki::formalism::MultiArithmeticOperator::Add:
             return build_multi_op(ArithmeticOperatorKind::Add);
@@ -434,7 +442,7 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
                                       Repository& context)
 {
     auto minus = planning::checkout<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>(builder);
-    minus->operator_kind = ArithmeticOperatorKind::Sub;
+    minus->operation = ArithmeticOperatorKind::Sub;
     minus->arg = translate_lifted(element.get_expression(), builder, context);
     return FunctionExpression<LiftedTag>(planning::insert(context, *minus).first.index());
 }
@@ -480,10 +488,10 @@ LokiToTyrTranslator::translate_lifted(loki::formalism::EntityView<loki::formalis
                                       Builder& builder,
                                       Repository& context)
 {
-    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>
+    auto build_binary_op = [&](BooleanOperatorKind operation) -> urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>
     {
         auto binary = planning::checkout<BinaryOperator<LiftedTag, BooleanOperatorKind>>(builder);
-        binary->operator_kind = operator_kind;
+        binary->operation = operation;
         binary->lhs = translate_lifted(element.get_left(), builder, context);
         binary->rhs = translate_lifted(element.get_right(), builder, context);
         return urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>(planning::insert(context, *binary).first.index());
@@ -590,19 +598,19 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
 {
     auto fterm_view_variant = translate_lifted(element.get_function(), builder, context);
 
-    auto build = [&]<FactKind F>(FunctionTermView<LiftedTag, F> fterm, NumericEffectOperatorKind operator_kind) -> NumericEffectViewVariant
+    auto build = [&]<FactKind F>(FunctionTermView<LiftedTag, F> fterm, NumericEffectOperatorKind operation) -> NumericEffectViewVariant
     {
         auto numeric_effect = planning::checkout<NumericEffect<LiftedTag, F>>(builder);
 
-        numeric_effect->operator_kind = operator_kind;
+        numeric_effect->operation = operation;
         numeric_effect->fterm = fterm.index();
         numeric_effect->fexpr = this->translate_lifted(element.get_expression(), builder, context);
         return planning::insert(context, *numeric_effect).first;
     };
 
-    const auto operator_kind = [&]
+    const auto operation = [&]
     {
-        switch (element.get_operator())
+        switch (element.get_operation())
         {
             case loki::formalism::NumericEffectOperator::Assign:
                 return NumericEffectOperatorKind::Assign;
@@ -621,10 +629,10 @@ NumericEffectViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::
 
     return std::visit(Overloaded { [](FunctionTermView<LiftedTag, StaticTag>) -> NumericEffectViewVariant
                                    { throw std::runtime_error("Cannot create NumericEffect over static function term."); },
-                                   [&](FunctionTermView<LiftedTag, FluentTag> fterm) { return build(fterm, operator_kind()); },
+                                   [&](FunctionTermView<LiftedTag, FluentTag> fterm) { return build(fterm, operation()); },
                                    [&](FunctionTermView<LiftedTag, AuxiliaryTag> fterm)
                                    {
-                                       if (element.get_operator() != loki::formalism::NumericEffectOperator::Increase)
+                                       if (element.get_operation() != loki::formalism::NumericEffectOperator::Increase)
                                            throw std::runtime_error("Auxiliary numeric effect must use INCREASE operator.");
                                        return build(fterm, NumericEffectOperatorKind::Increase);
                                    } },
@@ -862,7 +870,7 @@ GroundAtomViewVariant LokiToTyrTranslator::translate_grounded(loki::formalism::A
             auto atom = planning::checkout<Atom<GroundTag, Tag>>(builder);
             atom->row =
                 to_binding(predicate, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
-                    .first.data();
+                    .first.index();
             return planning::insert(context, *atom).first;
         },
         predicate_view_variant);
@@ -908,23 +916,25 @@ FunctionExpression<GroundTag>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>> element,
                                         Builder&,
                                         Repository&)
-{ return FunctionExpression<GroundTag>(static_cast<ygg::float_t>(element.get_value())); }
+{
+    return FunctionExpression<GroundTag>(static_cast<ygg::float_t>(element.get_value()));
+}
 
 FunctionExpression<GroundTag>
 LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> element,
                                         Builder& builder,
                                         Repository& context)
 {
-    auto build_binary_op = [&](ArithmeticOperatorKind operator_kind) -> FunctionExpression<GroundTag>
+    auto build_binary_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<GroundTag>
     {
         auto binary = planning::checkout<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
-        binary->operator_kind = operator_kind;
+        binary->operation = operation;
         binary->lhs = translate_grounded(element.get_left(), builder, context);
         binary->rhs = translate_grounded(element.get_right(), builder, context);
         return FunctionExpression<GroundTag>(planning::insert(context, *binary).first.index());
     };
 
-    switch (element.get_operator())
+    switch (element.get_operation())
     {
         case loki::formalism::BinaryArithmeticOperator::Add:
             return build_binary_op(ArithmeticOperatorKind::Add);
@@ -944,15 +954,15 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
                                         Builder& builder,
                                         Repository& context)
 {
-    auto build_multi_op = [&](ArithmeticOperatorKind operator_kind) -> FunctionExpression<GroundTag>
+    auto build_multi_op = [&](ArithmeticOperatorKind operation) -> FunctionExpression<GroundTag>
     {
         auto multi = planning::checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(builder);
-        multi->operator_kind = operator_kind;
+        multi->operation = operation;
         translate_grounded(element.get_args(), builder, context, multi->args);
         return FunctionExpression<GroundTag>(planning::insert(context, *multi).first.index());
     };
 
-    switch (element.get_operator())
+    switch (element.get_operation())
     {
         case loki::formalism::MultiArithmeticOperator::Add:
             return build_multi_op(ArithmeticOperatorKind::Add);
@@ -969,7 +979,7 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
                                         Repository& context)
 {
     auto minus = planning::checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(builder);
-    minus->operator_kind = ArithmeticOperatorKind::Sub;
+    minus->operation = ArithmeticOperatorKind::Sub;
     minus->arg = translate_grounded(element.get_expression(), builder, context);
     return FunctionExpression<GroundTag>(planning::insert(context, *minus).first.index());
 }
@@ -1003,7 +1013,7 @@ GroundFunctionTermViewVariant LokiToTyrTranslator::translate_grounded(loki::form
             auto fterm = planning::checkout<FunctionTerm<GroundTag, Tag>>(builder);
             fterm->row =
                 to_binding(function, element.get_terms(), builder, context, [&](const auto term) { return this->translate_grounded(term, builder, context); })
-                    .first.data();
+                    .first.index();
             return planning::insert(context, *fterm).first;
         },
         function_view_variant);
@@ -1038,10 +1048,10 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::EntityView<loki::formal
                                         Builder& builder,
                                         Repository& context)
 {
-    auto build_binary_op = [&](BooleanOperatorKind operator_kind) -> urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>
+    auto build_binary_op = [&](BooleanOperatorKind operation) -> urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>
     {
         auto binary = planning::checkout<BinaryOperator<GroundTag, BooleanOperatorKind>>(builder);
-        binary->operator_kind = operator_kind;
+        binary->operation = operation;
         binary->lhs = translate_grounded(element.get_left(), builder, context);
         binary->rhs = translate_grounded(element.get_right(), builder, context);
         return urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>(planning::insert(context, *binary).first.index());
@@ -1075,7 +1085,10 @@ LokiToTyrTranslator::translate_grounded(loki::formalism::ConditionView element, 
     {
         std::visit(Overloaded { [&](LiteralView<GroundTag, StaticTag> literal) { conj_condition->static_literals.push_back(literal.index()); },
                                 [&](const std::pair<FDRFactView<FluentTag>, bool>& fact)
-                                { (fact.second ? conj_condition->positive_facts : conj_condition->negative_facts).push_back(fact.first.data()); },
+                                {
+                                    (fact.second ? conj_condition->positive_facts : conj_condition->negative_facts)
+                                        .push_back(urd::make<FDRFact<FluentTag>>(fact.first.get_variable(), fact.first.get_value()));
+                                },
                                 [&](LiteralView<GroundTag, DerivedTag> literal) { conj_condition->derived_literals.push_back(literal.index()); } },
                    literal_or_fact_view_variant);
     };

@@ -97,20 +97,20 @@ class JoinEvaluator
 {
     const ygg::FreeRelationRepository* m_layer;
     JoinPlan m_plan;
-    urd::builder<ygg::Relation<ygg::Schema>> m_lhs;
-    urd::builder<ygg::Relation<ygg::Schema>> m_rhs;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_lhs_index;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_rhs_index;
+    urd::builder<ygg::Relation<ygg::Schema>> m_left_operand;
+    urd::builder<ygg::Relation<ygg::Schema>> m_right_operand;
+    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_left_index;
+    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_right_index;
     urd::builder<ygg::Relation<ygg::Schema>> m_result;
     Delta m_delta;
     bool m_initialized = false;
 
     template<RelationViewConcept L, RelationViewConcept R>
-    void join(const L& lhs, const R& rhs, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace) const;
+    void join(const L& left_operand, const R& right_operand, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace) const;
 
     /// Applies changes that are known to be valid.
     template<RelationChange L, RelationChange R>
-    void apply(const L& lhs, const R& rhs, Workspace& workspace);
+    void apply(const L& left_operand, const R& right_operand, Workspace& workspace);
 
     friend struct detail::NodeRules<QueryJoinTag>;
 
@@ -120,13 +120,13 @@ public:
 
     /// Replace the baseline, retaining buffers, and clear the last output delta.
     template<RelationViewConcept L, RelationViewConcept R>
-    void initialize(const L& lhs, const R& rhs, Workspace& workspace);
+    void initialize(const L& left_operand, const R& right_operand, Workspace& workspace);
 
     /// Each change describes actual set changes in that input's original column
     /// order. Pass empty changes for an unchanged side; swap added/removed on
     /// both sides to undo. Reports the exact net change of the complete batch.
     template<RelationChange L, RelationChange R>
-    void update(const L& lhs, const R& rhs, Workspace& workspace);
+    void update(const L& left_operand, const R& right_operand, Workspace& workspace);
 
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&;
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
@@ -138,59 +138,62 @@ public:
 };
 
 template<RelationViewConcept L, RelationViewConcept R>
-void JoinEvaluator::join(const L& lhs, const R& rhs, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace) const
-{ database::detail::join_rows(lhs, rhs, m_plan, build_left, build_left ? m_lhs_index : m_rhs_index, output, workspace); }
+void JoinEvaluator::join(const L& left_operand, const R& right_operand, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace)
+    const
+{
+    database::detail::join_rows(left_operand, right_operand, m_plan, build_left, build_left ? m_left_index : m_right_index, output, workspace);
+}
 
 template<RelationViewConcept L, RelationViewConcept R>
-void JoinEvaluator::initialize(const L& lhs, const R& rhs, Workspace& workspace)
+void JoinEvaluator::initialize(const L& left_operand, const R& right_operand, Workspace& workspace)
 {
-    assert(std::ranges::equal(lhs.columns(), m_plan.lhs_columns()));
-    assert(std::ranges::equal(rhs.columns(), m_plan.rhs_columns()));
-    detail::require_unaliased(lhs, m_result, m_delta);
-    detail::require_unaliased(rhs, m_result, m_delta);
+    assert(std::ranges::equal(left_operand.columns(), m_plan.left_columns()));
+    assert(std::ranges::equal(right_operand.columns(), m_plan.right_columns()));
+    detail::require_unaliased(left_operand, m_result, m_delta);
+    detail::require_unaliased(right_operand, m_result, m_delta);
     m_initialized = false;
-    m_lhs.clear();
-    m_rhs.clear();
-    m_lhs_index.clear();
-    m_rhs_index.clear();
+    m_left_operand.clear();
+    m_right_operand.clear();
+    m_left_index.clear();
+    m_right_index.clear();
     m_result.clear();
     m_delta.clear();
-    detail::insert_rows(lhs, m_lhs, m_plan.lhs_keys(), m_lhs_index);
-    detail::insert_rows(rhs, m_rhs, m_plan.rhs_keys(), m_rhs_index);
+    detail::insert_rows(left_operand, m_left_operand, m_plan.left_keys(), m_left_index);
+    detail::insert_rows(right_operand, m_right_operand, m_plan.right_keys(), m_right_index);
     // Both indexes are ready, so probe the smaller input.
-    join(m_layer->view(m_lhs), m_layer->view(m_rhs), m_lhs.size() >= m_rhs.size(), m_result, workspace);
+    join(m_layer->view(m_left_operand), m_layer->view(m_right_operand), m_left_operand.size() >= m_right_operand.size(), m_result, workspace);
     m_initialized = true;
 }
 
 template<RelationChange L, RelationChange R>
-void JoinEvaluator::update(const L& lhs, const R& rhs, Workspace& workspace)
+void JoinEvaluator::update(const L& left_operand, const R& right_operand, Workspace& workspace)
 {
     detail::require_initialized(m_initialized);
-    detail::require_change(lhs, m_plan.lhs_columns(), m_result, m_delta);
-    detail::require_change(rhs, m_plan.rhs_columns(), m_result, m_delta);
-    apply(lhs, rhs, workspace);
+    detail::require_change(left_operand, m_plan.left_columns(), m_result, m_delta);
+    detail::require_change(right_operand, m_plan.right_columns(), m_result, m_delta);
+    apply(left_operand, right_operand, workspace);
 }
 
 template<RelationChange L, RelationChange R>
-void JoinEvaluator::apply(const L& lhs, const R& rhs, Workspace& workspace)
+void JoinEvaluator::apply(const L& left_operand, const R& right_operand, Workspace& workspace)
 {
-    const auto& [lhs_added, lhs_removed] = lhs;
-    const auto& [rhs_added, rhs_removed] = rhs;
+    const auto& [left_added, left_removed] = left_operand;
+    const auto& [right_added, right_removed] = right_operand;
     m_initialized = false;
     m_delta.clear();
 
     // Remove from both sides before inserting. Each old/new pair is visited
     // once, and no temporary match between an added and removed row is emitted.
-    const auto current_lhs = m_layer->view(m_lhs);
-    const auto current_rhs = m_layer->view(m_rhs);
-    join(lhs_removed, current_rhs, false, m_delta.removed, workspace);
-    detail::erase_rows(*m_layer, lhs_removed, m_lhs, m_plan.lhs_keys(), m_lhs_index);
-    join(current_lhs, rhs_removed, true, m_delta.removed, workspace);
-    detail::erase_rows(*m_layer, rhs_removed, m_rhs, m_plan.rhs_keys(), m_rhs_index);
-    join(lhs_added, current_rhs, false, m_delta.added, workspace);
-    detail::insert_rows(lhs_added, m_lhs, m_plan.lhs_keys(), m_lhs_index);
-    join(current_lhs, rhs_added, true, m_delta.added, workspace);
-    detail::insert_rows(rhs_added, m_rhs, m_plan.rhs_keys(), m_rhs_index);
+    const auto current_left = m_layer->view(m_left_operand);
+    const auto current_right = m_layer->view(m_right_operand);
+    join(left_removed, current_right, false, m_delta.removed, workspace);
+    detail::erase_rows(*m_layer, left_removed, m_left_operand, m_plan.left_keys(), m_left_index);
+    join(current_left, right_removed, true, m_delta.removed, workspace);
+    detail::erase_rows(*m_layer, right_removed, m_right_operand, m_plan.right_keys(), m_right_index);
+    join(left_added, current_right, false, m_delta.added, workspace);
+    detail::insert_rows(left_added, m_left_operand, m_plan.left_keys(), m_left_index);
+    join(current_left, right_added, true, m_delta.added, workspace);
+    detail::insert_rows(right_added, m_right_operand, m_plan.right_keys(), m_right_index);
 
     detail::apply_delta(m_delta, m_result);
     m_initialized = true;

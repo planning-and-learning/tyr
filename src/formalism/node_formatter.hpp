@@ -41,6 +41,7 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <string>
+#include <yggdrasil/formalism/formatter.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 /// How the records datalog and planning share print: their data, and their views read through either repository C
@@ -50,83 +51,149 @@ namespace tyr::formalism::node_format
 
 template<TaskKind T>
 std::string format(const urd::data<UnaryOperator<T, ArithmeticOperatorKind>>& value)
-{ return fmt::format("({} {})", value.operator_kind, value.arg); }
+{
+    return fmt::format("({} {})", value.operation, value.arg);
+}
 
 template<TaskKind T, typename C>
 std::string format(urd::index_view<UnaryOperator<T, ArithmeticOperatorKind>, C> value)
-{ return fmt::format("({} {})", value.get_operator(), value.get_arg()); }
+{
+    return fmt::format("({} {})", value.get_operation(), value.get_arg());
+}
 
 template<TaskKind T, OperatorKind O>
 std::string format(const urd::data<BinaryOperator<T, O>>& value)
-{ return fmt::format("({} {} {})", value.operator_kind, value.lhs, value.rhs); }
+{
+    return fmt::format("({} {} {})", value.operation, value.lhs, value.rhs);
+}
 
 template<TaskKind T, OperatorKind O, typename C>
 std::string format(urd::index_view<BinaryOperator<T, O>, C> value)
-{ return fmt::format("({} {} {})", value.get_operator(), value.get_lhs(), value.get_rhs()); }
+{
+    return fmt::format("({} {} {})", value.get_operation(), value.get_lhs(), value.get_rhs());
+}
 
 template<TaskKind T>
 std::string format(const urd::data<MultiOperator<T, ArithmeticOperatorKind>>& value)
-{ return fmt::format("({} {})", value.operator_kind, fmt::join(ygg::to_strings(value.args), " ")); }
+{
+    return fmt::format("({} {})", value.operation, fmt::join(ygg::to_strings(value.args), " "));
+}
 
 template<TaskKind T, typename C>
 std::string format(urd::index_view<MultiOperator<T, ArithmeticOperatorKind>, C> value)
-{ return fmt::format("({} {})", value.get_operator(), fmt::join(ygg::to_strings(value.get_args()), " ")); }
+{
+    return fmt::format("({} {})", value.get_operation(), fmt::join(ygg::to_strings(value.get_args()), " "));
+}
 
 template<FactKind F>
 std::string format(const urd::data<Atom<LiftedTag, F>>& value)
-{ return fmt::format("({} {})", value.predicate, fmt::join(ygg::to_strings(value.terms), " ")); }
+{
+    return fmt::format("({} {})", value.predicate, fmt::join(ygg::to_strings(value.terms), " "));
+}
 
 template<FactKind F, typename C>
 std::string format(urd::index_view<Atom<LiftedTag, F>, C> value)
-{ return fmt::format("({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " ")); }
+{
+    return fmt::format("({} {})", value.get_predicate().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
+}
 
 template<FactKind F>
 std::string format(const urd::data<Atom<GroundTag, F>>& value)
-{ return fmt::format("({})", value.row); }
+{
+    return fmt::format("({})", value.row);
+}
 
 template<FactKind F, typename C>
 std::string format(urd::index_view<Atom<GroundTag, F>, C> value)
-{ return fmt::format("{}", value.get_row()); }
+{
+    return fmt::format("{}", value.get_row());
+}
 
 template<TaskKind T, FactKind F>
 std::string format(const urd::data<Literal<T, F>>& value)
-{ return value.polarity ? fmt::format("{}", value.atom) : fmt::format("(not {})", value.atom); }
+{
+    return value.polarity ? fmt::format("{}", value.atom) : fmt::format("(not {})", value.atom);
+}
 
 template<TaskKind T, FactKind F, typename C>
 std::string format(urd::index_view<Literal<T, F>, C> value)
-{ return value.get_polarity() ? fmt::format("{}", value.get_atom()) : fmt::format("(not {})", value.get_atom()); }
+{
+    return value.get_polarity() ? fmt::format("{}", value.get_atom()) : fmt::format("(not {})", value.get_atom());
+}
 
 template<FactKind F>
 std::string format(const urd::data<FunctionTerm<LiftedTag, F>>& value)
-{ return fmt::format("({} {})", value.function, fmt::join(ygg::to_strings(value.terms), " ")); }
+{
+    return fmt::format("({} {})", value.function, fmt::join(ygg::to_strings(value.terms), " "));
+}
 
 template<FactKind F, typename C>
 std::string format(urd::index_view<FunctionTerm<LiftedTag, F>, C> value)
-{ return fmt::format("({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " ")); }
+{
+    return fmt::format("({} {})", value.get_function().get_name(), fmt::join(ygg::to_strings(value.get_terms()), " "));
+}
 
 template<FactKind F>
 std::string format(const urd::data<FunctionTerm<GroundTag, F>>& value)
-{ return fmt::format("({})", value.row); }
+{
+    return fmt::format("({})", value.row);
+}
 
 template<FactKind F, typename C>
 std::string format(urd::index_view<FunctionTerm<GroundTag, F>, C> value)
-{ return fmt::format("{}", value.get_row()); }
+{
+    return fmt::format("{}", value.get_row());
+}
 
 template<FactKind F>
 std::string format(const urd::data<FunctionTermValue<GroundTag, F>>& value)
-{ return fmt::format("(= {} {})", value.fterm, value.value); }
+{
+    return fmt::format("(= {} {})", value.fterm, value.value);
+}
 
 template<FactKind F, typename C>
 std::string format(urd::index_view<FunctionTermValue<GroundTag, F>, C> value)
-{ return fmt::format("(= {} {})", value.get_fterm(), value.get_value()); }
+{
+    return fmt::format("(= {} {})", value.get_fterm(), value.get_value());
+}
 
 template<TaskKind T, FactKind F>
 std::string format(const urd::data<NumericEffect<T, F>>& value)
-{ return fmt::format("({} {} {})", value.operator_kind, value.fterm, value.fexpr); }
+{
+    return fmt::format("({} {} {})", value.operation, value.fterm, value.fexpr);
+}
 
 template<TaskKind T, FactKind F, typename C>
 std::string format(urd::index_view<NumericEffect<T, F>, C> value)
-{ return fmt::format("({} {} {})", value.get_operator(), value.get_fterm(), value.get_fexpr()); }
+{
+    return fmt::format("({} {} {})", value.get_operation(), value.get_fterm(), value.get_fexpr());
+}
+
+template<typename F>
+std::string format(const urd::data<ygg::Row<F>>& value)
+{
+    return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " "));
+}
+
+/// An object as PDDL writes it: its name.
+template<typename C>
+std::string format(urd::index_view<Object, C> value)
+{
+    return std::string(value.get_name());
+}
+
+/// A row of a named relation (a predicate's, a function's, an action's) as PDDL writes it: (name values).
+template<typename F, typename C, typename K>
+std::string format(urd::index_view<ygg::Row<F>, C, K> value)
+{
+    return fmt::format("({} {})", value.get_relation().get_name(), ygg::values_text(value));
+}
+
+template<typename F, typename C, typename R>
+std::string format(urd::borrowed_view<ygg::Row<F>, C, R> value)
+{
+    return fmt::format("({} {})", value.get_relation().get_name(), ygg::values_text(value));
+}
 
 }
 

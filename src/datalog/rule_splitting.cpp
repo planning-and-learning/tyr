@@ -153,7 +153,9 @@ private:
 
     template<formalism::FactKind F>
     [[nodiscard]] Parameters parameters_of(urd::index<formalism::Literal<LiftedTag, F>> literal) const
-    { return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination())); }
+    {
+        return formalism::datalog::collect_parameters(urd::resolve(literal, m_context->destination()));
+    }
 
     [[nodiscard]] Parameters parameters_of(const Body& body) const
     {
@@ -247,7 +249,7 @@ private:
 
         auto pattern = urd::Store<urd::sequence<formalism::Term>> {};
         for (const auto term : atom.get_terms())
-            pattern.push_back(urd::to_stored(term));
+            urd::append(pattern, term);
         const auto atom_parameters = formalism::datalog::collect_parameters(atom);
         const auto sigma = Substitution(urd::Store<urd::sequence<formalism::ParameterIndex>>(atom_parameters.begin(), atom_parameters.end()));
 
@@ -268,7 +270,7 @@ private:
                     domain_binding->relation = new_predicate;
                     domain_binding->values.push_back(object.value);
                     auto ground_atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-                    ground_atom->row = formalism::datalog::insert(m_context->destination(), *domain_binding).first.data();
+                    urd::store(ground_atom->row, formalism::datalog::insert(m_context->destination(), *domain_binding).first);
                     m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *ground_atom).first.index());
                 }
             }
@@ -312,7 +314,7 @@ private:
         data->predicate = atom.get_predicate().index();
         for (const auto term : atom.get_terms())
         {
-            const auto& value = urd::to_stored(term);
+            const auto value = urd::stored<formalism::Term>(term);
             data->terms.push_back(formalism::unification::is_parameter(value) ? formalism::Term(local.at(formalism::unification::get_parameter(value))) :
                                                                                 value);
         }
@@ -356,7 +358,7 @@ private:
 
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(m_context->builder());
         for (const auto variable : new_condition.get_variables())
-            rule->variables.push_back(urd::to_stored(variable));
+            urd::append(rule->variables, variable);
         rule->body = new_condition.index();
         for (const auto head : heads)
             rule->heads.push_back(renumber(urd::resolve(head, m_context->destination()), local));
@@ -384,7 +386,7 @@ split_rules(formalism::datalog::ProgramView<LiftedTag> program, formalism::datal
     // The static predicates come first in the repository, as the fact sets require.
     auto static_facts = TaggedFactSets<formalism::StaticTag>(urd::resolve(result->static_predicates, repository), repository);
     for (const auto atom : result->static_atoms)
-        insert(static_facts, urd::resolve(atom, repository).get_row().data());
+        insert(static_facts, urd::resolve(atom, repository).get_row().index());
     auto splitter = Splitter(*result, splitting, context, static_facts);
     // Only rules of the program are inserted: rule workspaces are indexed by rule.
     for (const auto rule : program.get_rules())

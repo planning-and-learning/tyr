@@ -51,10 +51,10 @@ auto rows(const auto& relation)
     std::ranges::sort(result);
     return result;
 }
-auto difference(const auto& lhs, const auto& rhs)
+auto difference(const auto& left_operand, const auto& right_operand)
 {
-    std::remove_cvref_t<decltype(lhs)> result;
-    std::ranges::set_difference(lhs, rhs, std::back_inserter(result));
+    std::remove_cvref_t<decltype(left_operand)> result;
+    std::ranges::set_difference(left_operand, right_operand, std::back_inserter(result));
     return result;
 }
 template<class Tag>
@@ -278,7 +278,7 @@ TEST(DatabaseOptimization, CostBasedPlanChoosesTheSelectiveSubjoin)
                 if constexpr (std::same_as<Concrete, tyr::datalog::database::QueryView<tyr::datalog::database::QueryJoinTag>>)
                 {
                     std::set<size_t> slots;
-                    for (const auto child : { query.get_lhs(), query.get_rhs() })
+                    for (const auto child : { query.get_left_operand(), query.get_right_operand() })
                         for (const auto node : tyr::datalog::database::reachable(std::span<const tyr::datalog::database::QueryView<>>(&child, 1)))
                             std::visit(
                                 [&]<typename Leaf>(Leaf leaf)

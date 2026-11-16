@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_SUCCESSOR_GENERATOR_HPP_
 #define TYR_PLANNING_SUCCESSOR_GENERATOR_HPP_
 
+#include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/successor_generator_concepts.hpp"
@@ -50,21 +51,22 @@ class SourceNode
 {
 public:
     SourceNode(const Node<Kind>& node) noexcept :  // NOLINT(google-explicit-constructor): every node is a source
-        m_data(&node.get_state().data()),
+        m_state(*node.get_state().context().get_task(), node.get_state(), node.get_metric()),
         m_repository(&node.get_state().context()),
         m_registered(&node.get_state()),
         m_metric(node.get_metric())
     {
     }
     SourceNode(const Node<Kind, BuilderStateView<Kind>>& node) noexcept :  // NOLINT(google-explicit-constructor)
-        m_data(&node.get_state().data()),
+        m_state(*node.get_state().context().get_task(), node.get_state(), node.get_metric()),
         m_repository(&node.get_state().context()),
         m_registered(nullptr),
         m_metric(node.get_metric())
     {
     }
 
-    [[nodiscard]] const urd::data<State<Kind>>& data() const noexcept { return *m_data; }
+    /// The source's state as applicability reads it, its metric the auxiliary value.
+    [[nodiscard]] const StateContext<Kind>& state() const noexcept { return m_state; }
     [[nodiscard]] const StateRepository<Kind>& get_state_repository() const noexcept { return *m_repository; }
     [[nodiscard]] const Task<Kind>& get_task() const noexcept { return *m_repository->get_task(); }
     /// The registered state, or null for a builder.
@@ -72,7 +74,7 @@ public:
     [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
 
 private:
-    const urd::data<State<Kind>>* m_data;
+    StateContext<Kind> m_state;
     const StateRepository<Kind>* m_repository;
     const StateView<Kind>* m_registered;
     ygg::float_t m_metric;

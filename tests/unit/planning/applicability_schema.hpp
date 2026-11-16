@@ -176,7 +176,7 @@ void expect_schema_queries_match_filtered_successors()
     auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
     auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
     auto owned = pool.make_unique();
-    owned->assign(registered_initial.get_state().data());
+    owned->assign(registered_initial.get_state());
     owned->set(urd::index<tyr::planning::State<Kind>> {});
     ASSERT_TRUE(owned->index.is_none());
     const auto initial_node = [&]
@@ -330,20 +330,25 @@ void expect_schema_queries_match_filtered_successors()
     auto packed_nodes = tyr::planning::PackedNodeList<Kind> {};
     auto streamed_states = urd::Store<urd::sequence<std::pair<urd::builder<tyr::planning::State<Kind>>, ygg::float_t>>> {};
     size_t streamed = 0;
-    const urd::data<tyr::planning::State<Kind>>* successor_builder = nullptr;
+    // The storage of the successors' builder: the callback's successors share one builder.
+    const void* successor_storage = nullptr;
     EXPECT_TRUE(source->for_each_successor_node(initial_node,
                                                 callback_storage,
                                                 *axiom_evaluator,
                                                 [&](const auto& successor)
                                                 {
                                                     static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::Node<Kind, S>>);
-                                                    if (successor_builder)
+                                                    if (successor_storage)
                                                     {
-                                                        EXPECT_EQ(&successor.get_state().data(), successor_builder);
+                                                        EXPECT_EQ(&successor.get_state().get_fact_storage(), successor_storage);
                                                     }
-                                                    successor_builder = &successor.get_state().data();
+                                                    successor_storage = &successor.get_state().get_fact_storage();
                                                     if constexpr (Borrowed)
-                                                        streamed_states.emplace_back(successor.get_state().data(), successor.get_metric());
+                                                    {
+                                                        auto copy = urd::builder<tyr::planning::State<Kind>>();
+                                                        copy.assign(successor.get_state());
+                                                        streamed_states.emplace_back(std::move(copy), successor.get_metric());
+                                                    }
                                                     else
                                                         packed_nodes.push_back(successor.pack());
                                                     ++streamed;
@@ -371,7 +376,7 @@ void expect_schema_queries_match_filtered_successors()
     if constexpr (!Borrowed)
     {
         const auto recycled_builder = state_repository->get_state_builder();
-        EXPECT_EQ(recycled_builder.get(), successor_builder);
+        EXPECT_EQ(&recycled_builder->fact_storage, successor_storage);
     }
     const auto all_successors = source->get_labeled_successor_nodes(registered_initial, *state_repository, *axiom_evaluator);
     const auto num_states = state_repository->num_states();
@@ -388,7 +393,7 @@ void expect_schema_queries_match_filtered_successors()
                   source->generate_successor_state(registered_initial, binding, *expected, expected_delta));
         EXPECT_EQ(actual_delta, expected_delta);
         EXPECT_TRUE(std::ranges::equal(actual->get_fluent_facts(), expected->get_fluent_facts()));
-        EXPECT_TRUE(std::ranges::equal(actual->template get_fterm_values<formalism::FluentTag>(), expected->template get_fterm_values<formalism::FluentTag>()));
+        EXPECT_TRUE(std::ranges::equal(actual->numeric_storage.fterm_values(), expected->numeric_storage.fterm_values()));
         EXPECT_EQ(state_repository->num_states(), num_states);
         EXPECT_TRUE(owned->index.is_none());
     }
@@ -686,7 +691,8 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_EQ(calls, 1);
             EXPECT_EQ(count_action_bindings(fresh_task), 0);
             auto scratch = urd::builder<tyr::planning::State<Kind>> {};
-            const auto borrowed_state = urd::builder<tyr::planning::State<Kind>> { node.get_state().data() };
+            auto borrowed_state = urd::builder<tyr::planning::State<Kind>>();
+            borrowed_state.assign(node.get_state());
             const auto borrowed_node =
                 tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(borrowed_state, *fresh_repository), node.get_metric());
             const auto discard = [&](tyr::planning::BorrowedActionRowView<Kind> binding)
@@ -777,9 +783,10 @@ void expect_schema_queries_match_filtered_successors()
         malformed.values.push_back(invalid_indices[0].value);
         malformed.values.push_back(invalid_indices[1].value);
         EXPECT_THROW(source->materialize_action_binding(borrowed_malformed), std::invalid_argument);
+        // No relation: reading it (its view) finds no such index.
         malformed.relation = {};
-        EXPECT_THROW(source->materialize_action_binding(borrowed_malformed), std::invalid_argument);
-        EXPECT_THROW(source->get_successor_node(initial_node, borrowed_malformed, callback_storage, *axiom_evaluator), std::invalid_argument);
+        EXPECT_THROW(source->materialize_action_binding(borrowed_malformed), std::out_of_range);
+        EXPECT_THROW(source->get_successor_node(initial_node, borrowed_malformed, callback_storage, *axiom_evaluator), std::out_of_range);
     }
     EXPECT_THROW(source->for_each_borrowed_applicable_action_binding(initial_node, foreign_action, [](auto) { return true; }), std::invalid_argument);
     EXPECT_THROW(

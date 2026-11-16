@@ -10,13 +10,17 @@
 namespace tyr::datalog::database::detail
 {
 bool query_accepts(QueryView<QuerySelectEqualTag> selection, const ygg::RowPool::row_type& row)
-{ return row.get(selection.get_plan().lhs_position()) == row.get(selection.get_plan().rhs_position()); }
+{
+    return row.get(selection.get_plan().left_position()) == row.get(selection.get_plan().right_position());
+}
 }
 
 namespace tyr::datalog::database::detail
 {
 bool query_accepts(QueryView<QuerySelectValueTag> selection, const ygg::RowPool::row_type& row)
-{ return row.get(selection.get_plan().position()) == selection.get_plan().value(); }
+{
+    return row.get(selection.get_plan().position()) == selection.get_plan().value();
+}
 }
 
 namespace tyr::datalog::database

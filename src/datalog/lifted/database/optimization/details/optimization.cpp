@@ -109,8 +109,8 @@ QueryView<> Planner::plan(QueryView<> normalized)
             return plan_block(normalized, normalized.columns());
         if (is<QueryProjectTag>(normalized))
         {
-            if (const auto projection = as<QueryProjectTag>(normalized); joins(projection.get_arg()))
-                return plan_block(projection.get_arg(), normalized.columns());
+            if (const auto projection = as<QueryProjectTag>(normalized); joins(projection.get_operand()))
+                return plan_block(projection.get_operand(), normalized.columns());
         }
         urd::Store<urd::sequence<QueryView<>>> children;
         for_each_child(normalized, [&](QueryView<> child) { children.push_back(plan(child)); });

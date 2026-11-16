@@ -41,7 +41,9 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
 
     template<typename FormatContext>
     auto format(const tyr::formalism::datalog::VariableDependencyGraph& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
+    }
 };
 
 }  // namespace fmt
@@ -49,14 +51,6 @@ struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
 namespace tyr::formalism::datalog
 {
 
-std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value);
-std::string to_string(const urd::data<ConjunctiveEffect<LiftedTag>>& value);
-std::string to_string(const urd::data<Rule<LiftedTag>>& value);
-std::string to_string(const urd::data<ConjunctiveCondition<GroundTag>>& value);
-std::string to_string(const urd::data<ConjunctiveEffect<GroundTag>>& value);
-std::string to_string(const urd::data<Rule<GroundTag>>& value);
-std::string to_string(const urd::data<Program<LiftedTag>>& value);
-std::string to_string(const urd::data<Program<GroundTag>>& value);
 std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag>>>& value);
 
 /// Each symbol type's view (SymbolRepositoryTypes) and each relation's binding view (RelationRepositoryTypes) as text;
@@ -75,17 +69,45 @@ namespace fmt
 {
 
 /// Every view through the repository prints as its to_string: urd's (of an index or a held record), and binding views.
-template<template<typename, typename, typename...> typename V, typename H, typename... Rest>
-    requires requires(const V<H, tyr::formalism::datalog::Repository, Rest...>& value) { tyr::formalism::datalog::to_string(value); }
-struct formatter<V<H, tyr::formalism::datalog::Repository, Rest...>, char>
+template<typename T, typename K>
+    requires requires(const urd::index_view<T, tyr::formalism::datalog::Repository, K>& value) { tyr::formalism::datalog::to_string(value); }
+struct formatter<urd::index_view<T, tyr::formalism::datalog::Repository, K>, char>
 {
-    using View = V<H, tyr::formalism::datalog::Repository, Rest...>;
-
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const View& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
+    auto format(const urd::index_view<T, tyr::formalism::datalog::Repository, K>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
+    }
+};
+template<typename T, typename R>
+    requires requires(const urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
+struct formatter<urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    auto format(const urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
+    }
+};
+template<typename T, typename R>
+    requires requires(const urd::owning_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
+struct formatter<urd::owning_view<T, tyr::formalism::datalog::Repository, R>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    auto format(const urd::owning_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
+    }
+};
+template<typename T, typename R>
+    requires requires(const urd::shared_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
+struct formatter<urd::shared_view<T, tyr::formalism::datalog::Repository, R>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    auto format(const urd::shared_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value));
+    }
 };
 
 }  // namespace fmt

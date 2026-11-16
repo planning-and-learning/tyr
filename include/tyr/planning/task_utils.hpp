@@ -26,6 +26,7 @@
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/write_context.hpp"
+#include "tyr/planning/applicability_decl.hpp"
 #include "tyr/planning/ground/programs/translation_context.hpp"
 #include "tyr/planning/lifted/programs/translation_context.hpp"
 #include "tyr/planning/state_builder.hpp"
@@ -43,29 +44,29 @@ namespace tyr::planning
 namespace detail
 {
 
-void insert_fluent_atoms_to_fact_set(const urd::data<State<GroundTag>>& state,
+void insert_fluent_atoms_to_fact_set(const StateContext<GroundTag>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<GroundTag>::FluentToFluentAtomMapping& fluent_to_fluent_atom,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_numeric_variables_to_fact_set(const urd::data<State<GroundTag>>& state,
+void insert_numeric_variables_to_fact_set(const StateContext<GroundTag>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<GroundTag>::FluentToFluentFunctionTermMapping& fluent_to_fluent_fterm,
                                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_fluent_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
+void insert_fluent_atoms_to_fact_set(const StateContext<LiftedTag>& state,
                                      const formalism::planning::Repository& repository,
                                      const P2DTranslationContext<LiftedTag>::FluentToFluentPredicateMapping& fluent_to_fluent_predicate,
                                      formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_derived_atoms_to_fact_set(const urd::data<State<LiftedTag>>& state,
+void insert_derived_atoms_to_fact_set(const StateContext<LiftedTag>& state,
                                       const formalism::planning::Repository& repository,
                                       const P2DTranslationContext<LiftedTag>::DerivedToFluentPredicateMapping& derived_to_fluent_predicate,
                                       formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
                                       datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void insert_numeric_variables_to_fact_set(const urd::data<State<LiftedTag>>& state,
+void insert_numeric_variables_to_fact_set(const StateContext<LiftedTag>& state,
                                           const formalism::planning::Repository& repository,
                                           const P2DTranslationContext<LiftedTag>::FluentToFluentFunctionMapping& fluent_to_fluent_function,
                                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
@@ -83,7 +84,7 @@ void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
 /// ProgramExecutionContext populates assignment indices after insertion.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_unextended_state(const urd::data<State<GroundTag>>& state,
+void insert_unextended_state(const StateContext<GroundTag>& state,
                              const formalism::planning::Repository& repository,
                              const P2DTranslationContext<GroundTag>& translation_context,
                              datalog::ProgramWorkspace<GroundTag, AP, TP, CP>& workspace)
@@ -95,7 +96,7 @@ void insert_unextended_state(const urd::data<State<GroundTag>>& state,
 /// Inserts into caller-prepared fact storage; reset facts first when replacing a state.
 /// ProgramExecutionContext populates lifted assignment indices after insertion.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_unextended_state(const urd::data<State<LiftedTag>>& state,
+void insert_unextended_state(const StateContext<LiftedTag>& state,
                              const formalism::planning::Repository& repository,
                              const P2DTranslationContext<LiftedTag>& translation_context,
                              datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)
@@ -107,7 +108,7 @@ void insert_unextended_state(const urd::data<State<LiftedTag>>& state,
 
 /// insert_unextended_state, and the derived atoms.
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void insert_extended_state(const urd::data<State<LiftedTag>>& state,
+void insert_extended_state(const StateContext<LiftedTag>& state,
                            const formalism::planning::Repository& repository,
                            const P2DTranslationContext<LiftedTag>& translation_context,
                            datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace)

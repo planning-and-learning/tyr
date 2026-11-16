@@ -191,7 +191,9 @@ inline void bind_policies(nb::module_& m)
 
 template<TaskKind Kind>
 void bind_task_policies(nb::module_& m)
-{ bind_cost_policy<RuleCostOverridePolicy<Kind>>(m, "RuleCostOverridePolicy"); }
+{
+    bind_cost_policy<RuleCostOverridePolicy<Kind>>(m, "RuleCostOverridePolicy");
+}
 
 template<TaskKind Kind, typename Workspace>
 void bind_workspace(nb::module_& m, const std::string& name)
@@ -233,12 +235,12 @@ void bind_workspace(nb::module_& m, const std::string& name)
         cls.def("clear_fluent_facts", [](Workspace& self) { self.facts.reset(); })
             .def(
                 "insert_fluent_atom",
-                [](Workspace& self, Atom atom) { return tyr::datalog::insert(self.facts.fact_sets, atom.get_row().data()); },
+                [](Workspace& self, Atom atom) { return tyr::datalog::insert(self.facts.fact_sets, atom.get_row().index()); },
                 "atom"_a)
             .def(
                 "set_fluent_function",
                 [](Workspace& self, FunctionTerm term, const Interval& interval)
-                { return tyr::datalog::insert(self.facts.fact_sets, term.get_row().data(), interval); },
+                { return tyr::datalog::insert(self.facts.fact_sets, term.get_row().index(), interval); },
                 "function_term"_a,
                 "interval"_a);
     }
@@ -259,7 +261,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 [](Workspace& self, Atom atom)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(atom, context).first.get_row().data());
+                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(atom, context).first.get_row().index());
                 },
                 "atom"_a)
             .def(
@@ -267,7 +269,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 [](Workspace& self, PredicateBinding binding)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.data());
+                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.index());
                 },
                 "binding"_a)
             .def(
@@ -275,7 +277,7 @@ void bind_workspace(nb::module_& m, const std::string& name)
                 [](Workspace& self, FunctionBinding binding, const Interval& interval)
                 {
                     auto context = formalism::WriteContext { self.datalog_builder, *self.workspace_repository };
-                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.data(), interval);
+                    return tyr::datalog::insert(self.facts.fact_sets, formalism::copy(binding, context).first.index(), interval);
                 },
                 "binding"_a,
                 "interval"_a)

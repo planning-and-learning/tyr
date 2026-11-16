@@ -34,7 +34,7 @@ private:
 
 public:
     auto get_atom() const noexcept { return self().template member<&urd::record_of<V>::atom>(); }
-    auto get_polarity() const noexcept { return self().data().polarity; }
+    auto get_polarity() const noexcept { return self().template member<&urd::record_of<V>::polarity>(); }
 };
 }  // namespace urd
 

@@ -28,42 +28,20 @@ namespace tyr::formalism::planning
 
 namespace
 {
-
 template<FactKind T>
-void bind_predicate_data(nb::module_& m, const char* name)
+void bind_predicate_view(nb::module_& m, RepositoryBinding& repository)
 {
-    using namespace nb::literals;
-    using V = urd::data<Predicate<T>>;
-    auto cls = nb::class_<V>(m, name).def(nb::init<const std::string&, ygg::uint_t>(), "name"_a, "arity"_a);
-    cls.def(nb::init<urd::flat_string, ygg::uint_t>(), "name"_a, "arity"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
-template<FactKind T>
-void bind_predicate_view(nb::module_& m, const char* name)
-{
-    using V = PredicateView<T>;
-    auto cls = nb::class_<V>(m, name).def("index", &V::index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
+    urd::python::bind_view<PredicateView<T>>(m);
+    ygg::bind_insert<Predicate<T>>(repository);
 }
 }  // namespace
 
 void bind_predicate(nb::module_& m, RepositoryBinding& repository)
 {
-    urd::python::bind_index<urd::index<Predicate<DerivedTag>>>(m, "DerivedPredicateIndex");
-    bind_predicate_data<DerivedTag>(m, "DerivedPredicateData");
-
-    bind_predicate_view<StaticTag>(m, "StaticPredicate");
-    bind_predicate_view<FluentTag>(m, "FluentPredicate");
-    bind_predicate_view<DerivedTag>(m, "DerivedPredicate");
-
-    ygg::bind_insert<Predicate<StaticTag>>(repository);
-    ygg::bind_insert<Predicate<FluentTag>>(repository);
-    ygg::bind_insert<Predicate<DerivedTag>>(repository);
+    urd::python::bind_data<Predicate<DerivedTag>>(m);
+    bind_predicate_view<StaticTag>(m, repository);
+    bind_predicate_view<FluentTag>(m, repository);
+    bind_predicate_view<DerivedTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::planning

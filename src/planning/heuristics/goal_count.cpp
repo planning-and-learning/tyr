@@ -31,14 +31,18 @@ GoalCountHeuristic<Kind>::GoalCountHeuristic(std::shared_ptr<const Task<Kind>> t
 
 template<TaskKind Kind>
 std::shared_ptr<GoalCountHeuristic<Kind>> GoalCountHeuristic<Kind>::create(std::shared_ptr<const Task<Kind>> task)
-{ return std::make_shared<GoalCountHeuristic<Kind>>(std::move(task)); }
+{
+    return std::make_shared<GoalCountHeuristic<Kind>>(std::move(task));
+}
 
 template<TaskKind Kind>
 void GoalCountHeuristic<Kind>::set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-{ m_goal = goal; }
+{
+    m_goal = goal;
+}
 
 template<TaskKind Kind>
-ygg::float_t GoalCountHeuristic<Kind>::evaluate(const urd::data<State<Kind>>& state)
+ygg::float_t GoalCountHeuristic<Kind>::evaluate(const StateView<Kind>& state)
 {
     auto unsat_counter = ygg::float_t { 0 };
 

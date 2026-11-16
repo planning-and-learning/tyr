@@ -182,7 +182,9 @@ template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::PredicateRowView<T_DST>, bool> merge_p2d(PredicateRowView<T_SRC> element,  //
                                                             const urd::Store<urd::map<PredicateView<T_SRC>, datalog::PredicateView<T_DST>>>& predicate_mapping,
                                                             WriteContext<datalog::Builder, datalog::Repository>& context)
-{ return merge_p2d(element, predicate_mapping.at(element.get_relation()), context); }
+{
+    return merge_p2d(element, predicate_mapping.at(element.get_relation()), context);
+}
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::PredicateRowView<T_DST>, bool>
@@ -205,7 +207,7 @@ merge_p2d(AtomView<GroundTag, T_SRC> element,  //
 {
     auto atom = datalog::checkout<Atom<GroundTag, T_DST>>(context.builder());
 
-    atom->row = merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.data();
+    urd::store(atom->row, merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first);
 
     return datalog::insert(context.destination(), *atom);
 }
@@ -302,7 +304,9 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::FunctionRowView<T_DST>, bool> merge_p2d(FunctionRowView<T_SRC> element, WriteContext<datalog::Builder, datalog::Repository>& context)
-{ return merge_p2d(element, merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first, context); }
+{
+    return merge_p2d(element, merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first, context);
+}
 
 template<FactKind T_SRC, FactKind T_DST>
 std::pair<datalog::FunctionRowView<T_DST>, bool>
@@ -323,7 +327,7 @@ std::pair<datalog::FunctionTermView<GroundTag, T_DST>, bool> merge_p2d(FunctionT
 {
     auto fterm = datalog::checkout<FunctionTerm<GroundTag, T_DST>>(context.builder());
 
-    fterm->row = merge_p2d<T_SRC, T_DST>(element.get_row(), context).first.data();
+    urd::store(fterm->row, merge_p2d<T_SRC, T_DST>(element.get_row(), context).first);
 
     return datalog::insert(context.destination(), *fterm);
 }
@@ -335,7 +339,7 @@ std::pair<datalog::NumericEffectView<Kind, T_DST>, bool> merge_p2d(NumericEffect
 {
     auto numeric_effect = datalog::checkout<NumericEffect<Kind, T_DST>>(context.builder());
 
-    numeric_effect->operator_kind = element.get_operator();
+    numeric_effect->operation = element.get_operation();
     numeric_effect->fterm = merge_p2d<T_SRC, T_DST>(element.get_fterm(), context).first.index();
     numeric_effect->fexpr = merge_p2d(element.get_fexpr(), context);
 
@@ -379,10 +383,7 @@ std::pair<urd::index_view<T, datalog::Repository>, bool> merge_p2d(urd::index_vi
 {
     auto record = datalog::checkout<T>(context.builder());
 
-    [&]<auto... Ms>(const urd::data<T>& source, urd::Members<Ms...>) { (((*record).*Ms = source.*Ms), ...); }(element.data(), urd::data<T>::cista_members());
-    *record = urd::map_variant_children<boost::mp11::mp_list<>, T>(std::move(*record),
-                                                                   element.context(),
-                                                                   [&](const auto& expression) { return merge_p2d(expression, context); });
+    urd::map_variant_children<boost::mp11::mp_list<>, T>(element, *record, [&](const auto& expression) { return merge_p2d(expression, context); });
 
     return datalog::insert(context.destination(), *record);
 }

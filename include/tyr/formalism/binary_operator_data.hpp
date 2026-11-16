@@ -31,14 +31,14 @@ template<::tyr::TaskKind T, ::tyr::formalism::OperatorKind O>
 struct data<::tyr::formalism::BinaryOperator<T, O>>
 {
     urd::index<::tyr::formalism::BinaryOperator<T, O>> index;
-    O operator_kind {};
+    O operation {};
     ::tyr::formalism::FunctionExpression<T> lhs;
     ::tyr::formalism::FunctionExpression<T> rhs;
 
     data() = default;
-    data(O operator_kind_, ::tyr::formalism::FunctionExpression<T> lhs_, ::tyr::formalism::FunctionExpression<T> rhs_) :
+    data(O operation_, ::tyr::formalism::FunctionExpression<T> lhs_, ::tyr::formalism::FunctionExpression<T> rhs_) :
         index(),
-        operator_kind(operator_kind_),
+        operation(operation_),
         lhs(lhs_),
         rhs(rhs_)
     {
@@ -51,10 +51,10 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"operator_kind", &data::operator_kind>, urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>> {};
+        return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operator_kind, &data::lhs, &data::rhs> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operator_kind, &data::lhs, &data::rhs> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::lhs, &data::rhs> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::lhs, &data::rhs> {}; }
 };
 
 }

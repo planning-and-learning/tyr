@@ -52,7 +52,9 @@ bool TerminationPolicy<AggregationFunction>::check(const FactSets& fact_sets) co
 
 template<typename AggregationFunction>
 bool TerminationPolicy<AggregationFunction>::should_terminate(const FactSets& fact_sets) const
-{ return early_termination && check(fact_sets); }
+{
+    return early_termination && check(fact_sets);
+}
 
 template<typename AggregationFunction>
 Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&, const PredicateAnnotations<>& annotations) const
@@ -63,7 +65,7 @@ Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&, con
     auto total = AggregationFunction::identity();
     for (const auto literal : goals->template get_literals<formalism::FluentTag>())
     {
-        const auto* annotation = annotations.find(literal.get_atom().get_row().data());
+        const auto* annotation = annotations.find(literal.get_atom().get_row().index());
         assert(annotation);
         if (!annotation)
             return std::numeric_limits<Cost>::max();

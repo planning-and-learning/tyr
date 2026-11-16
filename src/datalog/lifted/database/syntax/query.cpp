@@ -28,9 +28,8 @@ QueryView<> clone_query(QueryView<> source, std::span<const QueryView<>> childre
         [&]<typename Tag>(QueryView<Tag> concrete)
         {
             size_t child = 0;
-            auto data = urd::map_children<boost::mp11::mp_list<Query<>>, Query<Tag>>(concrete.data(),
-                                                                                     concrete.context(),
-                                                                                     [&](QueryView<>) { return children[child++].index(); });
+            auto data = urd::data<Query<Tag>>();
+            urd::map_children<boost::mp11::mp_list<Query<>>, Query<Tag>>(concrete, data, [&](QueryView<>) { return children[child++]; });
             return insert_query(destination, builder, data);
         },
         source.get_variant());

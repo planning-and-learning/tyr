@@ -60,7 +60,9 @@ public:
 
     template<typename RuleKey>
     [[nodiscard]] Cost get_cost(RuleKey) const noexcept
-    { return static_cast<Cost>(0); }
+    {
+        return static_cast<Cost>(0);
+    }
 
     void clear() noexcept {}
     template<typename RuleKey>
@@ -114,7 +116,7 @@ public:
     [[nodiscard]] Cost get_cost(formalism::datalog::RuleRowView rule_key) const
     {
         const auto& costs = storage().get_costs();
-        if (const auto it = costs.find(rule_key.data()); it != costs.end())
+        if (const auto it = costs.find(rule_key.index()); it != costs.end())
             return it->second;
         return get_action_cost(rule_key);
     }
@@ -143,7 +145,7 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto actions = rule_to_action->find(rule_binding.data());
+        const auto actions = rule_to_action->find(rule_binding.index());
         if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
         auto credit = static_cast<Cost>(0);
@@ -160,7 +162,7 @@ private:
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto actions = rule_to_action->find(rule_binding.data().relation);
+        const auto actions = rule_to_action->find(rule_binding.index().relation);
         if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
         auto credit = static_cast<Cost>(0);

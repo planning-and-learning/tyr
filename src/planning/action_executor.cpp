@@ -87,10 +87,10 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
             const auto effect = cond_effect.get_effect();
 
             for (const auto fact : effect.template get_facts<formalism::NegativeTag>())
-                tmp_del_effects.push_back(fact.data());
+                tmp_del_effects.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
 
             for (const auto fact : effect.template get_facts<formalism::PositiveTag>())
-                tmp_add_effects.push_back(fact.data());
+                tmp_add_effects.push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
 
             for (const auto numeric_effect : effect.get_numeric_effects())
             {
@@ -120,10 +120,11 @@ void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> c
     const auto effect = cond_effect.get_effect();
 
     for (const auto literal : effect.get_literals())
-        if (literal.get_polarity())
-            tmp_add_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).data());
-        else
-            tmp_del_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first).data());
+    {
+        const auto fact = fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first);
+        (literal.get_polarity() ? tmp_add_effects : tmp_del_effects)
+            .push_back(urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+    }
 
     for (const auto numeric_effect : effect.get_numeric_effects())
     {
@@ -144,8 +145,8 @@ void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> c
 /// Writes the exact changes of `successor` relative to `parent` at the touched variables and function terms into `delta`.
 /// Touched entries may repeat and need not change (e.g., adding a true fact, or deleting and re-adding it).
 template<TaskKind Kind>
-void compute_touched_delta(const urd::data<State<Kind>>& parent,
-                           const urd::data<State<Kind>>& successor,
+void compute_touched_delta(const StateContext<Kind>& parent,
+                           const StateContext<Kind>& successor,
                            const urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& del_effects,
                            const urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& add_effects,
                            const urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
@@ -155,14 +156,15 @@ void compute_touched_delta(const urd::data<State<Kind>>& parent,
 
     for (const auto& effects : { &del_effects, &add_effects })
         for (const auto fact : *effects)
-            delta.fluents.push_back(StateDelta::FluentChange { fact.variable, parent.get(fact.variable), successor.get(fact.variable) });
+            delta.fluents.push_back(
+                StateDelta::FluentChange { fact.variable, parent.fact_storage().get(fact.variable), successor.fact_storage().get(fact.variable) });
     std::ranges::sort(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable.value); });
     delta.fluents.erase(std::ranges::unique(delta.fluents, {}, [](const auto& change) { return ygg::uint_t(change.variable.value); }).begin(),
                         delta.fluents.end());
     erase_if(delta.fluents, [](const auto& change) { return change.from == change.to; });
 
     for (const auto fterm : numeric_writes)
-        delta.numerics.push_back(StateDelta::NumericChange { fterm, parent.get(fterm), successor.get(fterm) });
+        delta.numerics.push_back(StateDelta::NumericChange { fterm, parent.numeric_storage().get(fterm), successor.numeric_storage().get(fterm) });
     std::ranges::sort(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm.value); });
     delta.numerics.erase(std::ranges::unique(delta.numerics, {}, [](const auto& change) { return ygg::uint_t(change.fterm.value); }).begin(),
                          delta.numerics.end());
@@ -184,18 +186,24 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
     auto tmp_state_context = state_context;
 
-    successor_state_builder.assign_unextended_part(tmp_state_context.state_data());
+    successor_state_builder.fact_storage = state_context.fact_storage();
+    successor_state_builder.numeric_storage = state_context.numeric_storage();
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
 
     for (const auto fact : del_effects)
-        if (successor_state_builder.get(fact.variable) == fact.value)
+        if (successor_state_builder.fact_storage.get(fact.variable) == fact.value)
             successor_state_builder.set(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> { fact.variable, formalism::planning::FDRValue::none() });
 
     for (const auto fact : add_effects)
         successor_state_builder.set(fact);
 
-    compute_touched_delta(state_context.state_data(), successor_state_builder, del_effects, add_effects, numeric_writes, delta);
+    compute_touched_delta(state_context,
+                          StateContext<Kind> { state_context.task(), successor_state_builder, ygg::float_t { 0 } },
+                          del_effects,
+                          add_effects,
+                          numeric_writes,
+                          delta);
 
     return tmp_state_context.auxiliary_value();
 }
@@ -206,14 +214,18 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{ return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state); }
+{
+    return tyr::planning::is_applicable(action.get_condition(), state) && is_applicable_if_fires(action, state);
+}
 
 template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<Kind>& state)
-{ return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families); }
+{
+    return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families);
+}
 
 template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<LiftedTag>& state);
 template bool ActionExecutor::is_applicable_if_fires(formalism::planning::ActionView<GroundTag> action, const StateContext<GroundTag>& state);
@@ -283,8 +295,7 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                               auto applicability_context = ApplicabilityContext { tmp_state_context, grounder, fdr };
                                               for (const auto cond_effect : action.get_effects())
                                                   for_each_effect_binding(cond_effect,
-                                                                          [&]
-                                                                          {
+                                                                          [&] {
                                                                               apply_lifted_effect(cond_effect,
                                                                                                   out_state,
                                                                                                   tmp_state_context,

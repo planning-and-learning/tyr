@@ -115,7 +115,7 @@ void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<Ground
             {
                 const auto atom = axiom.get_head();
 
-                if (!state_builder.test(atom))
+                if (!state_builder.atom_storage.test(atom.index()))
                     discovered_new_atom = true;
 
                 state_builder.set(atom);

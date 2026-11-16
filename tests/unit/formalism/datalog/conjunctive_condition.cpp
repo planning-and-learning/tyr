@@ -27,8 +27,6 @@ static_assert(requires(Data& data, const View& view) {
     data.static_literals;
     data.fluent_literals;
     data.numeric_constraints;
-    data.template get_literals<tyr::formalism::StaticTag>();
-    data.template get_literals<tyr::formalism::FluentTag>();
     view.index();
     view.get_variables();
     view.template get_literals<tyr::formalism::StaticTag>();
@@ -57,8 +55,6 @@ static_assert(requires(Data& data, const View& view) {
     data.static_literals;
     data.fluent_literals;
     data.numeric_constraints;
-    data.template get_literals<tyr::formalism::StaticTag>();
-    data.template get_literals<tyr::formalism::FluentTag>();
     view.index();
     view.template get_literals<tyr::formalism::StaticTag>();
     view.template get_literals<tyr::formalism::FluentTag>();

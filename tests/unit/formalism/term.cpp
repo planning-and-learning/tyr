@@ -35,5 +35,5 @@ TEST(TyrFormalismTerm, ReadoutFollowsReferencedObjectsToTheirLayer)
     EXPECT_EQ(&std::get<tyr::formalism::planning::ObjectView>(parent_term).context(), &parent);
     EXPECT_EQ(&std::get<tyr::formalism::planning::ObjectView>(child_term).context(), &child);
     EXPECT_EQ(std::get<tyr::formalism::ParameterIndex>(parameter), tyr::formalism::ParameterIndex(0));
-    EXPECT_EQ(urd::to_stored(child_term), Term(child_object.index()));
+    EXPECT_EQ(urd::stored<tyr::formalism::Term>(child_term), Term(child_object.index()));
 }

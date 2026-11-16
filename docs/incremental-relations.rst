@@ -49,18 +49,18 @@ read as ``layer.view(builder)``):
 
 .. code:: cpp
 
-   incremental::JoinEvaluator joined(repository, JoinPlan(lhs.columns(), rhs.columns()));
-   joined.initialize(lhs, rhs, workspace);
-   joined.update(lhs_change.added, lhs_change.removed,
-                 rhs_change.added, rhs_change.removed, workspace);
+   incremental::JoinEvaluator joined(repository, JoinPlan(left_operand.columns(), right_operand.columns()));
+   joined.initialize(left_operand, right_operand, workspace);
+   joined.update(left_change.added, left_change.removed,
+                 right_change.added, right_change.removed, workspace);
 
    // Undo the complete batch on both inputs.
-   joined.update(lhs_change.removed, lhs_change.added,
-                 rhs_change.removed, rhs_change.added, workspace);
+   joined.update(left_change.removed, left_change.added,
+                 right_change.removed, right_change.added, workspace);
 
    // Only the left input changes: pass empty relations for the right one.
-   urd::builder<Relation<Schema>> unchanged(rhs.columns());
-   joined.update(lhs_change.added, lhs_change.removed, unchanged, unchanged, workspace);
+   urd::builder<Relation<Schema>> unchanged(right_operand.columns());
+   joined.update(left_change.added, left_change.removed, unchanged, unchanged, workspace);
 
 The evaluator owns copies of both inputs and a mutable index for each. Initialization copies the rows; updates
 maintain the copies from the deltas alone, so no input view needs to stay alive between calls. Output columns follow
@@ -86,8 +86,8 @@ Delta and lifetime contract
   projection, source membership is the caller's precondition; join rejects absent removals and present additions
   while applying them. Detected invalid changes raise ``std::invalid_argument``.
 - **Inputs** are borrowed during the call only. They must not alias the evaluator's result, its delta or the
-  workspace's buffers; this is the caller's precondition beyond the ``relation_identity()`` check. Calls must be
-  sequential and nonreentrant.
+  workspace's buffers; this is the caller's precondition beyond the check that no input reads one of its builders
+  (``reads_builder``). Calls must be sequential and nonreentrant.
 - **Initialization** produces the baseline and an empty delta, and keeps reusable capacities when repeated.
   ``update`` before it throws ``std::logic_error``.
 - **Results.** ``get_result()`` returns a ``RelationBuilderView`` and ``get_delta()`` a const reference; do not keep

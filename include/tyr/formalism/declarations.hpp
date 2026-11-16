@@ -26,6 +26,7 @@
 #include <cista/containers/variant.h>
 #include <cista/containers/vector.h>
 #include <concepts>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <urd/elements/flat.hpp>
@@ -124,6 +125,7 @@ concept ArithmeticOperatorKindOnly = std::same_as<T, ArithmeticOperatorKind>;
 
 struct Variable
 {
+    static constexpr std::string_view name = "Variable";
 };
 
 struct ObjectTag
@@ -141,12 +143,14 @@ using TermList = urd::flat_vector<Term>;
 template<FactKind T>
 struct Predicate
 {
+    static constexpr std::string_view name = "Predicate";
     using object_tag = ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
 template<FactKind T>
 struct Function
 {
+    static constexpr std::string_view name = "Function";
     using object_tag = ObjectTag;  ///< its rows (ygg::Row) are objects
 };
 
@@ -157,43 +161,51 @@ struct Function
 template<TaskKind T, OperatorKind O>
 struct UnaryOperator
 {
+    static constexpr std::string_view name = "UnaryOperator";
 };
 
 template<TaskKind T, OperatorKind O>
 struct BinaryOperator
 {
+    static constexpr std::string_view name = "BinaryOperator";
 };
 
 template<TaskKind T, OperatorKind O>
 struct MultiOperator
 {
+    static constexpr std::string_view name = "MultiOperator";
 };
 
 template<TaskKind T, FactKind F>
 struct Atom
 {
+    static constexpr std::string_view name = "Atom";
 };
 
 template<TaskKind T, FactKind F>
 struct Literal
 {
+    static constexpr std::string_view name = "Literal";
 };
 
 template<TaskKind T, FactKind F>
 struct FunctionTerm
 {
+    static constexpr std::string_view name = "FunctionTerm";
 };
 
 template<TaskKind T, FactKind F>
     requires std::same_as<T, GroundTag>
 struct FunctionTermValue
 {
+    static constexpr std::string_view name = "FunctionTermValue";
 };
 
 template<TaskKind T, FactKind F>
     requires std::same_as<F, FluentTag> || std::same_as<F, AuxiliaryTag>
 struct NumericEffect
 {
+    static constexpr std::string_view name = "NumericEffect";
 };
 
 /// A function expression: a number, an arithmetic operator or a function term (ground ones also the auxiliary term).

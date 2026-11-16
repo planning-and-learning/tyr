@@ -92,14 +92,15 @@ struct NodeRules
             return;
         else if constexpr (std::same_as<Tag, QueryUnionTag> || std::same_as<Tag, QueryDifferenceTag>)
         {
-            const auto lhs = graph.result(operation.get_lhs());
-            const auto rhs = graph.result(operation.get_rhs());
+            const auto left_operand = graph.result(operation.get_left_operand());
+            const auto right_operand = graph.result(operation.get_right_operand());
             const auto reconcile = [&](const auto& rows)
             {
                 for (size_t i = 0; i < rows.size(); ++i)
                 {
                     const auto row = rows.row(i);
-                    const bool present = std::same_as<Tag, QueryUnionTag> ? lhs.contains(row) || rhs.contains(row) : lhs.contains(row) && !rhs.contains(row);
+                    const bool present = std::same_as<Tag, QueryUnionTag> ? left_operand.contains(row) || right_operand.contains(row) :
+                                                                            left_operand.contains(row) && !right_operand.contains(row);
                     state.set(row.get_values(), present);
                 }
             };
@@ -132,7 +133,7 @@ struct NodeRules
             }
             else
             {
-                const auto [added, removed] = graph.delta(operation.get_arg()).change();
+                const auto [added, removed] = graph.delta(operation.get_operand()).change();
                 apply(removed, false);
                 apply(added, true);
             }
@@ -148,10 +149,14 @@ struct NodeRules<QueryProjectTag>
     static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryProjectTag> operation) { return State(layer, operation.get_plan()); }
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryProjectTag> operation, const Graph& graph, const R&, Workspace& workspace)
-    { state.initialize(graph.result(operation.get_arg()), workspace); }
+    {
+        state.initialize(graph.result(operation.get_operand()), workspace);
+    }
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryProjectTag> operation, const Graph& graph, const R&, Workspace& workspace)
-    { state.apply(graph.delta(operation.get_arg()).change(), workspace); }
+    {
+        state.apply(graph.delta(operation.get_operand()).change(), workspace);
+    }
 };
 
 template<>
@@ -162,10 +167,14 @@ struct NodeRules<QueryJoinTag>
     static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryJoinTag> operation) { return State(layer, operation.get_plan()); }
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryJoinTag> operation, const Graph& graph, const R&, Workspace& workspace)
-    { state.initialize(graph.result(operation.get_lhs()), graph.result(operation.get_rhs()), workspace); }
+    {
+        state.initialize(graph.result(operation.get_left_operand()), graph.result(operation.get_right_operand()), workspace);
+    }
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryJoinTag> operation, const Graph& graph, const R&, Workspace& workspace)
-    { state.apply(graph.delta(operation.get_lhs()).change(), graph.delta(operation.get_rhs()).change(), workspace); }
+    {
+        state.apply(graph.delta(operation.get_left_operand()).change(), graph.delta(operation.get_right_operand()).change(), workspace);
+    }
 };
 
 template<typename Tag>
@@ -175,13 +184,19 @@ struct NodeRules<Tag>
     using State = SemijoinEvaluator;
 
     static State make(const ygg::FreeRelationRepository& layer, QueryView<Tag> operation)
-    { return State(layer, operation.get_plan(), std::same_as<Tag, QueryAntijoinTag>); }
+    {
+        return State(layer, operation.get_plan(), std::same_as<Tag, QueryAntijoinTag>);
+    }
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<Tag> operation, const Graph& graph, const R&, Workspace&)
-    { state.initialize(graph.result(operation.get_lhs()), graph.result(operation.get_rhs())); }
+    {
+        state.initialize(graph.result(operation.get_left_operand()), graph.result(operation.get_right_operand()));
+    }
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<Tag> operation, const Graph& graph, const R&, Workspace&)
-    { state.apply(graph.delta(operation.get_lhs()).change(), graph.delta(operation.get_rhs()).change()); }
+    {
+        state.apply(graph.delta(operation.get_left_operand()).change(), graph.delta(operation.get_right_operand()).change());
+    }
 };
 
 template<>
@@ -193,12 +208,12 @@ struct NodeRules<QueryGenericJoinTag>
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryGenericJoinTag> operation, const Graph& graph, const R&, Workspace&)
     {
-        state.initialize(operation.get_inputs() | std::views::transform([&](urd::index<Query<>> input) { return graph.result(input); }));
+        state.initialize(operation.get_inputs() | std::views::transform([&](QueryView<> input) { return graph.result(input.index()); }));
     }
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryGenericJoinTag> operation, const Graph& graph, const R&, Workspace&)
     {
-        state.apply(operation.get_inputs() | std::views::transform([&](urd::index<Query<>> input) { return graph.delta(input).change(); }));
+        state.apply(operation.get_inputs() | std::views::transform([&](QueryView<> input) { return graph.delta(input.index()).change(); }));
     }
 };
 
@@ -210,10 +225,14 @@ struct NodeRules<QueryDistanceTag>
     static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryDistanceTag> operation) { return State(layer, operation.get_plan()); }
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryDistanceTag> operation, const Graph& graph, const R&, Workspace&)
-    { state.initialize(graph.result(operation.get_sources()), graph.result(operation.get_edges()), graph.result(operation.get_targets())); }
+    {
+        state.initialize(graph.result(operation.get_sources()), graph.result(operation.get_edges()), graph.result(operation.get_targets()));
+    }
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryDistanceTag> operation, const Graph& graph, const R&, Workspace&)
-    { state.apply(graph.delta(operation.get_sources()).change(), graph.delta(operation.get_edges()).change(), graph.delta(operation.get_targets()).change()); }
+    {
+        state.apply(graph.delta(operation.get_sources()).change(), graph.delta(operation.get_edges()).change(), graph.delta(operation.get_targets()).change());
+    }
 };
 
 /// The node of one operator; the tag keeps the states of different operators distinct.
@@ -239,7 +258,7 @@ class QueryEvaluator
     QueryPlan m_plan;
     urd::Store<urd::sequence<Node, NodeId>> m_nodes;
     Workspace m_workspace;
-    urd::Store<urd::sequence<ygg::RelationIdentity>> m_identities;  ///< of its results and deltas
+    urd::Store<urd::sequence<const urd::builder<ygg::Relation<ygg::Schema>>*>> m_builders;  ///< its results and deltas, since its last initialization
     bool m_initialized = false;
 
     template<typename>
@@ -255,7 +274,12 @@ class QueryEvaluator
         return std::visit([](const auto& node) -> const Delta& { return node.state.get_delta(); }, m_nodes[id]);
     }
     [[nodiscard]] const Delta& delta(QueryView<> query) const { return delta(query.index()); }
-    [[nodiscard]] bool is_internal(ygg::RelationIdentity input) const { return std::ranges::find(m_identities, input) != m_identities.end(); }
+    /// Whether an input reads one of its results or deltas.
+    template<RelationViewConcept V>
+    [[nodiscard]] bool is_internal(const V& input) const
+    {
+        return std::ranges::any_of(m_builders, [&](const auto* builder) { return reads_builder(input, *builder); });
+    }
 
 public:
     QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryPlan plan) : m_layer(&layer), m_plan(std::move(plan))
@@ -269,23 +293,22 @@ public:
     template<RelationViewRange R>
     void initialize(const R& bindings)
     {
-        database::detail::validate_bindings(m_plan, bindings, [&](ygg::RelationIdentity input) { return is_internal(input); });
+        database::detail::validate_bindings(m_plan, bindings, [&](const auto& input) { return is_internal(input); });
         m_initialized = false;
         for (size_t i = 0; i < m_nodes.size(); ++i)
             std::visit(
-                [&]<typename Tag>(QueryView<Tag> operation)
-                {
+                [&]<typename Tag>(QueryView<Tag> operation) {
                     Rules<Tag>::initialize(std::get<detail::QueryNode<Tag>>(m_nodes[NodeId(ygg::to_uint_t(i))]).state, operation, *this, bindings, m_workspace);
                 },
                 m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
         // Its builders stay where they are, including after a failed update.
-        m_identities.clear();
+        m_builders.clear();
         for (size_t i = 0; i < m_nodes.size(); ++i)
         {
             const NodeId id(ygg::to_uint_t(i));
-            m_identities.push_back(result(id).relation_identity());
-            m_identities.push_back(delta(id).added.relation_identity());
-            m_identities.push_back(delta(id).removed.relation_identity());
+            m_builders.push_back(&result(id).get_builder());
+            m_builders.push_back(&delta(id).added);
+            m_builders.push_back(&delta(id).removed);
         }
         m_initialized = true;
     }
@@ -304,7 +327,7 @@ public:
                 throw std::invalid_argument("Incremental query: missing input delta.");
             const auto& [added, removed] = changes[slot];
             detail::require_delta(added, removed, query.columns());
-            if (is_internal(added.relation_identity()) || is_internal(removed.relation_identity()))
+            if (is_internal(added) || is_internal(removed))
                 throw std::invalid_argument("Incremental query: input aliases evaluator storage.");
             const auto baseline = result(query);
             for (size_t row = 0; row < added.size(); ++row)
@@ -341,7 +364,7 @@ public:
     /// Retained runtime storage; excludes the immutable query plan.
     [[nodiscard]] size_t memory_usage() const noexcept
     {
-        size_t result = m_workspace.memory_usage() + urd::memory_usage(m_identities);
+        size_t result = m_workspace.memory_usage() + urd::memory_usage(m_builders);
         // get_if rather than std::visit, which throws for a valueless variant; nodes are never valueless.
         const auto node_usage = []<typename... Nodes>(const std::variant<Nodes...>& node) noexcept
         { return ((std::get_if<Nodes>(&node) ? std::get_if<Nodes>(&node)->state.memory_usage() : size_t { 0 }) + ...); };

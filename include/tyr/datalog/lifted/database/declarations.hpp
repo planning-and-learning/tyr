@@ -16,59 +16,74 @@
 
 namespace tyr::datalog::database
 {
+/// The query operations. Each tag's name is its type's (urd::name: Query<QueryJoinTag> is QueryJoin); its operation,
+/// the word a query plan is written with.
 struct QueryInputTag
 {
-    static constexpr std::string_view name = "input";
+    static constexpr std::string_view name = "Input";
+    static constexpr std::string_view operation = "input";
 };
 struct QueryEmptyTag
 {
-    static constexpr std::string_view name = "empty";
+    static constexpr std::string_view name = "Empty";
+    static constexpr std::string_view operation = "empty";
 };
 struct QueryJoinTag
 {
-    static constexpr std::string_view name = "hash_join";
+    static constexpr std::string_view name = "Join";
+    static constexpr std::string_view operation = "hash_join";
 };
 struct QueryProjectTag
 {
-    static constexpr std::string_view name = "project";
+    static constexpr std::string_view name = "Project";
+    static constexpr std::string_view operation = "project";
 };
 struct QueryRenameTag
 {
-    static constexpr std::string_view name = "rename";
+    static constexpr std::string_view name = "Rename";
+    static constexpr std::string_view operation = "rename";
 };
 struct QuerySelectEqualTag
 {
-    static constexpr std::string_view name = "select_equal";
+    static constexpr std::string_view name = "SelectEqual";
+    static constexpr std::string_view operation = "select_equal";
 };
 struct QuerySelectValueTag
 {
-    static constexpr std::string_view name = "select_value";
+    static constexpr std::string_view name = "SelectValue";
+    static constexpr std::string_view operation = "select_value";
 };
 struct QueryUnionTag
 {
-    static constexpr std::string_view name = "union";
+    static constexpr std::string_view name = "Union";
+    static constexpr std::string_view operation = "union";
 };
 struct QueryDifferenceTag
 {
-    static constexpr std::string_view name = "difference";
+    static constexpr std::string_view name = "Difference";
+    static constexpr std::string_view operation = "difference";
 };
 struct QueryDistanceTag
 {
-    static constexpr std::string_view name = "distance";
+    static constexpr std::string_view name = "Distance";
+    static constexpr std::string_view operation = "distance";
 };
 struct QueryGenericJoinTag
 {
-    static constexpr std::string_view name = "generic_join";
+    static constexpr std::string_view name = "GenericJoin";
+    static constexpr std::string_view operation = "generic_join";
 };
 /// R ⋉ S: the rows of R with a match in S on their shared columns.
 struct QuerySemijoinTag
 {
-    static constexpr std::string_view name = "semijoin";
+    static constexpr std::string_view name = "Semijoin";
+    static constexpr std::string_view operation = "semijoin";
 };
 /// R ▷ S: the rows of R without a match in S on their shared columns.
 struct QueryAntijoinTag
 {
-    static constexpr std::string_view name = "antijoin";
+    static constexpr std::string_view name = "Antijoin";
+    static constexpr std::string_view operation = "antijoin";
 };
 
 using QueryConstructorTags = boost::mp11::mp_list<QueryInputTag,
@@ -86,10 +101,10 @@ using QueryConstructorTags = boost::mp11::mp_list<QueryInputTag,
                                                   QueryAntijoinTag>;
 
 /// Query tags grouped by the shape of their records.
-using QueryJoinTags = boost::mp11::mp_list<QueryJoinTag, QuerySemijoinTag, QueryAntijoinTag>;                            ///< lhs, rhs and a JoinPlan
-using QuerySetTags = boost::mp11::mp_list<QueryUnionTag, QueryDifferenceTag>;                                            ///< lhs, rhs and a SetPlan
-using QueryBinaryTags = boost::mp11::mp_append<QueryJoinTags, QuerySetTags>;                                             ///< lhs and rhs
-using QueryUnaryTags = boost::mp11::mp_list<QueryProjectTag, QueryRenameTag, QuerySelectEqualTag, QuerySelectValueTag>;  ///< arg
+using QueryJoinTags = boost::mp11::mp_list<QueryJoinTag, QuerySemijoinTag, QueryAntijoinTag>;  ///< left_operand, right_operand and a JoinPlan
+using QuerySetTags = boost::mp11::mp_list<QueryUnionTag, QueryDifferenceTag>;                  ///< left_operand, right_operand and a SetPlan
+using QueryBinaryTags = boost::mp11::mp_append<QueryJoinTags, QuerySetTags>;                   ///< left_operand and right_operand
+using QueryUnaryTags = boost::mp11::mp_list<QueryProjectTag, QueryRenameTag, QuerySelectEqualTag, QuerySelectValueTag>;  ///< operand
 /// The queries with a prepared plan.
 using QueryPlannedTags =
     boost::mp11::mp_append<QueryJoinTags,
@@ -101,6 +116,7 @@ template<typename Tag = void>
     requires(std::is_void_v<Tag> || boost::mp11::mp_contains<QueryConstructorTags, Tag>::value)
 struct Query
 {
+    static constexpr std::string_view name = "Query";
 };
 class QueryPlan;
 class QueryRepository;

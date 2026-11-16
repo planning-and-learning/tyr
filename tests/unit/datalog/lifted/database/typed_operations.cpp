@@ -103,21 +103,21 @@ TEST(YggdrasilTests, DatabaseTypedJoinUpdatesBothInputsAndRepairsCompactedIndexe
     const std::vector<ygg::ColumnLayout> right_columns { { ColumnIndex(3), ygg::type_id<bool> },
                                                          { ColumnIndex(1), ygg::type_id<ygg::uint_t> },
                                                          { ColumnIndex(4), ygg::type_id<double> } };
-    RelationBuilder left(left_columns);
-    RelationBuilder right(right_columns);
-    left.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(1.5), ygg::encode_value(true) });
-    left.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(2.5), ygg::encode_value(false) });
-    left.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(3)), ygg::encode_value(3.5), ygg::encode_value(true) });
-    right.insert(std::array { ygg::encode_value(true), ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(10.0) });
-    right.insert(std::array { ygg::encode_value(false), ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(20.0) });
-    right.insert(std::array { ygg::encode_value(true), ygg::encode_value(static_cast<ygg::uint_t>(3)), ygg::encode_value(30.0) });
+    RelationBuilder left_operand(left_columns);
+    RelationBuilder right_operand(right_columns);
+    left_operand.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(1.5), ygg::encode_value(true) });
+    left_operand.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(2.5), ygg::encode_value(false) });
+    left_operand.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(3)), ygg::encode_value(3.5), ygg::encode_value(true) });
+    right_operand.insert(std::array { ygg::encode_value(true), ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(10.0) });
+    right_operand.insert(std::array { ygg::encode_value(false), ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(20.0) });
+    right_operand.insert(std::array { ygg::encode_value(true), ygg::encode_value(static_cast<ygg::uint_t>(3)), ygg::encode_value(30.0) });
     const database::JoinPlan plan(left_columns, right_columns);
     const ygg::FreeRelationRepository repository;
     database::incremental::JoinEvaluator evaluator(repository, plan);
     database::Workspace workspace;
-    evaluator.initialize(repository.view(left), repository.view(right), workspace);
+    evaluator.initialize(repository.view(left_operand), repository.view(right_operand), workspace);
     RelationBuilder initial(plan.output_columns());
-    database::join(repository.view(left), repository.view(right), plan, initial, workspace);
+    database::join(repository.view(left_operand), repository.view(right_operand), plan, initial, workspace);
     expect_same_rows(evaluator.get_result(), repository.view(initial));
     ASSERT_EQ(initial.size(), 3);
 
@@ -130,10 +130,10 @@ TEST(YggdrasilTests, DatabaseTypedJoinUpdatesBothInputsAndRepairsCompactedIndexe
     right_changes.added.insert(std::array { ygg::encode_value(false), ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(22.0) });
     right_changes.added.insert(std::array { ygg::encode_value(false), ygg::encode_value(static_cast<ygg::uint_t>(4)), ygg::encode_value(40.0) });
     evaluator.update(left_changes.change(), right_changes.change(), workspace);
-    apply_changes(left, left_changes);
-    apply_changes(right, right_changes);
+    apply_changes(left_operand, left_changes);
+    apply_changes(right_operand, right_changes);
     RelationBuilder updated(plan.output_columns());
-    database::join(repository.view(left), repository.view(right), plan, updated, workspace);
+    database::join(repository.view(left_operand), repository.view(right_operand), plan, updated, workspace);
     expect_same_rows(evaluator.get_result(), repository.view(updated));
     expect_delta(evaluator.get_delta(), initial, updated);
     ASSERT_EQ(updated.size(), 4);
@@ -146,8 +146,8 @@ TEST(YggdrasilTests, DatabaseTypedJoinUpdatesBothInputsAndRepairsCompactedIndexe
     evaluator.update(std::pair { repository.view(left_changes.removed), repository.view(left_changes.added) },
                      std::pair { repository.view(right_changes.removed), repository.view(right_changes.added) },
                      workspace);
-    apply_changes(left, left_changes, true);
-    apply_changes(right, right_changes, true);
+    apply_changes(left_operand, left_changes, true);
+    apply_changes(right_operand, right_changes, true);
     expect_same_rows(evaluator.get_result(), repository.view(initial));
     expect_delta(evaluator.get_delta(), updated, initial);
 }
@@ -207,45 +207,5 @@ TEST(YggdrasilTests, DatabaseTypedSchemaErrorsPreserveOperatorAndIncrementalResu
     EXPECT_TRUE(evaluator.get_delta().removed.empty());
     RelationBuilder empty(columns);
     EXPECT_NO_THROW(evaluator.update(std::pair { repository.view(empty), repository.view(empty) }, workspace));
-}
-
-TEST(YggdrasilTests, DatabaseTypedJoinCacheSeparatesRowsByTypeAndLayout)
-{
-    ygg::FreeRelationRepository repository;
-    database::JoinIndexCache cache;
-    const std::vector<ygg::ColumnLayout> unsigned_columns { { ColumnIndex(1), ygg::type_id<std::uint64_t> } };
-    const std::vector<ygg::ColumnLayout> float_columns { { ColumnIndex(1), ygg::type_id<double> } };
-    RelationBuilder unsigned_input(unsigned_columns);
-    RelationBuilder float_input(float_columns);
-    unsigned_input.insert(std::array { ygg::encode_value(static_cast<std::uint64_t>(0)) });
-    float_input.insert(std::array { ygg::encode_value(0.0) });
-    const auto unsigned_view = tyr::datalog::tests::ops::intern(repository, unsigned_input).first;
-    const auto float_view = tyr::datalog::tests::ops::intern(repository, float_input).first;
-    // Rows of other column types lie in other pools (schemas), even of equal widths: separate relations.
-    ASSERT_NE(unsigned_view.relation_identity(), float_view.relation_identity());
-    const database::ProjectionPlan unsigned_key(unsigned_columns, std::array { ColumnIndex(1) });
-    const database::ProjectionPlan float_key(float_columns, std::array { ColumnIndex(1) });
-    cache.get_or_create(unsigned_view, unsigned_key.positions());
-    cache.get_or_create(float_view, float_key.positions());
-    EXPECT_EQ(cache.size(), 2);
-    const std::vector<ygg::ColumnLayout> renamed_columns { { ColumnIndex(9), ygg::type_id<std::uint64_t> } };
-    const auto renamed = tyr::datalog::tests::ops::rename(repository, unsigned_view, renamed_columns);
-    cache.get_or_create(renamed, unsigned_key.positions());
-    EXPECT_EQ(cache.size(), 3);  // a renamed relation is another relation
-
-    const std::vector<ygg::ColumnLayout> before_columns { { ColumnIndex(2), ygg::type_id<bool> }, { ColumnIndex(1), ygg::type_id<ygg::uint_t> } };
-    const std::vector<ygg::ColumnLayout> after_columns { { ColumnIndex(1), ygg::type_id<ygg::uint_t> }, { ColumnIndex(2), ygg::type_id<bool> } };
-    RelationBuilder before(before_columns);
-    RelationBuilder after(after_columns);
-    before.insert(std::array { ygg::encode_value(false), ygg::encode_value(static_cast<ygg::uint_t>(0)) });
-    after.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(false) });
-    const auto before_view = tyr::datalog::tests::ops::intern(repository, before).first;
-    const auto after_view = tyr::datalog::tests::ops::intern(repository, after).first;
-    ASSERT_NE(before_view.relation_identity(), after_view.relation_identity());
-    const database::ProjectionPlan before_key(before_columns, std::array { ColumnIndex(1) });
-    const database::ProjectionPlan after_key(after_columns, std::array { ColumnIndex(1) });
-    cache.get_or_create(before_view, before_key.positions());
-    cache.get_or_create(after_view, after_key.positions());
-    EXPECT_EQ(cache.size(), 5);
 }
 }  // namespace tyr::datalog::tests

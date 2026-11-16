@@ -28,49 +28,24 @@
 /// views); their views are each repository's.
 namespace tyr::formalism
 {
-
 namespace
 {
-template<TaskKind T, FactKind F>
-void bind_literal_data(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<Literal<T, F>>>(m, name + "Index");
-
-    using V = urd::data<Literal<T, F>>;
-    auto cls = nb::class_<V>(m, (name + "Data").c_str());
-    cls.def(urd::python::init_from_views<datalog::AtomView<T, F>, bool>(), "atom"_a, "polarity"_a);
-    cls.def(urd::python::init_from_views<planning::AtomView<T, F>, bool>(), "atom"_a, "polarity"_a);
-    cls.def(nb::init<urd::index<Atom<T, F>>, bool>(), "atom"_a, "polarity"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
 template<TaskKind T, FactKind F, typename C>
-void bind_literal_view(nb::module_& m, nb::class_<C>& repository, const std::string& name)
+void bind_literal_view(nb::module_& m, nb::class_<C>& repository)
 {
-    using V = urd::index_view<Literal<T, F>, C>;
-    auto cls = nb::class_<V>(m, name.c_str());
-    cls.def("index", &V::index);
-    cls.def("get_atom", &V::get_atom);
-    cls.def("get_polarity", &V::get_polarity);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-
+    urd::python::bind_view<urd::index_view<Literal<T, F>, C>>(m);
     ygg::bind_insert<Literal<T, F>>(repository);
 }
 }  // namespace
 
 void bind_literal(nb::module_& m)
 {
-    bind_literal_data<LiftedTag, StaticTag>(m, "StaticLiteral");
-    bind_literal_data<LiftedTag, FluentTag>(m, "FluentLiteral");
-    bind_literal_data<LiftedTag, DerivedTag>(m, "DerivedLiteral");
-    bind_literal_data<GroundTag, StaticTag>(m, "StaticGroundLiteral");
-    bind_literal_data<GroundTag, FluentTag>(m, "FluentGroundLiteral");
-    bind_literal_data<GroundTag, DerivedTag>(m, "DerivedGroundLiteral");
+    urd::python::bind_data<Literal<LiftedTag, StaticTag>>(m);
+    urd::python::bind_data<Literal<LiftedTag, FluentTag>>(m);
+    urd::python::bind_data<Literal<LiftedTag, DerivedTag>>(m);
+    urd::python::bind_data<Literal<GroundTag, StaticTag>>(m);
+    urd::python::bind_data<Literal<GroundTag, FluentTag>>(m);
+    urd::python::bind_data<Literal<GroundTag, DerivedTag>>(m);
 }
 
 }  // namespace tyr::formalism
@@ -80,10 +55,10 @@ namespace tyr::formalism::datalog
 
 void bind_literal(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_literal_view<LiftedTag, StaticTag>(m, repository, "StaticLiteral");
-    bind_literal_view<LiftedTag, FluentTag>(m, repository, "FluentLiteral");
-    bind_literal_view<GroundTag, StaticTag>(m, repository, "StaticGroundLiteral");
-    bind_literal_view<GroundTag, FluentTag>(m, repository, "FluentGroundLiteral");
+    bind_literal_view<LiftedTag, StaticTag>(m, repository);
+    bind_literal_view<LiftedTag, FluentTag>(m, repository);
+    bind_literal_view<GroundTag, StaticTag>(m, repository);
+    bind_literal_view<GroundTag, FluentTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::datalog
@@ -93,12 +68,12 @@ namespace tyr::formalism::planning
 
 void bind_literal(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_literal_view<LiftedTag, StaticTag>(m, repository, "StaticLiteral");
-    bind_literal_view<LiftedTag, FluentTag>(m, repository, "FluentLiteral");
-    bind_literal_view<LiftedTag, DerivedTag>(m, repository, "DerivedLiteral");
-    bind_literal_view<GroundTag, StaticTag>(m, repository, "StaticGroundLiteral");
-    bind_literal_view<GroundTag, FluentTag>(m, repository, "FluentGroundLiteral");
-    bind_literal_view<GroundTag, DerivedTag>(m, repository, "DerivedGroundLiteral");
+    bind_literal_view<LiftedTag, StaticTag>(m, repository);
+    bind_literal_view<LiftedTag, FluentTag>(m, repository);
+    bind_literal_view<LiftedTag, DerivedTag>(m, repository);
+    bind_literal_view<GroundTag, StaticTag>(m, repository);
+    bind_literal_view<GroundTag, FluentTag>(m, repository);
+    bind_literal_view<GroundTag, DerivedTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::planning

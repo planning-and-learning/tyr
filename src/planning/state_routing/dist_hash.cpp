@@ -39,7 +39,7 @@ void DistHash<Kind, LMCutDistHashTag>::initialize(const StateView<Kind>& start_s
 
     const auto& task = start_state.get_state_repository().get_task();
     auto heuristic = LMCutHeuristic<Kind>(task, ygg::ExecutionContext::create(1), CostMode::UNIT);
-    auto atoms = heuristic.compute_cut_frontier_atoms(start_state.data());
+    auto atoms = heuristic.compute_cut_frontier_atoms(start_state);
 
     for (const auto fact : task->get_task().get_goal().template get_facts<formalism::PositiveTag>())
         if (const auto atom = fact.get_atom())
@@ -50,13 +50,16 @@ void DistHash<Kind, LMCutDistHashTag>::initialize(const StateView<Kind>& start_s
 
     m_features.reserve(atoms.size());
     for (const auto atom : atoms)
-        m_features.push_back(Feature { atom.index(), task->get_fdr_context()->get_fact(atom).data() });
+    {
+        const auto fact = task->get_fdr_context()->get_fact(atom);
+        m_features.push_back(Feature { atom.index(), urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value()) });
+    }
 
     m_initialized = true;
 }
 
 template<TaskKind Kind>
-ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const urd::data<State<Kind>>& state) const noexcept
+ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const StateContext<Kind>& state) const noexcept
 {
     assert(m_initialized);
     if (m_features.empty())
@@ -65,7 +68,7 @@ ygg::hash_t DistHash<Kind, LMCutDistHashTag>::hash(const urd::data<State<Kind>>&
 
     auto result = static_cast<ygg::hash_t>(m_seed);
     for (const auto& feature : m_features)
-        if (state.get(feature.fact.variable) == feature.fact.value)
+        if (state.fact_storage().get(feature.fact.variable) == feature.fact.value)
             urd::hash_combine(result, feature.atom);
     return result;
 }

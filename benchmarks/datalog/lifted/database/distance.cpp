@@ -291,10 +291,10 @@ void distance_changes(benchmark::State& state)
     for (auto _ : state)
     {
         update(true);
-        benchmark::DoNotOptimize(result().relation_identity());
+        benchmark::DoNotOptimize(result().size());
         benchmark::ClobberMemory();
         update(false);
-        benchmark::DoNotOptimize(result().relation_identity());
+        benchmark::DoNotOptimize(result().size());
         benchmark::ClobberMemory();
     }
     state.SetItemsProcessed(state.iterations() * 2);
@@ -346,7 +346,7 @@ void distance_initialize_warm(benchmark::State& state)
     for (auto _ : state)
     {
         initialize();
-        benchmark::DoNotOptimize(result().relation_identity());
+        benchmark::DoNotOptimize(result().size());
         benchmark::ClobberMemory();
     }
     state.SetItemsProcessed(state.iterations());

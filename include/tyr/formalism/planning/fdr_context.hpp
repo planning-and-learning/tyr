@@ -76,8 +76,10 @@ public:
     // Construct with binary ground mutexes.
     FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, RepositoryPtr context);
 
-    // Copy the FDRContext after concurrent registrations have completed.
-    FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context);
+    /// Over a frozen parent: finds the parent's facts and starts from its variables; registers what the parent lacks
+    /// itself, into `context`, a layer over the parent's repository. Like a repository layer, it does not own its parent:
+    /// whoever creates it keeps the parent alive and frozen for its lifetime.
+    FDRContext(const FDRContext* parent, RepositoryPtr context);
 
     FDRContext(const FDRContext&) = delete;
     FDRContext& operator=(const FDRContext&) = delete;
@@ -104,6 +106,7 @@ private:
     void ensure_fact_slot(AtomView<GroundTag, FluentTag> atom);
     bool publish_fact(AtomView<GroundTag, FluentTag> atom, urd::data<FDRFact<FluentTag>> fact);
 
+    const FDRContext* m_parent = nullptr;
     RepositoryPtr m_context;
     // Facts are append-only and lock-free to read; only first registration serializes the reusable builder and variable list.
     urd::Store<urd::sequence<FactSlot>, urd::stable_refs, urd::concurrent> m_facts;

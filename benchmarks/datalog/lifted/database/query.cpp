@@ -46,7 +46,9 @@ std::vector<ygg::ColumnLayout> cols(std::initializer_list<Column> labels)
 
 /// The relations as views.
 std::array<ygg::FreeRelationBuilderView, 3> borrow_all(const std::array<Relation, 3>& relations)
-{ return { borrow(relations[0]), borrow(relations[1]), borrow(relations[2]) }; }
+{
+    return { borrow(relations[0]), borrow(relations[1]), borrow(relations[2]) };
+}
 
 struct Triangle
 {
@@ -91,11 +93,11 @@ struct Triangle
         return database::insert_query(repository, builder, *data);
     }
 
-    database::QueryView<> join(database::QueryView<> lhs, database::QueryView<> rhs)
+    database::QueryView<> join(database::QueryView<> left_operand, database::QueryView<> right_operand)
     {
         auto data = database::checkout<database::Query<database::QueryJoinTag>>(builder);
-        data->lhs = lhs.index();
-        data->rhs = rhs.index();
+        data->left_operand = left_operand.index();
+        data->right_operand = right_operand.index();
         return database::insert_query(repository, builder, *data);
     }
 
@@ -229,10 +231,10 @@ void query_updates(benchmark::State& state)
     for (auto _ : state)
     {
         update(true);
-        benchmark::DoNotOptimize(evaluator.get_result().relation_identity());
+        benchmark::DoNotOptimize(evaluator.get_result().size());
         benchmark::ClobberMemory();
         update(false);
-        benchmark::DoNotOptimize(evaluator.get_result().relation_identity());
+        benchmark::DoNotOptimize(evaluator.get_result().size());
         benchmark::ClobberMemory();
     }
     state.SetItemsProcessed(state.iterations() * 2);

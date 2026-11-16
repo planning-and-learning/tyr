@@ -71,8 +71,8 @@ class UnionNormalFormBuilder
 {
     UnionNormalForm m_result;  ///< Variables and input schemas so far.
 
-    static urd::Store<urd::sequence<ConjunctiveBranch>> product(const urd::Store<urd::sequence<ConjunctiveBranch>>& lhs,
-                                                                const urd::Store<urd::sequence<ConjunctiveBranch>>& rhs);
+    static urd::Store<urd::sequence<ConjunctiveBranch>> product(const urd::Store<urd::sequence<ConjunctiveBranch>>& left_operand,
+                                                                const urd::Store<urd::sequence<ConjunctiveBranch>>& right_operand);
 
     /// The child's variables: its columns found in `parent` take the parent's variable, others a fresh one.
     urd::Store<urd::sequence<uint32_t>>

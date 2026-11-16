@@ -95,9 +95,9 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         m_out.facts().reset();
         auto& facts = m_out.facts().fact_sets;
         for (const auto fterm_value : m_in.program().template get_fterm_values<formalism::FluentTag>())
-            insert(facts, fterm_value.get_fterm().get_row().data(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
+            insert(facts, fterm_value.get_fterm().get_row().index(), ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
         for (const auto atom : fluent_atoms)
-            insert(facts, atom.get_row().data());
+            insert(facts, atom.get_row().index());
         initialize();
     }
 

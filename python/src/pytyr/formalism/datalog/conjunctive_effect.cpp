@@ -25,40 +25,19 @@ namespace tyr::formalism::datalog
 namespace
 {
 template<TaskKind T>
-void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
+void bind_conjunctive_effect_kind(nb::module_& m, RepositoryBinding& repository)
 {
-    using namespace nb::literals;
-    using Tag = ConjunctiveEffect<T>;
-    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
-
-    {
-        using V = urd::data<Tag>;
-        auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        cls.def(urd::python::init_from_views<const NumericEffectOperatorViewList<T, FluentTag>&>(), "numeric_effects"_a);
-        cls.def(nb::init<urd::flat_vector<urd::index<NumericEffect<T, FluentTag>>>>(), "numeric_effects"_a);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    {
-        using V = ConjunctiveEffectView<T>;
-        auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("index", &V::index);
-        cls.def("get_numeric_effects", &V::get_numeric_effects);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    ygg::bind_insert<Tag>(repository);
+    urd::python::bind_view<ConjunctiveEffectView<T>>(m);
+    ygg::bind_insert<ConjunctiveEffect<T>>(repository);
 }
 }  // namespace
 
 void bind_conjunctive_effect(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_conjunctive_effect_kind<LiftedTag>(m, repository, "ConjunctiveEffect");
-    bind_conjunctive_effect_kind<GroundTag>(m, repository, "GroundConjunctiveEffect");
+    urd::python::bind_data<ConjunctiveEffect<LiftedTag>>(m);
+    bind_conjunctive_effect_kind<LiftedTag>(m, repository);
+    urd::python::bind_data<ConjunctiveEffect<GroundTag>>(m);
+    bind_conjunctive_effect_kind<GroundTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::datalog

@@ -35,46 +35,46 @@ ProjectionPlan::ProjectionPlan(std::span<const ygg::ColumnLayout> input, std::sp
     ygg::validate_columns(output_columns());
 }
 
-JoinPlan::JoinPlan(std::span<const ygg::ColumnLayout> lhs, std::span<const ygg::ColumnLayout> rhs)
+JoinPlan::JoinPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::ColumnLayout> right)
 {
-    ygg::validate_columns(lhs);
-    ygg::validate_columns(rhs);
-    m_lhs.set(lhs.begin(), lhs.end());
-    m_rhs.set(rhs.begin(), rhs.end());
-    m_output.set(lhs.begin(), lhs.end());
-    for (size_t position = 0; position < rhs.size(); ++position)
+    ygg::validate_columns(left);
+    ygg::validate_columns(right);
+    m_left.set(left.begin(), left.end());
+    m_right.set(right.begin(), right.end());
+    m_output.set(left.begin(), left.end());
+    for (size_t position = 0; position < right.size(); ++position)
     {
-        const auto& column = rhs[position];
-        const auto it = std::ranges::find(lhs, column.label, &ygg::ColumnLayout::label);
-        if (it == lhs.end())
+        const auto& column = right[position];
+        const auto it = std::ranges::find(left, column.label, &ygg::ColumnLayout::label);
+        if (it == left.end())
         {
             m_output.push_back(column);
-            m_rhs_payload.push_back(ColumnSlice { position });
+            m_right_payload.push_back(ColumnSlice { position });
         }
         else
         {
             if (it->type != column.type)
                 throw std::invalid_argument("Relational operation: common columns must have the same type.");
-            m_lhs_keys.push_back(ColumnSlice { static_cast<size_t>(it - lhs.begin()) });
-            m_rhs_keys.push_back(ColumnSlice { position });
+            m_left_keys.push_back(ColumnSlice { static_cast<size_t>(it - left.begin()) });
+            m_right_keys.push_back(ColumnSlice { position });
         }
     }
 }
 
-SetPlan::SetPlan(std::span<const ygg::ColumnLayout> lhs, std::span<const ygg::ColumnLayout> rhs)
+SetPlan::SetPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::ColumnLayout> right)
 {
-    ygg::validate_columns(lhs);
-    if (!std::ranges::equal(lhs, rhs))
+    ygg::validate_columns(left);
+    if (!std::ranges::equal(left, right))
         throw std::invalid_argument("Relational operation: input schemas must have the same column order.");
-    m_columns.set(lhs.begin(), lhs.end());
+    m_columns.set(left.begin(), left.end());
 }
 
-SelectEqualPlan::SelectEqualPlan(std::span<const ygg::ColumnLayout> input, urd::index<ygg::Column> lhs, urd::index<ygg::Column> rhs) :
-    m_lhs(column_position(input, lhs)),
-    m_rhs(column_position(input, rhs))
+SelectEqualPlan::SelectEqualPlan(std::span<const ygg::ColumnLayout> input, urd::index<ygg::Column> left, urd::index<ygg::Column> right) :
+    m_left(column_position(input, left)),
+    m_right(column_position(input, right))
 {
     ygg::validate_columns(input);
-    if (input[m_lhs].type != input[m_rhs].type)
+    if (input[m_left].type != input[m_right].type)
         throw std::invalid_argument("Relational operation: selected columns must have the same type.");
     m_columns.set(input.begin(), input.end());
 }

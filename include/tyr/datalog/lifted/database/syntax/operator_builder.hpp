@@ -42,13 +42,13 @@ public:
         return make<QueryEmptyTag>([&](auto& data) { data.columns.set(columns.begin(), columns.end()); });
     }
     template<class Tag>
-    QueryView<> binary(QueryView<> lhs, QueryView<> rhs)
+    QueryView<> binary(QueryView<> left_operand, QueryView<> right_operand)
     {
         return make<Tag>(
             [&](auto& data)
             {
-                data.lhs = lhs.index();
-                data.rhs = rhs.index();
+                data.left_operand = left_operand.index();
+                data.right_operand = right_operand.index();
             });
     }
     template<class Tag>
@@ -57,11 +57,11 @@ public:
         return make<Tag>(
             [&](auto& data)
             {
-                data.arg = arg.index();
+                data.operand = arg.index();
                 data.labels.set(labels.begin(), labels.end());
             });
     }
-    QueryView<> join(QueryView<> lhs, QueryView<> rhs) { return binary<QueryJoinTag>(lhs, rhs); }
+    QueryView<> join(QueryView<> left_operand, QueryView<> right_operand) { return binary<QueryJoinTag>(left_operand, right_operand); }
     /// The source's operation over schema-identical children of this repository.
     QueryView<> clone(QueryView<> source, std::span<const QueryView<>> children) { return detail::clone_query(source, children, *m_repository, *m_builder); }
     /// Keeps the query's columns with the given labels, in that order.

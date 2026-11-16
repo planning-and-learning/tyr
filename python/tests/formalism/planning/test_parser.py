@@ -11,9 +11,9 @@ from pyyggdrasil.execution import ExecutionContext
 
 from pytyr.formalism.planning import (
     GroundPlanningTask,
-    GroundTask,
+    TaskGround,
     LiftedPlanningTask,
-    LiftedTask,
+    TaskLifted,
     Parser,
     PlanningDomain,
 )
@@ -37,7 +37,7 @@ def test_pddl_parser() -> None:
     domain = parser.get_domain()
 
     assert isinstance(task, LiftedPlanningTask)
-    assert isinstance(task.get_task(), LiftedTask)
+    assert isinstance(task.get_task(), TaskLifted)
     assert domain.get_domain() == task.get_domain().get_domain()
     assert domain.get_path() == GRIPPER.domain_path
     assert task.get_path() == GRIPPER.task_path
@@ -66,7 +66,7 @@ def test_in_memory_paths_are_optional_and_preserved_through_grounding(
     )
     assert grounded.status == lifted.GroundTaskInstantiationStatus.SUCCESS
     assert isinstance(grounded.task.get_formalism_task(), GroundPlanningTask)
-    assert isinstance(grounded.task.get_task(), GroundTask)
+    assert isinstance(grounded.task.get_task(), TaskGround)
     assert grounded.task.get_formalism_task().get_path() == task_path
     assert grounded.task.get_formalism_task().get_domain().get_path() == domain_path
     assert task.get_task().get_num_objects() == 6
@@ -247,8 +247,8 @@ def test_parsed_task_exposes_domain_action_and_goal_views() -> None:
 
     assert len(list(goal.get_positive_facts())) == 1
     assert list(goal.get_negative_facts()) == []
-    assert list(goal.get_static_facts()) == []
-    assert list(goal.get_derived_facts()) == []
+    assert list(goal.get_static_literals()) == []
+    assert list(goal.get_derived_literals()) == []
     assert list(goal.get_numeric_constraints()) == []
 
 

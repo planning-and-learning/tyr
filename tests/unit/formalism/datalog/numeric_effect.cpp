@@ -20,9 +20,9 @@ concept NumericEffectContract =
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, tyr::formalism::NumericEffectOperatorKind>
     && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
-           { data.operator_kind } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
+           { data.operation } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            view.index();
-           { view.get_operator() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
+           { view.get_operation() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
            view.get_fterm();
            view.get_fexpr();
        };
@@ -44,9 +44,9 @@ concept GroundNumericEffectContract =
     && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, tyr::formalism::NumericEffectOperatorKind>
     && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
            data.index;
-           { data.operator_kind } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
+           { data.operation } -> std::same_as<tyr::formalism::NumericEffectOperatorKind&>;
            view.index();
-           { view.get_operator() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
+           { view.get_operation() } -> std::same_as<tyr::formalism::NumericEffectOperatorKind>;
            view.get_fterm();
            view.get_fexpr();
        };

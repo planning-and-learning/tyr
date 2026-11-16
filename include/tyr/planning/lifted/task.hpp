@@ -77,14 +77,17 @@ public:
     [[nodiscard]] const auto& get_formalism_task() const noexcept { return m_task; }
     [[nodiscard]] const auto& get_domain() const noexcept { return m_task.get_domain(); }
     [[nodiscard]] auto get_task() const noexcept { return m_task.get_task(); }
-    auto& get_fdr_context() noexcept { return m_task.get_fdr_context(); }
-    [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
-    [[nodiscard]] const auto& get_repository() const noexcept { return m_task.get_repository(); }
+    /// This task's own layers over the formalism task's frozen repository and FDR context: what its search grounds
+    /// and registers goes here.
+    [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_fdr_context; }
+    [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
     [[nodiscard]] const StaticState& get_static_state() const noexcept { return m_static_state; }
     [[nodiscard]] bool has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
 
 private:
     formalism::planning::PlanningTask<LiftedTag> m_task;
+    formalism::planning::RepositoryPtr m_repository;
+    formalism::planning::FDRContextPtr m_fdr_context;
 
     StaticState m_static_state;
 };

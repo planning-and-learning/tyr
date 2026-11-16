@@ -96,14 +96,16 @@ template<typename Tag>
 struct data<tyr::datalog::database::Query<Tag>>
 {
     urd::index<tyr::datalog::database::Query<Tag>> index;
-    urd::index<tyr::datalog::database::Query<>> lhs;
-    urd::index<tyr::datalog::database::Query<>> rhs;
+    urd::index<tyr::datalog::database::Query<>> left_operand;
+    urd::index<tyr::datalog::database::Query<>> right_operand;
     tyr::datalog::database::JoinPlan plan;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> lhs_, urd::index<tyr::datalog::database::Query<>> rhs_, tyr::datalog::database::JoinPlan plan_) :
-        lhs(lhs_),
-        rhs(rhs_),
+    data(urd::index<tyr::datalog::database::Query<>> left_operand_,
+         urd::index<tyr::datalog::database::Query<>> right_operand_,
+         tyr::datalog::database::JoinPlan plan_) :
+        left_operand(left_operand_),
+        right_operand(right_operand_),
         plan(std::move(plan_))
     {
     }
@@ -115,10 +117,11 @@ struct data<tyr::datalog::database::Query<Tag>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>, urd::field<"plan", &data::plan>> {};
+        return urd::
+            Fields<urd::field<"left_operand", &data::left_operand>, urd::field<"right_operand", &data::right_operand>, urd::field<"plan", &data::plan>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::lhs, &data::rhs> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::lhs, &data::rhs, &data::plan> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::left_operand, &data::right_operand> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::left_operand, &data::right_operand, &data::plan> {}; }
 };
 
 template<typename Tag>
@@ -126,14 +129,16 @@ template<typename Tag>
 struct data<tyr::datalog::database::Query<Tag>>
 {
     urd::index<tyr::datalog::database::Query<Tag>> index;
-    urd::index<tyr::datalog::database::Query<>> lhs;
-    urd::index<tyr::datalog::database::Query<>> rhs;
+    urd::index<tyr::datalog::database::Query<>> left_operand;
+    urd::index<tyr::datalog::database::Query<>> right_operand;
     tyr::datalog::database::SetPlan plan;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> lhs_, urd::index<tyr::datalog::database::Query<>> rhs_, tyr::datalog::database::SetPlan plan_) :
-        lhs(lhs_),
-        rhs(rhs_),
+    data(urd::index<tyr::datalog::database::Query<>> left_operand_,
+         urd::index<tyr::datalog::database::Query<>> right_operand_,
+         tyr::datalog::database::SetPlan plan_) :
+        left_operand(left_operand_),
+        right_operand(right_operand_),
         plan(std::move(plan_))
     {
     }
@@ -145,23 +150,24 @@ struct data<tyr::datalog::database::Query<Tag>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>, urd::field<"plan", &data::plan>> {};
+        return urd::
+            Fields<urd::field<"left_operand", &data::left_operand>, urd::field<"right_operand", &data::right_operand>, urd::field<"plan", &data::plan>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::lhs, &data::rhs> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::lhs, &data::rhs, &data::plan> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::left_operand, &data::right_operand> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::left_operand, &data::right_operand, &data::plan> {}; }
 };
 
 template<>
 struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTag>>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTag>> index;
-    urd::index<tyr::datalog::database::Query<>> arg;
+    urd::index<tyr::datalog::database::Query<>> operand;
     urd::flat_vector<urd::index<ygg::Column>> labels;
     tyr::datalog::database::ProjectionPlan plan;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> arg_, std::span<const urd::index<ygg::Column>> labels_, tyr::datalog::database::ProjectionPlan plan_) :
-        arg(arg_),
+    data(urd::index<tyr::datalog::database::Query<>> operand_, std::span<const urd::index<ygg::Column>> labels_, tyr::datalog::database::ProjectionPlan plan_) :
+        operand(operand_),
         plan(std::move(plan_))
     {
         labels.set(labels_.begin(), labels_.end());
@@ -174,23 +180,23 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTa
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"arg", &data::arg>, urd::field<"labels", &data::labels>, urd::field<"plan", &data::plan>> {};
+        return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"plan", &data::plan>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::labels> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::arg, &data::labels, &data::plan> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::labels> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operand, &data::labels, &data::plan> {}; }
 };
 
 template<>
 struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag>>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag>> index;
-    urd::index<tyr::datalog::database::Query<>> arg;
+    urd::index<tyr::datalog::database::Query<>> operand;
     urd::flat_vector<urd::index<ygg::Column>> labels;
     urd::flat_vector<ygg::ColumnLayout> columns;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> arg_, std::span<const urd::index<ygg::Column>> labels_, std::span<const ygg::ColumnLayout> columns_) :
-        arg(arg_)
+    data(urd::index<tyr::datalog::database::Query<>> operand_, std::span<const urd::index<ygg::Column>> labels_, std::span<const ygg::ColumnLayout> columns_) :
+        operand(operand_)
     {
         labels.set(labels_.begin(), labels_.end());
         columns.set(columns_.begin(), columns_.end());
@@ -203,29 +209,29 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"arg", &data::arg>, urd::field<"labels", &data::labels>, urd::field<"columns", &data::columns>> {};
+        return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"columns", &data::columns>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::labels> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::arg, &data::labels, &data::columns> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::labels> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operand, &data::labels, &data::columns> {}; }
 };
 
 template<>
 struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqualTag>>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqualTag>> index;
-    urd::index<tyr::datalog::database::Query<>> arg;
-    urd::index<ygg::Column> lhs_column;
-    urd::index<ygg::Column> rhs_column;
+    urd::index<tyr::datalog::database::Query<>> operand;
+    urd::index<ygg::Column> left_column;
+    urd::index<ygg::Column> right_column;
     tyr::datalog::database::SelectEqualPlan plan;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> arg_,
-         urd::index<ygg::Column> lhs_column_,
-         urd::index<ygg::Column> rhs_column_,
+    data(urd::index<tyr::datalog::database::Query<>> operand_,
+         urd::index<ygg::Column> left_column_,
+         urd::index<ygg::Column> right_column_,
          tyr::datalog::database::SelectEqualPlan plan_) :
-        arg(arg_),
-        lhs_column(lhs_column_),
-        rhs_column(rhs_column_),
+        operand(operand_),
+        left_column(left_column_),
+        right_column(right_column_),
         plan(std::move(plan_))
     {
     }
@@ -237,20 +243,23 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqu
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"arg", &data::arg>,
-                           urd::field<"lhs_column", &data::lhs_column>,
-                           urd::field<"rhs_column", &data::rhs_column>,
+        return urd::Fields<urd::field<"operand", &data::operand>,
+                           urd::field<"left_column", &data::left_column>,
+                           urd::field<"right_column", &data::right_column>,
                            urd::field<"plan", &data::plan>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::lhs_column, &data::rhs_column> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::arg, &data::lhs_column, &data::rhs_column, &data::plan> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::left_column, &data::right_column> {}; }
+    static constexpr auto cista_members() noexcept
+    {
+        return urd::Members<&data::index, &data::operand, &data::left_column, &data::right_column, &data::plan> {};
+    }
 };
 
 template<>
 struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>>
 {
     urd::index<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectValueTag>> index;
-    urd::index<tyr::datalog::database::Query<>> arg;
+    urd::index<tyr::datalog::database::Query<>> operand;
     urd::index<ygg::Column> column;
     /// The constant's canonical value.
     ygg::Value constant = 0;
@@ -259,12 +268,12 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
     tyr::datalog::database::SelectValuePlan plan;
 
     data() = default;
-    data(urd::index<tyr::datalog::database::Query<>> arg_,
+    data(urd::index<tyr::datalog::database::Query<>> operand_,
          urd::index<ygg::Column> column_,
          ygg::Value constant_,
          ygg::TypeId constant_type_,
          tyr::datalog::database::SelectValuePlan plan_) :
-        arg(arg_),
+        operand(operand_),
         column(column_),
         constant(constant_),
         constant_type(constant_type_),
@@ -279,16 +288,16 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
 
     static constexpr auto fields() noexcept
     {
-        return urd::Fields<urd::field<"arg", &data::arg>,
+        return urd::Fields<urd::field<"operand", &data::operand>,
                            urd::field<"column", &data::column>,
                            urd::field<"constant", &data::constant>,
                            urd::field<"constant_type", &data::constant_type>,
                            urd::field<"plan", &data::plan>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::arg, &data::column, &data::constant, &data::constant_type> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::column, &data::constant, &data::constant_type> {}; }
     static constexpr auto cista_members() noexcept
     {
-        return urd::Members<&data::index, &data::arg, &data::column, &data::constant, &data::constant_type, &data::plan> {};
+        return urd::Members<&data::index, &data::operand, &data::column, &data::constant, &data::constant_type, &data::plan> {};
     }
 };
 

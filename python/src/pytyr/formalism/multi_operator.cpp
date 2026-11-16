@@ -31,50 +31,25 @@ namespace tyr::formalism
 
 namespace
 {
-template<TaskKind T>
-void bind_multi_operator_data(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<MultiOperator<T, ArithmeticOperatorKind>>>(m, name + "Index");
-
-    using V = urd::data<MultiOperator<T, ArithmeticOperatorKind>>;
-    auto cls = nb::class_<V>(m, (name + "Data").c_str());
-    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, const urd::Store<urd::sequence<datalog::FunctionExpressionView<T>>>&>(),
-            "operator"_a,
-            "args"_a);
-    cls.def(urd::python::init_from_views<ArithmeticOperatorKind, const urd::Store<urd::sequence<planning::FunctionExpressionView<T>>>&>(),
-            "operator"_a,
-            "args"_a);
-    cls.def(nb::init<ArithmeticOperatorKind, FunctionExpressionList<T>>(), "operator"_a, "args"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
 template<TaskKind T, typename C>
-void bind_multi_operator_view(nb::module_& m, nb::class_<C>& repository, const std::string& name)
+void bind_multi_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
-    using V = urd::index_view<MultiOperator<T, ArithmeticOperatorKind>, C>;
-    auto cls = nb::class_<V>(m, name.c_str()).def("index", &V::index).def("get_operator", &V::get_operator).def("get_args", &V::get_args);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-
+    urd::python::bind_view<urd::index_view<MultiOperator<T, ArithmeticOperatorKind>, C>>(m);
     ygg::bind_insert<MultiOperator<T, ArithmeticOperatorKind>>(repository);
 }
 
 template<typename C>
 void bind_multi_operator_views(nb::module_& m, nb::class_<C>& repository)
 {
-    bind_multi_operator_view<LiftedTag>(m, repository, "MultiOperator");
-    bind_multi_operator_view<GroundTag>(m, repository, "GroundMultiOperator");
+    bind_multi_operator_view<LiftedTag>(m, repository);
+    bind_multi_operator_view<GroundTag>(m, repository);
 }
 }  // namespace
 
 void bind_multi_operator(nb::module_& m)
 {
-    bind_multi_operator_data<LiftedTag>(m, "MultiOperator");
-    bind_multi_operator_data<GroundTag>(m, "GroundMultiOperator");
+    urd::python::bind_data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_data<MultiOperator<GroundTag, ArithmeticOperatorKind>>(m);
 }
 
 }  // namespace tyr::formalism

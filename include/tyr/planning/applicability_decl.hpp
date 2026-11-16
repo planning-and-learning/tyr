@@ -25,25 +25,50 @@
 namespace tyr::planning
 {
 
+/// What applicability reads of a state: its task, its storages (its fluent facts, derived atoms and numeric values) and
+/// an auxiliary value. The state must outlive the context.
 template<TaskKind Kind>
 class StateContext
 {
 public:
+    /// From a state's view, registered or being built: its storages, through its getters.
+    template<typename V>
+        requires requires(const V& state) { state.get_fact_storage(); }
+    StateContext(const Task<Kind>& task, const V& state, ygg::float_t auxiliary_value) :
+        StateContext(task, state.get_fact_storage(), state.get_atom_storage(), state.get_numeric_storage(), auxiliary_value)
+    {
+    }
+    /// From a state being built (its builder: a data<State>), its storages.
     StateContext(const Task<Kind>& task, const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value) :
-        m_task(&task),
-        m_state(&state),
-        m_auxiliary_value(auxiliary_value)
+        StateContext(task, state.fact_storage, state.atom_storage, state.numeric_storage, auxiliary_value)
     {
     }
 
     [[nodiscard]] const Task<Kind>& task() const noexcept { return *m_task; }
-    [[nodiscard]] const urd::data<State<Kind>>& state_data() const noexcept { return *m_state; }
+    [[nodiscard]] const FactUnpackedStorage<Kind>& fact_storage() const noexcept { return *m_fact_storage; }
+    [[nodiscard]] const AtomUnpackedStorage<Kind>& atom_storage() const noexcept { return *m_atom_storage; }
+    [[nodiscard]] const NumericUnpackedStorage<Kind>& numeric_storage() const noexcept { return *m_numeric_storage; }
     [[nodiscard]] ygg::float_t auxiliary_value() const noexcept { return m_auxiliary_value; }
     [[nodiscard]] ygg::float_t& auxiliary_value() noexcept { return m_auxiliary_value; }
 
 private:
+    StateContext(const Task<Kind>& task,
+                 const FactUnpackedStorage<Kind>& fact_storage,
+                 const AtomUnpackedStorage<Kind>& atom_storage,
+                 const NumericUnpackedStorage<Kind>& numeric_storage,
+                 ygg::float_t auxiliary_value) :
+        m_task(&task),
+        m_fact_storage(&fact_storage),
+        m_atom_storage(&atom_storage),
+        m_numeric_storage(&numeric_storage),
+        m_auxiliary_value(auxiliary_value)
+    {
+    }
+
     const Task<Kind>* m_task;
-    const urd::data<State<Kind>>* m_state;
+    const FactUnpackedStorage<Kind>* m_fact_storage;
+    const AtomUnpackedStorage<Kind>* m_atom_storage;
+    const NumericUnpackedStorage<Kind>* m_numeric_storage;
     ygg::float_t m_auxiliary_value;
 };
 

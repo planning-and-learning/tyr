@@ -223,13 +223,13 @@ TEST(DatabaseRelaxation, UnknownInputsDropConstraints)
     const auto renamed = qb::rename(queries, unknown, { x, y });
     EXPECT_FALSE(relax(qb::union_(queries, known_edges, renamed), both_known)->relaxation.queries[0].has_value());
 
-    // A semijoin with an unknown lhs still constrains the shared label y by its known rhs: ⊤ ⋉ B̂ = B̂ on y.
+    // A semijoin with an unknown left operand still constrains the shared label y by its known right operand: ⊤ ⋉ B̂ = B̂ on y.
     const auto semi = relax(qb::semijoin(queries, unknown, known_edges), both_known);
     ASSERT_TRUE(semi->relaxation.queries[0].has_value());
     EXPECT_TRUE(std::ranges::equal(semi->relaxation.queries[0].value().columns() | std::views::transform(&ygg::ColumnLayout::label),
                                    (urd::Store<urd::sequence<Column>> { y })));
 
-    // A known antijoin rhs stays: the result is exact.
+    // A known antijoin right operand stays: the result is exact.
     const auto anti = relax(qb::antijoin(queries, known_edges, blocked), both_known);
     ASSERT_TRUE(anti->relaxation.queries[0].has_value());
     EXPECT_TRUE(tyr::datalog::database::is<tyr::datalog::database::QueryAntijoinTag>(anti->relaxation.queries[0].value()));
@@ -263,7 +263,7 @@ TEST(DatabaseRelaxation, ProjectedJoinEliminatesUnneededConjunctsAndAntijoins)
         if (tyr::datalog::database::is<tyr::datalog::database::QueryJoinTag>(node))
         {
             const auto join = tyr::datalog::database::as<tyr::datalog::database::QueryJoinTag>(node);
-            EXPECT_TRUE(join.get_lhs().columns().empty() || join.get_rhs().columns().empty());
+            EXPECT_TRUE(join.get_left_operand().columns().empty() || join.get_right_operand().columns().empty());
         }
     }
 

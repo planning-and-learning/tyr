@@ -76,14 +76,15 @@ pools).
 (``RowPool``), nothing else: no index and no content identity. The pool key is given where it is interned:
 ``insert(builder)`` for ``Schema``, ``insert(pool, builder)`` for other families. A builder is read through a layer
 (``repository.view(builder)`` or ``urd::resolve(builder, repository)``, a ``RelationBuilderView``), and operations
-take only views. It draws its number (``layer()``, the context number of its rows' views and of its
-``relation_identity()``) at construction from the process-wide counter of the repository layers.
+take only views. It draws its number (``layer()``, the context number of its rows' views) at construction from the
+process-wide counter of the repository layers.
 
 **Views.** An interned ``urd::index_view<Relation<F>, Context>`` and a ``RelationBuilderView`` give ``columns()``,
-``size()``, ``row(i)``, ``rows()``, ``contains(row)`` and ``relation_identity()`` (an interned relation's layer number
-and index, or a builder's address, valid while it is unchanged; alias checks and the join cache use it). An interned
-view reads its row set over its pool through ``urd::subset_view``; a builder's view reads the builder's pool by
-position.
+``size()``, ``row(i)``, ``rows()`` and ``contains(row)``; a ``RelationBuilderView`` also gives the builder it reads
+(``get_builder()``). An interned relation is immutable, so only a builder's view can read an operation's output:
+``reads_builder(view, builder)`` is what alias checks ask, and an interned view reads no builder. Interned views are
+told apart as urd views are, by their index and layer. An interned view reads its row set over its pool through
+``urd::subset_view``; a builder's view reads the builder's pool by position.
 
 **Rows.** Every row is a ``Row<F>`` view, the same for every family (tyr's bindings and fact rows too). It holds its
 key ``{relation, row}`` and reads through its context, the layer or the builder:
@@ -138,24 +139,21 @@ the output's rows.
    * - ``project(input, plan, out, workspace)``
      - ``ProjectionPlan(input, labels)``
      - Keep the ordered columns and eliminate duplicate rows.
-   * - ``join(lhs, rhs, plan, out, workspace)``
-     - ``JoinPlan(lhs, rhs)``
-     - Natural join on common labels, followed by rhs-only columns.
-   * - ``join(lhs, rhs, plan, cache, reuse, out, workspace)``
-     - ``JoinPlan(lhs, rhs)``
-     - As join, reusing ``JoinIndexCache`` indexes of inputs marked in ``JoinReuse``.
-   * - ``union_(lhs, rhs, plan, out)``
-     - ``SetPlan(lhs, rhs)``
+   * - ``join(left_operand, right_operand, plan, out, workspace)``
+     - ``JoinPlan(left, right)``
+     - Natural join on common labels, followed by right-only columns.
+   * - ``union_(left_operand, right_operand, plan, out)``
+     - ``SetPlan(left, right)``
      - Union with an identical ordered typed schema.
-   * - ``difference(lhs, rhs, plan, out)``
-     - ``SetPlan(lhs, rhs)``
+   * - ``difference(left_operand, right_operand, plan, out)``
+     - ``SetPlan(left, right)``
      - Difference with an identical ordered typed schema.
-   * - ``semijoin(lhs, rhs, plan, out, workspace)``
-     - ``JoinPlan(lhs, rhs)``
-     - lhs ⋉ rhs: the lhs rows with a match in rhs on the common labels; the output has the lhs columns.
-   * - ``antijoin(lhs, rhs, plan, out, workspace)``
-     - ``JoinPlan(lhs, rhs)``
-     - lhs ▷ rhs: the lhs rows without such a match. Without common labels, lhs if rhs is empty.
+   * - ``semijoin(left_operand, right_operand, plan, out, workspace)``
+     - ``JoinPlan(left, right)``
+     - left ⋉ right: the left rows with a match in right on the common labels; the output has the left columns.
+   * - ``antijoin(left_operand, right_operand, plan, out, workspace)``
+     - ``JoinPlan(left, right)``
+     - left ▷ right: the left rows without such a match. Without common labels, left if right is empty.
    * - ``assign(destination, source)``
      - none
      - Replace the destination's columns and rows by the source's.
@@ -171,9 +169,7 @@ inputs' and the output's columns are the plan's. An exception during evaluation 
 partial output. ``assign`` of a builder's own view leaves it as it is.
 
 Join keys mix their fields' canonical values into a hash (``urd::hash_columns``); collisions compare the values. A
-join indexes the smaller input. ``JoinIndexCache`` may retain indexes for immutable inputs, keyed by the input's
-``relation_identity()`` and the ordered key positions. Full and incremental operations share key hashing, equality and
-field copying.
+join indexes the smaller input. Full and incremental operations share key hashing, equality and field copying.
 
 Reuse and interning
 -------------------
@@ -227,7 +223,7 @@ added and removed rows, in the same typed schemas and rows:
 
 - Projection tracks witnesses; replacing a witness without changing membership produces no output delta.
 - Join supports updates to either or both operands.
-- Semijoin and antijoin re-examine only the changed lhs rows and the lhs rows sharing a key with a changed rhs row.
+- Semijoin and antijoin re-examine only the changed left rows and the left rows sharing a key with a changed right row.
 
 Every evaluator takes the layer first, and its ``update`` takes one change per input: an ``(added, removed)`` pair
 read with ``std::get``, such as ``Delta::change()`` or ``std::tie(added, removed)`` of views
@@ -493,14 +489,14 @@ input relation.
   record and its heterogeneous root. ``prepare_for_insert`` validates operands, schemas, constants and execution
   orders. Records hold plain indices, so operands stay in the repository they are inserted into.
 - **Records.** ``Query<Tag>`` is a concrete operation holding only its own operands and parameters (``QueryJoinTag``
-  has ``lhs`` and ``rhs``; ``QuerySelectValueTag`` has ``arg``, ``column`` and an encoded ``constant``). ``Query<>``
+  has ``left_operand`` and ``right_operand``; ``QuerySelectValueTag`` has ``operand``, ``column`` and an encoded ``constant``). ``Query<>``
   is the heterogeneous root, a variant of concrete query indices. Data, views and the repository are in
   ``query_data.hpp``, ``query_view.hpp`` and ``query_repository.hpp``.
 - **Identity.** Input and empty schemas and the ordered labels of projection and rename are part of a record's
   identity. Derived output columns and prepared plans (of join, projection, distance and Generic Join; the resolved
   positions of selections) are cached and are not.
 - **Views.** ``insert_query`` returns a ``QueryView``; ``get_variant()`` gives the concrete view with its getters
-  (``get_lhs()``, ``get_arg()``, ``get_constant()``). Every view has ``columns()`` and borrows its repository.
+  (``get_left_operand()``, ``get_operand()``, ``get_constant()``). Every view has ``columns()`` and borrows its repository.
   ``size()`` counts the root queries.
 - **Generic Join** is a query constructor with input queries, a variable order and an independent output order; an
   empty output order becomes the natural union of the input columns.
@@ -530,8 +526,8 @@ Include ``<tyr/datalog/lifted/database/syntax/formatter.hpp>`` to format a plan 
        return insert_query(repository, builder, *data);
    };
    auto join = checkout<Query<DefaultColumnTypes, QueryJoinTag>>(builder);
-   join->lhs = input(0, left_relation).index();
-   join->rhs = input(1, right_relation).index();
+   join->left_operand = input(0, left_relation).index();
+   join->right_operand = input(1, right_relation).index();
    const auto query = insert_query(repository, builder, *join);
 
    // Any range of relation views: interned RelationView or RelationBuilderView over builders.
@@ -546,7 +542,7 @@ Include ``<tyr/datalog/lifted/database/syntax/formatter.hpp>`` to format a plan 
 repository. It implements established algorithms as published:
 
 1. **Normalization.** The textbook algebraic rewrites [GMUW08]: selections are pushed down through joins, projections,
-   renames, unions and differences, and into the lhs of semijoins and antijoins; projections through renames and
+   renames, unions and differences, and into the left operand of semijoins and antijoins; projections through renames and
    unions; empty relations are propagated.
 
 2. **Join blocks.** Each maximal tree of joins is planned as a whole. Unions, differences, semijoins, antijoins,
@@ -724,9 +720,9 @@ type-erased ``Query`` that operators take as operands. The records:
 
 - ``QueryInputData(slot, columns)``, ``QueryEmptyData(columns)``
 - ``QueryJoinData``, ``QueryUnionData``, ``QueryDifferenceData``, ``QuerySemijoinData``,
-  ``QueryAntijoinData(lhs, rhs)``
-- ``QueryProjectData``, ``QueryRenameData(arg, labels)``
-- ``QuerySelectEqualData(arg, lhs, rhs)``, ``QuerySelectValueData(arg, column, type, value)`` (the constant must have
+  ``QueryAntijoinData(left_operand, right_operand)``
+- ``QueryProjectData``, ``QueryRenameData(operand, labels)``
+- ``QuerySelectEqualData(operand, left_column, right_column)``, ``QuerySelectValueData(operand, column, type, value)`` (the constant must have
   the selected column's type)
 - ``QueryDistanceData(sources, edges, targets, distance_column)``
 - ``QueryGenericJoinData(inputs, variable_order, output_order=[])``

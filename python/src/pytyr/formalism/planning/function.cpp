@@ -29,25 +29,18 @@ namespace tyr::formalism::planning
 namespace
 {
 template<FactKind T>
-void bind_function_view(nb::module_& m, const char* name)
+void bind_function_view(nb::module_& m, RepositoryBinding& repository)
 {
-    using V = FunctionView<T>;
-    auto cls = nb::class_<V>(m, name).def("index", &V::index).def("get_name", &V::get_name).def("get_arity", &V::get_arity);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
+    urd::python::bind_view<FunctionView<T>>(m);
+    ygg::bind_insert<Function<T>>(repository);
 }
 }  // namespace
 
 void bind_function(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_function_view<StaticTag>(m, "StaticFunction");
-    bind_function_view<FluentTag>(m, "FluentFunction");
-    bind_function_view<AuxiliaryTag>(m, "AuxiliaryFunction");
-
-    ygg::bind_insert<Function<StaticTag>>(repository);
-    ygg::bind_insert<Function<FluentTag>>(repository);
-    ygg::bind_insert<Function<AuxiliaryTag>>(repository);
+    bind_function_view<StaticTag>(m, repository);
+    bind_function_view<FluentTag>(m, repository);
+    bind_function_view<AuxiliaryTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::planning

@@ -154,7 +154,7 @@ std::pair<FunctionTermView<GroundTag, F>, bool> ground(FunctionTermView<LiftedTa
     auto fterm = datalog::checkout<FunctionTerm<GroundTag, F>>(context.builder());
 
     // Fill data
-    fterm->row = ground(element.get_terms(), element.get_function(), context).first.data();
+    urd::store(fterm->row, ground(element.get_terms(), element.get_function(), context).first);
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *fterm);
@@ -180,8 +180,8 @@ inline std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
     auto unary = datalog::checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
-    unary->operator_kind = element.get_operator();
-    unary->arg = urd::to_stored(ground(element.get_arg(), context));
+    unary->operation = element.get_operation();
+    urd::store(unary->arg, ground(element.get_arg(), context));
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *unary);
@@ -194,9 +194,9 @@ std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<Lift
     auto binary = datalog::checkout<BinaryOperator<GroundTag, O>>(context.builder());
 
     // Fill data
-    binary->operator_kind = element.get_operator();
-    binary->lhs = urd::to_stored(ground(element.get_lhs(), context));
-    binary->rhs = urd::to_stored(ground(element.get_rhs(), context));
+    binary->operation = element.get_operation();
+    urd::store(binary->lhs, ground(element.get_lhs(), context));
+    urd::store(binary->rhs, ground(element.get_rhs(), context));
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *binary);
@@ -209,9 +209,9 @@ inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
     auto multi = datalog::checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
-    multi->operator_kind = element.get_operator();
+    multi->operation = element.get_operation();
     for (const auto arg : element.get_args())
-        multi->args.push_back(urd::to_stored(ground(arg, context)));
+        urd::append(multi->args, ground(arg, context));
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *multi);
@@ -236,7 +236,7 @@ std::pair<AtomView<GroundTag, F>, bool> ground(AtomView<LiftedTag, F> element, W
     auto atom = datalog::checkout<Atom<GroundTag, F>>(context.builder());
 
     // Fill data
-    atom->row = ground(element.get_terms(), element.get_predicate(), context).first.data();
+    urd::store(atom->row, ground(element.get_terms(), element.get_predicate(), context).first);
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *atom);
@@ -261,9 +261,9 @@ std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<Lifted
 {
     auto numeric_effect = datalog::checkout<NumericEffect<GroundTag, F>>(context.builder());
 
-    numeric_effect->operator_kind = element.get_operator();
+    numeric_effect->operation = element.get_operation();
     numeric_effect->fterm = ground(element.get_fterm(), context).first.index();
-    numeric_effect->fexpr = urd::to_stored(ground(element.get_fexpr(), context));
+    urd::store(numeric_effect->fexpr, ground(element.get_fexpr(), context));
 
     return datalog::insert(context.destination(), *numeric_effect);
 }
@@ -291,7 +291,7 @@ inline std::pair<RuleView<GroundTag>, bool> ground(RuleView<LiftedTag> element, 
     auto rule = datalog::checkout<Rule<GroundTag>>(context.builder());
 
     // Fill data
-    rule->row = ground_binding(element, context).first.data();
+    urd::store(rule->row, ground_binding(element, context).first);
     rule->body = ground(element.get_body(), context).first.index();
     for (const auto head : element.get_heads())
         rule->heads.push_back(ground(head, context).first.index());
@@ -326,7 +326,9 @@ std::pair<PredicateRowView<F>, bool> ground_binding(AtomView<LiftedTag, F> eleme
 
 template<FactKind F>
 std::pair<FunctionRowView<F>, bool> ground_binding(FunctionTermView<LiftedTag, F> element, WriteContext<Builder, Repository>& context)
-{ return ground(element.get_terms(), element.get_function(), context); }
+{
+    return ground(element.get_terms(), element.get_function(), context);
+}
 
 inline std::pair<RuleRowView, bool> ground_binding(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context)
 {

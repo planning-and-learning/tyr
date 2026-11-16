@@ -25,69 +25,113 @@ private:
 public:
     [[nodiscard]] auto get_variant() const
         requires std::same_as<Tag, void>
-    { return urd::resolve(self().data().variant, self().context()); }
+    {
+        return self().template member<&urd::record_of<V>::variant>();
+    }
     [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const
     {
         if constexpr (std::same_as<Tag, void>)
             return std::visit([](auto concrete) { return concrete.columns(); }, get_variant());
         else if constexpr (std::same_as<Tag, tyr::datalog::database::QuerySemijoinTag> || std::same_as<Tag, tyr::datalog::database::QueryAntijoinTag>)
-            return get_plan().lhs_columns();
+            return get_plan().left_columns();
         else if constexpr (boost::mp11::mp_contains<tyr::datalog::database::QueryPlannedTags, Tag>::value)
             return get_plan().output_columns();
         else
-            return { self().data().columns.data(), self().data().columns.size() };
+            return { self().template member<&urd::record_of<V>::columns>().data(), self().template member<&urd::record_of<V>::columns>().size() };
     }
-    [[nodiscard]] auto get_arg() const
+    [[nodiscard]] auto get_operand() const
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryUnaryTags, Tag>::value
-    { return urd::resolve(self().data().arg, self().context()); }
-    [[nodiscard]] auto get_lhs() const
+    {
+        return self().template member<&urd::record_of<V>::operand>();
+    }
+    [[nodiscard]] auto get_left_operand() const
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryBinaryTags, Tag>::value
-    { return urd::resolve(self().data().lhs, self().context()); }
-    [[nodiscard]] auto get_rhs() const
+    {
+        return self().template member<&urd::record_of<V>::left_operand>();
+    }
+    [[nodiscard]] auto get_right_operand() const
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryBinaryTags, Tag>::value
-    { return urd::resolve(self().data().rhs, self().context()); }
+    {
+        return self().template member<&urd::record_of<V>::right_operand>();
+    }
     [[nodiscard]] auto get_sources() const
         requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return urd::resolve(self().data().sources, self().context()); }
+    {
+        return self().template member<&urd::record_of<V>::sources>();
+    }
     [[nodiscard]] auto get_edges() const
         requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return urd::resolve(self().data().edges, self().context()); }
+    {
+        return self().template member<&urd::record_of<V>::edges>();
+    }
     [[nodiscard]] auto get_targets() const
         requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return urd::resolve(self().data().targets, self().context()); }
+    {
+        return self().template member<&urd::record_of<V>::targets>();
+    }
     [[nodiscard]] auto get_input_slot() const
         requires std::same_as<Tag, tyr::datalog::database::QueryInputTag>
-    { return self().data().input_slot; }
+    {
+        return self().template member<&urd::record_of<V>::input_slot>();
+    }
     [[nodiscard]] auto get_labels() const
         requires(std::same_as<Tag, tyr::datalog::database::QueryProjectTag> || std::same_as<Tag, tyr::datalog::database::QueryRenameTag>)
-    { return std::span<const urd::index<ygg::Column>>(self().data().labels.data(), self().data().labels.size()); }
-    [[nodiscard]] auto get_lhs_column() const
+    {
+        return std::span<const urd::index<ygg::Column>>(self().template member<&urd::record_of<V>::labels>().data(),
+                                                        self().template member<&urd::record_of<V>::labels>().size());
+    }
+    [[nodiscard]] auto get_left_column() const
         requires std::same_as<Tag, tyr::datalog::database::QuerySelectEqualTag>
-    { return self().data().lhs_column; }
-    [[nodiscard]] auto get_rhs_column() const
+    {
+        return self().template member<&urd::record_of<V>::left_column>();
+    }
+    [[nodiscard]] auto get_right_column() const
         requires std::same_as<Tag, tyr::datalog::database::QuerySelectEqualTag>
-    { return self().data().rhs_column; }
+    {
+        return self().template member<&urd::record_of<V>::right_column>();
+    }
     [[nodiscard]] auto get_column() const
         requires std::same_as<Tag, tyr::datalog::database::QuerySelectValueTag>
-    { return self().data().column; }
+    {
+        return self().template member<&urd::record_of<V>::column>();
+    }
     [[nodiscard]] auto get_constant() const
         requires std::same_as<Tag, tyr::datalog::database::QuerySelectValueTag>
-    { return self().data().constant; }
+    {
+        return self().template member<&urd::record_of<V>::constant>();
+    }
+    [[nodiscard]] auto get_constant_type() const
+        requires std::same_as<Tag, tyr::datalog::database::QuerySelectValueTag>
+    {
+        return self().template member<&urd::record_of<V>::constant_type>();
+    }
     [[nodiscard]] auto get_distance_column() const
         requires std::same_as<Tag, tyr::datalog::database::QueryDistanceTag>
-    { return self().data().distance_column; }
+    {
+        return self().template member<&urd::record_of<V>::distance_column>();
+    }
     [[nodiscard]] const auto& get_plan() const
         requires boost::mp11::mp_contains<tyr::datalog::database::QueryPlannedTags, Tag>::value
-    { return self().data().plan; }
+    {
+        return self().template member<&urd::record_of<V>::plan>();
+    }
     [[nodiscard]] auto get_inputs() const
         requires std::same_as<Tag, tyr::datalog::database::QueryGenericJoinTag>
-    { return std::span<const urd::index<tyr::datalog::database::Query<>>>(self().data().inputs.data(), self().data().inputs.size()); }
+    {
+        return self().template member<&urd::record_of<V>::inputs>();
+    }
     [[nodiscard]] auto get_variable_order() const
         requires std::same_as<Tag, tyr::datalog::database::QueryGenericJoinTag>
-    { return std::span<const urd::index<ygg::Column>>(self().data().variable_order.data(), self().data().variable_order.size()); }
+    {
+        return std::span<const urd::index<ygg::Column>>(self().template member<&urd::record_of<V>::variable_order>().data(),
+                                                        self().template member<&urd::record_of<V>::variable_order>().size());
+    }
     [[nodiscard]] auto get_output_order() const
         requires std::same_as<Tag, tyr::datalog::database::QueryGenericJoinTag>
-    { return std::span<const urd::index<ygg::Column>>(self().data().output_order.data(), self().data().output_order.size()); }
+    {
+        return std::span<const urd::index<ygg::Column>>(self().template member<&urd::record_of<V>::output_order>().data(),
+                                                        self().template member<&urd::record_of<V>::output_order>().size());
+    }
 };
 }  // namespace urd
 
@@ -100,7 +144,7 @@ void for_each_child(QueryView<Tag> view, F f)
     if constexpr (std::same_as<Tag, void>)
         std::visit([&](auto concrete) { for_each_child(concrete, f); }, view.get_variant());
     else
-        urd::for_each_child<boost::mp11::mp_list<Query<>>, Query<Tag>>(view.data(), view.context(), f);
+        urd::for_each_child<boost::mp11::mp_list<Query<>>, Query<Tag>>(view, f);
 }
 }  // namespace tyr::datalog::database
 

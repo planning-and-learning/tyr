@@ -54,8 +54,7 @@ public:
 
     virtual void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) = 0;
 
-    ygg::float_t evaluate(const StateView<Kind>& state);
-    virtual ygg::float_t evaluate(const urd::data<State<Kind>>& state) = 0;
+    virtual ygg::float_t evaluate(const StateView<Kind>& state) = 0;
 
     [[nodiscard]] virtual HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const = 0;
 

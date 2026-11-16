@@ -20,7 +20,7 @@ from pathlib import Path
 
 from pypddl.formalism import ParserOptions
 
-from pytyr.formalism.planning import Domain, LiftedTask, Parser
+from pytyr.formalism.planning import Domain, TaskLifted, Parser
 
 
 def print_domain(formalism_domain: Domain) -> None:
@@ -53,7 +53,7 @@ def print_domain(formalism_domain: Domain) -> None:
         print(constant.get_name())
 
 
-def print_task(formalism_task: LiftedTask) -> None:
+def print_task(formalism_task: TaskLifted) -> None:
     """Print the initial ground atoms, derived predicates, and axioms of a task."""
     # The separation from above induces a parallel separation for atom, literal, ground atom, and ground literal.
     print("\nStatic initial ground atoms:")

@@ -58,7 +58,7 @@ public:
     }
     auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
     auto get_heads() const noexcept { return self().template member<&urd::record_of<V>::heads>(); }
-    auto get_cost() const noexcept { return self().data().cost; }
+    auto get_cost() const noexcept { return self().template member<&urd::record_of<V>::cost>(); }
 
     auto get_rule() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>

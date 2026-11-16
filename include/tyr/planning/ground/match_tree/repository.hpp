@@ -71,16 +71,30 @@ public:
 
     [[nodiscard]] const formalism::planning::Repository& get_formalism_repository() const noexcept { return *m_formalism_repository; }
 
-    /// An index as its view here (urd's resolves contract): what compositions of indices are read through (urd::resolve).
+    /// A node's index as its view here (urd's resolves contract): what compositions of indices are read through
+    /// (urd::resolve).
     template<typename T>
+        requires ygg::formalism::SupportsSymbol<Repository, T>
     [[nodiscard]] urd::index_view<T, Repository> view(urd::index<T> index) const noexcept
-    { return { index, this }; }
+    {
+        return { index, this };
+    }
+    /// A formalism element a node refers to (an atom, a constraint, a fact, a variable): its view in the formalism
+    /// repository, which owns it.
+    template<typename T>
+        requires(!ygg::formalism::SupportsSymbol<Repository, T>)
+    [[nodiscard]] auto view(urd::index<T> index) const
+    {
+        return get_formalism_repository().view(index);
+    }
 };
 
 template<typename Tag, typename T>
     requires ygg::formalism::SupportsSymbol<Repository<Tag>, T>
 void prepare_for_insert(Repository<Tag>&, urd::data<T>& data)
-{ canonicalize(data); }
+{
+    canonicalize(data);
+}
 
 }
 

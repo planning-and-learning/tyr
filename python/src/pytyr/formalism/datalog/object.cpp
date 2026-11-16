@@ -24,16 +24,7 @@ namespace tyr::formalism::datalog
 
 void bind_object(nb::module_& m, RepositoryBinding& repository)
 {
-    {
-        using V = ObjectView;
-        auto cls = nb::class_<V>(m, "Object")  //
-                       .def("index", &V::index)
-                       .def("get_name", &V::get_name);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
+    urd::python::bind_view<ObjectView>(m);
     ygg::bind_insert<Object>(repository);
 }
 

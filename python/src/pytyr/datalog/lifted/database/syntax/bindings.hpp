@@ -3,11 +3,14 @@
 
 #include "../module.hpp"
 #include "pytyr/module.hpp"
+#include "tyr/datalog/lifted/database/syntax/formatter.hpp"
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
+#include "tyr/datalog/lifted/database/syntax/query_construction.hpp"
 #include "yggdrasil/python/bindings.hpp"
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
+#include <urd/python/bindings.hpp>
 
 namespace tyr::database_python
 {
@@ -19,22 +22,17 @@ using QueryView = tyr::datalog::database::QueryView<>;
 using QueryRepositoryBinding = nb::class_<tyr::datalog::database::QueryRepository>;
 
 template<typename Tag>
-using QueryData = urd::data<tyr::datalog::database::Query<Tag>>;
-/// __init__ from the identifying fields as Python passes them (urd::python::init_from_views); the record's last field,
-/// derived (a plan or the columns), starts empty: inserting the record prepares it.
-template<typename... Args>
-struct init_without_derived : nb::def_visitor<init_without_derived<Args...>>
-{
-    template<typename Class, typename... Extra>
-    void execute(Class& cls, const Extra&... extra) const
-    {
-        using Record = typename Class::Type;
-        cls.def("__init__", [](Record* self, Args... arguments) { new (self) Record(urd::to_stored(arguments)..., {}); }, extra...);
-    }
-};
-
-template<typename Tag>
 using ConcreteQueryView = tyr::datalog::database::QueryView<Tag>;
+
+/// A query of operation Tag, whose record is bound first (bind_data; Python builds it through its empty __init__ and
+/// its fields): its view (bind_view, and its columns), and QueryRepository.insert of the record, which derives its
+/// plan from its children first (derive_and_insert).
+template<typename Tag>
+nb::class_<ConcreteQueryView<Tag>> bind_query_operation(nb::module_& m, QueryRepositoryBinding& repository)
+{
+    repository.def("insert", &tyr::datalog::database::derive_and_insert<Tag>, nb::arg("data"));
+    return urd::python::bind_view<ConcreteQueryView<Tag>>(m).def("columns", &ConcreteQueryView<Tag>::columns);
+}
 
 void bind_query(nb::module_& m, QueryRepositoryBinding& repository);
 void bind_query_input(nb::module_& m, QueryRepositoryBinding& repository);

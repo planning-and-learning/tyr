@@ -70,7 +70,7 @@ Residual compute_residual(InvariantView invariant, const Predicates& taken)
                     if constexpr (std::is_same_v<T, ParameterIndex>)
                         counted = counted || arg.value >= r;
                 },
-                urd::to_stored(term));
+                urd::stored<Term>(term));
     }
     residual.informative = residual.atoms > 1 || (residual.atoms == 1 && counted);
     return residual;

@@ -231,12 +231,14 @@ PredicateAssignmentSet<T>::PredicateAssignmentSet(formalism::datalog::PredicateV
 
 template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::reset() noexcept
-{ m_ranks.clear(); }
+{
+    m_ranks.clear();
+}
 
 template<formalism::FactKind T>
 void PredicateAssignmentSet<T>::insert(formalism::datalog::PredicateRowView<T> binding)
 {
-    assert(binding.data().relation == m_predicate_index);
+    assert(binding.index().relation == m_predicate_index);
     for_each_assignment_rank(m_hash, binding.template get<urd::index<formalism::Object>>(), m_remapped_objects, [&](size_t rank) { m_ranks.insert(rank); });
 }
 
@@ -256,23 +258,33 @@ bool PredicateAssignmentSet<T>::operator[](const EdgeAssignment& assignment) con
 
 template<formalism::FactKind T>
 bool PredicateAssignmentSet<T>::at(const VertexAssignment& assignment) const noexcept
-{ return m_ranks.contains(m_hash.get_rank(assignment)); }
+{
+    return m_ranks.contains(m_hash.get_rank(assignment));
+}
 
 template<formalism::FactKind T>
 bool PredicateAssignmentSet<T>::at(const EdgeAssignment& assignment) const noexcept
-{ return m_ranks.contains(m_hash.get_rank(assignment)); }
+{
+    return m_ranks.contains(m_hash.get_rank(assignment));
+}
 
 template<formalism::FactKind T>
 size_t PredicateAssignmentSet<T>::size() const noexcept
-{ return m_hash.size(); }
+{
+    return m_hash.size();
+}
 
 template<formalism::FactKind T>
 const PerfectAssignmentHash& PredicateAssignmentSet<T>::get_hash() const noexcept
-{ return m_hash; }
+{
+    return m_hash;
+}
 
 template<formalism::FactKind T>
 const urd::Store<urd::set<size_t>, urd::dense, urd::proportional_clear>& PredicateAssignmentSet<T>::get_set() const noexcept
-{ return m_ranks; }
+{
+    return m_ranks;
+}
 
 template class PredicateAssignmentSet<formalism::StaticTag>;
 template class PredicateAssignmentSet<formalism::FluentTag>;
@@ -308,11 +320,15 @@ void PredicateAssignmentSets<T>::reset() noexcept
 
 template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::datalog::AtomView<GroundTag, T> ground_atom)
-{ insert(ground_atom.get_row()); }
+{
+    insert(ground_atom.get_row());
+}
 
 template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateRowView<T> binding)
-{ m_sets[static_cast<ygg::uint_t>(binding.data().relation.value)].insert(binding); }
+{
+    m_sets[static_cast<ygg::uint_t>(binding.index().relation.value)].insert(binding);
+}
 
 template<formalism::FactKind T>
 void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateRowForwardRangeView<T> bindings)
@@ -323,7 +339,9 @@ void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateRowForwardR
 
 template<formalism::FactKind T>
 const PredicateAssignmentSet<T>& PredicateAssignmentSets<T>::get_set(urd::index<formalism::Predicate<T>> index) const noexcept
-{ return m_sets[static_cast<ygg::uint_t>(index.value)]; }
+{
+    return m_sets[static_cast<ygg::uint_t>(index.value)];
+}
 
 template<formalism::FactKind T>
 size_t PredicateAssignmentSets<T>::size() const noexcept
@@ -333,7 +351,9 @@ size_t PredicateAssignmentSets<T>::size() const noexcept
 
 template<formalism::FactKind T>
 const urd::Store<urd::sequence<PredicateAssignmentSet<T>>>& PredicateAssignmentSets<T>::get_sets() const noexcept
-{ return m_sets; }
+{
+    return m_sets;
+}
 
 template class PredicateAssignmentSets<formalism::StaticTag>;
 template class PredicateAssignmentSets<formalism::FluentTag>;
@@ -355,12 +375,14 @@ FunctionAssignmentSet<T>::FunctionAssignmentSet(formalism::datalog::FunctionView
 
 template<formalism::FactKind T>
 void FunctionAssignmentSet<T>::reset() noexcept
-{ std::fill(m_set.begin(), m_set.end(), ygg::ClosedInterval<ygg::float_t>()); }
+{
+    std::fill(m_set.begin(), m_set.end(), ygg::ClosedInterval<ygg::float_t>());
+}
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
 {
-    assert(binding.data().relation == m_function_index);
+    assert(binding.index().relation == m_function_index);
     auto changed = update_interval(m_set[EmptyAssignment::rank], interval);
     for_each_assignment_rank(m_hash,
                              binding.template get<urd::index<formalism::Object>>(),
@@ -372,15 +394,21 @@ bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> bin
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionRowView<T> binding, ygg::float_t value)
-{ return insert(binding, ygg::ClosedInterval<ygg::float_t>(value, value)); }
+{
+    return insert(binding, ygg::ClosedInterval<ygg::float_t>(value, value));
+}
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSet<T>::insert(formalism::datalog::FunctionTermValueView<GroundTag, T> fterm_value)
-{ return insert(fterm_value.get_fterm().get_row(), fterm_value.get_value()); }
+{
+    return insert(fterm_value.get_fterm().get_row(), fterm_value.get_value());
+}
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const EmptyAssignment&) const noexcept
-{ return m_set[EmptyAssignment::rank]; }
+{
+    return m_set[EmptyAssignment::rank];
+}
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const VertexAssignment& assignment) const noexcept
@@ -398,23 +426,33 @@ ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::operator[](const Edg
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EmptyAssignment&) const noexcept
-{ return m_set[EmptyAssignment::rank]; }
+{
+    return m_set[EmptyAssignment::rank];
+}
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const VertexAssignment& assignment) const noexcept
-{ return m_set[m_hash.get_rank(assignment)]; }
+{
+    return m_set[m_hash.get_rank(assignment)];
+}
 
 template<formalism::FactKind T>
 ygg::ClosedInterval<ygg::float_t> FunctionAssignmentSet<T>::at(const EdgeAssignment& assignment) const noexcept
-{ return m_set[m_hash.get_rank(assignment)]; }
+{
+    return m_set[m_hash.get_rank(assignment)];
+}
 
 template<formalism::FactKind T>
 size_t FunctionAssignmentSet<T>::size() const noexcept
-{ return m_set.size(); }
+{
+    return m_set.size();
+}
 
 template<formalism::FactKind T>
 const PerfectAssignmentHash& FunctionAssignmentSet<T>::get_hash() const noexcept
-{ return m_hash; }
+{
+    return m_hash;
+}
 
 template class FunctionAssignmentSet<formalism::StaticTag>;
 template class FunctionAssignmentSet<formalism::FluentTag>;
@@ -448,15 +486,21 @@ void FunctionAssignmentSets<T>::reset() noexcept
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionRowView<T> binding, const ygg::ClosedInterval<ygg::float_t>& interval)
-{ return m_sets[binding.get_relation().index().value].insert(binding, std::move(interval)); }
+{
+    return m_sets[binding.get_relation().index().value].insert(binding, std::move(interval));
+}
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, ygg::float_t value)
-{ return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), value); }
+{
+    return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), value);
+}
 
 template<formalism::FactKind T>
 bool FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermView<GroundTag, T> function_term, const ygg::ClosedInterval<ygg::float_t>& interval)
-{ return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), std::move(interval)); }
+{
+    return m_sets[function_term.get_function().index().value].insert(function_term.get_row(), std::move(interval));
+}
 
 template<formalism::FactKind T>
 void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermListView<GroundTag, T> function_terms,
@@ -477,15 +521,21 @@ void FunctionAssignmentSets<T>::insert(formalism::datalog::FunctionTermValueList
 
 template<formalism::FactKind T>
 const FunctionAssignmentSet<T>& FunctionAssignmentSets<T>::get_set(urd::index<formalism::Function<T>> index) const noexcept
-{ return m_sets[index.value]; }
+{
+    return m_sets[index.value];
+}
 
 template<formalism::FactKind T>
 urd::Store<urd::sequence<FunctionAssignmentSet<T>>>& FunctionAssignmentSets<T>::get_sets() noexcept
-{ return m_sets; }
+{
+    return m_sets;
+}
 
 template<formalism::FactKind T>
 const urd::Store<urd::sequence<FunctionAssignmentSet<T>>>& FunctionAssignmentSets<T>::get_sets() const noexcept
-{ return m_sets; }
+{
+    return m_sets;
+}
 
 template<formalism::FactKind T>
 size_t FunctionAssignmentSets<T>::size() const noexcept
@@ -519,7 +569,9 @@ TaggedAssignmentSets<T>::TaggedAssignmentSets(formalism::datalog::PredicateListV
                                               size_t num_objects,
                                               const TaggedFactSets<T>& fact_sets) :
     TaggedAssignmentSets(predicates, functions, predicate_domains, function_domains, num_objects)
-{ insert(fact_sets); }
+{
+    insert(fact_sets);
+}
 
 template<formalism::FactKind T>
 void TaggedAssignmentSets<T>::insert(const TaggedFactSets<T>& fact_sets)

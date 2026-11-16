@@ -92,7 +92,7 @@ ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionTermView<
     if (!binding)
         return {};
 
-    return value(context.fact_sets().template get<T>(), (*binding).data());
+    return value(context.fact_sets().template get<T>(), (*binding).index());
 }
 
 inline ygg::ClosedInterval<ygg::float_t> evaluate(formalism::datalog::FunctionExpressionView<LiftedTag> element, const ApplicabilityContext& context)
@@ -122,7 +122,7 @@ bool is_applicable(formalism::datalog::LiteralView<LiftedTag, T> element, const 
     if (!binding)
         return !element.get_polarity();
 
-    return contains(context.fact_sets().template get<T>(), (*binding).data()) == element.get_polarity();
+    return contains(context.fact_sets().template get<T>(), (*binding).index()) == element.get_polarity();
 }
 
 template<formalism::FactKind T>
@@ -132,7 +132,9 @@ bool is_applicable(formalism::datalog::LiteralListView<LiftedTag, T> elements, c
 }
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorView<LiftedTag> element, const ApplicabilityContext& context)
-{ return evaluate(element, context); }
+{
+    return evaluate(element, context);
+}
 
 inline bool is_applicable(formalism::datalog::BooleanOperatorListView<LiftedTag> elements, const ApplicabilityContext& context)
 {
@@ -147,7 +149,9 @@ inline bool is_applicable(formalism::datalog::ConjunctiveConditionView<LiftedTag
 }
 
 inline bool is_applicable(formalism::datalog::RuleView<LiftedTag> element, const ApplicabilityContext& context)
-{ return is_applicable(element.get_body(), context); }
+{
+    return is_applicable(element.get_body(), context);
+}
 
 }
 

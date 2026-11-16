@@ -113,7 +113,7 @@ private:
         // The literal's relation over its variables.
         auto pattern = urd::Store<urd::sequence<formalism::Term>> {};
         for (const auto term : literal.get_atom().get_terms())
-            pattern.push_back(urd::to_stored(term));
+            urd::append(pattern, term);
         auto relation = urd::Store<urd::set<Tuple>> {};
         auto element = urd::Store<urd::sequence<formalism::Term>> {};
         for (const auto binding : rows(*m_static_facts, literal.get_atom().get_predicate().index().value))
@@ -215,7 +215,7 @@ private:
             for (const auto object : tuple)
                 binding->values.push_back(static_cast<ygg::Value>(object));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->row = formalism::datalog::insert(m_context->destination(), *binding).first.data();
+            urd::store(atom->row, formalism::datalog::insert(m_context->destination(), *binding).first);
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
@@ -246,7 +246,7 @@ private:
             binding->values.push_back(static_cast<ygg::Value>(static_cast<ygg::uint_t>(key >> pair_key_shift)));
             binding->values.push_back(static_cast<ygg::Value>(static_cast<ygg::uint_t>(key & pair_key_lower_mask)));
             auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::StaticTag>>(m_context->builder());
-            atom->row = formalism::datalog::insert(m_context->destination(), *binding).first.data();
+            urd::store(atom->row, formalism::datalog::insert(m_context->destination(), *binding).first);
             m_program->static_atoms.push_back(formalism::datalog::insert(m_context->destination(), *atom).first.index());
         }
 
@@ -279,7 +279,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
     // The static predicates come first in the repository, as the fact sets require.
     auto static_facts = TaggedFactSets<formalism::StaticTag>(urd::resolve(output->static_predicates, repository), repository);
     for (const auto atom : output->static_atoms)
-        insert(static_facts, urd::resolve(atom, repository).get_row().data());
+        insert(static_facts, urd::resolve(atom, repository).get_row().index());
     auto decomposer = Decomposer(*output, context, static_facts);
     for (const auto rule : program.get_rules())
     {
@@ -315,7 +315,7 @@ decompose_static_literals(formalism::datalog::ProgramView<LiftedTag> program, fo
 
         auto new_rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(builder);
         for (const auto variable : new_body.get_variables())
-            new_rule->variables.push_back(urd::to_stored(variable));
+            urd::append(new_rule->variables, variable);
         new_rule->body = new_body.index();
         for (const auto head : rule.get_heads())
             new_rule->heads.push_back(formalism::copy(head, context).first.index());

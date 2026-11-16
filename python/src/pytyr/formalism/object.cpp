@@ -22,20 +22,6 @@
 namespace tyr::formalism
 {
 
-void bind_object(nb::module_& m)
-{
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<Object>>(m, "ObjectIndex");
-
-    {
-        using V = urd::data<Object>;
-
-        auto cls = nb::class_<V>(m, "ObjectData")  //
-                       .def(nb::init<const std::string&>(), "name"_a)
-                       .def_rw("name", &V::name);
-        cls.def(nb::init<urd::flat_string>(), "name"_a);
-        urd::python::add_comparison(cls);
-    }
-}
+void bind_object(nb::module_& m) { urd::python::bind_data<Object>(m); }
 
 }  // namespace tyr::formalism

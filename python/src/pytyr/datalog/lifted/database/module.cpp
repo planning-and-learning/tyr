@@ -26,19 +26,19 @@ void bind_plans(nb::module_& m)
         .def("memory_usage", &Workspace::memory_usage);
     nb::class_<ProjectionPlan>(m, "ProjectionPlan", "Keeps the input's columns of these labels, in this order.")
         .def(nb::init<ColumnIndices, urd::Store<urd::sequence<Column>>>(), nb::arg("input"), nb::arg("labels"))
-        .def("input_columns", &ProjectionPlan::input_columns, nb::keep_alive<0, 1>())
-        .def("output_columns", &ProjectionPlan::output_columns, nb::keep_alive<0, 1>());
+        .def("input_columns", &ProjectionPlan::input_columns)
+        .def("output_columns", &ProjectionPlan::output_columns);
     nb::class_<JoinPlan>(m, "JoinPlan", "Natural join (also semijoin, antijoin) of inputs with these columns.")
-        .def(nb::init<ColumnIndices, ColumnIndices>(), nb::arg("lhs"), nb::arg("rhs"))
-        .def("lhs_columns", &JoinPlan::lhs_columns, nb::keep_alive<0, 1>())
-        .def("rhs_columns", &JoinPlan::rhs_columns, nb::keep_alive<0, 1>())
-        .def("output_columns", &JoinPlan::output_columns, nb::keep_alive<0, 1>());
+        .def(nb::init<ColumnIndices, ColumnIndices>(), nb::arg("left"), nb::arg("right"))
+        .def("left_columns", &JoinPlan::left_columns)
+        .def("right_columns", &JoinPlan::right_columns)
+        .def("output_columns", &JoinPlan::output_columns);
     nb::class_<SetPlan>(m, "SetPlan", "Union and difference of inputs with the same columns in the same order.")
-        .def(nb::init<ColumnIndices, ColumnIndices>(), nb::arg("lhs"), nb::arg("rhs"))
-        .def("output_columns", &SetPlan::output_columns, nb::keep_alive<0, 1>());
+        .def(nb::init<ColumnIndices, ColumnIndices>(), nb::arg("left"), nb::arg("right"))
+        .def("output_columns", &SetPlan::output_columns);
     nb::class_<SelectEqualPlan>(m, "SelectEqualPlan", "The rows whose two columns (of one type) hold equal values.")
-        .def(nb::init<ColumnIndices, Column, Column>(), nb::arg("input"), nb::arg("lhs"), nb::arg("rhs"))
-        .def("output_columns", &SelectEqualPlan::output_columns, nb::keep_alive<0, 1>());
+        .def(nb::init<ColumnIndices, Column, Column>(), nb::arg("input"), nb::arg("left"), nb::arg("right"))
+        .def("output_columns", &SelectEqualPlan::output_columns);
     nb::class_<SelectValuePlan>(m, "SelectValuePlan", "The rows whose column holds a value of the column's type.")
         .def(
             "__init__",
@@ -48,7 +48,7 @@ void bind_plans(nb::module_& m)
             nb::arg("column"),
             nb::arg("type"),
             nb::arg("value"))
-        .def("output_columns", &SelectValuePlan::output_columns, nb::keep_alive<0, 1>());
+        .def("output_columns", &SelectValuePlan::output_columns);
 }
 
 /// The operations of one input relation type.
@@ -106,19 +106,19 @@ template<typename L, typename R>
 void bind_binary(nb::module_& m)
 {
     using namespace tyr::datalog::database;
-    const auto bind_join = [&m](const char* name, auto operation, bool output_is_lhs)
+    const auto bind_join = [&m](const char* name, auto operation, bool output_is_left)
     {
         m.def(
             name,
-            [operation, output_is_lhs](const L& lhs, const R& rhs, const JoinPlan& plan, Relation& out, Workspace& workspace)
+            [operation, output_is_left](const L& left_operand, const R& right_operand, const JoinPlan& plan, Relation& out, Workspace& workspace)
             {
-                require_columns(lhs.columns(), plan.lhs_columns());
-                require_columns(rhs.columns(), plan.rhs_columns());
-                require_columns(out.columns(), output_is_lhs ? plan.lhs_columns() : plan.output_columns());
-                operation(lhs, rhs, plan, out, workspace);
+                require_columns(left_operand.columns(), plan.left_columns());
+                require_columns(right_operand.columns(), plan.right_columns());
+                require_columns(out.columns(), output_is_left ? plan.left_columns() : plan.output_columns());
+                operation(left_operand, right_operand, plan, out, workspace);
             },
-            nb::arg("lhs"),
-            nb::arg("rhs"),
+            nb::arg("left_operand"),
+            nb::arg("right_operand"),
             nb::arg("plan"),
             nb::arg("out"),
             nb::arg("workspace"));
@@ -130,14 +130,14 @@ void bind_binary(nb::module_& m)
     {
         m.def(
             name,
-            [operation](const L& lhs, const R& rhs, const SetPlan& plan, Relation& out)
+            [operation](const L& left_operand, const R& right_operand, const SetPlan& plan, Relation& out)
             {
-                for (const auto columns : { lhs.columns(), rhs.columns(), out.columns() })
+                for (const auto columns : { left_operand.columns(), right_operand.columns(), out.columns() })
                     require_columns(columns, plan.output_columns());
-                operation(lhs, rhs, plan, out);
+                operation(left_operand, right_operand, plan, out);
             },
-            nb::arg("lhs"),
-            nb::arg("rhs"),
+            nb::arg("left_operand"),
+            nb::arg("right_operand"),
             nb::arg("plan"),
             nb::arg("out"));
     };

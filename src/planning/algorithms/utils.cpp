@@ -46,7 +46,7 @@ normalize_start_node(Task<Kind>& task, StateRepository<Kind>& state_repository, 
             return std::move(*start_node);
 
         auto state = state_repository.get_initial_state(axiom_evaluator);
-        const auto state_context = StateContext<Kind>(task, state.data(), 0);
+        const auto state_context = StateContext<Kind>(task, state, 0);
         const auto metric = evaluate_metric(task.get_task().get_metric(), task.get_task().get_auxiliary_fterm_value(), state_context);
         return Node<Kind>(std::move(state), metric);
     }();

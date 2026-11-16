@@ -80,7 +80,7 @@ inline std::optional<RuleView<GroundTag>> find_ground_rule(RuleRowIndex binding,
     return repository.find(rule);
 }
 
-inline std::optional<RuleView<GroundTag>> find_ground_rule(RuleRowView binding) { return find_ground_rule(binding.data(), binding.context()); }
+inline std::optional<RuleView<GroundTag>> find_ground_rule(RuleRowView binding) { return find_ground_rule(binding.index(), binding.context()); }
 
 }
 

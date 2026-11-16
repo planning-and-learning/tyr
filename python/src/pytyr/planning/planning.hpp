@@ -148,17 +148,14 @@ void bind_packed_state(nb::module_& m, const std::string& name)
     urd::python::add_hash(cls);
 }
 
-template<TaskKind Kind>
-void bind_state(nb::module_& m, const std::string& name)
+/// The reads of a state, registered or being built (urd::view_mixin<State>).
+template<typename T>
+nb::class_<T> bind_state_reads(nb::module_& m, const std::string& name)
 {
     using namespace nb::literals;
-    using T = StateView<Kind>;
 
     auto cls = nb::class_<T>(m, name.c_str())  //
-                   .def("index", &T::index, nb::rv_policy::copy)
                    .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
-                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
-                   .def("pack", &T::pack)
                    // AccessibleStateConcept
                    .def("test",
                         nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::StaticTag>>(&T::test, nb::const_),
@@ -246,23 +243,28 @@ void bind_state(nb::module_& m, const std::string& name)
                        },
                        nb::keep_alive<0, 1>());
     ygg::add_print(cls);
+    return cls;
+}
+
+/// A registered state: its reads, its index and its packed form.
+template<TaskKind Kind>
+void bind_state(nb::module_& m, const std::string& name)
+{
+    using T = StateView<Kind>;
+
+    auto cls = bind_state_reads<T>(m, name)
+                   .def("index", &T::index, nb::rv_policy::copy)
+                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
+                   .def("pack", &T::pack);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
 }
 
+/// A state being built: its reads, valid while the call that passes it runs.
 template<TaskKind Kind>
-void bind_state_data(nb::module_& m, const std::string& name)
+void bind_builder_state(nb::module_& m, const std::string& name)
 {
-    using namespace nb::literals;
-    using T = urd::data<State<Kind>>;
-
-    nb::class_<T>(m, name.c_str(), "Owning read-only state snapshot that remains valid after the callback returns.")
-        .def("get", nb::overload_cast<formalism::planning::FDRVariableView<formalism::FluentTag>>(&T::get, nb::const_), "fluent_variable"_a)
-        .def(
-            "get",
-            [](const T& state, formalism::planning::FunctionTermView<GroundTag, formalism::FluentTag> fterm) { return state.get(fterm.index()); },
-            "fluent_fterm"_a)
-        .def("test", nb::overload_cast<formalism::planning::AtomView<GroundTag, formalism::DerivedTag>>(&T::test, nb::const_), "derived_atom"_a);
+    bind_state_reads<BuilderStateView<Kind>>(m, name);
 }
 
 template<TaskKind Kind>
@@ -711,8 +713,14 @@ public:
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { NB_OVERRIDE_PURE(is_static_goal_satisfied, task); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const urd::data<State<Kind>>& state) override
-    { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
+    {
+        NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state);
+    }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override
+    {
+        NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state);
+    }
 };
 
 template<TaskKind Kind>
@@ -727,6 +735,10 @@ void bind_goal_strategy(nb::module_& m, const std::string& name)
         .def("is_static_goal_satisfied", &T::is_static_goal_satisfied, "task"_a)
         .def("is_dynamic_goal_satisfied",
              nb::overload_cast<const StateView<Kind>&, const StateView<Kind>&>(&T::is_dynamic_goal_satisfied),
+             "seed_state"_a,
+             "state"_a)
+        .def("is_dynamic_goal_satisfied",
+             nb::overload_cast<const StateView<Kind>&, const BuilderStateView<Kind>&>(&T::is_dynamic_goal_satisfied),
              "seed_state"_a,
              "state"_a);
 }
@@ -765,7 +777,9 @@ public:
     bool should_prune_state(const StateView<Kind>& state) override { NB_OVERRIDE(should_prune_state, state); }
 
     bool should_prune_successor_state(const StateView<Kind>& state, const StateView<Kind>& succ_state, bool is_new_succ_state) override
-    { NB_OVERRIDE(should_prune_successor_state, state, succ_state, is_new_succ_state); }
+    {
+        NB_OVERRIDE(should_prune_successor_state, state, succ_state, is_new_succ_state);
+    }
 };
 
 template<TaskKind Kind>
@@ -794,7 +808,7 @@ public:
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal) override { NB_OVERRIDE_PURE(set_goal, goal); }
 
-    ygg::float_t evaluate(const urd::data<State<Kind>>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
+    ygg::float_t evaluate(const StateView<Kind>& state) override { NB_OVERRIDE_PURE(evaluate, state); }
 
     HeuristicPtr<Kind> make_worker(ygg::ExecutionContextPtr execution_context) const override { NB_OVERRIDE_PURE(make_worker, execution_context); }
 
@@ -877,7 +891,7 @@ void bind_kind_definitions(nb::module_& m)
     urd::python::bind_index<urd::index<State<Kind>>>(m, "StateIndex");
     bind_packed_state<Kind>(m, "PackedState");
     bind_state<Kind>(m, "State");
-    bind_state_data<Kind>(m, "StateBuilder");
+    bind_builder_state<Kind>(m, "StateBuilder");
     bind_node<Kind>(m, "Node");
     bind_packed_node<Kind>(m, "PackedNode");
     bind_labeled_node<Kind>(m, "LabeledNode");

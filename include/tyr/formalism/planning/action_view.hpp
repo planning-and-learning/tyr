@@ -43,17 +43,17 @@ public:
     const auto& get_name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return self().data().name;
+        return self().template member<&urd::record_of<V>::name>();
     }
     const auto& get_original_name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return self().data().original_name;
+        return self().template member<&urd::record_of<V>::original_name>();
     }
     auto get_original_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return self().data().original_arity;
+        return self().template member<&urd::record_of<V>::original_arity>();
     }
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>

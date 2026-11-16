@@ -42,9 +42,9 @@ public:
     [[nodiscard]] virtual GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const { return nullptr; }
 
     virtual bool is_static_goal_satisfied(const Task<Kind>& task) = 0;
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state)
-    { return is_dynamic_goal_satisfied(seed_state, state.data()); }
-    virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const urd::data<State<Kind>>& state) = 0;
+    virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) = 0;
+    /// Of a state being built, not registered.
+    virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) = 0;
 
 protected:
     GoalStrategy(const GoalStrategy&) = default;
@@ -57,8 +57,6 @@ template<TaskKind Kind>
 class ConjunctiveGoalStrategy : public GoalStrategy<Kind>
 {
 public:
-    using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
-
     ConjunctiveGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
     ConjunctiveGoalStrategy(formalism::planning::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
 
@@ -66,18 +64,24 @@ public:
 
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(task); }
     static std::shared_ptr<ConjunctiveGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-    { return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal); }
+    {
+        return std::make_shared<ConjunctiveGoalStrategy<Kind>>(goal);
+    }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return create(m_goal); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_state()); }
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const urd::data<State<Kind>>& state) override
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override { return satisfies(seed_state, state); }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override { return satisfies(seed_state, state); }
+
+private:
+    template<typename V>
+    [[nodiscard]] bool satisfies(const StateView<Kind>& seed_state, const V& state) const
     {
         const auto state_context = StateContext { *seed_state.get_state_repository().get_task(), state, ygg::float_t { 0 } };
         return is_dynamically_applicable(m_goal, state_context);
     }
 
-private:
     formalism::planning::ConjunctiveConditionView<GroundTag> m_goal;
 };
 
@@ -85,27 +89,32 @@ template<TaskKind Kind>
 class SerializedGoalStrategy : public GoalStrategy<Kind>
 {
 public:
-    using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
-
     SerializedGoalStrategy(const Task<Kind>& task) : m_goal(task.get_task().get_goal()) {}
     SerializedGoalStrategy(formalism::planning::ConjunctiveConditionView<GroundTag> goal) : m_goal(goal) {}
 
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(const Task<Kind>& task) { return std::make_shared<SerializedGoalStrategy<Kind>>(task); }
     static std::shared_ptr<SerializedGoalStrategy<Kind>> create(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
-    { return std::make_shared<SerializedGoalStrategy<Kind>>(goal); }
+    {
+        return std::make_shared<SerializedGoalStrategy<Kind>>(goal);
+    }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return create(m_goal); }
 
     bool is_static_goal_satisfied(const Task<Kind>& task) override { return is_statically_applicable(m_goal, task.get_static_state()); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const urd::data<State<Kind>>& state) override
-    {
-        const auto& task = *seed_state.get_state_repository().get_task();
-        return count_satisfied_goals(task, state) > count_satisfied_goals(task, seed_state.data());
-    }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override { return satisfies(seed_state, state); }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override { return satisfies(seed_state, state); }
 
 private:
-    [[nodiscard]] ygg::uint_t count_satisfied_goals(const Task<Kind>& task, const urd::data<State<Kind>>& state) const
+    template<typename V>
+    [[nodiscard]] bool satisfies(const StateView<Kind>& seed_state, const V& state) const
+    {
+        const auto& task = *seed_state.get_state_repository().get_task();
+        return count_satisfied_goals(task, state) > count_satisfied_goals(task, seed_state);
+    }
+
+    template<typename V>
+    [[nodiscard]] ygg::uint_t count_satisfied_goals(const Task<Kind>& task, const V& state) const
     {
         const auto state_context = StateContext { task, state, ygg::float_t { 0 } };
         auto result = ygg::uint_t { 0 };
@@ -131,8 +140,6 @@ template<TaskKind Kind>
 class ExhaustiveGoalStrategy : public GoalStrategy<Kind>
 {
 public:
-    using GoalStrategy<Kind>::is_dynamic_goal_satisfied;
-
     static std::shared_ptr<ExhaustiveGoalStrategy<Kind>> create() { return std::make_shared<ExhaustiveGoalStrategy<Kind>>(); }
 
     [[nodiscard]] GoalStrategyPtr<Kind> make_worker(urd::index<Worker>) const override { return create(); }
@@ -143,12 +150,8 @@ public:
         return true;
     }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const urd::data<State<Kind>>& state) override
-    {
-        static_cast<void>(seed_state);
-        static_cast<void>(state);
-        return false;
-    }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>&, const StateView<Kind>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>&, const BuilderStateView<Kind>&) override { return false; }
 };
 
 }

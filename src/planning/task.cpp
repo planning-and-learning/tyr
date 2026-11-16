@@ -35,9 +35,11 @@
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/invariant_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/unary_operator_view.hpp"
@@ -45,6 +47,7 @@
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/lifted/task_grounder.hpp"
 
+#include <memory>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
@@ -70,13 +73,36 @@ StaticState::StaticState(formalism::planning::TaskView<Kind> task) :
 template StaticState::StaticState(formalism::planning::TaskView<GroundTag> task);
 template StaticState::StaticState(formalism::planning::TaskView<LiftedTag> task);
 
-Task<LiftedTag>::Task(formalism::planning::PlanningTask<LiftedTag> task) : m_task(std::move(task)), m_static_state(m_task.get_task()) {}
+namespace
+{
+/// A writable layer over a formalism task's frozen repository, for the objects of its task. The layers do not own
+/// their parents: the Task does, through m_task, which it declares first and so destroys last.
+template<TaskKind Kind>
+formalism::planning::RepositoryPtr layer_over(const formalism::planning::PlanningTask<Kind>& task)
+{
+    return std::make_shared<formalism::planning::Repository>(task.get_task().get_num_objects(), task.get_repository().get());
+}
+}
+
+Task<LiftedTag>::Task(formalism::planning::PlanningTask<LiftedTag> task) :
+    m_task(std::move(task)),
+    m_repository(layer_over(m_task)),
+    m_fdr_context(std::make_shared<formalism::planning::FDRContext>(m_task.get_fdr_context().get(), m_repository)),
+    m_static_state(m_task.get_task())
+{
+}
 
 TaskPtr<LiftedTag> Task<LiftedTag>::create(formalism::planning::PlanningTask<LiftedTag> task) { return std::make_shared<Task<LiftedTag>>(std::move(task)); }
 
 GroundTaskInstantiationResult Task<LiftedTag>::instantiate_ground_task(ygg::ExecutionContext& execution_context, const GroundTaskInstantiationOptions& options)
 { return tyr::planning::instantiate_ground_task(*this, execution_context, options); }
 
-Task<GroundTag>::Task(formalism::planning::PlanningTask<GroundTag> task) : m_task(std::move(task)), m_static_state(m_task.get_task()) {}
+Task<GroundTag>::Task(formalism::planning::PlanningTask<GroundTag> task) :
+    m_task(std::move(task)),
+    m_repository(layer_over(m_task)),
+    m_fdr_context(std::make_shared<formalism::planning::FDRContext>(m_task.get_fdr_context().get(), m_repository)),
+    m_static_state(m_task.get_task())
+{
+}
 
 }

@@ -10,8 +10,8 @@ namespace tyr::datalog::database::incremental
 JoinEvaluator::JoinEvaluator(const ygg::FreeRelationRepository& layer, JoinPlan plan) :
     m_layer(&layer),
     m_plan(std::move(plan)),
-    m_lhs(m_plan.lhs_columns()),
-    m_rhs(m_plan.rhs_columns()),
+    m_left_operand(m_plan.left_columns()),
+    m_right_operand(m_plan.right_columns()),
     m_result(m_plan.output_columns()),
     m_delta(layer, m_plan.output_columns())
 {
@@ -40,7 +40,7 @@ namespace tyr::datalog::database::incremental
 {
 size_t JoinEvaluator::memory_usage() const noexcept
 {
-    return m_lhs.memory_usage() + m_rhs.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + urd::memory_usage(m_lhs_index)
-           + urd::memory_usage(m_rhs_index);
+    return m_left_operand.memory_usage() + m_right_operand.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + urd::memory_usage(m_left_index)
+           + urd::memory_usage(m_right_index);
 }
 }

@@ -52,7 +52,7 @@ void initialize_dependencies(formalism::datalog::ProgramView<GroundTag> program,
         const auto body = rule.get_body();
         for (const auto literal : body.template get_literals<formalism::FluentTag>())
             if (literal.get_polarity())
-                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row().data(), [&](auto& rules, bool) { rules.push_back(rule); });
+                dependencies.fluent_precondition_to_rules.update(literal.get_atom().get_row().index(), [&](auto& rules, bool) { rules.push_back(rule); });
     }
 }
 }

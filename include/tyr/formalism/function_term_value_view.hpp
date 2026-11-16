@@ -35,7 +35,7 @@ private:
 
 public:
     auto get_fterm() const noexcept { return self().template member<&urd::record_of<V>::fterm>(); }
-    auto get_value() const noexcept { return self().data().value; }
+    auto get_value() const noexcept { return self().template member<&urd::record_of<V>::value>(); }
 };
 }  // namespace urd
 

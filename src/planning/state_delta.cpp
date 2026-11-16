@@ -28,32 +28,32 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind>
-void compute_state_delta(const urd::data<State<Kind>>& parent, const urd::data<State<Kind>>& successor, StateDelta& out)
+void compute_state_delta(const StateContext<Kind>& parent, const StateContext<Kind>& successor, StateDelta& out)
 {
     out.clear();
 
-    const auto num_variables = std::max(parent.fact_storage.num_variables(), successor.fact_storage.num_variables());
+    const auto num_variables = std::max(parent.fact_storage().num_variables(), successor.fact_storage().num_variables());
     for (size_t i = 0; i < num_variables; ++i)
     {
         const auto variable = urd::index<formalism::planning::FDRVariable<formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
-        const auto from = parent.get(variable);
-        const auto to = successor.get(variable);
+        const auto from = parent.fact_storage().get(variable);
+        const auto to = successor.fact_storage().get(variable);
         if (from != to)
             out.fluents.push_back(StateDelta::FluentChange { variable, from, to });
     }
 
-    const auto num_fterms = std::max(parent.numeric_storage.values.size(), successor.numeric_storage.values.size());
+    const auto num_fterms = std::max(parent.numeric_storage().values.size(), successor.numeric_storage().values.size());
     for (size_t i = 0; i < num_fterms; ++i)
     {
         const auto fterm = urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>(static_cast<ygg::uint_t>(i));
-        const auto from = parent.get(fterm);
-        const auto to = successor.get(fterm);
+        const auto from = parent.numeric_storage().get(fterm);
+        const auto to = successor.numeric_storage().get(fterm);
         if (!urd::EqualTo<ygg::float_t> {}(from, to))
             out.numerics.push_back(StateDelta::NumericChange { fterm, from, to });
     }
 }
 
-template void compute_state_delta(const urd::data<State<GroundTag>>& parent, const urd::data<State<GroundTag>>& successor, StateDelta& out);
-template void compute_state_delta(const urd::data<State<LiftedTag>>& parent, const urd::data<State<LiftedTag>>& successor, StateDelta& out);
+template void compute_state_delta(const StateContext<GroundTag>& parent, const StateContext<GroundTag>& successor, StateDelta& out);
+template void compute_state_delta(const StateContext<LiftedTag>& parent, const StateContext<LiftedTag>& successor, StateDelta& out);
 
 }

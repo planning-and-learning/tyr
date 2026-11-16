@@ -22,6 +22,7 @@
 
 #include <boost/mp11.hpp>
 #include <concepts>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -34,26 +35,31 @@ namespace tyr::planning::match_tree
 template<typename Tag>
 struct AtomSelectorNode
 {
+    static constexpr std::string_view name = "AtomSelectorNode";
 };
 
 template<typename Tag>
 struct VariableSelectorNode
 {
+    static constexpr std::string_view name = "VariableSelectorNode";
 };
 
 template<typename Tag>
 struct NegativeFactSelectorNode
 {
+    static constexpr std::string_view name = "NegativeFactSelectorNode";
 };
 
 template<typename Tag>
 struct NumericConstraintSelectorNode
 {
+    static constexpr std::string_view name = "NumericConstraintSelectorNode";
 };
 
 template<typename Tag>
 struct ElementGeneratorNode
 {
+    static constexpr std::string_view name = "ElementGeneratorNode";
 };
 
 /// The node kinds of a match tree, in the order of the Node variant.

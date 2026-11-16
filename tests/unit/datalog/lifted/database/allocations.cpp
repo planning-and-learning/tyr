@@ -54,7 +54,9 @@ using tyr::datalog::tests::ops::cols;
 
 template<typename T = ygg::uint_t, typename... Args>
 auto cells(Args... values)
-{ return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... }; }
+{
+    return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... };
+}
 
 template<typename T, size_t N>
 auto packed(const std::array<T, N>& values)
@@ -110,16 +112,16 @@ void fill(urd::builder<ygg::Relation<ygg::Schema>>& relation, size_t rows, ygg::
 
 struct Evaluation
 {
-    urd::builder<ygg::Relation<ygg::Schema>> left { cols({ ColumnIndex(1), ColumnIndex(2) }) };
-    urd::builder<ygg::Relation<ygg::Schema>> right { cols({ ColumnIndex(1), ColumnIndex(3) }) };
+    urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ ColumnIndex(1), ColumnIndex(3) }) };
     std::vector<ygg::ColumnLayout> joined_columns = cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) });
     std::vector<ygg::ColumnLayout> renamed_columns = cols({ ColumnIndex(4), ColumnIndex(5), ColumnIndex(6) });
     std::vector<ygg::ColumnLayout> key_columns = cols({ ColumnIndex(1) });
-    database::JoinPlan joining { left.columns(), right.columns() };
+    database::JoinPlan joining { left_operand.columns(), right_operand.columns() };
     database::ProjectionPlan projecting { joined_columns, std::array { ColumnIndex(3) } };
     database::ProjectionPlan projecting_renamed { renamed_columns, std::array { ColumnIndex(6) } };
-    database::ProjectionPlan projecting_left_keys { left.columns(), std::array { ColumnIndex(1) } };
-    database::ProjectionPlan projecting_right_keys { right.columns(), std::array { ColumnIndex(1) } };
+    database::ProjectionPlan projecting_left_keys { left_operand.columns(), std::array { ColumnIndex(1) } };
+    database::ProjectionPlan projecting_right_keys { right_operand.columns(), std::array { ColumnIndex(1) } };
     database::ProjectionPlan testing_existence { joined_columns, std::array<ColumnIndex, 0> {} };
     database::SetPlan keys { key_columns, key_columns };
     urd::builder<ygg::Relation<ygg::Schema>> joined { joining.output_columns() };
@@ -136,9 +138,9 @@ struct Evaluation
     bool evaluate(size_t left_size, size_t right_size, ygg::uint_t offset)
     {
         bool valid = true;
-        fill(left, left_size, offset);
-        fill(right, right_size, offset + 10000);
-        database::join(borrow(left), borrow(right), joining, joined, workspace);
+        fill(left_operand, left_size, offset);
+        fill(right_operand, right_size, offset + 10000);
+        database::join(borrow(left_operand), borrow(right_operand), joining, joined, workspace);
         database::select(borrow(joined), [](const auto& row) { return ygg::decode_value<ygg::uint_t>(row.value(0)) < key_count / 2; }, selected);
         database::project(borrow(joined), projecting, projected, workspace);
         // Relabel and restore the reusable builder within the measured path.
@@ -148,8 +150,8 @@ struct Evaluation
         valid &= joined.columns().data() == schema_storage;
         valid &= std::ranges::equal(joined.columns(), renamed_columns);
         joined.rename(joined_columns);
-        database::project(borrow(left), projecting_left_keys, left_keys, workspace);
-        database::project(borrow(right), projecting_right_keys, right_keys, workspace);
+        database::project(borrow(left_operand), projecting_left_keys, left_keys, workspace);
+        database::project(borrow(right_operand), projecting_right_keys, right_keys, workspace);
         database::union_(borrow(left_keys), borrow(right_keys), keys, either_keys);
         database::difference(borrow(left_keys), borrow(right_keys), keys, only_left_keys);
         database::project(borrow(joined), testing_existence, exists, workspace);
@@ -172,66 +174,31 @@ struct Evaluation
     }
 };
 
-struct CachedJoinEvaluation
-{
-    ygg::FreeRelationRepository builders;
-    std::shared_ptr<urd::builder<ygg::Relation<ygg::Schema>>> build = builders.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1), ColumnIndex(2) }));
-    urd::builder<ygg::Relation<ygg::Schema>> probe { cols({ ColumnIndex(1), ColumnIndex(3) }) };
-    database::JoinPlan forward { build->columns(), probe.columns() };
-    database::JoinPlan reverse { probe.columns(), build->columns() };
-    urd::builder<ygg::Relation<ygg::Schema>> forward_result { forward.output_columns() };
-    urd::builder<ygg::Relation<ygg::Schema>> reverse_result { reverse.output_columns() };
-    database::JoinIndexCache cache;
-    database::Workspace workspace;
-
-    CachedJoinEvaluation() { fill(*build, 128, 1000); }
-
-    bool evaluate(size_t left_size, size_t right_size, ygg::uint_t offset)
-    {
-        bool valid = true;
-        for (const auto probe_size : { left_size, right_size })
-        {
-            fill(probe, probe_size, offset);
-            database::join(borrow(*build), borrow(probe), forward, cache, database::JoinReuse { true, false }, forward_result, workspace);
-            database::join(borrow(probe), borrow(*build), reverse, cache, database::JoinReuse { false, true }, reverse_result, workspace);
-            valid &= forward_result.size() == joined_size(build->size(), probe_size);
-            valid &= reverse_result.size() == forward_result.size();
-            valid &= cache.size() == 1;
-            if (probe_size != 0)
-            {
-                valid &= forward_result.contains(cells(0, 1000, offset));
-                valid &= reverse_result.contains(cells(0, offset, 1000));
-            }
-        }
-        return valid;
-    }
-};
-
 struct PooledEvaluation
 {
-    urd::builder<ygg::Relation<ygg::Schema>> left { cols({ ColumnIndex(1), ColumnIndex(2) }) };
-    urd::builder<ygg::Relation<ygg::Schema>> right { cols({ ColumnIndex(1), ColumnIndex(3) }) };
+    urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ ColumnIndex(1), ColumnIndex(3) }) };
     ygg::FreeRelationRepository builders;
     database::Workspace workspace;
     std::vector<ygg::ColumnLayout> key_columns = cols({ ColumnIndex(1) });
-    database::JoinPlan joining { left.columns(), right.columns() };
-    database::ProjectionPlan projecting_left_keys { left.columns(), std::array { ColumnIndex(1) } };
-    database::ProjectionPlan projecting_right_keys { right.columns(), std::array { ColumnIndex(1) } };
+    database::JoinPlan joining { left_operand.columns(), right_operand.columns() };
+    database::ProjectionPlan projecting_left_keys { left_operand.columns(), std::array { ColumnIndex(1) } };
+    database::ProjectionPlan projecting_right_keys { right_operand.columns(), std::array { ColumnIndex(1) } };
     database::ProjectionPlan testing_existence { joining.output_columns(), std::array<ColumnIndex, 0> {} };
     database::SetPlan keys { key_columns, key_columns };
 
     bool evaluate(size_t left_size, size_t right_size, ygg::uint_t offset)
     {
-        fill(left, left_size, offset);
-        fill(right, right_size, offset + 10000);
+        fill(left_operand, left_size, offset);
+        fill(right_operand, right_size, offset + 10000);
         auto joined = builders.get_relation_builder<ygg::Schema>(joining.output_columns());
         auto left_keys = builders.get_relation_builder<ygg::Schema>(key_columns);
         auto right_keys = builders.get_relation_builder<ygg::Schema>(key_columns);
         auto either = builders.get_relation_builder<ygg::Schema>(key_columns);
         auto exists = builders.get_relation_builder<ygg::Schema>({});
-        database::join(borrow(left), borrow(right), joining, *joined, workspace);
-        database::project(borrow(left), projecting_left_keys, *left_keys, workspace);
-        database::project(borrow(right), projecting_right_keys, *right_keys, workspace);
+        database::join(borrow(left_operand), borrow(right_operand), joining, *joined, workspace);
+        database::project(borrow(left_operand), projecting_left_keys, *left_keys, workspace);
+        database::project(borrow(right_operand), projecting_right_keys, *right_keys, workspace);
         database::union_(borrow(*left_keys), borrow(*right_keys), keys, *either);
         database::project(borrow(*joined), testing_existence, *exists, workspace);
         bool valid = joined->size() == joined_size(left_size, right_size);
@@ -253,12 +220,12 @@ struct PreparedPooledEvaluation
     static constexpr ColumnIndex key_column = ColumnIndex(900000001);
     static constexpr ColumnIndex left_column = ColumnIndex(3);
     static constexpr ColumnIndex right_column = ColumnIndex(800000001);
-    urd::builder<ygg::Relation<ygg::Schema>> left { cols({ left_column, key_column }) };
-    urd::builder<ygg::Relation<ygg::Schema>> right { cols({ key_column, right_column }) };
-    database::JoinPlan joining { left.columns(), right.columns() };
+    urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ left_column, key_column }) };
+    urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ key_column, right_column }) };
+    database::JoinPlan joining { left_operand.columns(), right_operand.columns() };
     database::ProjectionPlan projecting { joining.output_columns(), std::array { right_column, left_column } };
-    database::ProjectionPlan projecting_left_keys { left.columns(), std::array { key_column } };
-    database::ProjectionPlan projecting_right_keys { right.columns(), std::array { key_column } };
+    database::ProjectionPlan projecting_left_keys { left_operand.columns(), std::array { key_column } };
+    database::ProjectionPlan projecting_right_keys { right_operand.columns(), std::array { key_column } };
     database::ProjectionPlan testing_existence { joining.output_columns(), std::array<ColumnIndex, 0> {} };
     database::SetPlan keys { projecting_left_keys.output_columns(), projecting_right_keys.output_columns() };
     std::vector<ygg::ColumnLayout> alternate_join_columns = cols({ ColumnIndex(7), ColumnIndex(8), ColumnIndex(9) });
@@ -272,13 +239,13 @@ struct PreparedPooledEvaluation
         // indexes, with changed keys and tuple values on every measured state.
         for (const bool disjoint : { false, true })
         {
-            left.clear();
-            right.clear();
+            left_operand.clear();
+            right_operand.clear();
             for (size_t i = 0; i < left_size; ++i)
-                left.insert(cells(offset + static_cast<ygg::uint_t>(i), offset + static_cast<ygg::uint_t>(i % key_count)));
+                left_operand.insert(cells(offset + static_cast<ygg::uint_t>(i), offset + static_cast<ygg::uint_t>(i % key_count)));
             const auto right_key_offset = offset + static_cast<ygg::uint_t>(disjoint ? key_count : 0);
             for (size_t i = 0; i < right_size; ++i)
-                right.insert(cells(right_key_offset + static_cast<ygg::uint_t>(i % key_count), offset + 10000 + static_cast<ygg::uint_t>(i)));
+                right_operand.insert(cells(right_key_offset + static_cast<ygg::uint_t>(i % key_count), offset + 10000 + static_cast<ygg::uint_t>(i)));
 
             // Relabel the same pooled relation before each prepared checkout.
             // Schema changes and read-only access stay in the measurement.
@@ -298,10 +265,10 @@ struct PreparedPooledEvaluation
             auto right_keys = builders.get_relation_builder<ygg::Schema>(projecting_right_keys.output_columns());
             auto either = builders.get_relation_builder<ygg::Schema>(projecting_left_keys.output_columns());
             auto exists = builders.get_relation_builder<ygg::Schema>(testing_existence.output_columns());
-            database::join(borrow(left), borrow(right), joining, *joined, workspace);
+            database::join(borrow(left_operand), borrow(right_operand), joining, *joined, workspace);
             database::project(borrow(*joined), projecting, *projected, workspace);
-            database::project(borrow(left), projecting_left_keys, *left_keys, workspace);
-            database::project(borrow(right), projecting_right_keys, *right_keys, workspace);
+            database::project(borrow(left_operand), projecting_left_keys, *left_keys, workspace);
+            database::project(borrow(right_operand), projecting_right_keys, *right_keys, workspace);
             database::union_(borrow(*left_keys), borrow(*right_keys), keys, *either);
             database::project(borrow(*joined), testing_existence, *exists, workspace);
 
@@ -351,7 +318,7 @@ struct InterningEvaluation
             const auto interned_schema = repository.insert(schema_data).first;
             const auto [duplicate_schema, schema_created] = repository.insert(schema_data);
             valid &= !schema_created && interned_schema.index() == duplicate_schema.index();
-            valid &= std::ranges::equal(interned_schema.data().values, schema);
+            valid &= std::ranges::equal(interned_schema.get_values(), schema);
             auto builder = builders.get_relation_builder<ygg::Schema>(schema);
             const auto seed = generation * 8192 + static_cast<ygg::uint_t>(logical_index) * 4;
             const std::array<ygg::uint_t, 3> first_row { seed, seed + 1, seed + 2 };
@@ -363,13 +330,12 @@ struct InterningEvaluation
             valid &= copied_created;
             valid &= !tyr::datalog::tests::ops::intern(copied_repository, original).second;
             auto extracted = builders.get_relation_builder<ygg::Schema>(renamed_schema);
-            const auto identity = extracted->relation_identity();
             const auto* schema_storage = extracted->columns().data();
             database::assign(*extracted, copied);
             database::assign(*extracted, borrow(*extracted));
             database::assign(*extracted, urd::resolve(*extracted, repository));
             valid &= extracted->size() == original.size();
-            valid &= extracted->relation_identity() == identity && extracted->columns().data() == schema_storage;
+            valid &= extracted->columns().data() == schema_storage;
             valid &= std::ranges::equal(extracted->columns(), schema);
             valid &= extracted->contains(std::span<const ygg::Value>(packed(first_row)).first(arity));
             builder->clear();
@@ -380,7 +346,12 @@ struct InterningEvaluation
             valid &= created && !duplicate_created;
             valid &= original.index() == duplicate.index();
             valid &= original.index() != renamed.index();
-            valid &= std::ranges::equal(original.data().rows, renamed.data().rows);
+            valid &= std::ranges::equal(
+                original.rows(),
+                renamed.rows(),
+                {},
+                [](const auto& row) { return row.index(); },
+                [](const auto& row) { return row.index(); });
             valid &= original.row(0).get_values().data() == renamed.row(0).get_values().data()
                      && original.row(0).get_values().first_bit() == renamed.row(0).get_values().first_bit();
             valid &= original.size() == 2 && renamed.columns().size() == arity;
@@ -515,12 +486,6 @@ TEST(YggdrasilTests, DatabaseWarmedPooledIntermediatesAllocateAndFreeNothing)
     expect_no_allocations_after_warmup(evaluation);
 }
 
-TEST(YggdrasilTests, DatabaseWarmedCachedJoinsAllocateAndFreeNothing)
-{
-    CachedJoinEvaluation evaluation;
-    expect_no_allocations_after_warmup(evaluation);
-}
-
 TEST(YggdrasilTests, DatabaseWarmedPreparedPooledEvaluationAllocatesAndFreesNothing)
 {
     PreparedPooledEvaluation evaluation;
@@ -579,7 +544,7 @@ TEST(YggdrasilTests, DatabaseTypedTupleMembershipAcrossViewsAllocatesAndFreesNot
     const auto row = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }) };
     relation.insert(row);
     const auto indexed = tyr::datalog::tests::ops::intern(repository, relation).first;
-    const auto data_view = urd::resolve(indexed.data(), repository);
+    const auto data_view = urd::resolve(repository[indexed.index()], repository);
     const auto builder_view = urd::resolve(relation, repository);
     auto other = urd::builder<ygg::Relation<ygg::Schema>>(cols({ ColumnIndex(0), ColumnIndex(1) }));
     const auto other_values = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 6 }) };
@@ -711,22 +676,22 @@ struct ChangingJoinEvaluation
 
     database::incremental::JoinEvaluator joining { layer(),
                                                    database::JoinPlan(cols({ ColumnIndex(1), ColumnIndex(2) }), cols({ ColumnIndex(1), ColumnIndex(3) })) };
-    database::incremental::Delta lhs_delta { layer(), cols({ ColumnIndex(1), ColumnIndex(2) }) };
-    database::incremental::Delta rhs_delta { layer(), cols({ ColumnIndex(1), ColumnIndex(3) }) };
+    database::incremental::Delta left_delta { layer(), cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    database::incremental::Delta right_delta { layer(), cols({ ColumnIndex(1), ColumnIndex(3) }) };
     std::array<std::array<ygg::uint_t, 2>, rows> values {};
     database::Workspace workspace;
 
     ChangingJoinEvaluation()
     {
-        urd::builder<ygg::Relation<ygg::Schema>> lhs { cols({ ColumnIndex(1), ColumnIndex(2) }) };
-        urd::builder<ygg::Relation<ygg::Schema>> rhs { cols({ ColumnIndex(1), ColumnIndex(3) }) };
+        urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+        urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ ColumnIndex(1), ColumnIndex(3) }) };
         for (size_t i = 0; i < rows; ++i)
         {
             values[i] = { static_cast<ygg::uint_t>(i / witnesses), static_cast<ygg::uint_t>(i) };
-            lhs.insert(packed(values[i]));
-            rhs.insert(packed(values[i]));
+            left_operand.insert(packed(values[i]));
+            right_operand.insert(packed(values[i]));
         }
-        joining.initialize(borrow(lhs), borrow(rhs), workspace);
+        joining.initialize(borrow(left_operand), borrow(right_operand), workspace);
     }
 
     bool evaluate(ygg::uint_t generation)
@@ -734,27 +699,27 @@ struct ChangingJoinEvaluation
         auto valid = true;
         const auto replace = [&](size_t begin, ygg::uint_t phase)
         {
-            lhs_delta.clear();
-            rhs_delta.clear();
+            left_delta.clear();
+            right_delta.clear();
             const auto offset = phase == 0 ? ygg::uint_t { 0 } : static_cast<ygg::uint_t>((generation * 3 + phase) * rows);
             for (size_t i = begin; i < begin + changed_rows; ++i)
             {
-                lhs_delta.removed.insert(packed(values[i]));
-                rhs_delta.removed.insert(packed(values[i]));
+                left_delta.removed.insert(packed(values[i]));
+                right_delta.removed.insert(packed(values[i]));
                 values[i] = { static_cast<ygg::uint_t>(i / witnesses + offset), static_cast<ygg::uint_t>(i + offset) };
-                lhs_delta.added.insert(packed(values[i]));
-                rhs_delta.added.insert(packed(values[i]));
+                left_delta.added.insert(packed(values[i]));
+                right_delta.added.insert(packed(values[i]));
             }
             // Overlapping changes exercise old/old, old/new, and new/new join
             // matches without double-reporting the tuples affected on both sides.
-            joining.update(lhs_delta.change(), rhs_delta.change(), workspace);
+            joining.update(left_delta.change(), right_delta.change(), workspace);
             size_t expected = 0;
-            for (const auto& lhs : values)
-                for (const auto& rhs : values)
-                    if (lhs[0] == rhs[0])
+            for (const auto& left : values)
+                for (const auto& right : values)
+                    if (left[0] == right[0])
                     {
                         ++expected;
-                        valid &= joining.get_result().contains(cells(lhs[0], lhs[1], rhs[1]));
+                        valid &= joining.get_result().contains(cells(left[0], left[1], right[1]));
                     }
             valid &= joining.get_result().size() == expected;
         };
@@ -770,7 +735,9 @@ struct ChangingJoinEvaluation
     }
 
     [[nodiscard]] size_t memory_usage() const
-    { return joining.memory_usage() + lhs_delta.memory_usage() + rhs_delta.memory_usage() + urd::memory_usage(workspace.join_index); }
+    {
+        return joining.memory_usage() + left_delta.memory_usage() + right_delta.memory_usage() + urd::memory_usage(workspace.join_index);
+    }
 };
 }  // namespace
 
@@ -802,21 +769,21 @@ TEST(YggdrasilTests, DatabaseWarmedMixedWidthTuplesAndOperationsRetainStorage)
                                                         { ColumnIndex(2), ygg::type_id<double> },
                                                         { ColumnIndex(3), ygg::type_id<bool> } };
     const std::vector<ygg::ColumnLayout> right_columns { { ColumnIndex(2), ygg::type_id<double> }, { ColumnIndex(4), ygg::type_id<ygg::uint_t> } };
-    urd::builder<ygg::Relation<ygg::Schema>> left(left_columns), right(right_columns);
-    const database::JoinPlan joining(left.columns(), right.columns());
+    urd::builder<ygg::Relation<ygg::Schema>> left_operand(left_columns), right_operand(right_columns);
+    const database::JoinPlan joining(left_operand.columns(), right_operand.columns());
     const database::ProjectionPlan projecting(joining.output_columns(), std::array { ColumnIndex(2), ColumnIndex(3) });
     urd::builder<ygg::Relation<ygg::Schema>> joined(joining.output_columns()), projected(projecting.output_columns());
     database::Workspace workspace;
     const auto cycle = [&](ygg::uint_t generation)
     {
-        left.clear();
-        right.clear();
+        left_operand.clear();
+        right_operand.clear();
         for (ygg::uint_t i = 0; i < 12; ++i)
         {
-            left.insert(std::array { ygg::encode_value(generation + i), ygg::encode_value(static_cast<double>(i % 4)), ygg::encode_value(i % 2 != 0) });
-            right.insert(std::array { ygg::encode_value(static_cast<double>(i % 4)), ygg::encode_value(generation + i) });
+            left_operand.insert(std::array { ygg::encode_value(generation + i), ygg::encode_value(static_cast<double>(i % 4)), ygg::encode_value(i % 2 != 0) });
+            right_operand.insert(std::array { ygg::encode_value(static_cast<double>(i % 4)), ygg::encode_value(generation + i) });
         }
-        database::join(borrow(left), borrow(right), joining, joined, workspace);
+        database::join(borrow(left_operand), borrow(right_operand), joining, joined, workspace);
         database::project(borrow(joined), projecting, projected, workspace);
         return joined.size() == 36 && projected.size() == 4 && projected.contains(std::array { ygg::encode_value(1.0), ygg::encode_value(true) })
                && projected.contains(std::array { ygg::encode_value(2.0), ygg::encode_value(false) });

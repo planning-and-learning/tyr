@@ -58,473 +58,63 @@
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <iterator>
-#include <sstream>
+#include <urd/dot.hpp>
+#include <urd/format.hpp>
 #include <utility>
+#include <variant>
 #include <yggdrasil/formalism/row_data.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 #include <yggdrasil/io/iostream.hpp>
 
+/// What only datalog writes, next to node_formatter.hpp's shared records; declared before the to_string templates
+/// below, which call node_format::format qualified.
+namespace tyr::formalism::node_format
+{
+/// A rule's binding: its values (a rule has no name).
+static std::string format(datalog::RuleRowView value) { return ygg::values_text(value); }
+}  // namespace tyr::formalism::node_format
+
 namespace tyr::formalism::datalog
 {
 
-namespace
+/// A term as an atom writes it: an object by its name, a parameter as its index.
+std::string to_string(TermView value)
 {
-
-std::string format_data(const urd::data<Rule<LiftedTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "Rule(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "variables = ", value.variables);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "heads = ", value.heads);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "body = ", value.body);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "cost = ", value.cost);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
+    return std::visit([](auto term) { return fmt::format("{}", term); }, value);
 }
+std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag>>>& value) { return node_format::format(value); }
 
-std::string format_view(RuleView<LiftedTag> value)
-{
-    auto os = std::stringstream {};
-    os << "Rule(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "body = ", value.get_body());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "cost = ", value.get_cost());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-std::string format_data(const urd::data<Rule<GroundTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "GroundRule(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "heads = ", value.heads);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "body = ", value.body);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "cost = ", value.cost);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-std::string format_view(RuleView<GroundTag> value)
-{
-    auto os = std::stringstream {};
-    os << "GroundRule(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "heads = ", value.get_heads());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "body = ", value.get_body());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "cost = ", value.get_cost());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-template<typename V>
-std::string format_binding(V value)
-{
-    const auto objects = urd::resolve(value.template get<urd::index<Object>>(), value.context());
-    if constexpr (requires { value.get_relation().get_name(); })
-    {
-        auto result = fmt::format("({}", value.get_relation().get_name());
-        for (const auto object : objects)
-            fmt::format_to(std::back_inserter(result), " {}", object);
-        result.push_back(')');
-        return result;
-    }
-    return fmt::format("({})", fmt::join(ygg::to_strings(objects), " "));
-}
-
-}  // namespace
-
-static std::string as_text(UnaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-static std::string as_text(UnaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-static std::string as_text(BinaryOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-static std::string as_text(BinaryOperatorView<LiftedTag, BooleanOperatorKind> value) { return node_format::format(value); }
-static std::string as_text(BinaryOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-static std::string as_text(BinaryOperatorView<GroundTag, BooleanOperatorKind> value) { return node_format::format(value); }
-static std::string as_text(MultiOperatorView<LiftedTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-static std::string as_text(MultiOperatorView<GroundTag, ArithmeticOperatorKind> value) { return node_format::format(value); }
-
-static std::string as_text(AtomView<LiftedTag, StaticTag> value) { return node_format::format(value); }
-static std::string as_text(AtomView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(LiteralView<LiftedTag, StaticTag> value) { return node_format::format(value); }
-static std::string as_text(LiteralView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(AtomView<GroundTag, StaticTag> value) { return node_format::format(value); }
-static std::string as_text(AtomView<GroundTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(LiteralView<GroundTag, StaticTag> value) { return node_format::format(value); }
-static std::string as_text(LiteralView<GroundTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermView<LiftedTag, StaticTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermView<LiftedTag, AuxiliaryTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermView<GroundTag, StaticTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermView<GroundTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermValueView<GroundTag, StaticTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermValueView<GroundTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(FunctionTermValueView<GroundTag, AuxiliaryTag> value) { return node_format::format(value); }
-static std::string as_text(NumericEffectView<LiftedTag, FluentTag> value) { return node_format::format(value); }
-static std::string as_text(NumericEffectView<GroundTag, FluentTag> value) { return node_format::format(value); }
-
-static std::string as_text(VariableView value) { return fmt::format("{}", value.get_name()); }
-static std::string as_text(ObjectView value) { return fmt::format("{}", value.get_name()); }
-std::string to_string(TermView value) { return fmt::format("{}", value); }
-static std::string as_text(PredicateView<StaticTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
-static std::string as_text(PredicateView<FluentTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
-static std::string as_text(FunctionView<StaticTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
-static std::string as_text(FunctionView<FluentTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
-static std::string as_text(FunctionView<AuxiliaryTag> value) { return fmt::format("{}/{}", value.get_name(), value.get_arity()); }
-static std::string as_text(PredicateRowView<StaticTag> value) { return format_binding(value); }
-static std::string as_text(PredicateRowView<FluentTag> value) { return format_binding(value); }
-static std::string as_text(FunctionRowView<StaticTag> value) { return format_binding(value); }
-static std::string as_text(FunctionRowView<FluentTag> value) { return format_binding(value); }
-static std::string as_text(FunctionRowView<AuxiliaryTag> value) { return format_binding(value); }
-static std::string as_text(RuleRowView value) { return format_binding(value); }
-
-std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag>>>& value)
-{ return fmt::format("{} {}", value.relation, fmt::join(ygg::to_strings(value.values), " ")); }
-
-std::string to_string(const urd::data<ConjunctiveCondition<LiftedTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "ConjunctiveCondition(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "variables = ", value.variables);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static literals = ", value.static_literals);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent literals = ", value.fluent_literals);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric constraints = ", value.numeric_constraints);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-static std::string as_text(ConjunctiveConditionView<LiftedTag> value)
-{
-    auto os = std::stringstream {};
-    os << "ConjunctiveCondition(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static literals = ", value.template get_literals<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent literals = ", value.template get_literals<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric constraints = ", value.get_numeric_constraints());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-std::string to_string(const urd::data<ConjunctiveEffect<LiftedTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "ConjunctiveEffect(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric effects = ", value.numeric_effects);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-static std::string as_text(ConjunctiveEffectView<LiftedTag> value)
-{
-    auto os = std::stringstream {};
-    os << "ConjunctiveEffect(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric effects = ", value.get_numeric_effects());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-std::string to_string(const urd::data<Rule<LiftedTag>>& value) { return format_data(value); }
-static std::string as_text(RuleView<LiftedTag> value) { return format_view(value); }
-
-std::string to_string(const urd::data<ConjunctiveCondition<GroundTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "GroundConjunctiveCondition(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static literals = ", value.static_literals);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent literals = ", value.fluent_literals);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric constraints = ", value.numeric_constraints);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-static std::string as_text(ConjunctiveConditionView<GroundTag> value)
-{
-    auto os = std::stringstream {};
-    os << "GroundConjunctiveCondition(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static literals = ", value.template get_literals<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent literals = ", value.template get_literals<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric constraints = ", value.get_numeric_constraints());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-std::string to_string(const urd::data<ConjunctiveEffect<GroundTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "GroundConjunctiveEffect(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric effects = ", value.numeric_effects);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-static std::string as_text(ConjunctiveEffectView<GroundTag> value)
-{
-    auto os = std::stringstream {};
-    os << "GroundConjunctiveEffect(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "numeric effects = ", value.get_numeric_effects());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-std::string to_string(const urd::data<Rule<GroundTag>>& value) { return format_data(value); }
-static std::string as_text(RuleView<GroundTag> value) { return format_view(value); }
-
-std::string to_string(const urd::data<Program<LiftedTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "Program(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static predicates =", value.static_predicates);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent predicates = ", value.fluent_predicates);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static functions = ", value.static_functions);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent functions = ", value.fluent_functions);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "objects = ", value.objects);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static atoms = ", value.static_atoms);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent atoms = ", value.fluent_atoms);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static fterms = ", value.static_fterm_values);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent fterms = ", value.fluent_fterm_values);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "goal = ", value.goal);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "rules = ", value.rules);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-static std::string as_text(ProgramView<LiftedTag> value)
-{
-    auto os = std::stringstream {};
-    os << "Program(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static predicates =", value.template get_predicates<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent predicates = ", value.template get_predicates<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static functions = ", value.template get_functions<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent functions = ", value.template get_functions<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "objects = ", value.get_objects());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static atoms = ", value.template get_atoms<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent atoms = ", value.template get_atoms<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static fterms = ", value.template get_fterm_values<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent fterms = ", value.template get_fterm_values<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "rules = ", value.get_rules());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-std::string to_string(const urd::data<Program<GroundTag>>& value)
-{
-    auto os = std::stringstream {};
-    os << "GroundProgram(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static predicates =", value.static_predicates);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent predicates = ", value.fluent_predicates);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static functions = ", value.static_functions);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent functions = ", value.fluent_functions);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "objects = ", value.objects);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static atoms = ", value.static_atoms);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent atoms = ", value.fluent_atoms);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static fterms = ", value.static_fterm_values);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent fterms = ", value.fluent_fterm_values);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "goal = ", value.goal);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "ground rules = ", value.rules);
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
-static std::string as_text(ProgramView<GroundTag> value)
-{
-    auto os = std::stringstream {};
-    os << "GroundProgram(\n";
-    {
-        ygg::IndentScope scope(os);
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "index = ", value.index());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static predicates =", value.template get_predicates<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent predicates = ", value.template get_predicates<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static functions = ", value.template get_functions<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent functions = ", value.template get_functions<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "objects = ", value.get_objects());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static atoms = ", value.template get_atoms<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent atoms = ", value.template get_atoms<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "static fterms = ", value.template get_fterm_values<StaticTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "fluent fterms = ", value.template get_fterm_values<FluentTag>());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "goal = ", value.get_goal());
-        os << ygg::print_indent;
-        fmt::print(os, "{}{}\n", "ground rules = ", value.get_rules());
-    }
-    os << ygg::print_indent << ")";
-    return os.str();
-}
-
+/// One DOT graph per kind of binary dependency, named after it: the condition's parameters, adjacent where they occur
+/// together in a literal (or constraint) of that kind.
 std::string to_string(const VariableDependencyGraph& value)
 {
-    auto os = std::stringstream {};
-    os << "graph {\n";
-    const auto k = value.k();
-    for (ygg::uint_t i = 0; i < k; ++i)
-        fmt::print(os, "n{} [label=\"V{}\"];\n", i, i);
-    for (ygg::uint_t i = 0; i < k; ++i)
-        for (ygg::uint_t j = i + 1; j < k; ++j)
-            if (value.binary().has_dependency(i, j))
-                fmt::print(os, "n{} -- n{};\n", i, j);
-    os << "}\n";
-    return os.str();
+    const auto& binary = value.binary();
+    const auto parameter = [](const auto& /*graph*/, ParameterIndex v) { return v; };
+    return urd::to_dot(binary.static_positive_literal, parameter, urd::unlabeled, "static_positive_literal")
+           + urd::to_dot(binary.static_negative_literal, parameter, urd::unlabeled, "static_negative_literal")
+           + urd::to_dot(binary.fluent_positive_literal, parameter, urd::unlabeled, "fluent_positive_literal")
+           + urd::to_dot(binary.fluent_negative_literal, parameter, urd::unlabeled, "fluent_negative_literal")
+           + urd::to_dot(binary.numeric_constraint, parameter, urd::unlabeled, "numeric_constraint");
 }
 
 template<typename T>
     requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value
 std::string to_string(urd::index_view<T, Repository> value)
-{ return as_text(value); }
+{
+    // In PDDL where tyr writes the record so (node_format), else as urd writes a record: its fields.
+    if constexpr (requires { node_format::format(value); })
+        return node_format::format(value);
+    else
+        return urd::record_written<T, urd::data<T>>([&]<typename F>() -> decltype(auto) { return value.template member<F::member>(); });
+}
 
 template<typename R>
     requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
 std::string to_string(ygg::RowView<R, Repository> value)
-{ return as_text(value); }
+{
+    return node_format::format(value);
+}
 
 TYR_VIEW_TO_STRINGS(42, 6)
 

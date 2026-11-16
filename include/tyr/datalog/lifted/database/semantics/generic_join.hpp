@@ -31,7 +31,7 @@ inline GenericJoinWork& generic_join_work() noexcept
     thread_local GenericJoinWork work;
     return work;
 }
-void count_generic_join_work(size_t GenericJoinWork::* member) noexcept;
+void count_generic_join_work(size_t GenericJoinWork::*member) noexcept;
 
 struct GenericJoinTrie;
 }  // namespace tyr::datalog::database::detail
@@ -76,7 +76,9 @@ struct GenericJoinTrie
 }  // namespace tyr::datalog::database::detail
 
 inline std::size_t urd::memory_of<tyr::datalog::database::detail::GenericJoinTrie>::bytes(const tyr::datalog::database::detail::GenericJoinTrie& trie)
-{ return trie.memory_usage(); }
+{
+    return trie.memory_usage();
+}
 
 namespace tyr::datalog::database
 {
@@ -164,7 +166,7 @@ void generic_join(const R& inputs, const GenericJoinPlan& plan, urd::builder<ygg
     for (size_t input = 0; input < plan.input_count(); ++input)
     {
         assert(std::ranges::equal(inputs[input].columns(), plan.input_columns(input)));
-        if (inputs[input].relation_identity() == out.relation_identity())
+        if (reads_builder(inputs[input], out))
             throw std::invalid_argument("Generic join: output aliases an input.");
     }
     out.clear();

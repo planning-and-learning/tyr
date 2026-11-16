@@ -22,81 +22,15 @@
 namespace tyr::formalism::datalog
 {
 
-namespace
-{
-template<TaskKind T>
-void bind_conjunctive_condition_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
-{
-    using namespace nb::literals;
-    using Tag = ConjunctiveCondition<T>;
-    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
-
-    {
-        using V = urd::data<Tag>;
-        auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        if constexpr (std::same_as<T, LiftedTag>)
-        {
-            cls.def(urd::python::init_from_views<const VariableViewList&,
-                                                 const LiteralViewList<T, StaticTag>&,
-                                                 const LiteralViewList<T, FluentTag>&,
-                                                 const BooleanOperatorViewList<T>&>(),
-                    "variables"_a,
-                    "static_literals"_a,
-                    "fluent_literals"_a,
-                    "numeric_constraints"_a);
-            cls.def(nb::init<urd::flat_vector<urd::index<Variable>>,
-                             urd::flat_vector<urd::index<Literal<LiftedTag, StaticTag>>>,
-                             urd::flat_vector<urd::index<Literal<LiftedTag, FluentTag>>>,
-                             urd::flat_vector<urd::index<BinaryOperator<LiftedTag, ::tyr::formalism::BooleanOperatorKind>>>>(),
-                    "variables"_a,
-                    "static_literals"_a,
-                    "fluent_literals"_a,
-                    "numeric_constraints"_a);
-        }
-        else
-        {
-            cls.def(
-                urd::python::init_from_views<const LiteralViewList<T, StaticTag>&, const LiteralViewList<T, FluentTag>&, const BooleanOperatorViewList<T>&>(),
-                "static_literals"_a,
-                "fluent_literals"_a,
-                "numeric_constraints"_a);
-            cls.def(nb::init<urd::flat_vector<urd::index<Literal<GroundTag, StaticTag>>>,
-                             urd::flat_vector<urd::index<Literal<GroundTag, FluentTag>>>,
-                             urd::flat_vector<urd::index<BinaryOperator<GroundTag, ::tyr::formalism::BooleanOperatorKind>>>>(),
-                    "static_literals"_a,
-                    "fluent_literals"_a,
-                    "numeric_constraints"_a);
-        }
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    {
-        using V = ConjunctiveConditionView<T>;
-        auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("index", &V::index);
-        if constexpr (std::same_as<T, LiftedTag>)
-        {
-            cls.def("get_variables", &V::get_variables);
-            cls.def("get_arity", &V::get_arity);
-        }
-        cls.def("get_static_literals", &V::template get_literals<StaticTag>);
-        cls.def("get_fluent_literals", &V::template get_literals<FluentTag>);
-        cls.def("get_numeric_constraints", &V::get_numeric_constraints);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    ygg::bind_insert<Tag>(repository);
-}
-}  // namespace
-
 void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_conjunctive_condition_kind<LiftedTag>(m, repository, "ConjunctiveCondition");
-    bind_conjunctive_condition_kind<GroundTag>(m, repository, "GroundConjunctiveCondition");
+    urd::python::bind_data<ConjunctiveCondition<LiftedTag>>(m);
+    urd::python::bind_view<ConjunctiveConditionView<LiftedTag>>(m).def("get_arity", &ConjunctiveConditionView<LiftedTag>::get_arity);
+    ygg::bind_insert<ConjunctiveCondition<LiftedTag>>(repository);
+
+    urd::python::bind_data<ConjunctiveCondition<GroundTag>>(m);
+    urd::python::bind_view<ConjunctiveConditionView<GroundTag>>(m);
+    ygg::bind_insert<ConjunctiveCondition<GroundTag>>(repository);
 }
 
 }  // namespace tyr::formalism::datalog

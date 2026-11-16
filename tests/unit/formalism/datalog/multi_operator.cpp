@@ -17,17 +17,17 @@ namespace tyr::tests::datalog_multi_operator
 {
 
 template<typename Entity>
-concept MultiOperatorContract =
-    std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>> && std::totally_ordered<urd::data<Entity>>
-    && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
-    && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>, std::remove_cvref_t<decltype(urd::data<Entity>::operator_kind)>>
-    && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
-           data.index;
-           { data.operator_kind } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operator_kind)>&>;
-           view.index();
-           { view.get_operator() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operator_kind)>>;
-           view.get_args();
-       };
+concept MultiOperatorContract = std::constructible_from<urd::index<Entity>, ygg::uint_t> && std::totally_ordered<urd::index<Entity>>
+                                && std::totally_ordered<urd::data<Entity>> && std::totally_ordered<urd::index_view<Entity, tyr::formalism::datalog::Repository>>
+                                && std::same_as<std::remove_cvref_t<std::tuple_element_t<0, urd::detail::identity_t<urd::data<Entity>>>>,
+                                                std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>
+                                && requires(urd::data<Entity>& data, const urd::index_view<Entity, tyr::formalism::datalog::Repository>& view) {
+                                       data.index;
+                                       { data.operation } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>&>;
+                                       view.index();
+                                       { view.get_operation() } -> std::same_as<std::remove_cvref_t<decltype(urd::data<Entity>::operation)>>;
+                                       view.get_args();
+                                   };
 
 using Lifted = tyr::formalism::MultiOperator<::tyr::LiftedTag, tyr::formalism::ArithmeticOperatorKind>;
 using Ground = tyr::formalism::MultiOperator<::tyr::GroundTag, tyr::formalism::ArithmeticOperatorKind>;
@@ -49,7 +49,7 @@ TEST(TyrFormalismDatalogMultiOperator, PreservesRepeatedOperands)
     for (const auto op : { tyr::formalism::ArithmeticOperatorKind::Add, tyr::formalism::ArithmeticOperatorKind::Mul })
     {
         auto data = urd::data<Lifted> {};
-        data.operator_kind = op;
+        data.operation = op;
         data.args.emplace_back(2.0);
         data.args.emplace_back(1.0);
         data.args.emplace_back(1.0);

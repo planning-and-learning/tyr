@@ -22,6 +22,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <tuple>
+#include <type_traits>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -81,11 +82,11 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
         head(head_)
     {
     }
-    data(const data& other) = delete;
-    data& operator=(const data& other) = delete;
-    data(data&& other) = default;
-    data& operator=(data&& other) = default;
-    ~data() = default;
+    static constexpr bool copyable() noexcept
+    {
+        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
+        return true;
+    }
 
     static constexpr auto fields() noexcept
     {

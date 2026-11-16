@@ -30,7 +30,7 @@ struct JoinBlock
 urd::Store<urd::sequence<urd::index<ygg::Column>>> variables(QueryView<> query);
 
 /// R ⋉ S, written R ⋈ π_common(S) with the existing operators, as Yannakakis' semijoin programs use it.
-QueryView<> semijoin(OperatorBuilder& build, QueryView<> lhs, QueryView<> rhs);
+QueryView<> semijoin(OperatorBuilder& build, QueryView<> left_operand, QueryView<> right_operand);
 
 /// The atoms' variables ordered by label.
 urd::Store<urd::sequence<urd::index<ygg::Column>>> variable_order(std::span<const QueryView<>> atoms);

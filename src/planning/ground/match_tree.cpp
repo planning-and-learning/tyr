@@ -161,7 +161,9 @@ struct AtomStackEntry
         false_elements(false_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<AtomSelectorNode<Tag>>(builder))
-    { result->atom = atom; }
+    {
+        result->atom = atom;
+    }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     [[nodiscard]] bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
@@ -220,7 +222,9 @@ struct NegativeFactStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NegativeFactSelectorNode<Tag>>(builder))
-    { result->fact = fact; }
+    {
+        result->fact = fact;
+    }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
@@ -245,7 +249,9 @@ struct ConstraintStackEntry
         true_elements(true_elements_),
         dontcare_elements(dontcare_elements_),
         result(planning::match_tree::checkout<NumericConstraintSelectorNode<Tag>>(builder))
-    { result->constraint = std::move(constraint); }
+    {
+        result->constraint = std::move(constraint);
+    }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
@@ -278,7 +284,9 @@ auto store_result(Entry& entry, Repository<Tag>& repository)
 
 template<typename Tag>
 bool explored(const AtomStackEntry<Tag>& el) noexcept
-{ return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child(); }
+{
+    return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child();
+}
 
 template<typename Tag>
 std::optional<StackEntry<Tag>>
@@ -309,7 +317,9 @@ void push_result(AtomStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const VariableStackEntry<Tag>& el) noexcept
-{ return el.explored_children() && el.explored_dontcare_child(); }
+{
+    return el.explored_children() && el.explored_dontcare_child();
+}
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
@@ -344,7 +354,9 @@ void push_result(VariableStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const NegativeFactStackEntry<Tag>& el) noexcept
-{ return el.explored_true_child() && el.explored_dontcare_child(); }
+{
+    return el.explored_true_child() && el.explored_dontcare_child();
+}
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
@@ -373,7 +385,9 @@ void push_result(NegativeFactStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const ConstraintStackEntry<Tag>& el) noexcept
-{ return el.explored_true_child() && el.explored_dontcare_child(); }
+{
+    return el.explored_true_child() && el.explored_dontcare_child();
+}
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
@@ -402,15 +416,21 @@ void push_result(ConstraintStackEntry<Tag>& el, const Node<Tag>& node)
 
 template<typename Tag>
 bool explored(const GeneratorStackEntry<Tag>&) noexcept
-{ return true; }
+{
+    return true;
+}
 
 template<typename Tag>
 std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>&, const SortedPreconditions<Tag>&, const PreconditionDetails<Tag>&, Builder<Tag>&)
-{ return std::nullopt; }
+{
+    return std::nullopt;
+}
 
 template<typename Tag>
 void push_result(GeneratorStackEntry<Tag>&, const Node<Tag>&)
-{ throw std::logic_error("Unexpected case."); }
+{
+    throw std::logic_error("Unexpected case.");
+}
 
 inline auto get_condition(formalism::planning::AxiomView<GroundTag> el) { return el.get_body(); }
 
@@ -663,7 +683,7 @@ MatchTree<Tag>::MatchTree(urd::Store<urd::sequence<urd::index_view<Tag, formalis
 
         for (const auto fact : condition.template get_facts<formalism::NegativeTag>())
         {
-            const auto key = fact.data();
+            const auto key = urd::make<formalism::planning::FDRFact<formalism::FluentTag>>(fact.get_variable(), fact.get_value());
             occurrences[key].push_back(element);
             details[element][key] = std::monostate {};
         }
@@ -774,11 +794,15 @@ MatchTree<Tag>::MatchTree(std::shared_ptr<const Definition> definition) : m_defi
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::create(urd::Store<urd::sequence<urd::index_view<Tag, formalism::planning::Repository>>> elements,
                                          const formalism::planning::Repository& context)
-{ return std::make_unique<MatchTree<Tag>>(std::move(elements), context); }
+{
+    return std::make_unique<MatchTree<Tag>>(std::move(elements), context);
+}
 
 template<typename Tag>
 MatchTreePtr<Tag> MatchTree<Tag>::make_worker() const
-{ return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition)); }
+{
+    return MatchTreePtr<Tag>(new MatchTree<Tag>(m_definition));
+}
 
 template<typename Tag>
 void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
@@ -803,7 +827,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
 
                 if constexpr (std::is_same_v<Handle, urd::index<AtomSelectorNode<Tag>>>)
                 {
-                    const auto holds = state.state_data().test(arg.get_atom());
+                    const auto holds = state.atom_storage().test(arg.get_atom().index());
 
                     if (const auto child = holds ? arg.get_true_child() : arg.get_false_child())
                         stack.push(*child);
@@ -824,7 +848,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                 }
                 else if constexpr (std::is_same_v<Handle, urd::index<VariableSelectorNode<Tag>>>)
                 {
-                    const auto value = state.state_data().get(arg.get_variable());
+                    const auto value = state.fact_storage().get(arg.get_variable().index());
                     const auto children = arg.get_domain_children();
                     assert(value.value < children.size());
 
@@ -837,7 +861,7 @@ void MatchTree<Tag>::generate(const StateContext<GroundTag>& state,
                 else if constexpr (std::is_same_v<Handle, urd::index<NegativeFactSelectorNode<Tag>>>)
                 {
                     const auto fact = arg.get_fact();
-                    const auto holds = state.state_data().get(fact.get_variable()) != fact.get_value();
+                    const auto holds = state.fact_storage().get(fact.get_variable().index()) != fact.get_value();
 
                     if (holds)
                         if (const auto child = arg.get_true_child())

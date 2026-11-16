@@ -81,7 +81,14 @@ struct AtomUnpackedStorage
     StateBits indices;
 
     [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) const
-    { return indices.contains(static_cast<ygg::uint_t>(index.value)); }
+    {
+        return indices.contains(static_cast<ygg::uint_t>(index.value));
+    }
+    /// Its derived atoms, by their bits.
+    [[nodiscard]] auto atoms() const noexcept
+    {
+        return urd::transform(indices, [](ygg::uint_t i) { return urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> { i }; });
+    }
     void set(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) { indices.insert(static_cast<ygg::uint_t>(index.value)); }
     void clear() { indices.clear(); }
     void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
@@ -92,13 +99,22 @@ struct AtomUnpackedStorage
 template<TaskKind Kind>
 struct FactUnpackedStorage;
 
+/// The fluent atoms of a fact storage: each fact's atom, through the repository that owns its variable.
+template<TaskKind Kind>
+[[nodiscard]] auto fluent_atoms(const FactUnpackedStorage<Kind>& storage, const formalism::planning::Repository& repository)
+{
+    return storage.facts() | std::views::transform([repository = &repository](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
+}
+
 template<TaskKind Kind>
 struct NumericUnpackedStorage
 {
     urd::Store<urd::sequence<ygg::float_t>> values;
 
     [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
-    { return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+    {
+        return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN());
+    }
     void set(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
     {
         tyr::set(static_cast<ygg::uint_t>(index.value),

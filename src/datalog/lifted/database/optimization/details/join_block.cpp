@@ -21,7 +21,10 @@ urd::Store<urd::sequence<urd::index<ygg::Column>>> variables(QueryView<> query)
 
 namespace tyr::datalog::database::detail
 {
-QueryView<> semijoin(OperatorBuilder& build, QueryView<> lhs, QueryView<> rhs) { return build.join(lhs, build.restrict(rhs, variables(lhs))); }
+QueryView<> semijoin(OperatorBuilder& build, QueryView<> left_operand, QueryView<> right_operand)
+{
+    return build.join(left_operand, build.restrict(right_operand, variables(left_operand)));
+}
 }
 
 namespace tyr::datalog::database::detail

@@ -21,6 +21,7 @@
 #include "tyr/formalism/declarations.hpp"
 
 #include <tuple>
+#include <type_traits>
 #include <urd/elements/flat.hpp>
 #include <utility>
 #include <yggdrasil/core/config.hpp>
@@ -37,11 +38,11 @@ struct data<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>
 
     data() = default;
     data(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> fterm_, ygg::float_t value_) : index(), fterm(fterm_), value(value_) {}
-    data(const data& other) = delete;
-    data& operator=(const data& other) = delete;
-    data(data&& other) = default;
-    data& operator=(data&& other) = default;
-    ~data() = default;
+    static constexpr bool copyable() noexcept
+    {
+        static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
+        return true;
+    }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"fterm", &data::fterm>, urd::field<"value", &data::value>> {}; }
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fterm, &data::value> {}; }

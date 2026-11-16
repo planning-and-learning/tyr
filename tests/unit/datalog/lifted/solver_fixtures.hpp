@@ -111,6 +111,14 @@ struct PredicateAtoms
 
 using AtomsByPredicate = urd::Store<urd::sequence<PredicateAtoms>>;
 
+[[maybe_unused]] void PrintTo(const PredicateAtoms& atoms, std::ostream* os)
+{
+    *os << atoms.predicate << '/' << atoms.arity << " {";
+    for (const auto& binding : atoms.bindings)
+        *os << ' ' << binding.objects << ';';
+    *os << " }";
+}
+
 struct BottomUpCase
 {
     std::string name;
@@ -218,7 +226,10 @@ BottomUpCase parse_case(const boost::json::object& object)
     {
         auto bindings = urd::Store<urd::sequence<AtomBinding>> {};
         for (const auto binding : tyr::datalog::rows(fact_sets, set))
-            bindings.push_back(AtomBinding { ygg::to_string(urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context())) });
+        {
+            const auto objects = urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context());
+            bindings.push_back(AtomBinding { ygg::to_string(objects | std::views::transform([](auto object) { return object.get_name(); })) });
+        }
         std::ranges::sort(bindings, {}, &AtomBinding::objects);
 
         const auto predicate = fact_sets.repository->view(urd::index<tyr::formalism::Predicate<tyr::formalism::FluentTag>>(set));
@@ -320,12 +331,12 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
         data.values.push_back(object.index().value);
         return intern(std::move(data));
     };
-    const auto ground_first_source = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(first_object).data()));
-    const auto ground_second_source = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(second_object).data()));
+    const auto ground_first_source = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(first_object).index()));
+    const auto ground_second_source = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(bind_source(second_object).index()));
     auto goal_binding_data = urd::data<ygg::Row<tyr::formalism::Predicate<tyr::formalism::FluentTag>>>();
     goal_binding_data.relation = goal_predicate.index();
     const auto goal = intern(std::move(goal_binding_data));
-    const auto ground_goal = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(goal.data()));
+    const auto ground_goal = intern(urd::data<tyr::formalism::Atom<GroundTag, tyr::formalism::FluentTag>>(goal.index()));
     const auto goal_literal = intern(urd::data<tyr::formalism::Literal<GroundTag, tyr::formalism::FluentTag>>(ground_goal.index(), true));
     auto goals_data = urd::data<tyr::formalism::datalog::ConjunctiveCondition<GroundTag>>();
     goals_data.fluent_literals.push_back(goal_literal.index());
@@ -341,7 +352,7 @@ LiftedPredicateProgram make_lifted_predicate_program(bool include_numeric_constr
             auto data = urd::data<ygg::Row<tyr::formalism::Function<tyr::formalism::FluentTag>>>();
             data.relation = value_function.index();
             data.values.push_back(object.index().value);
-            return intern(urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(data)).data()));
+            return intern(urd::data<tyr::formalism::FunctionTerm<GroundTag, tyr::formalism::FluentTag>>(intern(std::move(data)).index()));
         };
         program_data.fluent_functions = { value_function.index() };
         program_data.fluent_fterm_values = {

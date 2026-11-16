@@ -111,7 +111,7 @@ void expect_condition_atom_projection()
             {
                 auto binding = urd::data<ygg::Row<tyr::formalism::Predicate<F>>> {};
                 binding.relation = predicate.index();
-                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(std::move(binding)).data()));
+                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(std::move(binding)).index()));
             }
             else
                 return intern(urd::data<tyr::formalism::Atom<Kind, F>>(predicate.index(), {}));

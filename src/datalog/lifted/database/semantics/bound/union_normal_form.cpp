@@ -15,12 +15,12 @@ UnionNormalForm union_normal_form(QueryView<> query) { return detail::UnionNorma
 
 namespace tyr::datalog::database::bound::detail
 {
-urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::product(const urd::Store<urd::sequence<ConjunctiveBranch>>& lhs,
-                                                                             const urd::Store<urd::sequence<ConjunctiveBranch>>& rhs)
+urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::product(const urd::Store<urd::sequence<ConjunctiveBranch>>& left_operand,
+                                                                             const urd::Store<urd::sequence<ConjunctiveBranch>>& right_operand)
 {
     urd::Store<urd::sequence<ConjunctiveBranch>> result;
-    for (const auto& l : lhs)
-        for (const auto& r : rhs)
+    for (const auto& l : left_operand)
+        for (const auto& r : right_operand)
         {
             auto& merged = result.emplace_back(l);
             merged.atoms.insert(merged.atoms.end(), r.atoms.begin(), r.atoms.end());
@@ -56,10 +56,11 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 return {};
             else if constexpr (std::same_as<Tag, QueryJoinTag> || std::same_as<Tag, QuerySemijoinTag>)
             {
-                // A semijoin's rhs-only columns are not in the output, so they get fresh variables.
-                const auto lhs = concrete.get_lhs();
-                const auto rhs = concrete.get_rhs();
-                return product(flatten(lhs, by_label(lhs.columns(), columns, mapping)), flatten(rhs, by_label(rhs.columns(), columns, mapping)));
+                // A semijoin's right-only columns are not in the output, so they get fresh variables.
+                const auto left_operand = concrete.get_left_operand();
+                const auto right_operand = concrete.get_right_operand();
+                return product(flatten(left_operand, by_label(left_operand.columns(), columns, mapping)),
+                               flatten(right_operand, by_label(right_operand.columns(), columns, mapping)));
             }
             else if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
             {
@@ -70,7 +71,7 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 const auto& repository = get_repository(concrete.context());
                 for (const auto input : concrete.get_inputs())
                 {
-                    const auto child = repository.view(input);
+                    const auto child = input;
                     for (const auto& column : child.columns())
                         if (std::ranges::find(labels, column.label, &ygg::ColumnLayout::label) == labels.end())
                         {
@@ -83,18 +84,18 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
             }
             else if constexpr (std::same_as<Tag, QueryProjectTag>)
             {
-                const auto arg = concrete.get_arg();
+                const auto arg = concrete.get_operand();
                 return flatten(arg, by_label(arg.columns(), columns, mapping));
             }
             else if constexpr (std::same_as<Tag, QueryRenameTag>)
-                return flatten(concrete.get_arg(), mapping);
+                return flatten(concrete.get_operand(), mapping);
             else if constexpr (std::same_as<Tag, QuerySelectEqualTag> || std::same_as<Tag, QuerySelectValueTag>)
             {
-                auto branches = flatten(concrete.get_arg(), mapping);
+                auto branches = flatten(concrete.get_operand(), mapping);
                 for (auto& branch : branches)
                 {
                     if constexpr (std::same_as<Tag, QuerySelectEqualTag>)
-                        branch.equal.emplace_back(mapping[concrete.get_plan().lhs_position()], mapping[concrete.get_plan().rhs_position()]);
+                        branch.equal.emplace_back(mapping[concrete.get_plan().left_position()], mapping[concrete.get_plan().right_position()]);
                     else
                     {
                         branch.value.emplace_back(mapping[concrete.get_plan().position()], concrete.get_constant());
@@ -104,21 +105,21 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
             }
             else if constexpr (std::same_as<Tag, QueryUnionTag>)
             {
-                const auto lhs = concrete.get_lhs();
-                const auto rhs = concrete.get_rhs();
-                auto result = flatten(lhs, by_label(lhs.columns(), columns, mapping));
-                auto right = flatten(rhs, by_label(rhs.columns(), columns, mapping));
+                const auto left_operand = concrete.get_left_operand();
+                const auto right_operand = concrete.get_right_operand();
+                auto result = flatten(left_operand, by_label(left_operand.columns(), columns, mapping));
+                auto right = flatten(right_operand, by_label(right_operand.columns(), columns, mapping));
                 result.insert(result.end(), std::make_move_iterator(right.begin()), std::make_move_iterator(right.end()));
                 return result;
             }
             else if constexpr (std::same_as<Tag, QueryDifferenceTag> || std::same_as<Tag, QueryAntijoinTag>)
             {
-                // An antijoin's rhs-only columns get fresh variables inside the negation.
-                const auto lhs = concrete.get_lhs();
-                const auto rhs = concrete.get_rhs();
-                auto result = flatten(lhs, by_label(lhs.columns(), columns, mapping));
+                // An antijoin's right-only columns get fresh variables inside the negation.
+                const auto left_operand = concrete.get_left_operand();
+                const auto right_operand = concrete.get_right_operand();
+                auto result = flatten(left_operand, by_label(left_operand.columns(), columns, mapping));
                 auto negation = ConjunctiveNegation { urd::Store<urd::sequence<uint32_t>>(mapping.begin(), mapping.end()),
-                                                      flatten(rhs, by_label(rhs.columns(), columns, mapping)) };
+                                                      flatten(right_operand, by_label(right_operand.columns(), columns, mapping)) };
                 for (auto& branch : result)
                     branch.negations.push_back(negation);
                 return result;

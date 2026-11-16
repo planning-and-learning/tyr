@@ -158,14 +158,18 @@ public:
         m_execution_context(std::move(execution_context)),
         m_source_goal(m_definition->task->get_task().get_goal()),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
+    {
+        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
+    }
 
     RPGEvaluator(const RPGEvaluator& source, ygg::ExecutionContextPtr execution_context) :
         m_definition(source.m_definition),
         m_execution_context(std::move(execution_context)),
         m_source_goal(source.m_source_goal),
         m_workspace(m_definition->rpg_program.get_datalog_program(), AP {}, TP {}, make_cost_policy(*m_definition))
-    { Policy::set_goal(*m_definition, m_workspace, m_source_goal); }
+    {
+        Policy::set_goal(*m_definition, m_workspace, m_source_goal);
+    }
 
     void set_goal(formalism::planning::ConjunctiveConditionView<GroundTag> goal)
     {
@@ -173,7 +177,7 @@ public:
         Policy::set_goal(*m_definition, m_workspace, m_source_goal);
     }
 
-    ygg::float_t evaluate(const urd::data<State<Kind>>& state)
+    ygg::float_t evaluate(const StateView<Kind>& state)
     {
         begin_state_evaluation();
         return evaluate_current_state(state);
@@ -184,13 +188,13 @@ public:
 protected:
     void begin_state_evaluation() { Policy::begin_state_evaluation(*m_definition, m_workspace, m_source_goal); }
 
-    ygg::float_t evaluate_current_state(const urd::data<State<Kind>>& state)
+    ygg::float_t evaluate_current_state(const StateView<Kind>& state)
     {
         const auto& repository = *m_definition->task->get_repository();
         const auto& translation_context = m_definition->rpg_program.get_translation_context().p2d;
         // LM-cut repeats this evaluation while retaining the current goal and cost overrides.
         m_workspace.facts.reset();
-        insert_unextended_state(state, repository, translation_context, m_workspace);
+        insert_unextended_state(StateContext<Kind> { *m_definition->task, state, ygg::float_t { 0 } }, repository, translation_context, m_workspace);
         auto ctx = datalog::ProgramExecutionContext(m_workspace);
         datalog::execute_model(ctx, *m_execution_context);
 
@@ -199,15 +203,17 @@ protected:
                    std::numeric_limits<ygg::float_t>::infinity();
     }
 
-    ygg::float_t compute_result(const urd::data<State<Kind>>&) const { return get_goal_cost(); }
+    ygg::float_t compute_result(const StateView<Kind>&) const { return get_goal_cost(); }
 
     void set_action_binding_cost(formalism::planning::ActionRowView action_binding, datalog::Cost cost)
         requires std::same_as<CP, datalog::RuleCostOverridePolicy<Kind>>
-    { m_workspace.cost_policy.set_action_cost(action_binding, cost); }
+    {
+        m_workspace.cost_policy.set_action_cost(action_binding, cost);
+    }
 
     [[nodiscard]] datalog::Cost get_predicate_cost(formalism::datalog::PredicateRowView<formalism::FluentTag> head) const noexcept
     {
-        const auto* annotation = m_workspace.annotations.find(head.data());
+        const auto* annotation = m_workspace.annotations.find(head.index());
         return annotation ? datalog::get_cost(*annotation) : static_cast<datalog::Cost>(0);
     }
 
@@ -223,7 +229,9 @@ protected:
     /// Calls back the binding of every action whose rule the witness instantiates; identical relaxed rules share one rule.
     template<typename Callback>
     void for_each_action_binding(const datalog::WitnessAnnotation& witness, Callback callback)
-    { Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback); }
+    {
+        Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback);
+    }
 
     /// The binding of one action whose rule the witness instantiates, if any.
     std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation& witness)
@@ -262,7 +270,7 @@ protected:
     void for_each_achiever(formalism::datalog::PredicateRowView<formalism::FluentTag> head, Callback callback)
         requires AP::records_propositional_achievers
     {
-        const auto* achievers = m_workspace.annotation_policy.find_achievers(head.data());
+        const auto* achievers = m_workspace.annotation_policy.find_achievers(head.index());
         if (!achievers)
             return;
 

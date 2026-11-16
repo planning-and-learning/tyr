@@ -142,8 +142,8 @@ private:
             m_goal_atoms.clear();
             m_goal_positions.clear();
             for (const auto literal : goal->template get_literals<formalism::FluentTag>())
-                if (m_goal_positions.emplace(literal.get_atom().get_row().data(), m_goal_atoms.size()).second)
-                    m_goal_atoms.push_back(literal.get_atom().get_row().data());
+                if (m_goal_positions.emplace(literal.get_atom().get_row().index(), m_goal_atoms.size()).second)
+                    m_goal_atoms.push_back(literal.get_atom().get_row().index());
             m_goal_final.clear();
             m_min_edge_cost = min_edge_cost == std::numeric_limits<Cost>::max() ? static_cast<Cost>(0) : min_edge_cost;
             m_goal_cutoff_enabled = !m_goal_atoms.empty();
@@ -158,7 +158,7 @@ private:
         const auto& delta = program_out.facts().delta_fact_sets;
         for (ygg::uint_t i = 0; i < delta.predicate.size(); ++i)
             for (const auto atom : rows(delta, i))
-                if (const auto* annotation = program_out.annotations().find(atom.data()))
+                if (const auto* annotation = program_out.annotations().find(atom.index()))
                     return get_cost(*annotation);
         return static_cast<Cost>(0);
     }
@@ -254,8 +254,7 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]()
-        {
+        const auto statically_applicable = [&]() {
             return applicability_cache.static_nullary
                    && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
         };
@@ -275,7 +274,9 @@ private:
 
     [[maybe_unused]] static bool ensure_novel_binding(const urd::flat_vector<urd::index<formalism::Object>>& binding,
                                                       urd::Store<urd::set<urd::flat_vector<urd::index<formalism::Object>>>>& set)
-    { return set.insert(binding).second; }
+    {
+        return set.insert(binding).second;
+    }
 
     template<typename Callback>
     void for_each_relevant_clique(kckp::DeltaKCKP& algorithm, Callback&& callback, kckp::Workspace& workspace, [[maybe_unused]] bool enumerate_all)
@@ -418,8 +419,7 @@ private:
         const auto applicability_context = ApplicabilityContext { in.fact_sets(), out.ground_context() };
         auto& applicability_cache = out.applicability_cache();
 
-        const auto statically_applicable = [&]()
-        {
+        const auto statically_applicable = [&]() {
             return applicability_cache.static_nullary
                    && is_applicable(conflicting_condition.template get_literals<formalism::StaticTag>(), applicability_context);
         };

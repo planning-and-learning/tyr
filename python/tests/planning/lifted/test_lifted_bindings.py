@@ -29,6 +29,37 @@ def _lifted_task() -> planning.lifted.Task:
     return planning.lifted.Task(formalism_task)
 
 
+def test_a_lifted_task_leaves_its_formalism_task_usable() -> None:
+    options = ParserOptions()
+    parser = Parser(str(GRIPPER.domain_path), options)
+    formalism_task = parser.parse_task(str(GRIPPER.task_path), options)
+    text = repr(formalism_task)
+
+    planning.lifted.Task(formalism_task)
+
+    assert formalism_task.get_repository() is not None
+    assert repr(formalism_task) == text
+
+
+def test_lifted_tasks_of_one_formalism_task_write_into_their_own_layers() -> None:
+    options = ParserOptions()
+    formalism_task = Parser(str(GRIPPER.domain_path), options).parse_task(str(GRIPPER.task_path), options)
+    frozen = len(formalism_task.get_fdr_context().get_variables())
+    first = planning.lifted.Task(formalism_task)
+    second = planning.lifted.Task(formalism_task)
+
+    execution_context = ExecutionContext(1)
+    axiom_evaluator = planning.lifted.AxiomEvaluator(first, execution_context)
+    state_repository = planning.lifted.StateRepository(first)
+    successor_generator = planning.lifted.SuccessorGenerator(first, execution_context)
+    initial = successor_generator.get_initial_node(state_repository, axiom_evaluator)
+    assert successor_generator.get_labeled_successor_nodes(initial, state_repository, axiom_evaluator)
+
+    assert len(first.get_fdr_context().get_variables()) > frozen
+    assert len(second.get_fdr_context().get_variables()) == frozen
+    assert len(formalism_task.get_fdr_context().get_variables()) == frozen
+
+
 def test_lifted_datalog_workspaces_own_independent_repositories() -> None:
     task = _lifted_task()
     translated_program = planning.lifted.GroundTaskProgram(task.get_task())
@@ -60,7 +91,7 @@ def test_fact_sets_give_a_predicates_rows() -> None:
     facts = workspace.get_fluent_fact_sets()
 
     rows = list(facts.rows(0))
-    assert all(isinstance(row, formalism_datalog.FluentPredicateRow) for row in rows)
+    assert all(isinstance(row, formalism_datalog.RowPredicateFluent) for row in rows)
 
     # The rows keep what they are read through alive.
     del facts, workspace, program, task
@@ -226,7 +257,7 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
     class PythonGoalStrategy(planning.lifted.GoalStrategy):
         def __init__(self) -> None:
             super().__init__()
-            self.saw_builder = False
+            self.saw_state = False
 
         @override
         def is_static_goal_satisfied(self, task: planning.lifted.Task) -> bool:
@@ -234,14 +265,14 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
 
         @override
         def is_dynamic_goal_satisfied(self, seed_state: State, state: State) -> bool:
-            self.saw_builder = isinstance(state, planning.lifted.StateBuilder)
+            self.saw_state = isinstance(state, planning.lifted.State)
             return False
 
     goal_strategy = PythonGoalStrategy()
 
     assert isinstance(goal_strategy, planning.lifted.GoalStrategy)
     assert not planning.lifted.GoalStrategy.is_dynamic_goal_satisfied(goal_strategy, state, state)
-    assert goal_strategy.saw_builder
+    assert goal_strategy.saw_state
 
 
 def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() -> None:
@@ -255,16 +286,16 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
     class PythonHeuristic(planning.lifted.Heuristic):
         def __init__(self) -> None:
             super().__init__()
-            self.goal: formalism_planning.GroundConjunctiveCondition | None = None
-            self.saw_builder = False
+            self.goal: formalism_planning.ConjunctiveConditionGround | None = None
+            self.saw_state = False
 
         @override
-        def set_goal(self, goal: formalism_planning.GroundConjunctiveCondition) -> None:
+        def set_goal(self, goal: formalism_planning.ConjunctiveConditionGround) -> None:
             self.goal = goal
 
         @override
         def evaluate(self, state: State) -> float:
-            self.saw_builder = isinstance(state, planning.lifted.StateBuilder)
+            self.saw_state = isinstance(state, planning.lifted.State)
             return 7.0
 
     heuristic = PythonHeuristic()
@@ -276,4 +307,4 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
 
     assert heuristic.goal == goal
     assert value == 7.0
-    assert heuristic.saw_builder
+    assert heuristic.saw_state

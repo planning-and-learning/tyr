@@ -18,7 +18,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 from typing_extensions import override
 
-from pytyr.formalism.planning import GroundConjunctiveCondition, Parser
+from pytyr.formalism.planning import ConjunctiveConditionGround, Parser
 from pytyr.planning import SearchStatus, Statistics
 from pytyr.planning.algorithms.astar_eager.lifted import (
     DefaultEventHandler,
@@ -56,7 +56,7 @@ class CustomHeuristic(Heuristic):
     """CustomHeuristic derives from Heuristic to implement custom heuristics."""
 
     @override
-    def set_goal(self, goal: GroundConjunctiveCondition) -> None:
+    def set_goal(self, goal: ConjunctiveConditionGround) -> None:
         pass
 
     @override

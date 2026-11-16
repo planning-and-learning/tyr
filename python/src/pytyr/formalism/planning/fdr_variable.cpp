@@ -26,39 +26,10 @@
 namespace tyr::formalism::planning
 {
 
-namespace
-{
-template<FactKind T>
-void bind_fdr_variable_data(nb::module_& m, const char* name)
-{
-    using namespace nb::literals;
-    using V = urd::data<FDRVariable<T>>;
-    auto cls = nb::class_<V>(m, name).def(urd::python::init_from_views<const AtomViewList<GroundTag, T>>(), "atoms"_a);
-    cls.def(nb::init<urd::flat_vector<urd::index<Atom<GroundTag, T>>>>(), "atoms"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
-template<FactKind T>
-void bind_fdr_variable_view(nb::module_& m, const char* name)
-{
-    using V = FDRVariableView<T>;
-    auto cls = nb::class_<V>(m, name).def("index", &V::index).def("get_domain_size", &V::get_domain_size).def("get_atoms", &V::get_atoms);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-}  // namespace
-
 void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
 {
-    urd::python::bind_index<urd::index<FDRVariable<FluentTag>>>(m, "FluentFDRVariableIndex");
-
-    bind_fdr_variable_data<FluentTag>(m, "FluentFDRVariableData");
-
-    bind_fdr_variable_view<FluentTag>(m, "FluentFDRVariable");
-
+    urd::python::bind_data<FDRVariable<FluentTag>>(m);
+    urd::python::bind_view<FDRVariableView<FluentTag>>(m).def("get_domain_size", &FDRVariableView<FluentTag>::get_domain_size);
     ygg::bind_insert<FDRVariable<FluentTag>>(repository);
 }
 

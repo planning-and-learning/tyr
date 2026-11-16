@@ -49,8 +49,8 @@ std::shared_ptr<const PlanningTask<LiftedTag>::VariableDomains> make_variable_do
 
 template<TaskKind T>
 PlanningTask<T>::PlanningTask(TaskView<T> task,
-                              FDRContextPtr fdr_context,
-                              std::shared_ptr<Repository> repository,
+                              std::shared_ptr<const FDRContext> fdr_context,
+                              std::shared_ptr<const Repository> repository,
                               PlanningDomain domain,
                               std::optional<std::filesystem::path> path) :
     m_repository(std::move(repository)),

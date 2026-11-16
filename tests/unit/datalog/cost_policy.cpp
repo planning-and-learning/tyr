@@ -95,8 +95,8 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     const auto predicate = repository.insert(predicate_data).first;
     auto buckets = tyr::datalog::CostBuckets {};
 
-    EXPECT_TRUE(buckets.insert(3, predicate.data()));
-    EXPECT_FALSE(buckets.insert(3, predicate.data()));
+    EXPECT_TRUE(buckets.insert(3, predicate.index()));
+    EXPECT_FALSE(buckets.insert(3, predicate.index()));
     EXPECT_EQ(buckets.min_cost(), 3);
 
     const auto* address = &buckets.at(3);
@@ -105,23 +105,23 @@ TEST(TyrDatalogCostPolicyTest, CostBucketsRecycleNodesAndRetainTables)
     EXPECT_TRUE(buckets.is_empty());
     EXPECT_FALSE(buckets.erase(3));
 
-    EXPECT_TRUE(buckets.insert(5, predicate.data()));
+    EXPECT_TRUE(buckets.insert(5, predicate.index()));
     auto& bucket = buckets.at(5);
     EXPECT_EQ(&bucket, address);
     EXPECT_EQ(urd::memory_usage(bucket.predicate), predicate_capacity);
     bucket.predicate.clear();
     EXPECT_TRUE(buckets.erase(5));
 
-    buckets.insert(7, predicate.data());
+    buckets.insert(7, predicate.index());
     EXPECT_EQ(buckets.min_cost(), 7);
     buckets.clear();
     EXPECT_TRUE(buckets.is_empty());
 
-    buckets.insert(1, predicate.data());
-    EXPECT_TRUE(buckets.erase(1, predicate.data()));
+    buckets.insert(1, predicate.index());
+    EXPECT_TRUE(buckets.erase(1, predicate.index()));
     EXPECT_TRUE(buckets.is_empty());
-    EXPECT_FALSE(buckets.erase(1, predicate.data()));
-    EXPECT_TRUE(buckets.insert(1, predicate.data()));
+    EXPECT_FALSE(buckets.erase(1, predicate.index()));
+    EXPECT_TRUE(buckets.insert(1, predicate.index()));
 }
 
 TEST(TyrDatalogCostPolicyTest, AnnotationStoresCost)
@@ -157,7 +157,7 @@ TEST(TyrDatalogCostPolicyTest, RuleCostOverridePolicyLiftedUsesExactOverride)
     const auto fixture = make_nullary_rule_binding(repository);
 
     auto policy = tyr::datalog::RuleCostOverridePolicy<LiftedTag>();
-    policy.set_cost(fixture.binding.data(), 3);
+    policy.set_cost(fixture.binding.index(), 3);
 
     EXPECT_EQ(policy.get_cost(fixture.binding), 3);
 }

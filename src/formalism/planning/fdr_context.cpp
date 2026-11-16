@@ -18,7 +18,6 @@
 #include "tyr/formalism/planning/fdr_context.hpp"
 
 #include "tyr/formalism/atom_view.hpp"
-#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
@@ -31,6 +30,7 @@
 #include <cassert>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <urd/config.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
@@ -40,22 +40,6 @@
 
 namespace tyr::formalism::planning
 {
-namespace
-{
-std::pair<FDRVariableView<FluentTag>, bool> copy(FDRVariableView<FluentTag> element, WriteContext<Builder, Repository>& context)
-{
-    auto variable = planning::checkout<FDRVariable<FluentTag>>(context.builder());
-
-    for (const auto atom : element.get_atoms())
-        variable->atoms.push_back(copy(atom, context).first.index());
-
-    return planning::insert(context.destination(), *variable);
-}
-
-urd::data<FDRFact<FluentTag>> copy(FDRFactView<FluentTag> element, WriteContext<Builder, Repository>& context)
-{ return urd::data<FDRFact<FluentTag>>(copy(element.get_variable(), context).first.index(), element.get_value()); }
-}
-
 FDRContext::FDRContext(RepositoryPtr context) : m_context(std::move(context)), m_facts(), m_registration_mutex(), m_builder(), m_variables() {}
 
 FDRContext::FDRContext(const urd::Store<urd::sequence<AtomViewList<GroundTag, FluentTag>>>& mutexes, RepositoryPtr context) :
@@ -98,28 +82,16 @@ FDRContext::FDRContext(const AtomViewList<GroundTag, FluentTag>& all_atoms, Repo
     }
 }
 
-FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context) :
+FDRContext::FDRContext(const FDRContext* parent, RepositoryPtr context) :
+    m_parent(parent),
     m_context(std::move(context)),
     m_facts(),
     m_registration_mutex(),
     m_builder(),
-    m_variables()
+    m_variables(m_parent->m_variables)
 {
-    auto merge_context = WriteContext<Builder, Repository> { builder, *m_context };
-
-    for (const auto variable : other.m_variables)
-        m_variables.push_back(copy(variable, merge_context).first);
-
-    for (size_t i = 0; i < other.m_facts.size(); ++i)
-    {
-        const auto atom = other.m_context->view(urd::index<Atom<GroundTag, FluentTag>>(i));
-        const auto fact = other.find_fact(atom);
-        if (!fact)
-            continue;
-
-        [[maybe_unused]] const auto inserted = publish_fact(copy(atom, merge_context).first, copy(*fact, merge_context));
-        assert(inserted);
-    }
+    if (m_context->parent() != m_parent->m_context.get())
+        throw std::invalid_argument("FDRContext: the repository is not a layer over the parent's.");
 }
 
 FDRFactView<FluentTag> FDRContext::get_fact(AtomView<GroundTag, FluentTag> atom)
@@ -151,16 +123,18 @@ std::optional<FDRFactView<FluentTag>> FDRContext::get_fact(AtomView<GroundTag, F
 
 std::optional<FDRFactView<FluentTag>> FDRContext::find_fact(AtomView<GroundTag, FluentTag> atom) const
 {
-    assert(m_context->owner(atom.index()) == &atom.context());
+    assert(m_context->contains(atom.index()));
     const auto index = static_cast<ygg::uint_t>(atom.index().value);
-    if (index >= m_facts.size())
-        return std::nullopt;
-
-    const auto& slot = m_facts[index];
-    if (!slot.ready.load(std::memory_order_acquire))
-        return std::nullopt;
-
-    return urd::resolve(slot.fact, *m_context);
+    if (index < m_facts.size())
+    {
+        const auto& slot = m_facts[index];
+        if (slot.ready.load(std::memory_order_acquire))
+            return urd::resolve(slot.fact, *m_context);
+    }
+    // The parent's layer holds no atom of this one's (indices continue after the parent's).
+    if (m_parent && m_parent->m_context->contains(atom.index()))
+        return m_parent->find_fact(atom);
+    return std::nullopt;
 }
 
 void FDRContext::ensure_fact_slot(AtomView<GroundTag, FluentTag> atom)

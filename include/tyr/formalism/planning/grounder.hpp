@@ -161,7 +161,7 @@ std::pair<FunctionTermView<GroundTag, T>, bool> ground(FunctionTermView<LiftedTa
     auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
     // Fill data
-    fterm->row = ground(element.get_terms(), element.get_function(), context).first.data();
+    urd::store(fterm->row, ground(element.get_terms(), element.get_function(), context).first);
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *fterm);
@@ -187,8 +187,8 @@ inline std::pair<UnaryOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
     auto unary = planning::checkout<UnaryOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
-    unary->operator_kind = element.get_operator();
-    unary->arg = urd::to_stored(ground(element.get_arg(), context));
+    unary->operation = element.get_operation();
+    urd::store(unary->arg, ground(element.get_arg(), context));
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *unary);
@@ -201,9 +201,9 @@ std::pair<BinaryOperatorView<GroundTag, O>, bool> ground(BinaryOperatorView<Lift
     auto binary = planning::checkout<BinaryOperator<GroundTag, O>>(context.builder());
 
     // Fill data
-    binary->operator_kind = element.get_operator();
-    binary->lhs = urd::to_stored(ground(element.get_lhs(), context));
-    binary->rhs = urd::to_stored(ground(element.get_rhs(), context));
+    binary->operation = element.get_operation();
+    urd::store(binary->lhs, ground(element.get_lhs(), context));
+    urd::store(binary->rhs, ground(element.get_rhs(), context));
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *binary);
@@ -216,9 +216,9 @@ inline std::pair<MultiOperatorView<GroundTag, ArithmeticOperatorKind>, bool> gro
     auto multi = planning::checkout<MultiOperator<GroundTag, ArithmeticOperatorKind>>(context.builder());
 
     // Fill data
-    multi->operator_kind = element.get_operator();
+    multi->operation = element.get_operation();
     for (const auto arg : element.get_args())
-        multi->args.push_back(urd::to_stored(ground(arg, context)));
+        urd::append(multi->args, ground(arg, context));
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *multi);
@@ -256,14 +256,17 @@ std::pair<AtomView<GroundTag, T>, bool> ground(AtomView<LiftedTag, T> element, W
     auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
 
     // Fill data
-    atom->row = ground(element.get_terms(), element.get_predicate(), context).first.data();
+    urd::store(atom->row, ground(element.get_terms(), element.get_predicate(), context).first);
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *atom);
 }
 
 inline urd::data<FDRFact<FluentTag>> ground(AtomView<LiftedTag, FluentTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr)
-{ return fdr.get_fact(ground(element, context).first).data(); }
+{
+    const auto fact = fdr.get_fact(ground(element, context).first);
+    return urd::make<FDRFact<FluentTag>>(fact.get_variable(), fact.get_value());
+}
 
 template<FactKind T>
 std::pair<LiteralView<GroundTag, T>, bool> ground(LiteralView<LiftedTag, T> element, WriteContext<Builder, Repository>& context)
@@ -320,9 +323,9 @@ std::pair<NumericEffectView<GroundTag, T>, bool> ground(NumericEffectView<Lifted
     auto numeric_effect = planning::checkout<NumericEffect<GroundTag, T>>(context.builder());
 
     // Fill data
-    numeric_effect->operator_kind = element.get_operator();
+    numeric_effect->operation = element.get_operation();
     numeric_effect->fterm = ground(element.get_fterm(), context).first.index();
-    numeric_effect->fexpr = urd::to_stored(ground(element.get_fexpr(), context));
+    urd::store(numeric_effect->fexpr, ground(element.get_fexpr(), context));
 
     // Canonicalize and Serialize
     return planning::insert(context.destination(), *numeric_effect);
@@ -381,7 +384,7 @@ template<typename ForEachEffectBinding>
 std::pair<ActionView<GroundTag>, bool>
 ground(ActionView<LiftedTag> element, WriteContext<Builder, Repository>& context, FDRContext& fdr, ForEachEffectBinding for_each_effect_binding)
 {
-    const auto binding = ground(element, context).first.data();
+    const auto binding = ground(element, context).first.index();
 
     auto action = planning::checkout<Action<GroundTag>>(context.builder());
 
@@ -409,7 +412,7 @@ inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteCon
 inline std::pair<AxiomView<GroundTag>, bool>
 ground(AxiomView<LiftedTag> element, WriteContext<Builder, Repository>& context, GrounderCacheEntry<Axiom<LiftedTag>>& cache, FDRContext& fdr)
 {
-    const auto binding = ground(element, context).first.data();
+    const auto binding = ground(element, context).first.index();
 
     auto& axiom_cache = cache.container;
     if (auto it = axiom_cache.find(binding); it != axiom_cache.end())
@@ -459,7 +462,7 @@ std::optional<FunctionTermView<GroundTag, T>> try_ground(FunctionTermView<Lifted
 
     auto fterm = planning::checkout<FunctionTerm<GroundTag, T>>(context.builder());
 
-    fterm->row = binding_or_nullopt->data();
+    fterm->row = binding_or_nullopt->index();
 
     return context.destination().find(*fterm);
 }
@@ -491,7 +494,7 @@ std::optional<AtomView<GroundTag, T>> try_ground(AtomView<LiftedTag, T> element,
 
     auto atom = planning::checkout<Atom<GroundTag, T>>(context.builder());
 
-    atom->row = binding_or_nullopt->data();
+    atom->row = binding_or_nullopt->index();
 
     return context.destination().find(*atom);
 }

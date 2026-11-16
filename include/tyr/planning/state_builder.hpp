@@ -45,6 +45,7 @@
 #include "tyr/formalism/unary_operator_view.hpp"
 #include "tyr/formalism/variable_view.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/state_data.hpp"
 #include "tyr/planning/ground/state_storage.hpp"
 #include "tyr/planning/lifted/state_storage.hpp"
 
@@ -60,42 +61,6 @@
 namespace urd
 {
 
-/// A registered state, unpacked: its index and its storage, read only. A view of an index reads it, and so does the
-/// builder that filled it, whose storage it is (builder<State<Kind>> derives from it). The repository's packed record of
-/// a state is tyr::planning::PackedState.
-template<::tyr::TaskKind Kind>
-struct data<::tyr::planning::State<Kind>>
-{
-    urd::index<::tyr::planning::State<Kind>> index;
-    ::tyr::planning::FactUnpackedStorage<Kind> fact_storage;
-    ::tyr::planning::AtomUnpackedStorage<Kind> atom_storage;
-    ::tyr::planning::NumericUnpackedStorage<Kind> numeric_storage;
-
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable) const
-    { return fact_storage.get(variable); }
-    [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
-    { return numeric_storage.get(fterm); }
-    [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const { return atom_storage.test(atom); }
-
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag> view) const
-    { return get(view.index()); }
-    [[nodiscard]] ygg::float_t get(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view) const
-    { return get(view.index()); }
-    [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
-
-    [[nodiscard]] auto get_fluent_facts() const noexcept { return fact_storage.facts(); }
-    template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_atoms(const ::tyr::formalism::planning::Repository& repository) const noexcept;
-    template<::tyr::formalism::FactKind F>
-        requires std::same_as<F, ::tyr::formalism::FluentTag>
-    [[nodiscard]] auto get_fterm_values() const noexcept
-    { return numeric_storage.fterm_values(); }
-
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
-    /// A registered state is its index.
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::index> {}; }
-};
-
 /// A state being created, before it is registered: the storage of a data<State<Kind>>, mutable. It compares by its
 /// contents (the fluent facts and numeric values), as the repository deduplicates them; its index is none until it is
 /// registered.
@@ -106,15 +71,48 @@ private:
     using base = data<::tyr::planning::State<Kind>>;
 
 public:
-    using base::get;
-    using base::test;
+    builder() = default;
+    /// A copy of a builder: its index and its storages (its record is not copied: records are move-only).
+    builder(const builder& other) : base() { copy_from(other); }
+    builder& operator=(const builder& other)
+    {
+        if (this != &other)
+            copy_from(other);
+        return *this;
+    }
+    builder(builder&& other) noexcept = default;
+    builder& operator=(builder&& other) noexcept = default;
+    ~builder() = default;
+
+    /// What it holds, as a state's view reads it (the builder is the mutable record: it reads its own storages).
+    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable) const
+    {
+        return this->fact_storage.get(variable);
+    }
+    [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
+    {
+        return this->numeric_storage.get(fterm);
+    }
+    [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const
+    {
+        return this->atom_storage.test(atom);
+    }
+    [[nodiscard]] auto get_fluent_facts() const noexcept { return this->fact_storage.facts(); }
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { this->index = state; }
     void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact) { this->fact_storage.set(fact); }
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
-    { this->numeric_storage.set(fterm, value); }
+    {
+        this->numeric_storage.set(fterm, value);
+    }
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { this->atom_storage.set(atom); }
-    void set(::tyr::formalism::planning::FDRFactView<::tyr::formalism::FluentTag> view) { set(view.data()); }
+    /// A fact's view (borrowed or computed): its fact set.
+    template<typename V>
+        requires std::same_as<typename V::value_type, ::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>
+    void set(const V& fact)
+    {
+        set(urd::make<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>(fact.get_variable(), fact.get_value()));
+    }
     void set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value) { set(view.index(), value); }
     void set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) { set(view.index()); }
 
@@ -130,13 +128,33 @@ public:
         this->numeric_storage.clear();
     }
     void clear_extended_part() { this->atom_storage.clear(); }
-    void assign_unextended_part(const base& other)
+    /// Takes a state's facts and numeric values (a view of it: registered, or another builder's).
+    template<typename V>
+    void assign_unextended_part(const V& state)
+    {
+        this->fact_storage = state.get_fact_storage();
+        this->numeric_storage = state.get_numeric_storage();
+    }
+    /// Takes another builder's facts and numeric values.
+    void assign_unextended_part(const builder& other)
     {
         this->fact_storage = other.fact_storage;
         this->numeric_storage = other.numeric_storage;
     }
-    /// Takes the whole state: its index and its storage.
-    void assign(const base& other) { static_cast<base&>(*this) = other; }
+    /// Takes a registered state whole: its storages and its index.
+    void assign(const ::tyr::planning::StateView<Kind>& state)
+    {
+        assign_storages(state);
+        this->index = state.index();
+    }
+    /// Takes a state being built whole: its storages (it has no index).
+    void assign(const ::tyr::planning::BuilderStateView<Kind>& state)
+    {
+        assign_storages(state);
+        this->index = {};
+    }
+    /// Takes another builder whole.
+    void assign(const builder& other) { copy_from(other); }
     void swap(builder& other) noexcept
     {
         using std::swap;
@@ -148,9 +166,28 @@ public:
 
     friend void swap(builder& lhs, builder& rhs) noexcept { lhs.swap(rhs); }
 
+private:
+    /// The storages of a state's view.
+    template<typename V>
+    void assign_storages(const V& state)
+    {
+        assign_unextended_part(state);
+        this->atom_storage = state.get_atom_storage();
+    }
+    void copy_from(const builder& other)
+    {
+        this->index = other.index;
+        this->fact_storage = other.fact_storage;
+        this->atom_storage = other.atom_storage;
+        this->numeric_storage = other.numeric_storage;
+    }
+
+public:
     void resize_fluent_facts(size_t size)
         requires std::same_as<Kind, ::tyr::GroundTag>
-    { this->fact_storage.resize(size); }
+    {
+        this->fact_storage.resize(size);
+    }
 
     static constexpr auto identifying_members() noexcept
     {
@@ -158,18 +195,6 @@ public:
                             [](const builder& b) -> const auto& { return b.numeric_storage; }> {};
     }
 };
-
-template<::tyr::TaskKind Kind>
-template<::tyr::formalism::FactKind F>
-[[nodiscard]] auto urd::data<::tyr::planning::State<Kind>>::get_atoms(const ::tyr::formalism::planning::Repository& repository_) const noexcept
-{
-    if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-        return get_fluent_facts() | std::views::transform([repository = &repository_](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
-    else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
-        return urd::transform(atom_storage.indices, [](ygg::uint_t i) { return urd::index<::tyr::formalism::Atom<::tyr::GroundTag, F>> { i }; });
-    else
-        static_assert(false);
-}
 
 }  // namespace urd
 

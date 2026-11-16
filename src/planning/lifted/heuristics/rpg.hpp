@@ -82,7 +82,9 @@ struct RPGPolicy<LiftedTag>
     }
 
     static bool is_action_witness(const RPGDefinition<LiftedTag>& definition, const datalog::WitnessAnnotation& witness)
-    { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation); }
+    {
+        return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key().relation);
+    }
 
     /// Grounds every action of the witness's rule with the binding the witness recovers.
     template<typename Workspace, typename Callback>
@@ -134,7 +136,7 @@ struct RPGPolicy<LiftedTag>
                                         {
                                             if (!projection_rules.contains(literal.get_atom().get_predicate().index()))
                                                 continue;
-                                            const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).data());
+                                            const auto* annotation = workspace.annotations.find(instance.resolve(literal.get_atom()).index());
                                             const auto* projection = annotation ? std::get_if<datalog::WitnessAnnotation>(annotation) : nullptr;
                                             assert(projection && "A derived projection atom has a witness.");
                                             if (projection)

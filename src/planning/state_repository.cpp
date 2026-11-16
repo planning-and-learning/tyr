@@ -86,13 +86,13 @@ ygg::uint_t next_state_storage_identity() noexcept
 void insert_initial_fluent_facts(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
 {
     for (const auto fact : task.get_task().get_fluent_facts())
-        state.set(fact.data());
+        state.set(fact);
 }
 
 void insert_initial_fluent_facts(const Task<LiftedTag>& task, urd::builder<State<LiftedTag>>& state)
 {
     for (const auto atom : task.get_task().template get_atoms<formalism::FluentTag>())
-        state.set(task.get_fdr_context()->get_fact(atom).data());
+        state.set(task.get_fdr_context()->get_fact(atom));
 }
 
 void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
@@ -154,10 +154,10 @@ struct StateRepository<Kind>::Impl
 
         /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given.
         /// Axioms recompute derived atoms, so their changes are not part of a StateDelta.
-        auto insert_derived(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const urd::data<State<Kind>>* parent_state)
+        auto insert_derived(const urd::data<State<Kind>>& state, const PackedState<Kind>* parent, const StateView<Kind>* parent_state)
         {
             const auto& unpacked = state.atom_storage;
-            return parent ? derived_backend.insert(unpacked, parent->atom_storage, parent_state->atom_storage) : derived_backend.insert(unpacked);
+            return parent ? derived_backend.insert(unpacked, parent->atom_storage, parent_state->get_atom_storage()) : derived_backend.insert(unpacked);
         }
 
         /// Inserts the numeric values of `state`, as `delta` to `parent` if given.
@@ -171,7 +171,7 @@ struct StateRepository<Kind>::Impl
         template<typename ExtendState>
         void register_state(urd::builder<State<Kind>>& state,
                             ExtendState&& extend_state,
-                            const urd::data<State<Kind>>* parent_state = nullptr,
+                            const StateView<Kind>* parent_state = nullptr,
                             const StateDelta* delta = nullptr)
         {
             assert((parent_state == nullptr) == (delta == nullptr));
@@ -179,12 +179,14 @@ struct StateRepository<Kind>::Impl
             if (delta)
             {
                 auto expected = StateDelta {};
-                compute_state_delta(*parent_state, state, expected);
+                compute_state_delta(StateContext<Kind> { parent_state->get_task(), *parent_state, ygg::float_t { 0 } },
+                                    StateContext<Kind> { parent_state->get_task(), state, ygg::float_t { 0 } },
+                                    expected);
                 assert(expected == *delta && "register_state: delta does not match the changes from the parent.");
             }
 #endif
             auto& packed_states = storage->packed_states;
-            const auto* parent = parent_state ? &packed_states[parent_state->index] : nullptr;
+            const auto* parent = parent_state ? &packed_states[parent_state->index()] : nullptr;
             const auto fluent = insert_fluents(state, parent, delta);
             const auto numeric = insert_numeric(state, parent, delta);
             const auto key = PackedState<Kind>(fluent, {}, numeric);
@@ -343,7 +345,7 @@ StateView<Kind> StateRepository<Kind>::create_state(
     auto state_builder = get_state_builder();
 
     for (const auto& fact : fluent_facts)
-        state_builder->set(fact.data());
+        state_builder->set(fact);
     for (const auto& [fterm, value] : fterm_values)
         state_builder->set(fterm.index(), value);
 
@@ -385,7 +387,7 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
     // A delta insert reuses the parent's unchanged subtrees by their node indices, so the parent's trees must live in
     // this storage. A parent from separate storage would need its subtrees inserted here first, which is a full insert.
     const auto shares_storage = parent.get_state_repository().shares_storage_with(*this);
-    const auto* parent_state = shares_storage ? &parent.data() : nullptr;
+    const auto* parent_state = shares_storage ? &parent : nullptr;
     const auto* parent_delta = shares_storage ? &delta : nullptr;
     m_impl->visit_evaluator([&](auto& evaluator)
                             { evaluator.register_state(*state, [&] { axiom_evaluator.compute_extended_state(*state); }, parent_state, parent_delta); });
@@ -405,7 +407,7 @@ StateView<Kind> StateRepository<Kind>::register_extended_state(const BuilderStat
     if (&source.get_task() != get_task().get())
         throw std::invalid_argument("StateRepository::register_extended_state(...): source state belongs to a different task.");
     auto state = get_state_builder();
-    *state = source.data();
+    state->assign(source);
     return register_extended_state(std::move(state));
 }
 
@@ -418,23 +420,33 @@ size_t StateRepository<Kind>::memory_usage() const noexcept
 
 template<TaskKind Kind>
 const TaskPtr<Kind>& StateRepository<Kind>::get_task() const noexcept
-{ return m_impl->task; }
+{
+    return m_impl->task;
+}
 
 template<TaskKind Kind>
 bool StateRepository<Kind>::shares_storage_with(const StateRepository& other) const noexcept
-{ return m_impl->storage_identity == other.m_impl->storage_identity; }
+{
+    return m_impl->storage_identity == other.m_impl->storage_identity;
+}
 
 template<TaskKind Kind>
 bool StateRepository<Kind>::is_concurrent() const noexcept
-{ return static_cast<bool>(m_impl->shared_evaluator); }
+{
+    return static_cast<bool>(m_impl->shared_evaluator);
+}
 
 template<TaskKind Kind>
 ygg::uint_t StateRepository<Kind>::get_worker_index() const noexcept
-{ return m_impl->index; }
+{
+    return m_impl->index;
+}
 
 template<TaskKind Kind>
 std::size_t StateRepository<Kind>::layer() const noexcept
-{ return m_impl->storage_identity; }
+{
+    return m_impl->storage_identity;
+}
 
 template<TaskKind Kind>
 size_t StateRepository<Kind>::num_states() const noexcept

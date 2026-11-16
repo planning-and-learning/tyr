@@ -27,179 +27,19 @@ namespace tyr::formalism::planning
 namespace
 {
 template<TaskKind T>
-void bind_task_kind(nb::module_& m, RepositoryBinding& repository, const char* index_name, const char* data_name, const char* view_name)
+void bind_task_kind(nb::module_& m, RepositoryBinding& repository)
 {
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<Task<T>>>(m, index_name);
-
-    {
-        using V = urd::data<Task<T>>;
-
-        auto cls = nb::class_<V>(m, data_name);
-        if constexpr (std::same_as<T, LiftedTag>)
-        {
-            cls.def(urd::python::init_from_views<const std::string&,
-                                                 DomainView,
-                                                 const PredicateViewList<DerivedTag>&,
-                                                 const ObjectViewList&,
-                                                 const AtomViewList<GroundTag, StaticTag>&,
-                                                 const AtomViewList<GroundTag, FluentTag>&,
-                                                 const FunctionTermValueViewList<GroundTag, StaticTag>&,
-                                                 const FunctionTermValueViewList<GroundTag, FluentTag>&,
-                                                 const std::optional<FunctionTermValueView<GroundTag, AuxiliaryTag>>&,
-                                                 ConjunctiveConditionView<GroundTag>,
-                                                 const std::optional<MetricView>&,
-                                                 const AxiomViewList<LiftedTag>&>(),
-                    "name"_a,
-                    "domain"_a,
-                    "derived_predicates"_a,
-                    "objects"_a,
-                    "static_atoms"_a,
-                    "fluent_atoms"_a,
-                    "static_fterm_values"_a,
-                    "fluent_fterm_values"_a,
-                    "auxiliary_fterm_value"_a,
-                    "goal"_a,
-                    "metric"_a,
-                    "axioms"_a);
-            cls.def(nb::init<urd::flat_string,
-                             urd::index<Domain>,
-                             urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
-                             urd::flat_vector<urd::index<Object>>,
-                             urd::flat_vector<urd::index<Atom<GroundTag, StaticTag>>>,
-                             urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
-                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
-                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
-                             urd::flat_optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
-                             urd::index<ConjunctiveCondition<GroundTag>>,
-                             urd::flat_optional<urd::index<Metric>>,
-                             urd::flat_vector<urd::index<Axiom<LiftedTag>>>>(),
-                    "name"_a,
-                    "domain"_a,
-                    "derived_predicates"_a,
-                    "objects"_a,
-                    "static_atoms"_a,
-                    "fluent_atoms"_a,
-                    "static_fterm_values"_a,
-                    "fluent_fterm_values"_a,
-                    "auxiliary_fterm_value"_a,
-                    "goal"_a,
-                    "metric"_a,
-                    "axioms"_a);
-        }
-        else
-        {
-            cls.def(urd::python::init_from_views<const std::string&,
-                                                 DomainView,
-                                                 const PredicateViewList<DerivedTag>&,
-                                                 const ObjectViewList&,
-                                                 const AtomViewList<GroundTag, StaticTag>&,
-                                                 const AtomViewList<GroundTag, FluentTag>&,
-                                                 const AtomViewList<GroundTag, DerivedTag>&,
-                                                 const FunctionTermValueViewList<GroundTag, StaticTag>&,
-                                                 const FunctionTermValueViewList<GroundTag, FluentTag>&,
-                                                 const std::optional<FunctionTermValueView<GroundTag, AuxiliaryTag>>&,
-                                                 const std::optional<MetricView>&,
-                                                 const AxiomViewList<LiftedTag>&,
-                                                 const FDRVariableViewList<FluentTag>&,
-                                                 const FDRFactViewList<FluentTag>&,
-                                                 ConjunctiveConditionView<GroundTag>,
-                                                 const ActionViewList<GroundTag>&,
-                                                 const AxiomViewList<GroundTag>&>(),
-                    "name"_a,
-                    "domain"_a,
-                    "derived_predicates"_a,
-                    "objects"_a,
-                    "static_atoms"_a,
-                    "fluent_atoms"_a,
-                    "derived_atoms"_a,
-                    "static_fterm_values"_a,
-                    "fluent_fterm_values"_a,
-                    "auxiliary_fterm_value"_a,
-                    "metric"_a,
-                    "axioms"_a,
-                    "fluent_variables"_a,
-                    "fluent_facts"_a,
-                    "goal"_a,
-                    "ground_actions"_a,
-                    "ground_axioms"_a);
-            cls.def(nb::init<urd::flat_string,
-                             urd::index<Domain>,
-                             urd::flat_vector<urd::index<Predicate<DerivedTag>>>,
-                             urd::flat_vector<urd::index<Object>>,
-                             urd::flat_vector<urd::index<Atom<GroundTag, StaticTag>>>,
-                             urd::flat_vector<urd::index<Atom<GroundTag, FluentTag>>>,
-                             urd::flat_vector<urd::index<Atom<GroundTag, DerivedTag>>>,
-                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, StaticTag>>>,
-                             urd::flat_vector<urd::index<FunctionTermValue<GroundTag, FluentTag>>>,
-                             urd::flat_optional<urd::index<FunctionTermValue<GroundTag, AuxiliaryTag>>>,
-                             urd::flat_optional<urd::index<Metric>>,
-                             urd::flat_vector<urd::index<Axiom<LiftedTag>>>,
-                             urd::flat_vector<urd::index<FDRVariable<FluentTag>>>,
-                             urd::flat_vector<urd::data<FDRFact<FluentTag>>>,
-                             urd::index<ConjunctiveCondition<GroundTag>>,
-                             urd::flat_vector<urd::index<Action<GroundTag>>>,
-                             urd::flat_vector<urd::index<Axiom<GroundTag>>>>(),
-                    "name"_a,
-                    "domain"_a,
-                    "derived_predicates"_a,
-                    "objects"_a,
-                    "static_atoms"_a,
-                    "fluent_atoms"_a,
-                    "derived_atoms"_a,
-                    "static_fterm_values"_a,
-                    "fluent_fterm_values"_a,
-                    "auxiliary_fterm_value"_a,
-                    "metric"_a,
-                    "axioms"_a,
-                    "fluent_variables"_a,
-                    "fluent_facts"_a,
-                    "goal"_a,
-                    "ground_actions"_a,
-                    "ground_axioms"_a);
-        }
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    {
-        using V = TaskView<T>;
-
-        auto cls = nb::class_<V>(m, view_name)  //
-                       .def("index", &V::index)
-                       .def("get_name", &V::get_name)
-                       .def("get_domain", &V::get_domain)
-                       .def("get_derived_predicates", &V::get_derived_predicates)
-                       .def("get_objects", &V::get_objects)
-                       .def("get_num_objects", &V::get_num_objects)
-                       .def("get_static_atoms", &V::template get_atoms<StaticTag>)
-                       .def("get_fluent_atoms", &V::template get_atoms<FluentTag>)
-                       .def("get_static_fterm_values", &V::template get_fterm_values<StaticTag>)
-                       .def("get_fluent_fterm_values", &V::template get_fterm_values<FluentTag>)
-                       .def("get_auxiliary_fterm_value", &V::get_auxiliary_fterm_value)
-                       .def("get_goal", &V::get_goal)
-                       .def("get_metric", &V::get_metric)
-                       .def("get_axioms", &V::get_axioms);
-        if constexpr (std::same_as<T, GroundTag>)
-            cls.def("get_derived_atoms", &V::template get_atoms<DerivedTag>)
-                .def("get_fluent_variables", &V::get_fluent_variables)
-                .def("get_fluent_facts", &V::get_fluent_facts)
-                .def("get_ground_actions", &V::get_ground_actions)
-                .def("get_ground_axioms", &V::get_ground_axioms);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
+    urd::python::bind_view<TaskView<T>>(m).def("get_num_objects", &TaskView<T>::get_num_objects);
     ygg::bind_insert<Task<T>>(repository);
 }
 }  // namespace
 
 void bind_task(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_task_kind<LiftedTag>(m, repository, "LiftedTaskIndex", "LiftedTaskData", "LiftedTask");
-    bind_task_kind<GroundTag>(m, repository, "GroundTaskIndex", "GroundTaskData", "GroundTask");
+    urd::python::bind_data<Task<LiftedTag>>(m);
+    bind_task_kind<LiftedTag>(m, repository);
+    urd::python::bind_data<Task<GroundTag>>(m);
+    bind_task_kind<GroundTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::planning

@@ -41,29 +41,29 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
     auto initial = Context(workspace);
     tyr::datalog::compute_model(initial);
     const auto expected_atoms = collect_atoms_by_predicate(workspace);
-    const auto* expected_annotation = workspace.annotations.find(fixture.goal.data());
+    const auto* expected_annotation = workspace.annotations.find(fixture.goal.index());
     ASSERT_NE(expected_annotation, nullptr);
     const auto expected_cost = tyr::datalog::get_cost(*expected_annotation);
 
     const auto insert_inputs = [&]
     {
         for (const auto atom : fixture.program.get_program().get_atoms<tyr::formalism::FluentTag>())
-            tyr::datalog::insert(workspace.facts.fact_sets, atom.get_row().data());
+            tyr::datalog::insert(workspace.facts.fact_sets, atom.get_row().index());
         for (const auto fterm_value : fixture.program.get_program().get_fterm_values<tyr::formalism::FluentTag>())
             tyr::datalog::insert(workspace.facts.fact_sets,
-                                 fterm_value.get_fterm().get_row().data(),
+                                 fterm_value.get_fterm().get_row().index(),
                                  ygg::ClosedInterval<ygg::float_t>(fterm_value.get_value(), fterm_value.get_value()));
     };
     for (size_t iteration = 0; iteration < 2; ++iteration)
     {
-        workspace.cost_buckets.insert(99, fixture.goal.data());
+        workspace.cost_buckets.insert(99, fixture.goal.index());
         workspace.reset_evaluation();
         EXPECT_TRUE(workspace.cost_buckets.is_empty());
         insert_inputs();
         auto prepared = Context::from_reset_workspace(workspace, workspace.schedulers);
         tyr::datalog::compute_model(prepared);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        const auto* annotation = workspace.annotations.find(fixture.goal.data());
+        const auto* annotation = workspace.annotations.find(fixture.goal.index());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
 
@@ -73,7 +73,7 @@ TEST(TyrDatalogLiftedBottomUpTest, PreparedContextMatchesOrdinaryContextAfterWor
         auto ordinary = Context(workspace);
         tyr::datalog::compute_model(ordinary);
         EXPECT_EQ(collect_atoms_by_predicate(workspace), expected_atoms);
-        annotation = workspace.annotations.find(fixture.goal.data());
+        annotation = workspace.annotations.find(fixture.goal.index());
         ASSERT_NE(annotation, nullptr);
         EXPECT_EQ(tyr::datalog::get_cost(*annotation), expected_cost);
     }
@@ -168,7 +168,7 @@ TEST_P(BottomUpFixtureTest, InitialStateAtomsMatchFixture)
                     auto merge_context = tyr::formalism::WriteContext { action_workspace.datalog_builder, *action_workspace.workspace_repository };
                     for (ygg::uint_t set = 0; set < axiom_workspace.facts.fact_sets.predicate.size(); ++set)
                         for (const auto binding : tyr::datalog::rows(axiom_workspace.facts.fact_sets, set))
-                            tyr::datalog::insert(action_workspace.facts.fact_sets, tyr::formalism::copy(binding, merge_context).first.data());
+                            tyr::datalog::insert(action_workspace.facts.fact_sets, tyr::formalism::copy(binding, merge_context).first.index());
                 }
 
                 solve_workspace(action_workspace);

@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import pytest
 from pyyggdrasil import formalism
-from relation_utils import intern, rename
+from relation_utils import insert, intern, labels, rename, tuples, values
 
 import pytyr
 from pytyr.datalog.lifted import database
@@ -32,141 +32,114 @@ def test_relation_rows_and_validation() -> None:
     assert database is pytyr.datalog.lifted.database
     exported: list[str] = vars(database)["__all__"]  # the generated type hints do not list __all__
     assert all(hasattr(database, name) for name in exported)
-    relation = formalism.Relation(columns(10, 20))
-    labels = relation.columns()
-    assert isinstance(labels, formalism.ColumnIndices)
-    assert len(labels) == 2
-    assert tuple(labels) == tuple(columns(10, 20))
-    assert all(type(label) is formalism.ColumnIndex for label in labels)
-    assert labels[-1] == formalism.ColumnIndex(20)
-    assert labels[-2] == formalism.ColumnIndex(10)
-    for index in (-3, 2):
-        with pytest.raises(IndexError):
-            _ = labels[index]
-    with pytest.raises(TypeError):  # read-only: no __setitem__ in the type hints either
-        cast("Any", labels)[0] = 7
+    relation = formalism.RelationBuilder(layouts(10, 20))
+    schema = relation.columns()
+    assert isinstance(schema, list)
+    assert len(schema) == 2
+    assert schema == layouts(10, 20)
+    assert all(type(column) is formalism.ColumnLayout for column in schema)
+    assert labels(schema) == columns(10, 20)
     assert relation.arity() == 2
     assert relation.empty()
-    assert relation.insert([3, 4]) == relation.insert([3, 4])
-    assert not hasattr(relation, "at")  # a builder's rows are read through a repository
+    assert insert(relation, [3, 4]) == insert(relation, [3, 4])
+    assert not hasattr(relation, "rows")  # a builder's rows are read through a repository
     repository = formalism.RelationRepository()
     view = repository.view(relation)
-    assert isinstance(view, formalism.BorrowedRelation)
-    row = view.at(0)
-    assert isinstance(row, formalism.RelationRow)
-    assert len(relation) == 1
+    assert isinstance(view, formalism.RelationBuilderView)
+    row = view.row(0)
+    assert isinstance(row, formalism.RowBuilderView)
+    assert relation.size() == 1
     assert not relation.empty()
-    assert tuple(row) == (3, 4)
-    assert tuple(view[0]) == tuple(view[-1]) == (3, 4)
-    for index in (-2, 1):
-        with pytest.raises(IndexError):
-            _ = view[index]
-    assert row[-1] == 4
-    assert row[-2] == 3
-    for index in (-3, 2):
-        with pytest.raises(IndexError):
-            _ = row[index]
+    assert values(row) == (3, 4)
+    assert tuples(view) == [(3, 4)]
     with pytest.raises(IndexError):
-        view.at(1)
+        view.row(1)
+    assert row.get(1) == 4
+    assert row.get(0) == 3
+    with pytest.raises(IndexError):
+        row.get(2)
     with pytest.raises(TypeError):  # read-only: no __setitem__ in the type hints either
         cast("Any", row)[0] = 7
-    with pytest.raises(ValueError, match="Relation: row arity does not match schema"):
-        relation.insert([1])
+    with pytest.raises(ValueError, match="a row has one value per column"):
+        relation.insert([formalism.encode(1, formalism.ColumnType.UINT32)])
     with pytest.raises(ValueError, match="Columns: duplicate column label"):
-        formalism.Relation(columns(1, 1))
+        formalism.RelationBuilder(layouts(1, 1))
 
     for value in range(5000):
-        relation.insert([value, 0])
+        insert(relation, [value, 0])
+    row = view.row(0)  # the inserts invalidated the earlier row
     del relation, view, repository
     gc.collect()
-    assert tuple(row) == (3, 4)
-    del row
-    gc.collect()
-    assert tuple(labels) == tuple(columns(10, 20))
+    assert values(row) == (3, 4)
 
 
 def test_nullary_relation() -> None:
-    relation = formalism.Relation()
+    relation = formalism.RelationBuilder()
     assert relation.arity() == 0
-    assert len(relation) == 0
-    assert isinstance(relation.columns(), formalism.ColumnIndices)
-    assert tuple(relation.columns()) == ()
+    assert relation.size() == 0
+    assert isinstance(relation.columns(), list)
+    assert relation.columns() == []
     repository = formalism.RelationRepository()
     view = repository.view(relation)
-    assert list(view) == []
+    assert view.rows() == []
     relation.insert([])
     relation.insert([])
-    assert len(relation) == 1
-    row = view.at(0)
-    assert tuple(row) == ()
-    assert [tuple(row) for row in view] == [()]
-    for index in (-1, 0):
-        with pytest.raises(IndexError):
-            _ = row[index]
+    assert relation.size() == 1
+    row = view.row(0)
+    assert values(row) == ()
+    assert tuples(view) == [()]
+    with pytest.raises(IndexError):
+        row.get(0)
 
 
 def test_pooled_rows_keep_their_owners_alive() -> None:
     repository = formalism.RelationRepository()
     relation = repository.get_relation_builder(layouts(0, 1))
-    assert isinstance(relation, formalism.Relation)
-    relation.insert([3, 4])
-    row = repository.view(relation).at(0)
-    labels = relation.columns()
-    assert isinstance(labels, formalism.ColumnIndices)
+    assert isinstance(relation, formalism.RelationBuilder)
+    insert(relation, [3, 4])
+    row = repository.view(relation).row(0)
     del relation
     gc.collect()
 
     other = repository.get_relation_builder(layouts(10, 20))
     assert other.empty()
-    other.insert([5, 6])
-    assert tuple(row) == (3, 4)
+    insert(other, [5, 6])
+    assert values(row) == (3, 4)
     del other
     gc.collect()
     with pytest.raises(ValueError, match="Columns: duplicate column label"):
         repository.get_relation_builder(layouts(10, 10))
     reused = repository.get_relation_builder(layouts(30, 40))
     assert reused.empty()
-    reused.insert([7, 8])
-    assert tuple(row) == (3, 4)
+    insert(reused, [7, 8])
+    assert values(row) == (3, 4)
     del reused, repository
     gc.collect()
-    assert tuple(row) == (3, 4)
-    assert tuple(labels) == tuple(columns(0, 1))
+    assert values(row) == (3, 4)
 
 
-def test_iterators_keep_pooled_rows_alive() -> None:
+def test_row_lists_keep_pooled_rows_alive() -> None:
     repository = formalism.RelationRepository()
     relation = repository.get_relation_builder(layouts(0, 1))
-    relation.insert([3, 4])
-    relation.insert([5, 6])
-    rows = iter(repository.view(relation))
-    assert iter(rows) is rows
+    insert(relation, [3, 4])
+    insert(relation, [5, 6])
+    rows = repository.view(relation).rows()
+    assert isinstance(rows, list)
     del relation, repository
     gc.collect()
 
-    row = next(rows)
-    assert tuple(row) == (3, 4)
-    assert [tuple(other) for other in rows] == [(5, 6)]
-    with pytest.raises(StopIteration):
-        next(rows)
+    row = rows[0]
+    assert [values(other) for other in rows] == [(3, 4), (5, 6)]
     del rows
     gc.collect()
-    assert tuple(row) == (3, 4)
-
-    values = iter(row)
-    assert iter(values) is values
-    del row
-    gc.collect()
-    assert list(values) == [3, 4]
-    with pytest.raises(StopIteration):
-        next(values)
+    assert values(row) == (3, 4)
 
 
 def test_interned_relations_use_typed_identity_and_independent_storage() -> None:
     repository = formalism.RelationRepository()
-    builder = formalism.Relation(columns(10, 20))
-    builder.insert([3, 4])
-    builder.insert([5, 6])
+    builder = formalism.RelationBuilder(layouts(10, 20))
+    insert(builder, [3, 4])
+    insert(builder, [5, 6])
     result = intern(repository, builder)
     assert isinstance(result, tuple)
     relation, created = result
@@ -174,8 +147,8 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
     assert created is True
     assert duplicate_created is False
     del result
-    assert isinstance(relation, formalism.RelationView)
-    assert isinstance(relation.index(), formalism.RelationIndex)
+    assert isinstance(relation, formalism.RelationSchema)
+    assert isinstance(relation.index(), formalism.RelationSchemaIndex)
     assert relation == duplicate
     assert hash(relation) == hash(duplicate)
     assert len({relation, duplicate}) == 1
@@ -188,21 +161,19 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
     assert rename(repository, relation, columns(10, 20)) == relation
 
     builder.clear()
-    builder.insert([8, 9])
-    assert [tuple(row) for row in relation] == [(3, 4), (5, 6)]
-    assert [tuple(row) for row in repository.view(builder)] == [(8, 9)]
+    insert(builder, [8, 9])
+    assert tuples(relation) == [(3, 4), (5, 6)]
+    assert tuples(repository.view(builder)) == [(8, 9)]
     assert relation.arity() == 2
+    assert relation.size() == 2
     assert not relation.empty()
-    assert tuple(relation[-1]) == (5, 6)
-    for index in (-3, 2):
-        with pytest.raises(IndexError):
-            _ = relation[index]
+    assert values(relation.row(1)) == (5, 6)
     with pytest.raises(IndexError):
-        relation.at(2)
+        relation.row(2)
 
     renamed = rename(repository, relation, columns(30, 40))
-    assert tuple(renamed.columns()) == tuple(columns(30, 40))
-    assert [tuple(row) for row in renamed] == [(3, 4), (5, 6)]
+    assert labels(renamed.columns()) == columns(30, 40)
+    assert tuples(renamed) == [(3, 4), (5, 6)]
     assert renamed != relation
     assert rename(repository, renamed, columns(10, 20)) == relation
     with pytest.raises(ValueError, match="Columns: renaming must preserve arity"):
@@ -212,54 +183,45 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
 
     # Every borrowed layer must keep the repository alive, without keeping the
     # mutable builder alive or depending on its buffers.
-    row = relation.at(0)
-    labels = renamed.columns()
-    assert isinstance(labels, formalism.ColumnIndices)
-    assert all(type(label) is formalism.ColumnIndex for label in labels)
-    rows = iter(renamed)
-    indexed_row = relation[1]
+    row = relation.row(0)
+    rows = renamed.rows()
     del relation, duplicate, renamed, repository, other_repository, builder
     gc.collect()
-    assert tuple(row) == (3, 4)
-    assert tuple(labels) == tuple(columns(30, 40))
-    assert [tuple(other) for other in rows] == [(3, 4), (5, 6)]
-    assert tuple(indexed_row) == (5, 6)
-    del row, indexed_row, rows
-    gc.collect()
-    assert tuple(labels) == tuple(columns(30, 40))
+    assert values(row) == (3, 4)
+    assert [values(other) for other in rows] == [(3, 4), (5, 6)]
 
 
 def test_interned_nullary_relations_and_repository_reset() -> None:
     repository = formalism.RelationRepository()
-    builder = formalism.Relation()
+    builder = formalism.RelationBuilder()
     false = intern(repository, builder)[0]
     builder.insert([])
     true = intern(repository, builder)[0]
     assert false.empty()
-    assert list(false) == []
-    assert [tuple(row) for row in true] == [()]
+    assert false.rows() == []
+    assert tuples(true) == [()]
     assert false != true
     assert len(repository) == 2
     del false, true
     repository.clear()
     assert len(repository) == 0
-    assert [tuple(row) for row in intern(repository, builder)[0]] == [()]
+    assert tuples(intern(repository, builder)[0]) == [()]
 
 
 def test_interning_ignores_row_insertion_order() -> None:
     repository = formalism.RelationRepository()
-    seed = formalism.Relation(columns(10, 20))
-    seed.insert([9, 8])
+    seed = formalism.RelationBuilder(layouts(10, 20))
+    insert(seed, [9, 8])
     intern(repository, seed)[0]
 
-    builder = formalism.Relation(columns(10, 20))
-    builder.insert([3, 4])
-    builder.insert([9, 8])
+    builder = formalism.RelationBuilder(layouts(10, 20))
+    insert(builder, [3, 4])
+    insert(builder, [9, 8])
     forward = intern(repository, builder)[0]
     builder.clear()
-    builder.insert([9, 8])
-    builder.insert([3, 4])
-    builder.insert([3, 4])
+    insert(builder, [9, 8])
+    insert(builder, [3, 4])
+    insert(builder, [3, 4])
     reverse = intern(repository, builder)[0]
 
     assert forward == reverse
@@ -268,15 +230,15 @@ def test_interning_ignores_row_insertion_order() -> None:
     assert len(repository) == 2
     # Row IDs follow the repository's row-interning history; canonical
     # relations enumerate the sorted IDs, independent of builder order.
-    assert [tuple(row) for row in forward] == [(9, 8), (3, 4)]
-    assert [tuple(row) for row in reverse] == [(9, 8), (3, 4)]
+    assert tuples(forward) == [(9, 8), (3, 4)]
+    assert tuples(reverse) == [(9, 8), (3, 4)]
 
 
 def test_copy_and_assign_remap_relations_and_retain_unpacked_owner() -> None:
     source_repository = formalism.RelationRepository()
     target_repository = formalism.RelationRepository()
-    builder = formalism.Relation(columns(7, 3))
-    builder.insert([4, 5])
+    builder = formalism.RelationBuilder(layouts(7, 3))
+    insert(builder, [4, 5])
     source, created = intern(source_repository, builder)
     assert created is True
     target_result = intern(target_repository, source)
@@ -284,104 +246,104 @@ def test_copy_and_assign_remap_relations_and_retain_unpacked_owner() -> None:
     assert copied is True
     assert intern(target_repository, source) == (target, False)
     assert intern(target_repository, target) == (target, False)
-    assert tuple(target.columns()) == tuple(columns(7, 3))
-    output = formalism.Relation(columns(3, 7))
-    output.insert([99, 88])
+    assert labels(target.columns()) == columns(7, 3)
+    output = formalism.RelationBuilder(layouts(3, 7))
+    insert(output, [99, 88])
     assert database.assign(output, target) is output
-    assert tuple(output.columns()) == tuple(columns(7, 3))
-    assert [tuple(row) for row in target_repository.view(output)] == [(4, 5)]
+    assert labels(output.columns()) == columns(7, 3)
+    assert tuples(target_repository.view(output)) == [(4, 5)]
     assert database.assign(output, target_repository.view(output)) is output
-    assert tuple(output.columns()) == tuple(columns(7, 3))
-    assert [tuple(row) for row in target_repository.view(output)] == [(4, 5)]
-    unary = formalism.Relation(columns(99))
-    unary.insert([77])
+    assert labels(output.columns()) == columns(7, 3)
+    assert tuples(target_repository.view(output)) == [(4, 5)]
+    unary = formalism.RelationBuilder(layouts(99))
+    insert(unary, [77])
     assert database.assign(unary, target_repository.view(output)) is unary
-    assert tuple(unary.columns()) == tuple(columns(7, 3))
-    assert [tuple(row) for row in target_repository.view(unary)] == [(4, 5)]
+    assert labels(unary.columns()) == columns(7, 3)
+    assert tuples(target_repository.view(unary)) == [(4, 5)]
     del target_result, source, source_repository, target_repository
     del builder, output, unary
     gc.collect()
-    assert [tuple(row) for row in target] == [(4, 5)]
+    assert tuples(target) == [(4, 5)]
     assert not hasattr(database, "intern_relation")
 
 
 def test_mixed_column_types_and_float_canonicalization() -> None:
     types = [formalism.ColumnType.BOOL, formalism.ColumnType.FLOAT64, formalism.ColumnType.INT32]
-    relation = formalism.Relation(typed(columns(10, 20, 30), types))
-    assert [relation.columns().type(i) for i in range(3)] == types
-    first = relation.insert([True, -0.0, -7])
-    assert relation.insert([True, 0.0, -7]) == first
+    relation = formalism.RelationBuilder(typed(columns(10, 20, 30), types))
+    assert [column.type for column in relation.columns()] == types
+    first = insert(relation, [True, -0.0, -7])
+    assert insert(relation, [True, 0.0, -7]) == first
+    nan = insert(relation, [False, float("nan"), 9])
+    assert insert(relation, [False, -float("nan"), 9]) == nan
     repository = formalism.RelationRepository()
-    row = repository.view(relation)[first]
-    assert tuple(row) == (True, 0.0, -7)
-    assert [type(value) for value in row] == [bool, float, int]
-    nan = relation.insert([False, float("nan"), 9])
-    assert relation.insert([False, -float("nan"), 9]) == nan
-    value = repository.view(relation)[nan][1]
+    row = repository.view(relation).row(first)
+    assert values(row) == (True, 0.0, -7)
+    assert [type(value) for value in values(row)] == [bool, float, int]
+    value = repository.view(relation).row(nan).get(1)
     assert isinstance(value, float)
     assert math.isnan(value)
     interned, _ = intern(repository, relation)
     renamed = rename(repository, interned, columns(1, 2, 3))
-    assert [renamed.columns().type(i) for i in range(3)] == types
-    output = formalism.Relation()
+    assert [column.type for column in renamed.columns()] == types
+    output = formalism.RelationBuilder()
     database.assign(output, renamed)
-    assert tuple(repository.view(output)[0]) == (True, 0.0, -7)
+    assert values(repository.view(output).row(0)) == (True, 0.0, -7)
     with pytest.raises(ValueError, match="Columns: duplicate column label"):
-        formalism.Relation(typed(columns(1, 1), [formalism.ColumnType.BOOL] * 2))
+        formalism.RelationBuilder(typed(columns(1, 1), [formalism.ColumnType.BOOL] * 2))
     del relation, interned, renamed, repository
     gc.collect()
-    assert tuple(row) == (True, 0.0, -7)
+    assert values(row) == (True, 0.0, -7)
 
 
 def test_operations_take_plans_outputs_and_workspaces() -> None:
     repository = formalism.RelationRepository()
-    lhs = formalism.Relation(columns(0, 1))
-    rhs = formalism.Relation(columns(1, 2))
+    left_builder = formalism.RelationBuilder(layouts(0, 1))
+    right_builder = formalism.RelationBuilder(layouts(1, 2))
     for row in ([1, 2], [3, 4]):
-        lhs.insert(row)
-    rhs.insert([2, 5])
-    left, right = repository.view(lhs), intern(repository, rhs)[0]
+        insert(left_builder, row)
+    insert(right_builder, [2, 5])
+    left_operand, right_operand = repository.view(left_builder), intern(repository, right_builder)[0]
     workspace = database.Workspace()
 
-    join = database.JoinPlan(left.columns(), right.columns())
-    joined = formalism.Relation(join.output_columns())
-    database.join(left, right, join, joined, workspace)
-    assert [tuple(row) for row in repository.view(joined)] == [(1, 2, 5)]
-    semi = formalism.Relation(join.lhs_columns())
-    database.semijoin(left, right, join, semi, workspace)
-    assert [tuple(row) for row in repository.view(semi)] == [(1, 2)]
-    database.antijoin(left, right, join, semi, workspace)
-    assert [tuple(row) for row in repository.view(semi)] == [(3, 4)]
+    join = database.JoinPlan(left_operand.columns(), right_operand.columns())
+    joined = formalism.RelationBuilder(join.output_columns())
+    database.join(left_operand, right_operand, join, joined, workspace)
+    assert tuples(repository.view(joined)) == [(1, 2, 5)]
+    semi = formalism.RelationBuilder(join.left_columns())
+    database.semijoin(left_operand, right_operand, join, semi, workspace)
+    assert tuples(repository.view(semi)) == [(1, 2)]
+    database.antijoin(left_operand, right_operand, join, semi, workspace)
+    assert tuples(repository.view(semi)) == [(3, 4)]
 
-    projection = database.ProjectionPlan(left.columns(), columns(1))
-    projected = formalism.Relation(projection.output_columns())
-    database.project(left, projection, projected, workspace)
-    assert sorted(tuple(row) for row in repository.view(projected)) == [(2,), (4,)]
+    projection = database.ProjectionPlan(left_operand.columns(), columns(1))
+    projected = formalism.RelationBuilder(projection.output_columns())
+    database.project(left_operand, projection, projected, workspace)
+    assert sorted(tuples(repository.view(projected))) == [(2,), (4,)]
 
-    other = formalism.Relation(columns(0, 1))
-    other.insert([3, 4])
-    other.insert([7, 7])
-    sets = database.SetPlan(left.columns(), other.columns())
-    union = formalism.Relation(sets.output_columns())
-    database.union(left, repository.view(other), sets, union)
-    assert len(union) == 3
-    database.difference(left, repository.view(other), sets, union)
-    assert [tuple(row) for row in repository.view(union)] == [(1, 2)]
+    other = formalism.RelationBuilder(layouts(0, 1))
+    insert(other, [3, 4])
+    insert(other, [7, 7])
+    sets = database.SetPlan(left_operand.columns(), other.columns())
+    union = formalism.RelationBuilder(sets.output_columns())
+    database.union(left_operand, repository.view(other), sets, union)
+    assert union.size() == 3
+    database.difference(left_operand, repository.view(other), sets, union)
+    assert tuples(repository.view(union)) == [(1, 2)]
 
-    equal = formalism.Relation(other.columns())
+    equal = formalism.RelationBuilder(other.columns())
     database.select_equal_columns(
         repository.view(other), database.SelectEqualPlan(other.columns(), *columns(0, 1)), equal
     )
-    assert [tuple(row) for row in repository.view(equal)] == [(7, 7)]
+    assert tuples(repository.view(equal)) == [(7, 7)]
     value = database.SelectValuePlan(other.columns(), formalism.ColumnIndex(0), formalism.ColumnType.UINT32, 3)
     database.select_equal_value(repository.view(other), value, equal)
-    assert [tuple(row) for row in repository.view(equal)] == [(3, 4)]
+    assert tuples(repository.view(equal)) == [(3, 4)]
 
     with pytest.raises(ValueError, match="Relational operation: input schemas must have the same column order"):
-        database.SetPlan(left.columns(), right.columns())
+        database.SetPlan(left_operand.columns(), right_operand.columns())
     with pytest.raises(ValueError, match="output aliases an input"):
         database.select_equal_columns(
             repository.view(equal), database.SelectEqualPlan(equal.columns(), *columns(0, 1)), equal
         )
     with pytest.raises(ValueError, match="columns do not match the plan"):
-        database.join(left, right, join, formalism.Relation(), workspace)
+        database.join(left_operand, right_operand, join, formalism.RelationBuilder(), workspace)

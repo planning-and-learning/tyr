@@ -20,15 +20,15 @@ const CostBasedPlanner::Refined& CostBasedPlanner::refine(size_t node)
     const auto subset = m_tree[node].subset;
     if (const auto children = m_tree[node].children)
     {
-        const auto [lhs, rhs] = *children;
-        const auto& left = refine(lhs);
-        const auto& right = refine(rhs);
-        const auto largest_input = std::max(rows(m_tree[lhs].subset), rows(m_tree[rhs].subset));
+        const auto [left_child, right_child] = *children;
+        const auto& left = refine(left_child);
+        const auto& right = refine(right_child);
+        const auto largest_input = std::max(rows(m_tree[left_child].subset), rows(m_tree[right_child].subset));
         const bool growing = rows(subset) - largest_input > ygg::FloatTolerance<ygg::float_t>::tolerance(rows(subset), largest_input);
         if (growing || left.multiway || right.multiway)
         {
             urd::Store<urd::sequence<size_t>> inputs;
-            for (const auto& [child, refined] : { std::pair(lhs, &left), std::pair(rhs, &right) })
+            for (const auto& [child, refined] : { std::pair(left_child, &left), std::pair(right_child, &right) })
                 if (refined->multiway)
                     inputs.insert(inputs.end(), refined->inputs.begin(), refined->inputs.end());
                 else
@@ -49,11 +49,11 @@ QueryView<> CostBasedPlanner::build(size_t node)
     const auto keep = needed(subset);
     if (!children)
         return m_build->restrict(m_block->atoms[std::countr_zero(subset)], keep);
-    const auto [lhs, rhs] = *children;
+    const auto [left, right] = *children;
     // Multi-way joins with only two inputs are built as binary joins (Freitag et al.).
     const auto& refined = refine(node);
     if (!refined.multiway || refined.inputs.size() == 2)
-        return m_build->restrict(m_build->join(build(lhs), build(rhs)), keep);
+        return m_build->restrict(m_build->join(build(left), build(right)), keep);
     urd::Store<urd::sequence<QueryView<>>> inputs;
     inputs.reserve(refined.inputs.size());
     for (const auto input : refined.inputs)
@@ -68,20 +68,20 @@ QueryView<> CostBasedPlanner::plan() &&
 {
     const auto count = m_block->atoms.size();
     urd::Store<urd::sequence<std::uint64_t>> graph(count);
-    for (size_t lhs = 0; lhs < count; ++lhs)
-        for (size_t rhs = lhs + 1; rhs < count; ++rhs)
-            if (std::ranges::find_first_of(m_variables[lhs], m_variables[rhs]) != m_variables[lhs].end())
+    for (size_t left = 0; left < count; ++left)
+        for (size_t right = left + 1; right < count; ++right)
+            if (std::ranges::find_first_of(m_variables[left], m_variables[right]) != m_variables[left].end())
             {
-                graph[lhs] |= std::uint64_t { 1 } << rhs;
-                graph[rhs] |= std::uint64_t { 1 } << lhs;
+                graph[left] |= std::uint64_t { 1 } << right;
+                graph[right] |= std::uint64_t { 1 } << left;
             }
     enumerate_connected_pairs(graph,
-                              [&](std::uint64_t lhs, std::uint64_t rhs)
+                              [&](std::uint64_t left, std::uint64_t right)
                               {
-                                  const auto subset = lhs | rhs;
-                                  const auto cost = m_best.at(lhs).cost + m_best.at(rhs).cost + rows(subset);
+                                  const auto subset = left | right;
+                                  const auto cost = m_best.at(left).cost + m_best.at(right).cost + rows(subset);
                                   if (const auto it = m_best.find(subset); it == m_best.end() || cost < it->second.cost)
-                                      m_best.insert_or_assign(subset, Split { cost, lhs });
+                                      m_best.insert_or_assign(subset, Split { cost, left });
                                   return true;
                               });
     urd::Store<urd::sequence<std::uint64_t>> components;

@@ -17,15 +17,17 @@ from pathlib import Path
 
 from pypddl.formalism import ParserOptions
 
+from pytyr.formalism import (
+    ObjectIndex,
+    ParameterIndex,
+)
 from pytyr.formalism.planning import (
     Invariant,
     InvariantMatchData,
     InvariantMatcher,
     InvariantQueryResult,
     InvariantQueryWorkspace,
-    ObjectIndex,
     ObjectSubstitution,
-    ParameterIndex,
     Parser,
     TaskVariableDomains,
     synthesize_invariants,

@@ -16,43 +16,46 @@ from collections.abc import Sequence
 
 from pyyggdrasil.execution import ExecutionContext
 
-from pytyr.formalism.planning import (
-    Action,
-    ActionData,
-    ConditionalEffectData,
-    ConjunctiveCondition,
-    ConjunctiveConditionData,
-    ConjunctiveEffectData,
-    DomainData,
-    FDRContext,
-    FluentAtom,
-    FluentAtomData,
-    FluentGroundAtom,
-    FluentGroundAtomData,
-    FluentLiteral,
-    FluentLiteralData,
-    FluentPredicate,
-    FluentPredicateData,
-    FluentPredicateRowData,
-    GroundConjunctiveConditionData,
-    LiftedPlanningTask,
-    LiftedTaskData,
-    Object,
+from pytyr.formalism import (
+    AtomGroundFluentData,
+    AtomGroundStaticData,
+    AtomLiftedFluentData,
+    AtomLiftedStaticData,
+    LiteralLiftedFluentData,
+    LiteralLiftedStaticData,
     ObjectData,
     ParameterIndex,
+    PredicateFluentData,
+    PredicateStaticData,
+    RowPredicateFluentData,
+    RowPredicateStaticData,
+    VariableData,
+)
+from pytyr.formalism.planning import (
+    ActionLifted,
+    ActionLiftedData,
+    ConditionalEffectLiftedData,
+    ConjunctiveConditionLifted,
+    ConjunctiveConditionLiftedData,
+    ConjunctiveEffectLiftedData,
+    DomainData,
+    FDRContext,
+    FDRFactFluentData,
+    AtomLiftedFluent,
+    AtomGroundFluent,
+    LiteralLiftedFluent,
+    PredicateFluent,
+    ConjunctiveConditionGroundData,
+    LiftedPlanningTask,
+    TaskLiftedData,
+    Object,
     PlanningDomain,
     Repository,
-    StaticAtom,
-    StaticAtomData,
-    StaticGroundAtom,
-    StaticGroundAtomData,
-    StaticLiteral,
-    StaticLiteralData,
-    StaticPredicate,
-    StaticPredicateData,
-    StaticPredicateRowData,
+    AtomLiftedStatic,
+    AtomGroundStatic,
+    LiteralLiftedStatic,
+    PredicateStatic,
     Variable,
-    VariableData,
 )
 from pytyr.planning.lifted import (
     GroundTaskInstantiationOptions,
@@ -67,13 +70,13 @@ def make_action(
     repository: Repository,
     name: str,
     variables: Sequence[Variable],
-    condition: ConjunctiveCondition,
-    effect_data: ConjunctiveEffectData,
-) -> Action:
+    condition: ConjunctiveConditionLifted,
+    effect_data: ConjunctiveEffectLiftedData,
+) -> ActionLifted:
     """Insert an action whose effect is applied unconditionally."""
     effect = repository.insert(effect_data)[0]
     empty_condition = repository.insert(
-        ConjunctiveConditionData(
+        ConjunctiveConditionLiftedData(
             variables=[],
             static_literals=[],
             fluent_literals=[],
@@ -82,11 +85,12 @@ def make_action(
         ),
     )[0]
     conditional_effect = repository.insert(
-        ConditionalEffectData(variables=[], condition=empty_condition, effect=effect),
+        ConditionalEffectLiftedData(variables=[], condition=empty_condition, effect=effect),
     )[0]
     return repository.insert(
-        ActionData(
+        ActionLiftedData(
             name=name,
+            original_name=name,
             original_arity=len(variables),
             variables=variables,
             condition=condition,
@@ -95,54 +99,54 @@ def make_action(
     )[0]
 
 
-def make_static_atom(repository: Repository, predicate: StaticPredicate, terms: Sequence[Term]) -> StaticAtom:
+def make_static_atom(repository: Repository, predicate: PredicateStatic, terms: Sequence[Term]) -> AtomLiftedStatic:
     """Insert the static atom of `predicate` over `terms`."""
-    return repository.insert(StaticAtomData(predicate, terms))[0]
+    return repository.insert(AtomLiftedStaticData(predicate, terms))[0]
 
 
-def make_fluent_atom(repository: Repository, predicate: FluentPredicate, terms: Sequence[Term]) -> FluentAtom:
+def make_fluent_atom(repository: Repository, predicate: PredicateFluent, terms: Sequence[Term]) -> AtomLiftedFluent:
     """Insert the fluent atom of `predicate` over `terms`."""
-    return repository.insert(FluentAtomData(predicate, terms))[0]
+    return repository.insert(AtomLiftedFluentData(predicate, terms))[0]
 
 
 def make_static_literal(
     repository: Repository,
-    predicate: StaticPredicate,
+    predicate: PredicateStatic,
     terms: Sequence[Term],
     *,
     polarity: bool = True,
-) -> StaticLiteral:
+) -> LiteralLiftedStatic:
     """Insert the static literal of `predicate` over `terms` with the given polarity."""
     atom = make_static_atom(repository, predicate, terms)
-    return repository.insert(StaticLiteralData(atom, polarity))[0]
+    return repository.insert(LiteralLiftedStaticData(atom, polarity))[0]
 
 
 def make_fluent_literal(
     repository: Repository,
-    predicate: FluentPredicate,
+    predicate: PredicateFluent,
     terms: Sequence[Term],
     *,
     polarity: bool = True,
-) -> FluentLiteral:
+) -> LiteralLiftedFluent:
     """Insert the fluent literal of `predicate` over `terms` with the given polarity."""
     atom = make_fluent_atom(repository, predicate, terms)
-    return repository.insert(FluentLiteralData(atom, polarity))[0]
+    return repository.insert(LiteralLiftedFluentData(atom, polarity))[0]
 
 
 def make_static_ground_atom(
-    repository: Repository, predicate: StaticPredicate, objects: Sequence[Object]
-) -> StaticGroundAtom:
+    repository: Repository, predicate: PredicateStatic, objects: Sequence[Object]
+) -> AtomGroundStatic:
     """Insert the static ground atom of `predicate` over `objects`."""
-    binding = repository.insert(StaticPredicateRowData(predicate, objects))[0]
-    return repository.insert(StaticGroundAtomData(binding))[0]
+    binding = repository.insert(RowPredicateStaticData(predicate, [obj.index() for obj in objects]))[0]
+    return repository.insert(AtomGroundStaticData(binding))[0]
 
 
 def make_fluent_ground_atom(
-    repository: Repository, predicate: FluentPredicate, objects: Sequence[Object]
-) -> FluentGroundAtom:
+    repository: Repository, predicate: PredicateFluent, objects: Sequence[Object]
+) -> AtomGroundFluent:
     """Insert the fluent ground atom of `predicate` over `objects`."""
-    binding = repository.insert(FluentPredicateRowData(predicate, objects))[0]
-    return repository.insert(FluentGroundAtomData(binding))[0]
+    binding = repository.insert(RowPredicateFluentData(predicate, [obj.index() for obj in objects]))[0]
+    return repository.insert(AtomGroundFluentData(binding))[0]
 
 
 def main() -> None:
@@ -155,15 +159,15 @@ def main() -> None:
     domain_repository = Repository()
 
     # Static predicates
-    room = domain_repository.insert(StaticPredicateData("room", 1))[0]
-    ball = domain_repository.insert(StaticPredicateData("ball", 1))[0]
-    gripper = domain_repository.insert(StaticPredicateData("gripper", 1))[0]
+    room = domain_repository.insert(PredicateStaticData("room", 1))[0]
+    ball = domain_repository.insert(PredicateStaticData("ball", 1))[0]
+    gripper = domain_repository.insert(PredicateStaticData("gripper", 1))[0]
 
     # Fluent predicates
-    at_robby = domain_repository.insert(FluentPredicateData("at-robby", 1))[0]
-    at = domain_repository.insert(FluentPredicateData("at", 2))[0]
-    free = domain_repository.insert(FluentPredicateData("free", 1))[0]
-    carry = domain_repository.insert(FluentPredicateData("carry", 2))[0]
+    at_robby = domain_repository.insert(PredicateFluentData("at-robby", 1))[0]
+    at = domain_repository.insert(PredicateFluentData("at", 2))[0]
+    free = domain_repository.insert(PredicateFluentData("free", 1))[0]
+    carry = domain_repository.insert(PredicateFluentData("carry", 2))[0]
 
     # Constants
     rooma = domain_repository.insert(ObjectData("rooma"))[0]
@@ -197,7 +201,7 @@ def main() -> None:
     # --------------------------------------------------------------------------
 
     move_condition = domain_repository.insert(
-        ConjunctiveConditionData(
+        ConjunctiveConditionLiftedData(
             variables=[v_from, v_to],
             static_literals=[
                 make_static_literal(domain_repository, room, [t_from], polarity=True),
@@ -216,12 +220,12 @@ def main() -> None:
         "move",
         [v_from, v_to],
         move_condition,
-        ConjunctiveEffectData(
-            fluent_literals=[
+        ConjunctiveEffectLiftedData(
+            literals=[
                 make_fluent_literal(domain_repository, at_robby, [t_to], polarity=True),
                 make_fluent_literal(domain_repository, at_robby, [t_from], polarity=False),
             ],
-            fluent_numeric_effects=[],
+            numeric_effects=[],
             auxiliary_numeric_effect=None,
         ),
     )
@@ -238,7 +242,7 @@ def main() -> None:
     # --------------------------------------------------------------------------
 
     pick_condition = domain_repository.insert(
-        ConjunctiveConditionData(
+        ConjunctiveConditionLiftedData(
             variables=[v_obj, v_room, v_gripper],
             static_literals=[
                 make_static_literal(domain_repository, ball, [t_obj], polarity=True),
@@ -260,13 +264,13 @@ def main() -> None:
         "pick",
         [v_obj, v_room, v_gripper],
         pick_condition,
-        ConjunctiveEffectData(
-            fluent_literals=[
+        ConjunctiveEffectLiftedData(
+            literals=[
                 make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=True),
                 make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=False),
                 make_fluent_literal(domain_repository, free, [t_gripper], polarity=False),
             ],
-            fluent_numeric_effects=[],
+            numeric_effects=[],
             auxiliary_numeric_effect=None,
         ),
     )
@@ -283,7 +287,7 @@ def main() -> None:
     # --------------------------------------------------------------------------
 
     drop_condition = domain_repository.insert(
-        ConjunctiveConditionData(
+        ConjunctiveConditionLiftedData(
             variables=[v_obj, v_room, v_gripper],
             static_literals=[
                 make_static_literal(domain_repository, ball, [t_obj], polarity=True),
@@ -304,13 +308,13 @@ def main() -> None:
         "drop",
         [v_obj, v_room, v_gripper],
         drop_condition,
-        ConjunctiveEffectData(
-            fluent_literals=[
+        ConjunctiveEffectLiftedData(
+            literals=[
                 make_fluent_literal(domain_repository, at, [t_obj, t_room], polarity=True),
                 make_fluent_literal(domain_repository, free, [t_gripper], polarity=True),
                 make_fluent_literal(domain_repository, carry, [t_obj, t_gripper], polarity=False),
             ],
-            fluent_numeric_effects=[],
+            numeric_effects=[],
             auxiliary_numeric_effect=None,
         ),
     )
@@ -379,17 +383,17 @@ def main() -> None:
     goal_at_ball1_roomb = fdr_context.get_fact(at_ball1_roomb)
 
     goal = task_repository.insert(
-        GroundConjunctiveConditionData(
+        ConjunctiveConditionGroundData(
             static_literals=[],
             derived_literals=[],
-            positive_facts=[goal_at_ball1_roomb],
+            positive_facts=[FDRFactFluentData(goal_at_ball1_roomb.get_variable(), goal_at_ball1_roomb.get_value())],
             negative_facts=[],
             numeric_constraints=[],
         ),
     )[0]
 
     task = task_repository.insert(
-        LiftedTaskData(
+        TaskLiftedData(
             name="gripper-1",
             domain=domain,
             derived_predicates=[],

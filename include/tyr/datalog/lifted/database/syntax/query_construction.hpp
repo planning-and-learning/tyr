@@ -26,50 +26,71 @@ namespace detail
 {
 std::span<const ygg::ColumnLayout> child_columns(urd::index<Query<>> child, const QueryRepository& repository);
 
+/// The derived field of a query (its plan, or a rename's columns) from its other fields and its children's columns:
+/// what its creator computes before it is interned. Inputs and empty relations derive nothing.
 template<typename Tag>
     requires(std::same_as<Tag, QueryInputTag> || std::same_as<Tag, QueryEmptyTag>)
-void prepare(urd::data<Query<Tag>>& data, const QueryRepository&)
-{ ygg::validate_columns({ data.columns.data(), data.columns.size() }); }
+void derive(urd::data<Query<Tag>>& /*data*/, const QueryRepository& /*repository*/)
+{
+}
 
 template<typename Tag>
     requires boost::mp11::mp_contains<QueryJoinTags, Tag>::value
-void prepare(urd::data<Query<Tag>>& data, const QueryRepository& repository)
-{ data.plan = JoinPlan(child_columns(data.lhs, repository), child_columns(data.rhs, repository)); }
+void derive(urd::data<Query<Tag>>& data, const QueryRepository& repository)
+{
+    data.plan = JoinPlan(child_columns(data.left_operand, repository), child_columns(data.right_operand, repository));
+}
 
 template<typename Tag>
     requires boost::mp11::mp_contains<QuerySetTags, Tag>::value
-void prepare(urd::data<Query<Tag>>& data, const QueryRepository& repository)
-{ data.plan = SetPlan(child_columns(data.lhs, repository), child_columns(data.rhs, repository)); }
+void derive(urd::data<Query<Tag>>& data, const QueryRepository& repository)
+{
+    data.plan = SetPlan(child_columns(data.left_operand, repository), child_columns(data.right_operand, repository));
+}
 
-void prepare(urd::data<Query<QueryProjectTag>>& data, const QueryRepository& repository);
+void derive(urd::data<Query<QueryProjectTag>>& data, const QueryRepository& repository);
 
-void prepare(urd::data<Query<QueryRenameTag>>& data, const QueryRepository& repository);
+void derive(urd::data<Query<QueryRenameTag>>& data, const QueryRepository& repository);
 
-void prepare(urd::data<Query<QuerySelectEqualTag>>& data, const QueryRepository& repository);
+void derive(urd::data<Query<QuerySelectEqualTag>>& data, const QueryRepository& repository);
 
-void prepare(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& repository);
+void derive(urd::data<Query<QuerySelectValueTag>>& data, const QueryRepository& repository);
 
-void prepare(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& repository);
+void derive(urd::data<Query<QueryDistanceTag>>& data, const QueryRepository& repository);
 
 /// An omitted output order is canonicalized to first occurrence order.
-void prepare(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository);
+void derive(urd::data<Query<QueryGenericJoinTag>>& data, const QueryRepository& repository);
 }  // namespace detail
 
-/// Validates operands and derives the prepared metadata stored in the record.
+/// A query's columns are valid (an input's, an empty relation's); a record is interned as it is, its derived field
+/// included (detail::derive, which its creator runs).
 template<typename Tag>
     requires(!std::same_as<Tag, void>)
-void prepare_for_insert(QueryRepository& repository, urd::data<Query<Tag>>& data)
-{ detail::prepare(data, repository); }
+void prepare_for_insert(QueryRepository& /*repository*/, urd::data<Query<Tag>>& data)
+{
+    if constexpr (requires { data.columns; } && !std::same_as<Tag, QueryRenameTag>)
+        ygg::validate_columns({ data.columns.data(), data.columns.size() });
+}
 
 /// The concrete record must already be interned.
 void prepare_for_insert(QueryRepository& repository, urd::data<Query<>>& data);
 
-/// Interns a concrete query and then its heterogeneous root.
+/// Interns a query its creator built from its children and other fields: its derived field (a plan, a rename's
+/// columns) is computed from them first (detail::derive). The view, and whether it was new.
+template<typename Tag>
+    requires(!std::same_as<Tag, void>)
+std::pair<QueryView<Tag>, bool> derive_and_insert(QueryRepository& repository, urd::data<Query<Tag>>& data)
+{
+    detail::derive(data, repository);
+    return insert(repository, data);
+}
+
+/// Creates a query (derive_and_insert), then interns its heterogeneous root.
 template<typename Tag>
 QueryView<> insert_query(QueryRepository& repository, QueryBuilder& builder, urd::data<Query<Tag>>& data)
 {
     auto root = checkout<Query<>>(builder);
-    root->variant = insert(repository, data).first.index();
+    root->variant = derive_and_insert(repository, data).first.index();
     return insert(repository, *root).first;
 }
 }  // namespace tyr::datalog::database

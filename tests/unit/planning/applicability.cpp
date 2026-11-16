@@ -169,23 +169,23 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaProgramsPreserveGlobalIndices)
     {
         SCOPED_TRACE(action.get_name().str());
         const auto& schema = schemas.at(action);
-        const auto& data = schema.program.data();
-        const auto& global_data = global_program.data();
-        EXPECT_EQ(&schema.program.context(), &global_program.context());
-        EXPECT_TRUE(std::ranges::equal(data.static_predicates, global_data.static_predicates));
-        EXPECT_TRUE(std::ranges::equal(data.fluent_predicates, global_data.fluent_predicates));
-        EXPECT_TRUE(std::ranges::equal(data.static_functions, global_data.static_functions));
-        EXPECT_TRUE(std::ranges::equal(data.fluent_functions, global_data.fluent_functions));
-        EXPECT_TRUE(std::ranges::equal(data.objects, global_data.objects));
+        const auto& program = schema.program;
+        EXPECT_EQ(&program.context(), &global_program.context());
+        EXPECT_TRUE(
+            std::ranges::equal(program.template get_predicates<formalism::StaticTag>(), global_program.template get_predicates<formalism::StaticTag>()));
+        EXPECT_TRUE(
+            std::ranges::equal(program.template get_predicates<formalism::FluentTag>(), global_program.template get_predicates<formalism::FluentTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.template get_functions<formalism::StaticTag>(), global_program.template get_functions<formalism::StaticTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.template get_functions<formalism::FluentTag>(), global_program.template get_functions<formalism::FluentTag>()));
+        EXPECT_TRUE(std::ranges::equal(program.get_objects(), global_program.get_objects()));
         const auto schema_rules = schema.program.get_rules();
         ASSERT_EQ(schema_rules.size(), rules.size());
         for (size_t i = 0; i < rules.size(); ++i)
         {
             EXPECT_EQ(schema_rules[i], rules[i]);
-            EXPECT_EQ(&schema_rules[i].data(), &rules[i].data());
         }
         ASSERT_EQ(schema.strata.data.size(), 1);
-        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front(), data.rules));
+        EXPECT_TRUE(std::ranges::equal(schema.strata.data.front(), program.get_rules(), {}, {}, [](const auto& rule) { return rule.index(); }));
     }
 }
 

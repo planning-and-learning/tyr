@@ -28,66 +28,27 @@
 /// their views are each repository's.
 namespace tyr::formalism
 {
-
 namespace
 {
-template<TaskKind T, FactKind F>
-void bind_atom_data(nb::module_& m, const std::string& name)
-{
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<Atom<T, F>>>(m, name + "Index");
-
-    using V = urd::data<Atom<T, F>>;
-    auto cls = nb::class_<V>(m, (name + "Data").c_str());
-    if constexpr (std::same_as<T, LiftedTag>)
-    {
-        cls.def(urd::python::init_from_views<datalog::PredicateView<F>, const datalog::TermViewList&>(), "predicate"_a, "terms"_a);
-        cls.def(urd::python::init_from_views<planning::PredicateView<F>, const planning::TermViewList&>(), "predicate"_a, "terms"_a);
-        cls.def(nb::init<urd::index<Predicate<F>>, TermList>(), "predicate"_a, "terms"_a);
-    }
-    else
-    {
-        cls.def(urd::python::init_from_views<datalog::PredicateRowView<F>>(), "binding"_a);
-        cls.def(urd::python::init_from_views<planning::PredicateRowView<F>>(), "binding"_a);
-        cls.def(nb::init<ygg::RowIndex<Predicate<F>>>(), "binding"_a);
-    }
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
 template<TaskKind T, FactKind F, typename C>
-void bind_atom_view(nb::module_& m, nb::class_<C>& repository, const std::string& name)
+void bind_atom_view(nb::module_& m, nb::class_<C>& repository)
 {
     using V = urd::index_view<Atom<T, F>, C>;
-    auto cls = nb::class_<V>(m, name.c_str());
-    cls.def("index", &V::index);
-    cls.def("get_predicate", &V::get_predicate);
-    if constexpr (std::same_as<T, LiftedTag>)
-    {
-        cls.def("get_terms", &V::get_terms);
-    }
-    else
-    {
-        cls.def("get_row", &V::get_row);
-        cls.def("get_objects", &V::get_objects);
-    }
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-
+    auto cls = urd::python::bind_view<V>(m);
+    if constexpr (std::same_as<T, GroundTag>)
+        cls.def("get_predicate", &V::get_predicate).def("get_objects", &V::get_objects);
     ygg::bind_insert<Atom<T, F>>(repository);
 }
 }  // namespace
 
 void bind_atom(nb::module_& m)
 {
-    bind_atom_data<LiftedTag, StaticTag>(m, "StaticAtom");
-    bind_atom_data<LiftedTag, FluentTag>(m, "FluentAtom");
-    bind_atom_data<LiftedTag, DerivedTag>(m, "DerivedAtom");
-    bind_atom_data<GroundTag, StaticTag>(m, "StaticGroundAtom");
-    bind_atom_data<GroundTag, FluentTag>(m, "FluentGroundAtom");
-    bind_atom_data<GroundTag, DerivedTag>(m, "DerivedGroundAtom");
+    urd::python::bind_data<Atom<LiftedTag, StaticTag>>(m);
+    urd::python::bind_data<Atom<LiftedTag, FluentTag>>(m);
+    urd::python::bind_data<Atom<LiftedTag, DerivedTag>>(m);
+    urd::python::bind_data<Atom<GroundTag, StaticTag>>(m);
+    urd::python::bind_data<Atom<GroundTag, FluentTag>>(m);
+    urd::python::bind_data<Atom<GroundTag, DerivedTag>>(m);
 }
 
 }  // namespace tyr::formalism
@@ -97,10 +58,10 @@ namespace tyr::formalism::datalog
 
 void bind_atom(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_atom_view<LiftedTag, StaticTag>(m, repository, "StaticAtom");
-    bind_atom_view<LiftedTag, FluentTag>(m, repository, "FluentAtom");
-    bind_atom_view<GroundTag, StaticTag>(m, repository, "StaticGroundAtom");
-    bind_atom_view<GroundTag, FluentTag>(m, repository, "FluentGroundAtom");
+    bind_atom_view<LiftedTag, StaticTag>(m, repository);
+    bind_atom_view<LiftedTag, FluentTag>(m, repository);
+    bind_atom_view<GroundTag, StaticTag>(m, repository);
+    bind_atom_view<GroundTag, FluentTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::datalog
@@ -110,12 +71,12 @@ namespace tyr::formalism::planning
 
 void bind_atom(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_atom_view<LiftedTag, StaticTag>(m, repository, "StaticAtom");
-    bind_atom_view<LiftedTag, FluentTag>(m, repository, "FluentAtom");
-    bind_atom_view<LiftedTag, DerivedTag>(m, repository, "DerivedAtom");
-    bind_atom_view<GroundTag, StaticTag>(m, repository, "StaticGroundAtom");
-    bind_atom_view<GroundTag, FluentTag>(m, repository, "FluentGroundAtom");
-    bind_atom_view<GroundTag, DerivedTag>(m, repository, "DerivedGroundAtom");
+    bind_atom_view<LiftedTag, StaticTag>(m, repository);
+    bind_atom_view<LiftedTag, FluentTag>(m, repository);
+    bind_atom_view<LiftedTag, DerivedTag>(m, repository);
+    bind_atom_view<GroundTag, StaticTag>(m, repository);
+    bind_atom_view<GroundTag, FluentTag>(m, repository);
+    bind_atom_view<GroundTag, DerivedTag>(m, repository);
 }
 
 }  // namespace tyr::formalism::planning

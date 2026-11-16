@@ -6,11 +6,15 @@
 #define TYR_DATALOG_DATABASE_SYNTAX_FORMATTER_HPP_
 
 #include "tyr/datalog/lifted/database/syntax/query.hpp"
+#include "yggdrasil/formalism/formatter.hpp"
 #include "yggdrasil/formatting/formatter.hpp"
 
+#include <boost/mp11.hpp>
 #include <fmt/ranges.h>
 #include <iterator>
 #include <ranges>
+#include <string>
+#include <urd/format.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
@@ -33,7 +37,7 @@ OutputIt format_query_plan(OutputIt out, const QueryPlan& plan)
                 const auto columns =
                     operation.columns()
                     | std::views::transform([](const ygg::ColumnLayout& column) { return fmt::format("{}:{}", column.label.value, column.type); });
-                out = fmt::format_to(out, "{}: {}({}) columns=[{}]", id, Tag::name, fmt::join(children, ","), fmt::join(columns, ","));
+                out = fmt::format_to(out, "{}: {}({}) columns=[{}]", id, Tag::operation, fmt::join(children, ","), fmt::join(columns, ","));
                 if constexpr (std::same_as<Tag, QueryInputTag>)
                     out = fmt::format_to(out, " slot={}", operation.get_input_slot());
                 if constexpr (std::same_as<Tag, QueryGenericJoinTag>)
@@ -58,9 +62,39 @@ struct formatter<tyr::datalog::database::QueryPlan, char>
 
     template<typename FormatContext>
     auto format(const tyr::datalog::database::QueryPlan& plan, FormatContext& ctx) const
-    { return tyr::datalog::database::detail::format_query_plan(ctx.out(), plan); }
+    {
+        return tyr::datalog::database::detail::format_query_plan(ctx.out(), plan);
+    }
+};
+
+/// An operation's plan, as the columns it produces: how a query's record writes it.
+template<typename Plan>
+    requires boost::mp11::mp_contains<boost::mp11::mp_list<tyr::datalog::database::ProjectionPlan,
+                                                           tyr::datalog::database::JoinPlan,
+                                                           tyr::datalog::database::SetPlan,
+                                                           tyr::datalog::database::SelectEqualPlan,
+                                                           tyr::datalog::database::SelectValuePlan,
+                                                           tyr::datalog::database::DistancePlan,
+                                                           tyr::datalog::database::GenericJoinPlan>,
+                                      Plan>::value
+struct formatter<Plan, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const Plan& plan, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "[{}]", fmt::join(plan.output_columns(), ", "));
+    }
 };
 }  // namespace fmt
 #endif
+
+/// The query of any operation is named Query (its tag's argument, void, has no name).
+template<>
+struct urd::name_of<tyr::datalog::database::Query<>>
+{
+    static std::string named() { return "Query"; }
+};
 
 #endif

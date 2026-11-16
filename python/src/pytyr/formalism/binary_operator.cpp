@@ -31,51 +31,29 @@ namespace tyr::formalism
 
 namespace
 {
-template<TaskKind T, OperatorKind O>
-void bind_binary_operator_data(nb::module_& m, const std::string& name)
+template<TaskKind T, typename O, typename C>
+void bind_binary_operator_view(nb::module_& m, nb::class_<C>& repository)
 {
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<BinaryOperator<T, O>>>(m, name + "Index");
-
-    using V = urd::data<BinaryOperator<T, O>>;
-    auto cls = nb::class_<V>(m, (name + "Data").c_str());
-    cls.def(urd::python::init_from_views<O, datalog::FunctionExpressionView<T>, datalog::FunctionExpressionView<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
-    cls.def(urd::python::init_from_views<O, planning::FunctionExpressionView<T>, planning::FunctionExpressionView<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
-    cls.def(nb::init<O, FunctionExpression<T>, FunctionExpression<T>>(), "operator"_a, "lhs"_a, "rhs"_a);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-}
-
-template<TaskKind T, OperatorKind O, typename C>
-void bind_binary_operator_view(nb::module_& m, nb::class_<C>& repository, const std::string& name)
-{
-    using V = urd::index_view<BinaryOperator<T, O>, C>;
-    auto cls =
-        nb::class_<V>(m, name.c_str()).def("index", &V::index).def("get_operator", &V::get_operator).def("get_lhs", &V::get_lhs).def("get_rhs", &V::get_rhs);
-    ygg::add_print(cls);
-    urd::python::add_comparison(cls);
-    urd::python::add_hash(cls);
-
+    urd::python::bind_view<urd::index_view<BinaryOperator<T, O>, C>>(m);
     ygg::bind_insert<BinaryOperator<T, O>>(repository);
 }
 
 template<typename C>
 void bind_binary_operator_views(nb::module_& m, nb::class_<C>& repository)
 {
-    bind_binary_operator_view<LiftedTag, ArithmeticOperatorKind>(m, repository, "BinaryArithmeticOperator");
-    bind_binary_operator_view<LiftedTag, BooleanOperatorKind>(m, repository, "BinaryBooleanOperator");
-    bind_binary_operator_view<GroundTag, ArithmeticOperatorKind>(m, repository, "GroundBinaryArithmeticOperator");
-    bind_binary_operator_view<GroundTag, BooleanOperatorKind>(m, repository, "GroundBinaryBooleanOperator");
+    bind_binary_operator_view<LiftedTag, ArithmeticOperatorKind>(m, repository);
+    bind_binary_operator_view<LiftedTag, BooleanOperatorKind>(m, repository);
+    bind_binary_operator_view<GroundTag, ArithmeticOperatorKind>(m, repository);
+    bind_binary_operator_view<GroundTag, BooleanOperatorKind>(m, repository);
 }
 }  // namespace
 
 void bind_binary_operator(nb::module_& m)
 {
-    bind_binary_operator_data<LiftedTag, ArithmeticOperatorKind>(m, "BinaryArithmeticOperator");
-    bind_binary_operator_data<LiftedTag, BooleanOperatorKind>(m, "BinaryBooleanOperator");
-    bind_binary_operator_data<GroundTag, ArithmeticOperatorKind>(m, "GroundBinaryArithmeticOperator");
-    bind_binary_operator_data<GroundTag, BooleanOperatorKind>(m, "GroundBinaryBooleanOperator");
+    urd::python::bind_data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_data<BinaryOperator<LiftedTag, BooleanOperatorKind>>(m);
+    urd::python::bind_data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>(m);
+    urd::python::bind_data<BinaryOperator<GroundTag, BooleanOperatorKind>>(m);
 }
 
 }  // namespace tyr::formalism

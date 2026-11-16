@@ -22,63 +22,15 @@
 namespace tyr::formalism::planning
 {
 
-namespace
-{
-template<TaskKind T>
-void bind_conditional_effect_kind(nb::module_& m, RepositoryBinding& repository, const std::string& name)
-{
-    using namespace nb::literals;
-    using Tag = ConditionalEffect<T>;
-    urd::python::bind_index<urd::index<Tag>>(m, name + "Index");
-
-    {
-        using V = urd::data<Tag>;
-        auto cls = nb::class_<V>(m, (name + "Data").c_str());
-        if constexpr (std::same_as<T, LiftedTag>)
-        {
-            cls.def(urd::python::init_from_views<const VariableViewList&, ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(),
-                    "variables"_a,
-                    "condition"_a,
-                    "effect"_a);
-            cls.def(nb::init<urd::flat_vector<urd::index<Variable>>, urd::index<ConjunctiveCondition<LiftedTag>>, urd::index<ConjunctiveEffect<LiftedTag>>>(),
-                    "variables"_a,
-                    "condition"_a,
-                    "effect"_a);
-        }
-        else
-        {
-            cls.def(urd::python::init_from_views<ConjunctiveConditionView<T>, ConjunctiveEffectView<T>>(), "condition"_a, "effect"_a);
-            cls.def(nb::init<urd::index<ConjunctiveCondition<GroundTag>>, urd::index<ConjunctiveEffect<GroundTag>>>(), "condition"_a, "effect"_a);
-        }
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    {
-        using V = ConditionalEffectView<T>;
-        auto cls = nb::class_<V>(m, name.c_str());
-        cls.def("index", &V::index);
-        if constexpr (std::same_as<T, LiftedTag>)
-        {
-            cls.def("get_variables", &V::get_variables);
-            cls.def("get_arity", &V::get_arity);
-        }
-        cls.def("get_condition", &V::get_condition);
-        cls.def("get_effect", &V::get_effect);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    ygg::bind_insert<Tag>(repository);
-}
-}  // namespace
-
 void bind_conditional_effect(nb::module_& m, RepositoryBinding& repository)
 {
-    bind_conditional_effect_kind<LiftedTag>(m, repository, "ConditionalEffect");
-    bind_conditional_effect_kind<GroundTag>(m, repository, "GroundConditionalEffect");
+    urd::python::bind_data<ConditionalEffect<LiftedTag>>(m);
+    urd::python::bind_view<ConditionalEffectView<LiftedTag>>(m).def("get_arity", &ConditionalEffectView<LiftedTag>::get_arity);
+    ygg::bind_insert<ConditionalEffect<LiftedTag>>(repository);
+
+    urd::python::bind_data<ConditionalEffect<GroundTag>>(m);
+    urd::python::bind_view<ConditionalEffectView<GroundTag>>(m);
+    ygg::bind_insert<ConditionalEffect<GroundTag>>(repository);
 }
 
 }  // namespace tyr::formalism::planning

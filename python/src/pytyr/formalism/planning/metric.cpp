@@ -24,32 +24,8 @@ namespace tyr::formalism::planning
 
 void bind_metric(nb::module_& m, RepositoryBinding& repository)
 {
-    using namespace nb::literals;
-    urd::python::bind_index<urd::index<Metric>>(m, "MetricIndex");
-
-    {
-        using V = urd::data<Metric>;
-
-        auto cls = nb::class_<V>(m, "MetricData")  //
-                       .def(urd::python::init_from_views<OptimizationDirection, FunctionExpressionView<GroundTag>>(), "optimization_direction"_a, "fexpr"_a);
-        cls.def(nb::init<OptimizationDirection, FunctionExpression<GroundTag>>(), "optimization_direction"_a, "fexpr"_a);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
-    {
-        using V = MetricView;
-
-        auto cls = nb::class_<V>(m, "Metric")  //
-                       .def("index", &V::index)
-                       .def("get_optimization_direction", &V::get_optimization_direction)
-                       .def("get_fexpr", &V::get_fexpr);
-        ygg::add_print(cls);
-        urd::python::add_comparison(cls);
-        urd::python::add_hash(cls);
-    }
-
+    urd::python::bind_data<Metric>(m);
+    urd::python::bind_view<MetricView>(m);
     ygg::bind_insert<Metric>(repository);
 }
 
