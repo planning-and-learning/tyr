@@ -171,7 +171,8 @@ TEST(DatabaseOptimization, YannakakisBoundsIntermediatesByInputTimesOutput)
     nodes.reserve(plan.node_count());
     for (size_t position = 0; position < plan.node_count(); ++position)
         nodes.push_back(plan[PlanId(ygg::to_uint_t(position))]);
-    tyr::datalog::database::QueryEvaluator evaluator(layer(), tyr::datalog::database::compile_plan(std::span<const tyr::datalog::database::QueryView<>>(nodes)));
+    tyr::datalog::database::QueryEvaluator evaluator(layer(),
+                                                     tyr::datalog::database::compile_plan(std::span<const tyr::datalog::database::QueryView<>>(nodes)));
     evaluator.evaluate(refs);
     tyr::datalog::database::QueryEvaluator reference(layer(), tyr::datalog::database::compile_plan({ root })), optimized(layer(), plan);
     reference.evaluate(refs);

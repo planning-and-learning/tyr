@@ -314,7 +314,8 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     TypedRelation relation(schema);
     relation.insert(std::array { ygg::encode_value(static_cast<std::uint32_t>(4)), ygg::encode_value(0.0) });
     relation.insert(std::array { ygg::encode_value(static_cast<std::uint32_t>(5)), ygg::encode_value(2.0) });
-    tyr::datalog::database::QueryEvaluator evaluator(layer(), tyr::datalog::database::compile_plan({ tyr::datalog::tests::qb::project(mixed, selected, { y, x }) }));
+    tyr::datalog::database::QueryEvaluator evaluator(layer(),
+                                                     tyr::datalog::database::compile_plan({ tyr::datalog::tests::qb::project(mixed, selected, { y, x }) }));
     evaluator.evaluate(std::array { borrow(relation) });
     EXPECT_TRUE(evaluator.get_result().contains(std::array { ygg::encode_value(0.0), ygg::encode_value(std::uint32_t(4)) }));
 
@@ -323,7 +324,8 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     const auto edges = tyr::datalog::tests::qb::input(graph, 1, { x, y });
     const auto targets = tyr::datalog::tests::qb::input(graph, 2, { z });
     const auto distance = tyr::datalog::tests::qb::distance(graph, sources, edges, targets, d);
-    const auto plan = tyr::datalog::database::compile_plan({ distance, tyr::datalog::tests::qb::select_value(graph, distance, d, static_cast<ygg::uint_t>(2)) });
+    const auto plan =
+        tyr::datalog::database::compile_plan({ distance, tyr::datalog::tests::qb::select_value(graph, distance, d, static_cast<ygg::uint_t>(2)) });
     Relation s(tyr::datalog::tests::ops::cols({ x })), e(tyr::datalog::tests::ops::cols({ x, y })), t(tyr::datalog::tests::ops::cols({ z }));
     s.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     e.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
