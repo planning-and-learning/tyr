@@ -71,18 +71,18 @@ template<TaskKind Kind>
 struct LMCutImplementation :
     detail::RPGEvaluator<LMCutImplementation<Kind>,
                          Kind,
-                         datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
+                         datalog::MinCostAnnotationWithAchieversPolicy<Kind, datalog::MaxAggregation>,
                          datalog::TerminationPolicy<datalog::MaxAggregation>,
                          datalog::RuleCostOverridePolicy<Kind>>
 {
     using Base = detail::RPGEvaluator<LMCutImplementation<Kind>,
                                       Kind,
-                                      datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
+                                      datalog::MinCostAnnotationWithAchieversPolicy<Kind, datalog::MaxAggregation>,
                                       datalog::TerminationPolicy<datalog::MaxAggregation>,
                                       datalog::RuleCostOverridePolicy<Kind>>;
     using ActionBinding = formalism::planning::ActionRowView;
     using Node = formalism::datalog::PredicateRowView<formalism::FluentTag>;
-    using Witness = datalog::WitnessAnnotation;
+    using Witness = datalog::WitnessAnnotation<Kind>;
     using CutFrontierAtoms = formalism::planning::AtomViewList<GroundTag, formalism::FluentTag>;
 
     /// The arc of an achiever: its residual cost and its source, none for a rule without preconditions.

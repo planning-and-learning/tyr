@@ -22,7 +22,7 @@ from pypddl.formalism import ParserOptions
 from pyyggdrasil.execution import ExecutionContext
 
 from pytyr import datalog
-from pytyr.formalism.datalog import FluentPredicate, FluentPredicateRow
+from pytyr.formalism.datalog import PredicateFluent, RowPredicateFluent
 from pytyr.formalism.planning import LiftedPlanningTask, Parser
 from pytyr.planning import lifted as planning
 
@@ -66,7 +66,7 @@ class Context:
 
 def fluent_rows(
     program: datalog.lifted.Program, workspace: Workspace
-) -> list[tuple[FluentPredicate, list[FluentPredicateRow]]]:
+) -> list[tuple[PredicateFluent, list[RowPredicateFluent]]]:
     """The rows `workspace` holds of each fluent predicate of `program`, by ascending predicate index."""
     fact_sets = workspace.get_fluent_fact_sets()
     predicates = sorted(program.get_program().get_fluent_predicates(), key=lambda predicate: int(predicate.index()))
@@ -86,10 +86,15 @@ def make_context(domain_file: Path, task_file: Path) -> Context:
     return Context(execution_context, task)
 
 
+def binding_objects(row: RowPredicateFluent) -> str:
+    """The row's objects as ``[a, b]``: a row prints as ``(name a b)``, its values being objects."""
+    return "[" + ", ".join(str(row)[1:-1].split()[1:]) + "]"
+
+
 def atoms_by_predicate(program: datalog.lifted.Program, workspace: Workspace) -> list[PredicateAtoms]:
     result: list[PredicateAtoms] = []
     for predicate, rows in fluent_rows(program, workspace):
-        bindings: list[AtomBinding] = [{"objects": str(row.get_objects())} for row in rows]
+        bindings: list[AtomBinding] = [{"objects": binding_objects(row)} for row in rows]
         result.append(
             {
                 "predicate": predicate.get_name(),
@@ -103,7 +108,7 @@ def atoms_by_predicate(program: datalog.lifted.Program, workspace: Workspace) ->
 def solve_program(
     execution_context: ExecutionContext,
     program: datalog.lifted.Program,
-    input_rows: Iterable[FluentPredicateRow] = (),
+    input_rows: Iterable[RowPredicateFluent] = (),
 ) -> Workspace:
     workspace = Workspace(program)
     for row in input_rows:
@@ -125,7 +130,7 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
         case "applicable_action":
             axiom_program = planning.AxiomEvaluatorProgram(context.task.get_task())
             axiom_datalog_program = axiom_program.get_datalog_program()
-            axiom_rows: list[FluentPredicateRow] = []
+            axiom_rows: list[RowPredicateFluent] = []
             if len(axiom_datalog_program.get_program().get_rules()) != 0:
                 axiom_workspace = solve_program(context.execution_context, axiom_datalog_program)
                 axiom_rows = [row for _, rows in fluent_rows(axiom_datalog_program, axiom_workspace) for row in rows]

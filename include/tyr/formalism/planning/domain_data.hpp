@@ -133,21 +133,9 @@ inline constexpr auto predicates_of = tagged_member_pointer<StaticFluentDerivedT
                                                             &urd::data<Domain>::fluent_predicates,
                                                             &urd::data<Domain>::derived_predicates>;
 
-template<FactKind F>
-[[nodiscard]] const auto& predicates(const urd::data<Domain>& domain) noexcept
-{
-    return domain.*predicates_of<F>;
-}
-
 /// The member holding the F-functions of a domain.
 template<FactKind F>
 inline constexpr auto functions_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Domain>::static_functions, &urd::data<Domain>::fluent_functions>;
-
-template<FactKind F>
-[[nodiscard]] const auto& functions(const urd::data<Domain>& domain) noexcept
-{
-    return domain.*functions_of<F>;
-}
 }
 
 #endif

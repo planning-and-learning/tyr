@@ -9,17 +9,14 @@ from pytyr._pytyr.datalog import (
     FluentFactSets as FluentFactSets,
     GroundQueueStatistics as GroundQueueStatistics,
     MaxMinCostAnnotationPolicy as MaxMinCostAnnotationPolicy,
-    MaxMinCostAnnotationWithAchieversPolicy as MaxMinCostAnnotationWithAchieversPolicy,
     MaxTerminationPolicy as MaxTerminationPolicy,
     NoAnnotationPolicy as NoAnnotationPolicy,
     NoTerminationPolicy as NoTerminationPolicy,
-    PredicateAnnotations as PredicateAnnotations,
     ProgramStatistics as ProgramStatistics,
     RuleCostPolicy as RuleCostPolicy,
     StaticFactSets as StaticFactSets,
     SumMinCostAnnotationPolicy as SumMinCostAnnotationPolicy,
     SumTerminationPolicy as SumTerminationPolicy,
-    WitnessAnnotation as WitnessAnnotation,
 )
 from pytyr.datalog import (
     ground as ground,

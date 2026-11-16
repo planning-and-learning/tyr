@@ -74,7 +74,7 @@ class RPGProgram
 public:
     using Task = formalism::planning::TaskView<Kind>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex, urd::index<formalism::datalog::Rule<LiftedTag>>>;
+    using Rule = urd::index<formalism::datalog::Rule<Kind>>;
     /// Rules are hash-consed, so actions with identical relaxed rules share one rule.
     using Actions = urd::Store<urd::sequence<Action>>;
     using RuleToActionMapping = urd::Store<urd::map<Rule, Actions>>;

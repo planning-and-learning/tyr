@@ -47,7 +47,7 @@ concept SchedulerConcept = TaskKind<Kind> && AnnotationPolicyConcept<AP> && Term
 template<typename Kind, typename AP, typename TP, typename CP>
 concept SolverPolicyConcept =
     SchedulerConcept<Kind, AP, TP, CP> && std::constructible_from<SolverPolicy<Kind, AP, TP, CP>, ProgramExecutionContext<Kind, AP, TP, CP>&>
-    && requires(SolverPolicy<Kind, AP, TP, CP>& policy, CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers) {
+    && requires(SolverPolicy<Kind, AP, TP, CP>& policy, CostBuckets& cost_buckets, PendingPredicateAchievers<Kind>& pending_achievers) {
            { policy.next_stratum() } -> std::same_as<bool>;
            { policy.generate_updates(cost_buckets, pending_achievers) } -> std::same_as<bool>;
            { policy.scheduler() } -> std::same_as<Scheduler<Kind>&>;

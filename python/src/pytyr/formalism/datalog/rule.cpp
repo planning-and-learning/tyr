@@ -33,7 +33,7 @@ void bind_rule(nb::module_& m, RepositoryBinding& repository)
     ygg::bind_insert<Rule<LiftedTag>>(repository);
 
     urd::python::bind_data<Rule<GroundTag>>(m);
-    urd::python::bind_view<RuleView<GroundTag>>(m).def("get_rule", &RuleView<GroundTag>::get_rule).def("get_objects", &RuleView<GroundTag>::get_objects);
+    urd::python::bind_view<RuleView<GroundTag>>(m);
     ygg::bind_insert<Rule<GroundTag>>(repository);
 }
 

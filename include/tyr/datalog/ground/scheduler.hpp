@@ -29,12 +29,12 @@
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <concepts>
 #include <limits>
 #include <optional>
 #include <tuple>
 #include <urd/elements/flat.hpp>
-#include <urd/repr/queues/queue.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
@@ -44,33 +44,37 @@
 namespace tyr::datalog
 {
 
-struct GroundQueueEntry : urd::compared_by_identity<GroundQueueEntry>
-{
-    Cost cost;
-    formalism::datalog::RuleView<GroundTag> rule;
-
-    GroundQueueEntry() = delete;
-    GroundQueueEntry(Cost cost_, formalism::datalog::RuleView<GroundTag> rule_) : cost(cost_), rule(rule_) {}
-
-    static constexpr auto identifying_members() noexcept { return urd::Members<&GroundQueueEntry::cost, &GroundQueueEntry::rule> {}; }
-};
-
 struct GroundQueueStatistics
 {
-    ygg::uint_t num_queue_pushes = 0;
-    ygg::uint_t num_queue_pops = 0;
-    ygg::uint_t num_stale_queue_pops = 0;
     ygg::uint_t num_rules_fired = 0;
     ygg::uint_t num_facts_derived = 0;
-    ygg::uint_t max_queue_size = 0;
 };
+
+/// How a rule's support takes in a committed condition under annotation policy AP: AP's aggregation (max, sum) of its
+/// cost; without annotations a rule has no cost, and its support stays where it starts.
+template<typename AP>
+auto support_aggregation()
+{
+    if constexpr (AP::stores_annotations)
+        return typename AP::Aggregation {};
+    else
+        return [](Cost support, Cost) { return support; };
+}
+
+/// Where a rule's support starts under annotation policy AP: its aggregation's identity.
+template<typename AP>
+Cost support_start()
+{
+    if constexpr (AP::stores_annotations)
+        return AP::Aggregation::identity();
+    else
+        return static_cast<Cost>(0);
+}
 
 struct GroundSchedulerScratch
 {
-    PredicateHeadUpdates predicate_updates;
-    StagedPredicateAnnotation delta_annotations;
-    urd::Store<urd::sequence<formalism::datalog::PredicateRowIndex<formalism::FluentTag>>> head_bindings;
-    urd::Store<urd::sequence<CostBuckets::PredicateKey>> changed_facts;
+    PredicateHeadUpdates<GroundTag> predicate_updates;
+    StagedPredicateAnnotation<GroundTag> delta_annotations;
 
     void clear_updates() noexcept
     {
@@ -78,67 +82,67 @@ struct GroundSchedulerScratch
         delta_annotations.clear();
     }
 
-    void clear() noexcept
-    {
-        changed_facts.clear();
-        clear_updates();
-    }
+    void clear() noexcept { clear_updates(); }
 };
 
 template<>
 class Scheduler<GroundTag>
 {
 public:
-    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program) { m_queue.reserve(program.get_rules().size()); }
-
-    void reset(const FactSets& fact_sets)
+    /// What a run starts from is computed once here, by rule: the number of its conditions (fluent literals and numeric
+    /// constraints), the rules without any, the rules with numeric constraints.
+    explicit Scheduler(formalism::datalog::ProgramView<GroundTag> program) : m_program(program)
     {
-        m_queue.clear();
+        const auto rules = program.get_rules();
+        m_states.resize(rules.size());
+        m_conditions.resize(rules.size());
+        for (ygg::uint_t rule_index = 0; rule_index < rules.size(); ++rule_index)
+        {
+            const auto rule = rules[rule_index];
+            const auto body = rule.get_body();
+            const auto numeric_constraints = body.get_numeric_constraints().size();
+            m_conditions[rule_index] = static_cast<ygg::uint_t>(body.template get_literals<formalism::FluentTag>().size() + numeric_constraints);
+            if (numeric_constraints != 0)
+                m_numeric_rules.push_back(rule);
+            if (m_conditions[rule_index] == 0)
+                m_unconditional_rules.push_back(rule);
+        }
+    }
+
+    /// Back to no condition holding, in time linear in the rules (a copy of their condition counts, no reads of the
+    /// program), each rule's support at `start` (its aggregation's identity); the context then satisfies the conditions
+    /// its facts meet (satisfy).
+    void reset(Cost start)
+    {
         m_statistics = {};
         m_scratch.clear();
-        initialize_rule_states(fact_sets);
+        for (ygg::uint_t rule_index = 0; rule_index < m_conditions.size(); ++rule_index)
+        {
+            m_states[rule_index].unsatisfied_count = m_conditions[rule_index];
+            m_states[rule_index].support = start;
+        }
+        for (const auto rule : m_numeric_rules)
+            m_states[static_cast<ygg::uint_t>(rule.index().value)].numeric_constraint_satisfied.clear();
+        m_ready.assign(m_unconditional_rules.begin(), m_unconditional_rules.end());
     }
 
-    void enqueue(formalism::datalog::RuleView<GroundTag> rule, Cost queue_label)
+    /// One condition of `rule` holds, of cost `cost`, aggregated into its support by `aggregate`: a fact of its body is
+    /// committed (or given before the run). A rule whose conditions all hold is ready: it fires with its support.
+    template<typename Aggregate>
+    void satisfy(formalism::datalog::RuleView<GroundTag> rule, Cost cost, const Aggregate& aggregate)
     {
         auto& state = m_states[static_cast<ygg::uint_t>(rule.index().value)];
-        if (state.unsatisfied_count != 0)
-            return;
-
-        if (state.queued_cost && *state.queued_cost <= queue_label)
-            return;
-        state.queued_cost = queue_label;
-
-        m_queue.emplace(queue_label, rule);
-
-        ++m_statistics.num_queue_pushes;
-        m_statistics.max_queue_size = std::max(m_statistics.max_queue_size, static_cast<ygg::uint_t>(m_queue.size()));
+        assert(state.unsatisfied_count > 0);
+        state.support = aggregate(state.support, cost);
+        if (--state.unsatisfied_count == 0)
+            m_ready.push_back(rule);
     }
 
-    std::optional<GroundQueueEntry> pop()
-    {
-        if (m_queue.empty())
-            return std::nullopt;
-
-        auto entry = m_queue.top();
-        m_queue.pop();
-        ++m_statistics.num_queue_pops;
-        return entry;
-    }
-
-    bool claim(const GroundQueueEntry& entry)
-    {
-        auto& queued_cost = m_states[static_cast<ygg::uint_t>(entry.rule.index().value)].queued_cost;
-        if (!queued_cost || *queued_cost != entry.cost)
-        {
-            ++m_statistics.num_stale_queue_pops;
-            return false;
-        }
-        queued_cost.reset();
-        return true;
-    }
-
-    [[nodiscard]] Cost next_cost() const noexcept { return m_queue.empty() ? std::numeric_limits<Cost>::max() : m_queue.top().cost; }
+    /// The rules whose conditions all hold and that have not fired yet; the solver fires and empties them.
+    auto& ready() noexcept { return m_ready; }
+    /// The cost a ready rule fires with: the aggregate of its conditions' costs.
+    [[nodiscard]] Cost support(formalism::datalog::RuleView<GroundTag> rule) const noexcept
+    { return m_states[static_cast<ygg::uint_t>(rule.index().value)].support; }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
@@ -161,33 +165,7 @@ public:
 
 private:
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-    void schedule(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
-
-    template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_predicate_generated(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
-
-    void initialize_rule_states(const FactSets& fact_sets)
-    {
-        const auto rules = m_program.get_rules();
-        auto& states = m_states;
-        states.resize(rules.size());
-        for (ygg::uint_t rule_index = 0; rule_index < rules.size(); ++rule_index)
-        {
-            const auto rule = rules[rule_index];
-            auto& state = states[rule_index];
-
-            auto unsatisfied_count = static_cast<ygg::uint_t>(0);
-            for (const auto literal : rule.get_body().template get_literals<formalism::FluentTag>())
-                if (!is_applicable(literal, fact_sets))
-                    ++unsatisfied_count;
-
-            const auto numeric_constraints = rule.get_body().get_numeric_constraints();
-            state.numeric_constraint_satisfied.clear();
-            unsatisfied_count += numeric_constraints.size();
-            state.unsatisfied_count = unsatisfied_count;
-            state.queued_cost.reset();
-        }
-    }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
@@ -195,11 +173,16 @@ private:
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
     void notify_predicate_generated_for(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
-    using Queue = urd::Store<urd::queue<GroundQueueEntry>, urd::by_priority>;
+    using Rules = urd::Store<urd::sequence<formalism::datalog::RuleView<GroundTag>>>;
 
     formalism::datalog::ProgramView<GroundTag> m_program;
     RuleStates m_states;
-    Queue m_queue;
+    /// By rule: the number of its conditions, fluent literals and numeric constraints.
+    urd::Store<urd::sequence<ygg::uint_t>> m_conditions;
+    Rules m_unconditional_rules;
+    Rules m_numeric_rules;
+    /// The rules whose conditions all hold and that have not fired yet.
+    Rules m_ready;
     GroundQueueStatistics m_statistics;
     GroundSchedulerScratch m_scratch;
 };

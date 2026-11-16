@@ -76,7 +76,7 @@
             "task_file": "classical/tests/delivery/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 5
+                    "h": 4
                 }
             }
         },
@@ -266,7 +266,7 @@
             "task_file": "classical/tests/sokoban/test-1.pddl",
             "configs": {
                 "unit": {
-                    "h": 38
+                    "h": 39
                 }
             }
         },

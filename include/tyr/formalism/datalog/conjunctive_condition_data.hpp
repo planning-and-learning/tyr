@@ -121,12 +121,6 @@ namespace tyr::formalism::datalog
 template<FactKind F, TaskKind T>
 inline constexpr auto literals_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<ConjunctiveCondition<T>>::static_literals, &urd::data<ConjunctiveCondition<T>>::fluent_literals>;
-
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& literals(const urd::data<ConjunctiveCondition<T>>& condition) noexcept
-{
-    return condition.*literals_of<F, T>;
-}
 }
 
 #endif

@@ -102,12 +102,12 @@ private:
         if (!annotation)
             return;
 
-        const auto* witness = std::get_if<datalog::WitnessAnnotation>(annotation);
+        const auto* witness = std::get_if<datalog::WitnessAnnotation<Kind>>(annotation);
         if (witness)
             extract_relaxed_plan(*witness);
     }
 
-    void extract_relaxed_plan(const datalog::WitnessAnnotation& witness)
+    void extract_relaxed_plan(const datalog::WitnessAnnotation<Kind>& witness)
     {
         if (const auto action_binding = this->get_action_binding(witness))
             m_relaxed_plan.insert(*action_binding);

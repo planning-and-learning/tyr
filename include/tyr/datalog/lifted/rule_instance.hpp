@@ -44,13 +44,13 @@ public:
 
     auto resolve(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
     { return formalism::datalog::ground_binding(atom, *m_grounder).first; }
-    /// The key of the atom's row, without its view: what rule evaluation looks annotations up by.
-    auto resolve_row(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
-    { return formalism::datalog::ground_row(atom, *m_grounder).first; }
 
     auto resolve(formalism::datalog::BooleanOperatorView<LiftedTag> constraint) const { return formalism::datalog::ground(constraint, *m_grounder).first; }
 
-    auto witness_key() const
+    /// The instance's (rule, binding) row keys its witnesses; grounded once, on first use.
+    RuleKey<LiftedTag> witness_key() const { return cost_key().index(); }
+    /// The row as a view: the credit of its actions reads the row's objects.
+    formalism::datalog::RuleRowView cost_key() const
     {
         if (!m_witness_key)
             m_witness_key = formalism::datalog::ground_binding(get_rule(), *m_grounder).first;

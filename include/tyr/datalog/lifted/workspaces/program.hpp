@@ -56,13 +56,13 @@ struct ProgramWorkspace<LiftedTag, AP, TP, CP>
     FactsWorkspace<LiftedTag> facts;
 
     AP annotation_policy;
-    PredicateAnnotations<> annotations;
-    PredicateAnnotations<true> delta_annotations;
+    PredicateAnnotations<LiftedTag> annotations;
+    PredicateAnnotations<LiftedTag, true> delta_annotations;
 
     TP tp;
     CP cost_policy;
     CostBuckets cost_buckets;
-    PendingPredicateAchievers pending_achievers;
+    PendingPredicateAchievers<LiftedTag> pending_achievers;
 
     /// The evaluation engine's own state (KCKP: assignment sets and rule workspaces).
     KCKPWorkspace engine;

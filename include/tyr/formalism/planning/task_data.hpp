@@ -279,22 +279,10 @@ inline constexpr auto atoms_of<F, GroundTag> = tagged_member_pointer<StaticFluen
                                                                      &urd::data<Task<GroundTag>>::fluent_atoms,
                                                                      &urd::data<Task<GroundTag>>::derived_atoms>;
 
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& atoms(const urd::data<Task<T>>& task) noexcept
-{
-    return task.*atoms_of<F, T>;
-}
-
 /// The member holding the F-function term values of a task.
 template<FactKind F, TaskKind T>
 inline constexpr auto fterm_values_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<Task<T>>::static_fterm_values, &urd::data<Task<T>>::fluent_fterm_values>;
-
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& fterm_values(const urd::data<Task<T>>& task) noexcept
-{
-    return task.*fterm_values_of<F, T>;
-}
 }
 
 #endif

@@ -34,7 +34,9 @@ namespace tyr::datalog
 struct RuleState
 {
     ygg::uint_t unsatisfied_count = 0;
-    std::optional<Cost> queued_cost;
+    /// The aggregate (max, sum) of the costs of its fluent conditions committed so far: when the last one is, the cost
+    /// the rule fires with, without reading its body.
+    Cost support = 0;
     /// The positions of the rule's numeric constraints that hold.
     urd::Store<urd::set<ygg::uint_t>, urd::dense> numeric_constraint_satisfied;
 };

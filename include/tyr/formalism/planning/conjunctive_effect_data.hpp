@@ -122,12 +122,6 @@ namespace tyr::formalism::planning
 template<PolarityKind P>
 inline constexpr auto effect_facts_of =
     tagged_member_pointer<PositiveNegativeTags, P, &urd::data<ConjunctiveEffect<GroundTag>>::add_facts, &urd::data<ConjunctiveEffect<GroundTag>>::del_facts>;
-
-template<PolarityKind P>
-[[nodiscard]] const auto& facts(const urd::data<ConjunctiveEffect<GroundTag>>& effect) noexcept
-{
-    return effect.*effect_facts_of<P>;
-}
 }
 
 #endif

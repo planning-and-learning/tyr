@@ -134,43 +134,19 @@ template<FactKind F, TaskKind T>
 inline constexpr auto predicates_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_predicates, &urd::data<Program<T>>::fluent_predicates>;
 
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& predicates(const urd::data<Program<T>>& program) noexcept
-{
-    return program.*predicates_of<F, T>;
-}
-
 /// The member holding the F-functions of a program.
 template<FactKind F, TaskKind T>
 inline constexpr auto functions_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_functions, &urd::data<Program<T>>::fluent_functions>;
 
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& functions(const urd::data<Program<T>>& program) noexcept
-{
-    return program.*functions_of<F, T>;
-}
-
 /// The member holding the F-atoms of a program.
 template<FactKind F, TaskKind T>
 inline constexpr auto atoms_of = tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_atoms, &urd::data<Program<T>>::fluent_atoms>;
-
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& atoms(const urd::data<Program<T>>& program) noexcept
-{
-    return program.*atoms_of<F, T>;
-}
 
 /// The member holding the F-function term values of a program.
 template<FactKind F, TaskKind T>
 inline constexpr auto fterm_values_of =
     tagged_member_pointer<StaticFluentTags, F, &urd::data<Program<T>>::static_fterm_values, &urd::data<Program<T>>::fluent_fterm_values>;
-
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& fterm_values(const urd::data<Program<T>>& program) noexcept
-{
-    return program.*fterm_values_of<F, T>;
-}
 }
 
 #endif

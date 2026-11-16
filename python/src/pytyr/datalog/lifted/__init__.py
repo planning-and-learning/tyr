@@ -14,10 +14,12 @@ from pytyr._pytyr.datalog.lifted import (
     MaxGoalOverrideProgramWorkspace as MaxGoalOverrideProgramWorkspace,
     MaxGoalProgramExecutionContext as MaxGoalProgramExecutionContext,
     MaxGoalProgramWorkspace as MaxGoalProgramWorkspace,
+    MaxMinCostAnnotationWithAchieversPolicy as MaxMinCostAnnotationWithAchieversPolicy,
     MaxOverrideProgramExecutionContext as MaxOverrideProgramExecutionContext,
     MaxOverrideProgramWorkspace as MaxOverrideProgramWorkspace,
     MaxProgramExecutionContext as MaxProgramExecutionContext,
     MaxProgramWorkspace as MaxProgramWorkspace,
+    PredicateAnnotations as PredicateAnnotations,
     Program as Program,
     RuleCostOverridePolicy as RuleCostOverridePolicy,
     SumGoalOverrideProgramExecutionContext as SumGoalOverrideProgramExecutionContext,
@@ -30,6 +32,7 @@ from pytyr._pytyr.datalog.lifted import (
     SumProgramWorkspace as SumProgramWorkspace,
     UnannotatedProgramExecutionContext as UnannotatedProgramExecutionContext,
     UnannotatedProgramWorkspace as UnannotatedProgramWorkspace,
+    WitnessAnnotation as WitnessAnnotation,
     compute_model as compute_model,
 )
 from pytyr.datalog.lifted import database as database

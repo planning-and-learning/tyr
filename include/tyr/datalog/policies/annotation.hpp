@@ -43,11 +43,16 @@ public:
     static constexpr bool stores_annotations = false;
     static constexpr bool records_propositional_achievers = false;
 
-    void initialize_annotation(PredicateHead, PredicateAnnotations<>&) const noexcept {}
+    template<TaskKind Kind>
+    void initialize_annotation(PredicateHead, PredicateAnnotations<Kind>&) const noexcept
+    {
+    }
 
     void clear_achievers() noexcept {}
 };
 
+/// Keyless: its member templates take the witnesses and annotations of either engine (Kind), so one policy type serves
+/// both; only MinCostAnnotationWithAchieversPolicy stores rule keys and so names its engine.
 template<typename AggregationFunction>
 class MinCostAnnotationPolicy
 {
@@ -56,33 +61,37 @@ public:
 
 private:
     using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-    using PredicateWitness = WitnessAnnotation;
 
 public:
     static constexpr bool stores_annotations = true;
     static constexpr bool records_propositional_achievers = false;
 
-    void initialize_annotation(PredicateHead head, PredicateAnnotations<>& annotations) const;
+    template<TaskKind Kind>
+    void initialize_annotation(PredicateHead head, PredicateAnnotations<Kind>& annotations) const
+    { annotations.insert_or_assign(head, BaseAnnotation(static_cast<Cost>(0))); }
 
     void clear_achievers() noexcept {}
 
-    void record_achiever(PredicateHead, const PredicateWitness&) const noexcept {}
+    template<TaskKind Kind>
+    void record_achiever(PredicateHead, const WitnessAnnotation<Kind>&) const noexcept
+    {
+    }
 
-    template<PredicateAnnotationStore Annotations>
-    std::optional<CostUpdate> publish_annotation(PredicateHead head, PredicateWitness witness, Annotations& annotations) const
-    { return annotations.insert_if_better(head, Annotation(witness)); }
+    template<TaskKind Kind, PredicateAnnotationStore Annotations>
+    std::optional<CostUpdate> publish_annotation(PredicateHead head, WitnessAnnotation<Kind> witness, Annotations& annotations) const
+    { return annotations.insert_if_better(head, Annotation<Kind>(witness)); }
 
-    template<PredicateAnnotationStore Annotations>
-    bool try_update_candidate(PredicateHead head, PredicateWitness&& witness, Annotations& annotations) const
+    template<TaskKind Kind, PredicateAnnotationStore Annotations>
+    bool try_update_candidate(PredicateHead head, WitnessAnnotation<Kind>&& witness, Annotations& annotations) const
     { return publish_annotation(head, std::move(witness), annotations).has_value(); }
 
-    template<PredicateAnnotationStore DeltaAnnotations>
+    template<TaskKind Kind, PredicateAnnotationStore DeltaAnnotations>
     [[nodiscard]] bool
-    can_update(PredicateHead head, Cost cost, const PredicateAnnotations<>& annotations, const DeltaAnnotations& delta_annotations) const noexcept
+    can_update(PredicateHead head, Cost cost, const PredicateAnnotations<Kind>& annotations, const DeltaAnnotations& delta_annotations) const noexcept
     { return cost < std::min(annotations.fetch_cost(head), delta_annotations.fetch_cost(head)); }
 
-    template<PredicateAnnotationStore DeltaAnnotations>
-    CostUpdate commit_annotation(PredicateHead head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<>& annotations) const
+    template<TaskKind Kind, PredicateAnnotationStore DeltaAnnotations>
+    CostUpdate commit_annotation(PredicateHead head, const DeltaAnnotations& delta_annotations, PredicateAnnotations<Kind>& annotations) const
     {
         const auto old_cost = annotations.fetch_cost(head);
         if (const auto* delta_annotation = delta_annotations.find(head))
@@ -92,11 +101,11 @@ public:
     }
 };
 
-template<typename AggregationFunction>
+template<TaskKind Kind, typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy : public MinCostAnnotationPolicy<AggregationFunction>
 {
     using PredicateHead = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-    using PredicateWitness = WitnessAnnotation;
+    using PredicateWitness = WitnessAnnotation<Kind>;
 
 public:
     using Achievers = urd::Store<urd::sequence<PredicateWitness>>;
@@ -112,12 +121,10 @@ public:
     void record_achiever(PredicateHead head, PredicateWitness witness);
 
 private:
-    using RuleRow = formalism::datalog::RuleRowIndex;
-
     struct IndexedAchievers
     {
         Achievers achievers;
-        urd::Store<urd::map<RuleRow, size_t>> indices;
+        urd::Store<urd::map<RuleKey<Kind>, size_t>> indices;
     };
 
     DenseRelationMap<formalism::PredicateTag, IndexedAchievers> m_achievers;

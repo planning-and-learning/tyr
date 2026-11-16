@@ -76,13 +76,13 @@ template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregati
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>;
-template struct ProgramWorkspace<LiftedTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>;
+template struct ProgramWorkspace<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<MaxAggregation>>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<LiftedTag>>;
 template struct ProgramWorkspace<LiftedTag,
-                                 MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                 MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
                                  TerminationPolicy<MaxAggregation>,
                                  RuleCostOverridePolicy<LiftedTag>>;
 

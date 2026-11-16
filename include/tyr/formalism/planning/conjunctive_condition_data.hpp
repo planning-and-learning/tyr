@@ -148,24 +148,12 @@ inline constexpr auto literals_of<F, GroundTag> = tagged_member_pointer<boost::m
                                                                         &urd::data<ConjunctiveCondition<GroundTag>>::static_literals,
                                                                         &urd::data<ConjunctiveCondition<GroundTag>>::derived_literals>;
 
-template<FactKind F, TaskKind T>
-[[nodiscard]] const auto& literals(const urd::data<ConjunctiveCondition<T>>& condition) noexcept
-{
-    return condition.*literals_of<F, T>;
-}
-
 /// The member holding the P-facts of a ground conjunctive condition.
 template<PolarityKind P>
 inline constexpr auto condition_facts_of = tagged_member_pointer<PositiveNegativeTags,
                                                                  P,
                                                                  &urd::data<ConjunctiveCondition<GroundTag>>::positive_facts,
                                                                  &urd::data<ConjunctiveCondition<GroundTag>>::negative_facts>;
-
-template<PolarityKind P>
-[[nodiscard]] const auto& facts(const urd::data<ConjunctiveCondition<GroundTag>>& condition) noexcept
-{
-    return condition.*condition_facts_of<P>;
-}
 }
 
 #endif

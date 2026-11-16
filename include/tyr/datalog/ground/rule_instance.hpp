@@ -35,11 +35,12 @@ public:
     [[nodiscard]] auto get_heads() const noexcept { return m_rule.get_heads(); }
 
     [[nodiscard]] auto resolve(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
-    [[nodiscard]] auto resolve_row(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row().index(); }
 
     [[nodiscard]] auto resolve(formalism::datalog::BooleanOperatorView<GroundTag> constraint) const noexcept { return constraint; }
 
-    [[nodiscard]] auto witness_key() const noexcept { return m_rule.get_row(); }
+    /// A ground rule is its own instance: its index keys witnesses and rule costs.
+    [[nodiscard]] RuleKey<GroundTag> witness_key() const noexcept { return m_rule.index(); }
+    [[nodiscard]] RuleKey<GroundTag> cost_key() const noexcept { return witness_key(); }
 
 private:
     formalism::datalog::RuleView<GroundTag> m_rule;

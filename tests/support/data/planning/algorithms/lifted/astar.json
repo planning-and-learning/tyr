@@ -2697,61 +2697,12 @@
             "name": "Sokoban",
             "domain_file": "classical/tests/sokoban/domain.pddl",
             "task_file": "classical/tests/sokoban/test-1.pddl",
-            "hff_unit": {
-                "num_generated_successors": 1083,
-                "num_expanded": 497,
-                "num_deadends": 34,
-                "num_pruned": 0,
-                "plan": {
-                    "cost": 38,
-                    "length": 38,
-                    "actions": [
-                        "(move loc_3_6 loc_3_7 right)",
-                        "(move loc_3_7 loc_3_8 right)",
-                        "(move loc_3_8 loc_3_9 right)",
-                        "(move loc_3_9 loc_3_10 right)",
-                        "(move loc_3_10 loc_4_10 down)",
-                        "(push loc_4_10 loc_4_9 loc_4_8 left box2)",
-                        "(push loc_4_9 loc_4_8 loc_4_7 left box2)",
-                        "(push loc_4_8 loc_4_7 loc_4_6 left box2)",
-                        "(move loc_4_7 loc_3_7 up)",
-                        "(move loc_3_7 loc_3_6 left)",
-                        "(push loc_3_6 loc_4_6 loc_5_6 down box2)",
-                        "(push loc_4_6 loc_5_6 loc_6_6 down box2)",
-                        "(push loc_5_6 loc_6_6 loc_7_6 down box2)",
-                        "(move loc_6_6 loc_6_5 left)",
-                        "(move loc_6_5 loc_6_4 left)",
-                        "(move loc_6_4 loc_6_3 left)",
-                        "(move loc_6_3 loc_5_3 up)",
-                        "(push loc_5_3 loc_5_4 loc_5_5 right box3)",
-                        "(push loc_5_4 loc_5_5 loc_5_6 right box3)",
-                        "(move loc_5_5 loc_6_5 down)",
-                        "(move loc_6_5 loc_6_6 right)",
-                        "(push loc_6_6 loc_7_6 loc_8_6 down box2)",
-                        "(push loc_7_6 loc_8_6 loc_9_6 down box2)",
-                        "(move loc_8_6 loc_8_7 right)",
-                        "(move loc_8_7 loc_9_7 down)",
-                        "(push loc_9_7 loc_9_6 loc_9_5 left box2)",
-                        "(move loc_9_6 loc_8_6 up)",
-                        "(move loc_8_6 loc_8_7 right)",
-                        "(push loc_8_7 loc_7_7 loc_6_7 up box1)",
-                        "(push loc_7_7 loc_6_7 loc_5_7 up box1)",
-                        "(push loc_6_7 loc_5_7 loc_4_7 up box1)",
-                        "(move loc_5_7 loc_6_7 down)",
-                        "(move loc_6_7 loc_6_6 left)",
-                        "(push loc_6_6 loc_5_6 loc_4_6 up box3)",
-                        "(push loc_5_6 loc_4_6 loc_3_6 up box3)",
-                        "(push loc_4_6 loc_4_7 loc_4_8 right box1)",
-                        "(move loc_4_7 loc_3_7 up)",
-                        "(push loc_3_7 loc_3_6 loc_3_5 left box3)"
-                    ]
-                }
-            },
             "skipped": {
                 "blind_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "blind_general": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hmax_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
+                "hff_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
@@ -3098,6 +3049,27 @@
             "name": "Woodworking",
             "domain_file": "classical/tests/woodworking/domain.pddl",
             "task_file": "classical/tests/woodworking/test-1.pddl",
+            "blind_unit": {
+                "num_generated_successors": 13930,
+                "num_expanded": 10475,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 9,
+                    "length": 9,
+                    "actions": [
+                        "(do-grind p2 grinder0 verysmooth natural colourfragments untreated)",
+                        "(do-glaze p2 glazer0 mauve)",
+                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
+                        "(do-plane p0 planer0 rough natural untreated)",
+                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
+                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)",
+                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
+                        "(do-plane p1 planer0 rough natural untreated)",
+                        "(do-glaze p1 glazer0 green)"
+                    ]
+                }
+            },
             "blind_general": {
                 "num_generated_successors": 14208,
                 "num_expanded": 10685,
@@ -3184,7 +3156,6 @@
                 }
             },
             "skipped": {
-                "blind_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
                 "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
             }
         },
@@ -4372,10 +4343,65 @@
                     ]
                 }
             },
-            "skipped": {
-                "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hff_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
+            "hadd_unit": {
+                "num_generated_successors": 7427,
+                "num_expanded": 4883,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_up agent1)",
+                        "(move_up_right agent1)",
+                        "(move_up_right agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
+            },
+            "hff_unit": {
+                "num_generated_successors": 7427,
+                "num_expanded": 4883,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_up agent1)",
+                        "(move_up_right agent1)",
+                        "(move_up_right agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
+            },
+            "hlmcut_unit": {
+                "num_generated_successors": 7427,
+                "num_expanded": 4883,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_up agent1)",
+                        "(move_up_right agent1)",
+                        "(move_up_right agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
             }
         },
         {
@@ -5362,7 +5388,7 @@
                     ]
                 }
             },
-            "hlmcut_unit": {
+            "hff_unit": {
                 "num_generated_successors": 655,
                 "num_expanded": 132,
                 "num_deadends": 0,
@@ -5377,8 +5403,20 @@
                     ]
                 }
             },
-            "skipped": {
-                "hff_unit": "worker timeout after 10s"
+            "hlmcut_unit": {
+                "num_generated_successors": 655,
+                "num_expanded": 132,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 3,
+                    "length": 3,
+                    "actions": [
+                        "(produce_sugar sugar-cane mill1 brand1)",
+                        "(setting-machine mill1)",
+                        "(produce_sugar sugar-cane mill1 brand1)"
+                    ]
+                }
             }
         }
     ]

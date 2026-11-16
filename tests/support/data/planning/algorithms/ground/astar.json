@@ -321,8 +321,8 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 88,
-                "num_expanded": 43,
+                "num_generated_successors": 84,
+                "num_expanded": 41,
                 "num_deadends": 1,
                 "num_pruned": 0,
                 "plan": {
@@ -336,10 +336,10 @@
                         "(fill-shot shot1 ingredient2 right left dispenser2)",
                         "(pour-shot-to-used-shaker shot1 ingredient2 shaker1 right l1 l2)",
                         "(clean-shot shot1 ingredient2 right left)",
+                        "(grasp left shaker1)",
                         "(leave right shot1)",
-                        "(grasp right shaker1)",
-                        "(shake cocktail1 ingredient1 ingredient2 shaker1 right left)",
-                        "(pour-shaker-to-shot cocktail1 shot1 right shaker1 l2 l1)"
+                        "(shake cocktail1 ingredient1 ingredient2 shaker1 left right)",
+                        "(pour-shaker-to-shot cocktail1 shot1 left shaker1 l2 l1)"
                     ]
                 }
             },
@@ -2755,13 +2755,13 @@
                 }
             },
             "hff_unit": {
-                "num_generated_successors": 1229,
-                "num_expanded": 541,
-                "num_deadends": 35,
+                "num_generated_successors": 570,
+                "num_expanded": 235,
+                "num_deadends": 12,
                 "num_pruned": 0,
                 "plan": {
-                    "cost": 40,
-                    "length": 40,
+                    "cost": 42,
+                    "length": 42,
                     "actions": [
                         "(move loc_3_6 loc_3_7 right)",
                         "(move loc_3_7 loc_3_8 right)",
@@ -2787,22 +2787,24 @@
                         "(push loc_6_6 loc_7_6 loc_8_6 down box2)",
                         "(push loc_7_6 loc_8_6 loc_9_6 down box2)",
                         "(move loc_8_6 loc_8_7 right)",
-                        "(move loc_8_7 loc_9_7 down)",
-                        "(push loc_9_7 loc_9_6 loc_9_5 left box2)",
-                        "(move loc_9_6 loc_9_7 right)",
-                        "(move loc_9_7 loc_8_7 up)",
                         "(push loc_8_7 loc_7_7 loc_6_7 up box1)",
                         "(push loc_7_7 loc_6_7 loc_5_7 up box1)",
+                        "(push loc_6_7 loc_5_7 loc_4_7 up box1)",
+                        "(move loc_5_7 loc_6_7 down)",
                         "(move loc_6_7 loc_6_6 left)",
                         "(push loc_6_6 loc_5_6 loc_4_6 up box3)",
-                        "(move loc_5_6 loc_6_6 down)",
-                        "(move loc_6_6 loc_6_7 right)",
-                        "(push loc_6_7 loc_5_7 loc_4_7 up box1)",
-                        "(move loc_5_7 loc_5_6 left)",
                         "(push loc_5_6 loc_4_6 loc_3_6 up box3)",
                         "(push loc_4_6 loc_4_7 loc_4_8 right box1)",
                         "(move loc_4_7 loc_3_7 up)",
-                        "(push loc_3_7 loc_3_6 loc_3_5 left box3)"
+                        "(push loc_3_7 loc_3_6 loc_3_5 left box3)",
+                        "(move loc_3_6 loc_4_6 down)",
+                        "(move loc_4_6 loc_4_7 right)",
+                        "(move loc_4_7 loc_5_7 down)",
+                        "(move loc_5_7 loc_6_7 down)",
+                        "(move loc_6_7 loc_7_7 down)",
+                        "(move loc_7_7 loc_8_7 down)",
+                        "(move loc_8_7 loc_9_7 down)",
+                        "(push loc_9_7 loc_9_6 loc_9_5 left box2)"
                     ]
                 }
             },
@@ -3262,8 +3264,26 @@
                     ]
                 }
             },
-            "skipped": {
-                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
+            "hlmcut_unit": {
+                "num_generated_successors": 1115,
+                "num_expanded": 191,
+                "num_deadends": 77,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 9,
+                    "length": 9,
+                    "actions": [
+                        "(do-grind p2 grinder0 verysmooth natural colourfragments untreated)",
+                        "(do-glaze p2 glazer0 mauve)",
+                        "(do-saw-medium b1 p1 saw0 cherry rough s3 s2 s1)",
+                        "(do-plane p1 planer0 rough natural untreated)",
+                        "(do-glaze p1 glazer0 green)",
+                        "(do-saw-medium b0 p0 saw0 beech rough s3 s2 s1)",
+                        "(do-plane p0 planer0 rough natural untreated)",
+                        "(do-grind p0 grinder0 smooth natural untreated untreated)",
+                        "(do-immersion-varnish p0 immersion-varnisher0 mauve verysmooth)"
+                    ]
+                }
             }
         },
         {
@@ -4430,11 +4450,85 @@
                     ]
                 }
             },
-            "skipped": {
-                "hmax_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hadd_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hff_unit": "status OUT_OF_TIME within 1.0s/1000000 states",
-                "hlmcut_unit": "status OUT_OF_TIME within 1.0s/1000000 states"
+            "hmax_unit": {
+                "num_generated_successors": 7427,
+                "num_expanded": 4883,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_up agent1)",
+                        "(move_up_right agent1)",
+                        "(move_up_right agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
+            },
+            "hadd_unit": {
+                "num_generated_successors": 7427,
+                "num_expanded": 4883,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_up agent1)",
+                        "(move_up_right agent1)",
+                        "(move_up_right agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
+            },
+            "hff_unit": {
+                "num_generated_successors": 7427,
+                "num_expanded": 4883,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_up agent1)",
+                        "(move_up_right agent1)",
+                        "(move_up_right agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
+            },
+            "hlmcut_unit": {
+                "num_generated_successors": 7427,
+                "num_expanded": 4883,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 8,
+                    "length": 8,
+                    "actions": [
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(move_down agent1)",
+                        "(load agent1 tap1)",
+                        "(move_up agent1)",
+                        "(move_up_right agent1)",
+                        "(move_up_right agent1)",
+                        "(pour agent1 plant1)"
+                    ]
+                }
             }
         },
         {
@@ -5421,7 +5515,7 @@
                     ]
                 }
             },
-            "hlmcut_unit": {
+            "hff_unit": {
                 "num_generated_successors": 655,
                 "num_expanded": 132,
                 "num_deadends": 0,
@@ -5436,8 +5530,20 @@
                     ]
                 }
             },
-            "skipped": {
-                "hff_unit": "worker timeout after 10s"
+            "hlmcut_unit": {
+                "num_generated_successors": 655,
+                "num_expanded": 132,
+                "num_deadends": 0,
+                "num_pruned": 0,
+                "plan": {
+                    "cost": 3,
+                    "length": 3,
+                    "actions": [
+                        "(produce_sugar sugar-cane mill1 brand1)",
+                        "(setting-machine mill1)",
+                        "(produce_sugar sugar-cane mill1 brand1)"
+                    ]
+                }
             }
         }
     ]

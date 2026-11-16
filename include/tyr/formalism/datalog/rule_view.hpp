@@ -59,30 +59,6 @@ public:
     auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
     auto get_heads() const noexcept { return self().template member<&urd::record_of<V>::heads>(); }
     auto get_cost() const noexcept { return self().template member<&urd::record_of<V>::cost>(); }
-
-    auto get_rule() const noexcept
-        requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_relation();
-    }
-    auto get_row() const noexcept
-        requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return self().template member<&urd::record_of<V>::row>();
-    }
-    /// Its objects: its row's columns read as objects (checked against its pool's types), resolved through the row's
-    /// context.
-    auto get_objects() const
-        requires std::same_as<T, ::tyr::GroundTag>
-    {
-        const auto row = get_row();
-        return urd::resolve(row.template get<urd::index<::tyr::formalism::Object>>(), row.context());
-    }
-    auto get_key() const noexcept
-        requires std::same_as<T, ::tyr::GroundTag>
-    {
-        return get_row().get_key();
-    }
 };
 }  // namespace urd
 

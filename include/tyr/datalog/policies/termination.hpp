@@ -38,7 +38,11 @@ public:
     void set_goals(formalism::datalog::ConjunctiveConditionView<GroundTag>) {}
     [[nodiscard]] bool check(const FactSets&) const noexcept { return false; }
     [[nodiscard]] bool should_terminate(const FactSets&) const noexcept { return false; }
-    [[nodiscard]] Cost get_total_cost(const FactSets&, const PredicateAnnotations<>&) const noexcept { return static_cast<Cost>(0); }
+    template<TaskKind Kind>
+    [[nodiscard]] Cost get_total_cost(const FactSets&, const PredicateAnnotations<Kind>&) const noexcept
+    {
+        return static_cast<Cost>(0);
+    }
     void reset() noexcept {}
     void clear() noexcept {}
 };
@@ -56,7 +60,8 @@ public:
 
     void set_early_termination(bool value) noexcept { early_termination = value; }
 
-    [[nodiscard]] Cost get_total_cost(const FactSets& fact_sets, const PredicateAnnotations<>& annotations) const;
+    template<TaskKind Kind>
+    [[nodiscard]] Cost get_total_cost(const FactSets& fact_sets, const PredicateAnnotations<Kind>& annotations) const;
 
     [[nodiscard]] const auto& get_goal() const noexcept { return goals; }
 

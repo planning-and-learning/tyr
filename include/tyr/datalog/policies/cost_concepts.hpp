@@ -25,13 +25,17 @@
 namespace tyr::datalog
 {
 
+/// A ground rule instance's credit is read by its key, a lifted one's by its row (whose objects its actions read).
+template<typename T, typename RuleInstanceKey, typename Key>
+concept RuleCostPolicyFor = requires(T& policy, const T& const_policy, RuleInstanceKey predicate_rule, Key predicate_rule_key, Cost cost) {
+    { const_policy.get_cost(predicate_rule) } -> std::same_as<Cost>;
+    { policy.clear() } -> std::same_as<void>;
+    { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
+};
+
 template<typename T>
-concept RuleCostPolicyConcept =
-    requires(T& policy, const T& const_policy, formalism::datalog::RuleRowView predicate_rule, formalism::datalog::RuleRowIndex predicate_rule_key, Cost cost) {
-        { const_policy.get_cost(predicate_rule) } -> std::same_as<Cost>;
-        { policy.clear() } -> std::same_as<void>;
-        { policy.set_cost(predicate_rule_key, cost) } -> std::same_as<void>;
-    };
+concept RuleCostPolicyConcept = RuleCostPolicyFor<T, RuleKey<GroundTag>, RuleKey<GroundTag>>
+                                || RuleCostPolicyFor<T, formalism::datalog::RuleRowView, RuleKey<LiftedTag>>;
 
 }
 

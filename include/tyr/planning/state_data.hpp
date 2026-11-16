@@ -111,9 +111,9 @@ struct data<::tyr::planning::State<Kind>>
                            urd::field<"atom_storage", &data::atom_storage>,
                            urd::field<"numeric_storage", &data::numeric_storage>> {};
     }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
     /// A registered state is its index.
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::index> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
 };
 
 }  // namespace urd

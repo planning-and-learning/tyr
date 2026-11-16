@@ -25,24 +25,20 @@
 namespace tyr::datalog
 {
 
-template<typename AggregationFunction>
-void MinCostAnnotationPolicy<AggregationFunction>::initialize_annotation(PredicateHead head, PredicateAnnotations<>& annotations) const
-{ annotations.insert_or_assign(head, BaseAnnotation(static_cast<Cost>(0))); }
-
-template<typename AggregationFunction>
-void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::clear_achievers() noexcept
+template<TaskKind Kind, typename AggregationFunction>
+void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::clear_achievers() noexcept
 { m_achievers.clear(); }
 
-template<typename AggregationFunction>
-const typename MinCostAnnotationWithAchieversPolicy<AggregationFunction>::Achievers*
-MinCostAnnotationWithAchieversPolicy<AggregationFunction>::find_achievers(PredicateHead head) const noexcept
+template<TaskKind Kind, typename AggregationFunction>
+const typename MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::Achievers*
+MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::find_achievers(PredicateHead head) const noexcept
 {
     const auto* entry = m_achievers.find(head);
     return entry ? &entry->achievers : nullptr;
 }
 
-template<typename AggregationFunction>
-void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::record_achiever(PredicateHead head, PredicateWitness witness)
+template<TaskKind Kind, typename AggregationFunction>
+void MinCostAnnotationWithAchieversPolicy<Kind, AggregationFunction>::record_achiever(PredicateHead head, PredicateWitness witness)
 {
     m_achievers.update(head,
                        [&](auto& entry, bool initialized)
@@ -64,10 +60,12 @@ void MinCostAnnotationWithAchieversPolicy<AggregationFunction>::record_achiever(
 static_assert(AnnotationPolicyConcept<NoAnnotationPolicy>);
 static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<SumAggregation>>);
 static_assert(AnnotationPolicyConcept<MinCostAnnotationPolicy<MaxAggregation>>);
-static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<MaxAggregation>>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>>);
+static_assert(AnnotationPolicyConcept<MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>>);
 
 template class MinCostAnnotationPolicy<SumAggregation>;
 template class MinCostAnnotationPolicy<MaxAggregation>;
-template class MinCostAnnotationWithAchieversPolicy<MaxAggregation>;
+template class MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>;
+template class MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>;
 
 }

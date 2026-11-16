@@ -69,7 +69,6 @@ struct GroundQueueFixture
     GroundAtomViews initial_fluent_atoms;
     urd::Store<urd::sequence<urd::index<tyr::formalism::FunctionTermValue<GroundTag, tyr::formalism::FluentTag>>>> initial_fluent_fterm_values;
     urd::Store<urd::sequence<urd::index<tyr::formalism::datalog::Rule<GroundTag>>>> ground_rules;
-    ygg::uint_t next_rule_id = 0;
 
     tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> fluent_atom(const std::string& name)
     {
@@ -164,60 +163,36 @@ struct GroundQueueFixture
         return ygg::formalism::insert(repository, condition_builder).first;
     }
 
-    tyr::formalism::datalog::RuleRowView fresh_rule_binding()
-    {
-        auto predicate_builder = urd::data<tyr::formalism::Predicate<tyr::formalism::FluentTag>>("dummy_" + std::to_string(next_rule_id++), 0);
-        const auto predicate = ygg::formalism::insert(repository, predicate_builder).first;
-
-        auto atom_builder = urd::data<tyr::formalism::Atom<LiftedTag, tyr::formalism::FluentTag>>();
-        atom_builder.predicate = predicate.index();
-        const auto atom = ygg::formalism::insert(repository, atom_builder).first;
-
-        auto condition_builder = urd::data<tyr::formalism::datalog::ConjunctiveCondition<LiftedTag>>();
-        const auto lifted_condition = ygg::formalism::insert(repository, condition_builder).first;
-
-        auto rule_builder = urd::data<tyr::formalism::datalog::Rule<LiftedTag>>();
-        rule_builder.body = lifted_condition.index();
-        rule_builder.heads.push_back(atom.index());
-        const auto rule = ygg::formalism::insert(repository, rule_builder).first;
-
-        auto binding_builder = urd::data<ygg::Row<tyr::formalism::datalog::Rule<LiftedTag>>>();
-        binding_builder.relation = rule.index();
-        return ygg::formalism::insert(repository, binding_builder).first;
-    }
-
+    /// Identical rules are one rule: a rule already in the program is not added again.
     tyr::formalism::datalog::RuleView<GroundTag> rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body,
                                                       tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> head,
-                                                      tyr::formalism::datalog::RuleRowView binding)
+                                                      ygg::float_t cost = 0)
     {
         auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag>>();
-        rule_builder.row = binding.index();
-        rule_builder.body = body.index();
-        rule_builder.heads.push_back(head.index());
-        const auto ground_rule = ygg::formalism::insert(repository, rule_builder).first;
-        ground_rules.push_back(ground_rule.index());
-        return ground_rule;
-    }
-
-    tyr::formalism::datalog::RuleView<GroundTag> rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body,
-                                                      tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> head)
-    {
-        return rule(body, head, fresh_rule_binding());
-    }
-
-    tyr::formalism::datalog::RuleView<GroundTag> rule(tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> body,
-                                                      tyr::formalism::datalog::AtomView<GroundTag, tyr::formalism::FluentTag> head,
-                                                      tyr::formalism::datalog::RuleRowView binding,
-                                                      ygg::float_t cost)
-    {
-        auto rule_builder = urd::data<tyr::formalism::datalog::Rule<GroundTag>>();
-        rule_builder.row = binding.index();
         rule_builder.body = body.index();
         rule_builder.heads.push_back(head.index());
         rule_builder.cost = cost;
-        const auto ground_rule = ygg::formalism::insert(repository, rule_builder).first;
-        ground_rules.push_back(ground_rule.index());
+        const auto [ground_rule, inserted] = ygg::formalism::insert(repository, rule_builder);
+        if (inserted)
+            ground_rules.push_back(ground_rule.index());
         return ground_rule;
+    }
+
+    /// A body that holds wherever the empty one does, but a rule of its own: a true static atom of its own name.
+    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag> distinct_true_condition(const std::string& name)
+    {
+        const auto atom = static_atom(name);
+        initial_static_atoms.push_back(atom);
+        return condition({}, { static_literal(atom) });
+    }
+
+    /// As distinct_true_condition, with the fluent literals of `fluent_literals`.
+    tyr::formalism::datalog::ConjunctiveConditionView<GroundTag>
+    distinct_true_condition(const std::string& name, std::initializer_list<tyr::formalism::datalog::LiteralView<GroundTag, tyr::formalism::FluentTag>> fluent_literals)
+    {
+        const auto atom = static_atom(name);
+        initial_static_atoms.push_back(atom);
+        return condition(fluent_literals, { static_literal(atom) });
     }
 
     tyr::formalism::datalog::ProgramView<GroundTag> program()
@@ -458,7 +433,7 @@ TEST(TyrDatalogGroundQueueTest, DuplicateHeadsDeriveFactOnce)
     auto fixture = GroundQueueFixture();
     const auto a = fixture.fluent_atom("a");
     fixture.rule(fixture.condition(), a);
-    fixture.rule(fixture.condition(), a);
+    fixture.rule(fixture.distinct_true_condition("second"), a);
 
     const auto result = solve_default_state(fixture);
 
@@ -478,7 +453,7 @@ TEST(TyrDatalogGroundQueueTest, GroundUsedCostOverrideDoesNotCreateEdgeCost)
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(derive_a.get_row().index(), static_cast<datalog::Cost>(7));
+    cost_policy.set_cost(derive_a.index(), static_cast<datalog::Cost>(7));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
                                                 datalog::MinCostAnnotationPolicy<datalog::SumAggregation>,
                                                 datalog::NoTerminationPolicy,
@@ -591,19 +566,19 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
 {
     auto fixture = GroundQueueFixture();
     const auto goal = fixture.fluent_atom("goal");
-    const auto cheap = fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), 2);
-    fixture.rule(fixture.condition(), goal, fixture.fresh_rule_binding(), 2);
+    const auto cheap = fixture.rule(fixture.condition(), goal, 2);
+    fixture.rule(fixture.distinct_true_condition("second"), goal, 2);
 
     auto termination_policy = datalog::TerminationPolicy<datalog::MaxAggregation>();
     termination_policy.set_goals(fixture.condition({ fixture.fluent_literal(goal) }));
     auto cost_policy = datalog::RuleCostOverridePolicy<GroundTag>();
-    cost_policy.set_cost(cheap.get_row().index(), static_cast<datalog::Cost>(1));
+    cost_policy.set_cost(cheap.index(), static_cast<datalog::Cost>(1));
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
+                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
                                                 datalog::TerminationPolicy<datalog::MaxAggregation>,
                                                 datalog::RuleCostOverridePolicy<GroundTag>>;
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
-    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>(), termination_policy, cost_policy);
+    auto workspace = Workspace(const_workspace, datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(), termination_policy, cost_policy);
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
     ctx.initialize(fixture.initial_fluent_atoms);
@@ -612,17 +587,15 @@ TEST(TyrDatalogGroundQueueTest, GroundTerminationExposesOnlyOptimalGoalFrontierA
     const auto* achievers = ctx.out().annotation_policy().find_achievers(goal.get_row().index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
-    EXPECT_EQ(achievers->front().get_rule_key(), cheap.get_row().index());
+    EXPECT_EQ(achievers->front().get_rule_key(), cheap.index());
 }
 
 TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
 {
     auto fixture = GroundQueueFixture();
     const auto goal = fixture.fluent_atom("goal");
-    const auto canonical_first = fixture.fresh_rule_binding();
-    const auto scheduled_first = fixture.fresh_rule_binding();
-    fixture.rule(fixture.condition(), goal, scheduled_first);
-    fixture.rule(fixture.condition(), goal, canonical_first);
+    const auto scheduled_first = fixture.rule(fixture.condition(), goal);
+    fixture.rule(fixture.distinct_true_condition("second"), goal);
 
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(fixture.program());
     using Workspace = datalog::ProgramWorkspace<GroundTag, datalog::MinCostAnnotationPolicy<datalog::MaxAggregation>, datalog::NoTerminationPolicy>;
@@ -634,7 +607,7 @@ TEST(TyrDatalogGroundQueueTest, GroundRetainsFirstEqualCostWitness)
 
     const auto* annotation = ctx.out().annotations().find(goal.get_row().index());
     ASSERT_NE(annotation, nullptr);
-    const auto* witness = std::get_if<datalog::WitnessAnnotation>(annotation);
+    const auto* witness = std::get_if<datalog::WitnessAnnotation<GroundTag>>(annotation);
     ASSERT_NE(witness, nullptr);
     EXPECT_EQ(witness->get_rule_key(), scheduled_first.index());
 }
@@ -646,15 +619,15 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
     const auto b = fixture.fluent_atom("b");
     fixture.rule(fixture.condition(), a);
     const auto first_derive_b = fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), b);
-    const auto second_derive_b = fixture.rule(fixture.condition({ fixture.fluent_literal(a) }), b);
+    const auto second_derive_b = fixture.rule(fixture.distinct_true_condition("second", { fixture.fluent_literal(a) }), b);
 
     const auto program = fixture.program();
     const auto const_workspace = datalog::ConstProgramWorkspace<GroundTag>(program);
     using Workspace = datalog::ProgramWorkspace<GroundTag,
-                                                datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>,
+                                                datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>,
                                                 datalog::TerminationPolicy<datalog::MaxAggregation>>;
     auto workspace = Workspace(const_workspace,
-                               datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>(),
+                               datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>(),
                                datalog::TerminationPolicy<datalog::MaxAggregation>());
     auto ctx = datalog::ProgramExecutionContext(workspace);
 
@@ -668,27 +641,28 @@ TEST(TyrDatalogGroundQueueTest, AchieverPolicyGroundRecordsDistinctRuleBindings)
     const auto first_key = (*achievers)[0].get_rule_key();
     const auto second_key = (*achievers)[1].get_rule_key();
     EXPECT_NE(first_key, second_key);
-    EXPECT_TRUE((first_key == first_derive_b.get_row().index() && second_key == second_derive_b.get_row().index())
-                || (first_key == second_derive_b.get_row().index() && second_key == first_derive_b.get_row().index()));
+    EXPECT_TRUE((first_key == first_derive_b.index() && second_key == second_derive_b.index())
+                || (first_key == second_derive_b.index() && second_key == first_derive_b.index()));
 }
 
 TEST(TyrDatalogGroundQueueTest, AchieverPolicyKeepsFirstEqualAndReplacesStrictlyCheaperWitness)
 {
     auto fixture = GroundQueueFixture();
-    const auto head = fixture.fluent_atom("head").get_row();
-    const auto rule = fixture.fresh_rule_binding();
-    auto policy = datalog::MinCostAnnotationWithAchieversPolicy<datalog::MaxAggregation>();
+    const auto head_atom = fixture.fluent_atom("head");
+    const auto head = head_atom.get_row();
+    const auto rule = fixture.rule(fixture.condition(), head_atom);
+    auto policy = datalog::MinCostAnnotationWithAchieversPolicy<GroundTag, datalog::MaxAggregation>();
     policy.initialize(static_cast<ygg::uint_t>(head.index().relation.value) + 1);
 
-    policy.record_achiever(head.index(), datalog::WitnessAnnotation(rule.index(), static_cast<datalog::Cost>(2)));
-    policy.record_achiever(head.index(), datalog::WitnessAnnotation(rule.index(), static_cast<datalog::Cost>(2)));
+    policy.record_achiever(head.index(), datalog::WitnessAnnotation<GroundTag>(rule.index(), static_cast<datalog::Cost>(2)));
+    policy.record_achiever(head.index(), datalog::WitnessAnnotation<GroundTag>(rule.index(), static_cast<datalog::Cost>(2)));
 
     const auto* achievers = policy.find_achievers(head.index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);
     EXPECT_EQ(achievers->front().get_cost(), static_cast<datalog::Cost>(2));
 
-    policy.record_achiever(head.index(), datalog::WitnessAnnotation(rule.index(), static_cast<datalog::Cost>(1)));
+    policy.record_achiever(head.index(), datalog::WitnessAnnotation<GroundTag>(rule.index(), static_cast<datalog::Cost>(1)));
     achievers = policy.find_achievers(head.index());
     ASSERT_NE(achievers, nullptr);
     ASSERT_EQ(achievers->size(), 1);

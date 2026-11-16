@@ -52,15 +52,10 @@ static_assert(std::totally_ordered<View>);
 static_assert(std::same_as<View, tyr::formalism::datalog::RuleView<::tyr::GroundTag>>);
 static_assert(requires(Data& data, const View& view) {
     data.index;
-    data.row;
     data.body;
     data.heads;
     data.cost;
     view.index();
-    view.get_rule();
-    view.get_row();
-    view.get_objects();
-    view.get_key();
     view.get_body();
     view.get_heads();
     view.get_cost();

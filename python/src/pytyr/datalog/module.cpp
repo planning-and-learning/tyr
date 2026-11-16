@@ -39,12 +39,8 @@ void bind_module_definitions(nb::module_& m)
 
     nb::class_<GroundQueueStatistics>(m, "GroundQueueStatistics")
         .def(nb::init<>())
-        .def_rw("num_queue_pushes", &GroundQueueStatistics::num_queue_pushes)
-        .def_rw("num_queue_pops", &GroundQueueStatistics::num_queue_pops)
-        .def_rw("num_stale_queue_pops", &GroundQueueStatistics::num_stale_queue_pops)
         .def_rw("num_rules_fired", &GroundQueueStatistics::num_rules_fired)
-        .def_rw("num_facts_derived", &GroundQueueStatistics::num_facts_derived)
-        .def_rw("max_queue_size", &GroundQueueStatistics::max_queue_size);
+        .def_rw("num_facts_derived", &GroundQueueStatistics::num_facts_derived);
 
     auto ground_module = m.def_submodule("ground");
     bind_ground_module_definitions(ground_module);

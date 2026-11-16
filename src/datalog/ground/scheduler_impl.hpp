@@ -25,25 +25,11 @@
 #include "tyr/datalog/ground/scheduler.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::datalog
 {
-template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
-void Scheduler<GroundTag>::schedule(formalism::datalog::RuleView<GroundTag> rule, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
-{
-    if (m_states[static_cast<ygg::uint_t>(rule.index().value)].unsatisfied_count != 0)
-        return;
-
-    auto instance = RuleInstance<GroundTag>(rule);
-    const auto input = RuleEvaluationInput { FactSets { ctx.in().facts().fact_sets, ctx.out().facts().fact_sets }, ctx.out().annotations() };
-    const auto priority = evaluate_rule_priority(instance, ctx.out().annotation_policy(), ctx.out().cost_policy(), input);
-    if (priority)
-        enqueue(rule, *priority);
-}
-
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::datalog::RuleView<GroundTag> rule,
                                                                   ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
@@ -62,7 +48,8 @@ void Scheduler<GroundTag>::update_numeric_constraint_satisfaction(formalism::dat
         satisfied.insert(i);
         auto& unsatisfied_count = states[static_cast<ygg::uint_t>(rule_index.value)].unsatisfied_count;
         assert(unsatisfied_count > 0);
-        --unsatisfied_count;
+        if (--unsatisfied_count == 0)
+            m_ready.push_back(rule);
     }
 }
 
@@ -74,25 +61,19 @@ void Scheduler<GroundTag>::notify_predicate_generated_for(formalism::datalog::Pr
     if (!dependent_rules)
         return;
 
+    // The fact is committed, so its cost is final: each rule waiting on it takes it into its support.
+    const auto cost = ctx.out().annotations().fetch_cost(fact);
+    const auto aggregate = support_aggregation<AP>();
     for (const auto dependent_rule : *dependent_rules)
-    {
-        auto& unsatisfied_count = m_states[ygg::uint_t(dependent_rule.index().value)].unsatisfied_count;
-        if (unsatisfied_count == 0)
-            continue;
-
-        --unsatisfied_count;
-        schedule(dependent_rule, ctx);
-    }
+        if (m_states[ygg::uint_t(dependent_rule.index().value)].unsatisfied_count != 0)
+            satisfy(dependent_rule, cost, aggregate);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::begin_stratum(ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    for (const auto rule : m_program.get_rules())
+    for (const auto rule : m_numeric_rules)
         update_numeric_constraint_satisfaction(rule, ctx);
-
-    for (const auto rule : m_program.get_rules())
-        schedule(rule, ctx);
 }
 
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
@@ -106,9 +87,8 @@ void Scheduler<GroundTag>::notify_predicate_generated(formalism::datalog::Predic
 template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>
 void Scheduler<GroundTag>::notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx)
 {
-    m_scratch.changed_facts.assign(bucket.predicate.begin(), bucket.predicate.end());
-    std::sort(m_scratch.changed_facts.begin(), m_scratch.changed_facts.end());
-    for (const auto fact : m_scratch.changed_facts)
+    // In any order: waking a rule only counts down its conditions and aggregates its support.
+    for (const auto fact : bucket.predicate)
         notify_predicate_generated(fact, ctx);
 }
 

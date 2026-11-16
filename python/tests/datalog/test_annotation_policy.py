@@ -18,10 +18,12 @@ def test_annotation_policy_api_is_unified(module: ModuleType) -> None:
         "NoAnnotationPolicy",
         "SumMinCostAnnotationPolicy",
         "MaxMinCostAnnotationPolicy",
-        "MaxMinCostAnnotationWithAchieversPolicy",
     ):
         # The policies are the datalog module's: ground and lifted share them.
         assert getattr(datalog, name)() is not None
+
+    # Its achievers hold rule keys, which differ between the engines.
+    assert module.MaxMinCostAnnotationWithAchieversPolicy() is not None
 
     for name in (
         "NoOrAnnotationPolicy",

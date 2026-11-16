@@ -28,7 +28,6 @@
 #include "tyr/planning/state_builder.hpp"
 
 #include <optional>
-#include <stdexcept>
 #include <utility>
 
 namespace tyr::planning::detail
@@ -57,11 +56,12 @@ struct RPGPolicy<GroundTag>
     static void begin_state_evaluation(const RPGDefinition<GroundTag>&, Workspace& workspace, formalism::planning::ConjunctiveConditionView<GroundTag>)
     { workspace.clear_costs(); }
 
-    static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation& witness)
+    static bool is_action_witness(const RPGDefinition<GroundTag>& definition, const datalog::WitnessAnnotation<GroundTag>& witness)
     { return definition.rpg_program.get_rule_to_action_mapping().contains(witness.get_rule_key()); }
 
     template<typename Workspace, typename Callback>
-    static void for_each_action_binding(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation& witness, Callback callback)
+    static void
+    for_each_action_binding(const RPGDefinition<GroundTag>& definition, Workspace&, const datalog::WitnessAnnotation<GroundTag>& witness, Callback callback)
     {
         const auto& mapping = definition.rpg_program.get_rule_to_action_mapping();
         if (const auto it = mapping.find(witness.get_rule_key()); it != mapping.end())
@@ -70,13 +70,9 @@ struct RPGPolicy<GroundTag>
     }
 
     template<typename Workspace, typename Callback>
-    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation& witness, Callback&& callback)
+    static void visit_witness_rule_instance(Workspace& workspace, const datalog::WitnessAnnotation<GroundTag>& witness, Callback&& callback)
     {
-        const auto rule = formalism::datalog::find_ground_rule(witness.get_rule_key(), workspace.const_workspace->program.context());
-        if (!rule)
-            throw std::logic_error("Ground witness binding has no rule");
-
-        const auto instance = datalog::RuleInstance<GroundTag>(*rule);
+        const auto instance = datalog::RuleInstance<GroundTag>(urd::resolve(witness.get_rule_key(), workspace.const_workspace->program.context()));
         std::forward<Callback>(callback)(instance);
     }
 

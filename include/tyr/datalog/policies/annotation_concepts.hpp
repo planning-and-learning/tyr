@@ -28,15 +28,15 @@
 namespace tyr::datalog
 {
 
-template<typename T>
+template<typename T, typename Kind>
 concept AnnotationStoragePolicy = requires(T& policy,
                                            const T& const_policy,
                                            formalism::datalog::PredicateRowIndex<formalism::FluentTag> head,
-                                           WitnessAnnotation predicate_witness,
-                                           PredicateAnnotations<>& annotations,
-                                           PredicateAnnotations<true>& delta_annotations,
-                                           const PredicateAnnotations<true>& const_delta_annotations,
-                                           StagedPredicateAnnotation& staged_annotation) {
+                                           WitnessAnnotation<Kind> predicate_witness,
+                                           PredicateAnnotations<Kind>& annotations,
+                                           PredicateAnnotations<Kind, true>& delta_annotations,
+                                           const PredicateAnnotations<Kind, true>& const_delta_annotations,
+                                           StagedPredicateAnnotation<Kind>& staged_annotation) {
     { policy.record_achiever(head, std::move(predicate_witness)) } -> std::same_as<void>;
     { const_policy.publish_annotation(head, std::move(predicate_witness), annotations) } -> std::same_as<std::optional<CostUpdate>>;
     { const_policy.can_update(head, Cost {}, annotations, const_delta_annotations) } -> std::same_as<bool>;
@@ -47,14 +47,19 @@ concept AnnotationStoragePolicy = requires(T& policy,
     { const_policy.commit_annotation(head, staged_annotation, annotations) } -> std::same_as<CostUpdate>;
 };
 
-template<typename T>
-concept AnnotationPolicyConcept =
-    requires(T& policy, const T& const_policy, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head, PredicateAnnotations<>& annotations) {
+template<typename T, typename Kind>
+concept AnnotationPolicyFor =
+    requires(T& policy, const T& const_policy, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head, PredicateAnnotations<Kind>& annotations) {
         typename std::bool_constant<T::stores_annotations>;
         typename std::bool_constant<T::records_propositional_achievers>;
         { const_policy.initialize_annotation(head, annotations) } -> std::same_as<void>;
         { policy.clear_achievers() } -> std::same_as<void>;
-    } && (!T::stores_annotations || (requires { typename T::Aggregation; } && AnnotationStoragePolicy<T>) );
+    } && (!T::stores_annotations || (requires { typename T::Aggregation; } && AnnotationStoragePolicy<T, Kind>) );
+
+/// A policy of either engine: the witnesses name rule instances by RuleKey<Kind>, so a policy that stores them serves
+/// one engine.
+template<typename T>
+concept AnnotationPolicyConcept = AnnotationPolicyFor<T, GroundTag> || AnnotationPolicyFor<T, LiftedTag>;
 
 }
 

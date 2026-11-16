@@ -104,7 +104,7 @@ public:
         return true;
     }
 
-    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
+    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers<LiftedTag>& pending_achievers)
     {
         auto& ctx = stratum();
         begin_goal_cutoff_iteration(ctx);
@@ -622,7 +622,7 @@ private:
     }
 
     /// Sequential phase: reduce worker annotations and bucket their already-canonical heads by cost.
-    bool reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
+    bool reduce_worker_results(StratumExecutionContext<AP, TP, CP>& ctx, CostBuckets& cost_buckets, PendingPredicateAchievers<LiftedTag>& pending_achievers)
     {
         auto& program_out = ctx.out().program();
         auto& annotation_policy = program_out.annotation_policy();
@@ -672,7 +672,7 @@ template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotation
 template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx);
-template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx);
+template void compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx);
 template void
 compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(
@@ -682,7 +682,7 @@ compute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggr
 template void compute_model(
     ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx);
 template void compute_model(ProgramExecutionContext<LiftedTag,
-                                                    MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                                    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
                                                     TerminationPolicy<MaxAggregation>,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx);
 
@@ -695,7 +695,7 @@ template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotation
                             ygg::ExecutionContext& execution_context);
 template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
                             ygg::ExecutionContext& execution_context);
-template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
+template void execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx,
                             ygg::ExecutionContext& execution_context);
 template void
 execute_model(ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<LiftedTag>>& ctx,
@@ -710,7 +710,7 @@ template void execute_model(
     ProgramExecutionContext<LiftedTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<LiftedTag>>& ctx,
     ygg::ExecutionContext& execution_context);
 template void execute_model(ProgramExecutionContext<LiftedTag,
-                                                    MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                                    MinCostAnnotationWithAchieversPolicy<LiftedTag, MaxAggregation>,
                                                     TerminationPolicy<MaxAggregation>,
                                                     RuleCostOverridePolicy<LiftedTag>>& ctx,
                             ygg::ExecutionContext& execution_context);

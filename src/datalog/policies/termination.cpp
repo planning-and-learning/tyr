@@ -57,7 +57,8 @@ bool TerminationPolicy<AggregationFunction>::should_terminate(const FactSets& fa
 }
 
 template<typename AggregationFunction>
-Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&, const PredicateAnnotations<>& annotations) const
+template<TaskKind Kind>
+Cost TerminationPolicy<AggregationFunction>::get_total_cost(const FactSets&, const PredicateAnnotations<Kind>& annotations) const
 {
     if (!goals)
         return AggregationFunction::identity();
@@ -93,5 +94,9 @@ void TerminationPolicy<AggregationFunction>::clear() noexcept
 
 template class TerminationPolicy<SumAggregation>;
 template class TerminationPolicy<MaxAggregation>;
+template Cost TerminationPolicy<SumAggregation>::get_total_cost(const FactSets&, const PredicateAnnotations<GroundTag>&) const;
+template Cost TerminationPolicy<SumAggregation>::get_total_cost(const FactSets&, const PredicateAnnotations<LiftedTag>&) const;
+template Cost TerminationPolicy<MaxAggregation>::get_total_cost(const FactSets&, const PredicateAnnotations<GroundTag>&) const;
+template Cost TerminationPolicy<MaxAggregation>::get_total_cost(const FactSets&, const PredicateAnnotations<LiftedTag>&) const;
 
 }

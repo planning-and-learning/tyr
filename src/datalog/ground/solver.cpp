@@ -25,10 +25,8 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/rule_evaluation.hpp"
 
-#include <cassert>
 #include <concepts>
-#include <limits>
-#include <span>
+#include <ranges>
 #include <utility>
 
 namespace tyr::datalog
@@ -43,48 +41,34 @@ public:
     // Ground programs currently reject negative fluent bodies, so every supported program has one stratum.
     bool next_stratum() noexcept { return std::exchange(m_pending_stratum, false); }
 
-    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers& pending_achievers)
+    /// Fires every ready rule, each once: its conditions are all committed, so it fires with their aggregated cost, its
+    /// support. Its heads go to the cost buckets; none is committed here, so no rule becomes ready while they fire.
+    bool generate_updates(CostBuckets& cost_buckets, PendingPredicateAchievers<GroundTag>& pending_achievers)
     {
-        while (scheduler().next_cost() != std::numeric_limits<Cost>::max())
-            process_rule_frontier(cost_buckets, pending_achievers, scheduler().next_cost());
+        auto& ready = scheduler().ready();
+        for (const auto rule : ready)
+            fire(rule, cost_buckets, pending_achievers);
+        ready.clear();
         return false;
     }
 
     Scheduler<GroundTag>& scheduler() noexcept { return m_ctx->out().scheduler(); }
 
 private:
-    void process_next_rule(CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers)
+    void fire(formalism::datalog::RuleView<GroundTag> rule, CostBuckets& pending_heads, PendingPredicateAchievers<GroundTag>& pending_achievers)
     {
         auto& out = m_ctx->out();
-        auto entry = scheduler().pop();
-        assert(entry);
-
-        if (!scheduler().claim(*entry))
-            return;
-
         auto& scratch = scheduler().scratch();
         scratch.clear_updates();
-        auto input = make_rule_update_input(RuleInstance<GroundTag>(entry->rule),
+        auto input = make_rule_update_input(RuleInstance<GroundTag>(rule),
                                             FactSets { m_ctx->in().facts().fact_sets, out.facts().fact_sets },
                                             out.annotations(),
                                             out.annotation_policy(),
                                             out.cost_policy());
-        scratch.head_bindings.clear();
-        for (const auto head : input.rule_instance.get_heads())
-            scratch.head_bindings.push_back(input.rule_instance.resolve_row(head));
-        const auto result = insert_propositional_update(std::span(std::as_const(scratch.head_bindings)),
-                                                        input,
-                                                        scratch.predicate_updates,
-                                                        scratch.delta_annotations,
-                                                        entry->cost);
-        if (result.status == RuleUpdateStatus::Unavailable || result.status == RuleUpdateStatus::QueueLabelChanged)
-        {
-            ++scheduler().statistics().num_stale_queue_pops;
-            if (result.queue_label)
-                scheduler().enqueue(entry->rule, *result.queue_label);
-            return;
-        }
-
+        // The rule's heads as the keys of their rows, which key the predicate annotations.
+        const auto heads = input.rule_instance.get_heads() | std::views::transform([&](auto head) { return input.rule_instance.resolve(head).index(); });
+        const auto result =
+            fire_propositional_update(heads, input, scratch.predicate_updates, scratch.delta_annotations, scheduler().support(rule));
         if (result.status == RuleUpdateStatus::Completed)
             ++scheduler().statistics().num_rules_fired;
 
@@ -95,12 +79,6 @@ private:
                                       out.annotations(),
                                       pending_heads,
                                       pending_achievers);
-    }
-
-    void process_rule_frontier(CostBuckets& pending_heads, PendingPredicateAchievers& pending_achievers, Cost cost)
-    {
-        while (scheduler().next_cost() == cost)
-            process_next_rule(pending_heads, pending_achievers);
     }
 
     ProgramExecutionContext<GroundTag, AP, TP, CP>* m_ctx;
@@ -115,7 +93,7 @@ template void compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotation
 template void
 compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx);
 template void
-compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx);
+compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx);
 template void
 compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(
@@ -125,7 +103,7 @@ compute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggr
 template void compute_model(
     ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<GroundTag>>& ctx);
 template void compute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                                    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>,
                                                     TerminationPolicy<MaxAggregation>,
                                                     RuleCostOverridePolicy<GroundTag>>& ctx);
 
@@ -140,7 +118,7 @@ template void execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotation
 template void execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx,
                             ygg::ExecutionContext& execution_context);
 template void
-execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx,
+execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>& ctx,
               ygg::ExecutionContext& execution_context);
 template void
 execute_model(ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<SumAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<GroundTag>>& ctx,
@@ -155,7 +133,7 @@ template void execute_model(
     ProgramExecutionContext<GroundTag, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<GroundTag>>& ctx,
     ygg::ExecutionContext& execution_context);
 template void execute_model(ProgramExecutionContext<GroundTag,
-                                                    MinCostAnnotationWithAchieversPolicy<MaxAggregation>,
+                                                    MinCostAnnotationWithAchieversPolicy<GroundTag, MaxAggregation>,
                                                     TerminationPolicy<MaxAggregation>,
                                                     RuleCostOverridePolicy<GroundTag>>& ctx,
                             ygg::ExecutionContext& execution_context);

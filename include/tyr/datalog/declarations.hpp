@@ -19,9 +19,12 @@
 #define TYR_DATALOG_DECLARATIONS_HPP_
 
 #include "tyr/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
+#include <concepts>
 #include <cstdint>
+#include <type_traits>
 
 namespace tyr::datalog
 {
@@ -50,13 +53,18 @@ enum class SchedulerIterationTrigger : std::uint8_t
     FactChanged
 };
 
+/// What a witness names as the rule instance that derived a fact: a ground rule is its own instance, a lifted one is
+/// instantiated by a binding of its variables, its (rule, objects) row.
+template<TaskKind Kind>
+using RuleKey = std::conditional_t<std::same_as<Kind, GroundTag>, urd::index<formalism::datalog::Rule<GroundTag>>, formalism::datalog::RuleRowIndex>;
+
 class StaticConsistencyGraph;
 template<TaskKind Kind>
 class Program;
 class NoAnnotationPolicy;
 template<typename AggregationFunction>
 class MinCostAnnotationPolicy;
-template<typename AggregationFunction>
+template<TaskKind Kind, typename AggregationFunction>
 class MinCostAnnotationWithAchieversPolicy;
 class NoTerminationPolicy;
 template<typename AggregationFunction>

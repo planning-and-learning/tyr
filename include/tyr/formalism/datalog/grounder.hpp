@@ -84,8 +84,6 @@ std::pair<NumericEffectView<GroundTag, F>, bool> ground(NumericEffectView<Lifted
 
 std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveConditionView<LiftedTag> element, WriteContext<Builder, Repository>& context);
 
-std::pair<RuleView<GroundTag>, bool> ground(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context);
-
 /**
  * ground_binding
  */
@@ -283,22 +281,6 @@ inline std::pair<ConjunctiveConditionView<GroundTag>, bool> ground(ConjunctiveCo
 
     // Canonicalize and Serialize
     return datalog::insert(context.destination(), *conj_cond);
-}
-
-inline std::pair<RuleView<GroundTag>, bool> ground(RuleView<LiftedTag> element, WriteContext<Builder, Repository>& context)
-{
-    // Fetch and clear
-    auto rule = datalog::checkout<Rule<GroundTag>>(context.builder());
-
-    // Fill data
-    urd::store(rule->row, ground_binding(element, context).first);
-    rule->body = ground(element.get_body(), context).first.index();
-    for (const auto head : element.get_heads())
-        rule->heads.push_back(ground(head, context).first.index());
-    rule->cost = element.get_cost();
-
-    // Canonicalize and Serialize
-    return datalog::insert(context.destination(), *rule);
 }
 
 /**

@@ -224,17 +224,17 @@ protected:
     }
 
     /// Whether the witness instantiates an action rule.
-    [[nodiscard]] bool is_action_witness(const datalog::WitnessAnnotation& witness) const { return Policy::is_action_witness(*m_definition, witness); }
+    [[nodiscard]] bool is_action_witness(const datalog::WitnessAnnotation<Kind>& witness) const { return Policy::is_action_witness(*m_definition, witness); }
 
     /// Calls back the binding of every action whose rule the witness instantiates; identical relaxed rules share one rule.
     template<typename Callback>
-    void for_each_action_binding(const datalog::WitnessAnnotation& witness, Callback callback)
+    void for_each_action_binding(const datalog::WitnessAnnotation<Kind>& witness, Callback callback)
     {
         Policy::for_each_action_binding(*m_definition, m_workspace, witness, callback);
     }
 
     /// The binding of one action whose rule the witness instantiates, if any.
-    std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation& witness)
+    std::optional<formalism::planning::ActionRowView> get_action_binding(const datalog::WitnessAnnotation<Kind>& witness)
     {
         auto result = std::optional<formalism::planning::ActionRowView> {};
         for_each_action_binding(witness,
@@ -254,7 +254,7 @@ protected:
     }
 
     template<typename Callback>
-    void for_each_witness_precondition(const datalog::WitnessAnnotation& witness, Callback callback)
+    void for_each_witness_precondition(const datalog::WitnessAnnotation<Kind>& witness, Callback callback)
     {
         Policy::visit_witness_rule_instance(m_workspace,
                                             witness,

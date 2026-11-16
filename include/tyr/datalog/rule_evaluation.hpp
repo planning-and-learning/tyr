@@ -30,10 +30,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <cstdint>
 #include <limits>
 #include <optional>
-#include <span>
+#include <ranges>
 #include <tuple>
 #include <type_traits>
 #include <urd/elements/flat.hpp>
@@ -53,21 +54,22 @@ namespace tyr::datalog
 {
 
 /// What a rule instance is evaluated against: the facts, for its numeric constraints, and the costs of the atoms.
+template<TaskKind Kind>
 class RuleEvaluationInput
 {
 public:
-    RuleEvaluationInput(FactSets fact_sets, const PredicateAnnotations<>& predicate_annotations) noexcept :
+    RuleEvaluationInput(FactSets fact_sets, const PredicateAnnotations<Kind>& predicate_annotations) noexcept :
         m_fact_sets(fact_sets),
         m_predicate_annotations(&predicate_annotations)
     {
     }
 
     [[nodiscard]] const FactSets& fact_sets() const noexcept { return m_fact_sets; }
-    [[nodiscard]] const PredicateAnnotations<>& predicate_annotations() const noexcept { return *m_predicate_annotations; }
+    [[nodiscard]] const PredicateAnnotations<Kind>& predicate_annotations() const noexcept { return *m_predicate_annotations; }
 
 private:
     FactSets m_fact_sets;
-    const PredicateAnnotations<>* m_predicate_annotations = nullptr;
+    const PredicateAnnotations<Kind>* m_predicate_annotations = nullptr;
 };
 
 struct PredicateCandidate
@@ -76,22 +78,23 @@ struct PredicateCandidate
     Cost queue_label;
 };
 
+template<TaskKind Kind>
 class PredicateHeadUpdates
 {
 private:
     using Binding = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
-    using Witness = WitnessAnnotation;
+    using Witness = WitnessAnnotation<Kind>;
 
     /// The rows seen per relation; only membership is queried, so the order of bindings stays that of their first insertion.
     urd::Store<urd::sequence<urd::Store<urd::set<urd::index<ygg::Row<formalism::Predicate<formalism::FluentTag>>>>, urd::dense, urd::proportional_clear>>>
         m_seen_rows;
     urd::Store<urd::sequence<Binding>> m_bindings;
-    urd::Store<urd::sequence<PredicateAchiever>> m_achievers;
+    urd::Store<urd::sequence<PredicateAchiever<Kind>>> m_achievers;
 
 public:
     [[nodiscard]] const urd::Store<urd::sequence<Binding>>& bindings() const noexcept { return m_bindings; }
     /// Mutable: reducing the updates moves the achievers out.
-    urd::Store<urd::sequence<PredicateAchiever>>& achievers() noexcept { return m_achievers; }
+    urd::Store<urd::sequence<PredicateAchiever<Kind>>>& achievers() noexcept { return m_achievers; }
 
     void clear() noexcept
     {
@@ -110,17 +113,17 @@ public:
             m_bindings.push_back(binding);
     }
 
-    void insert_achiever(Binding head, Witness witness) { m_achievers.push_back(PredicateAchiever { head, witness }); }
+    void insert_achiever(Binding head, Witness witness) { m_achievers.push_back(PredicateAchiever<Kind> { head, witness }); }
 };
 
-template<AnnotationPolicyConcept AP, PredicateAnnotationStore DeltaAnnotations>
-void reduce_predicate_head_updates(PredicateHeadUpdates& head_updates,
+template<TaskKind Kind, AnnotationPolicyConcept AP, PredicateAnnotationStore DeltaAnnotations>
+void reduce_predicate_head_updates(PredicateHeadUpdates<Kind>& head_updates,
                                    [[maybe_unused]] AP& annotation_policy,
                                    [[maybe_unused]] const TaggedFactSets<formalism::FluentTag>& facts,
                                    [[maybe_unused]] DeltaAnnotations& delta_annotations,
-                                   [[maybe_unused]] PredicateAnnotations<>& annotations,
+                                   [[maybe_unused]] PredicateAnnotations<Kind>& annotations,
                                    CostBuckets& cost_buckets,
-                                   [[maybe_unused]] PendingPredicateAchievers& pending_achievers)
+                                   [[maybe_unused]] PendingPredicateAchievers<Kind>& pending_achievers)
 {
     if constexpr (AP::records_propositional_achievers)
         for (auto& achiever : head_updates.achievers())
@@ -152,7 +155,7 @@ template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
 struct RuleUpdateInput
 {
     RuleInstance<Kind> rule_instance;
-    RuleEvaluationInput evaluation;
+    RuleEvaluationInput<Kind> evaluation;
     AP* annotation_policy = nullptr;
     const CP* cost_policy = nullptr;
 };
@@ -160,11 +163,11 @@ struct RuleUpdateInput
 template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP>
 RuleUpdateInput<Kind, AP, CP> make_rule_update_input(RuleInstance<Kind> rule_instance,
                                                      FactSets fact_sets,
-                                                     const PredicateAnnotations<>& predicate_annotations,
+                                                     const PredicateAnnotations<Kind>& predicate_annotations,
                                                      AP& annotation_policy,
                                                      const CP& cost_policy)
 {
-    return { std::move(rule_instance), RuleEvaluationInput { fact_sets, predicate_annotations }, &annotation_policy, &cost_policy };
+    return { std::move(rule_instance), RuleEvaluationInput<Kind> { fact_sets, predicate_annotations }, &annotation_policy, &cost_policy };
 }
 
 enum class RuleUpdateStatus : std::uint8_t
@@ -203,12 +206,13 @@ Cost get_rule_credit(const CP& policy, RuleInstance<Kind>& instance)
     if constexpr (std::same_as<std::remove_cvref_t<CP>, RuleCostPolicy>)
         return static_cast<Cost>(0);
     else
-        return policy.get_cost(instance.witness_key());
+        return policy.get_cost(instance.cost_key());
 }
 
 /// The cost of the instance's body atoms, where they all have one and its numeric constraints hold on the facts.
 template<TaskKind Kind, typename AP, typename CanContinue>
-std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind>& instance, const AP&, const RuleEvaluationInput& input, CanContinue can_continue)
+std::optional<EvaluationState>
+evaluate_annotated_rule(RuleInstance<Kind>& instance, const AP&, const RuleEvaluationInput<Kind>& input, CanContinue can_continue)
 {
     using Aggregation = typename AP::Aggregation;
     const auto aggregate = Aggregation {};
@@ -222,7 +226,7 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind>& insta
         if (!literal.get_polarity())
             continue;
 
-        const auto binding = instance.resolve_row(literal.get_atom());
+        const auto binding = instance.resolve(literal.get_atom()).index();
         const auto* annotation = input.predicate_annotations().find(binding);
         if (!annotation || get_cost(*annotation) == std::numeric_limits<Cost>::max())
             return std::nullopt;
@@ -242,7 +246,8 @@ std::optional<EvaluationState> evaluate_annotated_rule(RuleInstance<Kind>& insta
 }
 
 template<TaskKind Kind, typename AP, typename CP>
-std::optional<Cost> evaluate_rule_priority(RuleInstance<Kind>& instance, const AP& annotation_policy, const CP& cost_policy, const RuleEvaluationInput& input)
+std::optional<Cost>
+evaluate_rule_priority(RuleInstance<Kind>& instance, const AP& annotation_policy, const CP& cost_policy, const RuleEvaluationInput<Kind>& input)
 {
     if constexpr (!AP::stores_annotations)
     {
@@ -261,7 +266,7 @@ template<TaskKind Kind, typename AP, typename CP, typename CanContinue = rule_ev
 std::optional<PredicateCandidate> evaluate_predicate_candidate(RuleInstance<Kind>& instance,
                                                                const AP& annotation_policy,
                                                                const CP& cost_policy,
-                                                               const RuleEvaluationInput& input,
+                                                               const RuleEvaluationInput<Kind>& input,
                                                                CanContinue can_continue = {})
 {
     if constexpr (!AP::stores_annotations)
@@ -283,7 +288,7 @@ template<TaskKind Kind, typename AP, typename CP>
 auto evaluate_propositional_candidate(RuleInstance<Kind>& rule_instance,
                                       const AP& annotation_policy,
                                       const CP& cost_policy,
-                                      const RuleEvaluationInput& input,
+                                      const RuleEvaluationInput<Kind>& input,
                                       Cost best_cost)
 {
     auto pruned = false;
@@ -306,38 +311,49 @@ auto evaluate_propositional_candidate(RuleInstance<Kind>& rule_instance,
     }
 }
 
-/// Prunes only once the instance cannot improve any of its heads.
-template<TaskKind Kind, typename AP, typename CP, PredicateAnnotationStore DeltaAnnotations>
-auto evaluate_propositional_candidate(std::span<const formalism::datalog::PredicateRowIndex<formalism::FluentTag>> heads,
-                                      RuleInstance<Kind>& rule_instance,
-                                      const AP& annotation_policy,
-                                      const CP& cost_policy,
-                                      const RuleEvaluationInput& input,
-                                      const DeltaAnnotations& delta_annotations)
+/// The heads of a rule instance as the keys of its predicate annotations, a range read more than once.
+template<typename R>
+concept PredicateHeads = std::ranges::forward_range<R>
+                         && std::same_as<std::ranges::range_value_t<R>, formalism::datalog::PredicateRowIndex<formalism::FluentTag>>;
+
+/// The cost below which a candidate improves some head of the instance: each head's best cost, committed or staged,
+/// the most of them. A candidate at or above it improves none.
+template<TaskKind Kind, PredicateAnnotationStore DeltaAnnotations, PredicateHeads Heads>
+Cost best_head_cost(const Heads& heads, const RuleEvaluationInput<Kind>& input, const DeltaAnnotations& delta_annotations)
 {
     auto best_cost = static_cast<Cost>(0);
     for (const auto head : heads)
         best_cost = std::max(best_cost, std::min(input.predicate_annotations().fetch_cost(head), delta_annotations.fetch_cost(head)));
-    return evaluate_propositional_candidate(rule_instance, annotation_policy, cost_policy, input, best_cost);
+    return best_cost;
 }
+
+/// Prunes only once the instance cannot improve any of its heads.
+template<TaskKind Kind, typename AP, typename CP, PredicateAnnotationStore DeltaAnnotations, PredicateHeads Heads>
+auto evaluate_propositional_candidate(const Heads& heads,
+                                      RuleInstance<Kind>& rule_instance,
+                                      const AP& annotation_policy,
+                                      const CP& cost_policy,
+                                      const RuleEvaluationInput<Kind>& input,
+                                      const DeltaAnnotations& delta_annotations)
+{ return evaluate_propositional_candidate(rule_instance, annotation_policy, cost_policy, input, best_head_cost(heads, input, delta_annotations)); }
 
 template<TaskKind Kind, typename Candidate>
-WitnessAnnotation materialize_witness(RuleInstance<Kind>& instance, const Candidate& candidate)
+WitnessAnnotation<Kind> materialize_witness(RuleInstance<Kind>& instance, const Candidate& candidate)
 {
-    return WitnessAnnotation(instance.witness_key().index(), candidate.cost);
+    return WitnessAnnotation<Kind>(instance.witness_key(), candidate.cost);
 }
 
-/// Evaluates the rule instance once and updates each of its heads with the shared witness.
-template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations>
-RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog::PredicateRowIndex<formalism::FluentTag>> heads,
-                                             RuleUpdateInput<Kind, AP, CP>& input,
-                                             PredicateHeadUpdates& head_updates,
-                                             DeltaAnnotations& delta_annotations,
-                                             std::optional<Cost> required_queue_label = std::nullopt)
+/// Updates each head of the rule instance with its candidate (none where it is pruned or not available), sharing one
+/// witness.
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations, PredicateHeads Heads>
+RuleUpdateResult apply_propositional_candidate(const Heads& heads,
+                                               RuleUpdateInput<Kind, AP, CP>& input,
+                                               PredicateHeadUpdates<Kind>& head_updates,
+                                               DeltaAnnotations& delta_annotations,
+                                               const std::optional<PredicateCandidate>& candidate,
+                                               bool pruned,
+                                               std::optional<Cost> required_queue_label)
 {
-    assert(!heads.empty());
-    auto [candidate, pruned] =
-        evaluate_propositional_candidate(heads, input.rule_instance, *input.annotation_policy, *input.cost_policy, input.evaluation, delta_annotations);
     if (!candidate)
     {
         if (!pruned)
@@ -380,6 +396,48 @@ RuleUpdateResult insert_propositional_update(std::span<const formalism::datalog:
     for (const auto head : heads)
         head_updates.insert(head);
     return { RuleUpdateStatus::Completed, candidate->queue_label };
+}
+
+/// Evaluates the rule instance once and updates each of its heads with the shared witness.
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations, PredicateHeads Heads>
+RuleUpdateResult insert_propositional_update(const Heads& heads,
+                                             RuleUpdateInput<Kind, AP, CP>& input,
+                                             PredicateHeadUpdates<Kind>& head_updates,
+                                             DeltaAnnotations& delta_annotations,
+                                             std::optional<Cost> required_queue_label = std::nullopt)
+{
+    assert(!std::ranges::empty(heads));
+    const auto [candidate, pruned] =
+        evaluate_propositional_candidate(heads, input.rule_instance, *input.annotation_policy, *input.cost_policy, input.evaluation, delta_annotations);
+    return apply_propositional_candidate(heads, input, head_updates, delta_annotations, candidate, pruned, required_queue_label);
+}
+
+/// Fires a rule instance whose conditions are all committed: its cost is `support`, the aggregate of their costs, plus
+/// its edge cost (less its credit), so its body is not read; pruned, as insert_propositional_update prunes, where it
+/// improves no head.
+template<TaskKind Kind, AnnotationPolicyConcept AP, RuleCostPolicyConcept CP, PredicateAnnotationStore DeltaAnnotations, PredicateHeads Heads>
+RuleUpdateResult fire_propositional_update(const Heads& heads,
+                                           RuleUpdateInput<Kind, AP, CP>& input,
+                                           PredicateHeadUpdates<Kind>& head_updates,
+                                           DeltaAnnotations& delta_annotations,
+                                           Cost support)
+{
+    assert(!std::ranges::empty(heads));
+    if constexpr (!AP::stores_annotations)
+    {
+        return apply_propositional_candidate(heads, input, head_updates, delta_annotations, PredicateCandidate { 0, 0 }, false, std::nullopt);
+    }
+    else
+    {
+        const auto edge = static_cast<Cost>(input.rule_instance.get_rule().get_cost());
+        auto pruned = false;
+        if constexpr (!AP::records_propositional_achievers && std::same_as<CP, RuleCostPolicy>)
+            pruned = support + edge >= best_head_cost(heads, input.evaluation, delta_annotations);
+        if (pruned)
+            return apply_propositional_candidate(heads, input, head_updates, delta_annotations, std::nullopt, true, std::nullopt);
+        const auto cost = support + reduce_cost(edge, rule_evaluation_detail::get_rule_credit(*input.cost_policy, input.rule_instance));
+        return apply_propositional_candidate(heads, input, head_updates, delta_annotations, PredicateCandidate { cost, cost }, false, std::nullopt);
+    }
 }
 
 }

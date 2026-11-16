@@ -125,8 +125,20 @@ private:
         m_out.cost_buckets().clear();
         m_out.pending_achievers().clear();
         initialize_annotations();
-        const auto fact_sets = FactSets { m_in.facts().fact_sets, m_out.facts().fact_sets };
-        m_out.scheduler().reset(fact_sets);
+        // The rules' conditions the given facts meet, through the rules that wait on each fact: in time linear in the
+        // facts, not in the program.
+        auto& scheduler = m_out.scheduler();
+        scheduler.reset(support_start<AP>());
+        const auto aggregate = support_aggregation<AP>();
+        const auto& facts = m_out.facts().fact_sets;
+        for (ygg::uint_t i = 0; i < facts.predicate.size(); ++i)
+            for (const auto id : facts.predicate[i])
+            {
+                const auto fact = formalism::datalog::PredicateRowIndex<formalism::FluentTag> { urd::index<formalism::Predicate<formalism::FluentTag>>(i), id };
+                if (const auto* rules = m_in.dependencies().fluent_precondition_to_rules.find(fact))
+                    for (const auto rule : *rules)
+                        scheduler.satisfy(rule, m_out.annotations().fetch_cost(fact), aggregate);
+            }
     }
 
     In m_in;

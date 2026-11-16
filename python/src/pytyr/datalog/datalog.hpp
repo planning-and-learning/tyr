@@ -96,27 +96,34 @@ inline void bind_fact_sets(nb::module_& m)
     bind_tagged_fact_sets<formalism::FluentTag>(m, "FluentFactSets");
 }
 
-template<typename Key>
-std::optional<Annotation> find_predicate_annotation(const PredicateAnnotations<>& annotations, const Key& key)
+template<TaskKind Kind, typename Key>
+std::optional<Annotation<Kind>> find_predicate_annotation(const PredicateAnnotations<Kind>& annotations, const Key& key)
 {
     const auto* annotation = annotations.find(key);
-    return annotation ? std::optional<Annotation>(*annotation) : std::nullopt;
+    return annotation ? std::optional<Annotation<Kind>>(*annotation) : std::nullopt;
 }
 
+/// The engine-independent annotation: a cost alone.
 inline void bind_annotations(nb::module_& m)
 {
     using namespace nb::literals;
-    using WitnessAnnotationT = WitnessAnnotation;
-    using PredicateAnnotationStore = PredicateAnnotations<>;
-    using RuleKey = formalism::datalog::RuleRowIndex;
-    using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
     auto base_annotation_cls =
         nb::class_<BaseAnnotation>(m, "BaseAnnotation").def(nb::init<>()).def(nb::init<Cost>(), "cost"_a).def("get_cost", &BaseAnnotation::get_cost);
     urd::python::add_comparison(base_annotation_cls);
+}
+
+/// The witnesses name rule instances by RuleKey<Kind>: a ground rule's index, a lifted rule's (rule, binding) row.
+template<TaskKind Kind>
+void bind_task_annotations(nb::module_& m)
+{
+    using namespace nb::literals;
+    using WitnessAnnotationT = WitnessAnnotation<Kind>;
+    using PredicateAnnotationStore = PredicateAnnotations<Kind>;
+    using PredicateKey = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
 
     auto witness_annotation_cls = nb::class_<WitnessAnnotationT>(m, "WitnessAnnotation")
-                                      .def(nb::init<RuleKey, Cost>(), "rule_key"_a, "cost"_a)
+                                      .def(nb::init<RuleKey<Kind>, Cost>(), "rule_key"_a, "cost"_a)
                                       .def("get_rule_key", &WitnessAnnotationT::get_rule_key)
                                       .def("get_cost", &WitnessAnnotationT::get_cost);
     urd::python::add_comparison(witness_annotation_cls);
@@ -125,20 +132,6 @@ inline void bind_annotations(nb::module_& m)
         .def(nb::init<>())
         .def("clear", &PredicateAnnotationStore::clear)
         .def("find", [](const PredicateAnnotationStore& self, PredicateKey key) { return find_predicate_annotation(self, key); }, "binding"_a);
-}
-
-template<typename CostPolicy>
-void bind_cost_policy(nb::module_& m, const char* name)
-{
-    using namespace nb::literals;
-
-    auto cls = nb::class_<CostPolicy>(m, name).def(nb::init<>()).def("clear", &CostPolicy::clear);
-
-    // get_cost(rule) takes only views: the lifted action cost reads the binding's objects.
-    const auto bind_rule_view_cost = [&]()
-    { cls.def("get_cost", [](const CostPolicy& self, formalism::datalog::RuleRowView rule) { return self.get_cost(rule); }, "rule"_a); };
-    cls.def("set_cost", [](CostPolicy& self, formalism::datalog::RuleRowIndex rule, Cost cost) { self.set_cost(rule, cost); }, "rule"_a, "cost"_a);
-    bind_rule_view_cost();
 }
 
 template<typename Aggregation>
@@ -160,11 +153,34 @@ inline void bind_policies(nb::module_& m)
     using namespace nb::literals;
     using SumMinCostAnnotation = MinCostAnnotationPolicy<SumAggregation>;
     using MaxMinCostAnnotation = MinCostAnnotationPolicy<MaxAggregation>;
-    using MaxMinCostAnnotationWithAchievers = MinCostAnnotationWithAchieversPolicy<MaxAggregation>;
 
     nb::class_<NoAnnotationPolicy>(m, "NoAnnotationPolicy").def(nb::init<>());
     nb::class_<SumMinCostAnnotation>(m, "SumMinCostAnnotationPolicy").def(nb::init<>());
     nb::class_<MaxMinCostAnnotation>(m, "MaxMinCostAnnotationPolicy").def(nb::init<>());
+
+    nb::class_<NoTerminationPolicy>(m, "NoTerminationPolicy")
+        .def(nb::init<>())
+        .def("set_goals", &NoTerminationPolicy::set_goals, "goals"_a)
+        .def("reset", &NoTerminationPolicy::reset)
+        .def("clear", &NoTerminationPolicy::clear);
+    bind_termination_policy<SumAggregation>(m, "SumTerminationPolicy");
+    bind_termination_policy<MaxAggregation>(m, "MaxTerminationPolicy");
+
+    // Its costs are all zero, of any rule: no get_cost or set_cost to bind.
+    nb::class_<RuleCostPolicy>(m, "RuleCostPolicy").def(nb::init<>()).def("clear", &RuleCostPolicy::clear);
+}
+
+/// The policies that hold rule keys, RuleKey<Kind>, and so differ between the engines.
+template<TaskKind Kind>
+void bind_task_policies(nb::module_& m)
+{
+    using namespace nb::literals;
+    using MaxMinCostAnnotation = MinCostAnnotationPolicy<MaxAggregation>;
+    using MaxMinCostAnnotationWithAchievers = MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>;
+    using CostPolicy = RuleCostOverridePolicy<Kind>;
+
+    bind_task_annotations<Kind>(m);
+
     nb::class_<MaxMinCostAnnotationWithAchievers, MaxMinCostAnnotation>(m, "MaxMinCostAnnotationWithAchieversPolicy")
         .def(nb::init<>())
         .def("clear_achievers", &MaxMinCostAnnotationWithAchievers::clear_achievers)
@@ -178,21 +194,13 @@ inline void bind_policies(nb::module_& m)
             },
             "binding"_a);
 
-    nb::class_<NoTerminationPolicy>(m, "NoTerminationPolicy")
+    // get_cost takes what a rule instance's credit is read from: a ground rule's index, a lifted instance's row view
+    // (its action cost reads the row's objects).
+    nb::class_<CostPolicy>(m, "RuleCostOverridePolicy")
         .def(nb::init<>())
-        .def("set_goals", &NoTerminationPolicy::set_goals, "goals"_a)
-        .def("reset", &NoTerminationPolicy::reset)
-        .def("clear", &NoTerminationPolicy::clear);
-    bind_termination_policy<SumAggregation>(m, "SumTerminationPolicy");
-    bind_termination_policy<MaxAggregation>(m, "MaxTerminationPolicy");
-
-    bind_cost_policy<RuleCostPolicy>(m, "RuleCostPolicy");
-}
-
-template<TaskKind Kind>
-void bind_task_policies(nb::module_& m)
-{
-    bind_cost_policy<RuleCostOverridePolicy<Kind>>(m, "RuleCostOverridePolicy");
+        .def("clear", &CostPolicy::clear)
+        .def("set_cost", [](CostPolicy& self, RuleKey<Kind> rule, Cost cost) { self.set_cost(rule, cost); }, "rule"_a, "cost"_a)
+        .def("get_cost", [](const CostPolicy& self, typename CostPolicy::RuleInstanceKey rule) { return self.get_cost(rule); }, "rule"_a);
 }
 
 template<TaskKind Kind, typename Workspace>
@@ -345,8 +353,8 @@ void bind_common_configurations(nb::module_& m)
     bind_configuration<Kind, MinCostAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, RuleCostOverridePolicy<Kind>>(m, "SumGoalOverride");
     bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, RuleCostOverridePolicy<Kind>>(m, "MaxOverride");
     bind_configuration<Kind, MinCostAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<Kind>>(m, "MaxGoalOverride");
-    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>(m, "MaxAchieverGoal");
-    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<Kind>>(
+    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostPolicy>(m, "MaxAchieverGoal");
+    bind_configuration<Kind, MinCostAnnotationWithAchieversPolicy<Kind, MaxAggregation>, TerminationPolicy<MaxAggregation>, RuleCostOverridePolicy<Kind>>(
         m,
         "MaxAchieverGoalOverride");
 }

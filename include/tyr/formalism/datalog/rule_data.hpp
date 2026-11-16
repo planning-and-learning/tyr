@@ -74,18 +74,15 @@ template<>
 struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
 {
     urd::index<::tyr::formalism::datalog::Rule<::tyr::GroundTag>> index;
-    ygg::RowIndex<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>> row;
     urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body;
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> heads;
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
-    data(ygg::RowIndex<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>> row_,
-         urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body_,
+    data(urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> heads_,
          ygg::float_t cost_ = 0) :
         index(),
-        row(row_),
         body(body_),
         heads(std::move(heads_)),
         cost(cost_)
@@ -99,11 +96,11 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept
     {
-        return urd::
-            Fields<urd::field<"row", &data::row>, urd::field<"body", &data::body>, urd::field<"heads", &data::heads>, urd::field<"cost", &data::cost>> {};
+        return urd::Fields<urd::field<"body", &data::body>, urd::field<"heads", &data::heads>, urd::field<"cost", &data::cost>> {};
     }
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, &data::heads, &data::cost> {}; }
+    /// Identified by its content: identical ground rules are one rule.
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::body, &data::heads, &data::cost> {}; }
 };
 }
 

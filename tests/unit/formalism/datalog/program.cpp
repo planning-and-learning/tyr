@@ -139,28 +139,10 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
                 data.fluent_literals.push_back(value.index());
             return intern(std::move(data));
         };
-        const auto lifted_atom = [&](tyr::formalism::datalog::PredicateView<tyr::formalism::FluentTag> predicate_)
-        {
-            auto data = urd::data<tyr::formalism::Atom<::tyr::LiftedTag, tyr::formalism::FluentTag>> {};
-            data.predicate = predicate_.index();
-            return intern(std::move(data));
-        };
-
-        const auto empty_lifted_body = intern(urd::data<tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> {});
         const auto predicate_rule = [&](tyr::formalism::datalog::ConjunctiveConditionView<::tyr::GroundTag> body,
                                         tyr::formalism::datalog::AtomView<::tyr::GroundTag, tyr::formalism::FluentTag> head)
         {
-            auto lifted_rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::LiftedTag>> {};
-            lifted_rule_data.body = empty_lifted_body.index();
-            lifted_rule_data.heads.push_back(lifted_atom(head.get_predicate()).index());
-            const auto lifted_rule = intern(std::move(lifted_rule_data));
-
-            auto binding_data = urd::data<ygg::Row<tyr::formalism::datalog::Rule<::tyr::LiftedTag>>> {};
-            binding_data.relation = lifted_rule.index();
-            const auto binding = intern(std::move(binding_data));
-
             auto rule_data = urd::data<tyr::formalism::datalog::Rule<::tyr::GroundTag>> {};
-            rule_data.row = binding.index();
             rule_data.body = body.index();
             rule_data.heads.push_back(head.index());
             return intern(std::move(rule_data));
@@ -205,8 +187,6 @@ TEST(TyrFormalismDatalogGroundProgram, RemovesStaticallyInapplicableRules)
     ASSERT_EQ(filtered->get_rules().size(), 1);
     EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().index()).value), 0);
     EXPECT_EQ(filtered->get_rules().front().get_heads().front().get_predicate().get_name().str(), "retained-predicate");
-    EXPECT_EQ(static_cast<ygg::uint_t>((filtered->get_rules().front().get_rule().index()).value), 0);
-    EXPECT_EQ(filtered->get_rules().front().get_rule().get_heads().front().get_predicate().get_name().str(), "retained-predicate");
     ASSERT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().size(), 1);
     EXPECT_EQ(filtered->get_atoms<tyr::formalism::StaticTag>().front().get_predicate().get_name().str(), "present");
     ASSERT_TRUE(filtered->get_goal().has_value());

@@ -77,7 +77,6 @@ struct GroundProgramBuildContext
     ygg::formalism::BuilderHandle<formalism::datalog::Program<GroundTag>> program;
     StaticPredicateMapping static_predicates;
     FluentPredicateMapping fluent_predicates;
-    ygg::uint_t next_rule_id = 0;
 
     GroundProgramBuildContext(formalism::datalog::Repository& repository) :
         builder(),
@@ -87,69 +86,6 @@ struct GroundProgramBuildContext
     }
 };
 
-formalism::datalog::RuleRowView create_rule_binding(GroundProgramBuildContext& context)
-{
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder);
-    predicate->name = "ground_rule_" + std::to_string(context.next_rule_id++);
-    predicate->arity = 0;
-    const auto new_predicate = formalism::datalog::insert(context.merge_context.destination(), *predicate).first;
-    context.program->fluent_predicates.push_back(new_predicate.index());
-
-    auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder);
-    atom->predicate = new_predicate.index();
-    const auto new_atom = formalism::datalog::insert(context.merge_context.destination(), *atom).first;
-
-    auto literal = formalism::datalog::checkout<formalism::Literal<LiftedTag, formalism::FluentTag>>(context.builder);
-    literal->atom = new_atom.index();
-    literal->polarity = false;
-    const auto new_literal = formalism::datalog::insert(context.merge_context.destination(), *literal).first;
-
-    auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(context.builder);
-    // Keep synthetic function-rule keys distinct without adding a positive witness precondition.
-    condition->fluent_literals.push_back(new_literal.index());
-    const auto new_condition = formalism::datalog::insert(context.merge_context.destination(), *condition).first;
-
-    auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(context.builder);
-    rule->body = new_condition.index();
-    rule->heads.push_back(new_atom.index());
-    const auto new_rule = formalism::datalog::insert(context.merge_context.destination(), *rule).first;
-
-    auto binding = formalism::datalog::checkout<ygg::Row<formalism::datalog::Rule<LiftedTag>>>(context.builder);
-    binding->relation = new_rule.index();
-    return formalism::datalog::insert(context.merge_context.destination(), *binding).first;
-}
-
-formalism::datalog::AtomView<GroundTag, formalism::FluentTag> create_applicability_atom(formalism::planning::ActionView<GroundTag> action,
-                                                                                        GroundProgramBuildContext& context)
-{
-    auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder);
-    predicate->name = create_applicability_name(action.get_action());
-    predicate->arity = action.get_objects().size();
-    const auto new_predicate = formalism::datalog::insert(context.merge_context.destination(), *predicate).first;
-
-    context.program->fluent_predicates.push_back(new_predicate.index());
-
-    auto binding = formalism::datalog::checkout<ygg::Row<formalism::Predicate<formalism::FluentTag>>>(context.builder);
-    binding->relation = new_predicate.index();
-    for (const auto object : action.get_objects())
-        binding->values.push_back(object.index().value);
-    const auto new_binding = formalism::datalog::insert(context.merge_context.destination(), *binding).first;
-
-    auto atom = formalism::datalog::checkout<formalism::Atom<GroundTag, formalism::FluentTag>>(context.builder);
-    atom->row = new_binding.index();
-    return formalism::datalog::insert(context.merge_context.destination(), *atom).first;
-}
-
-formalism::datalog::LiteralView<GroundTag, formalism::FluentTag> create_positive_literal(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom,
-                                                                                         GroundProgramBuildContext& context)
-{
-    auto literal = formalism::datalog::checkout<formalism::Literal<GroundTag, formalism::FluentTag>>(context.builder);
-    literal->atom = atom.index();
-    literal->polarity = true;
-    return formalism::datalog::insert(context.merge_context.destination(), *literal).first;
-}
-
-/// The relaxation holds no values of functions: the numeric constraints of a condition are taken to hold.
 void fill_delete_free_condition(formalism::planning::ConjunctiveConditionView<GroundTag> condition,
                                 TranslationContext<GroundTag>& translation_context,
                                 GroundProgramBuildContext& context,
@@ -178,39 +114,31 @@ formalism::datalog::ConjunctiveConditionView<GroundTag> create_delete_free_goal(
     return create_delete_free_condition(goal, translation_context, context);
 }
 
+/// The body of a conditional effect's rule: the action's precondition and the effect's condition, delete-free.
 formalism::datalog::ConjunctiveConditionView<GroundTag>
-create_delete_free_effect_condition(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> applicability_atom,
+create_delete_free_effect_condition(formalism::planning::ConjunctiveConditionView<GroundTag> action_condition,
                                     formalism::planning::ConjunctiveConditionView<GroundTag> effect_condition,
                                     TranslationContext<GroundTag>& translation_context,
                                     GroundProgramBuildContext& context)
 {
     auto result = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<GroundTag>>(context.builder);
+    fill_delete_free_condition(action_condition, translation_context, context, *result);
     fill_delete_free_condition(effect_condition, translation_context, context, *result);
-    result->fluent_literals.push_back(create_positive_literal(applicability_atom, context).index());
     return formalism::datalog::insert(context.merge_context.destination(), *result).first;
 }
 
-formalism::datalog::RuleView<GroundTag> create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> body,
-                                                                const urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>>& heads,
-                                                                GroundProgramBuildContext& context,
-                                                                ygg::float_t cost = 0)
+/// Identical rules are one rule: the second is not inserted.
+std::pair<formalism::datalog::RuleView<GroundTag>, bool>
+create_ground_atom_rule(formalism::datalog::ConjunctiveConditionView<GroundTag> body,
+                        const urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>>& heads,
+                        GroundProgramBuildContext& context,
+                        ygg::float_t cost = 0)
 {
     auto rule = formalism::datalog::checkout<formalism::datalog::Rule<GroundTag>>(context.builder);
-    rule->row = create_rule_binding(context).index();
     rule->body = body.index();
     rule->heads = heads;
     rule->cost = cost;
-    return formalism::datalog::insert(context.merge_context.destination(), *rule).first;
-}
-
-formalism::datalog::RuleView<GroundTag> create_applicability_rule(formalism::planning::ActionView<GroundTag> action,
-                                                                  formalism::datalog::AtomView<GroundTag, formalism::FluentTag> applicability_atom,
-                                                                  TranslationContext<GroundTag>& translation_context,
-                                                                  GroundProgramBuildContext& context)
-{
-    auto heads = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>> {};
-    heads.push_back(applicability_atom.index());
-    return create_ground_atom_rule(create_delete_free_condition(action.get_condition(), translation_context, context), heads, context);
+    return formalism::datalog::insert(context.merge_context.destination(), *rule);
 }
 
 formalism::datalog::ProgramView<GroundTag> finish_program(GroundProgramBuildContext& context)
@@ -224,13 +152,11 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
                                            GroundProgramBuildContext& context,
                                            RPGProgram<GroundTag>::RuleToActionMapping& rule_to_action)
 {
-    const auto applicability_atom = create_applicability_atom(action, context);
-    const auto applicability_rule = create_applicability_rule(action, applicability_atom, translation_context, context);
-    program.rules.push_back(applicability_rule.index());
-
+    // One rule per conditional effect, its body the action's precondition and the effect's condition: no intermediate
+    // applicability atom, so an applicable action fires once per effect.
     for (const auto cond_eff : action.get_effects())
     {
-        const auto body = create_delete_free_effect_condition(applicability_atom, cond_eff.get_condition(), translation_context, context);
+        const auto body = create_delete_free_effect_condition(action.get_condition(), cond_eff.get_condition(), translation_context, context);
 
         auto heads = urd::flat_vector<urd::index<formalism::Atom<GroundTag, formalism::FluentTag>>> {};
         for (const auto fact : cond_eff.get_effect().get_facts<formalism::PositiveTag>())
@@ -239,9 +165,10 @@ void translate_action_to_delete_free_rules(formalism::planning::ActionView<Groun
                 heads.push_back(literal->get_atom().index());
         if (!heads.empty())
         {
-            const auto rule = create_ground_atom_rule(body, heads, context, 1);
-            program.rules.push_back(rule.index());
-            rule_to_action[rule.get_row().index()].push_back(action);
+            const auto [rule, inserted] = create_ground_atom_rule(body, heads, context, 1);
+            if (inserted)
+                program.rules.push_back(rule.index());
+            rule_to_action[rule.index()].push_back(action);
         }
     }
 }
@@ -360,18 +287,16 @@ void remap_rule_to_action(const RPGProgram<GroundTag>::RuleToActionMapping& sour
                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& context,
                           const datalog::FactSets& fact_sets)
 {
-    for (const auto& [source_binding, actions] : source_mapping)
+    for (const auto& [source_index, actions] : source_mapping)
     {
-        const auto source_rule = formalism::datalog::find_ground_rule(source_binding, source_repository);
-        if (!source_rule)
-            throw std::logic_error("Ground rule binding has no rule");
-        if (!datalog::is_statically_applicable(*source_rule, fact_sets))
+        const auto source_rule = urd::resolve(source_index, source_repository);
+        if (!datalog::is_statically_applicable(source_rule, fact_sets))
             continue;
 
-        const auto [result_rule, inserted] = formalism::copy(*source_rule, context);
+        const auto [result_rule, inserted] = formalism::copy(source_rule, context);
         if (inserted)
             throw std::logic_error("Static rule filtering omitted a retained rule");
-        auto& result_actions = result_mapping[result_rule.get_row().index()];
+        auto& result_actions = result_mapping[result_rule.index()];
         result_actions.insert(result_actions.end(), actions.begin(), actions.end());
     }
 }

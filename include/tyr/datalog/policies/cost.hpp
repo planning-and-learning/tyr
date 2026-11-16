@@ -71,16 +71,16 @@ public:
     }
 };
 
+template<TaskKind Kind>
 class RuleCostOverrideStorage
 {
-    using RuleKey = formalism::datalog::RuleRowIndex;
-    using CostMap = urd::Store<urd::map<RuleKey, Cost>>;
+    using CostMap = urd::Store<urd::map<RuleKey<Kind>, Cost>>;
 
 public:
     RuleCostOverrideStorage() = default;
     explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)) {}
 
-    [[nodiscard]] Cost get_cost(RuleKey rule_key) const
+    [[nodiscard]] Cost get_cost(RuleKey<Kind> rule_key) const
     {
         if (const auto it = m_costs.find(rule_key); it != m_costs.end())
             return it->second;
@@ -89,7 +89,7 @@ public:
 
     void clear() noexcept { m_costs.clear(); }
 
-    void set_cost(RuleKey rule_key, Cost cost) { m_costs.insert_or_assign(rule_key, cost); }
+    void set_cost(RuleKey<Kind> rule_key, Cost cost) { m_costs.insert_or_assign(rule_key, cost); }
 
     [[nodiscard]] const CostMap& get_costs() const noexcept { return m_costs; }
     CostMap& get_costs() noexcept { return m_costs; }
@@ -102,7 +102,11 @@ template<TaskKind Kind>
 class RuleCostOverridePolicy
 {
 public:
-    using Rule = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::datalog::RuleRowIndex, urd::index<formalism::datalog::Rule<LiftedTag>>>;
+    /// The rule an action is translated to: actions are mapped by rule, a lifted rule's by its rule alone.
+    using Rule = urd::index<formalism::datalog::Rule<Kind>>;
+    /// What the credit of a rule instance is read from: a ground rule's key; a lifted instance's row as a view, since
+    /// its action cost reads the row's objects.
+    using RuleInstanceKey = std::conditional_t<std::same_as<Kind, GroundTag>, RuleKey<GroundTag>, formalism::datalog::RuleRowView>;
     using Action = std::conditional_t<std::same_as<Kind, GroundTag>, formalism::planning::ActionView<GroundTag>, formalism::planning::ActionView<LiftedTag>>;
 
 private:
@@ -112,11 +116,10 @@ public:
     RuleCostOverridePolicy() = default;
     explicit RuleCostOverridePolicy(const RuleToActionMapping& predicate_rule_to_action) noexcept : m_predicate_rule_to_action(&predicate_rule_to_action) {}
 
-    /// Takes the rule binding as a view: the lifted action cost reads the binding's objects.
-    [[nodiscard]] Cost get_cost(formalism::datalog::RuleRowView rule_key) const
+    [[nodiscard]] Cost get_cost(RuleInstanceKey rule_key) const
     {
         const auto& costs = storage().get_costs();
-        if (const auto it = costs.find(rule_key.index()); it != costs.end())
+        if (const auto it = costs.find(key_of(rule_key)); it != costs.end())
             return it->second;
         return get_action_cost(rule_key);
     }
@@ -129,23 +132,31 @@ public:
 
     void set_action_cost(formalism::planning::ActionRowView action, Cost cost) { m_action_costs.insert_or_assign(action, cost); }
 
-    void set_cost(formalism::datalog::RuleRowIndex rule_key, Cost cost) { storage().set_cost(rule_key, cost); }
+    void set_cost(RuleKey<Kind> rule_key, Cost cost) { storage().set_cost(rule_key, cost); }
 
 private:
+    static RuleKey<Kind> key_of(RuleInstanceKey rule_key) noexcept
+    {
+        if constexpr (std::same_as<Kind, GroundTag>)
+            return rule_key;
+        else
+            return rule_key.index();
+    }
+
     auto& storage() noexcept { return predicate_storage; }
     [[nodiscard]] const auto& storage() const noexcept { return predicate_storage; }
 
     [[nodiscard]] const auto* mapping() const noexcept { return m_predicate_rule_to_action; }
 
     /// The credit of a rule is the largest credit of its actions: the rule is the cheapest of their parallel arcs.
-    [[nodiscard]] Cost get_action_cost(formalism::datalog::RuleRowView rule_binding) const
+    [[nodiscard]] Cost get_action_cost(RuleKey<GroundTag> rule) const
         requires std::same_as<Kind, GroundTag>
     {
         const auto* rule_to_action = mapping();
         if (!rule_to_action)
             return static_cast<Cost>(0);
 
-        const auto actions = rule_to_action->find(rule_binding.index());
+        const auto actions = rule_to_action->find(rule);
         if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
         auto credit = static_cast<Cost>(0);
@@ -173,7 +184,7 @@ private:
         return credit;
     }
 
-    RuleCostOverrideStorage predicate_storage;
+    RuleCostOverrideStorage<Kind> predicate_storage;
     const RuleToActionMapping* m_predicate_rule_to_action { nullptr };
     gtl::flat_hash_map<formalism::planning::ActionRowView, Cost, ygg::RowKeyHash, ygg::RowKeyEqualTo> m_action_costs;
 };

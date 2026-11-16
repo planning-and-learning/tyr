@@ -103,7 +103,7 @@ struct RuleWorkspace<LiftedTag>
         void clear() noexcept;
 
         /// Head updates
-        PredicateHeadUpdates head_updates;
+        PredicateHeadUpdates<LiftedTag> head_updates;
 
         /// KCKP
         kckp::Workspace kckp_workspace;

@@ -51,9 +51,10 @@ namespace tyr::datalog
 {
 
 /// The rule instance that derives a fact, and the cost at which it does.
-struct WitnessAnnotation : urd::compared_by_identity<WitnessAnnotation>
+template<TaskKind Kind>
+struct WitnessAnnotation : urd::compared_by_identity<WitnessAnnotation<Kind>>
 {
-    WitnessAnnotation(formalism::datalog::RuleRowIndex rule_key_, Cost cost_) : rule_key(rule_key_), cost(cost_) {}
+    WitnessAnnotation(RuleKey<Kind> rule_key_, Cost cost_) : rule_key(rule_key_), cost(cost_) {}
 
     [[nodiscard]] auto get_rule_key() const noexcept { return rule_key; }
     [[nodiscard]] auto get_cost() const noexcept { return cost; }
@@ -61,43 +62,47 @@ struct WitnessAnnotation : urd::compared_by_identity<WitnessAnnotation>
     static constexpr auto identifying_members() noexcept { return urd::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost> {}; }
 
 private:
-    formalism::datalog::RuleRowIndex rule_key;
+    RuleKey<Kind> rule_key;
     Cost cost;
 };
 
-using PredicateRuleRow = formalism::datalog::RuleRowIndex;
-
+template<TaskKind Kind>
 struct PredicateAchiever
 {
     formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
-    WitnessAnnotation witness;
+    WitnessAnnotation<Kind> witness;
 };
 
-struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey>
+template<TaskKind Kind>
+struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey<Kind>>
 {
-    PredicateRuleRow rule_key;
+    RuleKey<Kind> rule_key;
     formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
 
     PredicateAchieverKey() = default;
-    PredicateAchieverKey(PredicateRuleRow rule_key_, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head_) : rule_key(rule_key_), head(head_) {}
+    PredicateAchieverKey(RuleKey<Kind> rule_key_, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head_) : rule_key(rule_key_), head(head_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
 };
 
 /// The achievers by cost, least first; erased buckets keep their vectors for the next costs (retains).
+template<TaskKind Kind>
 using PendingPredicateAchieverBuckets =
-    urd::Store<urd::map<Cost, urd::Store<urd::sequence<PredicateAchieverKey>>>, urd::sorted, urd::retains, urd::stable_refs>;
+    urd::Store<urd::map<Cost, urd::Store<urd::sequence<PredicateAchieverKey<Kind>>>>, urd::sorted, urd::retains, urd::stable_refs>;
 
 /// Owned by the program workspace and reused across solves: clear() keeps the capacity of by_key and of the bucket vectors.
+template<TaskKind Kind>
 struct PendingPredicateAchievers
 {
-    PendingPredicateAchieverBuckets buckets;
-    urd::Store<urd::map<PredicateAchieverKey, PredicateAchiever>> by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
+    using Buckets = PendingPredicateAchieverBuckets<Kind>;
 
-    urd::Store<urd::sequence<PredicateAchieverKey>>& bucket(Cost cost) { return buckets[cost]; }
+    Buckets buckets;
+    urd::Store<urd::map<PredicateAchieverKey<Kind>, PredicateAchiever<Kind>>> by_key;  ///< Cheapest unpublished achiever per rule and head; erased once published.
+
+    urd::Store<urd::sequence<PredicateAchieverKey<Kind>>>& bucket(Cost cost) { return buckets[cost]; }
 
     /// Erases the buckets before `end`, cheapest first.
-    void erase_buckets(PendingPredicateAchieverBuckets::const_iterator end)
+    void erase_buckets(typename Buckets::const_iterator end)
     {
         while (buckets.begin() != end)
             buckets.erase(buckets.begin());
@@ -110,10 +115,11 @@ struct PendingPredicateAchievers
     }
 };
 
-inline void insert_pending_achiever(PendingPredicateAchievers& pending, PredicateAchiever achiever)
+template<TaskKind Kind>
+void insert_pending_achiever(PendingPredicateAchievers<Kind>& pending, PredicateAchiever<Kind> achiever)
 {
     const auto cost = achiever.witness.get_cost();
-    const auto key = PredicateAchieverKey(achiever.witness.get_rule_key(), achiever.head);
+    const auto key = PredicateAchieverKey<Kind>(achiever.witness.get_rule_key(), achiever.head);
     const auto it = pending.by_key.find(key);
     if (it == pending.by_key.end())
     {
@@ -128,8 +134,10 @@ inline void insert_pending_achiever(PendingPredicateAchievers& pending, Predicat
     pending.bucket(cost).push_back(key);
 }
 
-template<typename AnnotationPolicy>
-void publish_pending_achievers(PendingPredicateAchievers& pending, PendingPredicateAchieverBuckets::const_iterator end, AnnotationPolicy& annotation_policy)
+template<TaskKind Kind, typename AnnotationPolicy>
+void publish_pending_achievers(PendingPredicateAchievers<Kind>& pending,
+                               typename PendingPredicateAchievers<Kind>::Buckets::const_iterator end,
+                               AnnotationPolicy& annotation_policy)
 {
     if constexpr (AnnotationPolicy::records_propositional_achievers)
         for (auto bucket = pending.buckets.begin(); bucket != end; ++bucket)
@@ -160,14 +168,16 @@ private:
     Cost m_cost;
 };
 
-using Annotation = std::variant<BaseAnnotation, WitnessAnnotation>;
+template<TaskKind Kind>
+using Annotation = std::variant<BaseAnnotation, WitnessAnnotation<Kind>>;
 
-inline Cost get_cost(const Annotation& annotation) noexcept
+template<TaskKind Kind>
+Cost get_cost(const std::variant<BaseAnnotation, WitnessAnnotation<Kind>>& annotation) noexcept
 {
     // get_if rather than std::visit, which throws for a valueless variant; annotations are never valueless.
     if (const auto* base = std::get_if<BaseAnnotation>(&annotation))
         return base->get_cost();
-    const auto* witness = std::get_if<WitnessAnnotation>(&annotation);
+    const auto* witness = std::get_if<WitnessAnnotation<Kind>>(&annotation);
     URD_ASSUME(witness != nullptr);
     return witness->get_cost();
 }
@@ -274,7 +284,7 @@ private:
 
 /// ThreadSafe permits concurrent insertions and cost reads; clear(), find(), moves,
 /// and destruction require quiescence.
-template<bool ThreadSafe = false>
+template<TaskKind Kind, bool ThreadSafe = false>
 class PredicateAnnotationMap
 {
 public:
@@ -282,6 +292,7 @@ public:
 
     /// Both engines key predicate annotations by the fluent predicate binding.
     using Key = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    using Annotation = datalog::Annotation<Kind>;
 
     PredicateAnnotationMap()
         requires(!ThreadSafe)
@@ -327,24 +338,26 @@ private:
     DenseRelationMap<formalism::PredicateTag, Annotation, ThreadSafe> m_annotations;
 };
 
-template<bool ThreadSafe = false>
-using PredicateAnnotations = PredicateAnnotationMap<ThreadSafe>;
+template<TaskKind Kind, bool ThreadSafe = false>
+using PredicateAnnotations = PredicateAnnotationMap<Kind, ThreadSafe>;
 
-/// Stores of staged predicate annotations: PredicateAnnotations<true> for the parallel lifted engine,
-/// StagedPredicateAnnotation for the ground engine.
+/// Stores of staged predicate annotations: PredicateAnnotations<LiftedTag, true> for the parallel lifted engine,
+/// StagedPredicateAnnotation<GroundTag> for the ground engine.
 template<typename T>
-concept PredicateAnnotationStore = requires(T& store, const T& const_store, typename T::Key key, Annotation annotation) {
+concept PredicateAnnotationStore = requires(T& store, const T& const_store, typename T::Key key, typename T::Annotation annotation) {
     { const_store.fetch_cost(key) } -> std::same_as<Cost>;
-    { const_store.find(key) } -> std::same_as<const Annotation*>;
+    { const_store.find(key) } -> std::same_as<const typename T::Annotation*>;
     { store.insert_if_better(key, std::move(annotation)) } -> std::same_as<std::optional<CostUpdate>>;
     store.clear();
 };
 
 /// The predicate annotations staged by one ground rule firing; the ground engine fires one rule, i.e. its few heads, at a time.
+template<TaskKind Kind>
 class StagedPredicateAnnotation
 {
 public:
     using Key = formalism::datalog::PredicateRowIndex<formalism::FluentTag>;
+    using Annotation = datalog::Annotation<Kind>;
 
     void clear() noexcept { m_entries.clear(); }
 
@@ -382,8 +395,8 @@ private:
     urd::Store<urd::sequence<std::pair<Key, Annotation>>> m_entries;
 };
 
-static_assert(PredicateAnnotationStore<PredicateAnnotations<true>>);
-static_assert(PredicateAnnotationStore<StagedPredicateAnnotation>);
+static_assert(PredicateAnnotationStore<PredicateAnnotations<LiftedTag, true>>);
+static_assert(PredicateAnnotationStore<StagedPredicateAnnotation<GroundTag>>);
 }
 
 #endif

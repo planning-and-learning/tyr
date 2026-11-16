@@ -66,11 +66,11 @@ struct ProgramWorkspace<GroundTag, AP, TP, CP>
     const ConstProgramWorkspace<GroundTag>* const_workspace;
     FactsWorkspace<GroundTag> facts;
     AP annotation_policy;
-    PredicateAnnotations<> annotations;
+    PredicateAnnotations<GroundTag> annotations;
     TP tp;
     CP cost_policy;
     CostBuckets cost_buckets;
-    PendingPredicateAchievers pending_achievers;
+    PendingPredicateAchievers<GroundTag> pending_achievers;
     Scheduler<GroundTag> scheduler;
     formalism::datalog::Builder datalog_builder;
 
