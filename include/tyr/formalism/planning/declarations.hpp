@@ -28,6 +28,7 @@
 #include <memory>
 #include <span>
 #include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -61,26 +62,26 @@ inline bool is_compatible_effect_family(EffectFamily lhs, EffectFamily rhs)
 template<TaskKind T>
 struct ConditionalEffect
 {
-    static constexpr std::string_view name = "ConditionalEffect";
+    static constexpr std::string_view name = urd::joined_name<"ConditionalEffect", T::name>;
 };
 
 template<TaskKind T>
 struct ConjunctiveEffect
 {
-    static constexpr std::string_view name = "ConjunctiveEffect";
+    static constexpr std::string_view name = urd::joined_name<"ConjunctiveEffect", T::name>;
 };
 
 template<TaskKind T>
 struct Action
 {
-    static constexpr std::string_view name = "Action";
+    static constexpr std::string_view name = urd::joined_name<"Action", T::name>;
     static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>
 struct Axiom
 {
-    static constexpr std::string_view name = "Axiom";
+    static constexpr std::string_view name = urd::joined_name<"Axiom", T::name>;
     static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
@@ -92,7 +93,7 @@ struct Metric
 template<TaskKind T>
 struct Task
 {
-    static constexpr std::string_view name = "Task";
+    static constexpr std::string_view name = urd::joined_name<"Task", T::name>;
 };
 
 struct Domain
@@ -103,7 +104,7 @@ struct Domain
 template<FactKind T>
 struct FDRVariable
 {
-    static constexpr std::string_view name = "FDRVariable";
+    static constexpr std::string_view name = urd::joined_name<"FDRVariable", T::name>;
 };
 
 struct Invariant
@@ -114,13 +115,13 @@ struct Invariant
 template<FactKind T>
 struct FDRFact
 {
-    static constexpr std::string_view name = "FDRFact";
+    static constexpr std::string_view name = urd::joined_name<"FDRFact", T::name>;
 };
 
 template<TaskKind T>
 struct ConjunctiveCondition
 {
-    static constexpr std::string_view name = "ConjunctiveCondition";
+    static constexpr std::string_view name = urd::joined_name<"ConjunctiveCondition", T::name>;
 };
 
 struct FDRAction

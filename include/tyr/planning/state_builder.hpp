@@ -97,7 +97,7 @@ public:
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const
     { return this->atom_storage.test(atom); }
 
-    [[nodiscard]] auto get_fluent_facts() const noexcept { return this->fact_storage.facts(); }
+    [[nodiscard]] auto get_fluent_fact_index_values() const noexcept { return this->fact_storage.facts(); }
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { this->index = state; }
 

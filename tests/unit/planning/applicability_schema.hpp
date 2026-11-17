@@ -321,10 +321,11 @@ void expect_schema_queries_match_filtered_successors()
     {
         const auto& left = lhs.get_state();
         const auto& right = rhs.get_state();
-        return lhs.get_metric() == rhs.get_metric() && std::ranges::equal(left.get_fluent_facts(), right.get_fluent_facts())
+        return lhs.get_metric() == rhs.get_metric() && std::ranges::equal(left.get_fluent_fact_index_values(), right.get_fluent_fact_index_values())
                && std::ranges::equal(left.template get_atom_indices<::tyr::formalism::DerivedTag>(),
                                      right.template get_atom_indices<::tyr::formalism::DerivedTag>())
-               && std::ranges::equal(left.template get_fterm_values<formalism::FluentTag>(), right.template get_fterm_values<formalism::FluentTag>());
+               && std::ranges::equal(left.template get_fterm_index_values<formalism::FluentTag>(),
+                                     right.template get_fterm_index_values<formalism::FluentTag>());
     };
     const auto num_action_bindings = count_action_bindings(task);
     const auto states_before_streaming = state_repository->num_states();
@@ -393,7 +394,7 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual, actual_delta),
                   source->generate_successor_state(registered_initial, binding, *expected, expected_delta));
         EXPECT_EQ(actual_delta, expected_delta);
-        EXPECT_TRUE(std::ranges::equal(actual->get_fluent_facts(), expected->get_fluent_facts()));
+        EXPECT_TRUE(std::ranges::equal(actual->get_fluent_fact_index_values(), expected->get_fluent_fact_index_values()));
         EXPECT_TRUE(std::ranges::equal(actual->numeric_storage.fterm_values(), expected->numeric_storage.fterm_values()));
         EXPECT_EQ(state_repository->num_states(), num_states);
         EXPECT_TRUE(owned->index.is_none());

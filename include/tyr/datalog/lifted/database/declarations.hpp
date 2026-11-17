@@ -12,6 +12,7 @@
 
 #include <boost/mp11.hpp>
 #include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 
 namespace tyr::datalog::database
@@ -127,6 +128,13 @@ using QueryPlannedTags =
 template<typename Tag = void>
     requires(std::is_void_v<Tag> || boost::mp11::mp_contains<QueryConstructorTags, Tag>::value)
 struct Query
+{
+    static constexpr std::string_view name = urd::joined_name<"Query", Tag::name>;
+};
+
+/// The query of any operation is named Query: its tag's argument, void, has no name.
+template<>
+struct Query<void>
 {
     static constexpr std::string_view name = "Query";
 };

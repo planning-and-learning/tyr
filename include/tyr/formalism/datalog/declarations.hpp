@@ -27,6 +27,7 @@
 #include <concepts>
 #include <memory>
 #include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -45,27 +46,27 @@ namespace tyr::formalism::datalog
 template<TaskKind T>
 struct ConjunctiveCondition
 {
-    static constexpr std::string_view name = "ConjunctiveCondition";
+    static constexpr std::string_view name = urd::joined_name<"ConjunctiveCondition", T::name>;
 };
 
 template<TaskKind T>
 struct ConjunctiveEffect
 {
-    static constexpr std::string_view name = "ConjunctiveEffect";
+    static constexpr std::string_view name = urd::joined_name<"ConjunctiveEffect", T::name>;
 };
 
 /// A rule: its heads, fluent atoms, are derived from one instantiation of its body.
 template<TaskKind T>
 struct Rule
 {
-    static constexpr std::string_view name = "Rule";
+    static constexpr std::string_view name = urd::joined_name<"Rule", T::name>;
     static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>
 struct Program
 {
-    static constexpr std::string_view name = "Program";
+    static constexpr std::string_view name = urd::joined_name<"Program", T::name>;
 };
 
 using CoreTypes = boost::mp11::mp_list<Variable, Object>;

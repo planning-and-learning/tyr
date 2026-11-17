@@ -306,7 +306,7 @@ private:
     void collect_atoms(const StateView<Kind>& state, AtomIndexList& out)
     {
         out.clear();
-        for (const auto fact : state.get_fluent_facts_view())
+        for (const auto fact : state.get_fluent_facts())
         {
             if (const auto atom = fact.get_atom())
                 out.push_back(ygg::uint_t(atom->index().value));

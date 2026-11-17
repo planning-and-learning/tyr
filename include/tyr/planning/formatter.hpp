@@ -242,13 +242,13 @@ struct state_formatter
             os << ygg::print_indent;
             fmt::print(os,
                        "fluent atoms = [{}]\n",
-                       fmt::join(value.get_fluent_facts_view() | std::views::filter([](const auto& fact) { return fact.has_value(); }), ", "));
+                       fmt::join(value.get_fluent_facts() | std::views::filter([](const auto& fact) { return fact.has_value(); }), ", "));
             os << ygg::print_indent;
             fmt::print(os, "derived atoms = [{}]\n", fmt::join(value.template get_atoms<::tyr::formalism::DerivedTag>(), ", "));
             os << ygg::print_indent;
-            fmt::print(os, "static numeric variables = [{}]\n", fmt::join(value.template get_fterm_values_view<::tyr::formalism::StaticTag>(), ", "));
+            fmt::print(os, "static numeric variables = [{}]\n", fmt::join(value.template get_fterm_values<::tyr::formalism::StaticTag>(), ", "));
             os << ygg::print_indent;
-            fmt::print(os, "fluent numeric variables = [{}]\n", fmt::join(value.template get_fterm_values_view<::tyr::formalism::FluentTag>(), ", "));
+            fmt::print(os, "fluent numeric variables = [{}]\n", fmt::join(value.template get_fterm_values<::tyr::formalism::FluentTag>(), ", "));
         }
 
         os << ygg::print_indent << ")";

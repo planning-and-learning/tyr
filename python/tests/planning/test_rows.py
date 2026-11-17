@@ -1296,67 +1296,61 @@ def test_state_repository_create_state_uses_plural_fluent_facts_argument() -> No
     assert "fluent_fact:" not in docstring
 
 
-def test_state_get_uses_fluent_variable_argument_name() -> None:
+def test_state_get_names_its_parameter() -> None:
     docstring = planning.ground.State.get.__doc__ or ""
 
-    assert "fluent_variable" in docstring
-    assert "fluent_fact:" not in docstring
+    assert "view" in docstring
+    assert "index" in docstring
 
 
-def _check_state_iterators_ground(task: planning.ground.Task) -> None:
+def _check_state_reads_ground(task: planning.ground.Task) -> None:
     state_repository, axiom_evaluator, _ = _make_components_ground(task)
     state = state_repository.get_initial_state(axiom_evaluator)
 
     static_atoms = state.static_atoms()
 
-    assert iter(static_atoms) is static_atoms
-    first_static_atom = next(static_atoms)
-    assert first_static_atom in list(state.static_atoms())
-    assert len(list(static_atoms)) == 11
-    assert list(static_atoms) == []
-    assert len(list(state.fluent_facts())) == 5
-    fluent_atoms = list(state.fluent_atoms())
+    assert len(static_atoms) == 12
+    assert static_atoms == state.static_atoms()
+    assert len(state.fluent_facts()) == 5
+    fluent_atoms = state.fluent_atoms()
     assert len(fluent_atoms) == 5
     assert all(state.test(atom) for atom in fluent_atoms)
-    assert len(list(state.derived_atoms())) == 0
-    assert len(list(state.static_fterm_values())) == 0
-    assert len(list(state.fluent_fterm_values())) == 0
+    assert len(state.derived_atoms()) == 0
+    assert len(state.static_fterm_values()) == 0
+    assert len(state.fluent_fterm_values()) == 0
 
     static_atoms = state.static_atoms()
     del state
     gc.collect()
-    assert len(list(static_atoms)) == 12
+    assert len(static_atoms) == 12
 
 
-def _check_state_iterators_lifted(task: planning.lifted.Task) -> None:
+def _check_state_reads_lifted(task: planning.lifted.Task) -> None:
     state_repository, axiom_evaluator, _ = _make_components_lifted(task)
     state = state_repository.get_initial_state(axiom_evaluator)
 
     static_atoms = state.static_atoms()
 
-    assert iter(static_atoms) is static_atoms
-    first_static_atom = next(static_atoms)
-    assert first_static_atom in list(state.static_atoms())
-    assert len(list(static_atoms)) == 11
-    assert list(static_atoms) == []
-    assert len(list(state.fluent_facts())) == 5
-    fluent_atoms = list(state.fluent_atoms())
+    assert len(static_atoms) == 12
+    assert static_atoms == state.static_atoms()
+    assert len(state.fluent_facts()) == 5
+    fluent_atoms = state.fluent_atoms()
     assert len(fluent_atoms) == 5
     assert all(state.test(atom) for atom in fluent_atoms)
-    assert len(list(state.derived_atoms())) == 0
-    assert len(list(state.static_fterm_values())) == 0
-    assert len(list(state.fluent_fterm_values())) == 0
+    assert len(state.derived_atoms()) == 0
+    assert len(state.static_fterm_values()) == 0
+    assert len(state.fluent_fterm_values()) == 0
 
     static_atoms = state.static_atoms()
     del state
     gc.collect()
-    assert len(list(static_atoms)) == 12
+    assert len(static_atoms) == 12
 
 
-def test_state_iterable_methods_return_stable_iterators() -> None:
+def test_state_reads_return_lists() -> None:
     ground_task, lifted_task = _make_gripper_tasks()
-    _check_state_iterators_ground(ground_task)
-    _check_state_iterators_lifted(lifted_task)
+    _check_state_reads_ground(ground_task)
+    _check_state_reads_lifted(lifted_task)
 
 
 def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
@@ -1366,7 +1360,7 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
     state_text = str(state)
     packed = state.pack()
 
-    assert type(packed) is planning.ground.PackedStateGround
+    assert type(packed) is planning.ground.PackedState
     assert packed.index().value == state_index.value
     assert packed.context() == state_repository
     assert packed.unpack() == state
@@ -1394,7 +1388,7 @@ def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
     state_text = str(state)
     packed = state.pack()
 
-    assert type(packed) is planning.lifted.PackedStateLifted
+    assert type(packed) is planning.lifted.PackedState
     assert packed.index().value == state_index.value
     assert packed.context() == state_repository
     assert packed.unpack() == state
@@ -1433,7 +1427,7 @@ def _check_packed_nodes_ground(task: planning.ground.Task) -> None:
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.ground.PackedNode
-    assert type(packed.get_state()) is planning.ground.PackedStateGround
+    assert type(packed.get_state()) is planning.ground.PackedState
     assert packed.get_metric() == 17.5
     assert packed == planning.ground.PackedNode(node.get_state().pack(), 17.5)
     assert hash(packed) == hash(node.pack())
@@ -1470,7 +1464,7 @@ def _check_packed_nodes_lifted(task: planning.lifted.Task) -> None:
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.lifted.PackedNode
-    assert type(packed.get_state()) is planning.lifted.PackedStateLifted
+    assert type(packed.get_state()) is planning.lifted.PackedState
     assert packed.get_metric() == 17.5
     assert packed == planning.lifted.PackedNode(node.get_state().pack(), 17.5)
     assert hash(packed) == hash(node.pack())

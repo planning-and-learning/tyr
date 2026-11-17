@@ -101,18 +101,44 @@ public:
         }
     }
 
-    template<::tyr::formalism::FactKind F, typename P>
-    auto get_atoms(bool polarity, P predicate) const
+    template<::tyr::formalism::FactKind F>
+    auto get_atoms(bool polarity, ::tyr::formalism::planning::PredicateView<F> predicate) const
     {
         return get_atoms<F>(polarity) | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
     }
 
     static constexpr auto functions() noexcept
     {
+        using Self = const view_mixin&;
+        const auto atoms =
+            urd::Functions<urd::function<"get_atoms",
+                                         static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::StaticTag>(
+                                             true,
+                                             std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>>())) (
+                                             view_mixin::*)(bool, ::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>) const>(
+                                             &view_mixin::template get_atoms<::tyr::formalism::StaticTag>),
+                                         urd::arg<"polarity">,
+                                         urd::arg<"predicate">>,
+                           urd::function<"get_atoms",
+                                         static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::FluentTag>(
+                                             true,
+                                             std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>>())) (
+                                             view_mixin::*)(bool, ::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>) const>(
+                                             &view_mixin::template get_atoms<::tyr::formalism::FluentTag>),
+                                         urd::arg<"polarity">,
+                                         urd::arg<"predicate">>,
+                           urd::function<"get_atoms",
+                                         static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::DerivedTag>(
+                                             true,
+                                             std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>>())) (
+                                             view_mixin::*)(bool, ::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>) const>(
+                                             &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>),
+                                         urd::arg<"polarity">,
+                                         urd::arg<"predicate">>> {};
         if constexpr (std::same_as<T, ::tyr::GroundTag>)
-            return urd::Functions<> {};
+            return atoms;
         else
-            return urd::Functions<urd::function<"get_arity", &view_mixin::get_arity>, urd::function<"empty", &view_mixin::empty>> {};
+            return atoms + urd::Functions<urd::function<"get_arity", &view_mixin::get_arity>, urd::function<"empty", &view_mixin::empty>> {};
     }
 };
 }  // namespace urd

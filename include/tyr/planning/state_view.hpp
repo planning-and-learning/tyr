@@ -114,7 +114,7 @@ public:
     [[nodiscard]] bool test(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) const { return test(view.index()); }
 
     /// Its fluent facts, as its fact storage holds them.
-    [[nodiscard]] auto get_fluent_facts() const noexcept { return get_fact_storage().facts(); }
+    [[nodiscard]] auto get_fluent_fact_index_values() const noexcept { return get_fact_storage().facts(); }
 
     /// The indices of its atoms of kind F: static ones its task's, fluent ones those of its facts, derived ones its atom storage's.
     template<::tyr::formalism::FactKind F>
@@ -132,10 +132,10 @@ public:
 
     /// Its function term values of kind F: static ones its task's, fluent ones its numeric storage's.
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_fterm_values() const noexcept
+    [[nodiscard]] auto get_fterm_index_values() const noexcept
     {
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
-            return self().context().get_task()->get_static_state().get_fterm_values();
+            return self().context().get_task()->get_static_state().get_fterm_index_values();
         else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
             return get_numeric_storage().fterm_values();
         else
@@ -149,30 +149,31 @@ public:
                | std::views::transform([repository = get_formalism_repository().get()](auto id) { return urd::resolve(id, *repository); });
     }
 
-    template<::tyr::formalism::FactKind F, typename C>
-    [[nodiscard]] auto get_atoms(urd::index_view<::tyr::formalism::Predicate<F>, C> predicate) const
+    template<::tyr::formalism::FactKind F>
+    [[nodiscard]] auto get_atoms(::tyr::formalism::planning::PredicateView<F> predicate) const
     {
         return get_atoms<F>() | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
     }
 
     /// The facts, computed on the fly: each view owns its fact.
-    [[nodiscard]] auto get_fluent_facts_view() const noexcept
+    [[nodiscard]] auto get_fluent_facts() const noexcept
     {
-        return get_fluent_facts()
+        return get_fluent_fact_index_values()
                | std::views::transform([repository = get_formalism_repository().get()](auto fact)
                                        { return ::tyr::formalism::planning::computed_fact_view(std::move(fact), *repository); });
     }
 
     template<::tyr::formalism::FactKind F>
-    [[nodiscard]] auto get_fterm_values_view() const noexcept
+    [[nodiscard]] auto get_fterm_values() const noexcept
     {
-        return get_fterm_values<F>()
+        return get_fterm_index_values<F>()
                | std::views::transform([repository = get_formalism_repository().get()](auto&& pair)
                                        { return std::make_pair(urd::resolve(pair.first, *repository), pair.second); });
     }
 
     static constexpr auto functions() noexcept
     {
+        using Self = const view_mixin&;
         return urd::Functions<
             urd::function<"get_formalism_repository", &view_mixin::get_formalism_repository>,
             urd::function<"test",
@@ -219,8 +220,41 @@ public:
                           static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>)
                                           const>(&view_mixin::value),
                           urd::arg<"view">>,
-            urd::function<"get_fluent_facts", &view_mixin::get_fluent_facts>,
-            urd::function<"get_fluent_facts_view", &view_mixin::get_fluent_facts_view>> {};
+            urd::function<"get_fluent_fact_index_values", &view_mixin::get_fluent_fact_index_values>,
+            urd::function<"fluent_facts", &view_mixin::get_fluent_facts>,
+            urd::function<"static_atoms",
+                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::StaticTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template get_atoms<::tyr::formalism::StaticTag>)>,
+            urd::function<"fluent_atoms",
+                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::FluentTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template get_atoms<::tyr::formalism::FluentTag>)>,
+            urd::function<"derived_atoms",
+                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::DerivedTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>)>,
+            urd::function<"static_fterm_values",
+                          static_cast<decltype(std::declval<Self>().template get_fterm_values<::tyr::formalism::StaticTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template get_fterm_values<::tyr::formalism::StaticTag>)>,
+            urd::function<"fluent_fterm_values",
+                          static_cast<decltype(std::declval<Self>().template get_fterm_values<::tyr::formalism::FluentTag>()) (view_mixin::*)() const noexcept>(
+                              &view_mixin::template get_fterm_values<::tyr::formalism::FluentTag>)>,
+            urd::function<"get_atoms",
+                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::StaticTag>(
+                              std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>>())) (view_mixin::*)(
+                              ::tyr::formalism::planning::PredicateView<::tyr::formalism::StaticTag>) const>(
+                              &view_mixin::template get_atoms<::tyr::formalism::StaticTag>),
+                          urd::arg<"predicate">>,
+            urd::function<"get_atoms",
+                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::FluentTag>(
+                              std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>>())) (view_mixin::*)(
+                              ::tyr::formalism::planning::PredicateView<::tyr::formalism::FluentTag>) const>(
+                              &view_mixin::template get_atoms<::tyr::formalism::FluentTag>),
+                          urd::arg<"predicate">>,
+            urd::function<"get_atoms",
+                          static_cast<decltype(std::declval<Self>().template get_atoms<::tyr::formalism::DerivedTag>(
+                              std::declval<::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>>())) (view_mixin::*)(
+                              ::tyr::formalism::planning::PredicateView<::tyr::formalism::DerivedTag>) const>(
+                              &view_mixin::template get_atoms<::tyr::formalism::DerivedTag>),
+                          urd::arg<"predicate">>> {};
     }
 };
 
@@ -237,6 +271,12 @@ public:
     [[nodiscard]] ::tyr::planning::PackedStateView<Kind> pack() const noexcept { return self().template member<&urd::record_of<V>::index>(); }
 
     [[nodiscard]] urd::index<::tyr::planning::State<Kind>> index() const noexcept { return self().context().state_index(pack().index()); }
+
+    static constexpr auto functions() noexcept
+    {
+        return urd::view_mixin<::tyr::planning::State<Kind>, V>::functions()
+               + urd::Functions<urd::function<"pack", &view_mixin::pack>, urd::function<"index", &view_mixin::index>> {};
+    }
 };
 
 /// A registered state, packed (PackedStateView): its packed storages, its repository, and the state unpacked.

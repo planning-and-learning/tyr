@@ -35,7 +35,7 @@ from pytyr.planning.lifted import (
     Node,
     Plan,
     SearchResult,
-    StateLiftedIndex,
+    StateIndex,
     StateRepository,
     SuccessorGenerator,
     Task,
@@ -57,20 +57,20 @@ class SearchNode:
     """The search information of a state: its g-value, the parent state on the best known path, and its status."""
 
     g_value: float
-    parent: StateLiftedIndex | None
+    parent: StateIndex | None
     status: SearchNodeStatus
 
 
 def backtrack_plan(
     goal_node: Node,
-    search_nodes: dict[StateLiftedIndex, SearchNode],
+    search_nodes: dict[StateIndex, SearchNode],
     state_repository: StateRepository,
     axiom_evaluator: AxiomEvaluator,
     successor_generator: SuccessorGenerator,
 ) -> Plan:
     """Backtracks from the goal search node to compute the labeled state trajectory."""
     cur_state_index = goal_node.get_state().index()
-    backward_state_trajectory: list[StateLiftedIndex] = []
+    backward_state_trajectory: list[StateIndex] = []
 
     while cur_state_index is not None:
         backward_state_trajectory.append(cur_state_index)
@@ -136,12 +136,12 @@ def find_solution(
     initial_g_value = initial_node.get_metric()
     initial_state_index = initial_state.index()
 
-    search_nodes: dict[StateLiftedIndex, SearchNode] = {}
+    search_nodes: dict[StateIndex, SearchNode] = {}
     search_nodes[initial_state_index] = SearchNode(initial_g_value, None, SearchNodeStatus.NEW)
 
-    queue: PriorityQueue[tuple[float, float, StateLiftedIndex]] = PriorityQueue()
+    queue: PriorityQueue[tuple[float, float, StateIndex]] = PriorityQueue()
     # Note: we insert cheap state indices to allow memory to be returned to the pool.
-    # We can always retrieve a state by calling state_repository.get_registered_state(i) for a StateLiftedIndex i.
+    # We can always retrieve a state by calling state_repository.get_registered_state(i) for a StateIndex i.
     queue.put((initial_h_value, initial_g_value, initial_state_index))
 
     while not queue.empty():

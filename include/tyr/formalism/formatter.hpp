@@ -79,20 +79,6 @@ std::string to_string(const urd::data<NumericEffect<GroundTag, AuxiliaryTag>>& v
 
 }  // namespace tyr::formalism
 
-/// The names of the formalism's records whose tags are named otherwise (urd::name): the operator kinds an operator is
-/// of (enums, which hold no name).
-template<>
-struct urd::name_of<tyr::formalism::BooleanOperatorKind>
-{
-    static std::string named() { return "Boolean"; }
-};
-
-template<>
-struct urd::name_of<tyr::formalism::ArithmeticOperatorKind>
-{
-    static std::string named() { return "Arithmetic"; }
-};
-
 namespace tyr::formalism::detail
 {
 /// Whether tyr writes the record of T itself: a to_string of tyr's (here or by ADL in its record's namespace), never

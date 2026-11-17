@@ -29,6 +29,7 @@
 #include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <urd/elements/concepts.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/elements/index.hpp>
 #include <urd/tags.hpp>
@@ -116,6 +117,11 @@ using PredicateFunctionTags = boost::mp11::mp_list<PredicateTag, FunctionTag>;
 template<typename T>
 concept OperatorKind = std::same_as<T, BooleanOperatorKind> || std::same_as<T, ArithmeticOperatorKind>;
 
+/// The name of operator kind O in the names of the operators of that kind (UnaryOperatorGroundArithmetic): the kinds are
+/// enums, which hold no name.
+template<OperatorKind O>
+inline constexpr std::string_view operator_kind_name = std::same_as<O, BooleanOperatorKind> ? std::string_view("Boolean") : std::string_view("Arithmetic");
+
 /// The operator kind of the operators that only occur in arithmetic (unary and multi operators).
 template<typename T>
 concept ArithmeticOperatorKindOnly = std::same_as<T, ArithmeticOperatorKind>;
@@ -140,14 +146,14 @@ using TermList = urd::flat_vector<Term>;
 template<FactKind T>
 struct Predicate
 {
-    static constexpr std::string_view name = "Predicate";
+    static constexpr std::string_view name = urd::joined_name<"Predicate", T::name>;
     static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<FactKind T>
 struct Function
 {
-    static constexpr std::string_view name = "Function";
+    static constexpr std::string_view name = urd::joined_name<"Function", T::name>;
     static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
@@ -158,51 +164,51 @@ struct Function
 template<TaskKind T, OperatorKind O>
 struct UnaryOperator
 {
-    static constexpr std::string_view name = "UnaryOperator";
+    static constexpr std::string_view name = urd::joined_name<"UnaryOperator", T::name, ::tyr::formalism::operator_kind_name<O>>;
 };
 
 template<TaskKind T, OperatorKind O>
 struct BinaryOperator
 {
-    static constexpr std::string_view name = "BinaryOperator";
+    static constexpr std::string_view name = urd::joined_name<"BinaryOperator", T::name, ::tyr::formalism::operator_kind_name<O>>;
 };
 
 template<TaskKind T, OperatorKind O>
 struct MultiOperator
 {
-    static constexpr std::string_view name = "MultiOperator";
+    static constexpr std::string_view name = urd::joined_name<"MultiOperator", T::name, ::tyr::formalism::operator_kind_name<O>>;
 };
 
 template<TaskKind T, FactKind F>
 struct Atom
 {
-    static constexpr std::string_view name = "Atom";
+    static constexpr std::string_view name = urd::joined_name<"Atom", T::name, F::name>;
 };
 
 template<TaskKind T, FactKind F>
 struct Literal
 {
-    static constexpr std::string_view name = "Literal";
+    static constexpr std::string_view name = urd::joined_name<"Literal", T::name, F::name>;
 };
 
 template<TaskKind T, FactKind F>
 struct FunctionTerm
 {
-    static constexpr std::string_view name = "FunctionTerm";
+    static constexpr std::string_view name = urd::joined_name<"FunctionTerm", T::name, F::name>;
 };
 
 template<TaskKind T, FactKind F>
     requires std::same_as<T, GroundTag>
 struct FunctionTermValue
 {
-    static constexpr std::string_view name = "FunctionTermValue";
+    static constexpr std::string_view name = urd::joined_name<"FunctionTermValue", T::name, F::name>;
 };
 
 template<TaskKind T, FactKind F>
     requires std::same_as<F, FluentTag> || std::same_as<F, AuxiliaryTag>
 struct NumericEffect
 {
-    static constexpr std::string_view name = "NumericEffect";
+    static constexpr std::string_view name = urd::joined_name<"NumericEffect", T::name, F::name>;
 };
 
 /// A function expression: a number, an arithmetic operator or a function term (ground ones also the auxiliary term).

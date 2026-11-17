@@ -57,7 +57,7 @@ public:
     /// In ascending order.
     [[nodiscard]] auto get_atoms() const noexcept { return std::views::all(m_atoms); }
 
-    [[nodiscard]] auto get_fterm_values() const noexcept
+    [[nodiscard]] auto get_fterm_index_values() const noexcept
     {
         return urd::transform(m_numeric_variables, [](const auto& entry) { return std::pair(entry.first, entry.second); });
     }

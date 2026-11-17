@@ -36,22 +36,22 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     data.fact_storage;
     data.atom_storage;
     data.numeric_storage;
-    builder.get_fluent_facts();
+    builder.get_fluent_fact_index_values();
     tyr::planning::fluent_atoms(builder.fact_storage, repository);
     builder.atom_storage.atoms();
     builder.numeric_storage.fterm_values();
     view.index();
     view.template get_atom_indices<::tyr::formalism::StaticTag>();
-    view.get_fluent_facts();
+    view.get_fluent_fact_index_values();
     view.template get_atom_indices<tyr::formalism::FluentTag>();
     view.template get_atom_indices<::tyr::formalism::DerivedTag>();
+    view.template get_fterm_index_values<tyr::formalism::StaticTag>();
+    view.template get_fterm_index_values<tyr::formalism::FluentTag>();
+    view.template get_atoms<::tyr::formalism::StaticTag>();
+    view.get_fluent_facts();
+    view.template get_atoms<::tyr::formalism::DerivedTag>();
     view.template get_fterm_values<tyr::formalism::StaticTag>();
     view.template get_fterm_values<tyr::formalism::FluentTag>();
-    view.template get_atoms<::tyr::formalism::StaticTag>();
-    view.get_fluent_facts_view();
-    view.template get_atoms<::tyr::formalism::DerivedTag>();
-    view.template get_fterm_values_view<tyr::formalism::StaticTag>();
-    view.template get_fterm_values_view<tyr::formalism::FluentTag>();
     view.get_formalism_repository();
     view.context();
     view.get_fact_storage();
@@ -118,9 +118,9 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     EXPECT_EQ(std::ranges::data(retained.get_numeric_storage().values), buffer);
     EXPECT_EQ(retained.get_numeric_storage().values.capacity(), capacity);
     EXPECT_TRUE(source.index.is_none());
-    EXPECT_TRUE(std::ranges::equal(source.get_fluent_facts(), initial.get_fluent_facts()));
+    EXPECT_TRUE(std::ranges::equal(source.get_fluent_fact_index_values(), initial.get_fluent_fact_index_values()));
     EXPECT_TRUE(std::ranges::equal(source.atom_storage.atoms(), initial.template get_atom_indices<tyr::formalism::DerivedTag>()));
-    EXPECT_TRUE(std::ranges::equal(source.numeric_storage.fterm_values(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
+    EXPECT_TRUE(std::ranges::equal(source.numeric_storage.fterm_values(), initial.template get_fterm_index_values<tyr::formalism::FluentTag>()));
     EXPECT_EQ(target->register_extended_state(borrowed), retained);
     EXPECT_EQ(target->num_states(), 1);
     auto foreign = std::make_shared<tyr::planning::StateRepository<tyr::LiftedTag>>(make_task());
@@ -128,9 +128,9 @@ TEST(TyrPlanningLiftedStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     EXPECT_EQ(foreign->num_states(), 0);
 
     source.clear();
-    EXPECT_TRUE(std::ranges::equal(retained.get_fluent_facts(), initial.get_fluent_facts()));
+    EXPECT_TRUE(std::ranges::equal(retained.get_fluent_fact_index_values(), initial.get_fluent_fact_index_values()));
     EXPECT_TRUE(std::ranges::equal(retained.template get_atom_indices<::tyr::formalism::DerivedTag>(),
                                    initial.template get_atom_indices<::tyr::formalism::DerivedTag>()));
-    EXPECT_TRUE(
-        std::ranges::equal(retained.template get_fterm_values<tyr::formalism::FluentTag>(), initial.template get_fterm_values<tyr::formalism::FluentTag>()));
+    EXPECT_TRUE(std::ranges::equal(retained.template get_fterm_index_values<tyr::formalism::FluentTag>(),
+                                   initial.template get_fterm_index_values<tyr::formalism::FluentTag>()));
 }

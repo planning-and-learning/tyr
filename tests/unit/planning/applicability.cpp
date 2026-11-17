@@ -97,7 +97,7 @@ void expect_effect_validity_successors(const tyr::planning::TaskPtr<Kind>& task)
 template<TaskKind Kind>
 bool has_marked_object(const tyr::planning::StateView<Kind>& state, std::string_view object_name)
 {
-    return std::ranges::any_of(state.get_fluent_facts_view(),
+    return std::ranges::any_of(state.get_fluent_facts(),
                                [&](const auto fact)
                                {
                                    const auto atom = fact.get_atom();
@@ -254,7 +254,7 @@ TEST(TyrPlanningApplicabilityTest, LiftedSchemaQueriesRefreshDerivedPredicatesAc
                 {
                     EXPECT_EQ(successor.label.get_relation(), action);
                     auto saw_effect_only = false;
-                    for (const auto& [term, value] : successor.node.get_state().template get_fterm_values_view<formalism::FluentTag>())
+                    for (const auto& [term, value] : successor.node.get_state().template get_fterm_values<formalism::FluentTag>())
                         if (term.get_function().get_name().str() == "effect-only")
                         {
                             saw_effect_only = true;

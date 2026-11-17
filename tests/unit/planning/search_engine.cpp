@@ -207,7 +207,7 @@ private:
 template<TaskKind Kind>
 bool is_at_location(const tyr::planning::StateView<Kind>& state, const formalism::planning::Repository& repository, std::string_view location)
 {
-    return std::ranges::any_of(state.get_fluent_facts(),
+    return std::ranges::any_of(state.get_fluent_fact_index_values(),
                                [&](const auto fact_data)
                                {
                                    const auto atom = formalism::planning::computed_fact_view(fact_data, repository).get_atom();

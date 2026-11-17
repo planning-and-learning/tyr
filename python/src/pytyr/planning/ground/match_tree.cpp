@@ -24,6 +24,8 @@
 #include <tyr/planning/ground/match_tree/nodes/generator_data.hpp>
 #include <tyr/planning/ground/match_tree/nodes/negative_fact_data.hpp>
 #include <tyr/planning/ground/match_tree/nodes/variable_data.hpp>
+#include <tyr/planning/ground/match_tree/repository.hpp>
+#include <urd/format.hpp>
 #include <urd/python/bindings.hpp>
 
 namespace tyr::planning
@@ -36,10 +38,15 @@ template<typename Tag>
 void bind_match_tree_nodes(nb::module_& m)
 {
     urd::python::bind_data<match_tree::AtomSelectorNode<Tag>>(m);
+    urd::python::bind_view<urd::index_view<match_tree::AtomSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
     urd::python::bind_data<match_tree::VariableSelectorNode<Tag>>(m);
+    urd::python::bind_view<urd::index_view<match_tree::VariableSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
     urd::python::bind_data<match_tree::NegativeFactSelectorNode<Tag>>(m);
+    urd::python::bind_view<urd::index_view<match_tree::NegativeFactSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
     urd::python::bind_data<match_tree::NumericConstraintSelectorNode<Tag>>(m);
+    urd::python::bind_view<urd::index_view<match_tree::NumericConstraintSelectorNode<Tag>, match_tree::Repository<Tag>>>(m);
     urd::python::bind_data<match_tree::ElementGeneratorNode<Tag>>(m);
+    urd::python::bind_view<urd::index_view<match_tree::ElementGeneratorNode<Tag>, match_tree::Repository<Tag>>>(m);
 }
 }  // namespace
 

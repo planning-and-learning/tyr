@@ -23,6 +23,7 @@
 #include <boost/mp11.hpp>
 #include <concepts>
 #include <string_view>
+#include <urd/elements/concepts.hpp>
 #include <variant>
 #include <vector>
 
@@ -35,31 +36,31 @@ namespace tyr::planning::match_tree
 template<typename Tag>
 struct AtomSelectorNode
 {
-    static constexpr std::string_view name = "AtomSelectorNode";
+    static constexpr std::string_view name = urd::joined_name<"AtomSelectorNode", Tag::name>;
 };
 
 template<typename Tag>
 struct VariableSelectorNode
 {
-    static constexpr std::string_view name = "VariableSelectorNode";
+    static constexpr std::string_view name = urd::joined_name<"VariableSelectorNode", Tag::name>;
 };
 
 template<typename Tag>
 struct NegativeFactSelectorNode
 {
-    static constexpr std::string_view name = "NegativeFactSelectorNode";
+    static constexpr std::string_view name = urd::joined_name<"NegativeFactSelectorNode", Tag::name>;
 };
 
 template<typename Tag>
 struct NumericConstraintSelectorNode
 {
-    static constexpr std::string_view name = "NumericConstraintSelectorNode";
+    static constexpr std::string_view name = urd::joined_name<"NumericConstraintSelectorNode", Tag::name>;
 };
 
 template<typename Tag>
 struct ElementGeneratorNode
 {
-    static constexpr std::string_view name = "ElementGeneratorNode";
+    static constexpr std::string_view name = urd::joined_name<"ElementGeneratorNode", Tag::name>;
 };
 
 /// The node kinds of a match tree, in the order of the Node variant.

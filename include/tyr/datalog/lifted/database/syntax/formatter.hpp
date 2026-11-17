@@ -86,11 +86,4 @@ struct formatter<Plan, char>
 }  // namespace fmt
 #endif
 
-/// The query of any operation is named Query (its tag's argument, void, has no name).
-template<>
-struct urd::name_of<tyr::datalog::database::Query<>>
-{
-    static std::string named() { return "Query"; }
-};
-
 #endif
