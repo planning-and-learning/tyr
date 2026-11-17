@@ -39,6 +39,8 @@ HERE = Path(__file__).resolve().parent
 DATA = HERE.parents[4] / "tests/support/data/formalism/invariants"
 SUITE_PREFIX = "classical/downward-benchmarks/"
 MAX_DOMAIN_FILES = 5
+# Synthesis takes 8-22 s per domain file here (the rest of the suite takes about 8 s together), so the tests leave them out.
+EXCLUDED_DOMAINS = ("organic-synthesis-split-opt18-strips", "organic-synthesis-split-sat18-strips")
 TIMEOUT_SECONDS = 600
 
 # An invariant is a list of parts {"predicate": name, "args": [...]}: rigid parameter indices, -1 for the counted
@@ -143,7 +145,7 @@ def check_case(translator: Path, root: Path, case: dict[str, Any]) -> dict[str, 
 def ipc_cases(root: Path) -> list[dict[str, str]]:
     cases: list[dict[str, str]] = []
     for name in sorted(pypddl_datasets.list_domains()):
-        if not name.startswith(SUITE_PREFIX):
+        if not name.startswith(SUITE_PREFIX) or name.removeprefix(SUITE_PREFIX) in EXCLUDED_DOMAINS:
             continue
         tasks = sorted(pypddl_datasets.fetch_domain(name).tasks, key=lambda task: task.task_path.name)
         first_task_of_domain_file: dict[Path, Any] = {}

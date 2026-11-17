@@ -36,7 +36,7 @@ class GenericJoinEvaluator
         // Added and removed views may have different types, so never select one with ?:.
         const auto apply_input = [&](size_t input, const auto& changed, bool removing)
         {
-            if (changed.empty())
+            if (changed.get_rows().empty())
                 return;
             const auto keys = m_plan.input_keys(input);
             auto& current = m_workspace.trie(input);

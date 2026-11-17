@@ -75,8 +75,7 @@ using ColumnsIndexView = urd::index_view<ygg::Columns, Repository>;
 struct AliasFreeRelationView
 {
     [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const;
-    [[nodiscard]] size_t size() const;
-    [[nodiscard]] bool empty() const;
+    [[nodiscard]] std::span<const RowBuilderView> get_rows() const;
     [[nodiscard]] RowBuilderView row(size_t) const;
     [[nodiscard]] bool contains(std::span<const ygg::Value>) const;
     [[nodiscard]] bool contains(RowBuilderView) const;
@@ -151,7 +150,10 @@ ygg::FreeRelationBuilderView borrow(const RelationBuilder& relation) { return la
 template<typename ViewType>
 void expect_rows(const ViewType& view, std::initializer_list<std::initializer_list<ygg::uint_t>> rows)
 {
-    ASSERT_EQ(view.size(), rows.size());
+    if constexpr (requires { view.get_rows(); })
+        ASSERT_EQ(std::ranges::size(view.get_rows()), rows.size());
+    else
+        ASSERT_EQ(view.size(), rows.size());  // a builder: its own size
     for (const auto& row : rows)
         EXPECT_TRUE(view.contains(packed(std::span<const ygg::uint_t>(row.begin(), row.size()))) && view.columns().size() == row.size());
 }
@@ -278,8 +280,8 @@ TEST(YggdrasilTests, DatabaseRelationRepositoryDistinguishesNullaryTruthAndEmpty
     EXPECT_NE(false_view.index(), true_view.index());
     EXPECT_EQ(false_view.columns().size(), 0);
     EXPECT_EQ(true_view.columns().size(), 0);
-    EXPECT_TRUE(false_view.empty());
-    EXPECT_EQ(true_view.size(), 1);
+    EXPECT_TRUE(false_view.get_rows().empty());
+    EXPECT_EQ(true_view.get_rows().size(), 1);
     EXPECT_TRUE(true_view.contains(cells()));
 
     RelationBuilder unary { tyr::datalog::tests::ops::cols({ ColumnIndex(5) }) };
@@ -650,7 +652,7 @@ TEST(YggdrasilTests, DatabaseRelationIteratorsSupportRandomAccessThroughTemporar
     {
         using V = decltype(view);
         const auto it = V(view).get_rows().end() - 1;
-        EXPECT_EQ((*it).size(), 0);
+        EXPECT_EQ((*it).get_values().size(), 0);
         EXPECT_EQ(it + 1, view.get_rows().end());
     };
     check_unit(urd::resolve(nullary, repository));
@@ -687,7 +689,7 @@ TEST(YggdrasilTests, TypedRelationRowsLeaveIndicesOfOtherRepositoriesRaw)
     static_assert(std::same_as<decltype(builder_view.row(0).value(0)), ygg::Value>);
     const auto check = [&](const auto& view)
     {
-        ASSERT_EQ(view.size(), 1);
+        ASSERT_EQ(view.get_rows().size(), 1);
         EXPECT_EQ(ygg::decode_value<ygg::uint_t>(view.row(0).value(0)), first_value);
         // Rows of interned relations name values owned elsewhere; callers resolve them explicitly.
         EXPECT_EQ(resolve_in(ygg::decode_value<ygg::uint_t>(view.row(0).value(0)), entities), first);
@@ -737,7 +739,7 @@ TEST(YggdrasilTests, TypedRelationRowsLeaveIndicesOfOtherRepositoriesRaw)
     auto truth = urd::builder<ygg::Relation<ygg::Schema>>();
     truth.insert(cells<ygg::uint_t>());
     const auto truth_view = urd::resolve(truth, entities);
-    EXPECT_EQ((*truth_view.get_rows().begin()).size(), 0);
+    EXPECT_EQ((*truth_view.get_rows().begin()).get_values().size(), 0);
     EXPECT_EQ(std::ranges::distance(truth_view.get_rows()), 1);
     truth.clear();
     EXPECT_EQ(truth_view.get_rows().begin(), truth_view.get_rows().end());

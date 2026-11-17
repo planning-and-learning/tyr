@@ -135,13 +135,13 @@ void project(const V& input, const ProjectionPlan& plan, urd::builder<ygg::Relat
     const auto positions = plan.positions();
     if (positions.empty())
     {
-        if (!input.empty())
+        if (!input.get_rows().empty())
             out.insert(std::span<const ygg::Value>());
         return;
     }
     auto& row = workspace.row;
     row.reset(out.widths());
-    for (size_t i = 0; i < input.size(); ++i)
+    for (size_t i = 0; i < input.get_rows().size(); ++i)
     {
         detail::copy_fields(row, 0, input.row(i).get_values(), positions);
         out.insert(row.row());
@@ -154,7 +154,7 @@ urd::builder<ygg::Relation<ygg::Schema>>& assign(urd::builder<ygg::Relation<ygg:
     if (reads_builder(source, destination))
         return destination;
     destination.initialize(source.columns());
-    for (size_t i = 0; i < source.size(); ++i)
+    for (size_t i = 0; i < source.get_rows().size(); ++i)
         destination.insert(source.row(i).get_values());
     return destination;
 }
@@ -165,7 +165,7 @@ void select(const V& input, Predicate predicate, urd::builder<ygg::Relation<ygg:
 {
     assert(std::ranges::equal(input.columns(), out.columns()));
     detail::prepare_output(out, input);
-    for (size_t i = 0; i < input.size(); ++i)
+    for (size_t i = 0; i < input.get_rows().size(); ++i)
         if (const auto row = input.row(i); std::invoke(predicate, row))
             out.insert(row.get_values());
 }
@@ -197,7 +197,7 @@ void join_rows(const L& left_operand,
                urd::builder<ygg::Relation<ygg::Schema>>& out,
                Workspace& workspace)
 {
-    if (left_operand.empty() || right_operand.empty())
+    if (left_operand.get_rows().empty() || right_operand.get_rows().empty())
         return;
 
     auto& row = workspace.row;
@@ -212,8 +212,8 @@ void join_rows(const L& left_operand,
 
     if (plan.left_keys().empty())
     {
-        for (size_t i = 0; i < left_operand.size(); ++i)
-            for (size_t j = 0; j < right_operand.size(); ++j)
+        for (size_t i = 0; i < left_operand.get_rows().size(); ++i)
+            for (size_t j = 0; j < right_operand.get_rows().size(); ++j)
                 emit(left_operand.row(i).get_values(), right_operand.row(j).get_values());
         return;
     }
@@ -223,7 +223,7 @@ void join_rows(const L& left_operand,
                                 std::span<const ColumnSlice> build_keys,
                                 std::span<const ColumnSlice> probe_keys)
     {
-        for (size_t i = 0; i < probe.size(); ++i)
+        for (size_t i = 0; i < probe.get_rows().size(); ++i)
         {
             const auto probe_row = probe.row(i).get_values();
             for (const auto [first, last] = index.equal_range(join_key_hash(probe_row, probe_keys));
@@ -258,8 +258,8 @@ void join(const L& left_operand, const R& right_operand, const JoinPlan& plan, u
     detail::assert_planned(left_operand, right_operand, plan);
     assert(std::ranges::equal(out.columns(), plan.output_columns()));
     detail::prepare_output(out, left_operand, right_operand);
-    const bool build_left = left_operand.size() <= right_operand.size();
-    if (!plan.left_keys().empty() && !left_operand.empty() && !right_operand.empty())
+    const bool build_left = left_operand.get_rows().size() <= right_operand.get_rows().size();
+    if (!plan.left_keys().empty() && !left_operand.get_rows().empty() && !right_operand.get_rows().empty())
     {
         if (build_left)
             detail::build_join_index(left_operand, plan.left_keys(), workspace.join_index);
@@ -274,9 +274,9 @@ void union_(const L& left_operand, const R& right_operand, [[maybe_unused]] cons
 {
     assert(std::ranges::equal(left_operand.columns(), plan.output_columns()) && std::ranges::equal(right_operand.columns(), plan.output_columns()));
     detail::prepare_output(out, left_operand, right_operand);
-    for (size_t i = 0; i < left_operand.size(); ++i)
+    for (size_t i = 0; i < left_operand.get_rows().size(); ++i)
         out.insert(left_operand.row(i).get_values());
-    for (size_t i = 0; i < right_operand.size(); ++i)
+    for (size_t i = 0; i < right_operand.get_rows().size(); ++i)
         out.insert(right_operand.row(i).get_values());
 }
 
@@ -285,7 +285,7 @@ void difference(const L& left_operand, const R& right_operand, [[maybe_unused]] 
 {
     assert(std::ranges::equal(left_operand.columns(), plan.output_columns()) && std::ranges::equal(right_operand.columns(), plan.output_columns()));
     detail::prepare_output(out, left_operand, right_operand);
-    for (size_t i = 0; i < left_operand.size(); ++i)
+    for (size_t i = 0; i < left_operand.get_rows().size(); ++i)
         if (const auto row = left_operand.row(i); !right_operand.contains(row))
             out.insert(row.get_values());
 }
@@ -306,19 +306,19 @@ void filter_matches(const L& left_operand,
     prepare_output(out, left_operand, right_operand);
     const auto left_keys = plan.left_keys();
     const auto right_keys = plan.right_keys();
-    if (!left_keys.empty() && !right_operand.empty())
+    if (!left_keys.empty() && !right_operand.get_rows().empty())
         build_join_index(right_operand, right_keys, workspace.join_index);
     const auto matched = [&](const ygg::RowPool::row_type& row)
     {
-        if (right_operand.empty() || left_keys.empty())
-            return !right_operand.empty();
+        if (right_operand.get_rows().empty() || left_keys.empty())
+            return !right_operand.get_rows().empty();
         for (const auto [first, last] = workspace.join_index.equal_range(join_key_hash(row, left_keys));
              const auto match : std::ranges::subrange(first, last) | std::views::values)
             if (join_keys_equal(right_operand.row(match).get_values(), right_keys, row, left_keys))
                 return true;
         return false;
     };
-    for (size_t i = 0; i < left_operand.size(); ++i)
+    for (size_t i = 0; i < left_operand.get_rows().size(); ++i)
         if (const auto row = left_operand.row(i).get_values(); matched(row) == matching)
             out.insert(row);
 }

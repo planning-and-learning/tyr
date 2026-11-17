@@ -285,8 +285,8 @@ TEST(TyrPlanningApplicabilityTest, TppUndefinedDriveCostIsFilteredAsAnEffect)
     for (const auto binding : bindings)
     {
         EXPECT_EQ(binding.get_relation().get_name().str(), "drive");
-        ASSERT_EQ(binding.get_key().second.size(), 3);
-        EXPECT_NE(binding.get_key().second[1], binding.get_key().second[2]);
+        ASSERT_EQ(binding.get_values().size(), 3);
+        EXPECT_NE(binding.get_values()[1], binding.get_values()[2]);
     }
 }
 

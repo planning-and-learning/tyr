@@ -232,8 +232,8 @@ def test_incremental_batch_changes_projection_union_and_difference() -> None:
     maintained.initialize(borrow(inputs))
     for index in range(2):
         assert rows(maintained.get_result(index)) == rows(full.get_result(index))
-        assert maintained.get_delta(index).added.empty()
-        assert maintained.get_delta(index).removed.empty()
+        assert not maintained.get_delta(index).added.get_rows()
+        assert not maintained.get_delta(index).removed.get_rows()
     assert maintained.memory_usage() > 0
     steps: list[tuple[list[set[tuple[int, int]]], list[set[tuple[int, int]]]]] = [
         ([set(), set(), set()], [{(1, 7)}, set(), set()]),

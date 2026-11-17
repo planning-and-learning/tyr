@@ -478,7 +478,7 @@ TEST(YggdrasilTests, DatabaseDistanceNullaryTuplesUseTheSingleEmptyVertex)
     evaluator.update(std::pair { layer().view(empty), layer().view(truth) },
                      std::pair { layer().view(empty), layer().view(truth) },
                      std::pair { layer().view(empty), layer().view(empty) });
-    EXPECT_TRUE(evaluator.get_result().empty());
+    EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     EXPECT_TRUE(evaluator.get_delta().removed.contains(std::array { ygg::encode_value(ygg::uint_t(0)) }));
     sources.insert(std::array<ygg::Value, 0> {});
     database::DistanceWorkspace workspace(plan);

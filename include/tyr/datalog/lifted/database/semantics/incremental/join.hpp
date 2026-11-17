@@ -28,8 +28,8 @@ void insert_rows(const V& input,
                  urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains>& index)
 {
     if (!keys.empty())
-        index.reserve(rows.size() + input.size());
-    for (size_t i = 0; i < input.size(); ++i)
+        index.reserve(rows.size() + input.get_rows().size());
+    for (size_t i = 0; i < input.get_rows().size(); ++i)
     {
         const auto row = input.row(i).get_values();
         const auto previous_size = rows.size();

@@ -100,7 +100,7 @@ public:
         assert(std::ranges::equal(rows.columns(), m_query.input_columns[slot]));
         auto& snapshot = *m_inputs[slot];
         snapshot.clear();
-        for (size_t r = 0; r < rows.size(); ++r)
+        for (size_t r = 0; r < rows.get_rows().size(); ++r)
             snapshot.insert(rows.row(r).get_values());
         m_bound.insert(slot);
         invalidate(slot);
@@ -112,7 +112,7 @@ public:
     template<RelationViewConcept A, RelationViewConcept R>
     void replace(size_t slot, const A& added, const R& removed)
     {
-        if (added.empty() && removed.empty())
+        if (added.get_rows().empty() && removed.get_rows().empty())
             return;
         auto& snapshot = *m_inputs[slot];
         const auto stored = m_layer->view(snapshot);
@@ -314,7 +314,7 @@ private:
         auto& entry = m_indexes[lookup.index];
         if (entry.positions.empty())
         {
-            for (size_t r = 0; r < rows.size(); ++r)
+            for (size_t r = 0; r < rows.get_rows().size(); ++r)
                 if (!visit(r))
                     return proceed;
             return true;
@@ -323,7 +323,7 @@ private:
         {
             entry.rows.clear();
             entry.rows.reserve(rows.size());
-            for (size_t r = 0; r < rows.size(); ++r)
+            for (size_t r = 0; r < rows.get_rows().size(); ++r)
                 entry.rows.insert({ database::detail::join_key_hash(rows.row(r).get_values(), entry.keys), ygg::to_uint_t(r) });
             entry.built = true;
         }

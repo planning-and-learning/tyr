@@ -229,7 +229,7 @@ TEST(YggdrasilTests, DatabaseGenericJoinHandlesDisconnectedAndNullaryInputs)
     EXPECT_EQ(evaluator.get_result().size(), 1);
     const std::array undo { std::pair { borrow(change.removed), borrow(change.added) }, std::pair { borrow(change.removed), borrow(change.added) } };
     evaluator.update(undo);
-    EXPECT_TRUE(evaluator.get_result().empty());
+    EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     EXPECT_EQ(evaluator.get_delta().removed.size(), 1);
 }
 
@@ -338,7 +338,7 @@ TEST(YggdrasilTests, DatabaseGenericJoinIncrementalAvoidsTransientCrossedMatches
     b.added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     const std::array changes { std::pair { borrow(a.added), borrow(a.removed) }, std::pair { borrow(b.added), borrow(b.removed) } };
     evaluator.update(changes);
-    EXPECT_TRUE(evaluator.get_result().empty());
+    EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     EXPECT_TRUE(evaluator.get_delta().added.empty());
     EXPECT_TRUE(evaluator.get_delta().removed.empty());
 }
@@ -480,7 +480,7 @@ TEST(YggdrasilTests, DatabaseGenericJoinRejectsInvalidBatchesBeforeMutationAndGu
     // The late invalid slot must not have removed the first slot's row.
     second.clear();
     EXPECT_NO_THROW(evaluator.update(invalid));
-    EXPECT_TRUE(evaluator.get_result().empty());
+    EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     expect_same(evaluator.get_delta().change().second, borrow(input));
 
     const std::array single_input { borrow(input) };

@@ -151,8 +151,8 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
     )
     expected = {(0, 0, 0), (0, 2, 2), (0, 3, 1), (2, 2, 0), (2, 3, 1)}
     assert rows(evaluator.get_result()) == expected
-    assert evaluator.get_delta().added.empty()
-    assert evaluator.get_delta().removed.empty()
+    assert not evaluator.get_delta().added.get_rows()
+    assert not evaluator.get_delta().removed.get_rows()
     assert evaluator.memory_usage() > 0
 
     unchanged: tuple[Rows, Rows] = ((), ())
@@ -189,8 +189,8 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
     assert rows(evaluator.get_delta().removed) == before - expected
     update()
     assert rows(evaluator.get_result()) == expected
-    assert evaluator.get_delta().added.empty()
-    assert evaluator.get_delta().removed.empty()
+    assert not evaluator.get_delta().added.get_rows()
+    assert not evaluator.get_delta().removed.get_rows()
 
 
 @pytest.mark.parametrize(
@@ -232,7 +232,7 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
         assert value.arity() == 3
         assert labels(value.columns()) == columns(20, 21, 99)
         with pytest.raises(IndexError):
-            value.row(value.size())
+            value.row(len(value.get_rows()))
 
     for value in (result, delta.added, delta.removed):
         check_read_only(value)
@@ -252,7 +252,7 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
         case "delta":
             retained = delta
         case "result_row":
-            retained = result.row(result.size() - 1)
+            retained = result.row(len(result.get_rows()) - 1)
         case "added_row":
             retained = delta.added.row(0)
         case "removed_row":

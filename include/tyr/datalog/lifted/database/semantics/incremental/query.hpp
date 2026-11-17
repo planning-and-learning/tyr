@@ -101,7 +101,7 @@ struct NodeRules
             const auto right_operand = graph.result(operation.get_right_operand());
             const auto reconcile = [&](const auto& rows)
             {
-                for (size_t i = 0; i < rows.size(); ++i)
+                for (size_t i = 0; i < rows.get_rows().size(); ++i)
                 {
                     const auto row = rows.row(i);
                     const bool present = std::same_as<Tag, QueryUnionTag> ? left_operand.contains(row) || right_operand.contains(row) :
@@ -121,7 +121,7 @@ struct NodeRules
         {
             const auto apply = [&](const auto& rows, bool present)
             {
-                for (size_t i = 0; i < rows.size(); ++i)
+                for (size_t i = 0; i < rows.get_rows().size(); ++i)
                 {
                     const auto row = rows.row(i).get_values();
                     if constexpr (std::same_as<Tag, QuerySelectEqualTag> || std::same_as<Tag, QuerySelectValueTag>)
@@ -334,10 +334,10 @@ public:
             if (is_internal(added) || is_internal(removed))
                 throw std::invalid_argument("Incremental query: input aliases evaluator storage.");
             const auto baseline = result(query);
-            for (size_t row = 0; row < added.size(); ++row)
+            for (size_t row = 0; row < added.get_rows().size(); ++row)
                 if (baseline.contains(added.row(row)))
                     throw std::invalid_argument("Incremental query: added row is already present.");
-            for (size_t row = 0; row < removed.size(); ++row)
+            for (size_t row = 0; row < removed.get_rows().size(); ++row)
                 if (!baseline.contains(removed.row(row)))
                     throw std::invalid_argument("Incremental query: removed row is absent.");
         }

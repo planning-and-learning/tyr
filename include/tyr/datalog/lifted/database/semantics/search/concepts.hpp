@@ -65,11 +65,11 @@ template<ygg::RowViewConcept<ygg::Schema> R>
 std::span<const ygg::Value> vertex_values(const R& row, urd::Store<urd::sequence<ygg::Value>>& buffer)
 { return vertex_values(row.get_values(), buffer); }
 
-/// A random-access sequence of vertices: size() of them, row(i) the i-th, its values or a stored row (e.g. a relation
+/// A random-access sequence of vertices: get_rows() of them, row(i) the i-th, its values or a stored row (e.g. a relation
 /// view).
 template<typename R>
 concept VertexRange = requires(const R& range, size_t i, urd::Store<urd::sequence<ygg::Value>>& buffer) {
-    { range.size() } -> std::convertible_to<size_t>;
+    { range.get_rows().size() } -> std::convertible_to<size_t>;
     { vertex_values(range.row(i), buffer) } -> std::same_as<std::span<const ygg::Value>>;
 };
 

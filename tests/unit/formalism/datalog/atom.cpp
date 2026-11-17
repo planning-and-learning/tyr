@@ -65,7 +65,7 @@ concept GroundAtomContract = std::constructible_from<urd::index<Entity>, ygg::ui
                                     view.get_predicate();
                                     view.get_row();
                                     view.get_row().get_objects();
-                                    view.get_row().get_key();
+                                    view.get_row().relation_key();
                                 };
 
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)

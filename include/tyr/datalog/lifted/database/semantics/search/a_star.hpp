@@ -154,7 +154,7 @@ public:
             return infinity;
         if (const auto distance = reuse(sources))
             return *distance;
-        for (size_t i = 0; i < sources.size(); ++i)
+        for (size_t i = 0; i < sources.get_rows().size(); ++i)
             push(vertex_values(sources.row(i), m_storage->m_source), 0, {});
         while (!m_storage->m_open_list.empty())
         {
@@ -226,7 +226,7 @@ private:
     [[nodiscard]] bool closed_off(const Sources& sources) const
     {
         return m_backward->exhausted()
-               && std::ranges::none_of(std::views::iota(static_cast<size_t>(0), sources.size()),
+               && std::ranges::none_of(std::views::iota(static_cast<size_t>(0), sources.get_rows().size()),
                                        [&](size_t i) { return m_backward->level(m_tree->find(vertex_values(sources.row(i), m_storage->m_source))) != none; });
     }
 
@@ -234,7 +234,7 @@ private:
     template<VertexRange Sources>
     std::optional<ygg::uint_t> reuse(const Sources& sources)
     {
-        if (sources.size() != 1)
+        if (sources.get_rows().size() != 1)
             return std::nullopt;
         const auto stored = m_tree->find(vertex_values(sources.row(0), m_storage->m_source));
         if (stored.is_none())

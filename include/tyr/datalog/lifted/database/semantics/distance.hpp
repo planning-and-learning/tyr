@@ -145,21 +145,21 @@ void DistanceWorkspace::append_distances(const S& sources,
 {
     m_graph.clear();
     m_targets.clear();
-    if (sources.empty() || targets.empty())
+    if (sources.get_rows().empty() || targets.get_rows().empty())
         return;
-    m_graph.outgoing.reserve(edges.size());
-    for (size_t i = 0; i < edges.size(); ++i)
+    m_graph.outgoing.reserve(edges.get_rows().size());
+    for (size_t i = 0; i < edges.get_rows().size(); ++i)
     {
         const auto [from, to] = m_graph.insert_endpoints(edges.row(i).get_values());
         m_graph.outgoing.insert({ from, to });
     }
-    for (size_t i = 0; i < sources.size(); ++i)
+    for (size_t i = 0; i < sources.get_rows().size(); ++i)
         m_graph.insert_vertex(sources.row(i).get_values());
-    m_targets.reserve(targets.size());
-    for (size_t i = 0; i < targets.size(); ++i)
+    m_targets.reserve(targets.get_rows().size());
+    for (size_t i = 0; i < targets.get_rows().size(); ++i)
         m_targets.push_back(m_graph.insert_vertex(targets.row(i).get_values()));
 
-    for (size_t i = 0; i < sources.size(); ++i)
+    for (size_t i = 0; i < sources.get_rows().size(); ++i)
     {
         const auto from = m_graph.find_vertex(sources.row(i).get_values());
         URD_ASSUME(!from.is_none());  // every source was inserted above

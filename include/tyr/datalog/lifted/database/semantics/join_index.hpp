@@ -48,8 +48,8 @@ template<RelationViewConcept V>
 void build_join_index(const V& build, std::span<const ColumnSlice> keys, urd::Store<urd::map<ygg::hash_t, size_t>, urd::multi, urd::retains>& index)
 {
     index.clear();
-    index.reserve(build.size());
-    for (size_t i = 0; i < build.size(); ++i)
+    index.reserve(build.get_rows().size());
+    for (size_t i = 0; i < build.get_rows().size(); ++i)
         index.insert({ join_key_hash(build.row(i).get_values(), keys), i });
 }
 }  // namespace tyr::datalog::database::detail

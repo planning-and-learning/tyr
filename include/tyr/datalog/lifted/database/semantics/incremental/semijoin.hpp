@@ -61,7 +61,7 @@ class SemijoinEvaluator
     {
         const auto left_keys = m_plan.left_keys();
         const auto right_keys = m_plan.right_keys();
-        if (right_rows.empty())
+        if (right_rows.get_rows().empty())
             return;
         const auto current = m_layer->view(m_left_operand);
         if (left_keys.empty())
@@ -97,7 +97,7 @@ class SemijoinEvaluator
         for (size_t i = 0; i < left_added.size(); ++i)
             reconcile(left_added.row(i).get_values());
         if (m_plan.left_keys().empty())
-            reconcile_matches(right_added.empty() ? right_removed : right_added);
+            reconcile_matches(right_added.get_rows().empty() ? right_removed : right_added);
         else
         {
             reconcile_matches(right_removed);

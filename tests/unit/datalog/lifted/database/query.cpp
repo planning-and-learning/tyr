@@ -39,7 +39,7 @@ auto rows(const auto& relation)
     for (const auto row : relation.get_rows())
     {
         auto& values = result.emplace_back();
-        for (size_t c = 0; c < row.size(); ++c)
+        for (size_t c = 0; c < row.get_values().size(); ++c)
             values.push_back(row.value(c));
     }
     std::ranges::sort(result);
@@ -351,7 +351,7 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     apply(e, de);
     full.evaluate(inputs);
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
-    EXPECT_TRUE(incremental.get_result(1).empty());
+    EXPECT_TRUE(incremental.get_result(1).get_rows().empty());
     EXPECT_EQ(incremental.get_delta().added.size(), 1);
     EXPECT_EQ(incremental.get_delta().removed.size(), 1);
 }
@@ -503,7 +503,7 @@ TEST(DatabaseQuery, GenericJoinPlanExecutesInBothModesAndPrunesAlternatives)
     incremental.update(std::array { std::pair { borrow(da.added), borrow(da.removed) },
                                     std::pair { borrow(dbb.added), borrow(dbb.removed) },
                                     std::pair { borrow(dc.added), borrow(dc.removed) } });
-    EXPECT_TRUE(incremental.get_result().empty());
+    EXPECT_TRUE(incremental.get_result().get_rows().empty());
     EXPECT_EQ(incremental.get_delta().removed.size(), 1);
     apply(cr, dc);
     full.evaluate(inputs);

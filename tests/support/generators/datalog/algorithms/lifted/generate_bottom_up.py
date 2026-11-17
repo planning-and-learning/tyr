@@ -91,9 +91,21 @@ def binding_objects(row: RowPredicateFluent) -> str:
     return "[" + ", ".join(str(row)[1:-1].split()[1:]) + "]"
 
 
-def atoms_by_predicate(program: datalog.lifted.Program, workspace: Workspace) -> list[PredicateAtoms]:
+def atoms_by_predicate(
+    program: datalog.lifted.Program, workspace: Workspace,
+    effect_programs: planning.ApplicableActionProgram | planning.GroundTaskProgram | None = None,
+) -> list[PredicateAtoms]:
+    """The fluent atoms by predicate, without the predicates of the conditional effects of `effect_programs` (internal to
+    the action and ground task programs; the solver test leaves them out the same way)."""
+    effect_predicates = (
+        set()
+        if effect_programs is None
+        else {predicate.get_name() for _, predicate in effect_programs.get_conditional_effect_to_predicate_mapping()}
+    )
     result: list[PredicateAtoms] = []
     for predicate, rows in fluent_rows(program, workspace):
+        if predicate.get_name() in effect_predicates:
+            continue
         bindings: list[AtomBinding] = [{"objects": binding_objects(row)} for row in rows]
         result.append(
             {
@@ -137,12 +149,12 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
             program = planning.ApplicableActionProgram(context.task.get_task())
             datalog_program = program.get_datalog_program()
             return atoms_by_predicate(
-                datalog_program, solve_program(context.execution_context, datalog_program, axiom_rows)
+                datalog_program, solve_program(context.execution_context, datalog_program, axiom_rows), program
             )
         case "ground_task":
             program = planning.GroundTaskProgram(context.task.get_task())
             datalog_program = program.get_datalog_program()
-            return atoms_by_predicate(datalog_program, solve_program(context.execution_context, datalog_program))
+            return atoms_by_predicate(datalog_program, solve_program(context.execution_context, datalog_program), program)
 
 
 def generate_case(case: FixtureCase) -> FixtureCase:

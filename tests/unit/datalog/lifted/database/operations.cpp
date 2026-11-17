@@ -319,7 +319,7 @@ TEST(YggdrasilTests, DatabaseBuilderViewsShareSchemasAndObserveRefills)
     EXPECT_EQ(copy.columns()[0].label, ColumnIndex(3));
     EXPECT_EQ(view.row(0).get_values().data(), first_row);
     relation.clear();
-    EXPECT_TRUE(view.empty());
+    EXPECT_TRUE(view.get_rows().empty());
     relation.insert(cells(9, 10));
     EXPECT_TRUE(copy.contains(cells(9, 10)));
     expect_relation(projected(view, { ColumnIndex(4), ColumnIndex(3) }), { ColumnIndex(4), ColumnIndex(3) }, { { 10, 9 } });
@@ -684,7 +684,7 @@ TEST(YggdrasilTests, DatabaseNullaryRelationsObeyBooleanLaws)
     objects.clear();
     database::project(borrow(objects), nothing, output, workspace);
     expect_relation(output, {}, {});
-    expect_relation(selected(borrow(true_), [](const auto& row) { return row.size() == 0; }), {}, { {} });
+    expect_relation(selected(borrow(true_), [](const auto& row) { return row.get_values().size() == 0; }), {}, { {} });
     expect_relation(selected(borrow(true_), [](const auto&) { return false; }), {}, {});
 }
 

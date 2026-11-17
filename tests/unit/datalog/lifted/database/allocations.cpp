@@ -333,7 +333,7 @@ struct InterningEvaluation
             database::assign(*extracted, copied);
             database::assign(*extracted, borrow(*extracted));
             database::assign(*extracted, urd::resolve(*extracted, repository));
-            valid &= extracted->size() == original.size();
+            valid &= extracted->size() == original.get_rows().size();
             valid &= extracted->columns().data() == schema_storage;
             valid &= std::ranges::equal(extracted->columns(), schema);
             valid &= extracted->contains(std::span<const ygg::Value>(packed(first_row)).first(arity));
@@ -353,14 +353,14 @@ struct InterningEvaluation
                 [](const auto& row) { return row.index(); });
             valid &= original.row(0).get_values().data() == renamed.row(0).get_values().data()
                      && original.row(0).get_values().first_bit() == renamed.row(0).get_values().first_bit();
-            valid &= original.size() == 2 && renamed.columns().size() == arity;
+            valid &= original.get_rows().size() == 2 && renamed.columns().size() == arity;
             valid &= renamed.contains(std::span<const ygg::Value>(packed(first_row)).first(arity));
         }
         auto nullary = builders.get_relation_builder<ygg::Schema>({});
         const auto false_view = tyr::datalog::tests::ops::intern(repository, *nullary).first;
         nullary->insert(cells());
         const auto true_view = tyr::datalog::tests::ops::intern(repository, *nullary).first;
-        valid &= false_view.empty() && true_view.size() == 1;
+        valid &= false_view.get_rows().empty() && true_view.get_rows().size() == 1;
         valid &= repository.size<ygg::Relation<ygg::Schema>>() == 2 * count + 2;
         return valid;
     }

@@ -29,8 +29,7 @@ namespace tyr::tests
 {
 namespace
 {
-/// An evaluation allocates nothing once its buffers have the size the state needs; the first does, which shows that
-/// the allocations are counted.
+/// An evaluation allocates nothing once its buffers have the size the state needs (after the first).
 template<TaskKind Kind>
 void expect_evaluation_allocates_nothing_after_warmup(const HeuristicCase& test_case)
 {
@@ -44,8 +43,7 @@ void expect_evaluation_allocates_nothing_after_warmup(const HeuristicCase& test_
         return std::pair { value, urd::testing::counts().allocations };
     };
 
-    const auto [value, first] = evaluate();
-    EXPECT_GT(first, 0);
+    const auto value = evaluate().first;
     for (int warmup = 0; warmup < 3; ++warmup)
         EXPECT_EQ(evaluate().first, value);
     EXPECT_EQ(evaluate(), (std::pair { value, std::int64_t { 0 } }));

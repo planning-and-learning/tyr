@@ -119,7 +119,7 @@ public:
         assert(std::ranges::equal(out.columns(), m_plan.output_columns()));
         m_edges.evaluator().bind(input);
         m_probes.clear();
-        for (size_t r = 0; r < probes.size(); ++r)
+        for (size_t r = 0; r < probes.get_rows().size(); ++r)
             m_probes.insert(vertex_values(probes.row(r), m_values));
         if (m_probes.empty())
             return;
@@ -146,7 +146,7 @@ private:
         const VertexSet* set = nullptr;
         std::span<const VertexSet::handle_type> ids;
 
-        [[nodiscard]] size_t size() const noexcept { return ids.size(); }
+        [[nodiscard]] std::span<const VertexSet::handle_type> get_rows() const noexcept { return ids; }
 
         [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return set->at(ids[i]); }
     };
@@ -223,7 +223,7 @@ private:
     void group(const S& sources, const T& targets)
     {
         m_keys.clear();
-        for (size_t r = 0; r < sources.size(); ++r)
+        for (size_t r = 0; r < sources.get_rows().size(); ++r)
             m_keys.insert(key_of(vertex_values(sources.row(r), m_values)));
         m_key_sources.resize(m_keys.size());
         m_key_targets.resize(m_keys.size());
@@ -231,13 +231,13 @@ private:
             rows.clear();
         for (auto& rows : m_key_targets)
             rows.clear();
-        for (size_t r = 0; r < sources.size(); ++r)
+        for (size_t r = 0; r < sources.get_rows().size(); ++r)
         {
             const auto key = m_keys.find(key_of(vertex_values(sources.row(r), m_values)));
             URD_ASSUME(!key.is_none());  // every source's key was inserted above
             m_key_sources[key].push_back(r);
         }
-        for (size_t r = 0; r < targets.size(); ++r)
+        for (size_t r = 0; r < targets.get_rows().size(); ++r)
             if (const auto key = m_keys.find(key_of(vertex_values(targets.row(r), m_values))); !key.is_none())  // A key without sources has no paths.
                 m_key_targets[key].push_back(r);
     }

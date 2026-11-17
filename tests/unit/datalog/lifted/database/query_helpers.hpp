@@ -231,7 +231,7 @@ std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repos
     relation->pool = repository.schema(source.columns());
     auto row = checkout<ygg::Row<ygg::Schema>>(records());
     row->relation = relation->pool;
-    for (std::size_t i = 0; i < source.size(); ++i)
+    for (std::size_t i = 0; i < source.get_rows().size(); ++i)
     {
         const auto values = source.row(i).get_values();
         row->values.set(values.begin(), values.end());
@@ -333,8 +333,8 @@ template<ygg::RowViewConcept<ygg::Schema> R>
 urd::Store<urd::sequence<ygg::uint_t>> decode(const R& row)
 {
     urd::Store<urd::sequence<ygg::uint_t>> values;
-    values.reserve(row.size());
-    for (size_t c = 0; c < row.size(); ++c)
+    values.reserve(row.get_values().size());
+    for (size_t c = 0; c < row.get_values().size(); ++c)
         values.push_back(ygg::decode_value<ygg::uint_t>(row.value(c)));
     return values;
 }

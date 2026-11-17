@@ -46,7 +46,7 @@ auto rows(const auto& relation)
     for (const auto row : relation.get_rows())
     {
         auto& values = result.emplace_back();
-        for (size_t c = 0; c < row.size(); ++c)
+        for (size_t c = 0; c < row.get_values().size(); ++c)
             values.push_back(row.value(c));
     }
     std::ranges::sort(result);
@@ -366,7 +366,7 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
     reference.evaluate(refs);
     EXPECT_EQ(reference.get_result(0).size(), 1);
     EXPECT_EQ(reference.get_result(1).size(), 1);
-    EXPECT_TRUE(reference.get_result(2).empty());
+    EXPECT_TRUE(reference.get_result(2).get_rows().empty());
     for (const auto* chosen : { &unmeasured, &measured })
     {
         EXPECT_EQ(chosen->roots()[8], chosen->roots()[9]);

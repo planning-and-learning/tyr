@@ -39,13 +39,13 @@ template<RelationViewConcept Relation>
 RelationStatistics measure_relation(const Relation& relation)
 {
     RelationStatistics stats;
-    stats.rows = static_cast<double>(relation.size());
+    stats.rows = static_cast<double>(relation.get_rows().size());
     const auto columns = relation.columns();
     auto seen = urd::Store<urd::set<ygg::Value>>();
     for (size_t c = 0; c < columns.size(); ++c)
     {
         seen.clear();
-        for (size_t i = 0; i < relation.size(); ++i)
+        for (size_t i = 0; i < relation.get_rows().size(); ++i)
             seen.insert(relation.row(i).value(c));
         stats.distinct[columns[c].label] = static_cast<double>(seen.size());
     }

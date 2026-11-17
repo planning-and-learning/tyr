@@ -77,7 +77,7 @@ void require_delta(const A& added, const R& removed, [[maybe_unused]] std::span<
 {
     assert(std::ranges::equal(added.columns(), columns));
     assert(std::ranges::equal(removed.columns(), columns));
-    for (size_t i = 0; i < added.size(); ++i)
+    for (size_t i = 0; i < added.get_rows().size(); ++i)
         if (removed.contains(added.row(i)))
             throw std::invalid_argument("Incremental evaluation: added and removed rows overlap.");
 }

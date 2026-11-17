@@ -177,22 +177,22 @@ void DistanceEvaluator::initialize(const S& sources, const E& edges, const T& ta
     m_repair->clear();
     m_changed.clear();
     clear_changes();
-    m_graph.outgoing.reserve(edges.size());
-    m_reverse.reserve(edges.size());
-    for (size_t i = 0; i < edges.size(); ++i)
+    m_graph.outgoing.reserve(edges.get_rows().size());
+    m_reverse.reserve(edges.get_rows().size());
+    for (size_t i = 0; i < edges.get_rows().size(); ++i)
     {
         const auto [from, to] = m_graph.insert_endpoints(edges.row(i).get_values());
         m_graph.outgoing.insert({ from, to });
         m_reverse.insert({ to, from });
     }
-    for (size_t i = 0; i < sources.size(); ++i)
+    for (size_t i = 0; i < sources.get_rows().size(); ++i)
         m_graph.insert_vertex(sources.row(i).get_values());
-    for (size_t i = 0; i < targets.size(); ++i)
+    for (size_t i = 0; i < targets.get_rows().size(); ++i)
         m_targets.push_back(m_graph.insert_vertex(targets.row(i).get_values()));
     resize_vertices();
     for (const auto target : m_targets)
         m_target_flags[target] = Flag::SET;
-    for (size_t i = 0; i < sources.size(); ++i)
+    for (size_t i = 0; i < sources.get_rows().size(); ++i)
     {
         const auto source = m_graph.find_vertex(sources.row(i).get_values());
         URD_ASSUME(!source.is_none());  // every source was inserted above
@@ -230,7 +230,7 @@ void DistanceEvaluator::require_actual(const S& sources, const E& edges, const T
     };
     const auto require_members = [&](const auto& rows, auto is_member, bool removing)
     {
-        for (size_t i = 0; i < rows.size(); ++i)
+        for (size_t i = 0; i < rows.get_rows().size(); ++i)
         {
             const auto vertex = m_graph.vertices.find(vertex_values(rows.row(i), m_values));
             if ((!vertex.is_none() && (this->*is_member)(vertex)) != removing)
@@ -242,10 +242,10 @@ void DistanceEvaluator::require_actual(const S& sources, const E& edges, const T
     require_members(sources_added, &DistanceEvaluator::is_source, false);
     require_members(targets_removed, &DistanceEvaluator::is_target, true);
     require_members(targets_added, &DistanceEvaluator::is_target, false);
-    for (size_t i = 0; i < edges_removed.size(); ++i)
+    for (size_t i = 0; i < edges_removed.get_rows().size(); ++i)
         if (!contains_edge(edges_removed.row(i).get_values()))
             throw std::invalid_argument("Incremental distance: removed edge is absent.");
-    for (size_t i = 0; i < edges_added.size(); ++i)
+    for (size_t i = 0; i < edges_added.get_rows().size(); ++i)
         if (contains_edge(edges_added.row(i).get_values()))
             throw std::invalid_argument("Incremental distance: added edge is already present.");
 }
@@ -260,19 +260,19 @@ void DistanceEvaluator::apply(const S& sources, const E& edges, const T& targets
     m_delta.clear();
     clear_changes();
 
-    for (size_t i = 0; i < sources_removed.size(); ++i)
+    for (size_t i = 0; i < sources_removed.get_rows().size(); ++i)
     {
         const auto id = require_vertex(vertex_values(sources_removed.row(i), m_values));
         assert(is_source(id));
         m_sources_removed.push_back(id);
     }
-    for (size_t i = 0; i < targets_removed.size(); ++i)
+    for (size_t i = 0; i < targets_removed.get_rows().size(); ++i)
     {
         const auto id = require_vertex(vertex_values(targets_removed.row(i), m_values));
         assert(is_target(id));
         m_targets_removed.push_back(id);
     }
-    for (size_t i = 0; i < edges_removed.size(); ++i)
+    for (size_t i = 0; i < edges_removed.get_rows().size(); ++i)
     {
         const auto row = vertex_values(edges_removed.row(i), m_values);
         const auto from = require_vertex(row.first(m_plan.tuple_size()));
@@ -280,19 +280,19 @@ void DistanceEvaluator::apply(const S& sources, const E& edges, const T& targets
         assert(m_graph.contains_edge(from, to));
         m_edges_removed.emplace_back(from, to);
     }
-    for (size_t i = 0; i < sources_added.size(); ++i)
+    for (size_t i = 0; i < sources_added.get_rows().size(); ++i)
     {
         const auto id = m_graph.insert_vertex(sources_added.row(i).get_values());
         assert(!is_source(id));
         m_sources_added.push_back(id);
     }
-    for (size_t i = 0; i < targets_added.size(); ++i)
+    for (size_t i = 0; i < targets_added.get_rows().size(); ++i)
     {
         const auto id = m_graph.insert_vertex(targets_added.row(i).get_values());
         assert(!is_target(id));
         m_targets_added.push_back(id);
     }
-    for (size_t i = 0; i < edges_added.size(); ++i)
+    for (size_t i = 0; i < edges_added.get_rows().size(); ++i)
     {
         const auto [from, to] = m_graph.insert_endpoints(edges_added.row(i).get_values());
         assert(!m_graph.contains_edge(from, to));

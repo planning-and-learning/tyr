@@ -75,7 +75,7 @@ concept RowContract =
            view.get_relation();
            view.template get<urd::index<tyr::formalism::Object>>();
            view.get(0);
-           view.get_key();
+           view.relation_key();
        };
 
 template<typename Repository, typename... Relations>

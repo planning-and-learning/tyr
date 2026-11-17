@@ -60,8 +60,8 @@ std::set<urd::Store<urd::sequence<T>>> rows(const V& relation)
     {
         const auto row = relation.row(i);
         urd::Store<urd::sequence<T>> values;
-        values.reserve(row.size());
-        for (size_t column = 0; column < row.size(); ++column)
+        values.reserve(row.get_values().size());
+        for (size_t column = 0; column < row.get_values().size(); ++column)
             values.push_back(row.get_values().template get<T>(column));
         result.insert(std::move(values));
     }
@@ -246,7 +246,7 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionConsolidatesMixedChangesAndUnd
     for (size_t i = 0; i < input.size(); ++i)
         all.insert(borrow(input).row(i).get_values());
     update(empty, all);
-    EXPECT_TRUE(evaluator.get_result().empty());
+    EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     update(all, empty);
     EXPECT_EQ(rows<ygg::uint_t>(borrow(input)), initial);
 }
@@ -275,7 +275,7 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionDoesNotHideRemovalUnderflowWit
     EXPECT_TRUE(evaluator.get_delta().added.empty());
     EXPECT_TRUE(evaluator.get_delta().removed.empty());
     evaluator.update(std::pair { borrow(empty), borrow(valid.added) }, workspace);
-    EXPECT_TRUE(evaluator.get_result().empty());
+    EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     EXPECT_TRUE(evaluator.get_delta().removed.contains(cells(7)));
 }
 
@@ -287,7 +287,7 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionHandlesEmptyAndNullaryRelation
     database::Workspace workspace;
     urd::builder<ygg::Relation<ygg::Schema>> reference;
     evaluator.initialize(borrow(input), workspace);
-    EXPECT_TRUE(evaluator.get_result().empty());
+    EXPECT_TRUE(evaluator.get_result().get_rows().empty());
     database::incremental::Delta delta(layer(), input.columns());
     delta.added.insert(cells(1));
     delta.added.insert(cells(2));
@@ -323,7 +323,7 @@ TEST(YggdrasilTests, DatabaseIncrementalProjectionHandlesEmptyAndNullaryRelation
     EXPECT_TRUE(identity.get_result().contains(cells()));
     EXPECT_TRUE(identity.get_delta().added.contains(cells()));
     identity.update(std::pair { borrow(nullary_delta.removed), borrow(nullary_delta.added) }, workspace);
-    EXPECT_TRUE(identity.get_result().empty());
+    EXPECT_TRUE(identity.get_result().get_rows().empty());
     EXPECT_TRUE(identity.get_delta().removed.contains(cells()));
 }
 
@@ -573,7 +573,7 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinHandlesCartesianAndNullaryChangesOnB
         database::incremental::JoinEvaluator evaluator(layer(), plan);
         urd::builder<ygg::Relation<ygg::Schema>> reference(plan.output_columns());
         evaluator.initialize(borrow(left_operand), borrow(right_operand), workspace);
-        EXPECT_TRUE(evaluator.get_result().empty());
+        EXPECT_TRUE(evaluator.get_result().get_rows().empty());
         database::incremental::Delta left_delta(layer(), left_operand.columns());
         database::incremental::Delta right_delta(layer(), right_operand.columns());
         if (left_operand.columns().size() == 0)
@@ -614,11 +614,11 @@ TEST(YggdrasilTests, DatabaseIncrementalJoinHandlesCartesianAndNullaryChangesOnB
         EXPECT_TRUE(evaluator.get_delta().removed.empty());
         // Changing one input while the other remains empty emits no rows.
         update(left_delta.added, left_delta.removed, right_delta.removed, right_delta.removed);
-        EXPECT_TRUE(evaluator.get_result().empty());
+        EXPECT_TRUE(evaluator.get_result().get_rows().empty());
         EXPECT_TRUE(evaluator.get_delta().added.empty());
         update(left_delta.removed, left_delta.removed, right_delta.added, right_delta.removed);
         update(left_delta.removed, left_delta.added, right_delta.removed, right_delta.removed);
-        EXPECT_TRUE(evaluator.get_result().empty());
+        EXPECT_TRUE(evaluator.get_result().get_rows().empty());
         update(left_delta.removed, left_delta.removed, right_delta.removed, right_delta.added);
     }
 }

@@ -170,8 +170,8 @@ public:
     template<VertexRange Targets>
     [[nodiscard]] bool same(const Targets& targets) const
     {
-        return targets.size() == m_vertices.size()
-               && std::ranges::all_of(std::views::iota(static_cast<size_t>(0), targets.size()),
+        return targets.get_rows().size() == m_vertices.size()
+               && std::ranges::all_of(std::views::iota(static_cast<size_t>(0), targets.get_rows().size()),
                                       [&](size_t i) { return m_vertices.contains(vertex_values(targets.row(i), m_buffer)); });
     }
 
@@ -180,7 +180,7 @@ public:
     {
         m_vertices.clear();
         m_handles.clear();
-        for (size_t i = 0; i < targets.size(); ++i)
+        for (size_t i = 0; i < targets.get_rows().size(); ++i)
             if (const auto [handle, added] = m_vertices.insert(vertex_values(targets.row(i), m_buffer)); added)
                 m_handles.push_back(handle);
     }

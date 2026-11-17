@@ -165,8 +165,8 @@ def test_interned_relations_use_typed_identity_and_independent_storage() -> None
     assert tuples(relation) == [(3, 4), (5, 6)]
     assert tuples(repository.view(builder)) == [(8, 9)]
     assert relation.arity() == 2
-    assert relation.size() == 2
-    assert not relation.empty()
+    assert len(relation.get_rows()) == 2
+    assert relation.get_rows()
     assert values(relation.row(1)) == (5, 6)
     with pytest.raises(IndexError):
         relation.row(2)
@@ -197,7 +197,6 @@ def test_interned_nullary_relations_and_repository_reset() -> None:
     false = intern(repository, builder)[0]
     builder.insert([])
     true = intern(repository, builder)[0]
-    assert false.empty()
     assert false.get_rows() == []
     assert tuples(true) == [()]
     assert false != true

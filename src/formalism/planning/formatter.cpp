@@ -28,6 +28,7 @@
 #include <fmt/ranges.h>
 #include <iterator>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <urd/format.hpp>
@@ -101,6 +102,25 @@ std::string to_string(const urd::data<ygg::Row<Action<LiftedTag>>>& value) { ret
 std::string to_string(const urd::data<ygg::Row<Axiom<LiftedTag>>>& value) { return node_format::format(value); }
 
 std::string to_string(ActionRowDataView value) { return node_format::format(value); }
+
+std::string to_string(InvariantView value)
+{
+    auto os = std::stringstream {};
+    os << "Invariant(\n";
+    {
+        const auto scope = ygg::IndentScope(os);
+        os << ygg::print_indent;
+        fmt::print(os, "index = {}\n", value.index());
+        os << ygg::print_indent;
+        fmt::print(os, "num rigid variables = {}\n", value.get_num_rigid_variables());
+        os << ygg::print_indent;
+        fmt::print(os, "num counted variables = {}\n", value.get_num_counted_variables());
+        os << ygg::print_indent;
+        fmt::print(os, "atoms = {}\n", value.get_atoms());
+    }
+    os << ygg::print_indent << ")";
+    return os.str();
+}
 
 std::string to_string(FDRFactView<FluentTag> value) { return node_format::format(value); }
 

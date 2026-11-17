@@ -304,7 +304,7 @@ struct ListVertices
 {
     urd::Store<urd::sequence<ListGraph::Bytes>> rows;
 
-    [[nodiscard]] size_t size() const noexcept { return rows.size(); }
+    [[nodiscard]] const urd::Store<urd::sequence<ListGraph::Bytes>>& get_rows() const noexcept { return rows; }
 
     [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return rows[i]; }
 };

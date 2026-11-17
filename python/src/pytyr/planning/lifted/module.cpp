@@ -84,6 +84,18 @@ formalism task's repository afterwards.
         .def("get_datalog_program", nb::overload_cast<>(&ApplicableProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &ApplicableProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
         .def(
+            "get_conditional_effect_to_predicate_mapping",
+            [](const ApplicableProgram& self)
+            {
+                using Key = std::pair<const formalism::planning::ActionView<LiftedTag>*, const formalism::planning::ConditionalEffectView<LiftedTag>*>;
+                using Entry = std::pair<Key, const formalism::datalog::PredicateView<formalism::FluentTag>*>;
+                auto result = urd::Store<urd::sequence<Entry>> {};
+                for (const auto& [key, predicate] : self.get_conditional_effect_to_predicate_mapping())
+                    result.emplace_back(Key { &key.first, &key.second }, &predicate);
+                return result;
+            },
+            nb::rv_policy::reference_internal)
+        .def(
             "get_predicate_to_action_mapping",
             [](const ApplicableProgram& self)
             {
@@ -122,6 +134,18 @@ formalism task's repository afterwards.
         .def(nb::init<formalism::planning::TaskView<LiftedTag>>(), "task"_a, nb::keep_alive<1, 2>())
         .def("get_datalog_program", nb::overload_cast<>(&GroundTaskProgram::get_datalog_program), nb::rv_policy::reference_internal)
         .def("get_const_program_workspace", &GroundTaskProgram::get_const_program_workspace, nb::rv_policy::reference_internal)
+        .def(
+            "get_conditional_effect_to_predicate_mapping",
+            [](const GroundTaskProgram& self)
+            {
+                using Key = std::pair<const formalism::planning::ActionView<LiftedTag>*, const formalism::planning::ConditionalEffectView<LiftedTag>*>;
+                using Entry = std::pair<Key, const formalism::datalog::PredicateView<formalism::FluentTag>*>;
+                auto result = urd::Store<urd::sequence<Entry>> {};
+                for (const auto& [key, predicate] : self.get_conditional_effect_to_predicate_mapping())
+                    result.emplace_back(Key { &key.first, &key.second }, &predicate);
+                return result;
+            },
+            nb::rv_policy::reference_internal)
         .def(
             "get_predicate_to_action_mapping",
             [](const GroundTaskProgram& self)

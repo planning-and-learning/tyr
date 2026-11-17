@@ -82,6 +82,9 @@ std::string to_string(ygg::RowView<R, Repository> value);
 std::string to_string(TermView value);
 std::string to_string(ActionRowDataView value);
 
+/// An invariant as `Invariant(` its index, numbers of rigid and counted variables and atoms, one per line `)`: the
+/// lexicographic invariant order compares this text, so it is part of that order.
+std::string to_string(InvariantView value);
 std::string to_string(FDRFactView<FluentTag> value);
 std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value);
 

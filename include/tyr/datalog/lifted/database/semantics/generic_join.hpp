@@ -147,7 +147,7 @@ public:
         {
             auto& trie = m_tries[input];
             trie.clear();
-            for (size_t row = 0; row < inputs[input].size(); ++row)
+            for (size_t row = 0; row < inputs[input].get_rows().size(); ++row)
                 trie.insert(inputs[input].row(row).get_values(), m_plan.input_keys(input));
         }
         append(out);
