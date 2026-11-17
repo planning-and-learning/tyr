@@ -177,37 +177,48 @@ public:
             urd::function<"get_formalism_repository", &view_mixin::get_formalism_repository>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>) const>(
-                              &view_mixin::test)>,
+                              &view_mixin::test),
+                          urd::arg<"index">>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>>) const>(
-                              &view_mixin::test)>,
+                              &view_mixin::test),
+                          urd::arg<"index">>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::StaticTag>) const>(
-                              &view_mixin::test)>,
+                              &view_mixin::test),
+                          urd::arg<"view">>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::FluentTag>) const>(
-                              &view_mixin::test)>,
+                              &view_mixin::test),
+                          urd::arg<"view">>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag>) const>(
-                              &view_mixin::test)>,
+                              &view_mixin::test),
+                          urd::arg<"view">>,
             urd::function<"get",
                           static_cast<ygg::float_t (view_mixin::*)(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::StaticTag>>)
-                                          const>(&view_mixin::value)>,
+                                          const>(&view_mixin::value),
+                          urd::arg<"index">>,
             urd::function<"get",
                           static_cast<::tyr::formalism::planning::FDRValue (view_mixin::*)(
-                              urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>) const>(&view_mixin::value)>,
+                              urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>>) const>(&view_mixin::value),
+                          urd::arg<"index">>,
             urd::function<"get",
                           static_cast<ygg::float_t (view_mixin::*)(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>>)
-                                          const>(&view_mixin::value)>,
+                                          const>(&view_mixin::value),
+                          urd::arg<"index">>,
             urd::function<"get",
                           static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::StaticTag>)
-                                          const>(&view_mixin::value)>,
+                                          const>(&view_mixin::value),
+                          urd::arg<"view">>,
             urd::function<"get",
                           static_cast<::tyr::formalism::planning::FDRValue (view_mixin::*)(
-                              ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag>) const>(&view_mixin::value)>,
+                              ::tyr::formalism::planning::FDRVariableView<::tyr::formalism::FluentTag>) const>(&view_mixin::value),
+                          urd::arg<"view">>,
             urd::function<"get",
                           static_cast<ygg::float_t (view_mixin::*)(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag>)
-                                          const>(&view_mixin::value)>,
+                                          const>(&view_mixin::value),
+                          urd::arg<"view">>,
             urd::function<"get_fluent_facts", &view_mixin::get_fluent_facts>,
             urd::function<"get_fluent_facts_view", &view_mixin::get_fluent_facts_view>> {};
     }
