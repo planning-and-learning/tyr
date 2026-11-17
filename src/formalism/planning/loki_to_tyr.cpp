@@ -263,13 +263,17 @@ void LokiToTyrTranslator::prepare(loki::formalism::TaskView problem)
 void LokiToTyrTranslator::ParameterIndexMapping::push_parameters(const urd::flat_vector<urd::index<Variable>>& parameters)
 {
     for (const auto parameter : parameters)
+    {
         map.emplace(parameter, map.size());
+        variables.push_back(parameter);
+    }
 }
 
 void LokiToTyrTranslator::ParameterIndexMapping::pop_parameters(const urd::flat_vector<urd::index<Variable>>& parameters)
 {
     for (const auto parameter : parameters)
         map.erase(parameter);
+    variables.resize(variables.size() - parameters.size());
 }
 
 ParameterIndex LokiToTyrTranslator::ParameterIndexMapping::lookup_parameter_index(urd::index<Variable> variable) { return map.at(variable); }
@@ -364,7 +368,10 @@ AtomViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::AtomView 
     return std::visit(
         [&]<FactKind Tag>(PredicateView<Tag> predicate) -> AtomViewVariant
         {
+            auto parameters = planning::checkout<Parameters>(builder);
+            parameters->variables = m_param_map.variables;
             auto atom = planning::checkout<Atom<LiftedTag, Tag>>(builder);
+            atom->parameters = planning::insert(context, *parameters).first.index();
             atom->predicate = predicate.index();
             this->translate_lifted(element.get_terms(), builder, context, atom->terms);
             return planning::insert(context, *atom).first;
@@ -485,7 +492,10 @@ FunctionTermViewVariant LokiToTyrTranslator::translate_lifted(loki::formalism::F
     return std::visit(
         [&]<FactKind Tag>(FunctionView<Tag> function) -> FunctionTermViewVariant
         {
+            auto parameters = planning::checkout<Parameters>(builder);
+            parameters->variables = m_param_map.variables;
             auto fterm = planning::checkout<FunctionTerm<LiftedTag, Tag>>(builder);
+            fterm->parameters = planning::insert(context, *parameters).first.index();
             fterm->function = function.index();
             this->translate_lifted(element.get_terms(), builder, context, fterm->terms);
             return planning::insert(context, *fterm).first;

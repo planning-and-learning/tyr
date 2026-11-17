@@ -84,6 +84,11 @@ create_applicability_atom(formalism::planning::ActionView<LiftedTag> action,
 
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
+    // Its terms are the action's variables, in order: they are its parameters.
+    auto parameters = formalism::datalog::checkout<formalism::Parameters>(context.builder());
+    for (const auto variable : action.get_condition().get_variables())
+        parameters->variables.push_back(formalism::copy(variable, context).first.index());
+    atom->parameters = formalism::datalog::insert(context.destination(), *parameters).first.index();
     atom->predicate = applicability_predicate.index();
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));
@@ -111,6 +116,11 @@ create_applicability_atom(formalism::planning::AxiomView<LiftedTag> axiom,
 
     const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
 
+    // Its terms are the axiom's variables, in order: they are its parameters.
+    auto parameters = formalism::datalog::checkout<formalism::Parameters>(context.builder());
+    for (const auto variable : axiom.get_body().get_variables())
+        parameters->variables.push_back(formalism::copy(variable, context).first.index());
+    atom->parameters = formalism::datalog::insert(context.destination(), *parameters).first.index();
     atom->predicate = applicability_predicate.index();
     for (ygg::uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
         atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));

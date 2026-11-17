@@ -78,6 +78,8 @@ from pytyr._pytyr.formalism import (
     NumericEffectOperatorKind as NumericEffectOperatorKind,
     ObjectData as ObjectData,
     ParameterIndex as ParameterIndex,
+    ParametersData as ParametersData,
+    ParametersIndex as ParametersIndex,
     PredicateFluentData as PredicateFluentData,
     PredicateFluentIndex as PredicateFluentIndex,
     PredicateStaticData as PredicateStaticData,

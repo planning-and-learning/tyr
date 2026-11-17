@@ -46,6 +46,7 @@ from pytyr._pytyr.formalism.datalog import (
     NumericEffectGroundFluent as NumericEffectGroundFluent,
     NumericEffectLiftedFluent as NumericEffectLiftedFluent,
     Object as Object,
+    Parameters as Parameters,
     PredicateFluent as PredicateFluent,
     PredicateStatic as PredicateStatic,
     ProgramGround as ProgramGround,

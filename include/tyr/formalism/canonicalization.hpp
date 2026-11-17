@@ -36,6 +36,11 @@ inline void canonicalize(urd::data<Variable>&)
 {  // Trivially canonical
 }
 
+inline void canonicalize(urd::data<Parameters>&)
+{
+    // Canonical as built: the order of the variables is their parameter indices
+}
+
 inline void canonicalize(urd::data<Object>&)
 {
     // Trivially canonical

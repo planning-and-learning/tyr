@@ -69,7 +69,7 @@ struct Program
     static constexpr std::string_view name = urd::joined_name<"Program", T::name>;
 };
 
-using CoreTypes = boost::mp11::mp_list<Variable, Object>;
+using CoreTypes = boost::mp11::mp_list<Variable, Parameters, Object>;
 using PredicateTypes = boost::mp11::mp_transform<Predicate, StaticFluentTags>;
 template<TaskKind T>
 using AtomTypes = boost::mp11::mp_transform_q<boost::mp11::mp_bind_front<Atom, T>, StaticFluentTags>;
@@ -198,6 +198,7 @@ template<TaskKind T, OperatorKind O>
 using UnaryOperatorView = urd::index_view<UnaryOperator<T, O>, Repository>;
 
 using VariableView = urd::index_view<Variable, Repository>;
+using ParametersView = urd::index_view<Parameters, Repository>;
 
 using VariableViewList = urd::Store<urd::sequence<VariableView>>;
 

@@ -1,4 +1,5 @@
 #include "tyr/formalism/detail/repository_instantiations.hpp"
+#include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_data.hpp"
 #include "tyr/formalism/planning/conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -114,7 +115,7 @@ void expect_condition_atom_projection()
                 return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(std::move(binding)).index()));
             }
             else
-                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(predicate.index(), {}));
+                return intern(urd::data<tyr::formalism::Atom<Kind, F>>(intern(urd::data<tyr::formalism::Parameters> {}).index(), predicate.index(), {}));
         };
         const auto positive = atom("positive");
         return std::pair(positive, atom("negative"));

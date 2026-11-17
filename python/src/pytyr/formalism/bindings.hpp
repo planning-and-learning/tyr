@@ -28,6 +28,7 @@ void bind_formalism(nb::module_& m);
 void bind_parameter(nb::module_& m);
 void bind_object(nb::module_& m);
 void bind_variable(nb::module_& m);
+void bind_parameters(nb::module_& m);
 void bind_row(nb::module_& m);
 void bind_predicate(nb::module_& m);
 void bind_function(nb::module_& m);

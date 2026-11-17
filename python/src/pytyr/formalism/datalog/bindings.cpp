@@ -58,6 +58,7 @@ void bind_formalism(nb::module_& m)
     bind_program(m, repository);
     bind_object(m, repository);
     bind_variable(m, repository);
+    bind_parameters(m, repository);
     bind_predicate(m, repository);
     bind_function(m, repository);
 }

@@ -135,6 +135,12 @@ struct Variable
     static constexpr std::string_view name = "Variable";
 };
 
+/// The variables of a scope, by parameter index (parameters_data.hpp).
+struct Parameters
+{
+    static constexpr std::string_view name = "Parameters";
+};
+
 using Object = ::ygg::formalism::Object;
 
 /// A term: an object, or a parameter of the enclosing rule or action. Stored as it is, not interned; read through a

@@ -113,7 +113,7 @@ InvariantViewList compute_invariant_order_greedy(const InvariantViewList& invari
             unique.push_back(invariant);
     auto texts = urd::Store<urd::sequence<std::string>> {};
     for (const auto invariant : unique)
-        texts.push_back(to_string(invariant));
+        texts.push_back(fmt::format("{}", invariant));
 
     auto rng = std::mt19937_64(options.random_seed);
     auto taken = Predicates {};

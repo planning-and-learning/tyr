@@ -186,7 +186,10 @@ auto create_ground_cond_effect_rule(formalism::planning::ActionView<LiftedTag> a
                 formalism::planning::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first.index());
     if (effect_predicate)
     {
+        auto effect_parameters = formalism::datalog::checkout<formalism::Parameters>(context.builder());
+        effect_parameters->variables = rule->variables;
         auto effect_atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(context.builder());
+        effect_atom->parameters = formalism::datalog::insert(context.destination(), *effect_parameters).first.index();
         effect_atom->predicate = effect_predicate->index();
         for (ygg::uint_t i = 0; i < effect_predicate->get_arity(); ++i)
             effect_atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));

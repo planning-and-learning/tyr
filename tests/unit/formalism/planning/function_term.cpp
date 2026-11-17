@@ -1,10 +1,12 @@
 #include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/function_term_data.hpp"
 #include "tyr/formalism/function_term_view.hpp"
+#include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/interning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/variable_data.hpp"
 
 #include <concepts>
 #include <gtest/gtest.h>
@@ -117,7 +119,11 @@ TEST(TyrFormalismPlanningCopy, RemapsLiftedFunctionTerms)
     const auto target_function = tyr::formalism::planning::insert(destination, function_data).first;
     ASSERT_NE(function.index(), target_function.index());
 
+    auto variable_data = urd::data<tyr::formalism::Variable>(urd::flat_string(std::string("?x")));
+    auto parameters_data = urd::data<tyr::formalism::Parameters> {};
+    parameters_data.variables.push_back(tyr::formalism::planning::insert(source, variable_data).first.index());
     auto term_data = urd::data<tyr::formalism::FunctionTerm<tyr::LiftedTag, tyr::formalism::FluentTag>> {};
+    term_data.parameters = tyr::formalism::planning::insert(source, parameters_data).first.index();
     term_data.function = function.index();
     term_data.terms.push_back(tyr::formalism::Term(tyr::formalism::ParameterIndex(0)));
     const auto term = tyr::formalism::planning::insert(source, term_data).first;

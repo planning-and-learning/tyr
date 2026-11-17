@@ -23,119 +23,251 @@
 #include "tyr/formalism/planning/fdr_value.hpp"
 
 #include <fmt/format.h>
-#include <string>
 #include <utility>
 
 namespace tyr::formalism::planning
 {
+/// Writes a plan's step (std::pair<View, PlanFormatting>) as a plan file lists it.
 struct PlanFormatting
 {
 };
-
-std::string to_string(const PlanningDomain& value);
-std::string to_string(const PlanningTask<LiftedTag>& value);
-std::string to_string(const PlanningTask<GroundTag>& value);
-
 }  // namespace tyr::formalism::planning
 
-namespace fmt
-{
+// The planning formalism in PDDL: each record's view (through planning::Repository) has an fmt::formatter whose format
+// is defined in src/formalism/planning/formatter.cpp, and explicitly instantiated there for each member of a family of
+// records. A domain and a task are written as loki writes them: their sections one per line, the rest on one line. A
+// fact's variable, an invariant and a record held as data are written as urd writes a record.
 
+/// An object: its name.
 template<>
-struct formatter<tyr::formalism::planning::PlanningDomain, char>
+struct fmt::formatter<urd::index_view<tyr::formalism::Object, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::PlanningDomain& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Object, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
 };
 
+/// A variable: its name (?x).
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::Variable, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Variable, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A predicate as a domain declares it: (name ?x0 ?x1 ...).
+template<tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A function as a domain declares it: (name ?x0 ?x1 ...).
+template<tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Function<F>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Function<F>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// An atom: (predicate terms...).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Atom<T, F>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Atom<T, F>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A literal: its atom, or (not atom).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A function term: (function terms...).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A function term's initial value: (= term value).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::FunctionTermValue<T, F>, tyr::formalism::planning::Repository>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::FunctionTermValue<T, F>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A unary arithmetic expression: (- e).
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A binary arithmetic expression (+ a b), or a numeric comparison (>= a b); != is (not (= a b)).
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// An arithmetic expression over several arguments: (+ a b c).
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::MultiOperator<T, O>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::MultiOperator<T, O>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A numeric effect: (increase term expression).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A condition: (and literals... constraints...), a ground one's facts as the literals they stand for.
 template<tyr::TaskKind T>
-struct formatter<tyr::formalism::planning::PlanningTask<T>, char>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::ConjunctiveCondition<T>, tyr::formalism::planning::Repository>> :
+    tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::PlanningTask<T>& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::ConjunctiveCondition<T>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
 };
 
-}  // namespace fmt
-
-namespace tyr::formalism::planning
+/// An effect: (and literals... numeric effects...), a ground one's added and deleted facts as literals.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::ConjunctiveEffect<T>, tyr::formalism::planning::Repository>> :
+    tyr::formalism::detail::without_format_spec
 {
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::ConjunctiveEffect<T>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
-std::string to_string(const urd::data<FDRFact<FluentTag>>& value);
-std::string to_string(const urd::data<Metric>& value);
-std::string to_string(const urd::data<ygg::Row<Action<LiftedTag>>>& value);
-std::string to_string(const urd::data<ygg::Row<Axiom<LiftedTag>>>& value);
+/// A conditional effect: (forall (variables) (when condition effect)), without the forall or the when it does not need.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::ConditionalEffect<T>, tyr::formalism::planning::Repository>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::ConditionalEffect<T>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
-/// Each symbol type's view (SymbolRepositoryTypes) and each relation's binding view (RelationRepositoryTypes) as text;
-/// instantiated for these lists in formatter.cpp.
-template<typename T>
-    requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value
-std::string to_string(urd::index_view<T, Repository> value);
+/// An action: (:action name :parameters (...) :precondition C :effect E); a ground one is named after its binding.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::Action<T>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::Action<T>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// An axiom: (:derived (head) condition), the variables not in its head under an exists.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::Axiom<T>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::Axiom<T>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A metric: (:metric minimize expression).
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::Metric, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::Metric, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A domain: (define (domain name) its requirements, constants, predicates and functions (one per line), axioms and actions (one per line)).
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::Domain, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::Domain, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A task as a PDDL problem: (define (problem name) its domain, objects, initial state, goal and metric, one per line); a ground task is written as the problem
+/// it grounds.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::planning::Task<T>, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::planning::Task<T>, tyr::formalism::planning::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A fact as the literal it stands for: its atom, or (and (not a1) ...) where its variable holds none of its atoms.
+template<>
+struct fmt::formatter<tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const tyr::formalism::planning::FDRFactView<tyr::formalism::FluentTag>& value, fmt::format_context& context) const;
+};
+
+/// A fact computed on the fly (a state's), as a stored one.
+template<>
+struct fmt::formatter<urd::owning_view<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator
+    format(const urd::owning_view<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>, tyr::formalism::planning::Repository>& value,
+           fmt::format_context& context) const;
+};
+
+/// A binding of a relation (a predicate's, a function's, an action's): (name values...); an axiom's, which has no name, its values.
 template<typename R>
-    requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
-std::string to_string(ygg::RowView<R, Repository> value);
-std::string to_string(TermView value);
-std::string to_string(ActionRowDataView value);
-
-/// An invariant as `Invariant(` its index, numbers of rigid and counted variables and atoms, one per line `)`: the
-/// lexicographic invariant order compares this text, so it is part of that order.
-std::string to_string(InvariantView value);
-std::string to_string(FDRFactView<FluentTag> value);
-std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value);
-
-}  // namespace tyr::formalism::planning
-
-namespace fmt
+struct fmt::formatter<ygg::RowView<R, tyr::formalism::planning::Repository>> : tyr::formalism::detail::without_format_spec
 {
-
-/// Every view through the repository prints as its to_string: urd's (of an index or a held record), and binding views.
-template<typename T, typename K>
-    requires requires(const urd::index_view<T, tyr::formalism::planning::Repository, K>& value) { tyr::formalism::planning::to_string(value); }
-struct formatter<urd::index_view<T, tyr::formalism::planning::Repository, K>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const urd::index_view<T, tyr::formalism::planning::Repository, K>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    fmt::format_context::iterator format(const ygg::RowView<R, tyr::formalism::planning::Repository>& value, fmt::format_context& context) const;
 };
 
-template<typename T, typename R>
-    requires requires(const urd::borrowed_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
-struct formatter<urd::borrowed_view<T, tyr::formalism::planning::Repository, R>, char>
+/// An action's binding held by a view: as a stored one.
+template<>
+struct fmt::formatter<tyr::formalism::planning::ActionRowDataView> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const urd::borrowed_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    fmt::format_context::iterator format(const tyr::formalism::planning::ActionRowDataView& value, fmt::format_context& context) const;
 };
 
-template<typename T, typename R>
-    requires requires(const urd::owning_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
-struct formatter<urd::owning_view<T, tyr::formalism::planning::Repository, R>, char>
+/// A planning domain: its domain.
+template<>
+struct fmt::formatter<tyr::formalism::planning::PlanningDomain> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const urd::owning_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+    fmt::format_context::iterator format(const tyr::formalism::planning::PlanningDomain& value, fmt::format_context& context) const;
 };
 
-template<typename T, typename R>
-    requires requires(const urd::shared_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
-struct formatter<urd::shared_view<T, tyr::formalism::planning::Repository, R>, char>
+/// A planning task: its domain, then its problem.
+template<tyr::TaskKind T>
+struct fmt::formatter<tyr::formalism::planning::PlanningTask<T>> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    fmt::format_context::iterator format(const tyr::formalism::planning::PlanningTask<T>& value, fmt::format_context& context) const;
+};
 
-    auto format(const urd::shared_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
+/// A plan's step: (original-name original arguments...), as a plan file lists it.
+template<>
+struct fmt::formatter<std::pair<tyr::formalism::planning::ActionRowView, tyr::formalism::planning::PlanFormatting>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const std::pair<tyr::formalism::planning::ActionRowView, tyr::formalism::planning::PlanFormatting>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A plan's step of a ground action: its binding's.
+template<>
+struct fmt::formatter<std::pair<tyr::formalism::planning::ActionView<tyr::GroundTag>, tyr::formalism::planning::PlanFormatting>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const std::pair<tyr::formalism::planning::ActionView<tyr::GroundTag>, tyr::formalism::planning::PlanFormatting>& value,
+                                         fmt::format_context& context) const;
 };
 
 template<>
-struct formatter<tyr::formalism::planning::FDRValue, char>
+struct fmt::formatter<tyr::formalism::planning::FDRValue, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
@@ -145,7 +277,7 @@ struct formatter<tyr::formalism::planning::FDRValue, char>
 };
 
 template<>
-struct formatter<tyr::formalism::OptimizationDirection, char>
+struct fmt::formatter<tyr::formalism::OptimizationDirection, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
@@ -153,34 +285,5 @@ struct formatter<tyr::formalism::OptimizationDirection, char>
     auto format(tyr::formalism::OptimizationDirection value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
 };
-
-}  // namespace fmt
-
-namespace tyr::formalism::planning
-{
-
-std::string to_string(const std::pair<ActionRowView, PlanFormatting>& value);
-std::string to_string(const std::pair<ActionView<GroundTag>, PlanFormatting>& value);
-
-}  // namespace tyr::formalism::planning
-
-namespace fmt
-{
-
-template<typename View>
-struct formatter<std::pair<View, tyr::formalism::planning::PlanFormatting>, char>
-{
-private:
-    using Value = std::pair<View, tyr::formalism::planning::PlanFormatting>;
-
-public:
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const Value& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
-};
-
-}  // namespace fmt
 
 #endif

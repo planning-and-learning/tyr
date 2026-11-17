@@ -156,7 +156,10 @@ auto create_action_program(formalism::planning::TaskView<LiftedTag> task,
             append_condition(condition, *effect_condition);
             effect_rule->body = formalism::datalog::insert(repository, *effect_condition).first.index();
 
+            auto effect_parameters = formalism::datalog::checkout<formalism::Parameters>(builder);
+            effect_parameters->variables = effect_condition->variables;
             auto effect_atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::FluentTag>>(builder);
+            effect_atom->parameters = formalism::datalog::insert(repository, *effect_parameters).first.index();
             effect_atom->predicate = new_effect_predicate.index();
             for (ygg::uint_t i = 0; i < new_effect_predicate.get_arity(); ++i)
                 effect_atom->terms.push_back(formalism::Term(formalism::ParameterIndex(i)));

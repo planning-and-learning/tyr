@@ -94,11 +94,8 @@ TEST(TyrFormalismDatalogGroundAtom, PreservesFormatting)
     const auto [ground_atom, ground_atom_created] = ygg::formalism::insert(repository, ground_atom_data);
     ASSERT_TRUE(ground_atom_created);
 
-    EXPECT_EQ(tyr::formalism::datalog::to_string(binding), "(at truck truck)");
-    EXPECT_EQ(tyr::formalism::datalog::to_string(ground_atom), "(at truck truck)");
-    EXPECT_EQ(tyr::formalism::to_string(ground_atom_data), fmt::format("{}", ground_atom_data));
-    EXPECT_EQ(fmt::format("{}", binding), "(at truck truck)");
-    EXPECT_EQ(fmt::format("{}", ground_atom), "(at truck truck)");
+    EXPECT_EQ(fmt::format("{}", binding), "at(truck, truck)");
+    EXPECT_EQ(fmt::format("{}", ground_atom), "at(truck, truck)");
 }
 
 }

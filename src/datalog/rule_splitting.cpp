@@ -96,6 +96,9 @@ public:
         auto variables = urd::flat_vector<urd::index<formalism::Variable>> {};
         for (const auto variable : condition.get_variables())
             variables.push_back(variable.index());
+        auto parameters = formalism::datalog::checkout<formalism::Parameters>(m_context->builder());
+        parameters->variables = variables;
+        m_parameters = formalism::datalog::insert(m_context->destination(), *parameters).first.index();
         auto body = Body {};
         for (const auto literal : condition.get_literals<formalism::StaticTag>())
             body.static_literals.push_back(literal.index());
@@ -294,6 +297,7 @@ private:
                                                                 const urd::Store<urd::sequence<formalism::ParameterIndex>>& parameters)
     {
         auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
+        atom->parameters = m_parameters;
         atom->predicate = predicate;
         for (const auto parameter : parameters)
             atom->terms.push_back(formalism::Term(parameter));
@@ -303,12 +307,14 @@ private:
         return formalism::datalog::insert(m_context->destination(), *literal).first.index();
     }
 
-    /// The atom with each parameter renumbered to its position among the emitted rule's variables.
+    /// The atom with each parameter renumbered to its position among the emitted rule's variables, its `parameters`.
     template<formalism::FactKind F>
     urd::index<formalism::Atom<LiftedTag, F>> renumber(formalism::datalog::AtomView<LiftedTag, F> atom,
-                                                       const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
+                                                       const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local,
+                                                       urd::index<formalism::Parameters> parameters)
     {
         auto data = formalism::datalog::checkout<formalism::Atom<LiftedTag, F>>(m_context->builder());
+        data->parameters = parameters;
         data->predicate = atom.get_predicate().index();
         for (const auto term : atom.get_terms())
         {
@@ -321,11 +327,12 @@ private:
 
     template<formalism::FactKind F>
     urd::index<formalism::Literal<LiftedTag, F>> renumber(urd::index<formalism::Literal<LiftedTag, F>> literal,
-                                                          const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local)
+                                                          const urd::Store<urd::map<formalism::ParameterIndex, formalism::ParameterIndex>>& local,
+                                                          urd::index<formalism::Parameters> parameters)
     {
         const auto view = urd::resolve(literal, m_context->destination());
         auto data = formalism::datalog::checkout<formalism::Literal<LiftedTag, F>>(m_context->builder());
-        data->atom = renumber(view.get_atom(), local);
+        data->atom = renumber(view.get_atom(), local, parameters);
         data->polarity = view.get_polarity();
         return formalism::datalog::insert(m_context->destination(), *data).first.index();
     }
@@ -348,10 +355,13 @@ private:
         auto condition = formalism::datalog::checkout<formalism::datalog::ConjunctiveCondition<LiftedTag>>(m_context->builder());
         for (const auto position : positions)
             condition->variables.push_back(variables[position]);
+        auto parameters = formalism::datalog::checkout<formalism::Parameters>(m_context->builder());
+        parameters->variables = condition->variables;
+        const auto rule_parameters = formalism::datalog::insert(m_context->destination(), *parameters).first.index();
         for (const auto literal : body.static_literals)
-            condition->static_literals.push_back(renumber(literal, local));
+            condition->static_literals.push_back(renumber(literal, local, rule_parameters));
         for (const auto literal : body.fluent_literals)
-            condition->fluent_literals.push_back(renumber(literal, local));
+            condition->fluent_literals.push_back(renumber(literal, local, rule_parameters));
         const auto new_condition = formalism::datalog::insert(m_context->destination(), *condition).first;
 
         auto rule = formalism::datalog::checkout<formalism::datalog::Rule<LiftedTag>>(m_context->builder());
@@ -359,7 +369,7 @@ private:
             urd::append(rule->variables, variable);
         rule->body = new_condition.index();
         for (const auto head : heads)
-            rule->heads.push_back(renumber(urd::resolve(head, m_context->destination()), local));
+            rule->heads.push_back(renumber(urd::resolve(head, m_context->destination()), local, rule_parameters));
         rule->cost = cost;
         return { formalism::datalog::insert(m_context->destination(), *rule).first.index(), std::move(positions) };
     }
@@ -369,6 +379,8 @@ private:
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
     const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_projections = 0;
+    /// The variables of the rule being split: the parameters of the atoms built for it before they are renumbered.
+    urd::index<formalism::Parameters> m_parameters;
     urd::Store<urd::map<std::pair<urd::index<formalism::Atom<LiftedTag, formalism::StaticTag>>, formalism::ParameterIndex>, StaticLiteral>> m_domain_literals;
 };
 

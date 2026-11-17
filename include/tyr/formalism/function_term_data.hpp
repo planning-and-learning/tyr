@@ -36,12 +36,19 @@ template<::tyr::formalism::FactKind F>
 struct data<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>>
 {
     urd::index<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>> index;
+    urd::index<::tyr::formalism::Parameters> parameters;
     urd::index<::tyr::formalism::Function<F>> function;
     ::tyr::formalism::TermList terms;
 
     data() = default;
 
-    data(urd::index<::tyr::formalism::Function<F>> function_, ::tyr::formalism::TermList terms_) : index(), function(function_), terms(std::move(terms_)) {}
+    data(urd::index<::tyr::formalism::Parameters> parameters_, urd::index<::tyr::formalism::Function<F>> function_, ::tyr::formalism::TermList terms_) :
+        index(),
+        parameters(parameters_),
+        function(function_),
+        terms(std::move(terms_))
+    {
+    }
 
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
@@ -49,11 +56,12 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>>
     data& operator=(data&& other) = default;
     ~data() = default;
 
-    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"function", &data::function>, urd::field<"terms", &data::terms>> {}; }
+    static constexpr auto fields() noexcept
+    { return urd::Fields<urd::field<"parameters", &data::parameters>, urd::field<"function", &data::function>, urd::field<"terms", &data::terms>> {}; }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&data::function, &data::terms> {}; }
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 
-    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::function, &data::terms> {}; }
+    static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::parameters, &data::function, &data::terms> {}; }
 };
 
 template<::tyr::formalism::FactKind F>

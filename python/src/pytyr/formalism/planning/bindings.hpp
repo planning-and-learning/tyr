@@ -35,6 +35,7 @@ void bind_predicate(nb::module_& m, RepositoryBinding& repository);
 void bind_function(nb::module_& m, RepositoryBinding& repository);
 void bind_object(nb::module_& m, RepositoryBinding& repository);
 void bind_variable(nb::module_& m, RepositoryBinding& repository);
+void bind_parameters(nb::module_& m, RepositoryBinding& repository);
 void bind_atom(nb::module_& m, RepositoryBinding& repository);
 void bind_literal(nb::module_& m, RepositoryBinding& repository);
 void bind_function_term(nb::module_& m, RepositoryBinding& repository);

@@ -96,8 +96,6 @@ TEST(TyrFormalismPlanningAction, FormatsBinding)
     ASSERT_TRUE(binding_created);
 
     EXPECT_EQ(fmt::format("{}", binding), "(move-internal truck)");
-    EXPECT_EQ(tyr::formalism::planning::to_string(binding), "(move-internal truck)");
-    EXPECT_EQ(tyr::formalism::planning::to_string(std::make_pair(binding, tyr::formalism::planning::PlanFormatting {})), "(move)");
     EXPECT_EQ(fmt::format("{}", std::make_pair(binding, tyr::formalism::planning::PlanFormatting {})), "(move)");
 }
 
@@ -139,7 +137,7 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     EXPECT_EQ(&copied.context(), &destination);
     EXPECT_EQ(copied.get_original_name(), source_action.get_original_name());
     EXPECT_EQ(copied.get_original_arity(), source_action.get_original_arity());
-    EXPECT_EQ(tyr::formalism::planning::to_string(copied), tyr::formalism::planning::to_string(source_action));
+    EXPECT_EQ(fmt::format("{}", copied), fmt::format("{}", source_action));
     EXPECT_NE(copied.get_variables().front().index(), source_action.get_variables().front().index());
     const auto copied_objects = copied_binding.get_objects();
     ASSERT_EQ(copied_objects.size(), 1);

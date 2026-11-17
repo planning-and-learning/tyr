@@ -251,7 +251,10 @@ TEST(TyrDatalogGroundQueueTest, GroundProgramStoresGroundRules)
 
     EXPECT_EQ(program.get_rules().size(), 1);
     EXPECT_EQ(program.get_rules()[0].index(), fixture.ground_rules[0]);
-    EXPECT_TRUE(fmt::format("{}", program).starts_with(urd::name<tyr::formalism::datalog::Program<GroundTag>>() + "("));
+    // In Datalog: the program's last statement is its rule, a fact without a body, its cost a comment after it.
+    const auto rule_text = fmt::format("{}", program.get_rules()[0]);
+    EXPECT_EQ(rule_text, fmt::format("{}.  % cost {}", program.get_rules()[0].get_heads()[0], program.get_rules()[0].get_cost()));
+    EXPECT_TRUE(fmt::format("{}", program).ends_with(rule_text));
 }
 
 TEST(TyrDatalogGroundQueueTest, EmptyBodyRuleFires)

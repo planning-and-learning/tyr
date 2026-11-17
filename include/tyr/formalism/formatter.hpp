@@ -22,7 +22,6 @@
 #include "tyr/formalism/parameter_index.hpp"
 
 #include <fmt/format.h>
-#include <string>
 #include <yggdrasil/formalism/formatter.hpp>
 #include <yggdrasil/formatting/formatter.hpp>
 
@@ -30,78 +29,28 @@
 #error "tyr requires yggdrasil's fmt formatters (YGG_ENABLE_FMT_FORMATTERS=1)."
 #endif
 
-namespace tyr::formalism
-{
-
-std::string to_string(const Term& value);
-
-std::string to_string(const urd::data<ygg::Row<Predicate<StaticTag>>>& value);
-std::string to_string(const urd::data<ygg::Row<Predicate<FluentTag>>>& value);
-std::string to_string(const urd::data<ygg::Row<Predicate<DerivedTag>>>& value);
-
-std::string to_string(const urd::data<ygg::Row<Function<StaticTag>>>& value);
-std::string to_string(const urd::data<ygg::Row<Function<FluentTag>>>& value);
-std::string to_string(const urd::data<ygg::Row<Function<AuxiliaryTag>>>& value);
-
-std::string to_string(const urd::data<UnaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<UnaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<LiftedTag, BooleanOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<BinaryOperator<GroundTag, BooleanOperatorKind>>& value);
-std::string to_string(const urd::data<MultiOperator<LiftedTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<MultiOperator<GroundTag, ArithmeticOperatorKind>>& value);
-std::string to_string(const urd::data<Atom<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<Atom<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<Atom<LiftedTag, DerivedTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<Literal<LiftedTag, DerivedTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<Atom<GroundTag, DerivedTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<Literal<GroundTag, DerivedTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<LiftedTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTerm<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, StaticTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<FunctionTermValue<GroundTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<NumericEffect<LiftedTag, FluentTag>>& value);
-std::string to_string(const urd::data<NumericEffect<LiftedTag, AuxiliaryTag>>& value);
-std::string to_string(const urd::data<NumericEffect<GroundTag, FluentTag>>& value);
-std::string to_string(const urd::data<NumericEffect<GroundTag, AuxiliaryTag>>& value);
-
-}  // namespace tyr::formalism
+// The records of tyr's formalism are written by fmt::formatter specializations of their views, declared in
+// formalism/planning/formatter.hpp (PDDL) and formalism/datalog/formatter.hpp (Datalog) and defined in the library:
+// written once there, not in every file that prints a record. A record held as data (no repository to name its
+// symbols) is written as urd writes a record.
 
 namespace tyr::formalism::detail
 {
-/// Whether tyr writes the record of T itself: a to_string of tyr's (here or by ADL in its record's namespace), never
-/// fmt::to_string, which would format the record with the formatter that asks.
-template<typename T>
-concept has_text = requires(const urd::data<T>& value) { to_string(value); };
-
-template<typename T>
-std::string text(const urd::data<T>& value)
-{ return to_string(value); }
+/// The parse of tyr's formatters: a record takes no format spec.
+struct without_format_spec
+{
+    constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& context) const { return context.begin(); }
+};
 }  // namespace tyr::formalism::detail
 
 namespace fmt
 {
 
+/// A parameter by its index, ?x<index>: a lifted atom or function term writes it as the variable its parameters name.
 template<>
-struct formatter<tyr::formalism::ParameterIndex, char>
+struct formatter<tyr::formalism::ParameterIndex, char> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::ParameterIndex& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "V{}", value.value); }
+    fmt::format_context::iterator format(const tyr::formalism::ParameterIndex& value, fmt::format_context& context) const;
 };
 
 template<>
@@ -132,19 +81,6 @@ struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
     template<typename FormatContext>
     auto format(tyr::formalism::NumericEffectOperatorKind value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
-};
-
-/// A record as tyr writes it (its to_string, PDDL-like): this subsumes urd's field-by-field formatter (HasFields), so it
-/// is the one chosen.
-template<typename T>
-    requires urd::HasFields<urd::data<T>> && tyr::formalism::detail::has_text<T>
-struct formatter<urd::data<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const urd::data<T>& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::detail::text(value)); }
 };
 
 }  // namespace fmt

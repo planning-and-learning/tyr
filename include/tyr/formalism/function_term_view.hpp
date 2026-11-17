@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/parameters_view.hpp"
 
 #include <urd/elements/flat.hpp>
 #include <yggdrasil/formalism/row_view.hpp>
@@ -33,6 +34,10 @@ private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
 
 public:
+    auto get_parameters() const noexcept
+        requires std::same_as<T, ::tyr::LiftedTag>
+    { return self().template member<&urd::record_of<V>::parameters>(); }
+
     auto get_function() const noexcept
     {
         if constexpr (std::same_as<T, ::tyr::GroundTag>)

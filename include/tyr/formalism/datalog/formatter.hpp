@@ -22,91 +22,154 @@
 #include "tyr/formalism/formatter.hpp"
 
 #include <fmt/format.h>
-#include <string>
 
-namespace tyr::formalism::datalog
-{
+// The datalog formalism in Datalog: each record's view (through datalog::Repository) has an fmt::formatter whose format
+// is defined in src/formalism/datalog/formatter.cpp, and explicitly instantiated there for each member of a family of
+// records. Variables keep their PDDL names (?x); a rule's cost is a comment after it.
 
-std::string to_string(const VariableDependencyGraph& value);
-
-}  // namespace tyr::formalism::datalog
-
-namespace fmt
-{
-
+/// An object: its name.
 template<>
-struct formatter<tyr::formalism::datalog::VariableDependencyGraph, char>
+struct fmt::formatter<urd::index_view<tyr::formalism::Object, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::datalog::VariableDependencyGraph& value, FormatContext& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Object, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
 };
 
-}  // namespace fmt
-
-namespace tyr::formalism::datalog
+/// A variable: its name (?x).
+template<>
+struct fmt::formatter<urd::index_view<tyr::formalism::Variable, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
 {
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Variable, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
-std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag>>>& value);
+/// A predicate: name/arity.
+template<tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Predicate<F>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
 
-/// Each symbol type's view (SymbolRepositoryTypes) and each relation's binding view (RelationRepositoryTypes) as text;
-/// instantiated for these lists in formatter.cpp.
-template<typename T>
-    requires boost::mp11::mp_contains<SymbolRepositoryTypes, T>::value
-std::string to_string(urd::index_view<T, Repository> value);
+/// A function: name/arity.
+template<tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Function<F>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Function<F>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// An atom: predicate(terms...), a nullary one predicate.
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Atom<T, F>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Atom<T, F>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A literal: its atom, or not atom.
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::Literal<T, F>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A function term: function(terms...).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::FunctionTerm<T, F>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A function term's value: term = value.
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::FunctionTermValue<T, F>, tyr::formalism::datalog::Repository>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::FunctionTermValue<T, F>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A unary arithmetic expression: (-e).
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::UnaryOperator<T, O>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A binary arithmetic expression (a + b), or a comparison a >= b.
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::BinaryOperator<T, O>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// An arithmetic expression over several arguments: (a + b + c).
+template<tyr::TaskKind T, tyr::formalism::OperatorKind O>
+struct fmt::formatter<urd::index_view<tyr::formalism::MultiOperator<T, O>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::MultiOperator<T, O>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A numeric effect: term += expression (:=, +=, -=, *=, /=).
+template<tyr::TaskKind T, tyr::formalism::FactKind F>
+struct fmt::formatter<urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::NumericEffect<T, F>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A rule's body: its literals and constraints, separated by commas.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::datalog::ConjunctiveCondition<T>, tyr::formalism::datalog::Repository>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::ConjunctiveCondition<T>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// An effect: its numeric effects, separated by commas.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::datalog::ConjunctiveEffect<T>, tyr::formalism::datalog::Repository>> :
+    tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::ConjunctiveEffect<T>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A rule: heads :- body.  % cost c (its heads separated by commas; without a body, heads.).
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::datalog::Rule<T>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::Rule<T>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A program: its predicates, functions and objects as comments, then its facts, function values and rules, one per line, and its goal as a query ?- body.
+template<tyr::TaskKind T>
+struct fmt::formatter<urd::index_view<tyr::formalism::datalog::Program<T>, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
+{
+    fmt::format_context::iterator format(const urd::index_view<tyr::formalism::datalog::Program<T>, tyr::formalism::datalog::Repository>& value,
+                                         fmt::format_context& context) const;
+};
+
+/// A binding of a relation: a predicate's or a function's as its atom, name(values...); a rule's, which has no name, its values.
 template<typename R>
-    requires boost::mp11::mp_contains<RelationRepositoryTypes, R>::value
-std::string to_string(ygg::RowView<R, Repository> value);
-std::string to_string(TermView value);
-
-}  // namespace tyr::formalism::datalog
-
-namespace fmt
+struct fmt::formatter<ygg::RowView<R, tyr::formalism::datalog::Repository>> : tyr::formalism::detail::without_format_spec
 {
-
-/// Every view through the repository prints as its to_string: urd's (of an index or a held record), and binding views.
-template<typename T, typename K>
-    requires requires(const urd::index_view<T, tyr::formalism::datalog::Repository, K>& value) { tyr::formalism::datalog::to_string(value); }
-struct formatter<urd::index_view<T, tyr::formalism::datalog::Repository, K>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const urd::index_view<T, tyr::formalism::datalog::Repository, K>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
+    fmt::format_context::iterator format(const ygg::RowView<R, tyr::formalism::datalog::Repository>& value, fmt::format_context& context) const;
 };
 
-template<typename T, typename R>
-    requires requires(const urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
-struct formatter<urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>, char>
+/// A condition's variable dependency graph: one DOT graph per kind of binary dependency.
+template<>
+struct fmt::formatter<tyr::formalism::datalog::VariableDependencyGraph> : tyr::formalism::detail::without_format_spec
 {
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const urd::borrowed_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
+    fmt::format_context::iterator format(const tyr::formalism::datalog::VariableDependencyGraph& value, fmt::format_context& context) const;
 };
-
-template<typename T, typename R>
-    requires requires(const urd::owning_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
-struct formatter<urd::owning_view<T, tyr::formalism::datalog::Repository, R>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const urd::owning_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
-};
-
-template<typename T, typename R>
-    requires requires(const urd::shared_view<T, tyr::formalism::datalog::Repository, R>& value) { tyr::formalism::datalog::to_string(value); }
-struct formatter<urd::shared_view<T, tyr::formalism::datalog::Repository, R>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const urd::shared_view<T, tyr::formalism::datalog::Repository, R>& value, format_context& ctx) const
-    { return fmt::format_to(ctx.out(), "{}", tyr::formalism::datalog::to_string(value)); }
-};
-
-}  // namespace fmt
 
 #endif

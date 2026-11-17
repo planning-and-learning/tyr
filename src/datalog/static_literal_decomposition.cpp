@@ -20,6 +20,7 @@
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/copy.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"
 #include "tyr/formalism/datalog/conjunctive_effect_view.hpp"
 #include "tyr/formalism/datalog/copy.hpp"
@@ -135,6 +136,8 @@ private:
         }
         if (relation.empty())
             return std::nullopt;
+        // The literals that replace it number their variables as it does: they have its atom's parameters.
+        m_parameters = formalism::copy(literal.get_atom().get_parameters(), *m_context).first.index();
         if (arity < 3)
             return urd::Store<urd::sequence<StaticLiteralIndex>> { create_projection_literal(relation, parameters) };
 
@@ -220,6 +223,7 @@ private:
         }
 
         auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
+        atom->parameters = m_parameters;
         atom->predicate = new_predicate;
         for (const auto parameter : parameters)
             atom->terms.push_back(formalism::Term(parameter));
@@ -251,6 +255,7 @@ private:
         }
 
         auto atom = formalism::datalog::checkout<formalism::Atom<LiftedTag, formalism::StaticTag>>(m_context->builder());
+        atom->parameters = m_parameters;
         atom->predicate = new_predicate;
         atom->terms.push_back(formalism::Term(first));
         atom->terms.push_back(formalism::Term(second));
@@ -264,6 +269,8 @@ private:
     formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>* m_context;
     const TaggedFactSets<formalism::StaticTag>* m_static_facts;
     size_t m_num_predicates = 0;
+    /// The parameters of the literal being decomposed, those of the literals that replace it.
+    urd::index<formalism::Parameters> m_parameters;
     urd::Store<urd::map<StaticLiteralIndex, std::optional<urd::Store<urd::sequence<StaticLiteralIndex>>>>> m_decompositions;
 };
 

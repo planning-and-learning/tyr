@@ -28,6 +28,8 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <algorithm>
+#include <cstddef>
+#include <fmt/format.h>
 #include <map>
 #include <optional>
 #include <urd/config.hpp>
@@ -71,9 +73,19 @@ InvariantView intern(const MutableInvariant& invariant, Builder& builder, Reposi
     auto data = checkout<Invariant>(builder);
     data->num_rigid_variables = invariant.num_rigid_variables;
     data->num_counted_variables = invariant.num_counted_variables;
+    // Its atoms' parameters: its rigid variables, then its counted ones, named ?v0, ?v1, ... in that order.
+    auto parameters = checkout<Parameters>(builder);
+    for (std::size_t position = 0; position < invariant.num_rigid_variables + invariant.num_counted_variables; ++position)
+    {
+        auto variable = checkout<Variable>(builder);
+        variable->name = fmt::format("?v{}", position);
+        parameters->variables.push_back(insert(repository, *variable).first.index());
+    }
+    const auto parameters_index = insert(repository, *parameters).first.index();
     for (const auto& atom : invariant.atoms)
     {
         auto atom_data = checkout<Atom<LiftedTag, FluentTag>>(builder);
+        atom_data->parameters = parameters_index;
         atom_data->predicate = atom.predicate.index();
         for (const auto& term : atom.terms)
             atom_data->terms.push_back(term);

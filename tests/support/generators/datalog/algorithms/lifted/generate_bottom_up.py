@@ -87,8 +87,9 @@ def make_context(domain_file: Path, task_file: Path) -> Context:
 
 
 def binding_objects(row: RowPredicateFluent) -> str:
-    """The row's objects as ``[a, b]``: a row prints as ``(name a b)``, its values being objects."""
-    return "[" + ", ".join(str(row)[1:-1].split()[1:]) + "]"
+    """The row's objects as ``[a, b]``: a row prints as its Datalog atom, ``name(a, b)`` (``name`` without values)."""
+    text = str(row)
+    return "[" + (text[text.index("(") + 1 : -1] if "(" in text else "") + "]"
 
 
 def atoms_by_predicate(

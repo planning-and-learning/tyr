@@ -171,6 +171,7 @@ merge_p2d(AtomView<LiftedTag, T_SRC> element,  //
 {
     auto atom = datalog::checkout<Atom<LiftedTag, T_DST>>(context.builder());
 
+    atom->parameters = copy(element.get_parameters(), context).first.index();
     atom->predicate = predicate_mapping.at(element.get_predicate()).index();
     for (const auto term : element.get_terms())
         atom->terms.push_back(merge_p2d(term, context));
@@ -293,6 +294,7 @@ std::pair<datalog::FunctionTermView<LiftedTag, T_DST>, bool> merge_p2d(FunctionT
 {
     auto fterm = datalog::checkout<FunctionTerm<LiftedTag, T_DST>>(context.builder());
 
+    fterm->parameters = copy(element.get_parameters(), context).first.index();
     fterm->function = merge_p2d<T_SRC, T_DST>(element.get_function(), context).first.index();
     for (const auto term : element.get_terms())
         fterm->terms.push_back(merge_p2d(term, context));

@@ -137,6 +137,8 @@ private:
         ParameterIndexMapping() = default;
 
         urd::Store<urd::map<urd::index<Variable>, ParameterIndex>> map;
+        /// The variables in scope, by parameter index: the parameters of the lifted atoms and function terms built now.
+        urd::flat_vector<urd::index<Variable>> variables;
 
         void push_parameters(const urd::flat_vector<urd::index<Variable>>& parameters);
 

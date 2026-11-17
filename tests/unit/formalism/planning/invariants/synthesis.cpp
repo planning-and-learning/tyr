@@ -21,16 +21,19 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/parameter_index.hpp"
+#include "tyr/formalism/parameters_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/invariants/ordering.hpp"
 #include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/mutable/formatter.hpp"
 #include "tyr/formalism/planning/mutable/invariant.hpp"
+#include "tyr/formalism/variable_data.hpp"
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 
 #include <algorithm>
 #include <boost/json.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fmt/format.h>
@@ -74,12 +77,20 @@ auto atom(tyr::formalism::planning::Repository& repo, std::string_view predicate
 auto intern_invariant(tyr::formalism::planning::Repository& repository, const tyr::formalism::planning::MutableInvariant& invariant)
 {
     auto data = urd::data<tyr::formalism::planning::Invariant>(invariant.num_rigid_variables, invariant.num_counted_variables, {});
+    // Its atoms' parameters, as synthesis names them: ?v0, ?v1, ... for its rigid, then its counted variables.
+    auto parameters = urd::data<tyr::formalism::Parameters> {};
+    for (std::size_t position = 0; position < invariant.num_rigid_variables + invariant.num_counted_variables; ++position)
+    {
+        auto variable = urd::data<tyr::formalism::Variable>(urd::flat_string(fmt::format("?v{}", position)));
+        parameters.variables.push_back(tyr::formalism::planning::insert(repository, variable).first.index());
+    }
+    const auto parameters_index = tyr::formalism::planning::insert(repository, parameters).first.index();
     for (const auto& atom : invariant.atoms)
     {
         auto terms = tyr::formalism::TermList {};
         for (const auto& term : atom.terms)
             terms.push_back(term);
-        auto atom_data = urd::data<tyr::formalism::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>>(atom.predicate.index(), std::move(terms));
+        auto atom_data = urd::data<tyr::formalism::Atom<tyr::LiftedTag, tyr::formalism::FluentTag>>(parameters_index, atom.predicate.index(), std::move(terms));
         data.atoms.push_back(tyr::formalism::planning::insert(repository, atom_data).first.index());
     }
     return tyr::formalism::planning::insert(repository, data).first;
@@ -268,12 +279,12 @@ TEST(TyrTests, TyrFormalismPlanningInvariantOrderPrefersMoreResidualAtomsOnStole
     const auto alone = intern_invariant(repository, planning::MutableInvariant(0, 1, { free }));
     const auto pair = intern_invariant(repository, planning::MutableInvariant(0, 1, { free, atom(repository, "loaded", { 0 }) }));
 
-    // Both steal free from each other. More residual atoms keeps free and loaded in one variable; the text alone
-    // would take the smaller group first and leave loaded on its own. alone, then without mutex information, follows.
+    // Both steal free from each other. More residual atoms keeps free and loaded in one variable; alone, then without
+    // mutex information, follows. The text agrees here: the pair's atoms, one per line, sort before alone's closing ].
     EXPECT_EQ(invariant::compute_invariant_order_greedy({ alone, pair }), (planning::InvariantViewList { pair, alone }));
     EXPECT_EQ(invariant::compute_invariant_order_greedy({ alone, pair },
                                                         invariant::InvariantOrderOptions { { Criterion::MinStolenPredicates, Criterion::Lexicographic } }),
-              (planning::InvariantViewList { alone, pair }));
+              (planning::InvariantViewList { pair, alone }));
 }
 
 TEST(TyrTests, TyrFormalismPlanningInvariantOrderPutsResidualsWithoutMutexInformationLast)

@@ -50,6 +50,7 @@ void bind_formalism(nb::module_& m)
     bind_parameter(m);
     bind_object(m);
     bind_variable(m);
+    bind_parameters(m);
     bind_row(m);
     bind_predicate(m);
     bind_function(m);

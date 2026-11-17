@@ -132,7 +132,7 @@ struct FDRAxiom
 {
 };
 
-using CoreTypes = boost::mp11::mp_list<Variable, Object>;
+using CoreTypes = boost::mp11::mp_list<Variable, Parameters, Object>;
 using PredicateTypes = boost::mp11::mp_transform<Predicate, StaticFluentDerivedTags>;
 template<TaskKind T>
 using AtomTypes = boost::mp11::mp_list<Atom<T, StaticTag>, Atom<T, FluentTag>, Atom<T, DerivedTag>>;
@@ -342,6 +342,7 @@ template<TaskKind T, OperatorKind O>
 using UnaryOperatorView = urd::index_view<UnaryOperator<T, O>, Repository>;
 
 using VariableView = urd::index_view<Variable, Repository>;
+using ParametersView = urd::index_view<Parameters, Repository>;
 using VariableViewList = urd::Store<urd::sequence<VariableView>>;
 
 /// A function expression read through the repository: the number, or the view of the record, it holds.
