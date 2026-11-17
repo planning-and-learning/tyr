@@ -12,6 +12,7 @@
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::planning_action
 {
@@ -140,7 +141,7 @@ TEST(TyrFormalismPlanningCopy, RemapsActionClosureAndBinding)
     EXPECT_EQ(copied.get_original_arity(), source_action.get_original_arity());
     EXPECT_EQ(tyr::formalism::planning::to_string(copied), tyr::formalism::planning::to_string(source_action));
     EXPECT_NE(copied.get_variables().front().index(), source_action.get_variables().front().index());
-    const auto copied_objects = urd::resolve(copied_binding.get<urd::index<tyr::formalism::Object>>(), copied_binding.context());
+    const auto copied_objects = copied_binding.get_objects();
     ASSERT_EQ(copied_objects.size(), 1);
     EXPECT_EQ(copied_objects[0].get_name(), "truck");
     EXPECT_NE(copied_objects[0].index(), source_object.index());
@@ -172,8 +173,8 @@ static_assert(requires(const GroundActionView& view) {
     view.index();
     view.get_action();
     view.get_row();
-    view.get_objects();
-    view.get_key();
+    view.get_row().get_objects();
+    view.get_row().get_key();
     view.get_condition();
     view.get_effects();
     { view == view } -> std::same_as<bool>;

@@ -31,7 +31,7 @@ template<typename Tag>
 nb::class_<ConcreteQueryView<Tag>> bind_query_operation(nb::module_& m, QueryRepositoryBinding& repository)
 {
     repository.def("insert", &tyr::datalog::database::derive_and_insert<Tag>, nb::arg("data"));
-    return urd::python::bind_view<ConcreteQueryView<Tag>>(m).def("columns", &ConcreteQueryView<Tag>::columns);
+    return urd::python::bind_view<ConcreteQueryView<Tag>>(m);
 }
 
 void bind_query(nb::module_& m, QueryRepositoryBinding& repository);

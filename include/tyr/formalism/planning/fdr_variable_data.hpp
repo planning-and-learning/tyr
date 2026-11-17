@@ -37,7 +37,9 @@ struct data<::tyr::formalism::planning::FDRVariable<T>>
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>> atoms;
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, T>>> atoms_) : index(), atoms(std::move(atoms_)) {}
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -45,7 +47,9 @@ struct data<::tyr::formalism::planning::FDRVariable<T>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atoms", &data::atoms>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::atoms> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atoms> {}; }
 };
 

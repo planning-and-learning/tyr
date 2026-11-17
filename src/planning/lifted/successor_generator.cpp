@@ -98,7 +98,9 @@ void validate_storage(const TaskPtr<LiftedTag>&, const Source&, const SuccessorB
 
 /// The storage of a list's next successor: the repository, or a builder appended to the list.
 StateRepository<LiftedTag>& next_storage(StateRepository<LiftedTag>& storage) { return storage; }
+
 Builder& next_storage(Builder& storage) { return storage; }
+
 Builder& next_storage(SuccessorBuilders<LiftedTag>& storage) { return storage.emplace_back(); }
 
 /// Sinks of successors: appending to a list, as they are or packed.
@@ -183,7 +185,7 @@ struct SuccessorGenerator<LiftedTag>::Impl
     static StateKey state_key(const Source& node)
     {
         if (const auto* state = node.registered())
-            return { static_cast<const void*>(&state->get_state_repository()), static_cast<ygg::uint_t>(state->index().value) };
+            return { static_cast<const void*>(&state->context()), static_cast<ygg::uint_t>(state->index().value) };
         return { static_cast<const void*>(&node.state().fact_storage()), std::numeric_limits<ygg::uint_t>::max() };
     }
 
@@ -429,13 +431,16 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         throw std::logic_error("SuccessorGenerator: applicable action bindings are enumerated already.");
     compute_action_facts(node, action);
     evaluator.facts.enumerating = true;
+
     struct EndEnumeration
     {
         EndEnumeration(Evaluator::Facts& facts_, bool registered_) : facts(&facts_), registered(registered_) {}
+
         EndEnumeration(const EndEnumeration&) = delete;
         EndEnumeration& operator=(const EndEnumeration&) = delete;
         EndEnumeration(EndEnumeration&&) = delete;
         EndEnumeration& operator=(EndEnumeration&&) = delete;
+
         ~EndEnumeration()
         {
             facts->enumerating = false;
@@ -446,6 +451,7 @@ bool SuccessorGenerator<LiftedTag>::Impl::for_each_applicable_action_binding(con
         Evaluator::Facts* facts;
         bool registered;
     } end_enumeration { evaluator.facts, node.registered() != nullptr };
+
     auto& scratch_binding = *evaluator.scratch_action_binding;
 
     const auto state_context = node.state();

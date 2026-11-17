@@ -50,7 +50,9 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         explicit In(const ConstProgramWorkspace<GroundTag>& cws) : m_cws(&cws) {}
 
         [[nodiscard]] auto program() const noexcept { return m_cws->program; }
+
         [[nodiscard]] const auto& facts() const noexcept { return m_cws->facts; }
+
         [[nodiscard]] const auto& dependencies() const noexcept { return m_cws->dependencies; }
 
     private:
@@ -63,20 +65,34 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
         explicit Out(ProgramWorkspace<GroundTag, AP, TP, CP>& ws) : m_ws(&ws) {}
 
         auto& facts() noexcept { return m_ws->facts; }
+
         [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
+
         /// Commits a fact. Whether it was new.
         bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact) { return m_ws->facts.insert(fact); }
+
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
+
         [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
+
         auto& annotations() noexcept { return m_ws->annotations; }
+
         [[nodiscard]] const auto& annotations() const noexcept { return m_ws->annotations; }
+
         auto& tp() noexcept { return m_ws->tp; }
+
         [[nodiscard]] const auto& tp() const noexcept { return m_ws->tp; }
+
         auto& cost_policy() noexcept { return m_ws->cost_policy; }
+
         [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws->cost_policy; }
+
         auto& cost_buckets() noexcept { return m_ws->cost_buckets; }
+
         auto& pending_achievers() noexcept { return m_ws->pending_achievers; }
+
         auto& scheduler() noexcept { return m_ws->scheduler; }
+
         [[nodiscard]] const auto& scheduler() const noexcept { return m_ws->scheduler; }
 
     private:
@@ -102,7 +118,9 @@ struct ProgramExecutionContext<GroundTag, AP, TP, CP>
     }
 
     [[nodiscard]] const auto& in() const noexcept { return m_in; }
+
     auto& out() noexcept { return m_out; }
+
     [[nodiscard]] const auto& out() const noexcept { return m_out; }
 
 private:

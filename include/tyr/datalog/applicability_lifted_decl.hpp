@@ -36,6 +36,7 @@ public:
     }  // no operator& lookup: the builder's records need not be complete here
 
     [[nodiscard]] const FactSets& fact_sets() const noexcept { return *m_fact_sets; }
+
     [[nodiscard]] formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& grounder() const noexcept { return *m_grounder; }
 
 private:

@@ -62,6 +62,7 @@ public:
     void on_finish_iteration();
 
     [[nodiscard]] const formalism::datalog::Repository& get_context() const noexcept { return *m_context; }
+
     [[nodiscard]] const urd::flat_vector<urd::index<formalism::datalog::Rule<LiftedTag>>>& get_rules() const noexcept { return *m_rules; }
 
     /// Active rules in index order (the dense set iterates in it): the rule processing order assigns
@@ -97,6 +98,7 @@ public:
               size_t num_fluent_functions);
 
     auto& rules() noexcept { return predicate_rules; }
+
     [[nodiscard]] const auto& rules() const noexcept { return predicate_rules; }
 
     template<AnnotationPolicyConcept AP, TerminationPolicyConcept TP, RuleCostPolicyConcept CP>

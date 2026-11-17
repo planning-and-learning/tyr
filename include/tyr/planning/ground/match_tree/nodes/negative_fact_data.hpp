@@ -39,6 +39,7 @@ struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
+
     data(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
@@ -48,6 +49,7 @@ struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
         dontcare_child(std::move(dontcare_child_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -59,7 +61,9 @@ struct data<::tyr::planning::match_tree::NegativeFactSelectorNode<Tag>>
         return urd::
             Fields<urd::field<"fact", &data::fact>, urd::field<"true_child", &data::true_child>, urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact, &data::true_child, &data::dontcare_child> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact, &data::true_child, &data::dontcare_child> {}; }
 };
 }

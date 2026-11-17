@@ -44,6 +44,7 @@ struct data<::tyr::formalism::NumericEffect<T, F>>
     ::tyr::formalism::FunctionExpression<T> fexpr;
 
     data() = default;
+
     data(::tyr::formalism::NumericEffectOperatorKind operation_,
          urd::index<::tyr::formalism::FunctionTerm<T, F>> fterm_,
          ::tyr::formalism::FunctionExpression<T> fexpr_) :
@@ -56,6 +57,7 @@ struct data<::tyr::formalism::NumericEffect<T, F>>
             if (operation != ::tyr::formalism::default_numeric_effect_operator<F>)
                 throw std::invalid_argument("auxiliary numeric effect must be Increase");
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -64,7 +66,9 @@ struct data<::tyr::formalism::NumericEffect<T, F>>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"fterm", &data::fterm>, urd::field<"fexpr", &data::fexpr>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::fterm, &data::fexpr> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::fterm, &data::fexpr> {}; }
 };
 

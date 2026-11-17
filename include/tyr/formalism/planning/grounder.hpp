@@ -402,7 +402,7 @@ inline std::pair<AxiomRowView, bool> ground(AxiomView<LiftedTag> axiom, WriteCon
     auto binding = planning::checkout<ygg::Row<Axiom<LiftedTag>>>(context.builder());
 
     binding->relation = axiom.index();
-    for (ygg::uint_t i = 0; i < axiom.get_arity(); ++i)
+    for (ygg::uint_t i = 0; i < axiom.get_body().get_arity(); ++i)
         binding->values.push_back(context.binding()[i].value);
 
     // Canonicalize and Serialize

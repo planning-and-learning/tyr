@@ -74,14 +74,14 @@ template<TaskKind T>
 struct Action
 {
     static constexpr std::string_view name = "Action";
-    using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
+    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<TaskKind T>
 struct Axiom
 {
     static constexpr std::string_view name = "Axiom";
-    using object_tag = ::tyr::formalism::ObjectTag;  ///< its rows (ygg::Row) are objects
+    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 struct Metric
@@ -195,17 +195,17 @@ using Builder = boost::mp11::mp_apply<ygg::formalism::BuilderStorage, BuilderTyp
 using SymbolRepository = boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbolRepository, SymbolRepositoryTypes>;
 
 template<typename... Ts>
-using TaggedRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<ObjectTag, Ts...>;
+using StoredRelationRepository = ::ygg::formalism::ConcurrentRelationRepository<RelationStorage, Ts...>;
 
-using RelationRepository = boost::mp11::mp_apply<TaggedRelationRepository, RelationRepositoryTypes>;
+using RelationRepository = boost::mp11::mp_apply<StoredRelationRepository, RelationRepositoryTypes>;
 
 template<typename... Ts>
-using TaggedRelations = ::ygg::formalism::ConcurrentRelations<ObjectTag, Ts...>;
+using StoredRelations = ::ygg::formalism::ConcurrentRelations<RelationStorage, Ts...>;
 
 /// Named by what it holds (yggdrasil's Symbols and Relations), not by its stores: a call with a repository argument
 /// then never instantiates them (yggdrasil/formalism/declarations.hpp).
 using Repository = ::ygg::formalism::Repository<boost::mp11::mp_apply<::ygg::formalism::ConcurrentSymbols, SymbolRepositoryTypes>,
-                                                boost::mp11::mp_apply<TaggedRelations, RelationRepositoryTypes>>;
+                                                boost::mp11::mp_apply<StoredRelations, RelationRepositoryTypes>>;
 using RepositoryPtr = std::shared_ptr<Repository>;
 
 /**

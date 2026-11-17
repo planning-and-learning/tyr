@@ -44,8 +44,10 @@ public:
     }
 
     [[nodiscard]] size_t size() const noexcept { return m_nodes.size(); }
+
     /// A stored vertex, or none.
     [[nodiscard]] VertexSet::handle_type find(std::span<const ygg::Value> vertex) const { return m_vertices.find(vertex); }
+
     [[nodiscard]] std::span<const ygg::Value> vertex(VertexSet::handle_type id) const { return m_vertices.at(id); }
 
     /// A stored vertex, inserted with its heuristic estimate as learned distance. The estimate is computed only on
@@ -59,6 +61,7 @@ public:
         m_nodes.push_back(Node { estimate });
         return m_vertices.insert(vertex).first;
     }
+
     /// The learned distance of a vertex: its stored value, or the heuristic's estimate if it is not stored.
     template<DistanceHeuristic H>
     [[nodiscard]] ygg::uint_t value(std::span<const ygg::Value> vertex, const H& heuristic) const
@@ -68,16 +71,20 @@ public:
     }
 
     [[nodiscard]] ygg::uint_t learned(VertexSet::handle_type id) const noexcept { return m_nodes[id].learned; }
+
     /// Raises the learned distance to a bound a search established (Generalized Adaptive A*).
     void learn(VertexSet::handle_type id, ygg::uint_t bound) noexcept { m_nodes[id].learned = std::max(m_nodes[id].learned, bound); }
+
     /// Lowers the learned distance and drops the next pointer, after edges were added.
     void lower(VertexSet::handle_type id, ygg::uint_t bound) noexcept
     {
         m_nodes[id].learned = bound;
         set_next(id, {});
     }
+
     /// The next vertex along a found path, or none.
     [[nodiscard]] VertexSet::handle_type next(VertexSet::handle_type id) const noexcept { return m_nodes[id].next; }
+
     void link(VertexSet::handle_type from, VertexSet::handle_type to) noexcept { set_next(from, to); }
 
     /// Starts a new search: chain checks of earlier searches are forgotten.

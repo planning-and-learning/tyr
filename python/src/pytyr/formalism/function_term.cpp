@@ -45,9 +45,7 @@ template<TaskKind T, FactKind F, typename C>
 void bind_function_term_view(nb::module_& m, nb::class_<C>& repository)
 {
     using V = urd::index_view<FunctionTerm<T, F>, C>;
-    auto cls = urd::python::bind_view<V>(m);
-    if constexpr (std::same_as<T, GroundTag>)
-        cls.def("get_function", &V::get_function).def("get_objects", &V::get_objects);
+    urd::python::bind_view<V>(m);
     ygg::bind_insert<FunctionTerm<T, F>>(repository);
 }
 

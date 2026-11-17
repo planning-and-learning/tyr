@@ -49,6 +49,7 @@ class ScopedCoutSilencer
 {
 public:
     ScopedCoutSilencer() : m_null_stream("/dev/null"), m_old_buffer(std::cout.rdbuf(m_null_stream.rdbuf())) {}
+
     ~ScopedCoutSilencer() { std::cout.rdbuf(m_old_buffer); }
 
     ScopedCoutSilencer(const ScopedCoutSilencer&) = delete;

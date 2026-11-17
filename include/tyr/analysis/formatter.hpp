@@ -46,6 +46,7 @@ template<>
 struct formatter<tyr::analysis::VariableDomain, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::VariableDomain& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", value.objects); }
@@ -55,6 +56,7 @@ template<typename Element, typename Payload>
 struct formatter<tyr::analysis::Scoped<Element, Payload>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::Scoped<Element, Payload>& value, FormatContext& ctx) const
     {
@@ -76,6 +78,7 @@ template<typename Payload>
 struct formatter<tyr::analysis::Scoped<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::Scoped<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload>& value, FormatContext& ctx) const
     {
@@ -97,6 +100,7 @@ template<typename Payload>
 struct formatter<tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, Payload>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::Scoped<tyr::formalism::datalog::Rule<::tyr::LiftedTag>, Payload>& value, FormatContext& ctx) const
     {
@@ -118,6 +122,7 @@ template<>
 struct formatter<tyr::analysis::ConditionalEffectDomain, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ConditionalEffectDomain& value, FormatContext& ctx) const
     {
@@ -141,6 +146,7 @@ template<>
 struct formatter<tyr::analysis::ActionDomain, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ActionDomain& value, FormatContext& ctx) const
     {
@@ -164,6 +170,7 @@ template<>
 struct formatter<tyr::analysis::ConditionalEffectDomainData, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ConditionalEffectDomainData& value, FormatContext& ctx) const
     {
@@ -185,6 +192,7 @@ template<>
 struct formatter<tyr::analysis::ActionDomainData, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ActionDomainData& value, FormatContext& ctx) const
     {
@@ -206,6 +214,7 @@ template<>
 struct formatter<tyr::analysis::ProgramVariableDomains, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ProgramVariableDomains& value, FormatContext& ctx) const
     {
@@ -241,6 +250,7 @@ template<>
 struct formatter<tyr::analysis::TaskVariableDomains, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::TaskVariableDomains& value, FormatContext& ctx) const
     {
@@ -281,6 +291,7 @@ struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Conditional
                  char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto
     format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>, tyr::analysis::ConditionalEffectDomainViewData<C>, C>&
@@ -307,6 +318,7 @@ template<typename C>
 struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::analysis::ActionDomainViewData<C>, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Action<::tyr::LiftedTag>, tyr::analysis::ActionDomainViewData<C>, C>& value,
                 FormatContext& ctx) const
@@ -335,6 +347,7 @@ template<typename Element, typename Payload, typename C>
 struct formatter<tyr::analysis::ScopedView<Element, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ScopedView<Element, Payload, C>& value, FormatContext& ctx) const
     {
@@ -356,6 +369,7 @@ template<typename Payload, typename C>
 struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, Payload, C>& value, FormatContext& ctx) const
     {
@@ -377,6 +391,7 @@ template<typename Payload, typename C>
 struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>, Payload, C>& value, FormatContext& ctx) const
     {
@@ -398,6 +413,7 @@ template<typename Payload, typename C>
 struct formatter<tyr::analysis::ScopedView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload, C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::ScopedView<tyr::formalism::planning::Axiom<::tyr::LiftedTag>, Payload, C>& value, FormatContext& ctx) const
     {
@@ -419,6 +435,7 @@ template<typename C>
 struct formatter<tyr::analysis::VariableDomainView<C>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::VariableDomainView<C>& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", value.objects); }
@@ -428,6 +445,7 @@ template<>
 struct formatter<tyr::analysis::TaskVariableDomainsView, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::analysis::TaskVariableDomainsView& value, FormatContext& ctx) const
     {

@@ -48,6 +48,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
 #include <vector>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests
 {
@@ -364,7 +365,7 @@ TEST(TyrKCKPDelta, MixedAdjacencyMatchesAcrossIterations)
         if (atom.get_predicate().get_name() != "at")
             continue;
 
-        const auto object = atom.get_objects().front().get_name();
+        const auto object = atom.get_row().get_objects().front().get_name();
         if (object == "truck-1")
         {
             first_assignments.predicate.insert(atom);

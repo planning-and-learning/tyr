@@ -44,6 +44,7 @@ public:
     Node(State state, ygg::float_t metric) noexcept(std::is_nothrow_move_constructible_v<State>) : m_state(std::move(state)), m_metric(metric) {}
 
     [[nodiscard]] const State& get_state() const noexcept { return m_state; }
+
     [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
 
     // NOLINTNEXTLINE(bugprone-exception-escape): a state's repository is owned by a StateRepositoryPtr, so PackedNode's shared_from_this() does not throw
@@ -71,6 +72,7 @@ public:
     }
 
     [[nodiscard]] const PackedStateView<Kind>& get_state() const noexcept { return m_state; }
+
     [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
 
     [[nodiscard]] Node<Kind> unpack() const { return Node<Kind>(m_state.unpack(), m_metric); }

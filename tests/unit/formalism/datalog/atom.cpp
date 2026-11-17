@@ -8,6 +8,7 @@
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::datalog_atom
 {
@@ -63,8 +64,8 @@ concept GroundAtomContract = std::constructible_from<urd::index<Entity>, ygg::ui
                                     view.index();
                                     view.get_predicate();
                                     view.get_row();
-                                    view.get_objects();
-                                    view.get_key();
+                                    view.get_row().get_objects();
+                                    view.get_row().get_key();
                                 };
 
 static_assert([]<typename... Entities>(boost::mp11::mp_list<Entities...>)

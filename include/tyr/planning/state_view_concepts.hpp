@@ -108,7 +108,7 @@ concept StateViewConcept = TaskKind<Kind> && IterableStateConcept<T> && Iterable
                                        formalism::planning::PredicateView<formalism::StaticTag> static_predicate,
                                        formalism::planning::PredicateView<formalism::FluentTag> fluent_predicate,
                                        formalism::planning::PredicateView<formalism::DerivedTag> derived_predicate) {
-                                  { state.get_task() } -> std::same_as<const Task<Kind>&>;
+                                  { state.context() } -> std::same_as<const StateRepository<Kind>&>;
                                   { state.get_formalism_repository() } -> std::same_as<const formalism::planning::RepositoryPtr&>;
                                   { state.value(variable) } -> std::same_as<formalism::planning::FDRValue>;
                                   { state.value(static_fterm) } -> std::same_as<ygg::float_t>;

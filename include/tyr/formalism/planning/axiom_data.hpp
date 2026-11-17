@@ -41,6 +41,7 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
     urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head;
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> body_,
          urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>> head_) :
@@ -50,6 +51,7 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
         head(head_)
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -58,7 +60,9 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"variables", &data::variables>, urd::field<"body", &data::body>, urd::field<"head", &data::head>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::head> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::head> {}; }
 };
 
@@ -71,6 +75,7 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
     urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head;
 
     data() = default;
+
     data(ygg::RowIndex<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>> row_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> body_,
          urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> head_) :
@@ -80,6 +85,7 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
         head(head_)
     {
     }
+
     static constexpr bool copyable() noexcept
     {
         static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
@@ -88,7 +94,9 @@ struct data<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"row", &data::row>, urd::field<"body", &data::body>, urd::field<"head", &data::head>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::body, &data::head> {}; }
 };
 

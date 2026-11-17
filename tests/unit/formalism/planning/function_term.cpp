@@ -9,6 +9,7 @@
 #include <concepts>
 #include <gtest/gtest.h>
 #include <string>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::planning_function_term
 {
@@ -56,8 +57,8 @@ concept GroundFunctionTermContract =
            view.index();
            view.get_function();
            view.get_row();
-           view.get_objects();
-           view.get_key();
+           view.get_row().get_objects();
+           view.get_row().get_key();
            { view == view } -> std::same_as<bool>;
            { view < view } -> std::same_as<bool>;
        };
@@ -95,7 +96,7 @@ TEST(TyrFormalismPlanningGroundFunctionTerm, ExposesRepositoryView)
     ASSERT_TRUE(ground_function_term_created);
 
     EXPECT_EQ(ground_function_term.get_function().index(), function.index());
-    const auto objects = ground_function_term.get_objects();
+    const auto objects = ground_function_term.get_row().get_objects();
     ASSERT_EQ(objects.size(), 1);
     EXPECT_EQ(objects[0].index(), object.index());
     EXPECT_EQ(fmt::format("{}", binding), "(fuel truck)");

@@ -106,6 +106,7 @@ public:
     }
 
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&) override { return false; }
+
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::BuilderStateView<GroundTag>&) override { return false; }
 };
 
@@ -113,6 +114,7 @@ class SatisfiedGoalStrategy : public NeverSatisfiedGoalStrategy
 {
 public:
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&) override { return true; }
+
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::BuilderStateView<GroundTag>&) override { return true; }
 };
 
@@ -137,10 +139,11 @@ public:
 
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>& seed_state, const tyr::planning::StateView<GroundTag>&) override
     {
-        seed_repositories.push_back(&seed_state.get_state_repository());
+        seed_repositories.push_back(&seed_state.context());
         seed_indices.push_back(seed_state.index());
         return false;
     }
+
     using NeverSatisfiedGoalStrategy::is_dynamic_goal_satisfied;
 };
 
@@ -148,6 +151,7 @@ class AlwaysPruningStrategy : public tyr::planning::PruningStrategy<GroundTag>
 {
 public:
     bool should_prune_state(const tyr::planning::StateView<GroundTag>&) override { return true; }
+
     bool should_prune_successor_state(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&, bool) override { return true; }
 };
 
@@ -256,18 +260,23 @@ public:
         ++num_search_starts;
         statistics.clear();
     }
+
     void on_start_subsearch(ygg::uint_t) override
     {
         ++num_subsearch_starts;
         std::this_thread::sleep_for(start_subsearch_delay);
     }
+
     void add_subsearch_statistics(const tyr::planning::Statistics& search_statistics, const Stats& solver_statistics) override
     {
         statistics.add_search_statistics(search_statistics);
         statistics.add_solver_statistics(solver_statistics);
     }
+
     void on_end_subsearch(ygg::uint_t, tyr::planning::SearchStatus) override { ++num_subsearch_ends; }
+
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override { ++num_search_ends; }
+
     void on_solved(const tyr::planning::Plan<GroundTag>&) override {}
 };
 
@@ -289,18 +298,23 @@ public:
         statistics.clear();
         ++num_search_starts;
     }
+
     void on_start_arity(ygg::uint_t) override
     {
         ++num_arity_starts;
         std::this_thread::sleep_for(start_arity_delay);
     }
+
     void on_end_arity(ygg::uint_t, tyr::planning::SearchStatus) override
     {
         ++num_arity_ends;
         std::this_thread::sleep_for(end_arity_delay);
     }
+
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override { ++num_search_ends; }
+
     void on_solved(ygg::uint_t arity) override { statistics.set_solution_arity(arity); }
+
     [[nodiscard]] const tyr::planning::iw::Statistics<GroundTag>& get_statistics() const override { return statistics; }
 };
 }
@@ -607,8 +621,8 @@ TEST(TyrPlanningSerialized, ZeroSubsearchesMaterializesCompatibleForeignStart)
     const auto result = tyr::planning::serialized::find_solution(solver, options);
 
     ASSERT_TRUE(result.plan);
-    EXPECT_EQ(&result.plan.value().get_start_node().get_state().get_state_repository(), context.state_repository.get());
-    EXPECT_NE(&result.plan.value().get_start_node().get_state().get_state_repository(), &foreign_start.get_state().get_state_repository());
+    EXPECT_EQ(&result.plan.value().get_start_node().get_state().context(), context.state_repository.get());
+    EXPECT_NE(&result.plan.value().get_start_node().get_state().context(), &foreign_start.get_state().context());
     EXPECT_EQ(result.plan.value().get_start_node().get_metric(), 7);
 }
 

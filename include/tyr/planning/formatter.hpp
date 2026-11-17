@@ -47,6 +47,7 @@ template<>
 struct formatter<tyr::planning::Task<::tyr::LiftedTag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::Task<::tyr::LiftedTag>& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
@@ -56,6 +57,7 @@ template<>
 struct formatter<tyr::planning::Task<::tyr::GroundTag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::Task<::tyr::GroundTag>& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", value.get_task()); }
@@ -65,6 +67,7 @@ template<>
 struct formatter<urd::data<tyr::planning::State<::tyr::LiftedTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
@@ -74,6 +77,7 @@ template<>
 struct formatter<urd::builder<tyr::planning::State<::tyr::LiftedTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::LiftedTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
@@ -83,6 +87,7 @@ template<>
 struct formatter<urd::data<tyr::planning::State<::tyr::GroundTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
@@ -92,6 +97,7 @@ template<>
 struct formatter<urd::builder<tyr::planning::State<::tyr::GroundTag>>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const urd::data<tyr::planning::State<::tyr::GroundTag>>&, FormatContext& ctx) const
     { return ctx.out(); }
@@ -101,6 +107,7 @@ template<>
 struct formatter<tyr::planning::Statistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::Statistics& value, FormatContext& ctx) const
     {
@@ -152,6 +159,7 @@ template<>
 struct formatter<tyr::planning::ProgressStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::ProgressStatistics& value, FormatContext& ctx) const
     {
@@ -181,6 +189,7 @@ template<::tyr::TaskKind Kind>
 struct formatter<tyr::planning::iw::Statistics<Kind>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::iw::Statistics<Kind>& value, FormatContext& ctx) const
     {
@@ -194,6 +203,7 @@ template<::tyr::TaskKind Kind>
 struct formatter<tyr::planning::siw::Statistics<Kind>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::siw::Statistics<Kind>& value, FormatContext& ctx) const
     {
@@ -214,6 +224,7 @@ template<typename State>
 struct state_formatter
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const State& value, FormatContext& ctx) const
     {
@@ -250,6 +261,7 @@ template<::tyr::TaskKind Kind>
 struct formatter<::tyr::planning::StateView<Kind>, char> : state_formatter<::tyr::planning::StateView<Kind>>
 {
 };
+
 template<::tyr::TaskKind Kind>
 struct formatter<::tyr::planning::BuilderStateView<Kind>, char> : state_formatter<::tyr::planning::BuilderStateView<Kind>>
 {
@@ -259,6 +271,7 @@ template<::tyr::TaskKind Kind, ::tyr::planning::StateViewConcept<Kind> State>
 struct formatter<tyr::planning::Node<Kind, State>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::Node<Kind, State>& value, FormatContext& ctx) const
     {
@@ -280,6 +293,7 @@ template<::tyr::TaskKind Kind, ::tyr::planning::StateViewConcept<Kind> State, yg
 struct formatter<tyr::planning::LabeledNode<Kind, State, Binding>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::LabeledNode<Kind, State, Binding>& value, FormatContext& ctx) const
     {
@@ -317,6 +331,7 @@ template<::tyr::TaskKind Kind>
 struct formatter<tyr::planning::Plan<Kind>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::Plan<Kind>& value, FormatContext& ctx) const
     {
@@ -333,6 +348,7 @@ template<::tyr::TaskKind Kind>
 struct formatter<tyr::planning::PackedPlan<Kind>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::planning::PackedPlan<Kind>& value, FormatContext& ctx) const
     {

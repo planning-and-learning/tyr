@@ -166,9 +166,13 @@ struct ConstRuleWorkspace<LiftedTag>
 {
 public:
     [[nodiscard]] auto get_rule() const noexcept { return rule; }
+
     [[nodiscard]] auto get_nullary_condition() const noexcept { return nullary_condition; }
+
     [[nodiscard]] auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
+
     [[nodiscard]] auto get_hyperedge_condition() const noexcept { return hyperedge_condition; }
+
     [[nodiscard]] const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
     ConstRuleWorkspace(formalism::datalog::RuleView<LiftedTag> rule_, formalism::datalog::Repository& repository, kckp::Graph compatibility_graph);

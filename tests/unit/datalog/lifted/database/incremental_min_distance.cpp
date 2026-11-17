@@ -52,11 +52,13 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
     // Fed the exact changes of its inputs (update()) instead of diffing them (bind()).
     auto exact = tyr::datalog::database::incremental::MinDistance<HalfDistance>(layer, edges, plan, static_slots);
     auto previous = urd::Store<urd::sequence<Relation>>();
+
     struct Change
     {
         Relation added;
         Relation removed;
     };
+
     auto changes = urd::Store<urd::sequence<Change>>();
     auto evaluator = tyr::datalog::database::QueryEvaluator(layer, tyr::datalog::database::compile_plan({ edges }));
     evaluator.evaluate(borrow_all(layer, maximal));
@@ -389,10 +391,12 @@ struct TwoSlotEdges
         inputs[0].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(0)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
         inputs[0].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     }
+
     [[nodiscard]] auto input() const
     {
         return [this](size_t slot) { return borrow(layer, inputs[slot]); };
     }
+
     /// The changes as views (SlotChanges).
     [[nodiscard]] auto changes_of(const urd::Store<urd::sequence<SlotChange>>& changes) const
     {

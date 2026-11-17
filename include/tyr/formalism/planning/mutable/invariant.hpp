@@ -52,6 +52,7 @@ struct MutableInvariant : urd::compared_by_identity<MutableInvariant>
         atoms(std::move(atoms_)),
         predicates()
     { canonicalize(); }
+
     MutableInvariant(size_t num_rigid_variables_,
                      size_t num_counted_variables_,
                      MutableAtomList<FluentTag> atoms_,

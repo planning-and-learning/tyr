@@ -156,7 +156,7 @@ SearchResult<Kind> find_solution(Solver& solver, const Options<Kind, Stats>& opt
         return result;
     };
 
-    if (!options.goal_strategy->is_static_goal_satisfied(*final_goal_seed.get_state_repository().get_task()))
+    if (!options.goal_strategy->is_static_goal_satisfied(*final_goal_seed.context().get_task()))
     {
         auto result = SearchResult<Kind> {};
         result.status = SearchStatus::UNSOLVABLE;

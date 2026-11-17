@@ -227,7 +227,7 @@ BottomUpCase parse_case(const boost::json::object& object)
         auto bindings = urd::Store<urd::sequence<AtomBinding>> {};
         for (const auto binding : tyr::datalog::rows(fact_sets, set))
         {
-            const auto objects = urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context());
+            const auto objects = binding.get_objects();
             bindings.push_back(AtomBinding { ygg::to_string(objects | std::views::transform([](auto object) { return object.get_name(); })) });
         }
         std::ranges::sort(bindings, {}, &AtomBinding::objects);

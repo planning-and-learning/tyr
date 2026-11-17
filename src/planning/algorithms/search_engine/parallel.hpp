@@ -79,7 +79,7 @@ public:
     std::pair<urd::index<Worker>, StateView<Kind>> prepare_start_state(Engine& engine, const StateView<Kind>& start_state)
     {
         m_dist_hash.initialize(start_state);
-        const auto owner = m_dist_hash.owner(StateContext<Kind> { start_state.get_task(), start_state, ygg::float_t { 0 } }, engine.num_workers());
+        const auto owner = m_dist_hash.owner(StateContext<Kind> { *start_state.context().get_task(), start_state, ygg::float_t { 0 } }, engine.num_workers());
         auto& worker = engine.get_worker(owner);
         return { owner, materialize_state(start_state, *worker.state_repository, *worker.axiom_evaluator) };
     }
@@ -93,7 +93,7 @@ public:
                                   ygg::float_t metric,
                                   size_t num_workers)
     {
-        const auto owner = m_dist_hash.owner(StateContext<Kind> { parent.get_task(), *target, ygg::float_t { 0 } }, num_workers);
+        const auto owner = m_dist_hash.owner(StateContext<Kind> { *parent.context().get_task(), *target, ygg::float_t { 0 } }, num_workers);
         const auto owner_index = static_cast<size_t>(static_cast<ygg::uint_t>(owner.value));
         assert(owner_index < sender.registration_repositories.size());
         auto& repository = *sender.registration_repositories[owner_index];
@@ -468,7 +468,9 @@ public:
     { return running(); }
 
     bool running() const noexcept { return m_status.load(std::memory_order_acquire) == SearchStatus::IN_PROGRESS; }
+
     bool timed_out() const noexcept { return m_deadline && std::chrono::steady_clock::now() >= *m_deadline; }
+
     SearchStatus status() const noexcept { return m_status.load(std::memory_order_acquire); }
 
     std::optional<WorkerStateIndex<Kind>> goal() const

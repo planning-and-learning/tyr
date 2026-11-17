@@ -21,6 +21,7 @@
 #include <nanobind/nanobind.h>
 
 namespace nb = nanobind;
+
 namespace tyr::formalism
 {
 

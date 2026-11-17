@@ -212,7 +212,7 @@ void insert_into_predicate_domain_sets(formalism::planning::AtomListView<GroundT
         auto& variable_domains = predicate_domain_sets.at(predicate.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : atom.get_objects())
+        for (const auto object : atom.get_row().get_objects())
             variable_domains[pos++].objects.insert(object.index());
     }
 }
@@ -239,7 +239,7 @@ void insert_into_function_domain_sets(formalism::planning::FunctionTermValueList
         auto& variable_domains = function_domain_sets.at(function.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : fterm.get_objects())
+        for (const auto object : fterm.get_row().get_objects())
             variable_domains[pos++].objects.insert(object.index());
     }
 }
@@ -274,9 +274,13 @@ struct InsertConstantPolicy
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
     [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
@@ -312,9 +316,13 @@ struct RestrictPolicy
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::FluentTag>) const { return true; }
 
     [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+
     [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+
     [[nodiscard]] const auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+
     [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+
     [[nodiscard]] const auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
@@ -347,9 +355,13 @@ struct LiftPolicy
     [[nodiscard]] bool should_skip(formalism::planning::FunctionView<formalism::StaticTag>) const { return true; }
 
     [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::PredicateView<formalism::DerivedTag>) const { return *derived_predicate_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::planning::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>

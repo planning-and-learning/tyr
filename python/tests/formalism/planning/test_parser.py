@@ -203,7 +203,7 @@ def test_parsed_task_exposes_domain_action_and_goal_views() -> None:
     assert len(static_atoms) == 12
     assert len(fluent_atoms) == 5
     for atom in [*static_atoms, *fluent_atoms]:
-        assert atom.get_predicate().get_arity() == len(list(atom.get_objects()))
+        assert atom.get_predicate().get_arity() == len(list(atom.get_row().get_objects()))
     assert list(task.get_static_fterm_values()) == []
     assert list(task.get_fluent_fterm_values()) == []
     assert list(task.get_axioms()) == []

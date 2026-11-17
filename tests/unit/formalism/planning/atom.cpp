@@ -10,6 +10,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::planning_atom
 {
@@ -116,8 +117,8 @@ concept GroundAtomContract = std::constructible_from<urd::index<Entity>, ygg::ui
                                     view.index();
                                     view.get_predicate();
                                     view.get_row();
-                                    view.get_objects();
-                                    view.get_key();
+                                    view.get_row().get_objects();
+                                    view.get_row().get_key();
                                     { view == view } -> std::same_as<bool>;
                                     { view < view } -> std::same_as<bool>;
                                 };
@@ -156,7 +157,7 @@ TEST(TyrFormalismPlanningGroundAtom, ExposesRepositoryView)
     ASSERT_TRUE(ground_atom_created);
 
     EXPECT_EQ(ground_atom.get_predicate().index(), predicate.index());
-    const auto objects = ground_atom.get_objects();
+    const auto objects = ground_atom.get_row().get_objects();
     ASSERT_EQ(objects.size(), 2);
     EXPECT_EQ(objects[0].index(), object.index());
     EXPECT_EQ(objects[1].index(), object.index());

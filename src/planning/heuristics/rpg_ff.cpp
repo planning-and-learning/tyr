@@ -48,6 +48,7 @@ struct FFRPGHeuristic<Kind>::Impl :
     using Base =
         detail::RPGEvaluator<Impl, Kind, datalog::MinCostAnnotationPolicy<datalog::SumAggregation>, datalog::TerminationPolicy<datalog::SumAggregation>>;
     using PredicateHead = formalism::datalog::PredicateRowView<formalism::FluentTag>;
+
     Impl(TaskPtr<Kind> task, ygg::ExecutionContextPtr execution_context, CostMode cost_mode) :
         Base(std::move(task), std::move(execution_context), cost_mode),
         m_predicate_markings(this->workspace().facts.fact_sets.predicate.size())

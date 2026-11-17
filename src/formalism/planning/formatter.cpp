@@ -62,12 +62,14 @@ static std::string format(V value)
 }
 
 static std::string format(const urd::data<planning::Metric>& value) { return fmt::format("({} {})", value.optimization_direction, value.fexpr); }
+
 static std::string format(planning::MetricView value) { return fmt::format("({} {})", value.get_optimization_direction(), value.get_fexpr()); }
 
 /// An axiom's binding: its values (an axiom has no name).
 static std::string format(planning::AxiomRowView value) { return ygg::values_text(value); }
 
 static std::string format(const planning::PlanningDomain& value) { return fmt::format("{}", value.get_domain()); }
+
 template<TaskKind T>
 static std::string format(const planning::PlanningTask<T>& value)
 { return fmt::format("{}", value.get_task()); }
@@ -76,12 +78,13 @@ static std::string format(const planning::PlanningTask<T>& value)
 static std::string format(const std::pair<planning::ActionRowView, planning::PlanFormatting>& value)
 {
     auto result = fmt::format("({}", value.first.get_relation().get_original_name());
-    const auto objects = urd::resolve(value.first.get<urd::index<Object>>(), value.first.context());
+    const auto objects = value.first.get_objects();
     for (std::size_t i = 0; i < value.first.get_relation().get_original_arity(); ++i)
         fmt::format_to(std::back_inserter(result), " {}", objects[static_cast<std::ptrdiff_t>(i)].get_name());
     result.push_back(')');
     return result;
 }
+
 static std::string format(const std::pair<planning::ActionView<GroundTag>, planning::PlanFormatting>& value)
 { return format(std::make_pair(value.first.get_row(), value.second)); }
 }  // namespace tyr::formalism::node_format
@@ -90,16 +93,27 @@ namespace tyr::formalism::planning
 {
 
 std::string to_string(const urd::data<FDRFact<FluentTag>>& value) { return node_format::format(value); }
+
 std::string to_string(const urd::data<Metric>& value) { return node_format::format(value); }
+
 std::string to_string(const urd::data<ygg::Row<Action<LiftedTag>>>& value) { return node_format::format(value); }
+
 std::string to_string(const urd::data<ygg::Row<Axiom<LiftedTag>>>& value) { return node_format::format(value); }
+
 std::string to_string(ActionRowDataView value) { return node_format::format(value); }
+
 std::string to_string(FDRFactView<FluentTag> value) { return node_format::format(value); }
+
 std::string to_string(urd::owning_view<FDRFact<FluentTag>, Repository> value) { return node_format::format(value); }
+
 std::string to_string(const PlanningDomain& value) { return node_format::format(value); }
+
 std::string to_string(const PlanningTask<LiftedTag>& value) { return node_format::format(value); }
+
 std::string to_string(const PlanningTask<GroundTag>& value) { return node_format::format(value); }
+
 std::string to_string(const std::pair<ActionRowView, PlanFormatting>& value) { return node_format::format(value); }
+
 std::string to_string(const std::pair<ActionView<GroundTag>, PlanFormatting>& value) { return node_format::format(value); }
 
 /// A term as an atom writes it: an object by its name, a parameter as its index.

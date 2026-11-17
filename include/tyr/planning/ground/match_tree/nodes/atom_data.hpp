@@ -40,6 +40,7 @@ struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
+
     data(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> true_child_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> false_child_,
@@ -51,6 +52,7 @@ struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
         dontcare_child(std::move(dontcare_child_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -64,7 +66,9 @@ struct data<::tyr::planning::match_tree::AtomSelectorNode<Tag>>
                            urd::field<"false_child", &data::false_child>,
                            urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::true_child, &data::false_child, &data::dontcare_child> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::atom, &data::true_child, &data::false_child, &data::dontcare_child> {}; }
 };

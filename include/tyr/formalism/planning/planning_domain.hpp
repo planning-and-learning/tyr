@@ -41,7 +41,9 @@ public:
     }
 
     [[nodiscard]] auto get_domain() const noexcept { return m_domain; }
+
     [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
+
     [[nodiscard]] const auto& get_path() const noexcept { return m_path; }
 
 private:

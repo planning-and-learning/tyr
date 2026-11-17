@@ -33,6 +33,7 @@ struct ParentStatePolicy<Kind, SequentialSearch>
     using Type = urd::index<State<Kind>>;
 
     static constexpr Type no_parent() noexcept { return Type(); }
+
     static constexpr Type make_parent(WorkerStateIndex<Kind> parent) noexcept { return parent.state; }
 };
 
@@ -42,6 +43,7 @@ struct ParentStatePolicy<Kind, ParallelSearch>
     using Type = WorkerStateIndex<Kind>;
 
     static constexpr Type no_parent() noexcept { return Type { urd::index<Worker>(), urd::index<State<Kind>>() }; }
+
     static constexpr Type make_parent(WorkerStateIndex<Kind> parent) noexcept { return parent; }
 };
 

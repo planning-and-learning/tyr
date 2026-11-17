@@ -57,6 +57,7 @@ struct WitnessAnnotation : urd::compared_by_identity<WitnessAnnotation<Kind>>
     WitnessAnnotation(RuleKey<Kind> rule_key_, Cost cost_) : rule_key(rule_key_), cost(cost_) {}
 
     [[nodiscard]] auto get_rule_key() const noexcept { return rule_key; }
+
     [[nodiscard]] auto get_cost() const noexcept { return cost; }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&WitnessAnnotation::rule_key, &WitnessAnnotation::cost> {}; }
@@ -80,6 +81,7 @@ struct PredicateAchieverKey : urd::compared_by_identity<PredicateAchieverKey<Kin
     formalism::datalog::PredicateRowIndex<formalism::FluentTag> head;
 
     PredicateAchieverKey() = default;
+
     PredicateAchieverKey(RuleKey<Kind> rule_key_, formalism::datalog::PredicateRowIndex<formalism::FluentTag> head_) : rule_key(rule_key_), head(head_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&PredicateAchieverKey::rule_key, &PredicateAchieverKey::head> {}; }
@@ -159,6 +161,7 @@ struct BaseAnnotation : urd::compared_by_identity<BaseAnnotation>
 {
 public:
     BaseAnnotation() : m_cost(static_cast<Cost>(0)) {}
+
     explicit BaseAnnotation(Cost cost) : m_cost(cost) {}
 
     [[nodiscard]] auto get_cost() const noexcept { return m_cost; }
@@ -189,13 +192,16 @@ struct CostUpdate
     Cost new_cost;
 
     CostUpdate() noexcept : old_cost(std::nullopt), new_cost(static_cast<Cost>(0)) { assert(is_monotone()); }
+
     CostUpdate(std::optional<Cost> old_cost_, Cost new_cost_) noexcept : old_cost(old_cost_), new_cost(new_cost_) { assert(is_monotone()); }
+
     CostUpdate(Cost old_cost_, Cost new_cost_) noexcept :
         old_cost(old_cost_ == std::numeric_limits<Cost>::max() ? std::nullopt : std::optional<Cost>(old_cost_)),
         new_cost(new_cost_)
     { assert(is_monotone()); }
 
     [[nodiscard]] bool is_monotone() const noexcept { return !old_cost || new_cost <= *old_cost; }
+
     [[nodiscard]] bool is_strict_improvement() const noexcept { return new_cost < old_cost.value_or(std::numeric_limits<Cost>::max()); }
 };
 
@@ -215,6 +221,7 @@ public:
     using Row = decltype(std::declval<Key>().row);
 
     explicit DenseRelationMap(size_t num_relations = 0) : m_lanes(num_relations) {}
+
     DenseRelationMap(const DenseRelationMap&)
         requires(!ThreadSafe)
     = default;
@@ -298,6 +305,7 @@ public:
     PredicateAnnotationMap()
         requires(!ThreadSafe)
     = default;
+
     explicit PredicateAnnotationMap(size_t num_relations) : m_annotations(num_relations) {}
 
     /// Resetting bumps the generation rather than touching the dense row span. Slots of older

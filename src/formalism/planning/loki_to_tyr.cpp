@@ -85,11 +85,17 @@ void LokiToTyrTranslator::prepare(loki::formalism::FunctionSkeletonView function
     prepare(function_skeleton.get_parameters());
     prepare(function_skeleton.get_type());
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::ObjectView object) { prepare(object.get_types()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::ParameterView parameter) { prepare(parameter.get_variable()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::PredicateView predicate) { prepare(predicate.get_parameters()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::RequirementView) {}
+
 void LokiToTyrTranslator::prepare(loki::formalism::TypeView type) { prepare(type.get_bases()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::VariableView) {}
 
 /**
@@ -106,27 +112,35 @@ void LokiToTyrTranslator::prepare(loki::formalism::AtomView atom)
     prepare(atom.get_predicate());
     prepare(atom.get_terms());
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::LiteralView literal) { prepare(literal.get_atom()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::NumberTag>>) {}
+
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::BinaryTag>> function_expression)
 {
     prepare(function_expression.get_left());
     prepare(function_expression.get_right());
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::MultiTag>> function_expression)
 { this->prepare(function_expression.get_args()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::EntityView<loki::formalism::FunctionExpression<loki::formalism::UnaryTag>> function_expression)
 { this->prepare(function_expression.get_expression()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionTermView function_expression)
 {
     m_fexpr_functions.insert(function_expression.get_function().get_name().str());
     prepare(function_expression.get_function());
     prepare(function_expression.get_terms());
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::FunctionExpressionView function_expression)
 {
     std::visit([&](auto&& arg) { return this->prepare(arg); }, function_expression);
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::ConditionView condition)
 {
     std::visit(
@@ -197,12 +211,14 @@ void LokiToTyrTranslator::prepare(loki::formalism::EffectView effect)
 
     prepare_effect(effect);
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::ActionView action)
 {
     prepare(action.get_parameters());
     prepare(action.get_precondition());
     prepare(action.get_effect());
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::AxiomView axiom)
 {
     prepare(axiom.get_parameters());
@@ -211,7 +227,9 @@ void LokiToTyrTranslator::prepare(loki::formalism::AxiomView axiom)
 
     m_derived_predicates.insert(axiom.get_head().get_atom().get_predicate().get_name().str());
 }
+
 void LokiToTyrTranslator::prepare(loki::formalism::InitialFunctionValueView function_value) { prepare(function_value.get_function()); }
+
 void LokiToTyrTranslator::prepare(loki::formalism::MetricView metric) { prepare(metric.get_expression()); }
 
 void LokiToTyrTranslator::prepare(loki::formalism::DomainView domain)

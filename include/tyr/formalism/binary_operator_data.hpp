@@ -36,6 +36,7 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
     ::tyr::formalism::FunctionExpression<T> rhs;
 
     data() = default;
+
     data(O operation_, ::tyr::formalism::FunctionExpression<T> lhs_, ::tyr::formalism::FunctionExpression<T> rhs_) :
         index(),
         operation(operation_),
@@ -43,6 +44,7 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
         rhs(rhs_)
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -51,7 +53,9 @@ struct data<::tyr::formalism::BinaryOperator<T, O>>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"lhs", &data::lhs>, urd::field<"rhs", &data::rhs>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::lhs, &data::rhs> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::lhs, &data::rhs> {}; }
 };
 

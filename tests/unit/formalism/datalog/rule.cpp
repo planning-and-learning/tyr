@@ -28,7 +28,7 @@ static_assert(requires(Data& data, const View& view) {
     data.heads;
     data.cost;
     view.index();
-    view.get_arity();
+    view.get_body().get_arity();
     view.get_variables();
     view.get_body();
     view.get_heads();

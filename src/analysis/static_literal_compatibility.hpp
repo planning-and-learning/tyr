@@ -28,6 +28,7 @@
 #include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/core/config.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::analysis::detail
 {
@@ -57,6 +58,7 @@ private:
     {
     public:
         BinaryCompatibility() = default;
+
         BinaryCompatibility(size_t first_size, size_t second_size) : m_first_size(first_size), m_second_size(second_size) {}
 
         [[nodiscard]] bool constrained() const noexcept { return m_constrained; }
@@ -225,7 +227,7 @@ public:
                 assigned.clear();
                 auto matches = true;
                 auto position = size_t { 0 };
-                for (const auto object : atom.get_objects())
+                for (const auto object : atom.get_row().get_objects())
                 {
                     if (position == terms.size())
                     {

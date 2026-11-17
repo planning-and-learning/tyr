@@ -31,16 +31,21 @@ struct QueryValue
     const ygg::FreeRelationRepository* layer;
     urd::builder<ygg::Relation<ygg::Schema>> result;
     Delta delta;
+
     QueryValue(const ygg::FreeRelationRepository& layer_, std::span<const ygg::ColumnLayout> columns) : layer(&layer_), result(columns), delta(layer_, columns)
     {
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const noexcept { return layer->view(result); }
+
     [[nodiscard]] const auto& get_delta() const noexcept { return delta; }
+
     [[nodiscard]] size_t memory_usage() const noexcept { return result.memory_usage() + delta.memory_usage(); }
 
     /// Adds the row to the result and delta where `present` and absent, removes it where not `present` and present:
     /// a row of a relation of the same column types, or its values.
     void set(const ygg::RowPool::row_type& row, bool present) { apply(row, present); }
+
     void set(std::span<const ygg::Value> row, bool present) { apply(row, present); }
 
 private:
@@ -147,9 +152,11 @@ struct NodeRules<QueryProjectTag>
     using State = ProjectionEvaluator;
 
     static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryProjectTag> operation) { return State(layer, operation.get_plan()); }
+
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryProjectTag> operation, const Graph& graph, const R&, Workspace& workspace)
     { state.initialize(graph.result(operation.get_operand()), workspace); }
+
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryProjectTag> operation, const Graph& graph, const R&, Workspace& workspace)
     { state.apply(graph.delta(operation.get_operand()).change(), workspace); }
@@ -161,9 +168,11 @@ struct NodeRules<QueryJoinTag>
     using State = JoinEvaluator;
 
     static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryJoinTag> operation) { return State(layer, operation.get_plan()); }
+
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryJoinTag> operation, const Graph& graph, const R&, Workspace& workspace)
     { state.initialize(graph.result(operation.get_left_operand()), graph.result(operation.get_right_operand()), workspace); }
+
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryJoinTag> operation, const Graph& graph, const R&, Workspace& workspace)
     { state.apply(graph.delta(operation.get_left_operand()).change(), graph.delta(operation.get_right_operand()).change(), workspace); }
@@ -177,9 +186,11 @@ struct NodeRules<Tag>
 
     static State make(const ygg::FreeRelationRepository& layer, QueryView<Tag> operation)
     { return State(layer, operation.get_plan(), std::same_as<Tag, QueryAntijoinTag>); }
+
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<Tag> operation, const Graph& graph, const R&, Workspace&)
     { state.initialize(graph.result(operation.get_left_operand()), graph.result(operation.get_right_operand())); }
+
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<Tag> operation, const Graph& graph, const R&, Workspace&)
     { state.apply(graph.delta(operation.get_left_operand()).change(), graph.delta(operation.get_right_operand()).change()); }
@@ -191,11 +202,13 @@ struct NodeRules<QueryGenericJoinTag>
     using State = GenericJoinEvaluator;
 
     static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryGenericJoinTag> operation) { return State(layer, operation.get_plan()); }
+
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryGenericJoinTag> operation, const Graph& graph, const R&, Workspace&)
     {
         state.initialize(operation.get_inputs() | std::views::transform([&](QueryView<> input) { return graph.result(input.index()); }));
     }
+
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryGenericJoinTag> operation, const Graph& graph, const R&, Workspace&)
     {
@@ -209,9 +222,11 @@ struct NodeRules<QueryDistanceTag>
     using State = QueryDistance;
 
     static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryDistanceTag> operation) { return State(layer, operation.get_plan()); }
+
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryDistanceTag> operation, const Graph& graph, const R&, Workspace&)
     { state.initialize(graph.result(operation.get_sources()), graph.result(operation.get_edges()), graph.result(operation.get_targets())); }
+
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
     static void update(State& state, QueryView<QueryDistanceTag> operation, const Graph& graph, const R&, Workspace&)
     { state.apply(graph.delta(operation.get_sources()).change(), graph.delta(operation.get_edges()).change(), graph.delta(operation.get_targets()).change()); }
@@ -250,12 +265,16 @@ class QueryEvaluator
     {
         return std::visit([](const auto& node) -> ygg::FreeRelationBuilderView { return node.state.get_result(); }, m_nodes[id]);
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView result(QueryView<> query) const { return result(query.index()); }
+
     [[nodiscard]] const Delta& delta(NodeId id) const
     {
         return std::visit([](const auto& node) -> const Delta& { return node.state.get_delta(); }, m_nodes[id]);
     }
+
     [[nodiscard]] const Delta& delta(QueryView<> query) const { return delta(query.index()); }
+
     /// Whether an input reads one of its results or deltas.
     template<RelationViewConcept V>
     [[nodiscard]] bool is_internal(const V& input) const
@@ -272,6 +291,7 @@ public:
                        { m_nodes.emplace_back(std::in_place_type<detail::QueryNode<Tag>>, Rules<Tag>::make(layer, operation)); },
                        m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
     }
+
     template<RelationViewRange R>
     void initialize(const R& bindings)
     {
@@ -295,6 +315,7 @@ public:
         }
         m_initialized = true;
     }
+
     template<RelationDeltaRange R>
     void update(const R& changes)
     {
@@ -328,6 +349,7 @@ public:
                 m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
         m_initialized = true;
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t root = 0) const&
     {
         detail::require_initialized(m_initialized);
@@ -335,7 +357,9 @@ public:
             throw std::out_of_range("Incremental query: invalid root.");
         return result(m_plan.roots()[root]);
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t = 0) const&& = delete;
+
     [[nodiscard]] const Delta& get_delta(size_t root = 0) const&
     {
         detail::require_initialized(m_initialized);
@@ -343,7 +367,9 @@ public:
             throw std::out_of_range("Incremental query: invalid root.");
         return delta(m_plan.roots()[root]);
     }
+
     [[nodiscard]] const Delta& get_delta(size_t = 0) const&& = delete;
+
     /// Retained runtime storage; excludes the immutable query plan.
     [[nodiscard]] size_t memory_usage() const noexcept
     {

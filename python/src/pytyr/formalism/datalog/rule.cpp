@@ -35,7 +35,7 @@ namespace tyr::formalism::datalog
 void bind_rule(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_data<Rule<LiftedTag>>(m);
-    urd::python::bind_view<RuleView<LiftedTag>>(m).def("get_arity", &RuleView<LiftedTag>::get_arity);
+    urd::python::bind_view<RuleView<LiftedTag>>(m);
     ygg::bind_insert<Rule<LiftedTag>>(repository);
 
     urd::python::bind_data<Rule<GroundTag>>(m);

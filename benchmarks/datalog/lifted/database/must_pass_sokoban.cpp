@@ -164,6 +164,7 @@ struct PushDistance
             base[b] = distances(b, tyr::datalog::database::infinity);
         pushes = base;
     }
+
     /// Backward breadth-first pushes to the box's goal: a push from `from` to `to` in direction d needs a cell before
     /// `from` in direction d; blocked cells hold neither the box nor the agent.
     [[nodiscard]] urd::Store<urd::sequence<ygg::uint_t>> distances(ygg::uint_t b, ygg::uint_t excluded) const
@@ -197,11 +198,13 @@ struct PushDistance
             }
         return distance;
     }
+
     void exclude(std::span<const ygg::Value> key, std::span<const ygg::Value> object)
     {
         const auto b = ygg::decode_value<ygg::uint_t>(key.front());
         pushes[b] = object.empty() ? base[b] : distances(b, ygg::decode_value<ygg::uint_t>(object.front()));
     }
+
     [[nodiscard]] ygg::uint_t estimate(std::span<const ygg::Value> key_and_vertex) const
     { return pushes.at(ygg::decode_value<ygg::uint_t>(key_and_vertex[0]))[ygg::decode_value<ygg::uint_t>(key_and_vertex[2])]; }
 };

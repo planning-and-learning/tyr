@@ -202,6 +202,7 @@ class DynamicNoveltyTable
 {
 public:
     DynamicNoveltyTable() : m_storage(std::make_shared<detail::NoveltyTableStorage<Arity>>()) {}
+
     DynamicNoveltyTable(const DynamicNoveltyTable&) = delete;
     DynamicNoveltyTable& operator=(const DynamicNoveltyTable&) = delete;
     DynamicNoveltyTable(DynamicNoveltyTable&&) noexcept = default;

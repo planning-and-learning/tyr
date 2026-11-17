@@ -39,11 +39,13 @@ struct data<::tyr::formalism::MultiOperator<T, O>>
     urd::flat_vector<::tyr::formalism::FunctionExpression<T>> args;
 
     data() = default;
+
     data(O operation_, urd::flat_vector<::tyr::formalism::FunctionExpression<T>> args_) : index(), operation(operation_), args(std::move(args_))
     {
         if (!is_multi(operation))
             throw std::invalid_argument("multi operator must be Add or Mul");
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -51,7 +53,9 @@ struct data<::tyr::formalism::MultiOperator<T, O>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"args", &data::args>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::args> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::args> {}; }
 };
 

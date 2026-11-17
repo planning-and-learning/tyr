@@ -36,7 +36,9 @@ struct data<::tyr::formalism::planning::FDRFact<T>>
     ::tyr::formalism::planning::FDRValue value;
 
     data() = default;
+
     data(urd::index<::tyr::formalism::planning::FDRVariable<T>> variable_, ::tyr::formalism::planning::FDRValue value_) : variable(variable_), value(value_) {}
+
     static constexpr bool copyable() noexcept
     {
         static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
@@ -44,7 +46,9 @@ struct data<::tyr::formalism::planning::FDRFact<T>>
     }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variable", &data::variable>, urd::field<"value", &data::value>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::variable, &data::value> {}; }
 };
 

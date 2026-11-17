@@ -41,6 +41,7 @@ struct data<::tyr::formalism::planning::Invariant>
     urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms;
 
     data() = default;
+
     data(ygg::uint_t num_rigid_variables_,
          ygg::uint_t num_counted_variables_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> atoms_) :
@@ -50,6 +51,7 @@ struct data<::tyr::formalism::planning::Invariant>
         atoms(std::move(atoms_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -62,7 +64,9 @@ struct data<::tyr::formalism::planning::Invariant>
                            urd::field<"num_counted_variables", &data::num_counted_variables>,
                            urd::field<"atoms", &data::atoms>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::num_rigid_variables, &data::num_counted_variables, &data::atoms> {}; }
 };

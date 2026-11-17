@@ -43,8 +43,11 @@ private:
 
 public:
     auto get_atom() const noexcept { return self().template member<&urd::record_of<V>::atom>(); }
+
     auto get_true_child() const noexcept { return self().template member<&urd::record_of<V>::true_child>(); }
+
     auto get_false_child() const noexcept { return self().template member<&urd::record_of<V>::false_child>(); }
+
     auto get_dontcare_child() const noexcept { return self().template member<&urd::record_of<V>::dontcare_child>(); }
 };
 
@@ -56,7 +59,9 @@ private:
 
 public:
     auto get_constraint() const noexcept { return self().template member<&urd::record_of<V>::constraint>(); }
+
     auto get_true_child() const noexcept { return self().template member<&urd::record_of<V>::true_child>(); }
+
     auto get_dontcare_child() const noexcept { return self().template member<&urd::record_of<V>::dontcare_child>(); }
 };
 
@@ -78,7 +83,9 @@ private:
 
 public:
     auto get_variable() const noexcept { return self().template member<&urd::record_of<V>::variable>(); }
+
     auto get_domain_children() const noexcept { return self().template member<&urd::record_of<V>::domain_children>(); }
+
     auto get_dontcare_child() const noexcept { return self().template member<&urd::record_of<V>::dontcare_child>(); }
 };
 
@@ -90,7 +97,9 @@ private:
 
 public:
     auto get_fact() const noexcept { return self().template member<&urd::record_of<V>::fact>(); }
+
     auto get_true_child() const noexcept { return self().template member<&urd::record_of<V>::true_child>(); }
+
     auto get_dontcare_child() const noexcept { return self().template member<&urd::record_of<V>::dontcare_child>(); }
 };
 }  // namespace urd

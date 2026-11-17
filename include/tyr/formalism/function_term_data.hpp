@@ -40,7 +40,9 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>>
     ::tyr::formalism::TermList terms;
 
     data() = default;
+
     data(urd::index<::tyr::formalism::Function<F>> function_, ::tyr::formalism::TermList terms_) : index(), function(function_), terms(std::move(terms_)) {}
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -48,7 +50,9 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::LiftedTag, F>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"function", &data::function>, urd::field<"terms", &data::terms>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::function, &data::terms> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::function, &data::terms> {}; }
 };
 
@@ -59,7 +63,9 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>
     ygg::RowIndex<::tyr::formalism::Function<F>> row;
 
     data() = default;
+
     data(ygg::RowIndex<::tyr::formalism::Function<F>> row_) : index(), row(row_) {}
+
     static constexpr bool copyable() noexcept
     {
         static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
@@ -67,7 +73,9 @@ struct data<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>>
     }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"row", &data::row>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row> {}; }
 };
 

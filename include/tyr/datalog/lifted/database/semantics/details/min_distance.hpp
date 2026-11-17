@@ -69,8 +69,11 @@ public:
     }
 
     Evaluator& evaluator() noexcept { return m_edges; }
+
     [[nodiscard]] const Evaluator& evaluator() const noexcept { return m_edges; }
+
     [[nodiscard]] size_t vertex_size() const noexcept { return m_vertex_size; }
+
     /// Where an edge row's target vertex starts (a column position).
     [[nodiscard]] size_t target_offset() const noexcept { return m_target_offset; }
 
@@ -81,11 +84,13 @@ public:
                          bound(key, vertex),
                          [&](std::span<const ygg::Value> edge) { return on_vertex(edge.subspan(m_target_offset, m_vertex_size)); });
     }
+
     template<RowPredicate OnVertex>
     void predecessors(std::span<const ygg::Value> key, std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
     {
         m_edges.evaluate(m_backward, bound(key, vertex), [&](std::span<const ygg::Value> edge) { return on_vertex(edge.subspan(m_key_size, m_vertex_size)); });
     }
+
     bool edge_exists(std::span<const ygg::Value> key, std::span<const ygg::Value> from, std::span<const ygg::Value> to)
     {
         std::ranges::copy(key, m_edge.begin());
@@ -111,9 +116,11 @@ public:
         template<RowPredicate OnVertex>
         void successors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
         { m_edges->successors(m_key, vertex, on_vertex); }
+
         template<RowPredicate OnVertex>
         void predecessors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
         { m_edges->predecessors(m_key, vertex, on_vertex); }
+
         bool edge_exists(std::span<const ygg::Value> from, std::span<const ygg::Value> to) { return m_edges->edge_exists(m_key, from, to); }
 
     private:
@@ -167,6 +174,7 @@ public:
                && std::ranges::all_of(std::views::iota(static_cast<size_t>(0), targets.size()),
                                       [&](size_t i) { return m_vertices.contains(vertex_values(targets.row(i), m_buffer)); });
     }
+
     template<VertexRange Targets>
     void assign(const Targets& targets)
     {
@@ -176,6 +184,7 @@ public:
             if (const auto [handle, added] = m_vertices.insert(vertex_values(targets.row(i), m_buffer)); added)
                 m_handles.push_back(handle);
     }
+
     [[nodiscard]] const VertexSet& vertices() const noexcept { return m_vertices; }
 
     /// The targets' vertices in the tree, stored with their estimates; valid until the next call.

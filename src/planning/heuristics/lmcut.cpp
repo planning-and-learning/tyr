@@ -364,6 +364,7 @@ void LMCutImplementation<Kind>::print_summary(size_t verbosity) const
 }
 
 }  // namespace lmcut_details
+
 // NOLINTEND(misc-use-internal-linkage)
 
 template<TaskKind Kind>

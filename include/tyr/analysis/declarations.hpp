@@ -102,14 +102,19 @@ struct VariableDomainView
     urd::Store<urd::sequence<urd::index_view<formalism::Object, C>>> objects;
 
     auto begin() noexcept { return objects.begin(); }
+
     auto end() noexcept { return objects.end(); }
+
     [[nodiscard]] auto begin() const noexcept { return objects.begin(); }
+
     [[nodiscard]] auto end() const noexcept { return objects.end(); }
 
     [[nodiscard]] auto size() const noexcept { return objects.size(); }
+
     [[nodiscard]] bool empty() const noexcept { return objects.empty(); }
 
     auto& operator[](std::size_t i) noexcept { return objects[i]; }
+
     const auto& operator[](std::size_t i) const noexcept { return objects[i]; }
 };
 

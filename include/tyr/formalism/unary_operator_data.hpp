@@ -36,11 +36,13 @@ struct data<::tyr::formalism::UnaryOperator<T, O>>
     ::tyr::formalism::FunctionExpression<T> arg;
 
     data() = default;
+
     data(O operation_, ::tyr::formalism::FunctionExpression<T> arg_) : index(), operation(operation_), arg(arg_)
     {
         if (!is_unary(operation))
             throw std::invalid_argument("unary operator must be Sub");
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -48,7 +50,9 @@ struct data<::tyr::formalism::UnaryOperator<T, O>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"operation", &data::operation>, urd::field<"arg", &data::arg>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operation, &data::arg> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operation, &data::arg> {}; }
 };
 

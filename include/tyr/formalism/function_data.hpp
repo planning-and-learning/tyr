@@ -37,7 +37,9 @@ struct data<::tyr::formalism::Function<T>>
     ygg::uint_t arity = 0;
 
     data() = default;
+
     data(urd::flat_string name_, ygg::uint_t arity_) : index(), name(std::move(name_)), arity(arity_) {}
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -45,7 +47,9 @@ struct data<::tyr::formalism::Function<T>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &data::name>, urd::field<"arity", &data::arity>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::name, &data::arity> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name, &data::arity> {}; }
 };
 

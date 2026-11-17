@@ -22,6 +22,7 @@
 namespace tyr::tests
 {
 TEST(TyrPlanningGroundAddRPGHeuristicTest, SetGoalReconfiguresEvaluator) { expect_builtin_set_goal_reconfigures_evaluator<GroundTag>(); }
+
 TEST(TyrPlanningGroundAddRPGHeuristicTest, GeneralCostModeThrows) { expect_general_cost_mode_throws<GroundTag, tyr::planning::AddRPGHeuristic>(); }
 }
 
@@ -50,6 +51,7 @@ INSTANTIATE_TEST_SUITE_P(TyrPlanningGroundHeuristicFixture,
 namespace tyr::tests
 {
 TEST(TyrPlanningLiftedAddRPGHeuristicTest, SetGoalReconfiguresEvaluator) { expect_builtin_set_goal_reconfigures_evaluator<LiftedTag>(); }
+
 TEST(TyrPlanningLiftedAddRPGHeuristicTest, GeneralCostModeThrows) { expect_general_cost_mode_throws<LiftedTag, tyr::planning::AddRPGHeuristic>(); }
 }
 

@@ -44,6 +44,7 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 
 template<typename Kind, typename State>
 concept HasBindingQuery = requires(tyr::planning::SuccessorGenerator<Kind>& generator, const tyr::planning::Node<Kind, State>& node) {
@@ -100,7 +101,8 @@ bool has_marked_object(const tyr::planning::StateView<Kind>& state, std::string_
                                [&](const auto fact)
                                {
                                    const auto atom = fact.get_atom();
-                                   return atom && atom->get_predicate().get_name().str() == "marked" && atom->get_objects()[0].get_name().str() == object_name;
+                                   return atom && atom->get_predicate().get_name().str() == "marked"
+                                          && atom->get_row().get_objects()[0].get_name().str() == object_name;
                                });
 }
 

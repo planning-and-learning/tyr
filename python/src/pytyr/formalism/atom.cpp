@@ -44,9 +44,7 @@ template<TaskKind T, FactKind F, typename C>
 void bind_atom_view(nb::module_& m, nb::class_<C>& repository)
 {
     using V = urd::index_view<Atom<T, F>, C>;
-    auto cls = urd::python::bind_view<V>(m);
-    if constexpr (std::same_as<T, GroundTag>)
-        cls.def("get_predicate", &V::get_predicate).def("get_objects", &V::get_objects);
+    urd::python::bind_view<V>(m);
     ygg::bind_insert<Atom<T, F>>(repository);
 }
 }  // namespace

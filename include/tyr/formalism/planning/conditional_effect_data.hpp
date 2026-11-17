@@ -41,6 +41,7 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect;
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> condition_,
          urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>> effect_) :
@@ -50,6 +51,7 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
         effect(effect_)
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -58,7 +60,9 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"variables", &data::variables>, urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::condition, &data::effect> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::condition, &data::effect> {}; }
 };
 
@@ -70,6 +74,7 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
     urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect;
 
     data() = default;
+
     data(urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
          urd::index<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>> effect_) :
         index(),
@@ -77,6 +82,7 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
         effect(effect_)
     {
     }
+
     static constexpr bool copyable() noexcept
     {
         static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
@@ -84,7 +90,9 @@ struct data<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>
     }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"condition", &data::condition>, urd::field<"effect", &data::effect>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::condition, &data::effect> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::condition, &data::effect> {}; }
 };
 

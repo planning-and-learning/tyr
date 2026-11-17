@@ -22,6 +22,7 @@
 #include <nanobind/trampoline.h>
 
 namespace nb = nanobind;
+
 namespace tyr::planning
 {
 

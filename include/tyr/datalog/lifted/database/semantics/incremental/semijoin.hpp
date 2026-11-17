@@ -41,6 +41,7 @@ class SemijoinEvaluator
     bool m_initialized = false;
 
     [[nodiscard]] bool matched(const ygg::RowPool::row_type& left_row) const;
+
     [[nodiscard]] bool kept(const ygg::RowPool::row_type& left_row) const { return matched(left_row) != m_anti; }
 
     /// Records the change of a row of the current L against the result before this update.
@@ -53,6 +54,7 @@ class SemijoinEvaluator
         else if (!is && was)
             m_delta.removed.insert(row);
     }
+
     /// Reconciles the rows of the current L that share the key of a changed row of R.
     template<RelationViewConcept V>
     void reconcile_matches(const V& right_rows)
@@ -160,12 +162,15 @@ public:
         detail::require_initialized(m_initialized);
         return m_layer->view(m_result);
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
+
     [[nodiscard]] const Delta& get_delta() const&
     {
         detail::require_initialized(m_initialized);
         return m_delta;
     }
+
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 
     [[nodiscard]] size_t memory_usage() const noexcept

@@ -23,62 +23,74 @@ struct QueryInputTag
     static constexpr std::string_view name = "Input";
     static constexpr std::string_view operation = "input";
 };
+
 struct QueryEmptyTag
 {
     static constexpr std::string_view name = "Empty";
     static constexpr std::string_view operation = "empty";
 };
+
 struct QueryJoinTag
 {
     static constexpr std::string_view name = "Join";
     static constexpr std::string_view operation = "hash_join";
 };
+
 struct QueryProjectTag
 {
     static constexpr std::string_view name = "Project";
     static constexpr std::string_view operation = "project";
 };
+
 struct QueryRenameTag
 {
     static constexpr std::string_view name = "Rename";
     static constexpr std::string_view operation = "rename";
 };
+
 struct QuerySelectEqualTag
 {
     static constexpr std::string_view name = "SelectEqual";
     static constexpr std::string_view operation = "select_equal";
 };
+
 struct QuerySelectValueTag
 {
     static constexpr std::string_view name = "SelectValue";
     static constexpr std::string_view operation = "select_value";
 };
+
 struct QueryUnionTag
 {
     static constexpr std::string_view name = "Union";
     static constexpr std::string_view operation = "union";
 };
+
 struct QueryDifferenceTag
 {
     static constexpr std::string_view name = "Difference";
     static constexpr std::string_view operation = "difference";
 };
+
 struct QueryDistanceTag
 {
     static constexpr std::string_view name = "Distance";
     static constexpr std::string_view operation = "distance";
 };
+
 struct QueryGenericJoinTag
 {
     static constexpr std::string_view name = "GenericJoin";
     static constexpr std::string_view operation = "generic_join";
 };
+
 /// R ⋉ S: the rows of R with a match in S on their shared columns.
 struct QuerySemijoinTag
 {
     static constexpr std::string_view name = "Semijoin";
     static constexpr std::string_view operation = "semijoin";
 };
+
 /// R ▷ S: the rows of R without a match in S on their shared columns.
 struct QueryAntijoinTag
 {

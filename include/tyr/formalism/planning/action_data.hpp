@@ -46,6 +46,7 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
     urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::LiftedTag>>> effects;
 
     data() = default;
+
     data(urd::flat_string name_,
          urd::flat_string original_name_,
          ygg::uint_t original_arity_,
@@ -61,6 +62,7 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
         effects(std::move(effects_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;
@@ -76,8 +78,10 @@ struct data<::tyr::formalism::planning::Action<::tyr::LiftedTag>>
                            urd::field<"condition", &data::condition>,
                            urd::field<"effects", &data::effects>> {};
     }
+
     static constexpr auto identifying_members() noexcept
     { return urd::Members<&data::original_name, &data::variables, &data::original_arity, &data::condition, &data::effects> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::name, &data::original_name, &data::original_arity, &data::variables, &data::condition, &data::effects> {}; }
 };
@@ -91,6 +95,7 @@ struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects;
 
     data() = default;
+
     data(ygg::RowIndex<::tyr::formalism::planning::Action<::tyr::LiftedTag>> row_,
          urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> condition_,
          urd::flat_vector<urd::index<::tyr::formalism::planning::ConditionalEffect<::tyr::GroundTag>>> effects_) :
@@ -100,6 +105,7 @@ struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
         effects(std::move(effects_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -109,7 +115,9 @@ struct data<::tyr::formalism::planning::Action<::tyr::GroundTag>>
     // Have to include effects because row only binds objects to non-effect quantified variables.
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"row", &data::row>, urd::field<"condition", &data::condition>, urd::field<"effects", &data::effects>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::row, &data::condition, &data::effects> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::row, &data::condition, &data::effects> {}; }
 };
 

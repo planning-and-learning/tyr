@@ -31,8 +31,11 @@ public:
     Program(formalism::datalog::ProgramView<GroundTag> program, formalism::datalog::RepositoryPtr program_repository);
 
     [[nodiscard]] auto get_program() const noexcept { return m_const_program_workspace.program; }
+
     auto& get_program_repository() noexcept { return *m_program_repository; }
+
     [[nodiscard]] const auto& get_program_repository() const noexcept { return *m_program_repository; }
+
     [[nodiscard]] const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:

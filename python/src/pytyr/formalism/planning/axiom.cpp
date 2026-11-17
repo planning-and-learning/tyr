@@ -35,11 +35,11 @@ namespace tyr::formalism::planning
 void bind_axiom(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_data<Axiom<LiftedTag>>(m);
-    urd::python::bind_view<AxiomView<LiftedTag>>(m).def("get_arity", &AxiomView<LiftedTag>::get_arity);
+    urd::python::bind_view<AxiomView<LiftedTag>>(m);
     ygg::bind_insert<Axiom<LiftedTag>>(repository);
 
     urd::python::bind_data<Axiom<GroundTag>>(m);
-    urd::python::bind_view<AxiomView<GroundTag>>(m).def("get_axiom", &AxiomView<GroundTag>::get_axiom).def("get_objects", &AxiomView<GroundTag>::get_objects);
+    urd::python::bind_view<AxiomView<GroundTag>>(m);
     ygg::bind_insert<Axiom<GroundTag>>(repository);
 }
 

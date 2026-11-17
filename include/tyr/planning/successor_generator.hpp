@@ -57,6 +57,7 @@ public:
         m_metric(node.get_metric())
     {
     }
+
     SourceNode(const Node<Kind, BuilderStateView<Kind>>& node) noexcept :  // NOLINT(google-explicit-constructor)
         m_state(*node.get_state().context().get_task(), node.get_state(), node.get_metric()),
         m_repository(&node.get_state().context()),
@@ -67,10 +68,14 @@ public:
 
     /// The source's state as applicability reads it, its metric the auxiliary value.
     [[nodiscard]] const StateContext<Kind>& state() const noexcept { return m_state; }
+
     [[nodiscard]] const StateRepository<Kind>& get_state_repository() const noexcept { return *m_repository; }
+
     [[nodiscard]] const Task<Kind>& get_task() const noexcept { return *m_repository->get_task(); }
+
     /// The registered state, or null for a builder.
     [[nodiscard]] const StateView<Kind>* registered() const noexcept { return m_registered; }
+
     [[nodiscard]] ygg::float_t get_metric() const noexcept { return m_metric; }
 
 private:

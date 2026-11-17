@@ -51,8 +51,10 @@ class Planner
         const auto it = m_sources.find(plan.index());
         return it != m_sources.end() ? std::optional(it->second) : std::nullopt;
     }
+
     /// Whether the plan query's rows are measured or derivable from measured inputs.
     bool known(QueryView<> plan);
+
     Estimate estimate(QueryView<> plan)
     {
         if (const auto it = m_estimates.find(plan.index()); it != m_estimates.end())
@@ -73,6 +75,7 @@ class Planner
         }
         for_each_child(normalized, [&](QueryView<> child) { collect(child, atoms, seen); });
     }
+
     /// Plans π_output(⋈ atoms): cost-based when every atom is known, otherwise from structure.
     QueryView<> plan_block(QueryView<> join, std::span<const ygg::ColumnLayout> output);
 

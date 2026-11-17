@@ -50,7 +50,7 @@ normalize_start_node(Task<Kind>& task, StateRepository<Kind>& state_repository, 
         const auto metric = evaluate_metric(task.get_task().get_metric(), task.get_task().get_auxiliary_fterm_value(), state_context);
         return Node<Kind>(std::move(state), metric);
     }();
-    if (node.get_state().get_state_repository().get_task().get() != &task)
+    if (node.get_state().context().get_task().get() != &task)
         throw std::invalid_argument("normalize_start_node(...): start node belongs to a different task.");
     if (!std::isfinite(node.get_metric()))
         throw std::runtime_error("normalize_start_node(...): start node metric value is not finite.");

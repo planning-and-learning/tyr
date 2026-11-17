@@ -58,6 +58,7 @@ struct data<::tyr::planning::PackedState<Kind>>
     ::tyr::planning::NumericPackedStorage<Kind> numeric_storage;
 
     data() = default;
+
     data(::tyr::planning::FactPackedStorage<Kind> fact_storage_,
          ::tyr::planning::AtomPackedStorage<Kind> atom_storage_,
          ::tyr::planning::NumericPackedStorage<Kind> numeric_storage_) :
@@ -67,6 +68,7 @@ struct data<::tyr::planning::PackedState<Kind>>
         numeric_storage(numeric_storage_)
     {
     }
+
     static constexpr bool copyable() noexcept
     {
         static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
@@ -79,7 +81,9 @@ struct data<::tyr::planning::PackedState<Kind>>
                            urd::field<"atom_storage", &data::atom_storage>,
                            urd::field<"numeric_storage", &data::numeric_storage>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fact_storage, &data::numeric_storage> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
 };
 
@@ -112,6 +116,7 @@ struct data<::tyr::planning::State<Kind>>
     ::tyr::planning::NumericUnpackedStorage<Kind> numeric_storage;
 
     data() = default;
+
     data(::tyr::planning::FactUnpackedStorage<Kind> fact_storage_,
          ::tyr::planning::AtomUnpackedStorage<Kind> atom_storage_,
          ::tyr::planning::NumericUnpackedStorage<Kind> numeric_storage_) :
@@ -121,6 +126,7 @@ struct data<::tyr::planning::State<Kind>>
         numeric_storage(std::move(numeric_storage_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -133,8 +139,10 @@ struct data<::tyr::planning::State<Kind>>
                            urd::field<"atom_storage", &data::atom_storage>,
                            urd::field<"numeric_storage", &data::numeric_storage>> {};
     }
+
     /// A registered state is its index.
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::index> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fact_storage, &data::atom_storage, &data::numeric_storage> {}; }
 };
 

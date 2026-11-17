@@ -28,6 +28,7 @@ public:
     OperatorBuilder(QueryRepository& repository, QueryBuilder& builder) : m_repository(&repository), m_builder(&builder) {}
 
     QueryRepository& repository() noexcept { return *m_repository; }
+
     QueryBuilder& builder() noexcept { return *m_builder; }
 
     template<class Tag, std::invocable<urd::data<Query<Tag>>&> Fill>
@@ -37,10 +38,12 @@ public:
         fill(*data);
         return insert_query(*m_repository, *m_builder, *data);
     }
+
     QueryView<> empty(std::span<const ygg::ColumnLayout> columns)
     {
         return make<QueryEmptyTag>([&](auto& data) { data.columns.set(columns.begin(), columns.end()); });
     }
+
     template<class Tag>
     QueryView<> binary(QueryView<> left_operand, QueryView<> right_operand)
     {
@@ -51,6 +54,7 @@ public:
                 data.right_operand = right_operand.index();
             });
     }
+
     template<class Tag>
     QueryView<> relabel(QueryView<> arg, std::span<const urd::index<ygg::Column>> labels)
     {
@@ -61,9 +65,12 @@ public:
                 data.labels.set(labels.begin(), labels.end());
             });
     }
+
     QueryView<> join(QueryView<> left_operand, QueryView<> right_operand) { return binary<QueryJoinTag>(left_operand, right_operand); }
+
     /// The source's operation over schema-identical children of this repository.
     QueryView<> clone(QueryView<> source, std::span<const QueryView<>> children) { return detail::clone_query(source, children, *m_repository, *m_builder); }
+
     /// Keeps the query's columns with the given labels, in that order.
     QueryView<> project(QueryView<> query, std::span<const urd::index<ygg::Column>> labels)
     {
@@ -71,6 +78,7 @@ public:
             return query;
         return relabel<QueryProjectTag>(query, labels);
     }
+
     /// Keeps the query's columns whose labels occur in the sorted set, in schema order.
     QueryView<> restrict(QueryView<> query, std::span<const urd::index<ygg::Column>> keep)
     {
@@ -80,6 +88,7 @@ public:
                 labels.push_back(column.label);
         return project(query, labels);
     }
+
     /// Generic Join over the atoms; the variable order is also the output order.
     QueryView<> generic_join(std::span<const QueryView<>> atoms, std::span<const urd::index<ygg::Column>> order);
 };

@@ -49,6 +49,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
     urd::flat_vector<urd::index<::tyr::formalism::datalog::Rule<T>>> rules;
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::StaticTag>>> static_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::FluentTag>>> fluent_predicates_,
          urd::flat_vector<urd::index<::tyr::formalism::Function<::tyr::formalism::StaticTag>>> static_functions_,
@@ -74,6 +75,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
         rules(std::move(rules_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -94,6 +96,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
                            urd::field<"goal", &data::goal>,
                            urd::field<"rules", &data::rules>> {};
     }
+
     static constexpr auto identifying_members() noexcept
     {
         return urd::Members<&data::static_predicates,
@@ -108,6 +111,7 @@ struct data<::tyr::formalism::datalog::Program<T>>
                             &data::goal,
                             &data::rules> {};
     }
+
     static constexpr auto cista_members() noexcept
     {
         return urd::Members<&data::index,

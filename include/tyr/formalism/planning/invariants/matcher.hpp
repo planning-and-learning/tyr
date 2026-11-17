@@ -41,8 +41,11 @@ public:
     InvariantMatchData(InvariantView invariant, urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> rigid_variable_bindings);
 
     [[nodiscard]] auto invariant() const noexcept { return m_invariant; }
+
     [[nodiscard]] const auto& mutable_invariant() const noexcept { return m_inv; }
+
     [[nodiscard]] const auto& rigid_variable_bindings() const noexcept { return m_rigid_variable_bindings; }
+
     [[nodiscard]] const auto& postings() const noexcept { return m_postings; }
 
 private:

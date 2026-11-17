@@ -35,11 +35,13 @@ struct data<tyr::datalog::database::Query<>>
     urd::index_variant<boost::mp11::mp_transform<tyr::datalog::database::Query, tyr::datalog::database::QueryConstructorTags>> variant;
 
     data() = default;
+
     explicit data(urd::index_variant<boost::mp11::mp_transform<tyr::datalog::database::Query, tyr::datalog::database::QueryConstructorTags>> variant_) :
         index(),
         variant(std::move(variant_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -47,7 +49,9 @@ struct data<tyr::datalog::database::Query<>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"variant", &data::variant>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variant> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variant> {}; }
 };
 
@@ -59,7 +63,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>
     urd::flat_vector<ygg::ColumnLayout> columns;
 
     data() = default;
+
     data(size_t input_slot_, std::span<const ygg::ColumnLayout> columns_) : input_slot(input_slot_) { columns.set(columns_.begin(), columns_.end()); }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -67,7 +73,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryInputTag>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"input_slot", &data::input_slot>, urd::field<"columns", &data::columns>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::input_slot, &data::columns> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::input_slot, &data::columns> {}; }
 };
 
@@ -78,7 +86,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryEmptyTag>
     urd::flat_vector<ygg::ColumnLayout> columns;
 
     data() = default;
+
     explicit data(std::span<const ygg::ColumnLayout> columns_) { columns.set(columns_.begin(), columns_.end()); }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -86,7 +96,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryEmptyTag>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"columns", &data::columns>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::columns> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::columns> {}; }
 };
 
@@ -101,6 +113,7 @@ struct data<tyr::datalog::database::Query<Tag>>
     tyr::datalog::database::JoinPlan plan;
 
     data() = default;
+
     data(urd::index<tyr::datalog::database::Query<>> left_operand_,
          urd::index<tyr::datalog::database::Query<>> right_operand_,
          tyr::datalog::database::JoinPlan plan_) :
@@ -109,6 +122,7 @@ struct data<tyr::datalog::database::Query<Tag>>
         plan(std::move(plan_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -120,7 +134,9 @@ struct data<tyr::datalog::database::Query<Tag>>
         return urd::
             Fields<urd::field<"left_operand", &data::left_operand>, urd::field<"right_operand", &data::right_operand>, urd::field<"plan", &data::plan>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::left_operand, &data::right_operand> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::left_operand, &data::right_operand, &data::plan> {}; }
 };
 
@@ -134,6 +150,7 @@ struct data<tyr::datalog::database::Query<Tag>>
     tyr::datalog::database::SetPlan plan;
 
     data() = default;
+
     data(urd::index<tyr::datalog::database::Query<>> left_operand_,
          urd::index<tyr::datalog::database::Query<>> right_operand_,
          tyr::datalog::database::SetPlan plan_) :
@@ -142,6 +159,7 @@ struct data<tyr::datalog::database::Query<Tag>>
         plan(std::move(plan_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -153,7 +171,9 @@ struct data<tyr::datalog::database::Query<Tag>>
         return urd::
             Fields<urd::field<"left_operand", &data::left_operand>, urd::field<"right_operand", &data::right_operand>, urd::field<"plan", &data::plan>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::left_operand, &data::right_operand> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::left_operand, &data::right_operand, &data::plan> {}; }
 };
 
@@ -166,10 +186,12 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTa
     tyr::datalog::database::ProjectionPlan plan;
 
     data() = default;
+
     data(urd::index<tyr::datalog::database::Query<>> operand_, std::span<const urd::index<ygg::Column>> labels_, tyr::datalog::database::ProjectionPlan plan_) :
         operand(operand_),
         plan(std::move(plan_))
     { labels.set(labels_.begin(), labels_.end()); }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -178,7 +200,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryProjectTa
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"plan", &data::plan>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::labels> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operand, &data::labels, &data::plan> {}; }
 };
 
@@ -191,12 +215,14 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag
     urd::flat_vector<ygg::ColumnLayout> columns;
 
     data() = default;
+
     data(urd::index<tyr::datalog::database::Query<>> operand_, std::span<const urd::index<ygg::Column>> labels_, std::span<const ygg::ColumnLayout> columns_) :
         operand(operand_)
     {
         labels.set(labels_.begin(), labels_.end());
         columns.set(columns_.begin(), columns_.end());
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -205,7 +231,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryRenameTag
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"operand", &data::operand>, urd::field<"labels", &data::labels>, urd::field<"columns", &data::columns>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::labels> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::operand, &data::labels, &data::columns> {}; }
 };
 
@@ -219,6 +247,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqu
     tyr::datalog::database::SelectEqualPlan plan;
 
     data() = default;
+
     data(urd::index<tyr::datalog::database::Query<>> operand_,
          urd::index<ygg::Column> left_column_,
          urd::index<ygg::Column> right_column_,
@@ -229,6 +258,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqu
         plan(std::move(plan_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -242,7 +272,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectEqu
                            urd::field<"right_column", &data::right_column>,
                            urd::field<"plan", &data::plan>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::left_column, &data::right_column> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::operand, &data::left_column, &data::right_column, &data::plan> {}; }
 };
@@ -260,6 +292,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
     tyr::datalog::database::SelectValuePlan plan;
 
     data() = default;
+
     data(urd::index<tyr::datalog::database::Query<>> operand_,
          urd::index<ygg::Column> column_,
          ygg::Value constant_,
@@ -272,6 +305,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
         plan(std::move(plan_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -286,7 +320,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QuerySelectVal
                            urd::field<"constant_type", &data::constant_type>,
                            urd::field<"plan", &data::plan>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::operand, &data::column, &data::constant, &data::constant_type> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::operand, &data::column, &data::constant, &data::constant_type, &data::plan> {}; }
 };
@@ -302,6 +338,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceT
     tyr::datalog::database::DistancePlan plan;
 
     data() = default;
+
     data(urd::index<tyr::datalog::database::Query<>> sources_,
          urd::index<tyr::datalog::database::Query<>> edges_,
          urd::index<tyr::datalog::database::Query<>> targets_,
@@ -314,6 +351,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceT
         plan(std::move(plan_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -328,7 +366,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryDistanceT
                            urd::field<"distance_column", &data::distance_column>,
                            urd::field<"plan", &data::plan>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::sources, &data::edges, &data::targets, &data::distance_column> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::sources, &data::edges, &data::targets, &data::distance_column, &data::plan> {}; }
 };
@@ -343,6 +383,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJo
     tyr::datalog::database::GenericJoinPlan plan;
 
     data() = default;
+
     /// An empty output order is canonicalized on insertion.
     data(std::span<const urd::index<tyr::datalog::database::Query<>>> inputs_,
          std::span<const urd::index<ygg::Column>> variable_order_,
@@ -354,6 +395,7 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJo
         variable_order.set(variable_order_.begin(), variable_order_.end());
         output_order.set(output_order_.begin(), output_order_.end());
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -367,7 +409,9 @@ struct data<tyr::datalog::database::Query<tyr::datalog::database::QueryGenericJo
                            urd::field<"output_order", &data::output_order>,
                            urd::field<"plan", &data::plan>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::inputs, &data::variable_order, &data::output_order> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::inputs, &data::variable_order, &data::output_order, &data::plan> {}; }
 };

@@ -298,8 +298,7 @@ void expect_shared_worker_cohort(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(urd::Hash<tyr::planning::PackedStateView<Kind>> {}(first_initial.get_state().pack()),
               urd::Hash<tyr::planning::PackedStateView<Kind>> {}(second_initial.get_state().pack()));
     EXPECT_EQ(first_initial.get_metric(), second_initial.get_metric());
-    EXPECT_EQ(&tyr::planning::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).get_state_repository(),
-              source_repository.get());
+    EXPECT_EQ(&tyr::planning::materialize_state(second_initial.get_state(), *source_repository, *source_axiom_evaluator).context(), source_repository.get());
 
     auto novelty = tyr::planning::iw::NoveltyPruningStrategy<Kind>::create(0);
     auto first_novelty_worker = novelty->make_worker(urd::index<tyr::planning::Worker>(0));

@@ -25,6 +25,7 @@ namespace tyr::datalog::database::detail
 {
 /// The value of a row's field: a stored row's, or a row of values' (a query's frame of variables).
 inline ygg::Value field_value(const ygg::RowPool::row_type& row, size_t position) noexcept { return row.get(position); }
+
 inline ygg::Value field_value(std::span<const ygg::Value> values, size_t position) noexcept { return values[position]; }
 
 /// Hash the key fields' canonical values in logical key order, without materializing a key: as urd::hash_range of them.

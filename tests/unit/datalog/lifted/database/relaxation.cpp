@@ -58,6 +58,7 @@ std::unique_ptr<Relaxed> relax(std::span<const View> roots, const std::array<boo
     result->relaxation = tyr::datalog::database::relax(roots, [&](size_t slot) { return known[slot]; }, result->repository, qb::builder());
     return result;
 }
+
 std::unique_ptr<Relaxed> relax(View query, const std::array<bool, 4>& known) { return relax(std::span<const View>(&query, 1), known); }
 
 /// Q(I) ⊆ Q̂(I) × U^(free labels): Q's rows projected onto Q̂'s labels are rows of Q̂.
@@ -296,6 +297,7 @@ TEST(DatabaseRelaxation, RootsShareOneInputNumbering)
     EXPECT_EQ(evaluator.get_result(0).size(), 1);
     EXPECT_EQ(evaluator.get_result(1).size(), 1);
 }
+
 TEST(DatabaseRelaxation, ProjectedAwayConjunctsAreTestedOnceByBoundEvaluation)
 {
     // π_{x,y}(E(x,y) ⋈ I(u,v)) with y bound: I(u,v) is an existence test, so each predecessor x is emitted once, not

@@ -38,6 +38,7 @@ const ygg::FreeRelationRepository& layer()
 ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
 using tyr::datalog::tests::qb::columns_of;
+
 template<typename T = ygg::uint_t, typename... Args>
 auto cells(Args... values)
 { return std::array<ygg::Value, sizeof...(Args)> { ygg::encode_value(T(values))... }; }

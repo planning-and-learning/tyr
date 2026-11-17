@@ -82,6 +82,7 @@ constexpr std::array<std::pair<size_t, size_t>, 12> state_sizes = { {
 } };
 
 size_t frequency(size_t rows, size_t key) { return rows / key_count + static_cast<size_t>(key < rows % key_count); }
+
 size_t distinct_keys(size_t rows) { return rows < key_count ? rows : key_count; }
 
 size_t joined_size(size_t left_size, size_t right_size, size_t keys = key_count)

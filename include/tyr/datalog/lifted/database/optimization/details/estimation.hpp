@@ -36,13 +36,16 @@ struct InputFactorIdentity
     size_t value;
     auto operator<=>(const InputFactorIdentity&) const = default;
 };
+
 struct QueryFactorIdentity
 {
     size_t value;
     auto operator<=>(const QueryFactorIdentity&) const = default;
 };
+
 /// Identical factors with identical column bindings count once, so A ⋈ A estimates as A.
 using FactorIdentity = std::variant<InputFactorIdentity, QueryFactorIdentity>;
+
 /// A column of a factor: its position in the factor and its current label.
 struct Attribute
 {
@@ -51,12 +54,14 @@ struct Attribute
     double distinct = 0;
     auto operator<=>(const Attribute&) const = default;
 };
+
 struct Factor
 {
     FactorIdentity identity;
     double rows;
     urd::Store<urd::sequence<Attribute>> attributes;
 };
+
 /// A conjunction of factors, equalities, and constants, independent of join order.
 struct Estimate
 {
@@ -71,7 +76,9 @@ struct Estimate
 constexpr double max_estimate = 1e300;
 /// exp() of larger logarithms overflows a double.
 constexpr double max_log_estimate = 690;
+
 inline double bounded(double value) { return std::clamp(value, 0.0, max_estimate); }
+
 inline double multiply(double a, double b) { return a == 0 || b == 0 ? 0 : bounded(a * b); }
 
 Estimate factor(const RelationStatistics& stats, std::span<const ygg::ColumnLayout> columns, FactorIdentity identity);
@@ -98,12 +105,15 @@ Estimate estimate_operation(QueryView<QueryInputTag> query, FactorIdentity, GetE
         throw std::logic_error("Optimizer: estimates require the input's row count.");
     return factor(with_default_distinct(it->second, query.columns(), statistics.objects), query.columns(), InputFactorIdentity { query.get_input_slot() });
 }
+
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryEmptyTag> query, FactorIdentity identity, GetEstimate&&, const Statistics&)
 { return factor({ 0, {} }, query.columns(), identity); }
+
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryJoinTag> query, FactorIdentity, GetEstimate child, const Statistics&)
 { return conjunction(combine(child(query.get_left_operand()), child(query.get_right_operand())), query.columns()); }
+
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryGenericJoinTag> query, FactorIdentity identity, GetEstimate child, const Statistics&)
 {
@@ -115,6 +125,7 @@ Estimate estimate_operation(QueryView<QueryGenericJoinTag> query, FactorIdentity
         result = combine(std::move(result), child(input));
     return conjunction(std::move(result), query.columns());
 }
+
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QuerySelectEqualTag> query, FactorIdentity, GetEstimate child, const Statistics&)
 {
@@ -123,6 +134,7 @@ Estimate estimate_operation(QueryView<QuerySelectEqualTag> query, FactorIdentity
     result.equalities.emplace(std::min(left, right), std::max(left, right));
     return conjunction(std::move(result), query.columns());
 }
+
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QuerySelectValueTag> query, FactorIdentity, GetEstimate child, const Statistics&)
 {
@@ -130,6 +142,7 @@ Estimate estimate_operation(QueryView<QuerySelectValueTag> query, FactorIdentity
     result.constants.emplace(query.get_column(), query.get_constant());
     return conjunction(std::move(result), query.columns());
 }
+
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryRenameTag> query, FactorIdentity, GetEstimate child, const Statistics&)
 {
@@ -151,10 +164,12 @@ Estimate estimate_operation(QueryView<QueryRenameTag> query, FactorIdentity, Get
     result.constants = std::move(constants);
     return conjunction(std::move(result), after);
 }
+
 /// Operators beyond System R follow the textbook estimates of Garcia-Molina, Ullman,
 /// and Widom (Database Systems: The Complete Book, 2nd ed., 2008, §16.4), with distinct
 /// counts under containment of value sets and capped by the result size.
 RelationStatistics capped(RelationStatistics stats);
+
 /// Duplicate elimination after projection: min(T(R)/2, ∏ V(R, a)) over the kept columns.
 /// A projection that keeps every column only reorders it.
 template<class GetEstimate>
@@ -173,6 +188,7 @@ Estimate estimate_operation(QueryView<QueryProjectTag> query, FactorIdentity ide
     result.rows = std::min(argument.rows / 2, combinations);
     return factor(capped(std::move(result)), query.columns(), identity);
 }
+
 /// Set union: max(T(R), T(S)) + min(T(R), T(S))/2; V = max(V(R, a), V(S, a)).
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryUnionTag> query, FactorIdentity identity, GetEstimate child, const Statistics&)
@@ -183,6 +199,7 @@ Estimate estimate_operation(QueryView<QueryUnionTag> query, FactorIdentity ident
         result.distinct[column] = std::max(count, right.distinct.at(column));
     return factor(capped(std::move(result)), query.columns(), identity);
 }
+
 /// Difference: T(R) − T(S)/2; V = V(R, a).
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryDifferenceTag> query, FactorIdentity identity, GetEstimate child, const Statistics&)
@@ -190,6 +207,7 @@ Estimate estimate_operation(QueryView<QueryDifferenceTag> query, FactorIdentity 
     const auto left = child(query.get_left_operand()), right = child(query.get_right_operand());
     return factor(capped({ std::max(0.0, left.rows - right.rows / 2), left.distinct }), query.columns(), identity);
 }
+
 /// Semijoin: T(R ⋉ S) = min(T(R), T(π_R(R ⋈ S))); antijoin: T(R ▷ S) = T(R) − T(R ⋉ S); V = V(R, a).
 template<typename Tag, class GetEstimate>
     requires(std::same_as<Tag, QuerySemijoinTag> || std::same_as<Tag, QueryAntijoinTag>)
@@ -200,6 +218,7 @@ Estimate estimate_operation(QueryView<Tag> query, FactorIdentity identity, GetEs
     const auto rows = std::same_as<Tag, QuerySemijoinTag> ? matched : std::max(0.0, left.rows - matched);
     return factor(capped({ rows, left.distinct }), query.columns(), identity);
 }
+
 /// The literature has no estimate for distances; they are only known when observed.
 template<class GetEstimate>
 Estimate estimate_operation(QueryView<QueryDistanceTag>, FactorIdentity, GetEstimate&&, const Statistics&)

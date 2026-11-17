@@ -43,23 +43,31 @@ public:
     const auto& get_name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::name>(); }
+
     const auto& get_original_name() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::original_name>(); }
+
     auto get_original_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::original_arity>(); }
+
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }
+
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::row>(); }
+
     auto get_condition() const noexcept { return self().template member<&urd::record_of<V>::condition>(); }
+
     auto get_effects() const noexcept { return self().template member<&urd::record_of<V>::effects>(); }
+
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return get_variables().size(); }
+
     /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
     auto get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -71,17 +79,14 @@ public:
     auto get_action() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_relation(); }
-    /// Its objects: its row's columns read as objects (checked against its pool's types), resolved through the row's
-    /// context.
-    auto get_objects() const
-        requires std::same_as<T, ::tyr::GroundTag>
+
+    static constexpr auto functions() noexcept
     {
-        const auto row = get_row();
-        return urd::resolve(row.template get<urd::index<::tyr::formalism::Object>>(), row.context());
+        if constexpr (std::same_as<T, ::tyr::GroundTag>)
+            return urd::Functions<urd::function<"get_action", &view_mixin::get_action>> {};
+        else
+            return urd::Functions<urd::function<"get_arity", &view_mixin::get_arity>, urd::function<"get_column_types", &view_mixin::get_column_types>> {};
     }
-    auto get_key() const noexcept
-        requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_key(); }
 };
 }  // namespace urd
 

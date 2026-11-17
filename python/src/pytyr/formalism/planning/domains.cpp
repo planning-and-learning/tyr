@@ -26,6 +26,7 @@
 #include <yggdrasil/python/bindings.hpp>
 
 namespace nb = nanobind;
+
 namespace tyr::formalism::planning
 {
 

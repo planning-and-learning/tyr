@@ -85,6 +85,7 @@ public:
     static constexpr bool terminate_on_goal = true;
     static constexpr bool supports_priority_layer_synchronization = ModePolicy::supports_priority_layer_synchronization;
     static constexpr bool emits_priority_layer_events = true;
+
     struct SearchNode
     {
         ygg::uint_t g_value;

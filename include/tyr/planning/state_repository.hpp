@@ -58,18 +58,24 @@ public:
     StateRepository& operator=(StateRepository&&) = delete;
 
     StateView<Kind> get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator);
+
     /// A registered state and its packed record share their position in this repository: its index and the record's
     /// are the same value as two types, converted here and nowhere else.
     [[nodiscard]] static constexpr urd::index<PackedState<Kind>> packed_index(urd::index<State<Kind>> state_index) noexcept
     { return urd::index<PackedState<Kind>>(state_index.value); }
+
     [[nodiscard]] static constexpr urd::index<State<Kind>> state_index(urd::index<PackedState<Kind>> packed_index) noexcept
     { return urd::index<State<Kind>>(packed_index.value); }
+
     /// The stored, packed record of a registered state (urd's resolves contract; a PackedStateView is the usual handle).
     [[nodiscard]] const urd::data<PackedState<Kind>>& operator[](urd::index<PackedState<Kind>> packed_index) const;
+
     /// A registered state, packed: the view of its packed record's index, through this repository.
     [[nodiscard]] PackedStateView<Kind> view(urd::index<PackedState<Kind>> packed_index) const noexcept { return { packed_index, this }; }
+
     /// A registered state's index, as its view reads it (StateView::pack): its packed form.
     [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return view(packed_index(state_index)); }
+
     /// Const: the state's builder comes from the repository's pool of scratch builders.
     StateView<Kind> get_registered_state(urd::index<State<Kind>> state_index) const;
 
@@ -124,13 +130,13 @@ extern template class StateRepository<LiftedTag>;
 template<TaskKind Kind>
 StateView<Kind> materialize_state(const StateView<Kind>& source, StateRepository<Kind>& target, AxiomEvaluator<Kind>& axiom_evaluator)
 {
-    if (source.get_state_repository().get_task() != target.get_task())
+    if (source.context().get_task() != target.get_task())
         throw std::invalid_argument("materialize_state(...): source state belongs to a different task.");
     if (axiom_evaluator.get_task() != target.get_task())
         throw std::invalid_argument("materialize_state(...): axiom evaluator belongs to a different task.");
-    if (&source.get_state_repository() == &target)
+    if (&source.context() == &target)
         return source;
-    if (source.get_state_repository().shares_storage_with(target))
+    if (source.context().shares_storage_with(target))
         return target.get_registered_state(source.index());
 
     auto builder = target.get_state_builder();

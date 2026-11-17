@@ -35,28 +35,42 @@ private:
 
 public:
     auto get_static_predicates() const noexcept { return self().template member<&urd::record_of<V>::static_predicates>(); }
+
     auto get_fluent_predicates() const noexcept { return self().template member<&urd::record_of<V>::fluent_predicates>(); }
+
     auto get_static_functions() const noexcept { return self().template member<&urd::record_of<V>::static_functions>(); }
+
     auto get_fluent_functions() const noexcept { return self().template member<&urd::record_of<V>::fluent_functions>(); }
+
     auto get_objects() const noexcept { return self().template member<&urd::record_of<V>::objects>(); }
+
     auto get_static_atoms() const noexcept { return self().template member<&urd::record_of<V>::static_atoms>(); }
+
     auto get_fluent_atoms() const noexcept { return self().template member<&urd::record_of<V>::fluent_atoms>(); }
+
     auto get_static_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::static_fterm_values>(); }
+
     auto get_fluent_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::fluent_fterm_values>(); }
+
     auto get_goal() const noexcept { return self().template member<&urd::record_of<V>::goal>(); }
+
     auto get_rules() const noexcept { return self().template member<&urd::record_of<V>::rules>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_predicates() const noexcept
     { return self().template member<::tyr::formalism::datalog::predicates_of<F, T>>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_functions() const noexcept
     { return self().template member<::tyr::formalism::datalog::functions_of<F, T>>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_atoms() const noexcept
     { return self().template member<::tyr::formalism::datalog::atoms_of<F, T>>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_fterm_values() const noexcept

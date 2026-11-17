@@ -36,11 +36,22 @@ private:
 
 public:
     auto get_variable() const noexcept { return self().template member<&urd::record_of<V>::variable>(); }
+
     auto get_value() const noexcept { return self().template member<&urd::record_of<V>::value>(); }
+
     auto has_value() const noexcept { return get_value() != ::tyr::formalism::planning::FDRValue::none(); }
+
     auto get_atom_index() const noexcept
     { return has_value() ? std::make_optional(self().context()[get_variable().index()].atoms[get_value().value - 1]) : std::nullopt; }
+
     auto get_atom() const noexcept { return urd::resolve(get_atom_index(), self().context()); }
+
+    static constexpr auto functions() noexcept
+    {
+        return urd::Functions<urd::function<"has_value", &view_mixin::has_value>,
+                              urd::function<"get_atom_index", &view_mixin::get_atom_index>,
+                              urd::function<"get_atom", &view_mixin::get_atom>> {};
+    }
 };
 
 /// A stored fact (a member of a condition or effect) read through a context: its borrowed view, through the context that
@@ -55,6 +66,7 @@ struct urd::resolution<urd::data<::tyr::formalism::planning::FDRFact<T>>>
         const auto& owner = context.view(fact.variable).context();
         return urd::borrowed_view<::tyr::formalism::planning::FDRFact<T>, std::remove_cvref_t<decltype(owner)>> { &fact, &owner };
     }
+
     template<typename C>
     static void of(const urd::data<::tyr::formalism::planning::FDRFact<T>>&& fact, const C& context) = delete;
 };

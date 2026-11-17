@@ -38,11 +38,13 @@ struct data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
     urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<T, ::tyr::formalism::FluentTag>>> numeric_effects;
 
     data() = default;
+
     explicit data(urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<T, ::tyr::formalism::FluentTag>>> numeric_effects_) :
         index(),
         numeric_effects(std::move(numeric_effects_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -50,7 +52,9 @@ struct data<::tyr::formalism::datalog::ConjunctiveEffect<T>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"numeric_effects", &data::numeric_effects>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::numeric_effects> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::numeric_effects> {}; }
 };
 

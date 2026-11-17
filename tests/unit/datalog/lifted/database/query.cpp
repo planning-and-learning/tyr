@@ -29,6 +29,7 @@ const ygg::FreeRelationRepository& layer()
 }
 
 ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+
 const Column x(0), y(1), z(2), d(3);
 
 auto rows(const auto& relation)
@@ -44,12 +45,14 @@ auto rows(const auto& relation)
     std::ranges::sort(result);
     return result;
 }
+
 auto minus(const auto& left_operand, const auto& right_operand)
 {
     std::remove_cvref_t<decltype(left_operand)> result;
     std::ranges::set_difference(left_operand, right_operand, std::back_inserter(result));
     return result;
 }
+
 void apply(Relation& relation, const Delta& change)
 {
     const auto [added, removed] = change.change();
@@ -58,6 +61,7 @@ void apply(Relation& relation, const Delta& change)
     for (const auto row : added.get_rows())
         relation.insert(row);
 }
+
 void reverse(Delta& change) { std::swap(change.added, change.removed); }
 
 template<typename T>

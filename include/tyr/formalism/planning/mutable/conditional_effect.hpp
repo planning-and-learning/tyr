@@ -42,6 +42,7 @@ struct MutableConditionalEffect : urd::compared_by_identity<MutableConditionalEf
     MutableConjunctiveEffect effect;
 
     MutableConditionalEffect() = default;
+
     MutableConditionalEffect(size_t num_parent_variables_, size_t num_variables_, MutableConjunctiveCondition condition_, MutableConjunctiveEffect effect_) :
         num_parent_variables(num_parent_variables_),
         num_variables(num_variables_),
@@ -49,6 +50,7 @@ struct MutableConditionalEffect : urd::compared_by_identity<MutableConditionalEf
         effect(std::move(effect_))
     {
     }
+
     MutableConditionalEffect(size_t num_parent_variables_, ConditionalEffectView<LiftedTag> element) :
         num_parent_variables(num_parent_variables_),
         num_variables(element.get_arity()),

@@ -80,21 +80,17 @@ std::string to_string(const urd::data<NumericEffect<GroundTag, AuxiliaryTag>>& v
 }  // namespace tyr::formalism
 
 /// The names of the formalism's records whose tags are named otherwise (urd::name): the operator kinds an operator is
-/// of (enums, which hold no name), and the objects (yggdrasil's Object of tyr's ObjectTag).
+/// of (enums, which hold no name).
 template<>
 struct urd::name_of<tyr::formalism::BooleanOperatorKind>
 {
     static std::string named() { return "Boolean"; }
 };
+
 template<>
 struct urd::name_of<tyr::formalism::ArithmeticOperatorKind>
 {
     static std::string named() { return "Arithmetic"; }
-};
-template<>
-struct urd::name_of<ygg::formalism::Object<tyr::formalism::ObjectTag>>
-{
-    static std::string named() { return "Object"; }
 };
 
 namespace tyr::formalism::detail
@@ -126,6 +122,7 @@ template<>
 struct formatter<tyr::formalism::BooleanOperatorKind, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(tyr::formalism::BooleanOperatorKind value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
@@ -135,6 +132,7 @@ template<>
 struct formatter<tyr::formalism::ArithmeticOperatorKind, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(tyr::formalism::ArithmeticOperatorKind value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }
@@ -144,6 +142,7 @@ template<>
 struct formatter<tyr::formalism::NumericEffectOperatorKind, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(tyr::formalism::NumericEffectOperatorKind value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::to_string(value)); }

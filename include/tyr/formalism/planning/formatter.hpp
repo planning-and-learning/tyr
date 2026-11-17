@@ -96,30 +96,37 @@ template<typename T, typename K>
 struct formatter<urd::index_view<T, tyr::formalism::planning::Repository, K>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     auto format(const urd::index_view<T, tyr::formalism::planning::Repository, K>& value, format_context& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
+
 template<typename T, typename R>
     requires requires(const urd::borrowed_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
 struct formatter<urd::borrowed_view<T, tyr::formalism::planning::Repository, R>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     auto format(const urd::borrowed_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
+
 template<typename T, typename R>
     requires requires(const urd::owning_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
 struct formatter<urd::owning_view<T, tyr::formalism::planning::Repository, R>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     auto format(const urd::owning_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };
+
 template<typename T, typename R>
     requires requires(const urd::shared_view<T, tyr::formalism::planning::Repository, R>& value) { tyr::formalism::planning::to_string(value); }
 struct formatter<urd::shared_view<T, tyr::formalism::planning::Repository, R>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     auto format(const urd::shared_view<T, tyr::formalism::planning::Repository, R>& value, format_context& ctx) const
     { return fmt::format_to(ctx.out(), "{}", tyr::formalism::planning::to_string(value)); }
 };

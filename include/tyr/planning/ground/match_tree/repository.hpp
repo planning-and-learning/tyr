@@ -60,6 +60,7 @@ public:
         m_index(index)
     {
     }
+
     Repository(const Repository& other) = delete;
     Repository& operator=(const Repository& other) = delete;
     Repository(Repository&& other) = delete;
@@ -77,6 +78,7 @@ public:
         requires ygg::formalism::SupportsSymbol<Repository, T>
     [[nodiscard]] urd::index_view<T, Repository> view(urd::index<T> index) const noexcept
     { return { index, this }; }
+
     /// A formalism element a node refers to (an atom, a constraint, a fact, a variable): its view in the formalism
     /// repository, which owns it.
     template<typename T>

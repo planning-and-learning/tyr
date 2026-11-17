@@ -33,6 +33,7 @@ namespace tyr::datalog::database
 template<typename C>
 [[nodiscard]] bool reads_builder(const ygg::RelationBuilderView<ygg::Schema, C>& view, const urd::builder<ygg::Relation<ygg::Schema>>& builder) noexcept
 { return &view.get_builder() == &builder; }
+
 template<typename C, typename K>
 [[nodiscard]] constexpr bool reads_builder(const urd::index_view<ygg::Relation<ygg::Schema>, C, K>& /*view*/,
                                            const urd::builder<ygg::Relation<ygg::Schema>>& /*builder*/) noexcept

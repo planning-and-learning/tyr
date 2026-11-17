@@ -62,13 +62,19 @@ public:
     explicit Task(formalism::planning::PlanningTask<GroundTag> task);
 
     [[nodiscard]] const auto& get_formalism_task() const noexcept { return m_task; }
+
     [[nodiscard]] const auto& get_domain() const noexcept { return m_task.get_domain(); }
+
     [[nodiscard]] auto get_task() const noexcept { return m_task.get_task(); }
+
     /// This task's own layers over the formalism task's frozen repository and FDR context: what its search grounds
     /// and registers goes here.
     [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_fdr_context; }
+
     [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
+
     [[nodiscard]] const StaticState& get_static_state() const noexcept { return m_static_state; }
+
     [[nodiscard]] bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
 private:

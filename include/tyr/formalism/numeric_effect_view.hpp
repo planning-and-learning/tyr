@@ -37,7 +37,9 @@ public:
 
 public:
     auto get_operation() const noexcept { return self().template member<&urd::record_of<V>::operation>(); }
+
     auto get_fterm() const noexcept { return self().template member<&urd::record_of<V>::fterm>(); }
+
     auto get_fexpr() const noexcept { return self().template member<&urd::record_of<V>::fexpr>(); }
 };
 }  // namespace urd

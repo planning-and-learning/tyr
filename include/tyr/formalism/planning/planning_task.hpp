@@ -52,10 +52,15 @@ public:
                  std::optional<std::filesystem::path> path = std::nullopt);
 
     [[nodiscard]] const auto& get_repository() const noexcept { return m_repository; }
+
     [[nodiscard]] auto get_task() const noexcept { return m_task; }
+
     [[nodiscard]] const auto& get_fdr_context() const noexcept { return m_fdr_context; }
+
     [[nodiscard]] const auto& get_domain() const noexcept { return m_domain; }
+
     [[nodiscard]] const auto& get_path() const noexcept { return m_path; }
+
     [[nodiscard]] const analysis::TaskVariableDomains& get_variable_domains() const noexcept
         requires std::same_as<T, LiftedTag>;
     [[nodiscard]] const analysis::TaskVariableDomainsView& get_variable_domains_view() const noexcept

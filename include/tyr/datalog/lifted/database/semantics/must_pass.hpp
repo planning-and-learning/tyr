@@ -104,6 +104,7 @@ public:
     }
 
     [[nodiscard]] size_t input_count() const noexcept { return m_edges.evaluator().input_count(); }
+
     [[nodiscard]] const MustPassPlan& plan() const noexcept { return m_plan; }
 
     /// Appends to `out`, which has the plan's output columns, the must-pass probe objects of every key of the sources and
@@ -146,6 +147,7 @@ private:
         std::span<const VertexSet::handle_type> ids;
 
         [[nodiscard]] size_t size() const noexcept { return ids.size(); }
+
         [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return set->at(ids[i]); }
     };
 
@@ -164,12 +166,14 @@ private:
             ++m_owner->m_statistics.vertices;
             m_edges.successors(vertex, allowed_only(on_vertex));
         }
+
         template<RowPredicate OnVertex>
         void predecessors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
         {
             ++m_owner->m_statistics.backward;
             m_edges.predecessors(vertex, allowed_only(on_vertex));
         }
+
         bool edge_exists(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
         { return m_owner->allowed(from) && m_owner->allowed(to) && m_edges.edge_exists(from, to); }
 
@@ -209,6 +213,7 @@ private:
     }
 
     [[nodiscard]] std::span<const ygg::Value> key_of(std::span<const ygg::Value> row) const noexcept { return row.first(m_plan.key_size()); }
+
     [[nodiscard]] std::span<const ygg::Value> vertex_of(std::span<const ygg::Value> row) const noexcept
     { return row.subspan(m_plan.key_size(), m_plan.vertex_size()); }
 
@@ -245,12 +250,14 @@ private:
             if (const auto probe = m_probes.find(vertex.subspan(position, m_plan.probe_size())); !probe.is_none())
                 on_probe(probe);
     }
+
     [[nodiscard]] bool contains(std::span<const ygg::Value> vertex, VertexSet::handle_type probe) const
     {
         const auto object = m_probes.at(probe);
         return std::ranges::any_of(m_probe_positions,
                                    [&](size_t position) { return std::ranges::equal(vertex.subspan(position, m_plan.probe_size()), object); });
     }
+
     /// Whether the current search may visit a vertex: it does not contain the excluded probe object.
     [[nodiscard]] bool allowed(std::span<const ygg::Value> vertex) const { return m_excluded.is_none() || !contains(vertex, m_excluded); }
 

@@ -43,6 +43,7 @@ struct FakeAtomView
     urd::Store<urd::sequence<FakeTermView>> terms;
 
     [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
+
     [[nodiscard]] const auto& get_terms() const noexcept { return terms; }
 };
 
@@ -52,19 +53,30 @@ struct FakeLiteralView
     FakeAtomView atom;
 
     [[nodiscard]] bool get_polarity() const noexcept { return polarity; }
+
     [[nodiscard]] const FakeAtomView& get_atom() const noexcept { return atom; }
+};
+
+struct FakeRow
+{
+    urd::Store<urd::sequence<FakeObjectView>> objects;
+
+    /// Its objects, as a row's view gives them.
+    [[nodiscard]] const auto& get_objects() const noexcept { return objects; }
 };
 
 struct FakeGroundAtomView
 {
     FakePredicateView predicate;
-    urd::Store<urd::sequence<FakeObjectView>> objects;
+    FakeRow row;
 
     [[nodiscard]] FakePredicateView get_predicate() const noexcept { return predicate; }
-    [[nodiscard]] const auto& get_objects() const noexcept { return objects; }
+
+    [[nodiscard]] const FakeRow& get_row() const noexcept { return row; }
 };
 
 FakeTermView parameter(ygg::uint_t index) { return FakeTermView(index); }
+
 FakeTermView constant(ygg::uint_t index) { return FakeTermView(FakeObjectView { Object(index) }); }
 
 FakeLiteralView literal(bool polarity, ygg::uint_t predicate, std::initializer_list<FakeTermView> terms)
@@ -74,7 +86,7 @@ FakeGroundAtomView atom(ygg::uint_t predicate, std::initializer_list<ygg::uint_t
 {
     auto result = FakeGroundAtomView { FakePredicateView { predicate }, {} };
     for (const auto object : objects)
-        result.objects.push_back(FakeObjectView { Object(object) });
+        result.row.objects.push_back(FakeObjectView { Object(object) });
     return result;
 }
 
@@ -97,7 +109,9 @@ public:
     }
 
     [[nodiscard]] const tyr::kckp::Graph& get_graph() const noexcept { return m_graph; }
+
     [[nodiscard]] bool is_satisfiable() const noexcept { return m_graph.is_satisfiable(); }
+
     [[nodiscard]] const tyr::analysis::VariableDomainList& get_domains() const noexcept { return m_domains; }
 
     [[nodiscard]] Object get_object(tyr::kckp::Vertex vertex) const noexcept { return Object(m_graph.label(vertex)); }

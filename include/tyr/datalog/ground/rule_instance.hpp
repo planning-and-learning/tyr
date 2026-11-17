@@ -31,7 +31,9 @@ public:
     explicit RuleInstance(formalism::datalog::RuleView<GroundTag> rule) : m_rule(rule) {}
 
     [[nodiscard]] formalism::datalog::RuleView<GroundTag> get_rule() const noexcept { return m_rule; }
+
     [[nodiscard]] auto get_body() const noexcept { return m_rule.get_body(); }
+
     [[nodiscard]] auto get_heads() const noexcept { return m_rule.get_heads(); }
 
     [[nodiscard]] auto resolve(formalism::datalog::AtomView<GroundTag, formalism::FluentTag> atom) const noexcept { return atom.get_row(); }
@@ -40,6 +42,7 @@ public:
 
     /// A ground rule is its own instance: its index keys witnesses and rule costs.
     [[nodiscard]] RuleKey<GroundTag> witness_key() const noexcept { return m_rule.index(); }
+
     [[nodiscard]] RuleKey<GroundTag> cost_key() const noexcept { return witness_key(); }
 
 private:

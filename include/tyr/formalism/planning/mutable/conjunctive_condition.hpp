@@ -42,6 +42,7 @@ struct MutableConjunctiveCondition : urd::compared_by_identity<MutableConjunctiv
     MutableLiteralList<DerivedTag> derived_literals;
 
     MutableConjunctiveCondition() = default;
+
     MutableConjunctiveCondition(size_t num_parent_variables_,
                                 size_t num_variables_,
                                 MutableLiteralList<StaticTag> static_literals_,
@@ -54,6 +55,7 @@ struct MutableConjunctiveCondition : urd::compared_by_identity<MutableConjunctiv
         derived_literals(std::move(derived_literals_))
     {
     }
+
     MutableConjunctiveCondition(size_t num_parent_variables_, ConjunctiveConditionView<LiftedTag> element) :
         num_parent_variables(num_parent_variables_),
         num_variables(element.get_arity()),

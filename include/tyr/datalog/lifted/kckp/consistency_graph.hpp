@@ -131,6 +131,7 @@ public:
     }
 
     [[nodiscard]] auto get_parameter_index() const noexcept { return m_parameter_index; }
+
     [[nodiscard]] auto get_object_index() const noexcept { return m_object_index; }
 };
 
@@ -148,6 +149,7 @@ public:
     Edge(Vertex vi, Vertex vj) noexcept : m_vi(vi), m_vj(vj) {}
 
     [[nodiscard]] const auto& vi() const noexcept { return m_vi; }
+
     [[nodiscard]] const auto& vj() const noexcept { return m_vj; }
 };
 

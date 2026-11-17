@@ -252,6 +252,7 @@ TEST(TyrDatalogLiftedAssignmentSets, FunctionInsertionTracksHullsAndEmptyAssignm
     EXPECT_TRUE(nullary_set.insert(nullary_binding, static_cast<ygg::float_t>(7)));
     EXPECT_EQ(interval_of(nullary_set, nullary_binding), ygg::ClosedInterval<ygg::float_t>(7, 7));
 }
+
 TEST(TyrDatalogLiftedAssignmentSets, TouchedBlocksAndPreparedRanksMatchScalarRanks)
 {
     auto fixture = Fixture {};

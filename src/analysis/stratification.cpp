@@ -57,8 +57,10 @@ struct RelationVertexMap
 
     [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Predicate<formalism::FluentTag>> predicate) const
     { return static_cast<ygg::uint_t>(predicate.value); }
+
     [[nodiscard]] ygg::uint_t get_vertex(urd::index<formalism::Function<formalism::FluentTag>> function) const
     { return static_cast<ygg::uint_t>(num_predicates + static_cast<ygg::uint_t>(function.value)); }
+
     [[nodiscard]] size_t size() const { return num_predicates + num_functions; }
 };
 

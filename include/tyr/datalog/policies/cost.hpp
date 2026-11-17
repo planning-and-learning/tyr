@@ -44,12 +44,15 @@ struct ActionCostLookup
     formalism::planning::ActionView<LiftedTag> action;
     formalism::datalog::RuleRowView rule_binding;
 
-    [[nodiscard]] auto get_key() const
+    /// The action's row key (ygg::key_of): the action, and the first values of the rule's row, its arity many.
+    [[nodiscard]] auto relation_key() const { return action.index(); }
+
+    [[nodiscard]] auto get_values() const
     {
-        const auto objects = rule_binding.get_key().second;
+        const auto objects = rule_binding.get_values();
         assert(objects.size() >= action.get_arity());
         // A subrange of the stored row's iterators, which hold the row: it outlives `objects`.
-        return std::make_pair(action.index(), std::ranges::subrange(objects.begin(), objects.begin() + static_cast<std::ptrdiff_t>(action.get_arity())));
+        return std::ranges::subrange(objects.begin(), objects.begin() + static_cast<std::ptrdiff_t>(action.get_arity()));
     }
 };
 
@@ -63,6 +66,7 @@ public:
     { return static_cast<Cost>(0); }
 
     void clear() noexcept {}
+
     template<typename RuleKey>
     void set_cost(RuleKey, Cost) noexcept
     {
@@ -76,6 +80,7 @@ class RuleCostOverrideStorage
 
 public:
     RuleCostOverrideStorage() = default;
+
     explicit RuleCostOverrideStorage(CostMap costs) : m_costs(std::move(costs)) {}
 
     [[nodiscard]] Cost get_cost(RuleKey<Kind> rule_key) const
@@ -90,6 +95,7 @@ public:
     void set_cost(RuleKey<Kind> rule_key, Cost cost) { m_costs.insert_or_assign(rule_key, cost); }
 
     [[nodiscard]] const CostMap& get_costs() const noexcept { return m_costs; }
+
     CostMap& get_costs() noexcept { return m_costs; }
 
 private:
@@ -112,6 +118,7 @@ private:
 
 public:
     RuleCostOverridePolicy() = default;
+
     explicit RuleCostOverridePolicy(const RuleToActionMapping& predicate_rule_to_action) noexcept : m_predicate_rule_to_action(&predicate_rule_to_action) {}
 
     [[nodiscard]] Cost get_cost(RuleInstanceKey rule_key) const
@@ -142,6 +149,7 @@ private:
     }
 
     auto& storage() noexcept { return predicate_storage; }
+
     [[nodiscard]] const auto& storage() const noexcept { return predicate_storage; }
 
     [[nodiscard]] const auto* mapping() const noexcept { return m_predicate_rule_to_action; }

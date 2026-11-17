@@ -82,6 +82,7 @@ enum class Source : std::uint8_t
 
 /// The assignments a check reads, as bits: of one term from source s, and of two terms from sources s and t.
 constexpr std::uint16_t single(Source s) noexcept { return static_cast<std::uint16_t>(1U << static_cast<unsigned>(s)); }
+
 constexpr std::uint16_t pair(Source s, Source t) noexcept
 {
     const auto first = static_cast<unsigned>(s);
@@ -97,6 +98,7 @@ constexpr auto at_edge = static_cast<std::uint16_t>(pair(Source::p, Source::q) |
 constexpr auto at_edge_interval = static_cast<std::uint16_t>(at_vertex | at_edge | single(Source::q) | pair(Source::constant, Source::constant));
 
 inline std::uint16_t interval_assignments(const Vertex&) noexcept { return at_vertex; }
+
 inline std::uint16_t interval_assignments(const Edge&) noexcept { return at_edge_interval; }
 
 /// Where a term's object comes from at a vertex: its parameter (p) or a constant.
@@ -106,6 +108,7 @@ inline Source source_of(const Term& term, const Vertex& vertex) noexcept
         return Source::constant;
     return term.value == vertex.get_parameter_index().value ? Source::p : Source::unbound;
 }
+
 /// At an edge: the parameter of its first vertex (p), of its second (q), or a constant.
 inline Source source_of(const Term& term, const Edge& edge) noexcept
 {
@@ -118,6 +121,7 @@ inline Source source_of(const Term& term, const Edge& edge) noexcept
 
 inline urd::index<formalism::Object> object_of(const Term& term, Source from, const Vertex& vertex) noexcept
 { return from == Source::constant ? urd::index<formalism::Object>(term.value) : vertex.get_object_index(); }
+
 inline urd::index<formalism::Object> object_of(const Term& term, Source from, const Edge& edge) noexcept
 {
     if (from == Source::constant)

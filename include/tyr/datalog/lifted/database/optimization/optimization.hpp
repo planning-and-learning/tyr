@@ -96,6 +96,7 @@ private:
         size_t samples = 0;
         RelationStatistics statistics;
     };
+
     urd::Store<urd::map<Key, Total>> m_totals;
 };
 

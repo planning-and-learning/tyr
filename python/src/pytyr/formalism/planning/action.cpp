@@ -35,13 +35,11 @@ namespace tyr::formalism::planning
 void bind_action(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_data<Action<LiftedTag>>(m);
-    urd::python::bind_view<ActionView<LiftedTag>>(m).def("get_arity", &ActionView<LiftedTag>::get_arity);
+    urd::python::bind_view<ActionView<LiftedTag>>(m);
     ygg::bind_insert<Action<LiftedTag>>(repository);
 
     urd::python::bind_data<Action<GroundTag>>(m);
-    urd::python::bind_view<ActionView<GroundTag>>(m)
-        .def("get_action", &ActionView<GroundTag>::get_action)
-        .def("get_objects", &ActionView<GroundTag>::get_objects);
+    urd::python::bind_view<ActionView<GroundTag>>(m);
     ygg::bind_insert<Action<GroundTag>>(repository);
 }
 

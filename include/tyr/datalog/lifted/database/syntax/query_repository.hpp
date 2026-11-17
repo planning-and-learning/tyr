@@ -38,6 +38,7 @@ public:
     template<typename T>
     [[nodiscard]] urd::index_view<T, QueryRepository> view(urd::index<T> index) const noexcept
     { return { index, this }; }
+
     QueryRepository(const QueryRepository&) = delete;
     QueryRepository& operator=(const QueryRepository&) = delete;
     QueryRepository(QueryRepository&&) = delete;
@@ -45,9 +46,12 @@ public:
 
     /// The repository's number, as urd's views ask of a context.
     [[nodiscard]] std::size_t layer() const noexcept { return m_index; }
+
     friend const QueryRepository& get_repository(const QueryRepository& repository URD_LIFETIMEBOUND) noexcept { return repository; }
+
     /// Number of root queries. Root indices are topological.
     [[nodiscard]] size_t size() const { return Base::template size<Query<>>(); }
+
     using Base::size;
 };
 

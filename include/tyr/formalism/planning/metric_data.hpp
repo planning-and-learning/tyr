@@ -35,12 +35,14 @@ struct data<::tyr::formalism::planning::Metric>
     ::tyr::formalism::FunctionExpression<::tyr::GroundTag> fexpr;
 
     data() = default;
+
     data(::tyr::formalism::OptimizationDirection optimization_direction_, ::tyr::formalism::FunctionExpression<::tyr::GroundTag> fexpr_) :
         index(),
         optimization_direction(optimization_direction_),
         fexpr(std::move(fexpr_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -49,7 +51,9 @@ struct data<::tyr::formalism::planning::Metric>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"optimization_direction", &data::optimization_direction>, urd::field<"fexpr", &data::fexpr>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::optimization_direction, &data::fexpr> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::optimization_direction, &data::fexpr> {}; }
 };
 

@@ -72,6 +72,7 @@ struct State
 {
     static constexpr std::string_view name = "State";
 };
+
 /// The tag of a registered state as its repository stores it, packed: its record is urd::data<PackedState<Kind>>
 /// (state_data.hpp).
 template<TaskKind Kind>

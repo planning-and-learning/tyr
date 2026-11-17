@@ -41,36 +41,34 @@ public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }
+
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::row>(); }
+
     auto get_body() const noexcept { return self().template member<&urd::record_of<V>::body>(); }
+
     auto get_head() const noexcept { return self().template member<&urd::record_of<V>::head>(); }
-    auto get_arity() const noexcept
-        requires std::same_as<T, ::tyr::LiftedTag>
-    { return get_body().get_arity(); }
+
     /// Its rows' column types: one object per variable (a key of row pools, as the repository declares its pool).
     auto get_column_types() const
         requires std::same_as<T, ::tyr::LiftedTag>
     {
-        return std::views::iota(std::size_t { 0 }, std::size_t(get_arity()))
+        return std::views::iota(std::size_t { 0 }, std::size_t(get_body().get_arity()))
                | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; });
     }
 
     auto get_axiom() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return get_row().get_relation(); }
-    /// Its objects: its row's columns read as objects (checked against its pool's types), resolved through the row's
-    /// context.
-    auto get_objects() const
-        requires std::same_as<T, ::tyr::GroundTag>
+
+    static constexpr auto functions() noexcept
     {
-        const auto row = get_row();
-        return urd::resolve(row.template get<urd::index<::tyr::formalism::Object>>(), row.context());
+        if constexpr (std::same_as<T, ::tyr::GroundTag>)
+            return urd::Functions<urd::function<"get_axiom", &view_mixin::get_axiom>> {};
+        else
+            return urd::Functions<urd::function<"get_column_types", &view_mixin::get_column_types>> {};
     }
-    auto get_key() const noexcept
-        requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_key(); }
 };
 }  // namespace urd
 

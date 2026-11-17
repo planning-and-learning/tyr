@@ -51,6 +51,7 @@ private:
     friend Derived;
 
     [[nodiscard]] constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
+
     constexpr auto& self() { return static_cast<Derived&>(*this); }
 
     [[nodiscard]] bool verbosity(size_t level) const { return m_verbosity >= level; }
@@ -107,17 +108,21 @@ private:
     friend class EventHandlerBase<DefaultEventHandler<Kind>, Kind>;
 
     void on_start_search_impl() const {}
+
     void on_start_subsearch_impl(ygg::uint_t subsearch_index) const { static_cast<void>(subsearch_index); }
+
     void on_end_subsearch_impl(ygg::uint_t subsearch_index, SearchStatus status) const
     {
         static_cast<void>(subsearch_index);
         static_cast<void>(status);
     }
+
     void on_end_search_impl(SearchStatus status, const tyr::planning::Statistics& statistics) const
     {
         static_cast<void>(status);
         static_cast<void>(statistics);
     }
+
     void on_solved_impl(const Plan<Kind>& plan) const { static_cast<void>(plan); }
 
 public:

@@ -31,11 +31,17 @@ public:
                  urd::index<ygg::Column> distance_column);
 
     [[nodiscard]] std::span<const ygg::ColumnLayout> source_columns() const noexcept { return { m_sources.data(), m_sources.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> edge_columns() const noexcept { return { m_edges.data(), m_edges.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> target_columns() const noexcept { return { m_targets.data(), m_targets.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+
     [[nodiscard]] size_t tuple_size() const noexcept { return m_sources.size(); }
+
     [[nodiscard]] size_t arity() const noexcept { return m_sources.size(); }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&DistancePlan::m_sources, &DistancePlan::m_edges, &DistancePlan::m_targets, &DistancePlan::m_output> {}; }
 };

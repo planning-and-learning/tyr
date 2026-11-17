@@ -41,6 +41,7 @@ struct Vertex
     ygg::uint_t index;
 
     constexpr Vertex() noexcept : index(std::numeric_limits<ygg::uint_t>::max()) {}
+
     constexpr explicit Vertex(ygg::uint_t index_) noexcept : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&Vertex::index> {}; }
@@ -71,19 +72,30 @@ public:
     static Graph create(bool satisfiable, const CompatibilityMatrix& matrix, std::span<const ygg::uint_t> labels, const PartPairs& universal);
 
     [[nodiscard]] bool is_satisfiable() const noexcept { return m_satisfiable; }
+
     [[nodiscard]] size_t num_vertices() const { return m_rows.num_vertices(); }
+
     [[nodiscard]] size_t num_parts() const { return m_rows.num_parts(); }
+
     [[nodiscard]] ygg::uint_t part_of(Vertex v) const { return static_cast<ygg::uint_t>(m_rows.part_of(v)); }
+
     [[nodiscard]] auto part(size_t p) const { return m_rows.part(p); }
+
     [[nodiscard]] ygg::uint_t label(Vertex v) const { return m_labels[v.index]; }
+
     /// The vertex with `label` in part p, if any.
     [[nodiscard]] std::optional<Vertex> find_vertex(size_t p, ygg::uint_t label) const;
+
     [[nodiscard]] bool adjacent(Vertex u, Vertex v) const { return m_rows.adjacent(u, v); }
+
     [[nodiscard]] const StaticRows& rows() const noexcept { return m_rows; }
+
     /// The vertices of part p.
     [[nodiscard]] const VertexSet& all(size_t p) const { return m_all[p]; }
+
     /// An empty vertex set per part, over the part's window.
     [[nodiscard]] VertexSets empty_parts() const;
+
     /// The first vertex of each part, and one past the last vertex.
     [[nodiscard]] std::span<const size_t> bounds() const noexcept { return m_bounds; }
 
@@ -108,12 +120,14 @@ struct Workspace
     urd::Store<urd::sequence<size_t>> bounds;  ///< the part bounds of the graph the sets are shaped for (Graph::bounds)
 
     Workspace() = default;
+
     explicit Workspace(const Graph& graph) { prepare(graph); }
 
     /// Shapes the sets after the parts of `graph`, unless they already are.
     void prepare(const Graph& graph);
 
     [[nodiscard]] VertexSet& candidates_at(size_t depth, size_t part) noexcept { return candidates[depth * partial_solution.size() + part]; }
+
     [[nodiscard]] const VertexSet& candidates_at(size_t depth, size_t part) const noexcept { return candidates[depth * partial_solution.size() + part]; }
 };
 
@@ -155,6 +169,7 @@ class KCKP
 {
 public:
     explicit KCKP(const Graph& graph) : m_graph(&graph) {}
+
     KCKP(Graph&&) = delete;
 
     template<typename Callback>

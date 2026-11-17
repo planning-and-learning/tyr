@@ -72,14 +72,17 @@ private:
 
 public:
     builder() = default;
+
     /// A copy of a builder: its index and its storages (its record is not copied: records are move-only).
     builder(const builder& other) : base() { copy_from(other); }
+
     builder& operator=(const builder& other)
     {
         if (this != &other)
             copy_from(other);
         return *this;
     }
+
     builder(builder&& other) noexcept = default;
     builder& operator=(builder&& other) noexcept = default;
     ~builder() = default;
@@ -87,23 +90,32 @@ public:
     /// What it holds, as a state's view reads it (the builder is the mutable record: it reads its own storages).
     [[nodiscard]] ::tyr::formalism::planning::FDRValue get(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable) const
     { return this->fact_storage.get(variable); }
+
     [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
     { return this->numeric_storage.get(fterm); }
+
     [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const
     { return this->atom_storage.test(atom); }
+
     [[nodiscard]] auto get_fluent_facts() const noexcept { return this->fact_storage.facts(); }
 
     void set(urd::index<::tyr::planning::State<Kind>> state) { this->index = state; }
+
     void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact) { this->fact_storage.set(fact); }
+
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
     { this->numeric_storage.set(fterm, value); }
+
     void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { this->atom_storage.set(atom); }
+
     /// A fact's view (borrowed or computed): its fact set.
     template<typename V>
         requires std::same_as<typename V::value_type, ::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>
     void set(const V& fact)
     { set(urd::make<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>(fact.get_variable(), fact.get_value())); }
+
     void set(::tyr::formalism::planning::FunctionTermView<::tyr::GroundTag, ::tyr::formalism::FluentTag> view, ygg::float_t value) { set(view.index(), value); }
+
     void set(::tyr::formalism::planning::AtomView<::tyr::GroundTag, ::tyr::formalism::DerivedTag> view) { set(view.index()); }
 
     void clear()
@@ -112,12 +124,15 @@ public:
         clear_unextended_part();
         clear_extended_part();
     }
+
     void clear_unextended_part()
     {
         this->fact_storage.clear();
         this->numeric_storage.clear();
     }
+
     void clear_extended_part() { this->atom_storage.clear(); }
+
     /// Takes a state's facts and numeric values (a view of it: registered, or another builder's).
     template<typename V>
     void assign_unextended_part(const V& state)
@@ -125,26 +140,31 @@ public:
         this->fact_storage = state.get_fact_storage();
         this->numeric_storage = state.get_numeric_storage();
     }
+
     /// Takes another builder's facts and numeric values.
     void assign_unextended_part(const builder& other)
     {
         this->fact_storage = other.fact_storage;
         this->numeric_storage = other.numeric_storage;
     }
+
     /// Takes a registered state whole: its storages and its index.
     void assign(const ::tyr::planning::StateView<Kind>& state)
     {
         assign_storages(state);
         this->index = state.index();
     }
+
     /// Takes a state being built whole: its storages (it has no index).
     void assign(const ::tyr::planning::BuilderStateView<Kind>& state)
     {
         assign_storages(state);
         this->index = {};
     }
+
     /// Takes another builder whole.
     void assign(const builder& other) { copy_from(other); }
+
     void swap(builder& other) noexcept
     {
         using std::swap;
@@ -164,6 +184,7 @@ private:
         assign_unextended_part(state);
         this->atom_storage = state.get_atom_storage();
     }
+
     void copy_from(const builder& other)
     {
         this->index = other.index;

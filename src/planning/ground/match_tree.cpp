@@ -164,7 +164,9 @@ struct AtomStackEntry
     { result->atom = atom; }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+
     [[nodiscard]] bool explored_false_child() const noexcept { return (false_elements.empty() || result->false_child.has_value()); }
+
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
@@ -198,6 +200,7 @@ struct VariableStackEntry
     }
 
     [[nodiscard]] bool explored_children() const noexcept { return forward_pos == forward.size(); }
+
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
@@ -223,6 +226,7 @@ struct NegativeFactStackEntry
     { result->fact = fact; }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
@@ -248,6 +252,7 @@ struct ConstraintStackEntry
     { result->constraint = std::move(constraint); }
 
     [[nodiscard]] bool explored_true_child() const noexcept { return (true_elements.empty() || result->true_child.has_value()); }
+
     [[nodiscard]] bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result->dontcare_child.has_value()); }
 };
 
@@ -631,6 +636,7 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 }
 
 }  // namespace match_tree_details
+
 // NOLINTEND(misc-use-internal-linkage)
 
 template<typename Tag>

@@ -40,7 +40,9 @@ struct data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
     urd::flat_vector<urd::index<Tag>> elements;
 
     data() = default;
+
     data(urd::flat_vector<urd::index<Tag>> elements_) : index(), elements(std::move(elements_)) {}
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -48,7 +50,9 @@ struct data<::tyr::planning::match_tree::ElementGeneratorNode<Tag>>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"elements", &data::elements>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::elements> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::elements> {}; }
 };
 }

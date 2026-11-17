@@ -35,7 +35,7 @@ namespace tyr::formalism::planning
 void bind_conjunctive_condition(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_data<ConjunctiveCondition<LiftedTag>>(m);
-    urd::python::bind_view<ConjunctiveConditionView<LiftedTag>>(m).def("get_arity", &ConjunctiveConditionView<LiftedTag>::get_arity);
+    urd::python::bind_view<ConjunctiveConditionView<LiftedTag>>(m);
     ygg::bind_insert<ConjunctiveCondition<LiftedTag>>(repository);
 
     urd::python::bind_data<ConjunctiveCondition<GroundTag>>(m);

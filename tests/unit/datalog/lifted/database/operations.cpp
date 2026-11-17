@@ -67,9 +67,11 @@ Layouts columns_of(std::span<const ColumnIndex> labels)
         columns.push_back({ label, ygg::type_id<T> });
     return columns;
 }
+
 template<ygg::ColumnValueType T = ygg::uint_t>
 Layouts columns_of(std::initializer_list<ColumnIndex> labels)
 { return columns_of<T>(std::span<const ColumnIndex>(labels)); }
+
 /// uint_t columns labeled `labels`.
 Layouts cols(std::initializer_list<ColumnIndex> labels) { return columns_of(labels); }
 
@@ -83,6 +85,7 @@ urd::builder<ygg::Relation<ygg::Schema>> projected(const V& input, std::initiali
     database::project(input, plan, out, workspace);
     return out;
 }
+
 template<typename L, typename R>
 urd::builder<ygg::Relation<ygg::Schema>> joined(const L& left_operand, const R& right_operand)
 {
@@ -92,6 +95,7 @@ urd::builder<ygg::Relation<ygg::Schema>> joined(const L& left_operand, const R& 
     database::join(left_operand, right_operand, plan, out, workspace);
     return out;
 }
+
 template<typename L, typename R>
 urd::builder<ygg::Relation<ygg::Schema>> unioned(const L& left_operand, const R& right_operand)
 {
@@ -100,6 +104,7 @@ urd::builder<ygg::Relation<ygg::Schema>> unioned(const L& left_operand, const R&
     database::union_(left_operand, right_operand, plan, out);
     return out;
 }
+
 template<typename L, typename R>
 urd::builder<ygg::Relation<ygg::Schema>> subtracted(const L& left_operand, const R& right_operand)
 {
@@ -108,6 +113,7 @@ urd::builder<ygg::Relation<ygg::Schema>> subtracted(const L& left_operand, const
     database::difference(left_operand, right_operand, plan, out);
     return out;
 }
+
 template<typename V, typename Predicate>
 urd::builder<ygg::Relation<ygg::Schema>> selected(const V& input, Predicate predicate)
 {

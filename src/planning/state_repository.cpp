@@ -179,8 +179,8 @@ struct StateRepository<Kind>::Impl
             if (delta)
             {
                 auto expected = StateDelta {};
-                compute_state_delta(StateContext<Kind> { parent_state->get_task(), *parent_state, ygg::float_t { 0 } },
-                                    StateContext<Kind> { parent_state->get_task(), state, ygg::float_t { 0 } },
+                compute_state_delta(StateContext<Kind> { *parent_state->context().get_task(), *parent_state, ygg::float_t { 0 } },
+                                    StateContext<Kind> { *parent_state->context().get_task(), state, ygg::float_t { 0 } },
                                     expected);
                 assert(expected == *delta && "register_state: delta does not match the changes from the parent.");
             }
@@ -387,7 +387,7 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
     // A delta insert reuses the parent's unchanged subtrees by their node indices, so the parent's trees must live in
     // this storage. A parent from separate storage would need its subtrees inserted here first, which is a full insert.
-    const auto shares_storage = parent.get_state_repository().shares_storage_with(*this);
+    const auto shares_storage = parent.context().shares_storage_with(*this);
     const auto* parent_state = shares_storage ? &parent : nullptr;
     const auto* parent_delta = shares_storage ? &delta : nullptr;
     m_impl->visit_evaluator([&](auto& evaluator)
@@ -405,7 +405,7 @@ StateView<Kind> StateRepository<Kind>::register_extended_state(std::shared_ptr<u
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::register_extended_state(const BuilderStateView<Kind>& source)
 {
-    if (&source.get_task() != get_task().get())
+    if (source.context().get_task().get() != get_task().get())
         throw std::invalid_argument("StateRepository::register_extended_state(...): source state belongs to a different task.");
     auto state = get_state_builder();
     state->assign(source);

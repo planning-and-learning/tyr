@@ -46,7 +46,9 @@ void validate_bindings(const QueryPlan& plan, const R& bindings, IsInternal is_i
 struct QueryDistanceWorkspace
 {
     DistanceWorkspace workspace;
+
     explicit QueryDistanceWorkspace(const DistancePlan& plan) : workspace(plan) {}
+
     [[nodiscard]] size_t memory_usage() const noexcept { return workspace.memory_usage(); }
 };
 
@@ -88,10 +90,12 @@ class QueryEvaluator
     using NodeId = urd::index<Query<>>;
     using DistanceState = detail::QueryDistanceWorkspace;
     using State = std::variant<std::monostate, GenericJoinWorkspace, DistanceState>;
+
     struct Node
     {
         urd::builder<ygg::Relation<ygg::Schema>> result;
         State state;
+
         explicit Node(QueryView<> query) :
             result(columns_of(query)),
             state(std::visit(
@@ -108,6 +112,7 @@ class QueryEvaluator
         {
         }
     };
+
     const ygg::FreeRelationRepository* m_layer;
     QueryPlan m_plan;
     urd::Store<urd::sequence<Node, NodeId>> m_nodes;
@@ -121,6 +126,7 @@ public:
         for (size_t i = 0; i < m_plan.node_count(); ++i)
             m_nodes.emplace_back(m_plan[NodeId(ygg::to_uint_t(i))]);
     }
+
     template<RelationViewRange R>
     void evaluate(const R& bindings)
     {
@@ -169,6 +175,7 @@ public:
         }
         m_ready = true;
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t root = 0) const&
     {
         if (!m_ready)
@@ -177,6 +184,7 @@ public:
             throw std::out_of_range("Query: invalid root.");
         return m_layer->view(m_nodes.at(m_plan.roots()[root]).result);
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView get_result(size_t = 0) const&& = delete;
     /// Retained runtime storage; excludes the immutable query plan.
     [[nodiscard]] size_t memory_usage() const noexcept;

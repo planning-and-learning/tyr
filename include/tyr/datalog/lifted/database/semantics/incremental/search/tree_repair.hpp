@@ -29,14 +29,19 @@ public:
 
     void add(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
     { m_edges.emplace_back(m_vertices.insert(from).first, m_vertices.insert(to).first); }
+
     void clear() noexcept
     {
         m_vertices.clear();
         m_edges.clear();
     }
+
     [[nodiscard]] bool empty() const noexcept { return m_edges.empty(); }
+
     [[nodiscard]] size_t size() const noexcept { return m_edges.size(); }
+
     [[nodiscard]] std::span<const ygg::Value> from(size_t i) const { return m_vertices.at(m_edges[i].first); }
+
     [[nodiscard]] std::span<const ygg::Value> to(size_t i) const { return m_vertices.at(m_edges[i].second); }
 
 private:
@@ -88,6 +93,7 @@ private:
 
     static bool lowers(const SearchTree& tree, VertexSet::handle_type from, ygg::uint_t to_value) noexcept
     { return to_value != infinity && tree.learned(from) > to_value + 1; }
+
     void lower(SearchTree& tree, VertexSet::handle_type from, VertexSet::handle_type to)
     {
         tree.lower(from, tree.learned(to) + 1);

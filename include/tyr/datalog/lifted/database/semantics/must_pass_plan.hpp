@@ -35,6 +35,7 @@ class MustPassPlan
 
 public:
     MustPassPlan() = default;
+
     MustPassPlan(std::span<const ygg::ColumnLayout> sources,
                  std::span<const ygg::ColumnLayout> edges,
                  std::span<const ygg::ColumnLayout> targets,
@@ -66,17 +67,27 @@ public:
     }
 
     [[nodiscard]] std::span<const ygg::ColumnLayout> source_columns() const noexcept { return { m_sources.data(), m_sources.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> edge_columns() const noexcept { return { m_edges.data(), m_edges.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> target_columns() const noexcept { return { m_targets.data(), m_targets.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> probe_columns() const noexcept { return { m_probes.data(), m_probes.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+
     [[nodiscard]] size_t keys() const noexcept { return m_keys; }
+
     /// k, the columns of a vertex.
     [[nodiscard]] size_t arity() const noexcept { return m_sources.size() - m_keys; }
+
     /// The values of a key, which precede a vertex in every row.
     [[nodiscard]] size_t key_size() const noexcept { return m_keys; }
+
     [[nodiscard]] size_t vertex_size() const noexcept { return arity(); }
+
     [[nodiscard]] size_t probe_size() const noexcept { return m_probes.size(); }
+
     /// The positions, within a vertex, of its columns of the probes' type.
     [[nodiscard]] urd::Store<urd::sequence<size_t>> probe_positions() const
     {

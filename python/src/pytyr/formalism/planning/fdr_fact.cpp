@@ -37,7 +37,7 @@ namespace
 /// A fact's view: borrowed (a stored fact) or owning (a state's, computed on the fly).
 template<typename V>
 void bind_fdr_fact_view(nb::module_& m)
-{ urd::python::bind_view<V>(m).def("has_value", &V::has_value).def("get_atom", &V::get_atom); }
+{ urd::python::bind_view<V>(m); }
 }  // namespace
 
 void bind_fdr_fact(nb::module_& m, RepositoryBinding& /*repository*/)

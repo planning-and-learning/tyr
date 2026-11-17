@@ -56,8 +56,11 @@ public:
     }
 
     [[nodiscard]] StateRepository<Kind>& state_repository() const noexcept { return *m_state_repository; }
+
     [[nodiscard]] AxiomEvaluator<Kind>& axiom_evaluator() const noexcept { return *m_axiom_evaluator; }
+
     [[nodiscard]] SuccessorGenerator<Kind>& successor_generator() const noexcept { return *m_successor_generator; }
+
     [[nodiscard]] const urd::Store<urd::sequence<SearchNode>, urd::stable_refs>& search_nodes() const noexcept { return *m_search_nodes; }
 
     [[nodiscard]] const SearchNode& get_search_node(urd::index<State<Kind>> state) const

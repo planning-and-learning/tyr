@@ -37,11 +37,13 @@ struct DistanceWork
     size_t heap_erases = 0;
     size_t heap_pops = 0;
 };
+
 inline DistanceWork& distance_work() noexcept
 {
     thread_local DistanceWork work;
     return work;
 }
+
 void count_distance_work(size_t DistanceWork::* member) noexcept;
 
 /// Shared across source trees: every heap is empty between completed repairs.
@@ -68,8 +70,10 @@ class DistanceRepairWorkspace
 public:
     /// No vertex is scheduled and no edge candidate is pending: a repair is complete.
     [[nodiscard]] bool empty() const noexcept { return m_global.empty() && m_edges.empty(); }
+
     /// Whether any vertex is scheduled for settling.
     [[nodiscard]] bool scheduled() const noexcept { return !m_global.empty(); }
+
     /// Whether the vertex has no pending candidate distances.
     [[nodiscard]] bool settled(VertexSet::handle_type vertex) const { return m_local.at(vertex).empty(); }
 
@@ -113,6 +117,7 @@ public:
                             &DistanceRepairWorkspace::m_vertices,
                             &DistanceRepairWorkspace::m_edges> {};
     }
+
     [[nodiscard]] size_t memory_usage() const noexcept { return sizeof(*this) + urd::memory_usage(*this); }
 };
 }  // namespace tyr::datalog::database::incremental::detail

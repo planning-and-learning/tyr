@@ -41,14 +41,18 @@ struct DistanceGraph
 
     explicit DistanceGraph(size_t tuple_size);
     VertexSet::handle_type insert_vertex(std::span<const ygg::Value> tuple);
+
     VertexSet::handle_type insert_vertex(const ygg::RowPool::row_type& row) { return insert_vertex(vertex_values(row, scratch)); }
+
     /// The stored vertex of a row, or none.
     [[nodiscard]] VertexSet::handle_type find_vertex(const ygg::RowPool::row_type& row) { return vertices.find(vertex_values(row, scratch)); }
+
     /// Inserts both endpoint tuples of an edge row; returns their handles.
     std::pair<VertexSet::handle_type, VertexSet::handle_type> insert_endpoints(const ygg::RowPool::row_type& edge);
     [[nodiscard]] bool contains_edge(VertexSet::handle_type from, VertexSet::handle_type to) const;
     void clear();
     [[nodiscard]] size_t memory_usage() const noexcept;
+
     /// The members it owns memory through (urd::memory_of).
     static constexpr auto memory_members() noexcept { return urd::Members<&DistanceGraph::vertices, &DistanceGraph::outgoing, &DistanceGraph::scratch> {}; }
 };
@@ -73,6 +77,7 @@ public:
     template<RelationViewConcept S, RelationViewConcept E, RelationViewConcept T>
     void append_distances(const S& sources, const E& edges, const T& targets, const DistancePlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out);
     [[nodiscard]] size_t memory_usage() const noexcept;
+
     /// The members it owns memory through (urd::memory_of).
     static constexpr auto memory_members() noexcept
     {

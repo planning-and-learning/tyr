@@ -53,7 +53,7 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     view.template get_fterm_values_view<tyr::formalism::StaticTag>();
     view.template get_fterm_values_view<tyr::formalism::FluentTag>();
     view.get_formalism_repository();
-    view.get_state_repository();
+    view.context();
     view.get_fact_storage();
 });
 

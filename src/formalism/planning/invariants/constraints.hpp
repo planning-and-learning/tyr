@@ -38,6 +38,7 @@ struct InvariantParameter : urd::compared_by_identity<InvariantParameter>
     size_t index;
 
     InvariantParameter() = default;
+
     explicit InvariantParameter(size_t index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&InvariantParameter::index> {}; }
@@ -48,6 +49,7 @@ struct VariableTerm : urd::compared_by_identity<VariableTerm>
     ParameterIndex index;
 
     VariableTerm() = default;
+
     explicit VariableTerm(ParameterIndex index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&VariableTerm::index> {}; }
@@ -58,6 +60,7 @@ struct ObjectTerm : urd::compared_by_identity<ObjectTerm>
     urd::index<Object> index;
 
     ObjectTerm() = default;
+
     explicit ObjectTerm(urd::index<Object> index_) : index(index_) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&ObjectTerm::index> {}; }
@@ -78,6 +81,7 @@ public:
     explicit EqualityConjunction(urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> equalities_);
 
     const urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>>& get_equalities() const noexcept { return m_equalities; }
+
     bool is_consistent() const;
     const urd::Store<urd::map<ConstraintTerm, ConstraintTerm>, urd::sorted>& get_representative() const;
 

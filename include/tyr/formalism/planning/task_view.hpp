@@ -45,41 +45,62 @@ private:
 
 public:
     decltype(auto) get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
+
     auto get_domain() const noexcept { return self().template member<&urd::record_of<V>::domain>(); }
+
     auto get_derived_predicates() const noexcept { return self().template member<&urd::record_of<V>::derived_predicates>(); }
+
     auto get_objects() const noexcept { return self().template member<&urd::record_of<V>::objects>(); }
+
     auto get_static_atoms() const noexcept { return self().template member<&urd::record_of<V>::static_atoms>(); }
+
     auto get_fluent_atoms() const noexcept { return self().template member<&urd::record_of<V>::fluent_atoms>(); }
+
     auto get_derived_atoms() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::derived_atoms>(); }
+
     auto get_static_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::static_fterm_values>(); }
+
     auto get_fluent_fterm_values() const noexcept { return self().template member<&urd::record_of<V>::fluent_fterm_values>(); }
+
     auto get_auxiliary_fterm_value() const noexcept { return self().template member<&urd::record_of<V>::auxiliary_fterm_value>(); }
+
     auto get_goal() const noexcept { return self().template member<&urd::record_of<V>::goal>(); }
+
     auto get_metric() const noexcept { return self().template member<&urd::record_of<V>::metric>(); }
+
     auto get_axioms() const noexcept { return self().template member<&urd::record_of<V>::axioms>(); }
+
     auto get_fluent_variables() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::fluent_variables>(); }
+
     auto get_fluent_facts() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::fluent_facts>(); }
+
     auto get_ground_actions() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::ground_actions>(); }
+
     auto get_ground_axioms() const noexcept
         requires std::same_as<Kind, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::ground_axioms>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
     auto get_atoms() const noexcept
     { return self().template member<::tyr::formalism::planning::atoms_of<T, Kind>>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind T>
     auto get_fterm_values() const noexcept
     { return self().template member<::tyr::formalism::planning::fterm_values_of<T, Kind>>(); }
+
     [[nodiscard]] size_t get_num_objects() const noexcept { return get_domain().get_constants().size() + get_objects().size(); }
+
+    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_num_objects", &view_mixin::get_num_objects>> {}; }
 };
 }  // namespace urd
 

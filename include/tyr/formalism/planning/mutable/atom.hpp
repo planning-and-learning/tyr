@@ -33,6 +33,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::formalism::planning
 {
@@ -43,20 +44,24 @@ struct MutableAtom : urd::compared_by_identity<MutableAtom<T>>
     urd::Store<urd::sequence<Term>> terms;
 
     MutableAtom() = default;
+
     MutableAtom(PredicateView<T> predicate_, urd::Store<urd::sequence<Term>> terms_) : predicate(predicate_), terms(std::move(terms_)) {}
+
     MutableAtom(PredicateView<T> predicate_, const TermViewList& terms_) : predicate(predicate_), terms()
     {
         for (const auto& term : terms_)
             urd::append(terms, term);
     }
+
     MutableAtom(AtomView<LiftedTag, T> element_) : predicate(element_.get_predicate()), terms()
     {
         for (const auto& term : element_.get_terms())
             urd::append(terms, term);
     }
+
     MutableAtom(AtomView<GroundTag, T> element) : predicate(element.get_predicate()), terms()
     {
-        for (const auto& object : element.get_objects())
+        for (const auto& object : element.get_row().get_objects())
             terms.push_back(Term(object.index()));
     }
 

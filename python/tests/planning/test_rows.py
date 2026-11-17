@@ -727,7 +727,7 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
     assert result.status == planning.SearchStatus.SOLVED
     assert result.plan is not None
     assert result.goal_node is not None
-    assert result.goal_node.get_state().get_state_repository() == state_repository
+    assert result.goal_node.get_state().context() == state_repository
     assert result.statistics.get_num_expanded() > 0
     assert result.statistics.get_num_destination_lock_acquisitions() > 0
     assert event_handler.end_status == result.status
@@ -747,7 +747,7 @@ def _check_parallel_search_ground(task: planning.ground.Task) -> None:
     )
     assert brfs_result.status == planning.SearchStatus.SOLVED
     assert brfs_result.goal_node is not None
-    assert brfs_result.goal_node.get_state().get_state_repository() == state_repository
+    assert brfs_result.goal_node.get_state().context() == state_repository
     _assert_worker_statistics(brfs_result, 2)
 
     astar_options = planning.algorithms.astar_eager.ground.Options()
@@ -810,7 +810,7 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
     assert result.status == planning.SearchStatus.SOLVED
     assert result.plan is not None
     assert result.goal_node is not None
-    assert result.goal_node.get_state().get_state_repository() == state_repository
+    assert result.goal_node.get_state().context() == state_repository
     assert result.statistics.get_num_expanded() > 0
     assert result.statistics.get_num_destination_lock_acquisitions() > 0
     assert event_handler.end_status == result.status
@@ -830,7 +830,7 @@ def _check_parallel_search_lifted(task: planning.lifted.Task) -> None:
     )
     assert brfs_result.status == planning.SearchStatus.SOLVED
     assert brfs_result.goal_node is not None
-    assert brfs_result.goal_node.get_state().get_state_repository() == state_repository
+    assert brfs_result.goal_node.get_state().context() == state_repository
     _assert_worker_statistics(brfs_result, 2)
 
     astar_options = planning.algorithms.astar_eager.lifted.Options()
@@ -1368,7 +1368,7 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
 
     assert type(packed) is planning.ground.PackedStateGround
     assert packed.index().value == state_index.value
-    assert packed.get_state_repository() == state_repository
+    assert packed.context() == state_repository
     assert packed.unpack() == state
     assert packed == state.pack()
     assert hash(packed) == hash(state.pack())
@@ -1396,7 +1396,7 @@ def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
 
     assert type(packed) is planning.lifted.PackedStateLifted
     assert packed.index().value == state_index.value
-    assert packed.get_state_repository() == state_repository
+    assert packed.context() == state_repository
     assert packed.unpack() == state
     assert packed == state.pack()
     assert hash(packed) == hash(state.pack())
@@ -1752,7 +1752,7 @@ def _check_action_binding_api_ground(task: planning.ground.Task) -> None:
 
     assert type(binding) is formalism_planning.RowActionLifted
     assert successor_generator.ground_action(binding) == ground_action
-    assert ground_action.get_action().get_arity() == len(list(ground_action.get_objects()))
+    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().get_objects()))
     assert binding_successor == ground_action_successor
     packed_binding_successor = successor_generator.get_packed_successor_node(
         start_node, binding, state_repository, axiom_evaluator
@@ -1789,7 +1789,7 @@ def _check_action_binding_api_lifted(task: planning.lifted.Task) -> None:
 
     assert type(binding) is formalism_planning.RowActionLifted
     assert successor_generator.ground_action(binding) == ground_action
-    assert ground_action.get_action().get_arity() == len(list(ground_action.get_objects()))
+    assert ground_action.get_action().get_arity() == len(list(ground_action.get_row().get_objects()))
     assert binding_successor == ground_action_successor
     packed_binding_successor = successor_generator.get_packed_successor_node(
         start_node, binding, state_repository, axiom_evaluator

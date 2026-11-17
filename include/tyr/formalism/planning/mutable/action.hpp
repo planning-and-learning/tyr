@@ -41,12 +41,14 @@ struct MutableAction : urd::compared_by_identity<MutableAction>
     MutableConditionalEffectList effects;
 
     MutableAction() = default;
+
     MutableAction(size_t num_variables_, MutableConjunctiveCondition condition_, MutableConditionalEffectList effects_) :
         num_variables(num_variables_),
         condition(std::move(condition_)),
         effects(std::move(effects_))
     {
     }
+
     MutableAction(ActionView<LiftedTag> element) : num_variables(element.get_arity()), condition(num_variables, element.get_condition()), effects()
     {
         for (const auto& effect : element.get_effects())

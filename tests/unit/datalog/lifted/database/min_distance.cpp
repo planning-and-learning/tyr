@@ -277,7 +277,9 @@ struct ListGraph
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::uint_t>>>> in;
 
     static ygg::uint_t id(std::span<const ygg::Value> vertex) { return ygg::decode_value<ygg::uint_t>(vertex[0]); }
+
     static Bytes bytes(ygg::uint_t value) { return Bytes { ygg::encode_value(value) }; }
+
     template<typename OnVertex>
     static void each(const urd::Store<urd::sequence<ygg::uint_t>>& vertices, const OnVertex& on_vertex)
     {
@@ -285,12 +287,15 @@ struct ListGraph
             if (const auto encoded = bytes(w); !on_vertex(std::span<const ygg::Value>(encoded)))
                 return;
     }
+
     template<typename OnVertex>
     void successors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
     { each(out[id(vertex)], on_vertex); }
+
     template<typename OnVertex>
     void predecessors(std::span<const ygg::Value> vertex, const OnVertex& on_vertex)
     { each(in[id(vertex)], on_vertex); }
+
     bool edge_exists(std::span<const ygg::Value> from, std::span<const ygg::Value> to)
     { return std::ranges::find(out[id(from)], id(to)) != out[id(from)].end(); }
 };
@@ -300,6 +305,7 @@ struct ListVertices
     urd::Store<urd::sequence<ListGraph::Bytes>> rows;
 
     [[nodiscard]] size_t size() const noexcept { return rows.size(); }
+
     [[nodiscard]] std::span<const ygg::Value> row(size_t i) const { return rows[i]; }
 };
 

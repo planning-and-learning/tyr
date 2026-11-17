@@ -35,7 +35,9 @@ struct data<::tyr::formalism::Object>
     urd::flat_string name;
 
     data() = default;
+
     data(urd::flat_string name_) : index(), name(std::move(name_)) {}
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;
@@ -43,7 +45,9 @@ struct data<::tyr::formalism::Object>
     ~data() = default;
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"name", &data::name>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::name> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::name> {}; }
 };
 

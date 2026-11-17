@@ -22,6 +22,7 @@
 namespace tyr::tests
 {
 TEST(TyrPlanningGroundFFRPGHeuristicTest, RelaxedPlanDescribesLatestEvaluation) { expect_relaxed_plan_reset_after_dead_end<GroundTag>(); }
+
 TEST(TyrPlanningGroundFFRPGHeuristicTest, WorkerRelaxedPlanIsIndependent) { expect_worker_has_independent_relaxed_plan<GroundTag>(); }
 }
 
@@ -50,6 +51,7 @@ INSTANTIATE_TEST_SUITE_P(TyrPlanningGroundHeuristicFixture,
 namespace tyr::tests
 {
 TEST(TyrPlanningLiftedFFRPGHeuristicTest, RelaxedPlanDescribesLatestEvaluation) { expect_relaxed_plan_reset_after_dead_end<LiftedTag>(); }
+
 TEST(TyrPlanningLiftedFFRPGHeuristicTest, WorkerRelaxedPlanIsIndependent) { expect_worker_has_independent_relaxed_plan<LiftedTag>(); }
 }
 

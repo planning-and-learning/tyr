@@ -26,9 +26,11 @@
 #include <tyr/formalism/datalog/declarations.hpp>
 #include <tyr/formalism/datalog/formatter.hpp>
 #include <tyr/formalism/datalog/interning.hpp>
+#include <tyr/formalism/datalog/rule_view.hpp>
 #include <tyr/formalism/declarations.hpp>
 #include <urd/python/bindings.hpp>
 #include <yggdrasil/formalism/declarations.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/python/bindings.hpp>
 
 namespace tyr::formalism::datalog

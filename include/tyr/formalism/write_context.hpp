@@ -34,6 +34,7 @@ class WriteContext
 {
 public:
     WriteContext(B& builder, R& destination) noexcept : m_builder(&builder), m_destination(&destination) {}
+
     WriteContext(B& builder, R& destination, urd::flat_vector<urd::index<Object>>& binding) noexcept :
         m_builder(&builder),
         m_destination(&destination),
@@ -42,7 +43,9 @@ public:
     }
 
     [[nodiscard]] B& builder() const noexcept { return *m_builder; }
+
     [[nodiscard]] R& destination() const noexcept { return *m_destination; }
+
     [[nodiscard]] urd::flat_vector<urd::index<Object>>& binding() const noexcept
     {
         assert(m_binding && "WriteContext: grounding needs a binding.");

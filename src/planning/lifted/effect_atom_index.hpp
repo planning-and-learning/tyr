@@ -117,6 +117,7 @@ private:
     /// The atoms of one effect predicate, grouped by the applicability row of their action binding, refilled in the
     /// storage held: clear keeps each row's.
     using Atoms = urd::Store<urd::map<ygg::uint_t, AtomIndex>, urd::multi, urd::dense>;
+
     struct Groups
     {
         bool current = false;

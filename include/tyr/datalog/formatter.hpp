@@ -44,6 +44,7 @@ template<>
 struct formatter<tyr::datalog::VertexAssignment, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::VertexAssignment& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "[{}/{}]", value.index, value.object); }
@@ -53,6 +54,7 @@ template<>
 struct formatter<tyr::datalog::EdgeAssignment, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::EdgeAssignment& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "[{}/{}, {}/{}]", value.first_index, value.first_object, value.second_index, value.second_object); }
@@ -62,6 +64,7 @@ template<>
 struct formatter<tyr::datalog::details::Vertex, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::details::Vertex& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "[{}/{}]", value.get_parameter_index(), value.get_object_index()); }
@@ -71,6 +74,7 @@ template<>
 struct formatter<tyr::datalog::details::Edge, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::details::Edge& value, FormatContext& ctx) const
     { return fmt::format_to(ctx.out(), "[{}, {}]", value.vi(), value.vj()); }
@@ -80,6 +84,7 @@ template<>
 struct formatter<tyr::datalog::StaticConsistencyGraph, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::StaticConsistencyGraph&, FormatContext& ctx) const
     { return ctx.out(); }
@@ -89,6 +94,7 @@ template<>
 struct formatter<tyr::datalog::ProgramStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::ProgramStatistics& value, FormatContext& ctx) const
     {
@@ -118,6 +124,7 @@ template<>
 struct formatter<tyr::datalog::RuleStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::RuleStatistics& value, FormatContext& ctx) const
     {
@@ -141,6 +148,7 @@ template<>
 struct formatter<tyr::datalog::AggregatedRuleStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::AggregatedRuleStatistics& value, FormatContext& ctx) const
     {
@@ -194,6 +202,7 @@ template<>
 struct formatter<tyr::datalog::RuleWorkerStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::RuleWorkerStatistics& value, FormatContext& ctx) const
     {
@@ -217,6 +226,7 @@ template<>
 struct formatter<tyr::datalog::AggregatedRuleWorkerStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
     template<typename FormatContext>
     auto format(const tyr::datalog::AggregatedRuleWorkerStatistics& value, FormatContext& ctx) const
     {

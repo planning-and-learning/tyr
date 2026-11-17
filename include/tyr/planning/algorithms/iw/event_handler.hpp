@@ -63,6 +63,7 @@ private:
     friend Derived;
 
     [[nodiscard]] constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
+
     constexpr auto& self() { return static_cast<Derived&>(*this); }
 
     [[nodiscard]] bool verbosity(size_t level) const { return m_verbosity >= level; }
@@ -114,17 +115,21 @@ private:
     friend class EventHandlerBase<DefaultEventHandler<Kind>, Kind>;
 
     void on_start_search_impl(ygg::uint_t max_arity) const { static_cast<void>(max_arity); }
+
     void on_start_arity_impl(ygg::uint_t arity) const { static_cast<void>(arity); }
+
     void on_end_arity_impl(ygg::uint_t arity, SearchStatus status) const
     {
         static_cast<void>(arity);
         static_cast<void>(status);
     }
+
     void on_end_search_impl(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) const
     {
         static_cast<void>(status);
         static_cast<void>(statistics);
     }
+
     void on_solved_impl(ygg::uint_t arity) const { static_cast<void>(arity); }
 
 public:

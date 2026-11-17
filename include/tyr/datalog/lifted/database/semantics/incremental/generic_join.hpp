@@ -120,13 +120,17 @@ public:
         detail::require_initialized(m_initialized);
         return m_layer->view(m_result);
     }
+
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
+
     [[nodiscard]] const Delta& get_delta() const&
     {
         detail::require_initialized(m_initialized);
         return m_delta;
     }
+
     [[nodiscard]] const Delta& get_delta() const&& = delete;
+
     [[nodiscard]] size_t memory_usage() const noexcept
     { return m_workspace.memory_usage() + m_changed.memory_usage() + m_result.memory_usage() + m_delta.memory_usage(); }
 };

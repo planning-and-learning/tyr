@@ -55,7 +55,7 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
     view.template get_fterm_values_view<tyr::formalism::StaticTag>();
     view.template get_fterm_values_view<tyr::formalism::FluentTag>();
     view.get_formalism_repository();
-    view.get_state_repository();
+    view.context();
     view.get_fact_storage();
 });
 
@@ -184,7 +184,7 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
     EXPECT_TRUE(target.test(target_atom));
     auto target_builder = urd::builder<tyr::planning::State<tyr::GroundTag>>();
     target_builder.assign(target);
-    const auto borrowed = urd::resolve(target_builder, target.get_state_repository());
+    const auto borrowed = urd::resolve(target_builder, target.context());
     EXPECT_FALSE(borrowed.test(source_atom));
     EXPECT_TRUE(borrowed.test(target_atom));
 }

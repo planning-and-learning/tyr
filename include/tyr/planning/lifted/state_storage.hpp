@@ -40,6 +40,7 @@ struct FactUnpackedStorage<LiftedTag>
 
     [[nodiscard]] formalism::planning::FDRValue get(urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
     { return formalism::planning::FDRValue(indices.contains(static_cast<ygg::uint_t>(index.value))); }
+
     void set(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact)
     {
         assert(fact.value.value < 2);  // Lifted fluent variables are binary.
@@ -49,8 +50,10 @@ struct FactUnpackedStorage<LiftedTag>
         else
             indices.erase(index);
     }
+
     /// One past the last variable set: variables past it are none.
     [[nodiscard]] std::size_t num_variables() const { return indices.significant_words().size_bytes() * CHAR_BIT; }
+
     /// The facts set (value 1), by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {
@@ -62,7 +65,9 @@ struct FactUnpackedStorage<LiftedTag>
                                                                                        formalism::planning::FDRValue { 1 } };
             });
     }
+
     void clear() { indices.clear(); }
+
     void swap(FactUnpackedStorage& other) noexcept { indices.swap(other.indices); }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&FactUnpackedStorage::indices> {}; }

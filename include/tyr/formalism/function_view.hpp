@@ -34,13 +34,17 @@ private:
 
 public:
     const auto& get_name() const noexcept { return self().template member<&urd::record_of<V>::name>(); }
+
     auto get_arity() const noexcept { return self().template member<&urd::record_of<V>::arity>(); }
+
     /// Its rows' column types: one object per argument (a key of row pools, as the repository declares its pool).
     auto get_column_types() const
     {
         return std::views::iota(std::size_t { 0 }, std::size_t(get_arity()))
                | std::views::transform([](std::size_t) { return ygg::type_id<urd::index<::tyr::formalism::Object>>; });
     }
+
+    static constexpr auto functions() noexcept { return urd::Functions<urd::function<"get_column_types", &view_mixin::get_column_types>> {}; }
 };
 }  // namespace urd
 

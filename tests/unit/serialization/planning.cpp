@@ -33,6 +33,7 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests
 {
@@ -161,17 +162,17 @@ TEST(TyrSerialization, ProjectionReplacesFieldsBeforeCollectingDescendants)
     const auto binding = make_atom(repository, "truck").get_row();
     auto dictionaries = ygg::serialization::Dictionaries {};
     size_t calls = 0;
-    dictionaries.register_table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>(
-        "bindings",
-        "b",
-        std::nullopt,
-        [&](auto& ar, const auto& value)
-        {
-            ++calls;
-            ar.field("predicate_name", value.get_relation().get_name());
-            ar.field("arguments", urd::resolve(value.template get<urd::index<tyr::formalism::Object>>(), value.context()));
-            ar.field("text", ygg::to_string(value));
-        });
+    dictionaries.register_table<tyr::formalism::planning::PredicateRowView<tyr::formalism::FluentTag>>("bindings",
+                                                                                                       "b",
+                                                                                                       std::nullopt,
+                                                                                                       [&](auto& ar, const auto& value)
+                                                                                                       {
+                                                                                                           ++calls;
+                                                                                                           ar.field("predicate_name",
+                                                                                                                    value.get_relation().get_name());
+                                                                                                           ar.field("arguments", value.get_objects());
+                                                                                                           ar.field("text", ygg::to_string(value));
+                                                                                                       });
     dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p");
     dictionaries.register_table<tyr::formalism::planning::ObjectView>("objects", "o");
 
@@ -285,7 +286,7 @@ TEST(TyrSerialization, RegistrationRequiresUniqueNamesPrefixesAndPrecedesSeriali
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("objects", "p"), std::invalid_argument);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "o"), std::invalid_argument);
     auto repository = tyr::formalism::planning::Repository();
-    dictionaries.serialize(make_atom(repository, "truck").get_objects()[0]);
+    dictionaries.serialize(make_atom(repository, "truck").get_row().get_objects()[0]);
     EXPECT_THROW(dictionaries.register_table<tyr::formalism::planning::PredicateView<tyr::formalism::FluentTag>>("predicates", "p"), std::logic_error);
 }
 

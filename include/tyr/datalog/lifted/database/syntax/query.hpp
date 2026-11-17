@@ -28,6 +28,7 @@ namespace tyr::datalog::database
 template<class Tag>
 bool is(QueryView<> query)
 { return std::holds_alternative<QueryView<Tag>>(query.get_variant()); }
+
 /// The query's operation; requires is<Tag>(query).
 template<class Tag>
 QueryView<Tag> as(QueryView<> query)
@@ -49,6 +50,7 @@ class QueryPlan
 
 public:
     QueryPlan() : m_repository(std::make_shared<QueryRepository>()) {}
+
     QueryPlan(std::shared_ptr<const QueryRepository> repository, urd::Store<urd::sequence<QueryIndex>> roots) :
         m_repository(std::move(repository)),
         m_roots(std::move(roots))
@@ -56,17 +58,24 @@ public:
     }
 
     [[nodiscard]] size_t node_count() const noexcept { return m_repository->size(); }
+
     [[nodiscard]] size_t root_count() const noexcept { return m_roots.size(); }
+
     [[nodiscard]] std::span<const QueryIndex> roots() const& noexcept { return m_roots; }
+
     [[nodiscard]] std::span<const QueryIndex> roots() const&& = delete;
+
     [[nodiscard]] const QueryRepository& get_repository() const& noexcept { return *m_repository; }
+
     [[nodiscard]] const QueryRepository& get_repository() const&& = delete;
+
     QueryView<> operator[](QueryIndex id) const&
     {
         if (id.value >= node_count())
             throw std::out_of_range("Query plan: invalid query index.");
         return m_repository->view(id);
     }
+
     QueryView<> operator[](QueryIndex id) const&& = delete;
 };
 

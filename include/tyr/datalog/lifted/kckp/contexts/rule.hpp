@@ -58,8 +58,11 @@ public:
         [[nodiscard]] const auto& cws_rule() const noexcept { return *m_cws_rule; }
 
         auto& annotation_policy() noexcept { return m_rctx->stratum_out().program().annotation_policy(); }
+
         [[nodiscard]] const auto& annotations() const noexcept { return m_rctx->stratum_out().program().annotations(); }
+
         [[nodiscard]] const auto& cost_policy() const noexcept { return m_rctx->stratum_out().program().cost_policy(); }
+
         [[nodiscard]] const auto& fact_sets() const noexcept { return m_fact_sets; }
 
     private:
@@ -81,15 +84,20 @@ public:
         }
 
         auto& kckp_workspace() noexcept { return m_ws_worker->iteration.kckp_workspace; }
+
         auto& delta_annotations() noexcept { return m_rctx->stratum_out().program().delta_annotations(); }
+
         auto& head_updates() noexcept { return m_ws_worker->iteration.head_updates; }
 
 #ifndef NDEBUG
         auto& seen_bindings() noexcept { return m_ws_worker->solve.seen_bindings; }
 #endif
         auto& anchor_vertices() noexcept { return m_ws_worker->iteration.anchor_vertices; }
+
         auto& head_bindings() noexcept { return m_ws_worker->iteration.head_bindings; }
+
         auto& applicability_cache() noexcept { return m_ws_worker->solve.applicability_cache; }
+
         auto& statistics() noexcept { return m_ws_worker->solve.statistics; }
 
         auto& ground_context() noexcept { return m_ground_context; }
@@ -104,9 +112,11 @@ public:
     RuleWorkerExecutionContext(RuleExecutionContext<AP, TP, CP>& rctx, LiftedRuleWorkerT& ws_worker) : m_in(rctx), m_out(rctx, ws_worker) {}
 
     auto& in() noexcept { return m_in; }
+
     [[nodiscard]] const auto& in() const noexcept { return m_in; }
 
     auto& out() noexcept { return m_out; }
+
     [[nodiscard]] const auto& out() const noexcept { return m_out; }
 
 private:
@@ -134,12 +144,19 @@ struct RuleExecutionContext
         explicit Out(RuleWorkspace<LiftedTag>& ws_rule) : m_ws_rule(&ws_rule) {}
 
         auto& common() noexcept { return m_ws_rule->common; }
+
         [[nodiscard]] const auto& common() const noexcept { return m_ws_rule->common; }
+
         auto& kckp() noexcept { return m_ws_rule->common.kckp; }
+
         [[nodiscard]] const auto& kckp() const noexcept { return m_ws_rule->common.kckp; }
+
         auto& statistics() noexcept { return m_ws_rule->common.statistics; }
+
         [[nodiscard]] const auto& statistics() const noexcept { return m_ws_rule->common.statistics; }
+
         auto& workers() noexcept { return m_ws_rule->worker; }
+
         [[nodiscard]] const auto& workers() const noexcept { return m_ws_rule->worker; }
 
     private:
@@ -169,11 +186,15 @@ struct RuleExecutionContext
     { return RuleWorkerExecutionContext<AP, TP, CP>(*this, out().workers()[worker_index]); }
 
     [[nodiscard]] const auto& in() const noexcept { return m_in; }
+
     auto& out() noexcept { return m_out; }
+
     [[nodiscard]] const auto& out() const noexcept { return m_out; }
 
     [[nodiscard]] const auto& stratum_in() const noexcept { return m_ctx->in(); }
+
     auto& stratum_out() noexcept { return m_ctx->out(); }
+
     [[nodiscard]] const auto& stratum_out() const noexcept { return m_ctx->out(); }
 
 private:

@@ -4,6 +4,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::tests::planning_axiom
 {
@@ -29,7 +30,7 @@ static_assert(requires(AxiomData& data) {
 });
 static_assert(requires(const AxiomView& view) {
     view.index();
-    view.get_arity();
+    view.get_body().get_arity();
     view.get_body();
     view.get_variables();
     view.get_head();
@@ -62,8 +63,8 @@ static_assert(requires(const GroundAxiomView& view) {
     view.index();
     view.get_axiom();
     view.get_row();
-    view.get_objects();
-    view.get_key();
+    view.get_row().get_objects();
+    view.get_row().get_key();
     view.get_body();
     view.get_head();
     { view == view } -> std::same_as<bool>;

@@ -98,7 +98,7 @@ create_applicability_predicate(formalism::planning::AxiomView<LiftedTag> axiom,
     auto predicate = formalism::datalog::checkout<formalism::Predicate<formalism::FluentTag>>(context.builder());
 
     predicate->name = create_applicability_name(axiom);
-    predicate->arity = axiom.get_arity();
+    predicate->arity = axiom.get_body().get_arity();
 
     return formalism::datalog::insert(context.destination(), *predicate);
 }

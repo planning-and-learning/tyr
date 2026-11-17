@@ -60,6 +60,7 @@ public:
         for (const auto& columns : m_query.input_columns)
             m_inputs.push_back(layer.get_relation_builder<ygg::Schema>(std::span<const ygg::ColumnLayout>(columns)));
     }
+
     // Its snapshots are its own: shared with no copy.
     QueryEvaluator(const QueryEvaluator&) = delete;
     QueryEvaluator& operator=(const QueryEvaluator&) = delete;
@@ -68,13 +69,18 @@ public:
     ~QueryEvaluator() = default;
 
     [[nodiscard]] size_t input_count() const noexcept { return m_query.input_columns.size(); }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const noexcept { return m_columns; }
+
     [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_layer->view(*m_inputs.at(slot)); }
+
     [[nodiscard]] bool bound() const noexcept { return m_bound.size() == input_count(); }
+
     /// Increases whenever an input changes.
     [[nodiscard]] uint64_t version() const noexcept { return m_version; }
 
     [[nodiscard]] bool is_bound(size_t slot) const noexcept { return m_bound.contains(slot); }
+
     [[nodiscard]] bool is_static(size_t slot) const noexcept { return m_static.contains(slot); }
 
     /// Binds the current inputs: input(slot) returns slot's relation view. Static slots are read on the first bind
@@ -202,6 +208,7 @@ private:
         urd::Store<urd::sequence<size_t>> positions;
         urd::Store<urd::sequence<ConjunctivePlan>> plans;
     };
+
     /// The rows of an input slot keyed by some of its columns; with no key columns, a scan.
     struct KeyIndex
     {
@@ -211,6 +218,7 @@ private:
         urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> rows;  ///< Row positions by key hash, once built.
         bool built = false;
     };
+
     /// A step's lookup: its index and where the key's variables are in the frame.
     struct Lookup
     {

@@ -46,12 +46,14 @@ struct evaluation_of
 {
     using type = ygg::ClosedInterval<ygg::float_t>;
 };
+
 template<typename Expression>
     requires requires(const Expression& expression) { requires std::same_as<std::remove_cvref_t<decltype(expression.get_operation())>, BooleanOperatorKind>; }
 struct evaluation_of<Expression>
 {
     using type = bool;
 };
+
 template<typename Expression>
 using evaluation_t = typename evaluation_of<Expression>::type;
 

@@ -37,7 +37,7 @@ void DistHash<Kind, LMCutDistHashTag>::initialize(const StateView<Kind>& start_s
     if (m_initialized)
         throw std::logic_error("LMCutDistHash::initialize(...): distribution features are already initialized.");
 
-    const auto& task = start_state.get_state_repository().get_task();
+    const auto& task = start_state.context().get_task();
     auto heuristic = LMCutHeuristic<Kind>(task, ygg::ExecutionContext::create(1), CostMode::UNIT);
     auto atoms = heuristic.compute_cut_frontier_atoms(start_state);
 

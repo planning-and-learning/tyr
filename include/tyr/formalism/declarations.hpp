@@ -44,14 +44,11 @@ class SymbolRepository;
 template<typename... Ts>
 class ConcurrentSymbolRepository;
 
-template<typename ObjectTag, typename... Ts>
+template<typename Width, typename... Ts>
 class RelationRepository;
 
-template<typename ObjectTag, typename... Ts>
+template<typename Width, typename... Ts>
 class ConcurrentRelationRepository;
-
-template<typename ObjectTag>
-struct RelationRepositoryTraits;
 
 template<typename SymbolRepo, typename RelationRepo>
 class Repository;
@@ -68,14 +65,17 @@ struct StaticTag
 {
     static constexpr auto name = "Static";
 };
+
 struct FluentTag
 {
     static constexpr auto name = "Fluent";
 };
+
 struct DerivedTag
 {
     static constexpr auto name = "Derived";
 };
+
 struct AuxiliaryTag
 {
     static constexpr auto name = "Auxiliary";
@@ -102,6 +102,7 @@ struct PredicateTag
 {
     static constexpr auto name = "Predicate";
 };
+
 struct FunctionTag
 {
     static constexpr auto name = "Function";
@@ -128,11 +129,7 @@ struct Variable
     static constexpr std::string_view name = "Variable";
 };
 
-struct ObjectTag
-{
-};
-
-using Object = ::ygg::formalism::Object<ObjectTag>;
+using Object = ::ygg::formalism::Object;
 
 /// A term: an object, or a parameter of the enclosing rule or action. Stored as it is, not interned; read through a
 /// repository (urd::resolve) as std::variant<ObjectView, ParameterIndex>; printed as the alternative it
@@ -144,14 +141,14 @@ template<FactKind T>
 struct Predicate
 {
     static constexpr std::string_view name = "Predicate";
-    using object_tag = ObjectTag;  ///< its rows (ygg::Row) are objects
+    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 template<FactKind T>
 struct Function
 {
     static constexpr std::string_view name = "Function";
-    using object_tag = ObjectTag;  ///< its rows (ygg::Row) are objects
+    static constexpr bool objects = true;  ///< its rows (ygg::Row) are objects
 };
 
 /**
@@ -258,18 +255,15 @@ constexpr auto& tagged_member(Self& self) noexcept
 #error "Exactly one of TYR_RELATION_STORAGE_WORD or TYR_RELATION_STORAGE_BIT must be defined"
 #endif
 
-namespace ygg::formalism
+namespace tyr::formalism
 {
-
-template<>
-struct RelationRepositoryTraits<::tyr::formalism::ObjectTag>
-{
+/// How tyr's relation repositories store an object column (yggdrasil's Width): 32 bits (urd::word), or the bits the
+/// largest object index needs (urd::bit), as the build chooses.
 #if defined(TYR_RELATION_STORAGE_WORD)
-    using width = urd::word;
+using RelationStorage = urd::word;
 #else
-    using width = urd::bit;
+using RelationStorage = urd::bit;
 #endif
-};
 
 }
 

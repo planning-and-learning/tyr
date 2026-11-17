@@ -44,6 +44,7 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         explicit In(const ConstProgramWorkspace<LiftedTag>& cws) : m_cws(&cws) {}
 
         [[nodiscard]] const auto& facts() const noexcept { return m_cws->facts; }
+
         [[nodiscard]] const auto& engine() const noexcept { return m_cws->engine; }
 
     private:
@@ -56,9 +57,13 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
         Out(ProgramWorkspace<LiftedTag, AP, TP, CP>& ws, urd::Store<urd::sequence<Scheduler<LiftedTag>>>& schedulers) : m_ws(&ws), m_schedulers(&schedulers) {}
 
         auto& facts() noexcept { return m_ws->facts; }
+
         [[nodiscard]] const auto& facts() const noexcept { return m_ws->facts; }
+
         auto& engine() noexcept { return m_ws->engine; }
+
         [[nodiscard]] const auto& engine() const noexcept { return m_ws->engine; }
+
         /// Commits a fact: into the facts, then into the engine's index over them. Whether it was new.
         bool insert(formalism::datalog::PredicateRowIndex<formalism::FluentTag> fact)
         {
@@ -67,25 +72,45 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
             m_ws->engine.assignment_sets.predicate.insert(urd::resolve(fact, *m_ws->workspace_repository));
             return true;
         }
+
         auto& annotation_policy() noexcept { return m_ws->annotation_policy; }
+
         [[nodiscard]] const auto& annotation_policy() const noexcept { return m_ws->annotation_policy; }
+
         auto& annotations() noexcept { return m_ws->annotations; }
+
         [[nodiscard]] const auto& annotations() const noexcept { return m_ws->annotations; }
+
         auto& delta_annotations() noexcept { return m_ws->delta_annotations; }
+
         [[nodiscard]] const auto& delta_annotations() const noexcept { return m_ws->delta_annotations; }
+
         auto& tp() noexcept { return m_ws->tp; }
+
         [[nodiscard]] const auto& tp() const noexcept { return m_ws->tp; }
+
         auto& cost_policy() noexcept { return m_ws->cost_policy; }
+
         [[nodiscard]] const auto& cost_policy() const noexcept { return m_ws->cost_policy; }
+
         auto& cost_buckets() noexcept { return m_ws->cost_buckets; }
+
         auto& pending_achievers() noexcept { return m_ws->pending_achievers; }
+
         auto& datalog_builder() noexcept { return m_ws->datalog_builder; }
+
         [[nodiscard]] const auto& datalog_builder() const noexcept { return m_ws->datalog_builder; }
+
         auto& workspace_repository() noexcept { return *m_ws->workspace_repository; }
+
         [[nodiscard]] const auto& workspace_repository() const noexcept { return *m_ws->workspace_repository; }
+
         auto& schedulers() noexcept { return *m_schedulers; }
+
         [[nodiscard]] const auto& schedulers() const noexcept { return *m_schedulers; }
+
         auto& statistics() noexcept { return m_ws->statistics; }
+
         [[nodiscard]] const auto& statistics() const noexcept { return m_ws->statistics; }
 
     private:
@@ -131,9 +156,13 @@ struct ProgramExecutionContext<LiftedTag, AP, TP, CP>
     }
 
     [[nodiscard]] const auto& in() const noexcept { return m_in; }
+
     auto& out() noexcept { return m_out; }
+
     [[nodiscard]] const auto& out() const noexcept { return m_out; }
+
     [[nodiscard]] bool is_single_threaded() const noexcept { return m_num_threads == 1; }
+
     void set_num_threads(size_t num_threads) noexcept
     {
         assert(num_threads > 0);

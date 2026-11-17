@@ -80,6 +80,7 @@ private:
     urd::Store<urd::sequence<size_t>> m_slots;  ///< The original slot of each relaxed input.
 
     static bool contains(const Labels& labels, urd::index<ygg::Column> label) { return std::ranges::find(labels, label) != labels.end(); }
+
     /// The labels of `left_operand` also in `right_operand`, in the order of `left_operand`.
     static Labels intersection(const Labels& left_operand, const Labels& right_operand)
     {
@@ -89,6 +90,7 @@ private:
                 result.push_back(label);
         return result;
     }
+
     /// `left_operand` followed by the labels of `right_operand` not in it.
     static Labels united(Labels left_operand, const Labels& right_operand)
     {
@@ -97,6 +99,7 @@ private:
                 left_operand.push_back(label);
         return left_operand;
     }
+
     static bool subset(const Labels& left_operand, const Labels& right_operand)
     {
         return std::ranges::all_of(left_operand, [&](urd::index<ygg::Column> label) { return contains(right_operand, label); });
@@ -112,6 +115,7 @@ private:
         m_slots.push_back(slot);
         return m_slots.size() - 1;
     }
+
     std::optional<QueryView<>> input(QueryView<QueryInputTag> concrete)
     {
         const auto slot = concrete.get_input_slot();
@@ -125,6 +129,7 @@ private:
                 data.columns.set(columns.begin(), columns.end());
             });
     }
+
     /// A conjunction (⋈, ⋉) of relaxed operands: an unknown side is its identity ⊤ when over and absorbs it as ∅ when
     /// under.
     template<typename Tag>
@@ -134,6 +139,7 @@ private:
             return polarity == Polarity::over ? (left_operand ? left_operand : right_operand) : std::nullopt;
         return m_build.template binary<Tag>(*left_operand, *right_operand);
     }
+
     /// A union of relaxed operands: an unknown side absorbs it as ⊤ when over and is its identity ∅ when under. Only
     /// labels both sides constrain stay constrained.
     std::optional<QueryView<>> disjoin(std::optional<QueryView<>> left_operand, std::optional<QueryView<>> right_operand, Polarity polarity)

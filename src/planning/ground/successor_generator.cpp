@@ -109,7 +109,9 @@ void validate_storage(const TaskPtr<GroundTag>&, const Source&, const SuccessorB
 
 /// The storage of a list's next successor: the repository, or a builder appended to the list.
 StateRepository<GroundTag>& next_storage(StateRepository<GroundTag>& storage) { return storage; }
+
 Builder& next_storage(Builder& storage) { return storage; }
+
 Builder& next_storage(SuccessorBuilders<GroundTag>& storage) { return storage.emplace_back(); }
 
 /// Sinks of successors: appending to a list, as they are or packed.
@@ -649,6 +651,7 @@ void SuccessorGenerator<GroundTag>::get_packed_labeled_successor_nodes(const Sou
     out_nodes.clear();
     m_impl->for_each_labeled_successor(*this, node, tree, state_repository, axiom_evaluator, append_packed(out_nodes));
 }
+
 template<typename Objects>
 ActionBindingResult
 SuccessorGenerator<GroundTag>::Impl::try_get_applicable_action_binding(const Source& node, formalism::planning::ActionView<LiftedTag> action, Objects objects)
@@ -719,7 +722,7 @@ formalism::planning::ActionRowView SuccessorGenerator<GroundTag>::materialize_ac
         return binding;
     const auto action = binding.get_relation();
     m_impl->get_schema_match_tree(action);
-    const auto objects = urd::resolve(binding.get<urd::index<formalism::Object>>(), binding.context());
+    const auto objects = binding.get_objects();
     if (objects.size() != action.get_arity())
         throw std::invalid_argument("SuccessorGenerator: object count does not match action arity.");
     if (!std::ranges::all_of(objects, [&](const auto& value) { return ygg::formalism::contains(repository, value); }))

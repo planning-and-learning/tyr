@@ -35,7 +35,7 @@ namespace tyr::formalism::planning
 void bind_conditional_effect(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_data<ConditionalEffect<LiftedTag>>(m);
-    urd::python::bind_view<ConditionalEffectView<LiftedTag>>(m).def("get_arity", &ConditionalEffectView<LiftedTag>::get_arity);
+    urd::python::bind_view<ConditionalEffectView<LiftedTag>>(m);
     ygg::bind_insert<ConditionalEffect<LiftedTag>>(repository);
 
     urd::python::bind_data<ConditionalEffect<GroundTag>>(m);

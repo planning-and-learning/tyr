@@ -44,6 +44,7 @@ public:
             return self().template member<&urd::record_of<V>::function>();
         }
     }
+
     auto get_terms() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::terms>(); }
@@ -51,17 +52,14 @@ public:
     auto get_row() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::row>(); }
-    /// Its objects: its row's columns read as objects (checked against its pool's types), resolved through the row's
-    /// context.
-    auto get_objects() const
-        requires std::same_as<T, ::tyr::GroundTag>
+
+    static constexpr auto functions() noexcept
     {
-        const auto row = get_row();
-        return urd::resolve(row.template get<urd::index<::tyr::formalism::Object>>(), row.context());
+        if constexpr (std::same_as<T, ::tyr::GroundTag>)
+            return urd::Functions<urd::function<"get_function", &view_mixin::get_function>> {};
+        else
+            return urd::Functions<> {};
     }
-    auto get_key() const noexcept
-        requires std::same_as<T, ::tyr::GroundTag>
-    { return get_row().get_key(); }
 };
 }  // namespace urd
 

@@ -41,31 +41,41 @@ public:
     auto get_variables() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::variables>(); }
+
     auto get_static_literals() const noexcept { return self().template member<&urd::record_of<V>::static_literals>(); }
+
     auto get_fluent_literals() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return self().template member<&urd::record_of<V>::fluent_literals>(); }
+
     auto get_derived_literals() const noexcept { return self().template member<&urd::record_of<V>::derived_literals>(); }
+
     auto get_positive_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::positive_facts>(); }
+
     auto get_negative_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<&urd::record_of<V>::negative_facts>(); }
+
     auto get_numeric_constraints() const noexcept(std::same_as<T, ::tyr::GroundTag>)
     { return self().template member<&urd::record_of<V>::numeric_constraints>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::FactKind F>
     auto get_literals() const noexcept
     { return self().template member<::tyr::formalism::planning::literals_of<F, T>>(); }
+
     // user: one getter templated on the tag over the fields it chooses (next to the record), besides the plain getters.
     template<::tyr::formalism::PolarityKind F>
     auto get_facts() const noexcept
         requires std::same_as<T, ::tyr::GroundTag>
     { return self().template member<::tyr::formalism::planning::condition_facts_of<F>>(); }
+
     auto get_arity() const noexcept
         requires std::same_as<T, ::tyr::LiftedTag>
     { return get_variables().size(); }
+
     /// Whether the condition has no literals and no numeric constraints, i.e., holds in every state.
     [[nodiscard]] bool empty() const
         requires std::same_as<T, ::tyr::LiftedTag>
@@ -95,6 +105,14 @@ public:
     auto get_atoms(bool polarity, P predicate) const
     {
         return get_atoms<F>(polarity) | std::views::filter([predicate](auto atom) { return atom.get_predicate() == predicate; });
+    }
+
+    static constexpr auto functions() noexcept
+    {
+        if constexpr (std::same_as<T, ::tyr::GroundTag>)
+            return urd::Functions<> {};
+        else
+            return urd::Functions<urd::function<"get_arity", &view_mixin::get_arity>, urd::function<"empty", &view_mixin::empty>> {};
     }
 };
 }  // namespace urd

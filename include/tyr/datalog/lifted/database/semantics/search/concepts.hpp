@@ -51,6 +51,7 @@ struct BlindDistanceHeuristic
 /// borrows.
 inline std::span<const ygg::Value> vertex_values(std::span<const ygg::Value> vertex, urd::Store<urd::sequence<ygg::Value>>& /*buffer*/) noexcept
 { return vertex; }
+
 inline std::span<const ygg::Value> vertex_values(const ygg::RowPool::row_type& row, urd::Store<urd::sequence<ygg::Value>>& buffer)
 {
     buffer.clear();
@@ -58,6 +59,7 @@ inline std::span<const ygg::Value> vertex_values(const ygg::RowPool::row_type& r
         buffer.push_back(row.get(i));
     return buffer;
 }
+
 /// A row view's values (its stored row's).
 template<ygg::RowViewConcept<ygg::Schema> R>
 std::span<const ygg::Value> vertex_values(const R& row, urd::Store<urd::sequence<ygg::Value>>& buffer)

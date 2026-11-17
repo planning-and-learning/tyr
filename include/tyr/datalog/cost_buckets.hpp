@@ -53,6 +53,7 @@ public:
         PredicateBucket predicate;
 
         [[nodiscard]] bool empty() const noexcept { return predicate.empty(); }
+
         /// Empties the bucket, keeping its storage for the next cost (CostBuckets' erased buckets are kept).
         void clear() { predicate.clear(); }
     };

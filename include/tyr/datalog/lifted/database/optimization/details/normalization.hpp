@@ -41,6 +41,7 @@ class Normalizer
         const auto result = m_build.join(left_operand, right_operand);
         return is<QueryEmptyTag>(left_operand) || is<QueryEmptyTag>(right_operand) ? m_build.empty(columns_of(result)) : result;
     }
+
     QueryView<> union_(QueryView<> left_operand, QueryView<> right_operand)
     {
         if (is<QueryEmptyTag>(left_operand))
@@ -49,12 +50,14 @@ class Normalizer
             return left_operand;
         return m_build.template binary<QueryUnionTag>(left_operand, right_operand);
     }
+
     QueryView<> difference(QueryView<> left_operand, QueryView<> right_operand)
     {
         if (is<QueryEmptyTag>(left_operand) || is<QueryEmptyTag>(right_operand))
             return left_operand;
         return m_build.template binary<QueryDifferenceTag>(left_operand, right_operand);
     }
+
     /// A semijoin (`Tag` = QuerySemijoinTag) or antijoin: an empty right operand keeps nothing or everything.
     template<class Tag>
     QueryView<> filter_join(QueryView<> left_operand, QueryView<> right_operand)
@@ -65,6 +68,7 @@ class Normalizer
             return std::same_as<Tag, QuerySemijoinTag> ? m_build.empty(columns_of(left_operand)) : left_operand;
         return m_build.template binary<Tag>(left_operand, right_operand);
     }
+
     /// Labels of the renamed query's argument for the given renamed labels.
     static urd::Store<urd::sequence<urd::index<ygg::Column>>> inverse(QueryView<QueryRenameTag> rename, std::span<const urd::index<ygg::Column>> renamed)
     {
@@ -74,6 +78,7 @@ class Normalizer
             result.push_back(before[static_cast<size_t>(std::ranges::find(after, label, &ygg::ColumnLayout::label) - after.begin())].label);
         return result;
     }
+
     QueryView<> rename(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns)
     {
         if (std::ranges::equal(columns_of(arg), columns, {}, &ygg::ColumnLayout::label))
@@ -81,7 +86,9 @@ class Normalizer
         const auto result = m_build.template relabel<QueryRenameTag>(arg, columns);
         return is<QueryEmptyTag>(arg) ? m_build.empty(columns_of(result)) : result;
     }
+
     QueryView<> project(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns);
+
     QueryView<> finish_project(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns)
     {
         const auto result = m_build.template relabel<QueryProjectTag>(arg, columns);
@@ -98,6 +105,7 @@ class Normalizer
                 labels.push_back(column.label);
         return labels;
     }
+
     template<class Tag>
     QueryView<> project_filter_join(QueryView<> arg, std::span<const urd::index<ygg::Column>> columns)
     {
@@ -119,6 +127,7 @@ class Normalizer
         result.right_column = right_column;
         return result;
     }
+
     static Operation<QuerySelectValueTag> condition(urd::index<ygg::Column> column, ygg::Value constant, ygg::TypeId constant_type)
     {
         auto result = Operation<QuerySelectValueTag>();
@@ -127,17 +136,23 @@ class Normalizer
         result.constant_type = constant_type;
         return result;
     }
+
     static Operation<QuerySelectEqualTag> condition(const Operation<QuerySelectEqualTag>& data) { return condition(data.left_column, data.right_column); }
+
     static Operation<QuerySelectValueTag> condition(const Operation<QuerySelectValueTag>& data)
     { return condition(data.column, data.constant, data.constant_type); }
+
     static Operation<QuerySelectEqualTag> condition(QueryView<QuerySelectEqualTag> query)
     { return condition(query.get_left_column(), query.get_right_column()); }
+
     static Operation<QuerySelectValueTag> condition(QueryView<QuerySelectValueTag> query)
     { return condition(query.get_column(), query.get_constant(), query.get_constant_type()); }
 
     static urd::Store<urd::sequence<urd::index<ygg::Column>>> tested(const Operation<QuerySelectEqualTag>& data)
     { return { data.left_column, data.right_column }; }
+
     static urd::Store<urd::sequence<urd::index<ygg::Column>>> tested(const Operation<QuerySelectValueTag>& data) { return { data.column }; }
+
     static void retarget(Operation<QuerySelectEqualTag>& data, QueryView<QueryRenameTag> rename)
     {
         const std::array renamed { data.left_column, data.right_column };
@@ -145,11 +160,13 @@ class Normalizer
         data.left_column = inner[0];
         data.right_column = inner[1];
     }
+
     static void retarget(Operation<QuerySelectValueTag>& data, QueryView<QueryRenameTag> rename)
     {
         const std::array renamed { data.column };
         data.column = inverse(rename, renamed)[0];
     }
+
     template<class Tag>
     QueryView<> select(const Operation<Tag>& data, QueryView<> arg)
     {

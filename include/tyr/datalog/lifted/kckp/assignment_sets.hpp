@@ -213,6 +213,7 @@ public:
     AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets);
 
     [[nodiscard]] const TaggedAssignmentSets<formalism::StaticTag>& static_sets() const noexcept { return *m_static_sets; }
+
     [[nodiscard]] const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets() const noexcept { return *m_fluent_sets; }
 
 private:

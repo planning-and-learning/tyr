@@ -65,6 +65,7 @@ public:
     }
 
     [[nodiscard]] const FactSets& fact_sets() const noexcept { return m_fact_sets; }
+
     [[nodiscard]] const PredicateAnnotations<Kind>& predicate_annotations() const noexcept { return *m_predicate_annotations; }
 
 private:
@@ -93,6 +94,7 @@ private:
 
 public:
     [[nodiscard]] const urd::Store<urd::sequence<Binding>>& bindings() const noexcept { return m_bindings; }
+
     /// Mutable: reducing the updates moves the achievers out.
     urd::Store<urd::sequence<PredicateAchiever<Kind>>>& achievers() noexcept { return m_achievers; }
 

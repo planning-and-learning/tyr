@@ -40,6 +40,7 @@ public:
     }
 
     formalism::datalog::RuleView<LiftedTag> get_rule() const noexcept { return m_rule; }
+
     auto get_body() const noexcept { return get_rule().get_body(); }
 
     auto resolve(formalism::datalog::AtomView<LiftedTag, formalism::FluentTag> atom) const
@@ -49,6 +50,7 @@ public:
 
     /// The instance's (rule, binding) row keys its witnesses; grounded once, on first use.
     RuleKey<LiftedTag> witness_key() const { return cost_key().index(); }
+
     /// The row as a view: the credit of its actions reads the row's objects.
     formalism::datalog::RuleRowView cost_key() const
     {

@@ -28,7 +28,9 @@ struct ColumnSlice
     size_t position;
 
     bool operator==(const ColumnSlice&) const = default;
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&ColumnSlice::position> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&ColumnSlice::position> {}; }
 };
 
@@ -48,7 +50,9 @@ public:
     ProjectionPlan(std::span<const ygg::ColumnLayout> input, std::span<const urd::index<ygg::Column>> columns);
 
     [[nodiscard]] std::span<const ygg::ColumnLayout> input_columns() const noexcept { return { m_input.data(), m_input.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+
     [[nodiscard]] std::span<const ColumnSlice> positions() const noexcept { return { m_positions.data(), m_positions.size() }; }
 
     static constexpr auto cista_members() noexcept
@@ -71,10 +75,15 @@ public:
     JoinPlan(std::span<const ygg::ColumnLayout> left, std::span<const ygg::ColumnLayout> right);
 
     [[nodiscard]] std::span<const ygg::ColumnLayout> left_columns() const noexcept { return { m_left.data(), m_left.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> right_columns() const noexcept { return { m_right.data(), m_right.size() }; }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+
     [[nodiscard]] std::span<const ColumnSlice> left_keys() const noexcept { return { m_left_keys.data(), m_left_keys.size() }; }
+
     [[nodiscard]] std::span<const ColumnSlice> right_keys() const noexcept { return { m_right_keys.data(), m_right_keys.size() }; }
+
     [[nodiscard]] std::span<const ColumnSlice> right_payload() const noexcept { return { m_right_payload.data(), m_right_payload.size() }; }
 
     static constexpr auto cista_members() noexcept
@@ -112,7 +121,9 @@ public:
 
     /// The columns of the input and of the output.
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_columns.data(), m_columns.size() }; }
+
     [[nodiscard]] size_t left_position() const noexcept { return m_left; }
+
     [[nodiscard]] size_t right_position() const noexcept { return m_right; }
 
     static constexpr auto cista_members() noexcept { return urd::Members<&SelectEqualPlan::m_columns, &SelectEqualPlan::m_left, &SelectEqualPlan::m_right> {}; }
@@ -131,7 +142,9 @@ public:
 
     /// The columns of the input and of the output.
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_columns.data(), m_columns.size() }; }
+
     [[nodiscard]] size_t position() const noexcept { return m_position; }
+
     [[nodiscard]] ygg::Value value() const noexcept { return m_value; }
 
     static constexpr auto cista_members() noexcept

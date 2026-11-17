@@ -53,6 +53,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::LiftedTag>>> axioms;
 
     data() = default;
+
     data(urd::flat_string name_,
          urd::index<::tyr::formalism::planning::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
@@ -80,6 +81,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
         axioms(std::move(axioms_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;
@@ -101,6 +103,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
                            urd::field<"metric", &data::metric>,
                            urd::field<"axioms", &data::axioms>> {};
     }
+
     static constexpr auto identifying_members() noexcept
     {
         return urd::Members<&data::name,
@@ -116,6 +119,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::LiftedTag>>
                             &data::metric,
                             &data::axioms> {};
     }
+
     static constexpr auto cista_members() noexcept
     {
         return urd::Members<&data::index,
@@ -159,6 +163,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::planning::Axiom<::tyr::GroundTag>>> ground_axioms;
 
     data() = default;
+
     data(urd::flat_string name_,
          urd::index<::tyr::formalism::planning::Domain> domain_,
          urd::flat_vector<urd::index<::tyr::formalism::Predicate<::tyr::formalism::DerivedTag>>> derived_predicates_,
@@ -196,6 +201,7 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
         ground_axioms(std::move(ground_axioms_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) noexcept = default;
@@ -222,7 +228,9 @@ struct data<::tyr::formalism::planning::Task<::tyr::GroundTag>>
                            urd::field<"ground_actions", &data::ground_actions>,
                            urd::field<"ground_axioms", &data::ground_axioms>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+
     static constexpr auto cista_members() noexcept
     {
         return urd::Members<&data::index,

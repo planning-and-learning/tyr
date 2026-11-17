@@ -42,6 +42,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
     urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>>> static_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
@@ -53,6 +54,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
         numeric_constraints(std::move(numeric_constraints_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -66,8 +68,10 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>>
                            urd::field<"fluent_literals", &data::fluent_literals>,
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
+
     static constexpr auto identifying_members() noexcept
     { return urd::Members<&data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::variables, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
 };
@@ -81,6 +85,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
     urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints;
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>>> static_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> fluent_literals_,
          urd::flat_vector<urd::index<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>>> numeric_constraints_) :
@@ -90,6 +95,7 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
         numeric_constraints(std::move(numeric_constraints_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -102,7 +108,9 @@ struct data<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>>
                            urd::field<"fluent_literals", &data::fluent_literals>,
                            urd::field<"numeric_constraints", &data::numeric_constraints>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::static_literals, &data::fluent_literals, &data::numeric_constraints> {}; }
 };

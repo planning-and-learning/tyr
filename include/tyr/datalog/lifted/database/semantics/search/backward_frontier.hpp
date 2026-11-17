@@ -67,10 +67,13 @@ public:
     }
 
     [[nodiscard]] bool exhausted() const noexcept { return m_exhausted; }
+
     [[nodiscard]] size_t frontier_size() const noexcept { return m_frontier.size(); }
+
     /// The distance of a found vertex, or none: exact on the edges of the search that found it, a lower bound after
     /// edges are removed.
     [[nodiscard]] ygg::uint_t level(VertexSet::handle_type id) const noexcept { return id < m_level.position(m_level.end()) ? m_level[id] : none; }
+
     /// A lower bound on any vertex's distance (none: one not stored): its level if found, otherwise one beyond the last
     /// level, or infinity once the frontier is exhausted.
     [[nodiscard]] ygg::uint_t bound(VertexSet::handle_type id) const noexcept

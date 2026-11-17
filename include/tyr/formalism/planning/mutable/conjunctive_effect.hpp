@@ -40,12 +40,14 @@ struct MutableConjunctiveEffect : urd::compared_by_identity<MutableConjunctiveEf
     MutableLiteralList<FluentTag> literals;
 
     MutableConjunctiveEffect() = default;
+
     MutableConjunctiveEffect(size_t num_parent_variables_, size_t num_variables_, MutableLiteralList<FluentTag> literals_) :
         num_parent_variables(num_parent_variables_),
         num_variables(num_variables_),
         literals(std::move(literals_))
     {
     }
+
     MutableConjunctiveEffect(size_t num_parent_variables_, size_t num_variables_, ConjunctiveEffectView<LiftedTag> element) :
         num_parent_variables(num_parent_variables_),
         num_variables(num_variables_),

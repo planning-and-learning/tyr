@@ -40,7 +40,9 @@ public:
     virtual ~WorkerEventHandler() = default;
 
     virtual void on_expand_node(const Node<Kind>&) {}
+
     virtual void on_expand_goal_node(const Node<Kind>&) {}
+
     virtual void on_generate_transition(const Node<Kind>&, const LabeledNode<Kind>&, TransitionOutcome) {}
 
 protected:
@@ -64,6 +66,7 @@ public:
     virtual void on_new_best_h_value(ygg::float_t h_value) = 0;
     virtual void on_end_search(SearchStatus status, const tyr::planning::Statistics& statistics) = 0;
     virtual void on_solved(const Plan<Kind>& plan) = 0;
+
     virtual WorkerEventHandlerPtr<Kind> make_worker(urd::index<Worker>) { return nullptr; }
 
 protected:

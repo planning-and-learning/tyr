@@ -144,6 +144,7 @@ nb::class_<T> bind_state_reads(nb::module_& m, const std::string& name)
 
     auto cls =
         nb::class_<T>(m, name.c_str())  //
+            .def("context", &T::context, nb::rv_policy::reference_internal)
             .def("get_formalism_repository", &T::get_formalism_repository, nb::rv_policy::copy)
             // AccessibleStateConcept
             .def("test",
@@ -238,10 +239,7 @@ void bind_state(nb::module_& m, const std::string& name)
 {
     using T = StateView<Kind>;
 
-    auto cls = bind_state_reads<T>(m, name)
-                   .def("index", &T::index, nb::rv_policy::copy)
-                   .def("get_state_repository", &T::get_state_repository, nb::rv_policy::reference)
-                   .def("pack", &T::pack);
+    auto cls = bind_state_reads<T>(m, name).def("index", &T::index, nb::rv_policy::copy).def("pack", &T::pack);
     urd::python::add_comparison(cls);
     urd::python::add_hash(cls);
 }
@@ -699,6 +697,7 @@ public:
 
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
     { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
+
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override
     { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
 };
@@ -868,9 +867,7 @@ void bind_kind_definitions(nb::module_& m)
 {
     urd::python::bind_data<State<Kind>>(m);
     urd::python::bind_data<PackedState<Kind>>(m);
-    urd::python::bind_view<PackedStateView<Kind>>(m)
-        .def("get_state_repository", &PackedStateView<Kind>::get_state_repository, nb::rv_policy::reference)
-        .def("unpack", &PackedStateView<Kind>::unpack);
+    urd::python::bind_view<PackedStateView<Kind>>(m);
     bind_state<Kind>(m, "State");
     bind_builder_state<Kind>(m, "StateBuilder");
     bind_node<Kind>(m, "Node");

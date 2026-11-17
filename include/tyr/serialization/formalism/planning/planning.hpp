@@ -78,7 +78,7 @@ template<class Archive, typename T>
 void describe_fields(Archive& ar, std::type_identity<ygg::RowView<T, ::tyr::formalism::planning::Repository>>)
 {
     ar.field("relation", [](const auto& value) -> decltype(auto) { return (value.get_relation()); });
-    ar.field("objects", [](const auto& value) { return urd::resolve(value.template get<urd::index<::tyr::formalism::Object>>(), value.context()); });
+    ar.field("objects", [](const auto& value) { return value.get_objects(); });
 }
 
 template<class Archive>

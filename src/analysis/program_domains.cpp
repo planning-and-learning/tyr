@@ -132,7 +132,7 @@ void insert_into_predicate_domain_sets(formalism::datalog::AtomListView<GroundTa
         auto& variable_domains = predicate_domain_sets.at(predicate.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : atom.get_objects())
+        for (const auto object : atom.get_row().get_objects())
             variable_domains[pos++].objects.insert(object.index());
     }
 }
@@ -159,7 +159,7 @@ void insert_into_function_domain_sets(formalism::datalog::FunctionTermValueListV
         auto& variable_domains = function_domain_sets.at(function.index());
 
         auto pos = size_t { 0 };
-        for (const auto object : fterm.get_objects())
+        for (const auto object : fterm.get_row().get_objects())
             variable_domains[pos++].objects.insert(object.index());
     }
 }
@@ -193,9 +193,11 @@ struct InsertConstantPolicy
     [[nodiscard]] bool should_skip(formalism::datalog::FunctionView<formalism::FluentTag>) const { return true; }
 
     [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
 
     [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+
     [[nodiscard]] auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>
@@ -230,9 +232,11 @@ struct RestrictPolicy
     [[nodiscard]] bool should_skip(formalism::datalog::FunctionView<formalism::FluentTag>) const { return true; }
 
     [[nodiscard]] const auto& get_domains(formalism::datalog::PredicateView<formalism::StaticTag>) const { return *static_predicate_domain_sets; }
+
     [[nodiscard]] const auto& get_domains(formalism::datalog::PredicateView<formalism::FluentTag>) const { return *fluent_predicate_domain_sets; }
 
     [[nodiscard]] const auto& get_domains(formalism::datalog::FunctionView<formalism::StaticTag>) const { return *static_function_domain_sets; }
+
     [[nodiscard]] const auto& get_domains(formalism::datalog::FunctionView<formalism::FluentTag>) const { return *fluent_function_domain_sets; }
 
     template<typename Symbol>

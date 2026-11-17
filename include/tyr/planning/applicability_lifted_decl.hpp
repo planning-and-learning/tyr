@@ -38,7 +38,9 @@ public:
     }
 
     [[nodiscard]] const StateContext<LiftedTag>& state() const noexcept { return *m_state; }
+
     [[nodiscard]] formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder() const noexcept { return *m_grounder; }
+
     [[nodiscard]] const formalism::planning::FDRContext& fdr() const noexcept { return *m_fdr; }
 
 private:

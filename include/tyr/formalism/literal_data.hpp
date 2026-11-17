@@ -36,7 +36,9 @@ struct data<::tyr::formalism::Literal<T, F>>
     bool polarity = false;
 
     data() = default;
+
     data(urd::index<::tyr::formalism::Atom<T, F>> atom_, bool polarity_) : index(), atom(atom_), polarity(polarity_) {}
+
     static constexpr bool copyable() noexcept
     {
         static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
@@ -44,7 +46,9 @@ struct data<::tyr::formalism::Literal<T, F>>
     }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"atom", &data::atom>, urd::field<"polarity", &data::polarity>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::atom, &data::polarity> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::atom, &data::polarity> {}; }
 };
 

@@ -59,6 +59,7 @@ struct TaggedFactSets
     TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
                    formalism::datalog::FunctionListView<T> functions,
                    const formalism::datalog::Repository& repository_);
+
     /// Facts of predicates only (no functions).
     TaggedFactSets(formalism::datalog::PredicateListView<T> predicates, const formalism::datalog::Repository& repository_) :
         predicate(predicates.size()),
@@ -66,6 +67,7 @@ struct TaggedFactSets
         repository(&repository_)
     {
     }
+
     /// With the atoms and function values given.
     TaggedFactSets(formalism::datalog::PredicateListView<T> predicates,
                    formalism::datalog::FunctionListView<T> functions,

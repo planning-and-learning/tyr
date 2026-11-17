@@ -36,6 +36,7 @@ const ygg::FreeRelationRepository& layer()
 }
 
 ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
+
 const Column w(3), x(0), y(1), z(2);
 
 auto rows(const auto& relation)
@@ -51,12 +52,14 @@ auto rows(const auto& relation)
     std::ranges::sort(result);
     return result;
 }
+
 auto difference(const auto& left_operand, const auto& right_operand)
 {
     std::remove_cvref_t<decltype(left_operand)> result;
     std::ranges::set_difference(left_operand, right_operand, std::back_inserter(result));
     return result;
 }
+
 template<class Tag>
 size_t count(const tyr::datalog::database::QueryPlan& plan)
 {
@@ -65,6 +68,7 @@ size_t count(const tyr::datalog::database::QueryPlan& plan)
         result += tyr::datalog::database::is<Tag>(plan[PlanId(ygg::to_uint_t(position))]);
     return result;
 }
+
 urd::Store<urd::sequence<Column>> labels(std::initializer_list<Column> values)
 {
     urd::Store<urd::sequence<Column>> result(values);

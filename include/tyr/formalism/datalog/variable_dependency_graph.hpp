@@ -51,6 +51,7 @@ public:
     explicit VariableDependencyGraph(ConjunctiveConditionView<LiftedTag> condition);
 
     [[nodiscard]] const auto& unary() const noexcept { return m_unary_dependencies; }
+
     [[nodiscard]] const auto& binary() const noexcept { return m_binary_dependencies; }
 
     /**

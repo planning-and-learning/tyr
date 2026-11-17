@@ -108,6 +108,7 @@ public:
     explicit CountingGBFSWorkerEventHandler(tyr::planning::Statistics& statistics) : m_statistics(&statistics) {}
 
     void on_expand_node(const tyr::planning::Node<Kind>&) override { m_statistics->increment_num_expanded(); }
+
     void on_generate_transition(const tyr::planning::Node<Kind>&, const tyr::planning::LabeledNode<Kind>&, tyr::planning::TransitionOutcome outcome) override
     {
         if (outcome == tyr::planning::TransitionOutcome::OPENED || outcome == tyr::planning::TransitionOutcome::GOAL)
@@ -130,7 +131,9 @@ class UnsupportedParallelGoalStrategy final : public tyr::planning::GoalStrategy
 {
 public:
     bool is_static_goal_satisfied(const tyr::planning::Task<Kind>&) override { return true; }
+
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&) override { return false; }
+
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::BuilderStateView<Kind>&) override { return false; }
 };
 
@@ -141,6 +144,7 @@ public:
     explicit CountingGBFSEventHandler(const tyr::planning::StateRepository<Kind>* caller_repository_) : caller_repository(caller_repository_) {}
 
     void on_start_search(const tyr::planning::Node<Kind>&, ygg::float_t) override {}
+
     void on_new_best_h_value(ygg::float_t) override {}
 
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
@@ -152,9 +156,9 @@ public:
     void on_solved(const tyr::planning::Plan<Kind>& plan) override
     {
         solved_plan_length = plan.get_length();
-        plan_materialized = &plan.get_start_node().get_state().get_state_repository() == caller_repository;
+        plan_materialized = &plan.get_start_node().get_state().context() == caller_repository;
         for (const auto& successor : plan.get_labeled_succ_nodes())
-            plan_materialized &= &successor.node.get_state().get_state_repository() == caller_repository;
+            plan_materialized &= &successor.node.get_state().context() == caller_repository;
     }
 
     tyr::planning::gbfs_lazy::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker> index) override
@@ -187,6 +191,7 @@ public:
     explicit CountingBrFSWorkerEventHandler(tyr::planning::Statistics& statistics) : m_statistics(&statistics) {}
 
     void on_expand_node(const tyr::planning::Node<Kind>&) override { m_statistics->increment_num_expanded(); }
+
     void on_generate_transition(const tyr::planning::Node<Kind>&, const tyr::planning::LabeledNode<Kind>&, tyr::planning::TransitionOutcome outcome) override
     {
         if (outcome == tyr::planning::TransitionOutcome::OPENED || outcome == tyr::planning::TransitionOutcome::GOAL)
@@ -204,16 +209,19 @@ class CountingBrFSEventHandler final : public tyr::planning::brfs::EventHandler<
 {
 public:
     void on_start_search(const tyr::planning::Node<Kind>&) override { ++num_starts; }
+
     void on_finish_layer(ygg::uint_t layer, const tyr::planning::Statistics& statistics) override
     {
         finished_layers.push_back(layer);
         layer_statistics.push_back(statistics);
     }
+
     void on_end_search(tyr::planning::SearchStatus status, const tyr::planning::Statistics& statistics) override
     {
         end_status = status;
         end_statistics = statistics;
     }
+
     void on_solved(const tyr::planning::Plan<Kind>& plan) override { solved_plan_length = plan.get_length(); }
 
     tyr::planning::brfs::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker> index) override
@@ -261,7 +269,7 @@ public:
         if (source_owner != worker)
         {
             m_num_remote_transitions.fetch_add(1, std::memory_order_relaxed);
-            if (m_mode == RepositoryMode::SHARED && !source.get_state_repository().shares_storage_with(target.get_state_repository()))
+            if (m_mode == RepositoryMode::SHARED && !source.context().shares_storage_with(target.context()))
                 m_wrong_shared_remote_repository.store(true, std::memory_order_relaxed);
         }
         access(worker, target);
@@ -300,7 +308,7 @@ private:
     {
         if (m_mode == RepositoryMode::SHARED)
             return urd::index<tyr::planning::Worker>(static_cast<ygg::uint_t>(static_cast<ygg::uint_t>(state.index().value) % num_workers));
-        return m_hash.owner(tyr::planning::StateContext { state.get_task(), state, ygg::float_t { 0 } }, num_workers);
+        return m_hash.owner(tyr::planning::StateContext { *state.context().get_task(), state, ygg::float_t { 0 } }, num_workers);
     }
 
     void observe_repository(Lane& lane, const tyr::planning::StateView<Kind>& state) const
@@ -309,7 +317,7 @@ private:
             return;
 
         auto* expected_repository = static_cast<const tyr::planning::StateRepository<Kind>*>(nullptr);
-        const auto* repository = &state.get_state_repository();
+        const auto* repository = &state.context();
         if (!lane.repository.compare_exchange_strong(expected_repository, repository, std::memory_order_relaxed)
             && !expected_repository->shares_storage_with(*repository))
             lane.wrong_repository.store(true, std::memory_order_relaxed);
@@ -356,8 +364,11 @@ public:
     explicit GuardedBrFSEventHandler(std::shared_ptr<OwnerAccessGuard<Kind>> guard) : m_guard(std::move(guard)) {}
 
     void on_start_search(const tyr::planning::Node<Kind>&) override {}
+
     void on_finish_layer(ygg::uint_t, const tyr::planning::Statistics&) override {}
+
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override {}
+
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::brfs::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker> worker) override
@@ -440,7 +451,9 @@ class GatedAStarEventHandler final : public tyr::planning::astar_eager::EventHan
 {
 public:
     void on_start_search(const tyr::planning::Node<Kind>&, ygg::float_t) override {}
+
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override {}
+
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
@@ -487,8 +500,11 @@ class LayeredAStarEventHandler final : public tyr::planning::astar_eager::EventH
 {
 public:
     void on_start_search(const tyr::planning::Node<Kind>&, ygg::float_t) override {}
+
     void on_finish_f_layer(ygg::float_t f_value, const tyr::planning::Statistics&) override { finished_f_layers.push_back(f_value); }
+
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override {}
+
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
@@ -510,7 +526,9 @@ class ThrowingAStarEventHandler final : public tyr::planning::astar_eager::Event
 {
 public:
     void on_start_search(const tyr::planning::Node<Kind>&, ygg::float_t) override {}
+
     void on_end_search(tyr::planning::SearchStatus, const tyr::planning::Statistics&) override {}
+
     void on_solved(const tyr::planning::Plan<Kind>&) override {}
 
     tyr::planning::astar_eager::WorkerEventHandlerPtr<Kind> make_worker(urd::index<tyr::planning::Worker>) override
@@ -628,9 +646,9 @@ void expect_sequential_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
 
     ASSERT_EQ(plan.get_length(), 1);
     EXPECT_EQ(repository->num_states(), num_states);
-    EXPECT_EQ(&plan.get_start_node().get_state().get_state_repository(), repository.get());
+    EXPECT_EQ(&plan.get_start_node().get_state().context(), repository.get());
     EXPECT_EQ(plan.get_start_node().get_state().index(), start.get_state().index());
-    EXPECT_EQ(&plan.get_labeled_succ_nodes().front().node.get_state().get_state_repository(), repository.get());
+    EXPECT_EQ(&plan.get_labeled_succ_nodes().front().node.get_state().context(), repository.get());
     EXPECT_EQ(plan.get_labeled_succ_nodes().front().node.get_state().index(), final_node.get_state().index());
 }
 
@@ -703,9 +721,9 @@ void expect_parallel_reconstruction(const tyr::planning::TaskPtr<Kind>& task)
     ASSERT_EQ(plan->get_length(), 2);
     EXPECT_TRUE(first_repository.expired());
     EXPECT_TRUE(second_repository.expired());
-    EXPECT_EQ(&plan->get_start_node().get_state().get_state_repository(), caller_repository.get());
-    EXPECT_EQ(&plan->get_labeled_succ_nodes()[0].node.get_state().get_state_repository(), caller_repository.get());
-    EXPECT_EQ(&plan->get_labeled_succ_nodes()[1].node.get_state().get_state_repository(), caller_repository.get());
+    EXPECT_EQ(&plan->get_start_node().get_state().context(), caller_repository.get());
+    EXPECT_EQ(&plan->get_labeled_succ_nodes()[0].node.get_state().context(), caller_repository.get());
+    EXPECT_EQ(&plan->get_labeled_succ_nodes()[1].node.get_state().context(), caller_repository.get());
     EXPECT_EQ(plan->get_labeled_succ_nodes()[0].label.get_relation().get_name().str(), "pick");
     EXPECT_EQ(plan->get_labeled_succ_nodes()[1].label.get_relation().get_name().str(), "move");
 }
@@ -739,7 +757,7 @@ void expect_parallel_lazy_gbfs(const tyr::planning::TaskPtr<Kind>& task, Reposit
     const auto expect_caller_state = [&](const auto& node)
     {
         const auto& state = node.get_state();
-        EXPECT_EQ(&state.get_state_repository(), repository.get());
+        EXPECT_EQ(&state.context(), repository.get());
         EXPECT_EQ(repository->get_registered_state(state.index()), state);
     };
     expect_caller_state(result.plan.value().get_start_node());
@@ -810,10 +828,10 @@ void expect_parallel_brfs(const tyr::planning::TaskPtr<Kind>& task, RepositoryMo
     ASSERT_TRUE(result.goal_node);
     ASSERT_FALSE(result.plan.value().empty());
     EXPECT_EQ(result.plan.value().get_cost(), result.plan.value().get_length());
-    EXPECT_EQ(&result.plan.value().get_start_node().get_state().get_state_repository(), repository.get());
+    EXPECT_EQ(&result.plan.value().get_start_node().get_state().context(), repository.get());
     for (const auto& successor : result.plan.value().get_labeled_succ_nodes())
-        EXPECT_EQ(&successor.node.get_state().get_state_repository(), repository.get());
-    EXPECT_EQ(&result.goal_node.value().get_state().get_state_repository(), repository.get());
+        EXPECT_EQ(&successor.node.get_state().context(), repository.get());
+    EXPECT_EQ(&result.goal_node.value().get_state().context(), repository.get());
 
     ASSERT_EQ(result.worker_statistics.size(), 2);
     auto num_registered_states = uint64_t { 0 };
@@ -918,7 +936,7 @@ void expect_parallel_iw(const tyr::planning::TaskPtr<Kind>& task, RepositoryMode
     const auto iw_result = tyr::planning::iw::find_solution(brfs_solver, 2);
     ASSERT_EQ(iw_result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(iw_result.plan);
-    EXPECT_EQ(&iw_result.plan.value().get_start_node().get_state().get_state_repository(), repository.get());
+    EXPECT_EQ(&iw_result.plan.value().get_start_node().get_state().context(), repository.get());
     expect_aggregated_worker_statistics(iw_result, 2);
 }
 
@@ -940,9 +958,9 @@ void expect_parallel_siw_outer_orchestration(const tyr::planning::TaskPtr<Kind>&
     ASSERT_EQ(siw_result.status, tyr::planning::SearchStatus::SOLVED);
     ASSERT_TRUE(siw_result.plan);
     EXPECT_GT(event_handler->get_statistics().get_num_solved_subsearches(), 1);
-    EXPECT_EQ(&siw_result.plan.value().get_start_node().get_state().get_state_repository(), repository.get());
+    EXPECT_EQ(&siw_result.plan.value().get_start_node().get_state().context(), repository.get());
     for (const auto& successor : siw_result.plan.value().get_labeled_succ_nodes())
-        EXPECT_EQ(&successor.node.get_state().get_state_repository(), repository.get());
+        EXPECT_EQ(&successor.node.get_state().context(), repository.get());
     expect_aggregated_worker_statistics(siw_result, 2);
 }
 
@@ -967,10 +985,10 @@ void expect_parallel_astar(const tyr::planning::TaskPtr<Kind>& task,
     ASSERT_TRUE(result.plan);
     ASSERT_TRUE(result.goal_node);
     ASSERT_FALSE(result.plan.value().empty());
-    EXPECT_EQ(&result.plan.value().get_start_node().get_state().get_state_repository(), repository.get());
+    EXPECT_EQ(&result.plan.value().get_start_node().get_state().context(), repository.get());
     for (const auto& successor : result.plan.value().get_labeled_succ_nodes())
-        EXPECT_EQ(&successor.node.get_state().get_state_repository(), repository.get());
-    EXPECT_EQ(&result.goal_node.value().get_state().get_state_repository(), repository.get());
+        EXPECT_EQ(&successor.node.get_state().context(), repository.get());
+    EXPECT_EQ(&result.goal_node.value().get_state().context(), repository.get());
 
     ASSERT_EQ(result.worker_statistics.size(), 2);
     auto num_registered_states = uint64_t { 0 };
@@ -1079,9 +1097,10 @@ std::optional<uint64_t> find_weighted_astar_seed(tyr::planning::SuccessorGenerat
     for (uint64_t seed = 0; seed < 1024; ++seed)
     {
         const auto hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(seed);
-        const auto start_owner = hash.owner(tyr::planning::StateContext { start.get_state().get_task(), start.get_state(), ygg::float_t { 0 } }, 2);
-        if (hash.owner(tyr::planning::StateContext { start.get_state().get_task(), **direct, ygg::float_t { 0 } }, 2) == start_owner
-            && hash.owner(tyr::planning::StateContext { start.get_state().get_task(), **via, ygg::float_t { 0 } }, 2) != start_owner)
+        const auto start_owner =
+            hash.owner(tyr::planning::StateContext { (*start.get_state().context().get_task()), start.get_state(), ygg::float_t { 0 } }, 2);
+        if (hash.owner(tyr::planning::StateContext { (*start.get_state().context().get_task()), **direct, ygg::float_t { 0 } }, 2) == start_owner
+            && hash.owner(tyr::planning::StateContext { (*start.get_state().context().get_task()), **via, ygg::float_t { 0 } }, 2) != start_owner)
             return seed;
     }
     return std::nullopt;
@@ -1127,10 +1146,10 @@ void expect_parallel_astar_keeps_searching_after_first_goal(const tyr::planning:
         EXPECT_GT(result.worker_statistics[1].get_state_storage_memory_usage(), 0);
     else
         EXPECT_EQ(result.worker_statistics[1].get_state_storage_memory_usage(), 0);
-    EXPECT_EQ(&result.plan.value().get_start_node().get_state().get_state_repository(), repository.get());
+    EXPECT_EQ(&result.plan.value().get_start_node().get_state().context(), repository.get());
     for (const auto& successor : result.plan.value().get_labeled_succ_nodes())
-        EXPECT_EQ(&successor.node.get_state().get_state_repository(), repository.get());
-    EXPECT_EQ(&result.goal_node.value().get_state().get_state_repository(), repository.get());
+        EXPECT_EQ(&successor.node.get_state().context(), repository.get());
+    EXPECT_EQ(&result.goal_node.value().get_state().context(), repository.get());
 }
 
 template<TaskKind Kind>

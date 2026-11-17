@@ -34,7 +34,7 @@ namespace tyr::formalism::planning
 void bind_fdr_variable(nb::module_& m, RepositoryBinding& repository)
 {
     urd::python::bind_data<FDRVariable<FluentTag>>(m);
-    urd::python::bind_view<FDRVariableView<FluentTag>>(m).def("get_domain_size", &FDRVariableView<FluentTag>::get_domain_size);
+    urd::python::bind_view<FDRVariableView<FluentTag>>(m);
     ygg::bind_insert<FDRVariable<FluentTag>>(repository);
 }
 

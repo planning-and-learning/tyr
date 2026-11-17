@@ -35,10 +35,15 @@ template<typename T>
 struct FloatCmp
 {
     static bool eq(T a, T b) noexcept { return a == b; }
+
     static bool ne(T a, T b) noexcept { return a != b; }
+
     static bool le(T a, T b) noexcept { return a <= b; }
+
     static bool lt(T a, T b) noexcept { return a < b; }
+
     static bool ge(T a, T b) noexcept { return a >= b; }
+
     static bool gt(T a, T b) noexcept { return a > b; }
 };
 

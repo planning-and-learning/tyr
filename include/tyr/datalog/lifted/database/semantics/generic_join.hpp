@@ -26,11 +26,13 @@ struct GenericJoinWork
     size_t probes = 0;
     size_t prefixes = 0;
 };
+
 inline GenericJoinWork& generic_join_work() noexcept
 {
     thread_local GenericJoinWork work;
     return work;
 }
+
 void count_generic_join_work(size_t GenericJoinWork::* member) noexcept;
 
 struct GenericJoinTrie;
@@ -111,15 +113,18 @@ class GenericJoinWorkspace
         m_row.reset(out.widths());
         enumerate(0, out);
     }
+
     void append(urd::builder<ygg::Relation<ygg::Schema>>& out)
     {
         append(out, [&](size_t input) -> const auto& { return m_tries[input]; });
     }
+
     /// Appends the assignments that read the replacement trie for the replaced input.
     void append(urd::builder<ygg::Relation<ygg::Schema>>& out, size_t replaced, const detail::GenericJoinTrie& replacement)
     {
         append(out, [&](size_t input) -> const auto& { return input == replaced ? replacement : m_tries[input]; });
     }
+
     detail::GenericJoinTrie& trie(size_t input) { return m_tries.at(input); }
 
     friend class incremental::GenericJoinEvaluator;

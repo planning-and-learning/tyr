@@ -42,6 +42,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Variable>> variables_,
          urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::LiftedTag>> body_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> heads_,
@@ -53,6 +54,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
         cost(cost_)
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -66,7 +68,9 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::LiftedTag>>
                            urd::field<"heads", &data::heads>,
                            urd::field<"cost", &data::cost>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variables, &data::body, &data::heads, &data::cost> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variables, &data::body, &data::heads, &data::cost> {}; }
 };
 
@@ -79,6 +83,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
     ygg::float_t cost { 0 };  ///< The edge cost of deriving a head.
 
     data() = default;
+
     data(urd::index<::tyr::formalism::datalog::ConjunctiveCondition<::tyr::GroundTag>> body_,
          urd::flat_vector<urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> heads_,
          ygg::float_t cost_ = 0) :
@@ -88,6 +93,7 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
         cost(cost_)
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -96,8 +102,10 @@ struct data<::tyr::formalism::datalog::Rule<::tyr::GroundTag>>
 
     static constexpr auto fields() noexcept
     { return urd::Fields<urd::field<"body", &data::body>, urd::field<"heads", &data::heads>, urd::field<"cost", &data::cost>> {}; }
+
     /// Identified by its content: identical ground rules are one rule.
     static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::body, &data::heads, &data::cost> {}; }
 };
 }

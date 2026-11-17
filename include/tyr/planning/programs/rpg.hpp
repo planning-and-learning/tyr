@@ -90,7 +90,9 @@ public:
     [[nodiscard]] const datalog::RuleSplitting& get_rule_splitting() const noexcept { return m_rule_splitting; }
 
     datalog::Program<Kind>& get_datalog_program() noexcept { return m_datalog_program; }
+
     [[nodiscard]] const datalog::Program<Kind>& get_datalog_program() const noexcept { return m_datalog_program; }
+
     /// Not noexcept: the view accessors it goes through are checked and may throw.
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access): value() is the check: it throws for a program without a goal
     [[nodiscard]] formalism::datalog::ConjunctiveConditionView<GroundTag> get_goal() const { return m_datalog_program.get_program().get_goal().value(); }

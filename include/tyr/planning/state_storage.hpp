@@ -82,13 +82,17 @@ struct AtomUnpackedStorage
 
     [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) const
     { return indices.contains(static_cast<ygg::uint_t>(index.value)); }
+
     /// Its derived atoms, by their bits.
     [[nodiscard]] auto atoms() const noexcept
     {
         return urd::transform(indices, [](ygg::uint_t i) { return urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> { i }; });
     }
+
     void set(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) { indices.insert(static_cast<ygg::uint_t>(index.value)); }
+
     void clear() { indices.clear(); }
+
     void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&AtomUnpackedStorage::indices> {}; }
@@ -111,6 +115,7 @@ struct NumericUnpackedStorage
 
     [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
     { return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
+
     void set(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
     {
         tyr::set(static_cast<ygg::uint_t>(index.value),
@@ -118,6 +123,7 @@ struct NumericUnpackedStorage
                  values,
                  std::numeric_limits<ygg::float_t>::quiet_NaN());
     }
+
     /// The function terms with a value (not NaN) and their values, by ascending function term.
     [[nodiscard]] auto fterm_values() const noexcept
     {
@@ -129,7 +135,9 @@ struct NumericUnpackedStorage
                        return std::pair<FunctionTermIndex, ygg::float_t> { FunctionTermIndex { static_cast<ygg::uint_t>(i) }, values[i] };
                    });
     }
+
     void clear() { values.clear(); }
+
     void swap(NumericUnpackedStorage& other) noexcept { values.swap(other.values); }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&NumericUnpackedStorage::values> {}; }

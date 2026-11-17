@@ -63,8 +63,10 @@ concept SymbolContextFor = requires(const C& context) {
 struct ObjectContext
 {
     const tyr::formalism::planning::Repository* repository;
+
     [[maybe_unused]] friend const tyr::formalism::planning::Repository& get_repository(const ObjectContext& context) noexcept { return *context.repository; }
 };
+
 static_assert(SymbolRepositoryFor<tyr::formalism::planning::Repository, tyr::formalism::Object>);
 static_assert(SymbolContextFor<ObjectContext, tyr::formalism::Object>);
 static_assert(!SymbolContextFor<int, tyr::formalism::Object>);

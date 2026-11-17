@@ -34,6 +34,7 @@
 #include <urd/store.hpp>
 #include <utility>
 #include <vector>
+#include <yggdrasil/formalism/row_view.hpp>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -46,7 +47,7 @@ std::optional<urd::Store<urd::sequence<urd::index<Object>>>>
 extract_rigid_values(InvariantView inv, AtomView<LiftedTag, FluentTag> part, AtomView<GroundTag, FluentTag> atom)
 {
     const auto terms = part.get_terms();
-    const auto objects = atom.get_objects();
+    const auto objects = atom.get_row().get_objects();
     if (terms.size() != objects.size())
         return std::nullopt;
 
@@ -126,8 +127,8 @@ struct GroupKey : urd::compared_by_identity<GroupKey>
 
 bool structural_less(AtomView<GroundTag, FluentTag> lhs, AtomView<GroundTag, FluentTag> rhs)
 {
-    const auto lhs_key = std::tuple(lhs.get_predicate(), lhs.get_objects());
-    const auto rhs_key = std::tuple(rhs.get_predicate(), rhs.get_objects());
+    const auto lhs_key = std::tuple(lhs.get_predicate(), lhs.get_row().get_objects());
+    const auto rhs_key = std::tuple(rhs.get_predicate(), rhs.get_row().get_objects());
 
     return urd::Less<std::remove_cvref_t<decltype(lhs_key)>> {}(lhs_key, rhs_key);
 }
@@ -376,6 +377,7 @@ urd::Store<urd::sequence<MutexGroup>> compute_mutex_groups_in_order(const AtomVi
 
     return result;
 }
+
 urd::Store<urd::sequence<MutexGroup>> compute_all_mutex_groups(const AtomViewList<GroundTag, FluentTag>& initial_atoms,
                                                                const AtomViewList<GroundTag, FluentTag>& all_atoms,
                                                                const InvariantViewList& invariants)

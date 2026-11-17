@@ -69,20 +69,12 @@ struct StateFormattingView
     template<tyr::formalism::FactKind F>
     [[nodiscard]] auto get_atoms() const
     { return state->template get_atoms<F>(); }
+
     [[nodiscard]] auto get_fluent_facts_view() const { return state->get_fluent_facts_view(); }
+
     template<tyr::formalism::FactKind F>
     [[nodiscard]] auto get_fterm_values_view() const
     { return state->template get_fterm_values_view<F>(); }
-};
-
-struct StateWithMutableTask : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
-{
-    [[nodiscard]] tyr::planning::Task<tyr::GroundTag>& get_task() const;
-};
-
-struct StateWithTaskValue : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
-{
-    [[nodiscard]] tyr::planning::Task<tyr::GroundTag> get_task() const;
 };
 
 struct StateWithMutableAtoms : StateWithoutMetadata<tyr::planning::StateView<tyr::GroundTag>>
@@ -96,10 +88,13 @@ template<tyr::TaskKind Kind>
 struct StateWithThrowingMove : tyr::planning::BuilderStateView<Kind>
 {
     explicit StateWithThrowingMove(tyr::planning::BuilderStateView<Kind> state) : tyr::planning::BuilderStateView<Kind>(state) {}
+
     StateWithThrowingMove(const StateWithThrowingMove&) = default;
+
     // Throws by design: the tests check that a throwing state move propagates.
     StateWithThrowingMove(StateWithThrowingMove&& other) noexcept(false) : tyr::planning::BuilderStateView<Kind>(other)
     { throw std::runtime_error("state move"); }
+
     StateWithThrowingMove& operator=(const StateWithThrowingMove&) = delete;
     StateWithThrowingMove& operator=(StateWithThrowingMove&&) = delete;
     ~StateWithThrowingMove() = default;
@@ -109,6 +104,7 @@ template<tyr::TaskKind Kind>
 struct StateWithThrowingPack : tyr::planning::StateView<Kind>
 {
     explicit StateWithThrowingPack(tyr::planning::StateView<Kind> state) : tyr::planning::StateView<Kind>(std::move(state)) {}
+
     [[nodiscard]] tyr::planning::PackedStateView<Kind> pack() const { throw std::runtime_error("state pack"); }
 };
 }  // namespace
@@ -139,8 +135,7 @@ static_assert(
     }(StateKinds {}));
 
 template<typename T>
-concept HasStateIdentity =
-    requires(const T& state) { state.index(); } || requires(const T& state) { state.pack(); } || requires(const T& state) { state.get_state_repository(); };
+concept HasStateIdentity = requires(const T& state) { state.index(); } || requires(const T& state) { state.pack(); };
 
 static_assert(
     []<typename... Kinds>(boost::mp11::mp_list<Kinds...>)
@@ -160,8 +155,6 @@ static_assert(!tyr::planning::StateViewConcept<const tyr::planning::StateView<ty
 
 static_assert(!tyr::planning::StateViewConcept<tyr::planning::StateView<tyr::GroundTag>, void>);
 static_assert(!tyr::planning::StateViewConcept<tyr::planning::StateView<tyr::GroundTag>, int>);
-static_assert(!tyr::planning::StateViewConcept<StateWithMutableTask, tyr::GroundTag>);
-static_assert(!tyr::planning::StateViewConcept<StateWithTaskValue, tyr::GroundTag>);
 static_assert(!tyr::planning::IterableStateConcept<StateWithMutableAtoms&>);
 static_assert(!tyr::planning::StateViewConcept<StateWithMutableAtoms&, tyr::GroundTag>);
 static_assert(
@@ -368,11 +361,11 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
                                   const tyr::planning::StateView<Kind>& registered,
                                   tyr::formalism::planning::ActionRowView label)
 {
-    const auto num_states = registered.get_state_repository().num_states();
+    const auto num_states = registered.context().num_states();
     auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
     auto owned = pool.make_unique();
     owned->assign(registered);
-    const auto state = urd::resolve(*owned, registered.get_state_repository());
+    const auto state = urd::resolve(*owned, registered.context());
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms<formalism::FluentTag>(), registered.template get_atoms<formalism::FluentTag>()));
     EXPECT_TRUE(std::ranges::equal(state.template get_atoms<formalism::DerivedTag>(), registered.template get_atoms<formalism::DerivedTag>()));
     EXPECT_TRUE(
@@ -384,7 +377,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_EQ(fmt::format("{}", formatting_view), fmt::format("{}", state));
     const auto markerless_state = StateWithoutMetadata(state);
     const auto markerless_node = tyr::planning::Node<Kind, StateWithoutMetadata<tyr::planning::BuilderStateView<Kind>>>(markerless_state, 3);
-    EXPECT_EQ(&markerless_node.get_state().get_task(), task.get());
+    EXPECT_EQ(&(*markerless_node.get_state().context().get_task()), task.get());
     EXPECT_TRUE(std::ranges::equal(markerless_state.template get_atoms<formalism::FluentTag>(), state.template get_atoms<formalism::FluentTag>()));
     const auto node = tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(state, 3);
     const auto labeled = tyr::planning::LabeledNode<Kind, tyr::planning::BuilderStateView<Kind>> { label, node };
@@ -428,8 +421,8 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_NE(fmt::format("{}", labeled).find(label.get_relation().get_name().str()), std::string::npos);
     EXPECT_EQ(&state.get_fact_storage(), &owned->fact_storage);
     EXPECT_EQ(&state.get_fact_storage(), &owned->fact_storage);
-    EXPECT_EQ(&state.context(), &registered.get_state_repository());
-    EXPECT_EQ(&state.get_task(), &registered.get_task());
+    EXPECT_EQ(&state.context(), &registered.context());
+    EXPECT_EQ(&*state.context().get_task(), &*registered.context().get_task());
     EXPECT_EQ(state.get_formalism_repository(), registered.get_formalism_repository());
     EXPECT_TRUE(std::ranges::equal(state.template get_atom_indices<::tyr::formalism::StaticTag>(),
                                    registered.template get_atom_indices<::tyr::formalism::StaticTag>()));
@@ -463,7 +456,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
                 if (candidate.get_predicate() == atom.get_predicate())
                     expected.push_back(candidate);
             // The temporary state and predicate wrappers expire before traversal.
-            auto borrowed = urd::resolve(*owned, registered.get_state_repository()).get_atoms(atom.get_predicate());
+            auto borrowed = urd::resolve(*owned, registered.context()).get_atoms(atom.get_predicate());
             auto indexed = tyr::planning::StateView<Kind>(registered).get_atoms(atom.get_predicate());
             EXPECT_TRUE(std::ranges::equal(borrowed, expected));
             EXPECT_TRUE(std::ranges::equal(indexed, expected));
@@ -538,7 +531,7 @@ void expect_borrowed_builder_view(const tyr::planning::TaskPtr<Kind>& task,
     EXPECT_EQ(nodes.front().get_state().value(fterm), value + 1);
     EXPECT_EQ(labeled_nodes.front().node.get_state().value(fterm), value + 1);
     EXPECT_EQ(registered.value(fterm), value);
-    EXPECT_EQ(registered.get_state_repository().num_states(), num_states);
+    EXPECT_EQ(registered.context().num_states(), num_states);
     if constexpr (std::same_as<Kind, GroundTag>)
     {
         auto& values = moved->fact_storage.values;
@@ -573,9 +566,10 @@ void expect_generated_successor_deltas(tyr::planning::SuccessorGenerator<Kind>& 
             auto delta = tyr::planning::StateDelta {};
             generator.generate_successor_state(parent, binding, *builder, delta);
             auto expected = tyr::planning::StateDelta {};
-            tyr::planning::compute_state_delta(tyr::planning::StateContext { parent.get_state().get_task(), parent.get_state(), ygg::float_t { 0 } },
-                                               tyr::planning::StateContext { parent.get_state().get_task(), *builder, ygg::float_t { 0 } },
-                                               expected);
+            tyr::planning::compute_state_delta(
+                tyr::planning::StateContext { (*parent.get_state().context().get_task()), parent.get_state(), ygg::float_t { 0 } },
+                tyr::planning::StateContext { (*parent.get_state().context().get_task()), *builder, ygg::float_t { 0 } },
+                expected);
             EXPECT_EQ(delta, expected);
             return with_parent ? repository.register_state(axioms, std::move(builder), parent.get_state(), delta) :
                                  repository.register_state(axioms, std::move(builder));
@@ -606,11 +600,11 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
             released_builder = &state.get_fact_storage();
             return state.pack();
         }();
-        auto recycled_builder = packed.get_state_repository().get_state_builder();
+        auto recycled_builder = packed.context().get_state_builder();
         EXPECT_EQ(&recycled_builder->fact_storage, released_builder);
         recycled_builder = {};
         EXPECT_EQ(packed.unpack().pack(), packed);
-        EXPECT_EQ(packed.get_state_repository().num_states(), 1);
+        EXPECT_EQ(packed.context().num_states(), 1);
     }
 
     const auto initial = generator->get_initial_node(*repository, *axioms);
@@ -642,7 +636,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         const auto packed_state = state.pack();
         const auto unpacked = packed_state.unpack();
         EXPECT_EQ(repository->state_index(packed_state.index()), state.index());
-        EXPECT_EQ(&packed_state.get_state_repository(), repository.get());
+        EXPECT_EQ(&packed_state.context(), repository.get());
         EXPECT_EQ(unpacked, state);
         EXPECT_EQ(unpacked.pack(), packed_state);
         EXPECT_TRUE(std::ranges::equal(unpacked.get_fluent_facts(), state.get_fluent_facts()));
@@ -681,8 +675,8 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
                 builder->assign_unextended_part(parent);
                 change(*builder);
                 auto delta = tyr::planning::StateDelta {};
-                tyr::planning::compute_state_delta(tyr::planning::StateContext { parent.get_task(), parent, ygg::float_t { 0 } },
-                                                   tyr::planning::StateContext { parent.get_task(), *builder, ygg::float_t { 0 } },
+                tyr::planning::compute_state_delta(tyr::planning::StateContext { *parent.context().get_task(), parent, ygg::float_t { 0 } },
+                                                   tyr::planning::StateContext { *parent.context().get_task(), *builder, ygg::float_t { 0 } },
                                                    delta);
                 return with_parent ? repository->register_state(*axioms, std::move(builder), parent, delta) :
                                      repository->register_state(*axioms, std::move(builder));
@@ -860,9 +854,10 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
         auto generated_delta = tyr::planning::StateDelta {};
         generator->generate_successor_state(borrowed, *raise, *generated, generated_delta);
         auto expected_delta = tyr::planning::StateDelta {};
-        tyr::planning::compute_state_delta(tyr::planning::StateContext { borrowed.get_state().get_task(), borrowed.get_state(), ygg::float_t { 0 } },
-                                           tyr::planning::StateContext { borrowed.get_state().get_task(), *generated, ygg::float_t { 0 } },
-                                           expected_delta);
+        tyr::planning::compute_state_delta(
+            tyr::planning::StateContext { (*borrowed.get_state().context().get_task()), borrowed.get_state(), ygg::float_t { 0 } },
+            tyr::planning::StateContext { (*borrowed.get_state().context().get_task()), *generated, ygg::float_t { 0 } },
+            expected_delta);
         EXPECT_EQ(generated_delta, expected_delta);
         axioms->compute_extended_state(*generated);
         const auto generated_view = urd::resolve(*generated, *repository);
@@ -911,6 +906,7 @@ void expect_registered_closures_and_transition_costs(const tyr::planning::TaskPt
     expect_duplicate(cheap->node.get_state());
     EXPECT_EQ(repository->num_states(), 4);
 }
+
 /// Checks the deltas of all successors within the first layers of a breadth-first search from the initial state.
 template<TaskKind Kind>
 void expect_exact_successor_deltas(const tyr::planning::TaskPtr<Kind>& task, bool concurrent)

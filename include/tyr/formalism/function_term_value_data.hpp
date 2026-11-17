@@ -37,7 +37,9 @@ struct data<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>
     ygg::float_t value = 0.0;
 
     data() = default;
+
     data(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, F>> fterm_, ygg::float_t value_) : index(), fterm(fterm_), value(value_) {}
+
     static constexpr bool copyable() noexcept
     {
         static_assert(std::is_trivially_copyable_v<data>, "a copyable record is trivially copyable");
@@ -45,7 +47,9 @@ struct data<::tyr::formalism::FunctionTermValue<::tyr::GroundTag, F>>
     }
 
     static constexpr auto fields() noexcept { return urd::Fields<urd::field<"fterm", &data::fterm>, urd::field<"value", &data::value>> {}; }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::fterm, &data::value> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::fterm, &data::value> {}; }
 };
 

@@ -58,10 +58,10 @@ def print_task(formalism_task: TaskLifted) -> None:
     # The separation from above induces a parallel separation for atom, literal, ground atom, and ground literal.
     print("\nStatic initial ground atoms:")
     for ground_atom in formalism_task.get_static_atoms():
-        print(ground_atom.get_predicate(), ground_atom.get_objects())
+        print(ground_atom.get_predicate(), ground_atom.get_row().get_objects())
     print("\nFluent initial ground atoms:")
     for ground_atom in formalism_task.get_fluent_atoms():
-        print(ground_atom.get_predicate(), ground_atom.get_objects())
+        print(ground_atom.get_predicate(), ground_atom.get_row().get_objects())
 
     # The task may contain task-specific derived predicates, e.g., miconic-fulladl,
     # resulting from the translation of complicated goal, i.e., non-conjunctions of literals.

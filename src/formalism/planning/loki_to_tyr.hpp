@@ -93,6 +93,7 @@ private:
     {
         std::for_each(std::begin(range), std::end(range), [&](auto&& arg) { this->prepare(arg); });
     }
+
     template<typename T>
     void prepare(const std::optional<T>& element)
     {
@@ -101,6 +102,7 @@ private:
             this->prepare(element.value());
         }
     }
+
     void prepare(loki::formalism::FunctionSkeletonView function_skeleton);
     void prepare(loki::formalism::ObjectView object);
     void prepare(loki::formalism::ParameterView parameter);

@@ -40,6 +40,7 @@
 #include <urd/store.hpp>
 #include <vector>
 #include <yggdrasil/execution/onetbb.hpp>
+#include <yggdrasil/formalism/row_view.hpp>
 #include <yggdrasil/formatting/cista_formatters.hpp>
 
 namespace tyr::tests
@@ -50,6 +51,7 @@ using formalism::planning::InvariantView;
 using formalism::planning::InvariantViewList;
 
 std::filesystem::path ferry_domain() { return std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/domain.pddl"; }
+
 std::filesystem::path ferry_task() { return std::filesystem::path(BENCHMARKS_DIR) / "classical/tests/ferry/test-1.pddl"; }
 
 std::set<std::string> predicate_names(InvariantView invariant)
@@ -78,7 +80,7 @@ std::multiset<std::string> variable_texts(const planning::GroundTaskInstantiatio
         for (const auto atom : variable.get_atoms())
         {
             auto objects = urd::Store<urd::sequence<std::string>> {};
-            for (const auto object : atom.get_objects())
+            for (const auto object : atom.get_row().get_objects())
                 objects.push_back(fmt::format("{}", object.get_name()));
             names.push_back(fmt::format("{}({})", atom.get_predicate().get_name(), fmt::join(objects, ",")));
         }

@@ -42,6 +42,7 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
     urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
+
     data(urd::flat_vector<urd::index<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> literals_,
          urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
          urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::LiftedTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect_) :
@@ -51,6 +52,7 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
         auxiliary_numeric_effect(std::move(auxiliary_numeric_effect_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -63,7 +65,9 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::LiftedTag>>
                            urd::field<"numeric_effects", &data::numeric_effects>,
                            urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::literals, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
 };
@@ -78,6 +82,7 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
     urd::flat_optional<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
 
     data() = default;
+
     data(urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> add_facts_,
          urd::flat_vector<urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>>> del_facts_,
          urd::flat_vector<urd::index<::tyr::formalism::NumericEffect<::tyr::GroundTag, ::tyr::formalism::FluentTag>>> numeric_effects_,
@@ -89,6 +94,7 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
         auxiliary_numeric_effect(std::move(auxiliary_numeric_effect_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -102,8 +108,10 @@ struct data<::tyr::formalism::planning::ConjunctiveEffect<::tyr::GroundTag>>
                            urd::field<"numeric_effects", &data::numeric_effects>,
                            urd::field<"auxiliary_numeric_effect", &data::auxiliary_numeric_effect>> {};
     }
+
     static constexpr auto identifying_members() noexcept
     { return urd::Members<&data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
+
     static constexpr auto cista_members() noexcept
     { return urd::Members<&data::index, &data::add_facts, &data::del_facts, &data::numeric_effects, &data::auxiliary_numeric_effect> {}; }
 };

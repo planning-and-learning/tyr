@@ -83,6 +83,7 @@ std::string to_string(TermView value)
 {
     return std::visit([](auto term) { return fmt::format("{}", term); }, value);
 }
+
 std::string to_string(const urd::data<ygg::Row<Rule<LiftedTag>>>& value) { return node_format::format(value); }
 
 /// One DOT graph per kind of binary dependency, named after it: the condition's parameters, adjacent where they occur

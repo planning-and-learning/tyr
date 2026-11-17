@@ -138,6 +138,7 @@ public:
         m_storage(&storage),
         m_version(version)
     { m_storage->clear(); }
+
     AStar(const AStar&) = delete;
     AStar& operator=(const AStar&) = delete;
     AStar(AStar&&) = delete;  // One search, run in place.

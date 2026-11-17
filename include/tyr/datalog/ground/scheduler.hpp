@@ -140,6 +140,7 @@ public:
 
     /// The rules whose conditions all hold and that have not fired yet; the solver fires and empties them.
     auto& ready() noexcept { return m_ready; }
+
     /// The cost a ready rule fires with: the aggregate of its conditions' costs.
     [[nodiscard]] Cost support(formalism::datalog::RuleView<GroundTag> rule) const noexcept
     { return m_states[static_cast<ygg::uint_t>(rule.index().value)].support; }
@@ -158,9 +159,13 @@ public:
     void notify_generated(const CostBuckets::Bucket& bucket, ProgramExecutionContext<GroundTag, AP, TP, CP>& ctx);
 
     [[nodiscard]] const RuleStates& get_states() const noexcept { return m_states; }
+
     GroundQueueStatistics& statistics() noexcept { return m_statistics; }
+
     [[nodiscard]] const GroundQueueStatistics& statistics() const noexcept { return m_statistics; }
+
     GroundSchedulerScratch& scratch() noexcept { return m_scratch; }
+
     [[nodiscard]] const GroundSchedulerScratch& scratch() const noexcept { return m_scratch; }
 
 private:

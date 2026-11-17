@@ -65,13 +65,16 @@ struct FactUnpackedStorage<GroundTag>
         assert(static_cast<ygg::uint_t>(index.value) < values.size());
         return formalism::planning::FDRValue(values[static_cast<ygg::uint_t>(index.value)]);
     }
+
     void set(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact)
     {
         assert(static_cast<ygg::uint_t>(fact.variable.value) < values.size());
         values[static_cast<ygg::uint_t>(fact.variable.value)] = fact.value.value;
     }
+
     /// The number of variables, as resized to the task's.
     [[nodiscard]] std::size_t num_variables() const noexcept { return values.size(); }
+
     /// The facts whose value is not none, by ascending variable.
     [[nodiscard]] auto facts() const noexcept
     {
@@ -87,8 +90,11 @@ struct FactUnpackedStorage<GroundTag>
                        };
                    });
     }
+
     void resize(size_t size) { values.resize(size, 0); }
+
     void clear() { values.clear(); }
+
     void swap(FactUnpackedStorage& other) noexcept { values.swap(other.values); }
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&FactUnpackedStorage::values> {}; }

@@ -72,7 +72,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     const auto dist_hash = tyr::planning::DistHash<Kind, tyr::planning::RandomDistHashTag>(17);
 
     const auto expected_source_index = initial.get_state().index();
-    const auto expected_source_hash = dist_hash.hash(tyr::planning::StateContext { initial.get_state().get_task(), initial.get_state(), ygg::float_t { 0 } });
+    const auto expected_source_hash =
+        dist_hash.hash(tyr::planning::StateContext { (*initial.get_state().context().get_task()), initial.get_state(), ygg::float_t { 0 } });
     auto source = std::optional<tyr::planning::StateView<Kind>>(repository->get_registered_state(expected_source_index));
     auto transferred_source = source;
     source.reset();
@@ -80,7 +81,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
         [source = std::move(transferred_source), expected_source_index, expected_source_hash, &dist_hash]() mutable
         {
             EXPECT_EQ(source->index(), expected_source_index);
-            EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { source->get_task(), *source, ygg::float_t { 0 } }), expected_source_hash);
+            EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *source->context().get_task(), *source, ygg::float_t { 0 } }), expected_source_hash);
             source.reset();
         });
     source_reader.join();
@@ -100,7 +101,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto copy_assignment_worker = generator->make_worker(copy_assignment_context);
     auto copy_assigned_source = copy_assignment_worker->get_initial_node(*copy_assignment_repository, *copy_assignment_evaluator).get_state();
     copy_assigned_source = initial.get_state();
-    EXPECT_EQ(&copy_assigned_source.get_state_repository(), repository.get());
+    EXPECT_EQ(&copy_assigned_source.context(), repository.get());
 
     auto move_assignment_context = ygg::ExecutionContext::create(1);
     auto move_assignment_evaluator = axiom_evaluator->make_worker(move_assignment_context);
@@ -108,20 +109,23 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     auto move_assignment_worker = generator->make_worker(move_assignment_context);
     auto move_assigned_source = move_assignment_worker->get_initial_node(*move_assignment_repository, *move_assignment_evaluator).get_state();
     move_assigned_source = repository->get_registered_state(expected_source_index);
-    EXPECT_EQ(&move_assigned_source.get_state_repository(), repository.get());
+    EXPECT_EQ(&move_assigned_source.context(), repository.get());
 
-    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { initial.get_state().get_task(), initial.get_state(), ygg::float_t { 0 } }),
-              dist_hash.hash(tyr::planning::StateContext { worker_initial.get_state().get_task(), worker_initial.get_state(), ygg::float_t { 0 } }));
-    EXPECT_EQ(dist_hash.owner(tyr::planning::StateContext { initial.get_state().get_task(), initial.get_state(), ygg::float_t { 0 } }, 19),
-              dist_hash.owner(tyr::planning::StateContext { worker_initial.get_state().get_task(), worker_initial.get_state(), ygg::float_t { 0 } }, 19));
-    EXPECT_EQ(dist_hash.owner(tyr::planning::StateContext { initial.get_state().get_task(), initial.get_state(), ygg::float_t { 0 } }, 1),
+    EXPECT_EQ(
+        dist_hash.hash(tyr::planning::StateContext { (*initial.get_state().context().get_task()), initial.get_state(), ygg::float_t { 0 } }),
+        dist_hash.hash(tyr::planning::StateContext { (*worker_initial.get_state().context().get_task()), worker_initial.get_state(), ygg::float_t { 0 } }));
+    EXPECT_EQ(
+        dist_hash.owner(tyr::planning::StateContext { (*initial.get_state().context().get_task()), initial.get_state(), ygg::float_t { 0 } }, 19),
+        dist_hash.owner(tyr::planning::StateContext { (*worker_initial.get_state().context().get_task()), worker_initial.get_state(), ygg::float_t { 0 } },
+                        19));
+    EXPECT_EQ(dist_hash.owner(tyr::planning::StateContext { (*initial.get_state().context().get_task()), initial.get_state(), ygg::float_t { 0 } }, 1),
               urd::index<tyr::planning::Worker>(0));
 
     auto derived_only_difference = repository->get_state_builder();
     derived_only_difference->assign_unextended_part(initial.get_state());
     derived_only_difference->set(urd::index<tyr::formalism::Atom<GroundTag, tyr::formalism::DerivedTag>>(0));
     EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *derived_only_difference, ygg::float_t { 0 } }),
-              dist_hash.hash(tyr::planning::StateContext { initial.get_state().get_task(), initial.get_state(), ygg::float_t { 0 } }));
+              dist_hash.hash(tyr::planning::StateContext { (*initial.get_state().context().get_task()), initial.get_state(), ygg::float_t { 0 } }));
 
     auto first_numeric = repository->get_state_builder();
     auto second_numeric = repository->get_state_builder();
@@ -203,7 +207,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_EQ(owner_node.get_metric(), compatibility_node.get_metric());
     EXPECT_EQ(repository->num_states(), source_states_after_local_registration);
     EXPECT_EQ(worker_repository->num_states(), 2);
-    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { worker_repository->get_registered_state(owner_node.get_state().index()).get_task(),
+    EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { (*worker_repository->get_registered_state(owner_node.get_state().index()).context().get_task()),
                                                            worker_repository->get_registered_state(owner_node.get_state().index()),
                                                            ygg::float_t { 0 } }),
               remote_hash);
@@ -244,21 +248,22 @@ void expect_lmcut_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     first_hash.initialize(initial);
     second_hash.initialize(initial);
     EXPECT_THROW(first_hash.initialize(initial), std::logic_error);
-    EXPECT_EQ(first_hash.hash(tyr::planning::StateContext { initial.get_task(), initial, ygg::float_t { 0 } }),
-              second_hash.hash(tyr::planning::StateContext { initial.get_task(), initial, ygg::float_t { 0 } }));
-    EXPECT_EQ(first_hash.owner(tyr::planning::StateContext { initial.get_task(), initial, ygg::float_t { 0 } }, 1), urd::index<tyr::planning::Worker>(0));
+    EXPECT_EQ(first_hash.hash(tyr::planning::StateContext { *initial.context().get_task(), initial, ygg::float_t { 0 } }),
+              second_hash.hash(tyr::planning::StateContext { *initial.context().get_task(), initial, ygg::float_t { 0 } }));
+    EXPECT_EQ(first_hash.owner(tyr::planning::StateContext { *initial.context().get_task(), initial, ygg::float_t { 0 } }, 1),
+              urd::index<tyr::planning::Worker>(0));
 
     auto side_state = repository->get_state_builder();
     side_state->assign_unextended_part(initial);
     side_state->set(task->get_fdr_context()->get_fact(side.value()));
     EXPECT_EQ(first_hash.hash(tyr::planning::StateContext { *task, *side_state, ygg::float_t { 0 } }),
-              first_hash.hash(tyr::planning::StateContext { initial.get_task(), initial, ygg::float_t { 0 } }));
+              first_hash.hash(tyr::planning::StateContext { *initial.context().get_task(), initial, ygg::float_t { 0 } }));
 
     auto landmark_state = repository->get_state_builder();
     landmark_state->assign_unextended_part(initial);
     landmark_state->set(task->get_fdr_context()->get_fact(*landmark_it));
     EXPECT_NE(first_hash.hash(tyr::planning::StateContext { *task, *landmark_state, ygg::float_t { 0 } }),
-              first_hash.hash(tyr::planning::StateContext { initial.get_task(), initial, ygg::float_t { 0 } }));
+              first_hash.hash(tyr::planning::StateContext { *initial.context().get_task(), initial, ygg::float_t { 0 } }));
 }
 
 }

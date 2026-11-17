@@ -35,23 +35,29 @@ public:
                     std::span<const urd::index<ygg::Column>> output_order);
 
     [[nodiscard]] size_t input_count() const noexcept { return m_inputs.size(); }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> input_columns(size_t input) const
     {
         const auto& columns = m_inputs.at(input);
         return { columns.data(), columns.size() };
     }
+
     [[nodiscard]] std::span<const ygg::ColumnLayout> output_columns() const noexcept { return { m_output.data(), m_output.size() }; }
+
     [[nodiscard]] std::span<const urd::index<ygg::Column>> variable_order() const noexcept { return { m_order.data(), m_order.size() }; }
+
     [[nodiscard]] std::span<const ColumnSlice> input_keys(size_t input) const
     {
         const auto& keys = m_keys.at(input);
         return { keys.data(), keys.size() };
     }
+
     [[nodiscard]] std::span<const size_t> variable_inputs(size_t depth) const
     {
         const auto& occurrences = m_occurrences.at(depth);
         return { occurrences.data(), occurrences.size() };
     }
+
     [[nodiscard]] ColumnSlice output_position(size_t depth) const { return m_output_positions.at(depth); }
 
     static constexpr auto cista_members() noexcept

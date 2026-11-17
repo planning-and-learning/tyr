@@ -548,7 +548,7 @@ private:
 
     void generate(RuleExecutionContext<AP, TP, CP>& rctx, bool enumerate_all)
     {
-        const auto arity = rctx.in().cws_rule().get_rule().get_arity();
+        const auto arity = rctx.in().cws_rule().get_rule().get_body().get_arity();
 
         if (arity == 0)
             generate_nullary_case(rctx);
@@ -587,7 +587,7 @@ private:
                 const auto nullary_condition = rctx.in().cws_rule().get_nullary_condition();
                 const auto static_nullary = is_applicable(nullary_condition.template get_literals<formalism::StaticTag>(), fact_sets);
                 const auto dynamic_nullary = static_nullary && is_dynamically_applicable(nullary_condition, fact_sets);
-                if (!dynamic_nullary && rctx.in().cws_rule().get_rule().get_arity() > 0)
+                if (!dynamic_nullary && rctx.in().cws_rule().get_rule().get_body().get_arity() > 0)
                 {
                     // No binding is applicable while the nullary condition fails. Its atoms are listened to, so the rule
                     // runs again once it holds, and the reset graph then enumerates all cliques.

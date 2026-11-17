@@ -107,6 +107,7 @@ public:
     }
 
     [[nodiscard]] bool running() const noexcept { return m_status == SearchStatus::IN_PROGRESS; }
+
     [[nodiscard]] bool timed_out() const { return m_deadline && std::chrono::steady_clock::now() >= *m_deadline; }
 
     void set_terminal(SearchStatus status)
@@ -129,7 +130,9 @@ public:
     [[nodiscard]] ygg::float_t incumbent_cost() const noexcept { return m_incumbent_cost; }
 
     [[nodiscard]] SearchStatus status() const noexcept { return m_status; }
+
     std::optional<WorkerStateIndex<Kind>> goal() const noexcept { return m_goal; }
+
     [[nodiscard]] std::exception_ptr exception() const noexcept { return nullptr; }
 
     template<typename Engine, typename Worker>
@@ -200,6 +203,7 @@ public:
         ++m_num_states;
         return true;
     }
+
     template<typename Engine>
     void finish_expansion(Engine&) noexcept
     {

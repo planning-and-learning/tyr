@@ -37,6 +37,7 @@ class CostBasedPlanner
         double cost;
         std::uint64_t left;
     };
+
     const JoinBlock* m_block;
     OperatorBuilder* m_build;
     urd::Store<urd::sequence<urd::Store<urd::sequence<urd::index<ygg::Column>>>>> m_variables;
@@ -51,6 +52,7 @@ class CostBasedPlanner
         urd::bits::for_each_set_bit(subset, [&](size_t atom) { result.insert(result.end(), m_variables[atom].begin(), m_variables[atom].end()); });
         return ygg::canonicalized(std::move(result));
     }
+
     /// The subset's estimate; returned by value since recursion grows the memo.
     Estimate estimate(std::uint64_t subset)
     {
@@ -61,11 +63,13 @@ class CostBasedPlanner
         m_estimates.emplace(subset, result);
         return result;
     }
+
     double rows(std::uint64_t subset)
     {
         const auto it = m_estimates.find(subset);
         return it != m_estimates.end() ? it->second.rows : estimate(subset).rows;
     }
+
     /// Variables of the subset still needed outside it: output and join variables.
     [[nodiscard]] urd::Store<urd::sequence<urd::index<ygg::Column>>> needed(std::uint64_t subset) const
     {
@@ -75,18 +79,21 @@ class CostBasedPlanner
                 result.insert(result.end(), m_variables[atom].begin(), m_variables[atom].end());
         return ygg::canonicalized(std::move(result));
     }
+
     /// A node of the chosen operator tree: a join of its two children, or a leaf (a single operand).
     struct Node
     {
         std::uint64_t subset;
         std::optional<std::pair<size_t, size_t>> children;
     };
+
     /// A refined node: a multi-way join over the given tree nodes, or unchanged.
     struct Refined
     {
         bool multiway = false;
         urd::Store<urd::sequence<size_t>> inputs;
     };
+
     urd::Store<urd::sequence<Node>> m_tree;
     urd::Store<urd::sequence<std::optional<Refined>>> m_refined;
 
@@ -95,6 +102,7 @@ class CostBasedPlanner
         m_tree.push_back(node);
         return m_tree.size() - 1;
     }
+
     /// The DPccp plan of a connected subset as tree nodes.
     size_t tree(std::uint64_t subset)
     {
@@ -104,6 +112,7 @@ class CostBasedPlanner
         const auto left = tree(left_subset), right = tree(subset ^ left_subset);
         return add({ subset, std::pair(left, right) });
     }
+
     /// Algorithm 4 of M. Freitag et al., "Adopting Worst-Case Optimal Joins in Relational
     /// Database Systems", PVLDB 13(11), 2020: bottom-up, a join whose estimate exceeds both
     /// inputs, or one with a multi-way input, is collapsed with its inputs into a single

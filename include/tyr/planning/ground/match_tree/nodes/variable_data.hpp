@@ -41,6 +41,7 @@ struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
     urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child;
 
     data() = default;
+
     data(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable_,
          urd::flat_vector<urd::flat_optional<::tyr::planning::match_tree::Node<Tag>>> domain_children_,
          urd::flat_optional<::tyr::planning::match_tree::Node<Tag>> dontcare_child_) :
@@ -50,6 +51,7 @@ struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
         dontcare_child(std::move(dontcare_child_))
     {
     }
+
     data(const data& other) = delete;
     data& operator=(const data& other) = delete;
     data(data&& other) = default;
@@ -62,7 +64,9 @@ struct data<::tyr::planning::match_tree::VariableSelectorNode<Tag>>
                            urd::field<"domain_children", &data::domain_children>,
                            urd::field<"dontcare_child", &data::dontcare_child>> {};
     }
+
     static constexpr auto identifying_members() noexcept { return urd::Members<&data::variable, &data::domain_children, &data::dontcare_child> {}; }
+
     static constexpr auto cista_members() noexcept { return urd::Members<&data::index, &data::variable, &data::domain_children, &data::dontcare_child> {}; }
 };
 }

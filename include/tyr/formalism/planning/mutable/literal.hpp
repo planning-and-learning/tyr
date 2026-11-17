@@ -40,7 +40,9 @@ struct MutableLiteral : urd::compared_by_identity<MutableLiteral<T>>
     bool polarity = false;
 
     MutableLiteral() = default;
+
     MutableLiteral(MutableAtom<T> atom_, bool polarity_) : atom(std::move(atom_)), polarity(polarity_) {}
+
     MutableLiteral(LiteralView<LiftedTag, T> element) : atom(element.get_atom()), polarity(element.get_polarity()) {}
 
     static constexpr auto identifying_members() noexcept { return urd::Members<&MutableLiteral::atom, &MutableLiteral::polarity> {}; }

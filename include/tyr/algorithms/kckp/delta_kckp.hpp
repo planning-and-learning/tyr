@@ -43,6 +43,7 @@ struct Edge
     Vertex dst;
 
     constexpr Edge() noexcept = default;
+
     constexpr Edge(Vertex lhs, Vertex rhs) noexcept : src(lhs.index < rhs.index ? lhs : rhs), dst(lhs.index < rhs.index ? rhs : lhs) {}
 
     friend constexpr bool operator==(Edge, Edge) noexcept = default;
@@ -72,10 +73,13 @@ public:
 
     [[nodiscard]] AdjacencyKind kind(size_t source_partition, size_t target_partition) const noexcept
     { return m_kinds[(source_partition * m_num_partitions) + target_partition]; }
+
     [[nodiscard]] bool is_implicit(size_t source_partition, size_t target_partition) const noexcept
     { return kind(source_partition, target_partition) == AdjacencyKind::IMPLICIT; }
+
     [[nodiscard]] bool is_static_only(size_t source_partition, size_t target_partition) const noexcept
     { return kind(source_partition, target_partition) == AdjacencyKind::STATIC_ONLY; }
+
     [[nodiscard]] bool is_runtime(size_t source_partition, size_t target_partition) const noexcept
     { return kind(source_partition, target_partition) == AdjacencyKind::RUNTIME; }
 
@@ -104,6 +108,7 @@ public:
 
     /// Adds the edge between u and v, of a runtime pair of parts.
     void add_edge(Vertex u, Vertex v);
+
     /// The runtime neighbours of `vertex` in `partition`.
     [[nodiscard]] const VertexSet& runtime_neighbours(Vertex vertex, size_t partition) const
     { return m_rows[m_adjacency_layout->row(vertex, m_graph->part_of(vertex), partition)]; }
@@ -155,7 +160,9 @@ public:
     void reset() noexcept;
 
     [[nodiscard]] const Graph& graph() const noexcept { return *m_graph; }
+
     [[nodiscard]] const VertexSets& affected_partitions() const noexcept { return *m_affected; }
+
     [[nodiscard]] const VertexSets& delta_partitions() const noexcept { return *m_delta; }
 
 private:
@@ -388,8 +395,11 @@ public:
     }
 
     [[nodiscard]] const Graph& get_graph() const noexcept { return *m_graph; }
+
     [[nodiscard]] const DeltaGraph& get_delta_graph() const noexcept { return m_delta_graph; }
+
     [[nodiscard]] const FullGraph& get_full_graph() const noexcept { return m_full_graph; }
+
     [[nodiscard]] size_t get_iteration() const noexcept { return m_iteration; }
 
 private:

@@ -38,6 +38,7 @@ public:
         StateContext(task, state.get_fact_storage(), state.get_atom_storage(), state.get_numeric_storage(), auxiliary_value)
     {
     }
+
     /// From a state being built (its builder: a data<State>), its storages.
     StateContext(const Task<Kind>& task, const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value) :
         StateContext(task, state.fact_storage, state.atom_storage, state.numeric_storage, auxiliary_value)
@@ -45,10 +46,15 @@ public:
     }
 
     [[nodiscard]] const Task<Kind>& task() const noexcept { return *m_task; }
+
     [[nodiscard]] const FactUnpackedStorage<Kind>& fact_storage() const noexcept { return *m_fact_storage; }
+
     [[nodiscard]] const AtomUnpackedStorage<Kind>& atom_storage() const noexcept { return *m_atom_storage; }
+
     [[nodiscard]] const NumericUnpackedStorage<Kind>& numeric_storage() const noexcept { return *m_numeric_storage; }
+
     [[nodiscard]] ygg::float_t auxiliary_value() const noexcept { return m_auxiliary_value; }
+
     [[nodiscard]] ygg::float_t& auxiliary_value() noexcept { return m_auxiliary_value; }
 
 private:

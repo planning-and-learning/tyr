@@ -273,6 +273,7 @@ protected:
     const Task<Kind>& get_task() const noexcept { return *m_definition->task; }
 
     Workspace& workspace() noexcept { return m_workspace; }
+
     const Workspace& workspace() const noexcept { return m_workspace; }
 
 private:

@@ -35,10 +35,15 @@ public:
     Program(formalism::datalog::ProgramView<LiftedTag> program, formalism::datalog::RepositoryPtr program_repository);
 
     [[nodiscard]] auto get_program() const noexcept { return m_program; }
+
     [[nodiscard]] const auto& get_program_repository() const noexcept { return *m_program_repository; }
+
     [[nodiscard]] const auto& get_domains() const noexcept { return m_analysis.domains; }
+
     [[nodiscard]] const auto& get_strata() const noexcept { return m_strata; }
+
     [[nodiscard]] const auto& get_listeners() const noexcept { return m_listeners; }
+
     [[nodiscard]] const auto& get_const_program_workspace() const noexcept { return m_const_program_workspace; }
 
 private:

@@ -44,7 +44,7 @@ Use a native type's ``Fields`` enum to inspect the ordered default column names 
 
    from pytyr.formalism import planning as fp
 
-   list(fp.ActionRow.Fields.__members__)  # ["relation", "objects"]
+   list(fp.RowActionLifted.Fields.__members__)  # ["relation", "objects"]
 
 This describes the native declaration; registration's ``fields`` selection and ``project`` callback do not change it.
 
@@ -54,8 +54,8 @@ completion and selections checked against the registered native type:
 .. code:: python
 
    register_table(
-       dictionaries, fp.ActionRow, "actions", "a",
-       fields=[fp.ActionRow.Fields.objects],
+       dictionaries, fp.RowActionLifted, "actions", "a",
+       fields=[fp.RowActionLifted.Fields.objects],
    )
 
 ``fields=None`` keeps all declared fields; ``fields=[]`` creates empty rows. Selection happens before recursive
@@ -69,7 +69,7 @@ Pass ``project`` to define a complete row with your own column names and values:
 
    register_table(
        dictionaries,
-       fp.ActionRow,
+       fp.RowActionLifted,
        "actions",
        "a",
        project=lambda binding: {

@@ -89,9 +89,9 @@ using Binding = ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>;
 static_assert(std::same_as<Binding, ygg::Row<tyr::formalism::Predicate<tyr::formalism::StaticTag>>>);
 
 #if defined(TYR_RELATION_STORAGE_WORD)
-static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::width, urd::word>);
+static_assert(std::same_as<tyr::formalism::RelationStorage, urd::word>);
 #else
-static_assert(std::same_as<typename ygg::formalism::RelationRepositoryTraits<tyr::formalism::ObjectTag>::width, urd::bit>);
+static_assert(std::same_as<tyr::formalism::RelationStorage, urd::bit>);
 #endif
 
 namespace
@@ -141,11 +141,11 @@ void check_binding_copy()
     const auto merged_function_binding = copy(source_function_binding, context).first;
 
     EXPECT_EQ(merged_predicate_binding.get_relation(), destination_predicate);
-    ASSERT_EQ(urd::resolve(merged_predicate_binding.template get<urd::index<tyr::formalism::Object>>(), merged_predicate_binding.context()).size(), 1);
-    EXPECT_EQ(urd::resolve(merged_predicate_binding.template get<urd::index<tyr::formalism::Object>>(), merged_predicate_binding.context())[0], destination_a);
+    ASSERT_EQ(merged_predicate_binding.get_objects().size(), 1);
+    EXPECT_EQ(merged_predicate_binding.get_objects()[0], destination_a);
     EXPECT_EQ(merged_function_binding.get_relation(), destination_function);
-    ASSERT_EQ(urd::resolve(merged_function_binding.template get<urd::index<tyr::formalism::Object>>(), merged_function_binding.context()).size(), 1);
-    EXPECT_EQ(urd::resolve(merged_function_binding.template get<urd::index<tyr::formalism::Object>>(), merged_function_binding.context())[0], destination_a);
+    ASSERT_EQ(merged_function_binding.get_objects().size(), 1);
+    EXPECT_EQ(merged_function_binding.get_objects()[0], destination_a);
     EXPECT_FALSE(copy(source_predicate_binding, context).second);
     EXPECT_FALSE(copy(source_function_binding, context).second);
 }
@@ -184,9 +184,9 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     const auto [binding, inserted] = tyr::formalism::planning::insert(repository, *data);
     ASSERT_TRUE(inserted);
     EXPECT_EQ(binding.get_relation(), predicate);
-    ASSERT_EQ(urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context()).size(), 2);
-    EXPECT_EQ(urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context())[0], b);
-    EXPECT_EQ(urd::resolve(binding.template get<urd::index<tyr::formalism::Object>>(), binding.context())[1], a);
+    ASSERT_EQ(binding.get_objects().size(), 2);
+    EXPECT_EQ(binding.get_objects()[0], b);
+    EXPECT_EQ(binding.get_objects()[1], a);
     EXPECT_EQ(binding.type(0), ygg::type_id<urd::index<tyr::formalism::Object>>);
     EXPECT_THROW((void) binding.template get<double>(0), std::invalid_argument);  // an object column
 
@@ -197,6 +197,6 @@ TEST(TyrFormalismPlanningRepository, SharedInterningPreservesBindingObjectOrder)
     const auto [reversed, reversed_inserted] = tyr::formalism::planning::insert(repository, *data);
     EXPECT_TRUE(reversed_inserted);
     EXPECT_NE(reversed, binding);
-    EXPECT_EQ(urd::resolve(reversed.template get<urd::index<tyr::formalism::Object>>(), reversed.context())[0], a);
-    EXPECT_EQ(urd::resolve(reversed.template get<urd::index<tyr::formalism::Object>>(), reversed.context())[1], b);
+    EXPECT_EQ(reversed.get_objects()[0], a);
+    EXPECT_EQ(reversed.get_objects()[1], b);
 }
