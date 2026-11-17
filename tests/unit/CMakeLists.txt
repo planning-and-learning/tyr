@@ -51,6 +51,7 @@ add_gtest(
     "formalism/planning/domain.cpp"
     "formalism/planning/fdr_fact.cpp"
     "formalism/planning/fdr_variable.cpp"
+    "formalism/planning/formatter.cpp"
     "formalism/planning/function_term.cpp"
     "formalism/planning/function_term_value.cpp"
     "formalism/planning/literal.cpp"
@@ -72,6 +73,7 @@ add_gtest(
 
 # Type tests of one directory include the same headers and check their types against them: batched, the headers and
 # the types are compiled once (brokkr's template rules, rule 11). Each file has its own namespace, tyr::tests::<path>.
+target_link_libraries(formalism_planning_types PRIVATE Boost::json)
 brokkr_unity_directories(formalism_core_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism)
 brokkr_unity_directories(formalism_datalog_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism/datalog)
 brokkr_unity_directories(formalism_planning_types ENABLED ${TYR_UNITY_BUILD} DIRECTORIES formalism/planning)

@@ -1,0 +1,3237 @@
+{
+    "cases": [
+        {
+            "name": "classical/agricola",
+            "domain_file": "classical/tests/agricola/domain.pddl",
+            "task_file": "classical/tests/agricola/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 40,
+                        "static_predicates": 30,
+                        "fluent_predicates": 22,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 22,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 38,
+                        "derived_predicates": 0,
+                        "static_atoms": 392,
+                        "fluent_atoms": 35,
+                        "static_fterm_values": 3,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 40,
+                        "static_predicates": 30,
+                        "fluent_predicates": 22,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 22,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 38,
+                        "derived_predicates": 0,
+                        "static_atoms": 392,
+                        "fluent_atoms": 35,
+                        "static_fterm_values": 3,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/airport",
+            "domain_file": "classical/tests/airport/domain.pddl",
+            "task_file": "classical/tests/airport/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 14,
+                        "fluent_predicates": 8,
+                        "derived_predicates": 2,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 5,
+                        "axioms": 2
+                    },
+                    "task": {
+                        "objects": 19,
+                        "derived_predicates": 0,
+                        "static_atoms": 122,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 14,
+                        "fluent_predicates": 8,
+                        "derived_predicates": 2,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 5,
+                        "axioms": 2
+                    },
+                    "task": {
+                        "objects": 19,
+                        "derived_predicates": 0,
+                        "static_atoms": 122,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/assembly",
+            "domain_file": "classical/tests/assembly/domain.pddl",
+            "task_file": "classical/tests/assembly/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 11,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 8,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 6,
+                        "axioms": 8
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 10,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 11,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 8,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 6,
+                        "axioms": 8
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 10,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/barman",
+            "domain_file": "classical/tests/barman/domain.pddl",
+            "task_file": "classical/tests/barman/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 16,
+                        "fluent_predicates": 10,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 12,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 12,
+                        "derived_predicates": 0,
+                        "static_atoms": 36,
+                        "fluent_atoms": 9,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 16,
+                        "fluent_predicates": 10,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 12,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 12,
+                        "derived_predicates": 0,
+                        "static_atoms": 36,
+                        "fluent_atoms": 9,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/blocks_3",
+            "domain_file": "classical/tests/blocks_3/domain.pddl",
+            "task_file": "classical/tests/blocks_3/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 2,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 3,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 2,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 3,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/blocks_4",
+            "domain_file": "classical/tests/blocks_4/domain.pddl",
+            "task_file": "classical/tests/blocks_4/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 2,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 3,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 2,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 3,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/childsnack",
+            "domain_file": "classical/tests/childsnack/domain.pddl",
+            "task_file": "classical/tests/childsnack/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 1,
+                        "static_predicates": 13,
+                        "fluent_predicates": 8,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 16,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 1,
+                        "static_predicates": 13,
+                        "fluent_predicates": 8,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 16,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/delivery",
+            "domain_file": "classical/tests/delivery/domain.pddl",
+            "task_file": "classical/tests/delivery/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 22,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 22,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/driverlog",
+            "domain_file": "classical/tests/driverlog/domain.pddl",
+            "task_file": "classical/tests/driverlog/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 9,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 21,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 9,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 21,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/ferry",
+            "domain_file": "classical/tests/ferry/domain.pddl",
+            "task_file": "classical/tests/ferry/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 4,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 4,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/grid",
+            "domain_file": "classical/tests/grid/domain.pddl",
+            "task_file": "classical/tests/grid/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 6,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 32,
+                        "fluent_atoms": 9,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 6,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 32,
+                        "fluent_atoms": 9,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/gripper",
+            "domain_file": "classical/tests/gripper/domain.pddl",
+            "task_file": "classical/tests/gripper/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 2,
+                        "static_predicates": 5,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 12,
+                        "fluent_atoms": 5,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 2,
+                        "static_predicates": 5,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 12,
+                        "fluent_atoms": 5,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/hiking",
+            "domain_file": "classical/tests/hiking/domain.pddl",
+            "task_file": "classical/tests/hiking/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 10,
+                        "fluent_predicates": 6,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 7,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 23,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 10,
+                        "fluent_predicates": 6,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 7,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 23,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/logistics",
+            "domain_file": "classical/tests/logistics/domain.pddl",
+            "task_file": "classical/tests/logistics/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 9,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 17,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 9,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 17,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/miconic",
+            "domain_file": "classical/tests/miconic/domain.pddl",
+            "task_file": "classical/tests/miconic/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 6,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 11,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 6,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 11,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/miconic-fulladl",
+            "domain_file": "classical/tests/miconic-fulladl/domain.pddl",
+            "task_file": "classical/tests/miconic-fulladl/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 16,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 10,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 38,
+                        "axioms": 15
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 1,
+                        "static_atoms": 22,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 1,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 16,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 10,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 38,
+                        "axioms": 15
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 1,
+                        "static_atoms": 22,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 1,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/miconic-simpleadl",
+            "domain_file": "classical/tests/miconic-simpleadl/domain.pddl",
+            "task_file": "classical/tests/miconic-simpleadl/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 9,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 9,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/parcprinter",
+            "domain_file": "classical/tests/parcprinter/domain.pddl",
+            "task_file": "classical/tests/parcprinter/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 38,
+                        "static_predicates": 13,
+                        "fluent_predicates": 7,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 23,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 87,
+                        "fluent_atoms": 7,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 38,
+                        "static_predicates": 13,
+                        "fluent_predicates": 7,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 23,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 87,
+                        "fluent_atoms": 7,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/pathways",
+            "domain_file": "classical/tests/pathways/domain.pddl",
+            "task_file": "classical/tests/pathways/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 2,
+                        "static_predicates": 11,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 7,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 28,
+                        "derived_predicates": 0,
+                        "static_atoms": 117,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 2,
+                        "static_predicates": 11,
+                        "fluent_predicates": 4,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 7,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 28,
+                        "derived_predicates": 0,
+                        "static_atoms": 117,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/philosophers",
+            "domain_file": "classical/tests/philosophers/domain.pddl",
+            "task_file": "classical/tests/philosophers/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 26,
+                        "fluent_predicates": 13,
+                        "derived_predicates": 4,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 7,
+                        "axioms": 6
+                    },
+                    "task": {
+                        "objects": 20,
+                        "derived_predicates": 0,
+                        "static_atoms": 88,
+                        "fluent_atoms": 14,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 26,
+                        "fluent_predicates": 13,
+                        "derived_predicates": 4,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 7,
+                        "axioms": 6
+                    },
+                    "task": {
+                        "objects": 20,
+                        "derived_predicates": 0,
+                        "static_atoms": 88,
+                        "fluent_atoms": 14,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/psr-middle",
+            "domain_file": "classical/tests/psr-middle/domain.pddl",
+            "task_file": "classical/tests/psr-middle/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 3,
+                        "static_predicates": 10,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 5,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 14
+                    },
+                    "task": {
+                        "objects": 24,
+                        "derived_predicates": 1,
+                        "static_atoms": 150,
+                        "fluent_atoms": 11,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 1,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 3,
+                        "static_predicates": 10,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 5,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 14
+                    },
+                    "task": {
+                        "objects": 24,
+                        "derived_predicates": 1,
+                        "static_atoms": 150,
+                        "fluent_atoms": 11,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 1,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/pushworld",
+            "domain_file": "classical/tests/pushworld/domain.pddl",
+            "task_file": "classical/tests/pushworld/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 7,
+                        "static_predicates": 10,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 104,
+                        "derived_predicates": 0,
+                        "static_atoms": 2141,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 7,
+                        "static_predicates": 10,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 104,
+                        "derived_predicates": 0,
+                        "static_atoms": 2141,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/reward",
+            "domain_file": "classical/tests/reward/domain.pddl",
+            "task_file": "classical/tests/reward/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 13,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 13,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/rovers",
+            "domain_file": "classical/tests/rovers/domain.pddl",
+            "task_file": "classical/tests/rovers/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 20,
+                        "fluent_predicates": 14,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 9,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 9,
+                        "derived_predicates": 0,
+                        "static_atoms": 31,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 20,
+                        "fluent_predicates": 14,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 9,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 9,
+                        "derived_predicates": 0,
+                        "static_atoms": 31,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/satellite",
+            "domain_file": "classical/tests/satellite/domain.pddl",
+            "task_file": "classical/tests/satellite/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 9,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 18,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 9,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 18,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/schedule",
+            "domain_file": "classical/tests/schedule/domain.pddl",
+            "task_file": "classical/tests/schedule/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 14,
+                        "static_predicates": 14,
+                        "fluent_predicates": 8,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 9,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 12,
+                        "derived_predicates": 0,
+                        "static_atoms": 96,
+                        "fluent_atoms": 10,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 14,
+                        "static_predicates": 14,
+                        "fluent_predicates": 8,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 9,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 12,
+                        "derived_predicates": 0,
+                        "static_atoms": 96,
+                        "fluent_atoms": 10,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/sokoban",
+            "domain_file": "classical/tests/sokoban/domain.pddl",
+            "task_file": "classical/tests/sokoban/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 4,
+                        "static_predicates": 6,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 124,
+                        "derived_predicates": 0,
+                        "static_atoms": 416,
+                        "fluent_atoms": 53,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 4,
+                        "static_predicates": 6,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 124,
+                        "derived_predicates": 0,
+                        "static_atoms": 416,
+                        "fluent_atoms": 53,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/spanner",
+            "domain_file": "classical/tests/spanner/domain.pddl",
+            "task_file": "classical/tests/spanner/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 17,
+                        "fluent_atoms": 5,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 6,
+                        "derived_predicates": 0,
+                        "static_atoms": 17,
+                        "fluent_atoms": 5,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/transport",
+            "domain_file": "classical/tests/transport/domain.pddl",
+            "task_file": "classical/tests/transport/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 10,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 12,
+                        "derived_predicates": 0,
+                        "static_atoms": 36,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 4,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 10,
+                        "fluent_predicates": 3,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 12,
+                        "derived_predicates": 0,
+                        "static_atoms": 36,
+                        "fluent_atoms": 6,
+                        "static_fterm_values": 4,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/visitall",
+            "domain_file": "classical/tests/visitall/domain.pddl",
+            "task_file": "classical/tests/visitall/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 4,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": false,
+                        "actions": 1,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 26,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 4,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 1,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 26,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "classical/woodworking",
+            "domain_file": "classical/tests/woodworking/domain.pddl",
+            "task_file": "classical/tests/woodworking/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 11,
+                        "static_predicates": 25,
+                        "fluent_predicates": 9,
+                        "derived_predicates": 0,
+                        "static_functions": 4,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 13,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 20,
+                        "derived_predicates": 0,
+                        "static_atoms": 90,
+                        "fluent_atoms": 16,
+                        "static_fterm_values": 12,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 11,
+                        "static_predicates": 25,
+                        "fluent_predicates": 9,
+                        "derived_predicates": 0,
+                        "static_functions": 4,
+                        "fluent_functions": 0,
+                        "has_auxiliary_function": true,
+                        "actions": 13,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 20,
+                        "derived_predicates": 0,
+                        "static_atoms": 90,
+                        "fluent_atoms": 16,
+                        "static_fterm_values": 12,
+                        "fluent_fterm_values": 0,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/block-grouping",
+            "domain_file": "numeric/tests/block-grouping/domain.pddl",
+            "task_file": "numeric/tests/block-grouping/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 4,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 5,
+                        "derived_predicates": 0,
+                        "static_atoms": 10,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 4,
+                        "fluent_fterm_values": 10,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 4,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 5,
+                        "derived_predicates": 0,
+                        "static_atoms": 10,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 4,
+                        "fluent_fterm_values": 10,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/counters",
+            "domain_file": "numeric/tests/counters/domain.pddl",
+            "task_file": "numeric/tests/counters/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 1,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 1,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 4,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/delivery",
+            "domain_file": "numeric/tests/delivery/domain.pddl",
+            "task_file": "numeric/tests/delivery/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 2,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 13,
+                        "derived_predicates": 0,
+                        "static_atoms": 34,
+                        "fluent_atoms": 10,
+                        "static_fterm_values": 6,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 5,
+                        "derived_predicates": 0,
+                        "static_functions": 2,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 13,
+                        "derived_predicates": 0,
+                        "static_atoms": 34,
+                        "fluent_atoms": 10,
+                        "static_fterm_values": 6,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/drone",
+            "domain_file": "numeric/tests/drone/domain.pddl",
+            "task_file": "numeric/tests/drone/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 10,
+                        "fluent_functions": 4,
+                        "has_auxiliary_function": false,
+                        "actions": 8,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 4,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 13,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 10,
+                        "fluent_functions": 4,
+                        "has_auxiliary_function": false,
+                        "actions": 8,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 4,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 13,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/expedition",
+            "domain_file": "numeric/tests/expedition/domain.pddl",
+            "task_file": "numeric/tests/expedition/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 21,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 2,
+                        "fluent_fterm_values": 8,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 21,
+                        "fluent_atoms": 2,
+                        "static_fterm_values": 2,
+                        "fluent_fterm_values": 8,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/ext-plant-watering",
+            "domain_file": "numeric/tests/ext-plant-watering/domain.pddl",
+            "task_file": "numeric/tests/ext-plant-watering/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 5,
+                        "fluent_functions": 7,
+                        "has_auxiliary_function": false,
+                        "actions": 10,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 24,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 6,
+                        "fluent_fterm_values": 26,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 5,
+                        "fluent_functions": 7,
+                        "has_auxiliary_function": false,
+                        "actions": 10,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 24,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 6,
+                        "fluent_fterm_values": 26,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/farmland",
+            "domain_file": "numeric/tests/farmland/domain.pddl",
+            "task_file": "numeric/tests/farmland/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/fo-counters",
+            "domain_file": "numeric/tests/fo-counters/domain.pddl",
+            "task_file": "numeric/tests/fo-counters/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": true,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 6,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 6,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 3,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": true,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 6,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 6,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/fo-farmland",
+            "domain_file": "numeric/tests/fo-farmland/domain.pddl",
+            "task_file": "numeric/tests/fo-farmland/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 6,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 6,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 8,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/fo-sailing",
+            "domain_file": "numeric/tests/fo-sailing/domain.pddl",
+            "task_file": "numeric/tests/fo-sailing/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 10,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 4,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 10,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 2,
+                        "derived_predicates": 0,
+                        "static_atoms": 4,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/hydropower",
+            "domain_file": "numeric/tests/hydropower/domain.pddl",
+            "task_file": "numeric/tests/hydropower/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 11,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 78,
+                        "derived_predicates": 0,
+                        "static_atoms": 255,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 27,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 11,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 78,
+                        "derived_predicates": 0,
+                        "static_atoms": 255,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 27,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/markettrader",
+            "domain_file": "numeric/tests/markettrader/domain.pddl",
+            "task_file": "numeric/tests/markettrader/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 6,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 20,
+                        "derived_predicates": 0,
+                        "static_atoms": 62,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 72,
+                        "fluent_fterm_values": 19,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 6,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 20,
+                        "derived_predicates": 0,
+                        "static_atoms": 62,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 72,
+                        "fluent_fterm_values": 19,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/mprime",
+            "domain_file": "numeric/tests/mprime/domain.pddl",
+            "task_file": "numeric/tests/mprime/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 30,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 6,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 7,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 4,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 8,
+                        "derived_predicates": 0,
+                        "static_atoms": 30,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 6,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/pathwaysmetric",
+            "domain_file": "numeric/tests/pathwaysmetric/domain.pddl",
+            "task_file": "numeric/tests/pathwaysmetric/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 10,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 12,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 26,
+                        "derived_predicates": 0,
+                        "static_atoms": 90,
+                        "fluent_atoms": 16,
+                        "static_fterm_values": 48,
+                        "fluent_fterm_values": 27,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 10,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 12,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 6,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 26,
+                        "derived_predicates": 0,
+                        "static_atoms": 90,
+                        "fluent_atoms": 16,
+                        "static_fterm_values": 48,
+                        "fluent_fterm_values": 27,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/refuel",
+            "domain_file": "numeric/tests/refuel/domain.pddl",
+            "task_file": "numeric/tests/refuel/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 2,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 1,
+                        "has_auxiliary_function": false,
+                        "actions": 1,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 0,
+                        "derived_predicates": 0,
+                        "static_atoms": 0,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 1,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 2,
+                        "fluent_predicates": 0,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 1,
+                        "has_auxiliary_function": false,
+                        "actions": 1,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 0,
+                        "derived_predicates": 0,
+                        "static_atoms": 0,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 1,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/refuel-adl",
+            "domain_file": "numeric/tests/refuel-adl/domain.pddl",
+            "task_file": "numeric/tests/refuel-adl/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 1,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 5,
+                        "derived_predicates": 1,
+                        "static_atoms": 11,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 1,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 5,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 1,
+                        "has_auxiliary_function": false,
+                        "actions": 2,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 5,
+                        "derived_predicates": 1,
+                        "static_atoms": 11,
+                        "fluent_atoms": 3,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 1,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/rover",
+            "domain_file": "numeric/tests/rover/domain.pddl",
+            "task_file": "numeric/tests/rover/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 22,
+                        "fluent_predicates": 13,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 10,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 14,
+                        "derived_predicates": 0,
+                        "static_atoms": 66,
+                        "fluent_atoms": 5,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 2,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 22,
+                        "fluent_predicates": 13,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 10,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 14,
+                        "derived_predicates": 0,
+                        "static_atoms": 66,
+                        "fluent_atoms": 5,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 2,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/sailing",
+            "domain_file": "numeric/tests/sailing/domain.pddl",
+            "task_file": "numeric/tests/sailing/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 4,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 8,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 6,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 4,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 1,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": false,
+                        "actions": 8,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 3,
+                        "derived_predicates": 0,
+                        "static_atoms": 6,
+                        "fluent_atoms": 0,
+                        "static_fterm_values": 1,
+                        "fluent_fterm_values": 4,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/settersnumeric",
+            "domain_file": "numeric/tests/settersnumeric/domain.pddl",
+            "task_file": "numeric/tests/settersnumeric/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 6,
+                        "static_predicates": 12,
+                        "fluent_predicates": 13,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 7,
+                        "has_auxiliary_function": false,
+                        "actions": 25,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 11,
+                        "derived_predicates": 0,
+                        "static_atoms": 58,
+                        "fluent_atoms": 7,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 35,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 6,
+                        "static_predicates": 12,
+                        "fluent_predicates": 13,
+                        "derived_predicates": 0,
+                        "static_functions": 0,
+                        "fluent_functions": 7,
+                        "has_auxiliary_function": false,
+                        "actions": 25,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 11,
+                        "derived_predicates": 0,
+                        "static_atoms": 58,
+                        "fluent_atoms": 7,
+                        "static_fterm_values": 0,
+                        "fluent_fterm_values": 35,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/sugar",
+            "domain_file": "numeric/tests/sugar/domain.pddl",
+            "task_file": "numeric/tests/sugar/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 18,
+                        "fluent_predicates": 7,
+                        "derived_predicates": 0,
+                        "static_functions": 10,
+                        "fluent_functions": 10,
+                        "has_auxiliary_function": false,
+                        "actions": 13,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 15,
+                        "derived_predicates": 0,
+                        "static_atoms": 82,
+                        "fluent_atoms": 10,
+                        "static_fterm_values": 9,
+                        "fluent_fterm_values": 39,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 18,
+                        "fluent_predicates": 7,
+                        "derived_predicates": 0,
+                        "static_functions": 10,
+                        "fluent_functions": 10,
+                        "has_auxiliary_function": false,
+                        "actions": 13,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 15,
+                        "derived_predicates": 0,
+                        "static_atoms": 82,
+                        "fluent_atoms": 10,
+                        "static_fterm_values": 9,
+                        "fluent_fterm_values": 39,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/tpp",
+            "domain_file": "numeric/tests/tpp/domain.pddl",
+            "task_file": "numeric/tests/tpp/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 3,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 9,
+                        "derived_predicates": 0,
+                        "static_atoms": 27,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 39,
+                        "fluent_fterm_values": 12,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 8,
+                        "fluent_predicates": 1,
+                        "derived_predicates": 0,
+                        "static_functions": 3,
+                        "fluent_functions": 2,
+                        "has_auxiliary_function": true,
+                        "actions": 3,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 9,
+                        "derived_predicates": 0,
+                        "static_atoms": 27,
+                        "fluent_atoms": 1,
+                        "static_fterm_values": 39,
+                        "fluent_fterm_values": 12,
+                        "has_auxiliary_fterm_value": true,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "numeric/zenotravel",
+            "domain_file": "numeric/tests/zenotravel/domain.pddl",
+            "task_file": "numeric/tests/zenotravel/test-1.pddl",
+            "configurations": [
+                {
+                    "parser_options": {
+                        "add_action_costs": false
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 6,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 6,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 18,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 13,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                },
+                {
+                    "parser_options": {
+                        "add_action_costs": true
+                    },
+                    "domain": {
+                        "constants": 0,
+                        "static_predicates": 6,
+                        "fluent_predicates": 2,
+                        "derived_predicates": 0,
+                        "static_functions": 6,
+                        "fluent_functions": 3,
+                        "has_auxiliary_function": false,
+                        "actions": 5,
+                        "axioms": 0
+                    },
+                    "task": {
+                        "objects": 7,
+                        "derived_predicates": 0,
+                        "static_atoms": 18,
+                        "fluent_atoms": 4,
+                        "static_fterm_values": 13,
+                        "fluent_fterm_values": 3,
+                        "has_auxiliary_fterm_value": false,
+                        "axioms": 0,
+                        "has_metric": true
+                    }
+                }
+            ]
+        }
+    ]
+}
