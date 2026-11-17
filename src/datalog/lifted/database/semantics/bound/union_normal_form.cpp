@@ -68,7 +68,6 @@ urd::Store<urd::sequence<ConjunctiveBranch>> UnionNormalFormBuilder::flatten(Que
                 urd::Store<urd::sequence<ygg::ColumnLayout>> labels(columns.begin(), columns.end());
                 urd::Store<urd::sequence<uint32_t>> variables(mapping.begin(), mapping.end());
                 auto result = urd::Store<urd::sequence<ConjunctiveBranch>>(1);
-                const auto& repository = get_repository(concrete.context());
                 for (const auto input : concrete.get_inputs())
                 {
                     const auto child = input;

@@ -79,7 +79,8 @@ struct AliasFreeRelationView
     [[nodiscard]] RowBuilderView row(size_t) const;
     [[nodiscard]] bool contains(std::span<const ygg::Value>) const;
     [[nodiscard]] bool contains(RowBuilderView) const;
-    friend bool reads_builder(const AliasFreeRelationView&, const RelationBuilder&) noexcept;
+
+    [[maybe_unused]] friend bool reads_builder(const AliasFreeRelationView&, const RelationBuilder&) noexcept { return false; }
 };
 
 struct MutableRelationView : AliasFreeRelationView
