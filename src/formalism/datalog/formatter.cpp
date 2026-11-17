@@ -72,7 +72,7 @@
 namespace tyr::formalism::node_format
 {
 /// A rule's binding: its values (a rule has no name).
-static std::string format(datalog::RuleRowView value) { return ygg::values_text(value); }
+static std::string format(datalog::RuleRowView value) { return ygg::values_text<datalog::Rule<LiftedTag>>(value); }
 }  // namespace tyr::formalism::node_format
 
 namespace tyr::formalism::datalog

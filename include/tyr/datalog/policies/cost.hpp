@@ -25,36 +25,22 @@
 #include <cassert>
 #include <gtl/phmap.hpp>
 #include <ranges>
+#include <span>
 #include <tuple>
+#include <urd/elements/equal_to.hpp>
+#include <urd/elements/hash.hpp>
 #include <urd/repr/maps/std_map.hpp>
 #include <urd/repr/maps/unordered_flat_map.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/unordered_flat_set.hpp>
 #include <urd/store.hpp>
 #include <utility>
+#include <vector>
 #include <yggdrasil/core/closed_interval.hpp>
 #include <yggdrasil/core/config.hpp>
-#include <yggdrasil/formalism/row_key.hpp>
 
 namespace tyr::datalog
 {
-
-struct ActionCostLookup
-{
-    formalism::planning::ActionView<LiftedTag> action;
-    formalism::datalog::RuleRowView rule_binding;
-
-    /// The action's row key (ygg::key_of): the action, and the first values of the rule's row, its arity many.
-    [[nodiscard]] auto relation_key() const { return action.index(); }
-
-    [[nodiscard]] auto get_values() const
-    {
-        const auto objects = rule_binding.get_values();
-        assert(objects.size() >= action.get_arity());
-        // A subrange of the stored row's iterators, which hold the row: it outlives `objects`.
-        return std::ranges::subrange(objects.begin(), objects.begin() + static_cast<std::ptrdiff_t>(action.get_arity()));
-    }
-};
 
 class RuleCostPolicy
 {
@@ -133,9 +119,16 @@ public:
     {
         predicate_storage.clear();
         m_action_costs.clear();
+        m_action_repository = nullptr;
     }
 
-    void set_action_cost(formalism::planning::ActionRowView action, Cost cost) { m_action_costs.insert_or_assign(action, cost); }
+    /// The cost of an action's binding: a row of the task's repository, which every binding given is a row of.
+    void set_action_cost(formalism::planning::ActionRowView action, Cost cost)
+    {
+        assert(!m_action_repository || m_action_repository == &action.context());
+        m_action_repository = &action.context();
+        m_action_costs.insert_or_assign(action, cost);
+    }
 
     void set_cost(RuleKey<Kind> rule_key, Cost cost) { storage().set_cost(rule_key, cost); }
 
@@ -182,17 +175,36 @@ private:
         const auto actions = rule_to_action->find(rule_binding.index().relation);
         if (actions == rule_to_action->end())
             return static_cast<Cost>(0);
+        if (m_action_costs.empty())
+            return static_cast<Cost>(0);
+        // An action's binding is the first values of the rule's row, its arity many: the row of the task's repository
+        // that holds them (if it holds them, its cost may be set), by its identity.
+        const auto values = rule_binding.get_values();
         auto credit = static_cast<Cost>(0);
         for (const auto action : actions->second)
-            if (rule_binding.size() >= action.get_arity())
-                if (const auto cost = m_action_costs.find(ActionCostLookup { action, rule_binding }); cost != m_action_costs.end())
-                    credit = std::max(credit, cost->second);
+        {
+            const auto arity = action.get_arity();
+            if (values.size() < arity)
+                continue;
+            m_binding.assign(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(arity));
+            const auto row = m_action_repository->find_row(action.index(), std::span<const ygg::Value>(m_binding));
+            if (row.is_none())
+                continue;
+            const auto binding = m_action_repository->view(ygg::RowIndex<formalism::planning::Action<LiftedTag>> { action.index(), row });
+            if (const auto cost = m_action_costs.find(binding); cost != m_action_costs.end())
+                credit = std::max(credit, cost->second);
+        }
         return credit;
     }
 
     RuleCostOverrideStorage<Kind> predicate_storage;
     const RuleToActionMapping* m_predicate_rule_to_action { nullptr };
-    gtl::flat_hash_map<formalism::planning::ActionRowView, Cost, ygg::RowKeyHash, ygg::RowKeyEqualTo> m_action_costs;
+    /// The costs of action bindings, by their identity; the repository they are rows of (none before the first).
+    gtl::flat_hash_map<formalism::planning::ActionRowView, Cost, urd::Hash<formalism::planning::ActionRowView>, urd::EqualTo<formalism::planning::ActionRowView>>
+        m_action_costs;
+    const formalism::planning::Repository* m_action_repository { nullptr };
+    /// The binding of a lookup, written here (reused: it allocates once grown).
+    mutable std::vector<ygg::Value> m_binding;
 };
 
 }

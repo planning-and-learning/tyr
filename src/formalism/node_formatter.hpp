@@ -141,11 +141,11 @@ std::string format(urd::index_view<Object, C> value)
 /// A row of a named relation (a predicate's, a function's, an action's) as PDDL writes it: (name values).
 template<typename F, typename C, typename K>
 std::string format(urd::index_view<ygg::Row<F>, C, K> value)
-{ return fmt::format("({} {})", value.get_relation().get_name(), ygg::values_text(value)); }
+{ return fmt::format("({} {})", value.get_relation().get_name(), ygg::values_text<F>(value)); }
 
 template<typename F, typename C, typename R>
 std::string format(urd::borrowed_view<ygg::Row<F>, C, R> value)
-{ return fmt::format("({} {})", value.get_relation().get_name(), ygg::values_text(value)); }
+{ return fmt::format("({} {})", value.get_relation().get_name(), ygg::values_text<F>(value)); }
 
 }
 

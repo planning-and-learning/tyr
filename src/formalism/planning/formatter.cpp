@@ -66,7 +66,7 @@ static std::string format(const urd::data<planning::Metric>& value) { return fmt
 static std::string format(planning::MetricView value) { return fmt::format("({} {})", value.get_optimization_direction(), value.get_fexpr()); }
 
 /// An axiom's binding: its values (an axiom has no name).
-static std::string format(planning::AxiomRowView value) { return ygg::values_text(value); }
+static std::string format(planning::AxiomRowView value) { return ygg::values_text<planning::Axiom<LiftedTag>>(value); }
 
 static std::string format(const planning::PlanningDomain& value) { return fmt::format("{}", value.get_domain()); }
 

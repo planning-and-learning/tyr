@@ -23,7 +23,7 @@ def insert(builder: formalism.RelationBuilder, values: Sequence[Any]) -> int:
 # base.
 def values(row: Any) -> tuple[object, ...]:  # noqa: ANN401
     """The decoded values of `row`."""
-    return tuple(row.get(i) for i in range(row.size()))
+    return tuple(row.get(i) for i in range(len(row.get_values())))
 
 
 # `relation` is a relation view (RelationBuilderView) or an interned relation (RelationSchema).

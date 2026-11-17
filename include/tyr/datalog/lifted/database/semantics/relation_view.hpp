@@ -43,8 +43,7 @@ template<typename V>
 concept RelationViewConcept =
     requires(const std::remove_reference_t<V>& view, size_t i, std::span<const ygg::Value> values, const urd::builder<ygg::Relation<ygg::Schema>>& builder) {
         { view.columns() } -> std::same_as<std::span<const ygg::ColumnLayout>>;
-        { view.size() } -> std::same_as<size_t>;
-        { view.empty() } -> std::same_as<bool>;
+        { view.get_rows() } -> std::ranges::random_access_range;
         { reads_builder(view, builder) } -> std::same_as<bool>;
         { view.row(i) } -> ygg::RowViewConcept<ygg::Schema>;
         { view.row(i).get_values() } -> std::same_as<ygg::RowPool::row_type>;
