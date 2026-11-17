@@ -39,7 +39,8 @@ HERE = Path(__file__).resolve().parent
 DATA = HERE.parents[4] / "tests/support/data/formalism/invariants"
 SUITE_PREFIX = "classical/downward-benchmarks/"
 MAX_DOMAIN_FILES = 5
-# Synthesis takes 8-22 s per domain file here (the rest of the suite takes about 8 s together), so the tests leave them out.
+# Synthesis takes 8-22 s per domain file here (the rest of the suite takes about 8 s together): the tests leave them
+# out.
 EXCLUDED_DOMAINS = ("organic-synthesis-split-opt18-strips", "organic-synthesis-split-sat18-strips")
 TIMEOUT_SECONDS = 600
 

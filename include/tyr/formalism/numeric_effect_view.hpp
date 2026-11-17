@@ -25,15 +25,11 @@
 
 namespace urd
 {
-template<::tyr::TaskKind T, ::tyr::formalism::FactKind F, typename V>
+template<::tyr::TaskKind T, ::tyr::formalism::NumericEffectFactKind F, typename V>
 struct view_mixin<::tyr::formalism::NumericEffect<T, F>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
-
-public:
-    static_assert(std::same_as<F, ::tyr::formalism::FluentTag> || std::same_as<F, ::tyr::formalism::AuxiliaryTag>,
-                  "Unsupported NumericEffect<F> specialization.");
 
 public:
     auto get_operation() const noexcept { return self().template member<&urd::record_of<V>::operation>(); }

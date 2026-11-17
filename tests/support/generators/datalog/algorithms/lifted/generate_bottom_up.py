@@ -92,12 +92,15 @@ def binding_objects(row: RowPredicateFluent) -> str:
 
 
 def atoms_by_predicate(
-    program: datalog.lifted.Program, workspace: Workspace,
+    program: datalog.lifted.Program,
+    workspace: Workspace,
     effect_programs: planning.ApplicableActionProgram | planning.GroundTaskProgram | None = None,
 ) -> list[PredicateAtoms]:
-    """The fluent atoms by predicate, without the predicates of the conditional effects of `effect_programs` (internal to
-    the action and ground task programs; the solver test leaves them out the same way)."""
-    effect_predicates = (
+    """The fluent atoms by predicate, without the predicates of the conditional effects of `effect_programs`.
+
+    Those predicates are internal to the action and ground task programs; the solver test leaves them out the same way.
+    """
+    effect_predicates: set[str] = (
         set()
         if effect_programs is None
         else {predicate.get_name() for _, predicate in effect_programs.get_conditional_effect_to_predicate_mapping()}
@@ -154,7 +157,8 @@ def run_config(context: Context, config: ConfigName) -> list[PredicateAtoms]:
         case "ground_task":
             program = planning.GroundTaskProgram(context.task.get_task())
             datalog_program = program.get_datalog_program()
-            return atoms_by_predicate(datalog_program, solve_program(context.execution_context, datalog_program), program)
+            workspace = solve_program(context.execution_context, datalog_program)
+            return atoms_by_predicate(datalog_program, workspace, program)
 
 
 def generate_case(case: FixtureCase) -> FixtureCase:

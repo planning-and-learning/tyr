@@ -200,8 +200,9 @@ private:
     RuleCostOverrideStorage<Kind> predicate_storage;
     const RuleToActionMapping* m_predicate_rule_to_action { nullptr };
     /// The costs of action bindings, by their identity; the repository they are rows of (none before the first).
-    gtl::flat_hash_map<formalism::planning::ActionRowView, Cost, urd::Hash<formalism::planning::ActionRowView>, urd::EqualTo<formalism::planning::ActionRowView>>
-        m_action_costs;
+    gtl::
+        flat_hash_map<formalism::planning::ActionRowView, Cost, urd::Hash<formalism::planning::ActionRowView>, urd::EqualTo<formalism::planning::ActionRowView>>
+            m_action_costs;
     const formalism::planning::Repository* m_action_repository { nullptr };
     /// The binding of a lookup, written here (reused: it allocates once grown).
     mutable std::vector<ygg::Value> m_binding;

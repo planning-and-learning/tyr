@@ -16,11 +16,9 @@ from itertools import product
 from pathlib import Path
 
 from pypddl.formalism import ParserOptions
+from pyyggdrasil.formalism import ObjectIndex
 
-from pytyr.formalism import (
-    ObjectIndex,
-    ParameterIndex,
-)
+from pytyr.formalism import ParameterIndex
 from pytyr.formalism.planning import (
     Invariant,
     InvariantMatchData,

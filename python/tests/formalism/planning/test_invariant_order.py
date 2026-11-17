@@ -65,10 +65,9 @@ def test_ferry_orders(ferry: Ferry) -> None:
     def names(order: list[Invariant]) -> list[set[str]]:
         return [_predicate_names(i) for i in order]
 
-    # at-ferry shares no predicate, so it steals none and goes first; {at, on} and {empty-ferry, on} tie on the counts,
-    # and the smaller text (urd's record, num_rigid_variables first: 0 before 1) takes on: {empty-ferry, on} goes
-    # second, {at, on} last. No invariant is left out.
-    assert names(compute_invariant_order_greedy(invariants)) == [{"at-ferry"}, {"empty-ferry", "on"}, {"at", "on"}]
+    # at-ferry shares no predicate, so it steals none and goes first; {at, on} then steals on from {empty-ferry, on},
+    # which follows last: no invariant is left out.
+    assert names(compute_invariant_order_greedy(invariants)) == [{"at-ferry"}, {"at", "on"}, {"empty-ferry", "on"}]
     assert compute_invariant_order_greedy(invariants) == compute_invariant_order_greedy(
         invariants,
         InvariantOrderOptions(
@@ -111,10 +110,10 @@ def test_grounding_follows_the_order(ferry: Ferry) -> None:
     result = _ground(formalism_task, compute_invariant_order_greedy(invariants))
 
     assert _variable_predicates(result.task.get_fdr_context().get_variables()) == [
-        ["at", "at"],
-        ["at", "at"],
+        ["at", "at", "on"],
+        ["at", "at", "on"],
         ["at-ferry", "at-ferry"],
-        ["empty-ferry", "on", "on"],
+        ["empty-ferry"],
     ]
 
 

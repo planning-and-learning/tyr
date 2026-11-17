@@ -77,7 +77,6 @@ from pytyr._pytyr.formalism import (
     NumericEffectLiftedFluentIndex as NumericEffectLiftedFluentIndex,
     NumericEffectOperatorKind as NumericEffectOperatorKind,
     ObjectData as ObjectData,
-    ObjectIndex as ObjectIndex,
     ParameterIndex as ParameterIndex,
     PredicateFluentData as PredicateFluentData,
     PredicateFluentIndex as PredicateFluentIndex,
