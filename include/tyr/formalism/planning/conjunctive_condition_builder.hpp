@@ -1,0 +1,95 @@
+/*
+ * Copyright (C) 2025-2026 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_BUILDER_HPP_
+#define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_BUILDER_HPP_
+
+#include "tyr/formalism/binary_operator_builder.hpp"
+#include "tyr/formalism/literal_builder.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_data.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/fdr_fact_builder.hpp"
+#include "tyr/formalism/variable_builder.hpp"
+
+#include <optional>
+#include <urd/elements/builder.hpp>
+#include <variant>
+#include <vector>
+
+namespace urd
+{
+
+/// The builder of ConjunctiveCondition: its record's members; each child built or interned (urd::child).
+template<typename C>
+struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>, C>
+{
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::LiftedTag>> index;
+    std::vector<urd::child<::tyr::formalism::Variable, C>> variables;
+    std::vector<urd::child<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::StaticTag>, C>> static_literals;
+    std::vector<urd::child<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::FluentTag>, C>> fluent_literals;
+    std::vector<urd::child<::tyr::formalism::Literal<::tyr::LiftedTag, ::tyr::formalism::DerivedTag>, C>> derived_literals;
+    std::vector<urd::child<::tyr::formalism::BinaryOperator<::tyr::LiftedTag, ::tyr::formalism::BooleanOperatorKind>, C>> numeric_constraints;
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"variables", &builder::variables>,
+                           urd::field<"static_literals", &builder::static_literals>,
+                           urd::field<"fluent_literals", &builder::fluent_literals>,
+                           urd::field<"derived_literals", &builder::derived_literals>,
+                           urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
+    }
+
+    static constexpr auto identifying_members() noexcept
+    {
+        return urd::
+            Members<&builder::variables, &builder::static_literals, &builder::fluent_literals, &builder::derived_literals, &builder::numeric_constraints> {};
+    }
+};
+
+/// The builder of ConjunctiveCondition: its record's members; each child built or interned (urd::child).
+template<typename C>
+struct builder<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>, C>
+{
+    urd::index<::tyr::formalism::planning::ConjunctiveCondition<::tyr::GroundTag>> index;
+    std::vector<urd::child<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::StaticTag>, C>> static_literals;
+    std::vector<urd::child<::tyr::formalism::Literal<::tyr::GroundTag, ::tyr::formalism::DerivedTag>, C>> derived_literals;
+    std::vector<urd::builder<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>, C>> positive_facts;
+    std::vector<urd::builder<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>, C>> negative_facts;
+    std::vector<urd::child<::tyr::formalism::BinaryOperator<::tyr::GroundTag, ::tyr::formalism::BooleanOperatorKind>, C>> numeric_constraints;
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"static_literals", &builder::static_literals>,
+                           urd::field<"derived_literals", &builder::derived_literals>,
+                           urd::field<"positive_facts", &builder::positive_facts>,
+                           urd::field<"negative_facts", &builder::negative_facts>,
+                           urd::field<"numeric_constraints", &builder::numeric_constraints>> {};
+    }
+
+    static constexpr auto identifying_members() noexcept
+    {
+        return urd::Members<&builder::positive_facts,
+                            &builder::negative_facts,
+                            &builder::static_literals,
+                            &builder::derived_literals,
+                            &builder::numeric_constraints> {};
+    }
+};
+
+}  // namespace urd
+
+#endif

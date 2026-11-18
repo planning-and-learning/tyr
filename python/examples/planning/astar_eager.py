@@ -39,7 +39,7 @@ from pytyr.planning.lifted import (
     Node,
     Plan,
     PruningStrategy,
-    State,
+    StateBuilderShared,
     StateBuilder,
     StateRepository,
     SuccessorGenerator,
@@ -61,7 +61,7 @@ class CustomHeuristic(Heuristic):
         pass
 
     @override
-    def evaluate(self, state: State) -> float:
+    def evaluate(self, state: StateBuilderShared) -> float:
         raise NotImplementedError
 
 
@@ -73,12 +73,12 @@ class CustomPruningStrategy(PruningStrategy):
     """
 
     @override
-    def should_prune_state(self, state: State) -> bool:
+    def should_prune_state(self, state: StateBuilderShared) -> bool:
         """Is checked for the initial state."""
         raise NotImplementedError
 
     @override
-    def should_prune_successor_state(self, state: State, succ_state: State, is_new_succ_state: bool) -> bool:
+    def should_prune_successor_state(self, state: StateBuilderShared, succ_state: StateBuilderShared, is_new_succ_state: bool) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 
@@ -96,7 +96,7 @@ class CustomGoalStrategy(GoalStrategy):
         raise NotImplementedError
 
     @override
-    def is_dynamic_goal_satisfied(self, seed_state: State, state: State | StateBuilder) -> bool:
+    def is_dynamic_goal_satisfied(self, seed_state: StateBuilderShared, state: StateBuilderShared | StateBuilder) -> bool:
         """Is checked for every generated state."""
         raise NotImplementedError
 

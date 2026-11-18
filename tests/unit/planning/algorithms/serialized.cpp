@@ -107,7 +107,7 @@ public:
 
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&) override { return false; }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::BuilderStateView<GroundTag>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&) override { return false; }
 };
 
 class SatisfiedGoalStrategy : public NeverSatisfiedGoalStrategy
@@ -115,7 +115,7 @@ class SatisfiedGoalStrategy : public NeverSatisfiedGoalStrategy
 public:
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateView<GroundTag>&) override { return true; }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::BuilderStateView<GroundTag>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<GroundTag>&, const tyr::planning::StateBuilderView<GroundTag>&) override { return true; }
 };
 
 class StaticallyImpossibleGoalStrategy : public NeverSatisfiedGoalStrategy

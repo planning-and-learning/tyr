@@ -42,7 +42,7 @@ void compute_state_delta(const StateContext<Kind>& parent, const StateContext<Ki
             out.fluents.push_back(StateDelta::FluentChange { variable, from, to });
     }
 
-    const auto num_fterms = std::max(parent.numeric_storage().values.size(), successor.numeric_storage().values.size());
+    const auto num_fterms = std::max(parent.numeric_storage().get_values().size(), successor.numeric_storage().get_values().size());
     for (size_t i = 0; i < num_fterms; ++i)
     {
         const auto fterm = urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>(static_cast<ygg::uint_t>(i));

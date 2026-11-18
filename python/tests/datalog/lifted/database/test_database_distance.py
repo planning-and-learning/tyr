@@ -12,9 +12,10 @@ from relation_utils import insert, intern, labels, tuples, values
 
 from pytyr.datalog.lifted import database
 
-Readable = formalism.RelationBuilder | formalism.RelationBuilderView | formalism.RelationSchema
+Readable = database.ScratchRelation | formalism.RelationSchemaBuilder | formalism.RelationSchema
 # Reads the tests' relation builders and evaluator results.
 RELATIONS = formalism.RelationRepository()
+SCRATCH = database.ScratchRelations()
 
 
 Rows: TypeAlias = Iterable[Sequence[object]]
@@ -26,8 +27,8 @@ def columns(*numbers: int) -> list[formalism.ColumnIndex]:
 
 def relation(
     labels: Sequence[int], rows: Iterable[Sequence[object]] = (), types: Sequence[formalism.ColumnType] = ()
-) -> formalism.RelationBuilder:
-    result = formalism.RelationBuilder(
+) -> database.ScratchRelation:
+    result = database.ScratchRelation(
         [
             formalism.ColumnLayout(formalism.ColumnIndex(label), types[index] if types else formalism.ColumnType.UINT32)
             for index, label in enumerate(labels)
@@ -38,30 +39,30 @@ def relation(
     return result
 
 
-def rows(value: formalism.RelationBuilderView | formalism.RelationSchema) -> set[tuple[object, ...]]:
+def rows(value: formalism.RelationSchemaBuilder | formalism.RelationSchema) -> set[tuple[object, ...]]:
     return set(tuples(value))
 
 
 def borrow(
-    source: formalism.RelationBuilder, edges: formalism.RelationBuilder, target: formalism.RelationBuilder
-) -> tuple[formalism.RelationBuilderView, formalism.RelationBuilderView, formalism.RelationBuilderView]:
-    return RELATIONS.view(source), RELATIONS.view(edges), RELATIONS.view(target)
+    source: database.ScratchRelation, edges: database.ScratchRelation, target: database.ScratchRelation
+) -> tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]:
+    return source.view(), edges.view(), target.view()
 
 
 def change(
-    added: formalism.RelationBuilder, removed: formalism.RelationBuilder
-) -> tuple[formalism.RelationBuilderView, formalism.RelationBuilderView]:
-    return RELATIONS.view(added), RELATIONS.view(removed)
+    added: database.ScratchRelation, removed: database.ScratchRelation
+) -> tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]:
+    return added.view(), removed.view()
 
 
 def distance(
-    source: formalism.RelationBuilderView,
-    edges: formalism.RelationBuilderView,
-    target: formalism.RelationBuilderView,
+    source: formalism.RelationSchemaBuilder,
+    edges: formalism.RelationSchemaBuilder,
+    target: formalism.RelationSchemaBuilder,
     plan: database.DistancePlan,
-) -> formalism.RelationBuilder:
+) -> database.ScratchRelation:
     """The distances of borrowed inputs into a fresh relation of the plan's output columns."""
-    result = formalism.RelationBuilder(plan.output_columns())
+    result = database.ScratchRelation(plan.output_columns())
     database.distance(source, edges, target, plan, result, database.DistanceWorkspace(plan))
     return result
 
@@ -71,9 +72,9 @@ def distance_of_interned(
     edges: formalism.RelationSchema,
     target: formalism.RelationSchema,
     plan: database.DistancePlan,
-) -> formalism.RelationBuilder:
+) -> database.ScratchRelation:
     """As distance(), of interned inputs."""
-    result = formalism.RelationBuilder(plan.output_columns())
+    result = database.ScratchRelation(plan.output_columns())
     database.distance(source, edges, target, plan, result, database.DistanceWorkspace(plan))
     return result
 
@@ -96,7 +97,7 @@ def test_distance_mixed_inputs_and_independent_output(interned_mask: int) -> Non
     interned = [intern(repository, value)[0] for value in (source, edges, target)]
     # Interned inputs are accepted without copying only when all are interned; otherwise they are copied out.
     copied = [
-        database.assign(formalism.RelationBuilder(), view) if interned_mask & (1 << index) else value
+        database.assign(database.ScratchRelation(), view) if interned_mask & (1 << index) else value
         for index, (value, view) in enumerate(zip((source, edges, target), interned, strict=True))
     ]
     borrowed = borrow(copied[0], copied[1], copied[2])
@@ -106,9 +107,9 @@ def test_distance_mixed_inputs_and_independent_output(interned_mask: int) -> Non
         result, other = (distance_of_interned(interned[0], interned[1], interned[2], plan) for _ in range(2))
     else:
         result, other = (distance(borrowed[0], borrowed[1], borrowed[2], plan) for _ in range(2))
-    assert isinstance(result, formalism.RelationBuilder)
+    assert isinstance(result, database.ScratchRelation)
     expected = {a + a + (0,), a + c + (2,), c + c + (0,)}
-    assert rows(RELATIONS.view(result)) == expected
+    assert rows(result.view()) == expected
     assert labels(result.columns()) == columns(20, 21, 22, 23, 99)
     assert [column.type for column in result.columns()] == types * 2 + [formalism.ColumnType.UINT32]
 
@@ -118,7 +119,7 @@ def test_distance_mixed_inputs_and_independent_output(interned_mask: int) -> Non
     target.clear()
     del interned, copied, borrowed, repository, plan, source, edges, target
     gc.collect()
-    assert rows(RELATIONS.view(result)) == expected
+    assert rows(result.view()) == expected
 
 
 def test_distance_canonical_nan_boolean_and_zero_length_paths() -> None:
@@ -129,7 +130,7 @@ def test_distance_canonical_nan_boolean_and_zero_length_paths() -> None:
     result = distance(*borrow(source, edges, target), plan_for(source, edges, target))
     normalized = {
         tuple("nan" if isinstance(value, float) and math.isnan(value) else value for value in row)
-        for row in tuples(RELATIONS.view(result))
+        for row in tuples(result.view())
     }
     assert normalized == {
         (True, "nan", True, "nan", 0),
@@ -144,10 +145,10 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
     edges = relation([20, 21], [(0, 1), (1, 2), (2, 3), (0, 3)])
     target = relation([30], [(0,), (2,), (3,)])
     plan = plan_for(source, edges, target)
-    evaluator = database.DistanceEvaluator(RELATIONS, plan)
+    evaluator = database.DistanceEvaluator(SCRATCH, plan)
     repository = formalism.RelationRepository()
     evaluator.initialize(
-        *borrow(source, database.assign(formalism.RelationBuilder(), intern(repository, edges)[0]), target)
+        *borrow(source, database.assign(database.ScratchRelation(), intern(repository, edges)[0]), target)
     )
     expected = {(0, 0, 0), (0, 2, 2), (0, 3, 1), (2, 2, 0), (2, 3, 1)}
     assert rows(evaluator.get_result()) == expected
@@ -171,7 +172,7 @@ def test_incremental_distance_exact_deltas(intern_added: bool) -> None:
         ]
         for index in range(6):
             if (index % 2 == 0) == intern_added:
-                changes[index] = database.assign(formalism.RelationBuilder(), intern(repository, changes[index])[0])
+                changes[index] = database.assign(database.ScratchRelation(), intern(repository, changes[index])[0])
         evaluator.update(change(changes[0], changes[1]), change(changes[2], changes[3]), change(changes[4], changes[5]))
 
     before = expected
@@ -213,7 +214,7 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
     edges = relation([20, 21], [(0, 1), (1, 2)])
     target = relation([30], [(2,)])
     plan = plan_for(source, edges, target)
-    evaluator = database.DistanceEvaluator(RELATIONS, plan)
+    evaluator = database.DistanceEvaluator(SCRATCH, plan)
     evaluator.initialize(*borrow(source, edges, target))
     evaluator.update(
         change(relation([10]), relation([10])),
@@ -222,10 +223,10 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
     )
     result = evaluator.get_result()
     delta = evaluator.get_delta()
-    assert isinstance(result, formalism.RelationBuilderView)
+    assert isinstance(result, formalism.RelationSchemaBuilder)
     assert isinstance(delta, database.RelationDelta)
 
-    def check_read_only(value: formalism.RelationBuilderView) -> None:
+    def check_read_only(value: formalism.RelationSchemaBuilder) -> None:
         assert not hasattr(value, "insert")
         assert not hasattr(value, "clear")
         assert not hasattr(value, "erase")
@@ -240,7 +241,7 @@ def test_evaluator_borrowed_results_are_read_only_and_retain_owners(leaf: str) -
     with pytest.raises(AttributeError):
         cast("Any", delta).added = source
     with pytest.raises(TypeError):
-        cast("Any", formalism.RelationBuilderView)()
+        cast("Any", formalism.RelationSchemaBuilder)()
     with pytest.raises(TypeError):
         database.RelationDelta()
     retained: Any  # each leaf is a different borrowed type
@@ -286,7 +287,7 @@ def test_borrowed_relations_can_feed_another_distance_evaluation() -> None:
     source = relation([10], [(0,)])
     edges = relation([20, 21], [(0, 1)])
     target = relation([30], [(1,)])
-    evaluator = database.DistanceEvaluator(RELATIONS, plan_for(source, edges, target))
+    evaluator = database.DistanceEvaluator(SCRATCH, plan_for(source, edges, target))
     evaluator.initialize(*borrow(source, edges, target))
     borrowed = evaluator.get_result()
     next_edges = relation([40, 41, 42, 43, 44, 45])
@@ -295,7 +296,7 @@ def test_borrowed_relations_can_feed_another_distance_evaluation() -> None:
         borrowed.columns(), next_edges.columns(), next_target.columns(), formalism.ColumnIndex(100)
     )
     edges_view, target_view = change(next_edges, next_target)
-    assert rows(RELATIONS.view(distance(borrowed, edges_view, target_view, plan))) == {(0, 1, 1, 0, 1, 1, 0)}
+    assert rows(distance(borrowed, edges_view, target_view, plan).view()) == {(0, 1, 1, 0, 1, 1, 0)}
 
 
 def test_distance_rejects_invalid_schema_and_input_types() -> None:
@@ -318,7 +319,7 @@ def test_distance_rejects_invalid_schema_and_input_types() -> None:
     _, edges_view, target_view = borrow(source, edges, target)
     with pytest.raises(TypeError):
         distance(cast("Any", []), edges_view, target_view, plan)
-    evaluator = database.DistanceEvaluator(RELATIONS, plan)
+    evaluator = database.DistanceEvaluator(SCRATCH, plan)
     with pytest.raises(RuntimeError):
         evaluator.update(
             change(source, relation([10])), change(edges, relation([20, 21])), change(target, relation([30]))

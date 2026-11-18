@@ -54,25 +54,25 @@ class MinDistance
 public:
     /// Edges given by a query over inputs. `edges` has the plan's edge columns; `static_slots` marks its inputs that
     /// never change, which are then read on the first call only.
-    /// Its input snapshots are builders of `layer`, which must outlive it.
-    MinDistance(const ygg::FreeRelationRepository& layer,
+    /// Its input snapshots are drawn from `scratch`, which must outlive it.
+    MinDistance(ygg::FreeScratchRelations& scratch,
                 QueryView<> edges,
                 const DistancePlan& plan,
                 const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
-        MinDistance(bound::QueryEvaluator(layer, detail::checked_edges(edges, plan), static_slots), plan)
+        MinDistance(bound::QueryEvaluator(scratch, detail::checked_edges(edges, plan), static_slots), plan)
     {
     }
 
     /// Edges given as a relation with the plan's edge columns.
-    MinDistance(const ygg::FreeRelationRepository& layer, const DistancePlan& plan, bool static_edges = false) :
-        MinDistance(detail::relation_edges<bound::QueryEvaluator>(layer, plan, static_edges), plan)
+    MinDistance(ygg::FreeScratchRelations& scratch, const DistancePlan& plan, bool static_edges = false) :
+        MinDistance(detail::relation_edges<bound::QueryEvaluator>(scratch, plan, static_edges), plan)
     {
     }
 
     [[nodiscard]] size_t input_count() const noexcept { return m_edges.evaluator().input_count(); }
 
     /// The minimum distance over the edges of the inputs: input(slot) returns slot's relation view.
-    template<SlotRelations Input, RelationViewConcept S, RelationViewConcept T>
+    template<SlotRelations Input, ygg::RelationViewConcept<ygg::Schema> S, ygg::RelationViewConcept<ygg::Schema> T>
     ygg::uint_t min_distance(const Input& input, const S& sources, const T& targets, const H& heuristic = {})
     {
         assert(std::ranges::equal(sources.columns(), m_plan.source_columns()));

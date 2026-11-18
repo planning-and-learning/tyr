@@ -18,16 +18,17 @@ void require_initialized(bool initialized)
 
 namespace tyr::datalog::database::incremental::detail
 {
-void apply_delta(const Delta& delta, urd::builder<ygg::Relation<ygg::Schema>>& result)
+void apply_delta(const Delta& delta, ygg::FreeScratchRelation& result)
 {
     const auto [added, removed] = delta.change();
-    for (size_t i = 0; i < removed.size(); ++i)
-    {
-        const auto position = result.find(removed.row(i).get_values());
-        URD_ASSUME(position.has_value());  // a removed row is in the result
-        result.erase(*position);
-    }
-    for (size_t i = 0; i < added.size(); ++i)
-        result.insert(added.row(i).get_values());
+    for (const auto& held : removed.get_rows())
+        ygg::with_values(held,
+                         [&](const auto& values)
+                         {
+                             [[maybe_unused]] const bool erased = result.erase(values);
+                             URD_ASSUME(erased);  // a removed row is in the result
+                         });
+    for (const auto& held : added.get_rows())
+        ygg::with_values(held, [&](const auto& values) { result.insert(values); });
 }
 }

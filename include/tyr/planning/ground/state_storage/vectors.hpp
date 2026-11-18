@@ -58,14 +58,14 @@ struct StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>
 };
 
 template<typename... Tags, bool ThreadSafe>
-class FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>
+class StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
-    using Unpacked = FactUnpackedStorage<GroundTag>;
+    using Unpacked = urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>;
     using Packed = typename Context::ArraySet::handle_type;
 
-    explicit FactStorageBackend(Context& ctx);
+    explicit StateComponentRepository(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
@@ -84,19 +84,20 @@ private:
 };
 
 template<typename... Tags, bool ThreadSafe>
-class AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>
+class StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<GroundTag, Vectors<Tags...>, ThreadSafe>;
-    using Unpacked = AtomUnpackedStorage<GroundTag>;
+    using Unpacked = urd::builder<AtomStorage<GroundTag>, formalism::planning::Repository>;
     using Packed = typename Context::ArraySet::handle_type;
 
-    explicit AtomStorageBackend(Context& ctx);
+    explicit StateComponentRepository(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as writes to the blocks in which it differs from `parent_unpacked`, stored as `parent`.
-    Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
+    /// Inserts `unpacked` as writes to the blocks in which it differs from `parent_atoms` (the parent's derived atoms),
+    /// stored as `parent`.
+    Packed insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<GroundTag>& parent_atoms);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 

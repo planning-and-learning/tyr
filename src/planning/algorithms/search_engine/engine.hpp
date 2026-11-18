@@ -470,7 +470,7 @@ private:
         }
     }
 
-    ygg::float_t evaluate_successor_metric(const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value)
+    ygg::float_t evaluate_successor_metric(const urd::builder<State<Kind>, StateRepository<Kind>>& state, ygg::float_t auxiliary_value)
     { return planning::evaluate_successor_metric(*m_task, state, auxiliary_value); }
 
     void solve(WorkerData& worker, const Node<Kind>& node)

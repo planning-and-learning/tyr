@@ -67,7 +67,7 @@ void insert_fluent_atoms_to_fact_set(const StateContext<GroundTag>& state,
                                      const P2DTranslationContext<GroundTag>::FluentToFluentAtomMapping& fluent_to_fluent_atom,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
-    for (const auto atom : fluent_atoms(state.fact_storage(), repository))
+    for (const auto atom : state.fact_storage().fluent_atoms())
         datalog::insert(fact_sets, fluent_to_fluent_atom.at(urd::resolve(atom, repository)).get_row().index());
 }
 
@@ -87,7 +87,7 @@ void insert_fluent_atoms_to_fact_set(const StateContext<LiftedTag>& state,
                                      formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
 {
-    for (const auto atom_index : fluent_atoms(state.fact_storage(), repository))
+    for (const auto atom_index : state.fact_storage().fluent_atoms())
     {
         const auto atom = urd::resolve(atom_index, repository);
         if (const auto it = fluent_to_fluent_predicate.find(atom.get_predicate()); it != fluent_to_fluent_predicate.end())
@@ -125,7 +125,7 @@ void insert_numeric_variables_to_fact_set(const StateContext<LiftedTag>& state,
     }
 }
 
-void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
+void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,

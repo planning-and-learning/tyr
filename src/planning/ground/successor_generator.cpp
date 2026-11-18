@@ -74,8 +74,8 @@ namespace tyr::planning
 namespace
 {
 using Source = SourceNode<GroundTag>;
-using Builder = urd::builder<State<GroundTag>>;
-using BuilderNode = Node<GroundTag, BuilderStateView<GroundTag>>;
+using Builder = urd::builder<State<GroundTag>, StateRepository<GroundTag>>;
+using BuilderNode = Node<GroundTag, StateBuilderView<GroundTag>>;
 using Bindings = urd::Store<urd::sequence<formalism::planning::ActionRowView>>;
 
 void validate_task(const TaskPtr<GroundTag>& task, const StateRepository<GroundTag>& state_repository)
@@ -101,7 +101,7 @@ void validate_storage(const TaskPtr<GroundTag>& task, const Source&, const State
 
 void validate_storage(const TaskPtr<GroundTag>&, const Source& node, const Builder& storage)
 {
-    if (&storage.fact_storage == &node.state().fact_storage())
+    if (&storage.numeric_storage.values == &node.state().numeric_storage().get_values())
         throw std::invalid_argument("SuccessorGenerator: source and successor builder must be distinct.");
 }
 
@@ -377,10 +377,10 @@ void SuccessorGenerator<GroundTag>::get_successor_nodes(const Source& node,
     m_impl->for_each_successor(*this, node, tree, storage, axiom_evaluator, append(out_nodes));
 }
 
-NodeList<GroundTag, BuilderStateView<GroundTag>>
+NodeList<GroundTag, StateBuilderView<GroundTag>>
 SuccessorGenerator<GroundTag>::get_successor_nodes(const Source& node, SuccessorBuilders<GroundTag>& storage, AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = NodeList<GroundTag, BuilderStateView<GroundTag>> {};
+    auto result = NodeList<GroundTag, StateBuilderView<GroundTag>> {};
     get_successor_nodes(node, storage, axiom_evaluator, result);
     return result;
 }
@@ -388,19 +388,19 @@ SuccessorGenerator<GroundTag>::get_successor_nodes(const Source& node, Successor
 void SuccessorGenerator<GroundTag>::get_successor_nodes(const Source& node,
                                                         SuccessorBuilders<GroundTag>& storage,
                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                        NodeList<GroundTag, BuilderStateView<GroundTag>>& out_nodes)
+                                                        NodeList<GroundTag, StateBuilderView<GroundTag>>& out_nodes)
 {
     auto& tree = m_impl->prepare(node, std::nullopt, storage, axiom_evaluator);
     out_nodes.clear();
     m_impl->for_each_successor(*this, node, tree, storage, axiom_evaluator, append(out_nodes));
 }
 
-NodeList<GroundTag, BuilderStateView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Source& node,
+NodeList<GroundTag, StateBuilderView<GroundTag>> SuccessorGenerator<GroundTag>::get_successor_nodes(const Source& node,
                                                                                                     formalism::planning::ActionView<LiftedTag> action,
                                                                                                     SuccessorBuilders<GroundTag>& storage,
                                                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = NodeList<GroundTag, BuilderStateView<GroundTag>> {};
+    auto result = NodeList<GroundTag, StateBuilderView<GroundTag>> {};
     get_successor_nodes(node, action, storage, axiom_evaluator, result);
     return result;
 }
@@ -409,7 +409,7 @@ void SuccessorGenerator<GroundTag>::get_successor_nodes(const Source& node,
                                                         formalism::planning::ActionView<LiftedTag> action,
                                                         SuccessorBuilders<GroundTag>& storage,
                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                        NodeList<GroundTag, BuilderStateView<GroundTag>>& out_nodes)
+                                                        NodeList<GroundTag, StateBuilderView<GroundTag>>& out_nodes)
 {
     auto& tree = m_impl->prepare(node, action, storage, axiom_evaluator);
     out_nodes.clear();
@@ -455,11 +455,11 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Source& no
     m_impl->for_each_labeled_successor(*this, node, tree, storage, axiom_evaluator, append(out_nodes));
 }
 
-LabeledNodeList<GroundTag, BuilderStateView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Source& node,
+LabeledNodeList<GroundTag, StateBuilderView<GroundTag>> SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Source& node,
                                                                                                                    SuccessorBuilders<GroundTag>& storage,
                                                                                                                    AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = LabeledNodeList<GroundTag, BuilderStateView<GroundTag>> {};
+    auto result = LabeledNodeList<GroundTag, StateBuilderView<GroundTag>> {};
     get_labeled_successor_nodes(node, storage, axiom_evaluator, result);
     return result;
 }
@@ -467,20 +467,20 @@ LabeledNodeList<GroundTag, BuilderStateView<GroundTag>> SuccessorGenerator<Groun
 void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Source& node,
                                                                 SuccessorBuilders<GroundTag>& storage,
                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                LabeledNodeList<GroundTag, BuilderStateView<GroundTag>>& out_nodes)
+                                                                LabeledNodeList<GroundTag, StateBuilderView<GroundTag>>& out_nodes)
 {
     auto& tree = m_impl->prepare(node, std::nullopt, storage, axiom_evaluator);
     out_nodes.clear();
     m_impl->for_each_labeled_successor(*this, node, tree, storage, axiom_evaluator, append(out_nodes));
 }
 
-LabeledNodeList<GroundTag, BuilderStateView<GroundTag>>
+LabeledNodeList<GroundTag, StateBuilderView<GroundTag>>
 SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Source& node,
                                                            formalism::planning::ActionView<LiftedTag> action,
                                                            SuccessorBuilders<GroundTag>& storage,
                                                            AxiomEvaluator<GroundTag>& axiom_evaluator)
 {
-    auto result = LabeledNodeList<GroundTag, BuilderStateView<GroundTag>> {};
+    auto result = LabeledNodeList<GroundTag, StateBuilderView<GroundTag>> {};
     get_labeled_successor_nodes(node, action, storage, axiom_evaluator, result);
     return result;
 }
@@ -489,7 +489,7 @@ void SuccessorGenerator<GroundTag>::get_labeled_successor_nodes(const Source& no
                                                                 formalism::planning::ActionView<LiftedTag> action,
                                                                 SuccessorBuilders<GroundTag>& storage,
                                                                 AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                LabeledNodeList<GroundTag, BuilderStateView<GroundTag>>& out_nodes)
+                                                                LabeledNodeList<GroundTag, StateBuilderView<GroundTag>>& out_nodes)
 {
     auto& tree = m_impl->prepare(node, action, storage, axiom_evaluator);
     out_nodes.clear();
@@ -556,7 +556,7 @@ bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Source
 bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Source& node,
                                                                     Builder& storage,
                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                    const std::function<bool(LabeledNode<GroundTag, BuilderStateView<GroundTag>>)>& callback)
+                                                                    const std::function<bool(LabeledNode<GroundTag, StateBuilderView<GroundTag>>)>& callback)
 {
     auto& tree = m_impl->prepare(node, std::nullopt, storage, axiom_evaluator);
     return m_impl->for_each_labeled_successor(*this, node, tree, storage, axiom_evaluator, callback);
@@ -566,7 +566,7 @@ bool SuccessorGenerator<GroundTag>::for_each_labeled_successor_node(const Source
                                                                     formalism::planning::ActionView<LiftedTag> action,
                                                                     Builder& storage,
                                                                     AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                    const std::function<bool(LabeledNode<GroundTag, BuilderStateView<GroundTag>>)>& callback)
+                                                                    const std::function<bool(LabeledNode<GroundTag, StateBuilderView<GroundTag>>)>& callback)
 {
     auto& tree = m_impl->prepare(node, action, storage, axiom_evaluator);
     return m_impl->for_each_labeled_successor(*this, node, tree, storage, axiom_evaluator, callback);
@@ -712,7 +712,7 @@ template<ygg::RowViewConcept<formalism::planning::Action<LiftedTag>> Binding>
 ActionBindingStatus SuccessorGenerator<GroundTag>::check_action_binding(const Source& node, Binding binding)
 { return try_get_applicable_action_binding(node, binding).status; }
 
-formalism::planning::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_binding(BorrowedActionRowView<GroundTag> binding)
+formalism::planning::ActionRowView SuccessorGenerator<GroundTag>::materialize_action_binding(ActionBindingView<GroundTag> binding)
 {
     const auto& repository = *m_impl->definition->task->get_repository();
     if (!ygg::formalism::contains(repository, binding))
@@ -820,18 +820,18 @@ bool SuccessorGenerator<GroundTag>::for_each_applicable_action_binding(const Sou
 }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
-                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
+                                                                                const std::function<bool(ActionBindingView<GroundTag>)>& callback)
 { return for_each_applicable_action_binding(node, callback); }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
-                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback)
+                                                                                const std::function<bool(ActionBindingView<GroundTag>)>& callback)
 { return for_each_applicable_action_binding(node, action, callback); }
 
 bool SuccessorGenerator<GroundTag>::for_each_borrowed_applicable_action_binding(const Source& node,
                                                                                 formalism::planning::ActionView<LiftedTag> action,
-                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& accept,
-                                                                                const std::function<bool(BorrowedActionRowView<GroundTag>)>& callback,
+                                                                                const std::function<bool(ActionBindingView<GroundTag>)>& accept,
+                                                                                const std::function<bool(ActionBindingView<GroundTag>)>& callback,
                                                                                 const std::function<bool()>& stop)
 {
     validate_task(m_impl->definition->task, node);
@@ -874,7 +874,7 @@ ygg::float_t SuccessorGenerator<GroundTag>::generate_successor_state(const Sourc
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRepository<GroundTag>& state_repository,
                                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                        std::shared_ptr<urd::builder<State<GroundTag>>> state,
+                                                                        std::shared_ptr<urd::builder<State<GroundTag>, StateRepository<GroundTag>>> state,
                                                                         ygg::float_t auxiliary_value)
 {
     validate_task(m_impl->definition->task, state_repository);
@@ -885,7 +885,7 @@ Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRep
 
 Node<GroundTag> SuccessorGenerator<GroundTag>::finalize_successor_state(StateRepository<GroundTag>& state_repository,
                                                                         AxiomEvaluator<GroundTag>& axiom_evaluator,
-                                                                        std::shared_ptr<urd::builder<State<GroundTag>>> state,
+                                                                        std::shared_ptr<urd::builder<State<GroundTag>, StateRepository<GroundTag>>> state,
                                                                         ygg::float_t auxiliary_value,
                                                                         const StateView<GroundTag>& parent,
                                                                         const StateDelta& delta)

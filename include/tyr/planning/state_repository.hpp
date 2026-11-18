@@ -59,22 +59,20 @@ public:
 
     StateView<Kind> get_initial_state(AxiomEvaluator<Kind>& axiom_evaluator);
 
-    /// A registered state and its packed record share their position in this repository: its index and the record's
-    /// are the same value as two types, converted here and nowhere else.
-    [[nodiscard]] static constexpr urd::index<PackedState<Kind>> packed_index(urd::index<State<Kind>> state_index) noexcept
-    { return urd::index<PackedState<Kind>>(state_index.value); }
+    /// The stored record of a registered state (urd's resolves contract; a PackedStateView is the usual handle).
+    [[nodiscard]] const urd::data<State<Kind>>& operator[](urd::index<State<Kind>> state_index) const;
 
-    [[nodiscard]] static constexpr urd::index<State<Kind>> state_index(urd::index<PackedState<Kind>> packed_index) noexcept
-    { return urd::index<State<Kind>>(packed_index.value); }
+    /// A registered state, packed: the view of its record's index, through this repository (as a state's view reads its
+    /// index: StateView::pack).
+    [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return { state_index, this }; }
 
-    /// The stored, packed record of a registered state (urd's resolves contract; a PackedStateView is the usual handle).
-    [[nodiscard]] const urd::data<PackedState<Kind>>& operator[](urd::index<PackedState<Kind>> packed_index) const;
+    /// A state's storage being built, read through its task's formalism repository (a state's view reads its storages so).
+    [[nodiscard]] FactStorageView<Kind> view(const urd::builder<FactStorage<Kind>, formalism::planning::Repository>& storage) const noexcept { return { &storage, get_task()->get_repository().get() }; }
 
-    /// A registered state, packed: the view of its packed record's index, through this repository.
-    [[nodiscard]] PackedStateView<Kind> view(urd::index<PackedState<Kind>> packed_index) const noexcept { return { packed_index, this }; }
+    [[nodiscard]] AtomStorageView<Kind> view(const urd::builder<AtomStorage<Kind>, formalism::planning::Repository>& storage) const noexcept { return { &storage, get_task()->get_repository().get() }; }
 
-    /// A registered state's index, as its view reads it (StateView::pack): its packed form.
-    [[nodiscard]] PackedStateView<Kind> view(urd::index<State<Kind>> state_index) const noexcept { return view(packed_index(state_index)); }
+    [[nodiscard]] NumericStorageView<Kind> view(const urd::builder<NumericStorage<Kind>, formalism::planning::Repository>& storage) const noexcept
+    { return { &storage, get_task()->get_repository().get() }; }
 
     /// Const: the state's builder comes from the repository's pool of scratch builders.
     StateView<Kind> get_registered_state(urd::index<State<Kind>> state_index) const;
@@ -91,20 +89,20 @@ public:
                  const urd::Store<urd::sequence<FactView>>& fluent_facts,
                  const urd::Store<urd::sequence<formalism::planning::FunctionTermViewValuePair<GroundTag, formalism::FluentTag>>>& fterm_values);
 
-    std::shared_ptr<urd::builder<State<Kind>>> get_state_builder() const;
+    std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> get_state_builder() const;
 
     /// The builder must come from this repository and have no retained mutable aliases.
-    StateView<Kind> register_state(AxiomEvaluator<Kind>& axiom_evaluator, std::shared_ptr<urd::builder<State<Kind>>> state);
+    StateView<Kind> register_state(AxiomEvaluator<Kind>& axiom_evaluator, std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state);
     /// Like register_state, but `delta` must be the exact changes from `parent` to `state`, as produced when generating a successor.
-    /// If both share storage, storage backends may insert `state` as `delta` to `parent`.
+    /// If both share storage, state component repositories may insert `state` as `delta` to `parent`.
     StateView<Kind> register_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                                   std::shared_ptr<urd::builder<State<Kind>>> state,
+                                   std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state,
                                    const StateView<Kind>& parent,
                                    const StateDelta& delta);
     /// The builder must come from this repository, already contain its axiom closure, and have no retained mutable aliases.
-    StateView<Kind> register_extended_state(std::shared_ptr<urd::builder<State<Kind>>> state);
+    StateView<Kind> register_extended_state(std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state);
     /// Copies an already extended state of this task into repository-owned storage; source storage remains borrowed and unchanged.
-    StateView<Kind> register_extended_state(const BuilderStateView<Kind>& source);
+    StateView<Kind> register_extended_state(const StateBuilderView<Kind>& source);
     [[nodiscard]] StateRepositoryPtr<Kind> make_worker() const;
 
     /// All repositories sharing this storage must be quiescent while inspecting memory usage.

@@ -264,7 +264,7 @@ The bindings expose the library types directly:
   ``.columns()`` is a borrowed ``ColumnIndex`` sequence with ``type(position)``.
 - **Rows** yield Python values of the column's type.
 - **Repository.** ``RelationRepository.get_relation_builder(columns)`` gives a builder, ``view(relation)`` reads a
-  builder's rows (a ``BorrowedRelation``), and ``insert(relation)``, ``copy(view)`` and ``rename(view, labels)``
+  builder's rows (a ``RelationBuilderView``), and ``insert(relation)``, ``copy(view)`` and ``rename(view, labels)``
   intern relations.
 - **Operations** are bound as in C++: the plans (``ProjectionPlan``, ``JoinPlan``, ``SetPlan``, ``SelectEqualPlan``,
   ``SelectValuePlan(input, column, type, value)``), a ``Workspace``, and ``project``, ``join``, ``semijoin``,
@@ -441,7 +441,7 @@ vertex contains an object if one of its columns of the probes' type holds it:
 Distance from Python
 ~~~~~~~~~~~~~~~~~~~~
 
-Python evaluators and ``distance`` take ``BorrowedRelation`` inputs, or interned ``RelationView`` inputs when every
+Python evaluators and ``distance`` take ``RelationBuilderView`` inputs, or interned ``RelationView`` inputs when every
 input of the call is interned. Read a ``Relation`` with ``repository.view(relation)``; to mix them, copy a view with
 ``db.assign(formalism.Relation(), view)``.
 
@@ -472,7 +472,7 @@ input of the call is interned. Read a ``Relation`` with ``repository.view(relati
    assert tuple(evaluator.get_result()[0]) == (10, 20, 10, 21, 1)
    assert evaluator.get_delta().added.empty()
 
-``get_result()`` returns a read-only ``BorrowedRelation`` and ``get_delta()`` a ``RelationDelta`` whose ``added`` and
+``get_result()`` returns a read-only ``RelationBuilderView`` and ``get_delta()`` a ``RelationDelta`` whose ``added`` and
 ``removed`` are borrowed the same way. They keep the evaluator alive, but their rows must not be kept across an
 ``initialize`` or ``update``; ``db.assign(formalism.Relation(), result)`` copies a result. ``update(sources, edges,
 targets)`` takes one ``(added, removed)`` tuple per input.
@@ -731,7 +731,7 @@ type-erased ``Query`` that operators take as operands. The records:
 ``compile_plan(roots)`` and ``optimize(roots, statistics=Statistics())`` take a list of roots and return a
 ``QueryPlan``. ``IncrementalQueryEvaluator(repository, plan)`` has ``initialize(inputs)`` and ``update(changes)`` with
 one ``(added, removed)`` pair per input slot; its results and ``RelationDelta`` relations are read-only
-``BorrowedRelation`` views that keep the evaluator alive (``db.assign(formalism.Relation(), relation)`` copies one).
+``RelationBuilderView`` views that keep the evaluator alive (``db.assign(formalism.Relation(), relation)`` copies one).
 Query handles keep their repository alive; compiled plans and evaluators are independent of it. With sparse slot
 numbers, an unused slot takes an empty ``Relation()``. Dictionary-valued statistics fields are converted by value:
 replace the field to change entries.

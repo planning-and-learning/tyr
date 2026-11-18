@@ -54,7 +54,7 @@ from pytyr._pytyr.formalism.planning import (
     DomainData as DomainData,
     DomainIndex as DomainIndex,
     FDRContext as FDRContext,
-    FDRFactFluent as FDRFactFluent,
+    FDRFactFluentBorrowed as FDRFactFluentBorrowed,
     FDRFactFluentData as FDRFactFluentData,
     FDRFactFluentOwned as FDRFactFluentOwned,
     FDRValue as FDRValue,

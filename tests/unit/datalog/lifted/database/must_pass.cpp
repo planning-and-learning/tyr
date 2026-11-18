@@ -22,10 +22,14 @@
 namespace
 {
 using Column = urd::index<ygg::Column>;
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
+using tyr::datalog::tests::Change;
 using ygg::uint_t;
 namespace qb = tyr::datalog::tests::qb;
-using tyr::datalog::tests::distances::borrow;
 
 const Column key(20), u(0), v(1);
 
@@ -48,14 +52,13 @@ Pairs must_pass(const Relation& edges, const Relation& sources, const Relation& 
     auto queries = qb::repository();
     const auto query = qb::input(queries, 0, edges.columns());
     const auto plan = tyr::datalog::database::MustPassPlan(sources.columns(), columns_of(query), targets.columns(), probes.columns(), 1);
-    const ygg::FreeRelationRepository layer;
-    auto computation = tyr::datalog::database::MustPass(layer, query, plan);
+    auto computation = tyr::datalog::database::MustPass(scratch(), query, plan);
     auto out = Relation(plan.output_columns());
-    const auto view = borrow(layer, edges);
-    computation.must_pass([&](size_t) { return view; }, borrow(layer, sources), borrow(layer, targets), borrow(layer, probes), out);
+    const auto view = borrow(edges);
+    computation.must_pass([&](size_t) { return view; }, borrow(sources), borrow(targets), borrow(probes), out);
     auto result = Pairs();
-    for (const auto row : layer.view(out).get_rows())
-        result.emplace(ygg::decode_value<ygg::uint_t>(row.value(0)), ygg::decode_value<ygg::uint_t>(row.value(1)));
+    for (const auto& row : borrow(out).get_rows())
+        result.emplace(ygg::decode_value<ygg::uint_t>(value_of(row, 0)), ygg::decode_value<ygg::uint_t>(value_of(row, 1)));
     EXPECT_EQ(result.size(), out.size()) << "every must-pass object is reported once";
     return result;
 }

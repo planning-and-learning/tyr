@@ -42,20 +42,16 @@
 
 namespace
 {
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Change;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
 using Column = urd::index<ygg::Column>;
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
 using View = ygg::FreeRelationBuilderView;
 using ygg::uint_t;
 namespace qb = tyr::datalog::tests::qb;
-
-/// The layer the benchmark reads its builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-View borrow(const Relation& relation) { return layer().view(relation); }
 
 /// The value of an environment variable, or null.
 const char* environment(const char* name)
@@ -70,7 +66,7 @@ constexpr size_t default_top = 5;
 /// The value in a column of a row of a relation whose columns are uint_t.
 template<typename R>
 ygg::uint_t value_at(const R& relation, size_t row, size_t column)
-{ return ygg::decode_value<ygg::uint_t>(relation.row(row).value(column)); }
+{ return ygg::decode_value<ygg::uint_t>(value_of(relation.row(row), column)); }
 
 /// The atoms "(name args...)" of a text.
 urd::Store<urd::sequence<urd::Store<urd::sequence<std::string>>>> atoms(const std::string& text)
@@ -252,8 +248,8 @@ int run(std::span<char*> args)
     const auto input = [&](const Relation& relation, std::initializer_list<Column> labels)
     {
         auto& rows = slots.emplace_back(qb::columns_of(labels));
-        for (const auto row : borrow(relation).get_rows())
-            rows.insert(row);
+        for (const auto& row : borrow(relation).get_rows())
+            rows.insert(values_of(row));
         return qb::input(queries, slots.size() - 1, labels);
     };
     const auto free = [&](Column at_cell)
@@ -291,7 +287,7 @@ int run(std::span<char*> args)
         probes.insert(std::array { ygg::encode_value(task.goal.at(b)) });
     }
     const auto plan = tyr::datalog::database::MustPassPlan(sources.columns(), columns_of(edges), targets.columns(), probes.columns(), 1);
-    auto must_pass = tyr::datalog::database::MustPass<PushDistance>(layer(), edges, plan);
+    auto must_pass = tyr::datalog::database::MustPass<PushDistance>(scratch(), edges, plan);
     auto heuristic = PushDistance(task, environment("STATIC_HEURISTIC") == nullptr);
     auto views = urd::Store<urd::sequence<View>>();
     for (const auto& relation : slots)
@@ -299,7 +295,7 @@ int run(std::span<char*> args)
     const auto slot_input = [&](size_t slot) { return views[slot]; };
     if (environment("BLIND"))  // Without a heuristic, as runir's q_must_pass runs.
     {
-        auto blind = tyr::datalog::database::MustPass(layer(), edges, plan);
+        auto blind = tyr::datalog::database::MustPass(scratch(), edges, plan);
         auto rows = Relation(plan.output_columns());
         const auto start = std::chrono::steady_clock::now();
         blind.must_pass(slot_input, borrow(sources), borrow(targets), borrow(probes), rows);
@@ -321,7 +317,7 @@ int run(std::span<char*> args)
     if (environment("PROJECTED"))  // Times enumerating each key's edges projected onto the box column.
     {
         const auto projected = qb::project(queries, edges, { box, boxloc, next_boxloc });
-        auto evaluator = tyr::datalog::database::bound::QueryEvaluator(layer(), projected);
+        auto evaluator = tyr::datalog::database::bound::QueryEvaluator(scratch(), projected);
         evaluator.bind(slot_input);
         const auto by_key = evaluator.prepare({ 0 });
         auto rows = static_cast<size_t>(0), loops = static_cast<size_t>(0);
@@ -344,7 +340,7 @@ int run(std::span<char*> args)
     {
         const auto projected = qb::project(queries, edges, { box, boxloc, next_boxloc });
         const auto start = std::chrono::steady_clock::now();
-        auto evaluator = tyr::datalog::database::QueryEvaluator(layer(), tyr::datalog::database::optimize(projected));
+        auto evaluator = tyr::datalog::database::QueryEvaluator(scratch(), tyr::datalog::database::optimize(projected));
         const auto compiled = seconds_since(start);
         auto loops = static_cast<size_t>(0);
         const auto evaluated = std::chrono::steady_clock::now();
@@ -366,7 +362,7 @@ int run(std::span<char*> args)
             const auto b = value_at(borrow(unfinished), r, 0);
             auto one = Relation(sources.columns());
             one.insert(std::array { ygg::encode_value(b), ygg::encode_value(task.robot), ygg::encode_value(task.at.at(b)) });
-            auto alone = tyr::datalog::database::MustPass<PushDistance>(layer(), edges, plan);
+            auto alone = tyr::datalog::database::MustPass<PushDistance>(scratch(), edges, plan);
             auto rows = Relation(plan.output_columns());
             const auto start = std::chrono::steady_clock::now();
             alone.must_pass(slot_input, borrow(one), borrow(targets), borrow(probes), rows, heuristic);

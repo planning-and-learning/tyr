@@ -172,7 +172,7 @@ static_assert(requires(const GroundActionView& view) {
     view.get_action();
     view.get_row();
     view.get_row().get_objects();
-    view.get_row().relation_key();
+    view.get_row().get_relation().index();
     view.get_condition();
     view.get_effects();
     { view == view } -> std::same_as<bool>;

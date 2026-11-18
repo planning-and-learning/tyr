@@ -26,22 +26,22 @@
 using Entity = tyr::planning::State<tyr::GroundTag>;
 using Index = urd::index<Entity>;
 using Data = urd::data<Entity>;
-using Builder = urd::builder<Entity>;
+using Builder = urd::builder<Entity, tyr::planning::StateRepository<tyr::GroundTag>>;
 using View = tyr::planning::StateView<tyr::GroundTag>;
 
 static_assert(std::totally_ordered<Data>);
 static_assert(std::totally_ordered<View>);
 static_assert(tyr::planning::IterableStateConcept<View>);
 static_assert(tyr::planning::IterableViewStateConcept<View>);
-static_assert(requires(const Data& data, const Builder& builder, const View& view, const tyr::formalism::planning::Repository& repository) {
+static_assert(requires(const Data& data, const tyr::planning::StateBuilderView<tyr::GroundTag>& building, const View& view) {
     data.index;
     data.fact_storage;
     data.atom_storage;
     data.numeric_storage;
-    builder.get_fluent_fact_index_values();
-    tyr::planning::fluent_atoms(builder.fact_storage, repository);
-    builder.atom_storage.atoms();
-    builder.numeric_storage.fterm_values();
+    building.get_fluent_fact_index_values();
+    building.get_fact_storage().fluent_atoms();
+    building.get_atom_storage().atoms();
+    building.get_numeric_storage().fterm_values();
     view.index();
     view.template get_atom_indices<::tyr::formalism::StaticTag>();
     view.get_fluent_fact_index_values();
@@ -61,7 +61,7 @@ static_assert(requires(const Data& data, const Builder& builder, const View& vie
 
 TEST(TyrPlanningGroundStateTest, ClearResetsRegistrationWithoutReallocatingVectorStorage)
 {
-    auto builder = urd::builder<Entity> {};
+    auto builder = Builder {};
     builder.set(Index(7));
     builder.resize_fluent_facts(64);
     builder.numeric_storage.values.resize(64);
@@ -75,7 +75,7 @@ TEST(TyrPlanningGroundStateTest, ClearResetsRegistrationWithoutReallocatingVecto
     EXPECT_EQ(builder.numeric_storage.values.capacity(), numeric_capacity);
 }
 
-TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwnedBuffers)
+TEST(TyrPlanningGroundStateTest, BuilderRegistrationRetainsClosureAndReusesOwnedBuffers)
 {
     const auto execution_context = ygg::ExecutionContext::create(1);
     const auto make_task = [&]
@@ -106,7 +106,7 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     const auto initial = source_repository->get_initial_state(*axioms);
     const auto derived = initial.template get_atom_indices<::tyr::formalism::DerivedTag>();
     ASSERT_FALSE(derived.begin() == derived.end());
-    auto source = urd::builder<tyr::planning::State<tyr::GroundTag>>();
+    auto source = urd::builder<tyr::planning::State<tyr::GroundTag>, tyr::planning::StateRepository<tyr::GroundTag>>();
     source.assign(initial);
     source.set(Index {});
     const auto borrowed = urd::resolve(source, *source_repository);
@@ -119,13 +119,13 @@ TEST(TyrPlanningGroundStateTest, BorrowedRegistrationRetainsClosureAndReusesOwne
     warm = {};
 
     const auto retained = target->register_extended_state(borrowed);
-    EXPECT_EQ(&retained.get_numeric_storage(), &slot->numeric_storage);
-    EXPECT_EQ(std::ranges::data(retained.get_numeric_storage().values), buffer);
-    EXPECT_EQ(retained.get_numeric_storage().values.capacity(), capacity);
+    EXPECT_EQ(&retained.get_numeric_storage().get_values(), &slot->numeric_storage.values);
+    EXPECT_EQ(std::ranges::data(retained.get_numeric_storage().get_values()), buffer);
+    EXPECT_EQ(retained.get_numeric_storage().get_values().capacity(), capacity);
     EXPECT_TRUE(source.index.is_none());
-    EXPECT_TRUE(std::ranges::equal(source.get_fluent_fact_index_values(), initial.get_fluent_fact_index_values()));
-    EXPECT_TRUE(std::ranges::equal(source.atom_storage.atoms(), initial.template get_atom_indices<tyr::formalism::DerivedTag>()));
-    EXPECT_TRUE(std::ranges::equal(source.numeric_storage.fterm_values(), initial.template get_fterm_index_values<tyr::formalism::FluentTag>()));
+    EXPECT_TRUE(std::ranges::equal(borrowed.get_fluent_fact_index_values(), initial.get_fluent_fact_index_values()));
+    EXPECT_TRUE(std::ranges::equal(borrowed.get_atom_storage().atoms(), initial.template get_atom_indices<tyr::formalism::DerivedTag>()));
+    EXPECT_TRUE(std::ranges::equal(borrowed.get_numeric_storage().fterm_values(), initial.template get_fterm_index_values<tyr::formalism::FluentTag>()));
     EXPECT_EQ(target->register_extended_state(borrowed), retained);
     EXPECT_EQ(target->num_states(), 1);
     auto foreign = std::make_shared<tyr::planning::StateRepository<tyr::GroundTag>>(make_task());
@@ -182,7 +182,7 @@ TEST(TyrPlanningGroundStateTest, FluentAtomMembershipDistinguishesMutexValues)
     EXPECT_FALSE(initial.test(target_atom));
     EXPECT_FALSE(target.test(source_atom));
     EXPECT_TRUE(target.test(target_atom));
-    auto target_builder = urd::builder<tyr::planning::State<tyr::GroundTag>>();
+    auto target_builder = urd::builder<tyr::planning::State<tyr::GroundTag>, tyr::planning::StateRepository<tyr::GroundTag>>();
     target_builder.assign(target);
     const auto borrowed = urd::resolve(target_builder, target.context());
     EXPECT_FALSE(borrowed.test(source_atom));

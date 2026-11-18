@@ -7,26 +7,16 @@
 
 namespace tyr::datalog::database::incremental
 {
-ygg::RowPool::row_type ProjectionEvaluator::project_row(const ygg::RowPool::row_type& input, Workspace& workspace) const
+bool ProjectionEvaluator::add(std::span<const ygg::Value> row)
 {
-    auto& row = workspace.row;
-    row.reset(m_result.widths());
-    database::detail::copy_fields(row, 0, input, m_plan.positions());
-    return row.row();
-}
-}
-
-namespace tyr::datalog::database::incremental
-{
-bool ProjectionEvaluator::add(const ygg::RowPool::row_type& row)
-{
-    const auto index = m_result.insert(row);
-    if (index == m_supports.size())
+    const bool inserted = m_result->insert(row).second;
+    const auto slot = m_result->slot(row);
+    if (inserted)
     {
-        m_supports.push_back(1);
+        m_supports.insert_or_assign(slot, size_t { 1 });
         return true;
     }
-    auto& count = m_supports[index];
+    auto& count = m_supports.at(slot);  // a held row has its support, zero where it is pending removal
     if (count == std::numeric_limits<size_t>::max())
         throw std::overflow_error("Incremental projection: support count overflow.");
     ++count;
@@ -36,23 +26,23 @@ bool ProjectionEvaluator::add(const ygg::RowPool::row_type& row)
 
 namespace tyr::datalog::database::incremental
 {
-void ProjectionEvaluator::remove(const ygg::RowPool::row_type& row)
+void ProjectionEvaluator::remove(std::span<const ygg::Value> row)
 {
-    const auto index = m_result.find(row);
-    if (!index || m_supports[*index] == 0)
+    const auto slot = m_result->slot(row);
+    const auto found = slot.is_none() ? m_supports.end() : m_supports.find(slot);
+    if (found == m_supports.end() || found->second == 0)
         throw std::invalid_argument("Incremental projection: removal has no supporting row.");
-    if (--m_supports[*index] == 0)
-        m_pending_removals.push_back(*index);
+    if (--m_supports.at(slot) == 0)
+        m_pending_removals.push_back(slot);
 }
 }
 
 namespace tyr::datalog::database::incremental
 {
-ProjectionEvaluator::ProjectionEvaluator(const ygg::FreeRelationRepository& layer, ProjectionPlan plan) :
-    m_layer(&layer),
+ProjectionEvaluator::ProjectionEvaluator(ygg::FreeScratchRelations& scratch, ProjectionPlan plan) :
     m_plan(std::move(plan)),
-    m_result(m_plan.output_columns()),
-    m_delta(layer, m_plan.output_columns())
+    m_result(scratch.draw(m_plan.output_columns())),
+    m_delta(scratch, m_plan.output_columns())
 {
 }
 }
@@ -62,7 +52,7 @@ namespace tyr::datalog::database::incremental
 ygg::FreeRelationBuilderView ProjectionEvaluator::get_result() const&
 {
     detail::require_initialized(m_initialized);
-    return m_layer->view(m_result);
+    return m_result->view();
 }
 }
 
@@ -78,5 +68,5 @@ const Delta& ProjectionEvaluator::get_delta() const&
 namespace tyr::datalog::database::incremental
 {
 size_t ProjectionEvaluator::memory_usage() const noexcept
-{ return m_result.memory_usage() + m_delta.memory_usage() + urd::memory_usage(m_supports) + urd::memory_usage(m_pending_removals); }
+{ return urd::memory_usage(m_result->relation) + m_delta.memory_usage() + urd::memory_usage(m_supports) + urd::memory_usage(m_pending_removals); }
 }

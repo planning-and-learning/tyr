@@ -12,12 +12,11 @@
 
 namespace tyr::datalog::database::incremental
 {
-DistanceEvaluator::DistanceEvaluator(const ygg::FreeRelationRepository& layer, DistancePlan plan) :
-    m_layer(&layer),
+DistanceEvaluator::DistanceEvaluator(ygg::FreeScratchRelations& scratch, DistancePlan plan) :
     m_plan(std::move(plan)),
     m_graph(m_plan.tuple_size()),
-    m_result(m_plan.output_columns()),
-    m_delta(layer, m_plan.output_columns())
+    m_result(scratch.draw(m_plan.output_columns())),
+    m_delta(scratch, m_plan.output_columns())
 {
 }
 }
@@ -84,8 +83,8 @@ void DistanceEvaluator::insert_result(VertexSet::handle_type source, VertexSet::
     if (length == infinity)
         return;
     const auto row = database::detail::make_distance_row(m_graph, source, target, length, m_row);
-    m_result.insert(row);
-    m_delta.added.insert(row);
+    m_result->insert(row);
+    m_delta.added->insert(row);
 }
 }
 
@@ -96,10 +95,9 @@ void DistanceEvaluator::remove_result(VertexSet::handle_type source, VertexSet::
     if (length == infinity)
         return;
     const auto row = database::detail::make_distance_row(m_graph, source, target, length, m_row);
-    const auto position = m_result.find(row);
-    URD_ASSUME(position.has_value());  // only rows of the result are retracted
-    m_delta.removed.insert(row);
-    m_result.erase(*position);
+    [[maybe_unused]] const bool erased = m_result->erase(row);
+    URD_ASSUME(erased);  // only rows of the result are retracted
+    m_delta.removed->insert(row);
 }
 }
 
@@ -215,7 +213,7 @@ namespace tyr::datalog::database::incremental
 ygg::FreeRelationBuilderView DistanceEvaluator::get_result() const&
 {
     detail::require_initialized(m_initialized);
-    return m_layer->view(m_result);
+    return m_result->view();
 }
 }
 
@@ -232,7 +230,7 @@ namespace tyr::datalog::database::incremental
 {
 size_t DistanceEvaluator::memory_usage() const noexcept
 {
-    return m_graph.memory_usage() + m_result.memory_usage() + m_delta.memory_usage() + (m_repair ? m_repair->memory_usage() : 0) + urd::memory_usage(m_reverse)
+    return m_graph.memory_usage() + urd::memory_usage(m_result->relation) + m_delta.memory_usage() + (m_repair ? m_repair->memory_usage() : 0) + urd::memory_usage(m_reverse)
            + urd::memory_usage(m_sources) + urd::memory_usage(m_source_slots) + urd::memory_usage(m_targets) + urd::memory_usage(m_target_flags)
            + urd::memory_usage(m_queue) + urd::memory_usage(m_changed) + urd::memory_usage(m_row) + urd::memory_usage(m_values)
            + urd::memory_usage(m_sources_added) + urd::memory_usage(m_sources_removed) + urd::memory_usage(m_targets_added)
@@ -244,13 +242,15 @@ namespace tyr::datalog::database::incremental
 {
 void SourceMinDistance::count(ygg::FreeRelationBuilderView rows, bool add)
 {
-    for (size_t i = 0; i < rows.size(); ++i)
-    {
-        const auto distance = static_cast<ygg::uint_t>(rows.row(i).value(m_position));
-        if (distance >= m_counts.size())
-            m_counts.resize(distance + 1, 0);
-        assert(add || m_counts[distance] > 0);
-        m_counts[distance] = add ? m_counts[distance] + 1 : m_counts[distance] - 1;
-    }
+    for (const auto& held : rows.get_rows())
+        ygg::with_values(held,
+                         [&](const auto& values)
+                         {
+                             const auto distance = static_cast<ygg::uint_t>(std::ranges::begin(values)[static_cast<std::ptrdiff_t>(m_position)]);
+                             if (distance >= m_counts.size())
+                                 m_counts.resize(distance + 1, 0);
+                             assert(add || m_counts[distance] > 0);
+                             m_counts[distance] = add ? m_counts[distance] + 1 : m_counts[distance] - 1;
+                         });
 }
 }

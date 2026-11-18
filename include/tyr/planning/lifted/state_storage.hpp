@@ -30,49 +30,38 @@
 #include <tuple>
 #include <yggdrasil/core/config.hpp>
 
-namespace tyr::planning
+namespace urd
 {
 
-template<>
-struct FactUnpackedStorage<LiftedTag>
+/// A lifted state's fluent facts being built, unpacked: a bit per (binary) fluent variable (its record holds them packed,
+/// state_data.hpp).
+template<typename C>
+struct builder<::tyr::planning::FactStorage<::tyr::LiftedTag>, C>
 {
-    StateBits indices;
+    ::tyr::planning::StateBits indices;
 
-    [[nodiscard]] formalism::planning::FDRValue get(urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
-    { return formalism::planning::FDRValue(indices.contains(static_cast<ygg::uint_t>(index.value))); }
-
-    void set(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact)
+    void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
     {
         assert(fact.value.value < 2);  // Lifted fluent variables are binary.
         const auto index = static_cast<ygg::uint_t>(fact.variable.value);
-        if (fact.value != formalism::planning::FDRValue::none())
+        if (fact.value != ::tyr::formalism::planning::FDRValue::none())
             indices.insert(index);
         else
             indices.erase(index);
     }
 
-    /// One past the last variable set: variables past it are none.
-    [[nodiscard]] std::size_t num_variables() const { return indices.significant_words().size_bytes() * CHAR_BIT; }
-
-    /// The facts set (value 1), by ascending variable.
-    [[nodiscard]] auto facts() const noexcept
-    {
-        return urd::transform(
-            indices,
-            [](ygg::uint_t i)
-            {
-                return urd::data<formalism::planning::FDRFact<formalism::FluentTag>> { urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> { i },
-                                                                                       formalism::planning::FDRValue { 1 } };
-            });
-    }
-
     void clear() { indices.clear(); }
 
-    void swap(FactUnpackedStorage& other) noexcept { indices.swap(other.indices); }
+    /// Takes the bits of a view of a builder of its kind (another state's).
+    void assign(const urd::borrowed_view<::tyr::planning::FactStorage<::tyr::LiftedTag>, C, builder>& storage) { indices = storage.get_indices(); }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&FactUnpackedStorage::indices> {}; }
+    void swap(builder& other) noexcept { indices.swap(other.indices); }
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
-}
+}  // namespace urd
 
 #endif

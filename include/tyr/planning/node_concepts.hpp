@@ -38,7 +38,7 @@ namespace tyr::planning
 template<TaskKind Kind, StateViewConcept<Kind> State = StateView<Kind>>
 class Node;
 
-/// A node and the action binding that reached it: by default an interned binding; a borrowed one (BorrowedActionRowView,
+/// A node and the action binding that reached it: by default an interned binding; a borrowed one (ActionBindingView,
 /// runir's rule evaluation) before it is materialized.
 template<TaskKind Kind,
          StateViewConcept<Kind> State = StateView<Kind>,

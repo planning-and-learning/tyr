@@ -55,51 +55,38 @@ struct StateLayout<GroundTag>
     ygg::uint_t derived_num_bits;
 };
 
-template<>
-struct FactUnpackedStorage<GroundTag>
+}
+
+namespace urd
+{
+
+/// A ground state's fluent facts being built, unpacked: a value per FDR variable (its record holds them packed bitwise,
+/// state_data.hpp).
+template<typename C>
+struct builder<::tyr::planning::FactStorage<::tyr::GroundTag>, C>
 {
     urd::Store<urd::sequence<ygg::uint_t>> values;
 
-    [[nodiscard]] formalism::planning::FDRValue get(urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
-    {
-        assert(static_cast<ygg::uint_t>(index.value) < values.size());
-        return formalism::planning::FDRValue(values[static_cast<ygg::uint_t>(index.value)]);
-    }
-
-    void set(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> fact)
+    void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact)
     {
         assert(static_cast<ygg::uint_t>(fact.variable.value) < values.size());
         values[static_cast<ygg::uint_t>(fact.variable.value)] = fact.value.value;
-    }
-
-    /// The number of variables, as resized to the task's.
-    [[nodiscard]] std::size_t num_variables() const noexcept { return values.size(); }
-
-    /// The facts whose value is not none, by ascending variable.
-    [[nodiscard]] auto facts() const noexcept
-    {
-        using formalism::planning::FDRValue;
-        return std::views::iota(std::size_t { 0 }, values.size())
-               | std::views::filter([this](std::size_t i) { return FDRValue(values[i]) != FDRValue::none(); })
-               | std::views::transform(
-                   [this](std::size_t i)
-                   {
-                       return urd::data<formalism::planning::FDRFact<formalism::FluentTag>> {
-                           urd::index<formalism::planning::FDRVariable<formalism::FluentTag>> { static_cast<ygg::uint_t>(i) },
-                           FDRValue(values[i])
-                       };
-                   });
     }
 
     void resize(size_t size) { values.resize(size, 0); }
 
     void clear() { values.clear(); }
 
-    void swap(FactUnpackedStorage& other) noexcept { values.swap(other.values); }
+    /// Takes the values of a view of a builder of its kind (another state's).
+    void assign(const urd::borrowed_view<::tyr::planning::FactStorage<::tyr::GroundTag>, C, builder>& storage) { values = storage.get_values(); }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&FactUnpackedStorage::values> {}; }
+    void swap(builder& other) noexcept { values.swap(other.values); }
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
-}
+}  // namespace urd
 
 #endif

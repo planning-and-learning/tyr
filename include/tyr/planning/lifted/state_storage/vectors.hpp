@@ -55,13 +55,13 @@ struct StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>
 
 /// A bitset of a lifted state (`Unpacked`: fluent facts or derived atoms) as the vector of its true positions.
 template<typename Unpacked_, typename Context>
-class BitPositionsBackend
+class BitPositionsRepository
 {
 public:
     using Unpacked = Unpacked_;
     using Packed = typename Context::UintVectorSet::handle_type;
 
-    explicit BitPositionsBackend(Context& ctx);
+    explicit BitPositionsRepository(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
@@ -82,19 +82,19 @@ private:
 };
 
 template<typename... Tags, bool ThreadSafe>
-class FactStorageBackend<LiftedTag, Vectors<Tags...>, ThreadSafe> :
-    public BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
+class StateComponentRepository<FactStorage<LiftedTag>, Vectors<Tags...>, ThreadSafe> :
+    public BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
 public:
-    using BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsBackend;
+    using BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
 };
 
 template<typename... Tags, bool ThreadSafe>
-class AtomStorageBackend<LiftedTag, Vectors<Tags...>, ThreadSafe> :
-    public BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
+class StateComponentRepository<AtomStorage<LiftedTag>, Vectors<Tags...>, ThreadSafe> :
+    public BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>
 {
 public:
-    using BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsBackend;
+    using BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Vectors<Tags...>, ThreadSafe>>::BitPositionsRepository;
 };
 
 }

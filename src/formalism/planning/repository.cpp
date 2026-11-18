@@ -23,5 +23,5 @@
 #include <yggdrasil/formalism/builder_instantiations.hpp>
 #include <yggdrasil/formalism/repository_instantiations.hpp>
 
-YGG_FORMALISM_REPOSITORY(, tyr::formalism::planning::Repository, 58, 8, 0)
+YGG_FORMALISM_REPOSITORY(, tyr::formalism::planning::Repository, 58, 8)
 YGG_FORMALISM_BUILDER(, tyr::formalism::planning::Builder, 66)

@@ -98,7 +98,7 @@ struct AxiomWorkspace<GroundTag>
 }
 
 template<>
-void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>>& state_builder)
+void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state_builder)
 {
     auto state_context = StateContext<GroundTag> { *m_impl->definition->task, state_builder, static_cast<ygg::float_t>(0) };
 
@@ -115,7 +115,7 @@ void AxiomEvaluator<GroundTag>::compute_extended_state(urd::builder<State<Ground
             {
                 const auto atom = axiom.get_head();
 
-                if (!state_builder.atom_storage.test(atom.index()))
+                if (!state_context.atom_storage().test(atom.index()))
                     discovered_new_atom = true;
 
                 state_builder.set(atom);

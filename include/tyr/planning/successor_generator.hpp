@@ -58,7 +58,7 @@ public:
     {
     }
 
-    SourceNode(const Node<Kind, BuilderStateView<Kind>>& node) noexcept :  // NOLINT(google-explicit-constructor)
+    SourceNode(const Node<Kind, StateBuilderView<Kind>>& node) noexcept :  // NOLINT(google-explicit-constructor)
         m_state(*node.get_state().context().get_task(), node.get_state(), node.get_metric()),
         m_repository(&node.get_state().context()),
         m_registered(nullptr),

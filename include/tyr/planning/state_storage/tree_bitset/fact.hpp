@@ -37,14 +37,14 @@ namespace tyr::planning
 /// Stores fluent facts as a bitset tree: ground tasks pack the FDR values bitwise into blocks, as in TreeVector;
 /// lifted tasks store one bit per (binary) fluent variable.
 template<TaskKind Kind, bool ThreadSafe>
-class FactStorageBackend<Kind, TreeBitset, ThreadSafe>
+class StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
-    using Unpacked = FactUnpackedStorage<Kind>;
+    using Unpacked = urd::builder<FactStorage<Kind>, formalism::planning::Repository>;
     using Packed = typename Context::BitsetSet::handle_type;
 
-    explicit FactStorageBackend(Context& ctx);
+    explicit StateComponentRepository(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 

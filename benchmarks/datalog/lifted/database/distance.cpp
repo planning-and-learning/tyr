@@ -4,6 +4,7 @@
  */
 
 #include "tyr/datalog/lifted/database/semantics/distance.hpp"
+#include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 
 #include "tyr/datalog/lifted/database/semantics/incremental/distance.hpp"
 
@@ -19,11 +20,17 @@
 
 namespace tyr::datalog::benchmarks
 {
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Change;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
 namespace
 {
 using Values = boost::mp11::mp_list<ygg::uint_t>;
 using ColumnIndex = urd::index<ygg::Column>;
-using RelationBuilder = urd::builder<ygg::Relation<ygg::Schema>>;
+using RelationBuilder = tyr::datalog::tests::Relation;
 
 /// The first labels of the source and the target columns; the edge columns are labeled from 0.
 constexpr ygg::uint_t first_source_label = 1000;
@@ -44,15 +51,6 @@ std::vector<ygg::ColumnLayout> columns(size_t arity, ygg::uint_t first_label)
         result.emplace_back(ColumnIndex(first_label + static_cast<ygg::uint_t>(i)), ygg::type_id<ygg::uint_t>);
     return result;
 }
-
-/// The layer the benchmarks read their builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-ygg::FreeRelationBuilderView borrow(const RelationBuilder& relation) { return layer().view(relation); }
 
 /// The distances of the sources and targets over `edges`, fully evaluated.
 RelationBuilder full_distance(const RelationBuilder& sources, const RelationBuilder& edges, const RelationBuilder& targets, const database::DistancePlan& plan)
@@ -98,7 +96,7 @@ struct Trace
     RelationBuilder edges;
     RelationBuilder changed_edges;
     RelationBuilder targets;
-    database::incremental::Delta edge_change;
+    Change edge_change;
     RelationBuilder no_sources;
     RelationBuilder no_targets;
 
@@ -107,7 +105,7 @@ struct Trace
         edges(columns(2 * arity, 0)),
         changed_edges(edges.columns()),
         targets(columns(arity, first_target_label)),
-        edge_change(layer(), edges.columns()),
+        edge_change(edges.columns()),
         no_sources(sources.columns()),
         no_targets(targets.columns())
     {
@@ -193,8 +191,8 @@ bool equal_rows(ygg::FreeRelationBuilderView actual, const RelationBuilder& expe
 {
     if (actual.size() != expected.size())
         return false;
-    for (const auto row : borrow(expected).get_rows())
-        if (!actual.contains(row))
+    for (const auto& row : borrow(expected).get_rows())
+        if (!actual.contains(values_of(row)))
             return false;
     return true;
 }
@@ -202,21 +200,21 @@ bool equal_rows(ygg::FreeRelationBuilderView actual, const RelationBuilder& expe
 bool equal_delta(const database::incremental::Delta& actual, const RelationBuilder& before, const RelationBuilder& after)
 {
     size_t added = 0, removed = 0;
-    for (const auto row : borrow(after).get_rows())
-        if (!before.contains(row))
+    for (const auto& row : borrow(after).get_rows())
+        if (!before.contains(values_of(row)))
         {
             ++added;
-            if (!actual.added.contains(row))
+            if (!actual.added->view().contains(values_of(row)))
                 return false;
         }
-    for (const auto row : borrow(before).get_rows())
-        if (!after.contains(row))
+    for (const auto& row : borrow(before).get_rows())
+        if (!after.contains(values_of(row)))
         {
             ++removed;
-            if (!actual.removed.contains(row))
+            if (!actual.removed->view().contains(values_of(row)))
                 return false;
         }
-    return actual.added.size() == added && actual.removed.size() == removed;
+    return actual.added->view().size() == added && actual.removed->view().size() == removed;
 }
 
 template<bool Incremental, TraceKind Kind = TraceKind::shortcuts>
@@ -232,7 +230,7 @@ void distance_changes(benchmark::State& state)
     auto evaluation = [&]
     {
         if constexpr (Incremental)
-            return database::incremental::DistanceEvaluator(layer(), plan);
+            return database::incremental::DistanceEvaluator(scratch(), plan);
         else
             return RelationBuilder(plan.output_columns());
     }();
@@ -317,7 +315,7 @@ void distance_initialize_warm(benchmark::State& state)
     auto evaluation = [&]
     {
         if constexpr (Incremental)
-            return database::incremental::DistanceEvaluator(layer(), plan);
+            return database::incremental::DistanceEvaluator(scratch(), plan);
         else
             return RelationBuilder(plan.output_columns());
     }();

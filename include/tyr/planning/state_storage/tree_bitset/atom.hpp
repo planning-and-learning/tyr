@@ -36,20 +36,20 @@ namespace tyr::planning
 
 /// Stores derived atoms, a dense set in ground and lifted tasks alike, as a bitset tree, by its words.
 template<TaskKind Kind, bool ThreadSafe>
-class AtomStorageBackend<Kind, TreeBitset, ThreadSafe>
+class StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<Kind, TreeBitset, ThreadSafe>;
-    using Unpacked = AtomUnpackedStorage<Kind>;
+    using Unpacked = urd::builder<AtomStorage<Kind>, formalism::planning::Repository>;
     using Packed = typename Context::BitsetSet::handle_type;
 
-    explicit AtomStorageBackend(Context& ctx);
+    explicit StateComponentRepository(Context& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
-    /// Inserts `unpacked` as a delta to the stored `parent`, whose unpacked form is `parent_unpacked`.
+    /// Inserts `unpacked` as a delta to the stored `parent`, whose derived atoms `parent_atoms` are.
     /// Derived atoms are recomputed per state, so the changed blocks are found by comparing both rows' words.
-    Packed insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked);
+    Packed insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<Kind>& parent_atoms);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 

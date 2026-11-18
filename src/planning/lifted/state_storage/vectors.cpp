@@ -21,12 +21,12 @@ namespace tyr::planning
 {
 
 template<typename U, typename Context>
-BitPositionsBackend<U, Context>::BitPositionsBackend(Context& ctx) : m_uint_vectors(&ctx.uint_vectors)
+BitPositionsRepository<U, Context>::BitPositionsRepository(Context& ctx) : m_uint_vectors(&ctx.uint_vectors)
 {
 }
 
 template<typename U, typename Context>
-auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked) -> Packed
+auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked) -> Packed
 {
     m_buffer.clear();
     for (const auto i : unpacked.indices)
@@ -36,7 +36,7 @@ auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked) -> Packed
 }
 
 template<typename U, typename Context>
-auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked, const Packed& parent) -> Packed
+auto BitPositionsRepository<U, Context>::insert(const Unpacked& unpacked, const Packed& parent) -> Packed
 {
     // A write cannot grow or shrink a stored row, so only rows with as many true positions as the parent go in as writes.
     const auto& bits = unpacked.indices;
@@ -59,7 +59,7 @@ auto BitPositionsBackend<U, Context>::insert(const Unpacked& unpacked, const Pac
 }
 
 template<typename U, typename Context>
-void BitPositionsBackend<U, Context>::unpack(const Packed& packed, Unpacked& unpacked)
+void BitPositionsRepository<U, Context>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     m_buffer.resize(m_uint_vectors->row_size(packed));
     m_uint_vectors->copy(packed, m_buffer);
@@ -68,13 +68,13 @@ void BitPositionsBackend<U, Context>::unpack(const Packed& packed, Unpacked& unp
     unpacked.indices.insert(m_buffer.begin(), m_buffer.end());
 }
 
-template class BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, TreeVector, false>>;
-template class BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, TreeVector, true>>;
-template class BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Hashset, false>>;
-template class BitPositionsBackend<FactUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Hashset, true>>;
-template class BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, TreeVector, false>>;
-template class BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, TreeVector, true>>;
-template class BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Hashset, false>>;
-template class BitPositionsBackend<AtomUnpackedStorage<LiftedTag>, StateStorageContext<LiftedTag, Hashset, true>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
+template class BitPositionsRepository<urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, false>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, TreeVector, true>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, false>>;
+template class BitPositionsRepository<urd::builder<AtomStorage<LiftedTag>, formalism::planning::Repository>, StateStorageContext<LiftedTag, Hashset, true>>;
 
 }

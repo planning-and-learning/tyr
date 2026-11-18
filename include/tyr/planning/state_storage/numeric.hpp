@@ -31,14 +31,14 @@ namespace tyr::planning
 
 /// Numeric values, in every storage policy, as vectors in the context's FloatVectorSet.
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-class NumericStorageBackend
+class StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>
 {
 public:
     using Context = StateStorageContext<Kind, Tag, ThreadSafe>;
-    using Unpacked = NumericUnpackedStorage<Kind>;
+    using Unpacked = urd::builder<NumericStorage<Kind>, formalism::planning::Repository>;
     using Packed = typename Context::FloatVectorSet::handle_type;
 
-    explicit NumericStorageBackend(Context& ctx);
+    explicit StateComponentRepository(Context& ctx);
 
     Packed insert(Unpacked& unpacked);
 

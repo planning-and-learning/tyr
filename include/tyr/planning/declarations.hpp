@@ -19,6 +19,7 @@
 #define TYR_PLANNING_DECLARATIONS_HPP_
 
 #include "tyr/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <concepts>
 #include <memory>
@@ -49,13 +50,25 @@ struct PlanReconstructionPolicy;
 
 template<TaskKind Kind>
 class Task;
-/// A state's storages, unpacked: its fluent facts, its derived atoms and its numeric values (state_storage.hpp).
+/// The tags of a state's storages, values its record holds (state_data.hpp): its fluent facts, its derived atoms and its
+/// numeric values. A storage's record holds it packed, its builder unpacked (state_storage.hpp).
 template<TaskKind Kind>
-struct FactUnpackedStorage;
+struct FactStorage
+{
+    static constexpr std::string_view name = "FactStorage";
+};
+
 template<TaskKind Kind>
-struct AtomUnpackedStorage;
+struct AtomStorage
+{
+    static constexpr std::string_view name = "AtomStorage";
+};
+
 template<TaskKind Kind>
-struct NumericUnpackedStorage;
+struct NumericStorage
+{
+    static constexpr std::string_view name = "NumericStorage";
+};
 template<TaskKind Kind>
 using TaskPtr = std::shared_ptr<Task<Kind>>;
 
@@ -66,19 +79,12 @@ struct PackedLabeledNode;
 
 class StaticState;
 
-/// The tag of a state: its record is urd::data<State<Kind>> (state_data.hpp).
+/// The tag of a state: its record urd::data<State<Kind>> is the state as its repository stores it, its storages packed
+/// (state_data.hpp); its builder urd::builder<State<Kind>, StateRepository<Kind>> holds them unpacked (state_builder.hpp).
 template<TaskKind Kind>
 struct State
 {
     static constexpr std::string_view name = "State";
-};
-
-/// The tag of a registered state as its repository stores it, packed: its record is urd::data<PackedState<Kind>>
-/// (state_data.hpp).
-template<TaskKind Kind>
-struct PackedState
-{
-    static constexpr std::string_view name = "PackedState";
 };
 
 template<TaskKind Kind>
@@ -96,17 +102,25 @@ class StateRepository;
 template<TaskKind Kind>
 using StateRepositoryPtr = std::shared_ptr<StateRepository<Kind>>;
 
-/// A registered state, unpacked: the view of its data<State<Kind>>, shared from its repository's pool (whose slot keeps
-/// the repository alive), through the repository that registered it; it is identified by its record and that repository.
+/// A registered state, unpacked: the view of its builder, shared from its repository's pool (whose slot keeps the
+/// repository alive), through the repository that registered it; it holds the state's index.
 template<TaskKind Kind>
-using StateView = urd::shared_view<State<Kind>, StateRepository<Kind>>;
+using StateView = urd::shared_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>, StateRepository<Kind>>>;
 /// A state builder, borrowed, read through a state repository of its task.
 template<TaskKind Kind>
-using BuilderStateView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>>>;
-/// A registered state, packed: the view of its packed record's index, through its repository, which must outlive it (a
+using StateBuilderView = urd::borrowed_view<State<Kind>, StateRepository<Kind>, urd::builder<State<Kind>, StateRepository<Kind>>>;
+/// A state's storages being built, borrowed, read through the formalism repository their indices point into: its fluent
+/// facts, derived atoms and numeric values.
+template<TaskKind Kind>
+using FactStorageView = urd::borrowed_view<FactStorage<Kind>, formalism::planning::Repository, urd::builder<FactStorage<Kind>, formalism::planning::Repository>>;
+template<TaskKind Kind>
+using AtomStorageView = urd::borrowed_view<AtomStorage<Kind>, formalism::planning::Repository, urd::builder<AtomStorage<Kind>, formalism::planning::Repository>>;
+template<TaskKind Kind>
+using NumericStorageView = urd::borrowed_view<NumericStorage<Kind>, formalism::planning::Repository, urd::builder<NumericStorage<Kind>, formalism::planning::Repository>>;
+/// A registered state, packed: the view of its record's index, through its repository, which must outlive it (a
 /// PackedNode keeps it alive; unpack() gives its StateView).
 template<TaskKind Kind>
-using PackedStateView = urd::index_view<PackedState<Kind>, StateRepository<Kind>>;
+using PackedStateView = urd::index_view<State<Kind>, StateRepository<Kind>>;
 
 template<TaskKind Kind>
 class AxiomEvaluator;

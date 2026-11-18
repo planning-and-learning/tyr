@@ -19,11 +19,10 @@ namespace tyr::datalog::database::incremental
 /// Invalid changes preserve state; mutation failures require initialize().
 class GenericJoinEvaluator
 {
-    const ygg::FreeRelationRepository* m_layer;
     GenericJoinPlan m_plan;
     GenericJoinWorkspace m_workspace;
     database::detail::GenericJoinTrie m_changed;
-    urd::builder<ygg::Relation<ygg::Schema>> m_result;
+    urd::handle<ygg::FreeScratchRelation> m_result;
     Delta m_delta;
     bool m_initialized = false;
 
@@ -41,33 +40,42 @@ class GenericJoinEvaluator
             const auto keys = m_plan.input_keys(input);
             auto& current = m_workspace.trie(input);
             m_changed.clear();
-            for (size_t row = 0; row < changed.size(); ++row)
-                m_changed.insert(changed.row(row).get_values(), keys);
-            m_workspace.append(removing ? m_delta.removed : m_delta.added, input, m_changed);
-            for (size_t row = 0; row < changed.size(); ++row)
-                if (removing)
-                    current.erase(changed.row(row).get_values(), keys);
-                else
-                    current.insert(changed.row(row).get_values(), keys);
+            for (const auto& held : changed.get_rows())
+                ygg::with_values(held, [&](const auto& values) { m_changed.insert(values, keys); });
+            m_workspace.append(removing ? *m_delta.removed : *m_delta.added, input, m_changed);
+            for (const auto& held : changed.get_rows())
+                ygg::with_values(held,
+                                 [&](const auto& values)
+                                 {
+                                     if (removing)
+                                         current.erase(values, keys);
+                                     else
+                                         current.insert(values, keys);
+                                 });
         };
         for (size_t input = 0; input < m_plan.input_count(); ++input)
-            apply_input(input, std::get<1>(changes[input]), true);
+        {
+            const auto& [added, removed] = changes[input];
+            apply_input(input, removed, true);
+        }
         for (size_t input = 0; input < m_plan.input_count(); ++input)
-            apply_input(input, std::get<0>(changes[input]), false);
-        detail::apply_delta(m_delta, m_result);
+        {
+            const auto& [added, removed] = changes[input];
+            apply_input(input, added, false);
+        }
+        detail::apply_delta(m_delta, *m_result);
         m_initialized = true;
     }
 
     friend struct detail::NodeRules<QueryGenericJoinTag>;
 
 public:
-    /// Its builders are read through `layer`, which must outlive it.
-    GenericJoinEvaluator(const ygg::FreeRelationRepository& layer, GenericJoinPlan plan) :
-        m_layer(&layer),
+    /// Its relations are drawn from `scratch`, which must outlive it.
+    GenericJoinEvaluator(ygg::FreeScratchRelations& scratch, GenericJoinPlan plan) :
         m_plan(std::move(plan)),
         m_workspace(m_plan),
-        m_result(m_plan.output_columns()),
-        m_delta(layer, m_plan.output_columns())
+        m_result(scratch.draw(m_plan.output_columns())),
+        m_delta(scratch, m_plan.output_columns())
     {
     }
 
@@ -79,10 +87,10 @@ public:
         for (size_t input = 0; input < m_plan.input_count(); ++input)
         {
             assert(std::ranges::equal(inputs[input].columns(), m_plan.input_columns(input)));
-            detail::require_unaliased(inputs[input], m_result, m_delta);
+            detail::require_unaliased(inputs[input], *m_result, m_delta);
         }
         m_initialized = false;
-        generic_join(inputs, m_plan, m_result, m_workspace);
+        generic_join(inputs, m_plan, *m_result, m_workspace);
         m_changed.clear();
         m_delta.clear();
         m_initialized = true;
@@ -99,14 +107,14 @@ public:
             throw std::invalid_argument("Incremental generic join: wrong input count.");
         for (size_t input = 0; input < m_plan.input_count(); ++input)
         {
-            detail::require_change(changes[input], m_plan.input_columns(input), m_result, m_delta);
+            detail::require_change(changes[input], m_plan.input_columns(input), *m_result, m_delta);
             const auto& [added, removed] = changes[input];
             const auto keys = m_plan.input_keys(input);
             const auto& current = m_workspace.trie(input);
             const auto require_actual = [&](const auto& changed, bool removing)
             {
-                for (size_t row = 0; row < changed.size(); ++row)
-                    if (current.contains(changed.row(row).get_values(), keys) != removing)
+                for (const auto& held : changed.get_rows())
+                    if (ygg::with_values(held, [&](const auto& values) { return current.contains(values, keys); }) != removing)
                         throw std::invalid_argument("Incremental generic join: change does not describe an actual input set change.");
             };
             require_actual(removed, true);
@@ -118,7 +126,7 @@ public:
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&
     {
         detail::require_initialized(m_initialized);
-        return m_layer->view(m_result);
+        return m_result->view();
     }
 
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
@@ -132,7 +140,7 @@ public:
     [[nodiscard]] const Delta& get_delta() const&& = delete;
 
     [[nodiscard]] size_t memory_usage() const noexcept
-    { return m_workspace.memory_usage() + m_changed.memory_usage() + m_result.memory_usage() + m_delta.memory_usage(); }
+    { return m_workspace.memory_usage() + m_changed.memory_usage() + urd::memory_usage(m_result->relation) + m_delta.memory_usage(); }
 };
 }  // namespace tyr::datalog::database::incremental
 

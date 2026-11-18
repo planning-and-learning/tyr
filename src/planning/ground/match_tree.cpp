@@ -148,7 +148,7 @@ struct AtomStackEntry
     ElementSpan<Tag> false_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    ygg::formalism::BuilderHandle<AtomSelectorNode<Tag>> result;
+    urd::handle<urd::data<AtomSelectorNode<Tag>>> result;
 
     AtomStackEntry(Builder<Tag>& builder,
                    BaseEntry<Tag> base_,
@@ -180,7 +180,7 @@ struct VariableStackEntry
     ElementSpan<Tag> dontcare_elements;
     size_t forward_pos = 0;
 
-    ygg::formalism::BuilderHandle<VariableSelectorNode<Tag>> result;
+    urd::handle<urd::data<VariableSelectorNode<Tag>>> result;
 
     VariableStackEntry(Builder<Tag>& builder,
                        BaseEntry<Tag> base_,
@@ -212,7 +212,7 @@ struct NegativeFactStackEntry
     ElementSpan<Tag> true_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    ygg::formalism::BuilderHandle<NegativeFactSelectorNode<Tag>> result;
+    urd::handle<urd::data<NegativeFactSelectorNode<Tag>>> result;
 
     NegativeFactStackEntry(Builder<Tag>& builder,
                            BaseEntry<Tag> base_,
@@ -238,7 +238,7 @@ struct ConstraintStackEntry
     ElementSpan<Tag> true_elements;
     ElementSpan<Tag> dontcare_elements;
 
-    ygg::formalism::BuilderHandle<NumericConstraintSelectorNode<Tag>> result;
+    urd::handle<urd::data<NumericConstraintSelectorNode<Tag>>> result;
 
     ConstraintStackEntry(Builder<Tag>& builder,
                          BaseEntry<Tag> base_,
@@ -261,7 +261,7 @@ struct GeneratorStackEntry
 {
     BaseEntry<Tag> base;
 
-    ygg::formalism::BuilderHandle<planning::match_tree::ElementGeneratorNode<Tag>> result;
+    urd::handle<urd::data<planning::match_tree::ElementGeneratorNode<Tag>>> result;
 
     GeneratorStackEntry(Builder<Tag>& builder, BaseEntry<Tag> base_) :
         base(base_),

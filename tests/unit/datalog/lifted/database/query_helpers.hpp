@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <limits>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -18,7 +19,113 @@
 #include <utility>
 #include <vector>
 #include <yggdrasil/formalism/builder_impl.hpp>  // the tests' own storage, RelationRecords, is no library's
+#include <yggdrasil/formalism/canonicalization.hpp>
 #include <yggdrasil/formalism/free_relations.hpp>
+#include <yggdrasil/formalism/scratch_relation.hpp>
+
+/// The scratch relations of the tests, and a relation drawn from them: what the tests build, read and pass as an
+/// operation's output (it converts to the ygg::FreeScratchRelation it holds). Its rows are in tuple order.
+namespace tyr::datalog::tests
+{
+inline ygg::FreeScratchRelations& scratch()
+{
+    static ygg::FreeScratchRelations relations;
+    return relations;
+}
+
+class Relation
+{
+public:
+    Relation() : Relation(std::span<const ygg::ColumnLayout>()) {}
+
+    explicit Relation(std::span<const ygg::ColumnLayout> columns) : m_scratch(scratch().draw(columns)) {}
+
+    // NOLINTNEXTLINE(google-explicit-constructor): passed where an operation takes its output
+    operator ygg::FreeScratchRelation&() noexcept { return *m_scratch; }
+
+    // NOLINTNEXTLINE(google-explicit-constructor): read where an operation checks its output against an input
+    operator const ygg::FreeScratchRelation&() const noexcept { return *m_scratch; }
+
+    [[nodiscard]] ygg::FreeScratchRelation& get() noexcept { return *m_scratch; }
+
+    [[nodiscard]] ygg::FreeRelationBuilderView view() const { return m_scratch->view(); }
+
+    [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const { return view().columns(); }
+
+    [[nodiscard]] size_t size() const { return view().size(); }
+
+    [[nodiscard]] size_t arity() const { return view().arity(); }
+
+    [[nodiscard]] bool empty() const { return view().empty(); }
+
+    template<ygg::RowValues V>
+    [[nodiscard]] bool contains(const V& values) const
+    { return view().contains(values); }
+
+    /// The position of the row of these values in tuple order, if it holds one.
+    template<ygg::RowValues V>
+    [[nodiscard]] std::optional<size_t> find(const V& values) const
+    { return view().find(values); }
+
+    /// Its position in tuple order.
+    template<ygg::RowValues V>
+    size_t insert(const V& values)
+    { return m_scratch->insert(values).first; }
+
+    template<ygg::RowValues V>
+    bool erase(const V& values)
+    { return m_scratch->erase(values); }
+
+    void clear() noexcept { m_scratch->clear(); }
+
+    void initialize(std::span<const ygg::ColumnLayout> columns) { m_scratch->relation.initialize(m_scratch->rows, columns); }
+
+    void rename(std::span<const ygg::ColumnLayout> columns) { m_scratch->relation.rename(m_scratch->rows, columns); }
+
+    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(m_scratch->relation); }
+
+private:
+    urd::handle<ygg::FreeScratchRelation> m_scratch;
+};
+
+inline ygg::FreeRelationBuilderView borrow(const Relation& relation) { return relation.view(); }
+
+/// A change of a relation, as a test describes one: its added and its removed rows.
+struct Change
+{
+    Relation added;
+    Relation removed;
+
+    explicit Change(std::span<const ygg::ColumnLayout> columns) : added(columns), removed(columns) {}
+
+    void clear() noexcept
+    {
+        added.clear();
+        removed.clear();
+    }
+
+    /// The (added, removed) change, as views.
+    [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change() const { return { added.view(), removed.view() }; }
+
+    [[nodiscard]] size_t memory_usage() const noexcept { return added.memory_usage() + removed.memory_usage(); }
+};
+
+/// A row's values, as it is held: a row view, or a builder's row child resolved.
+template<typename R>
+std::vector<ygg::Value> values_of(const R& row)
+{ return ygg::with_values(row, [](const auto& values) { return std::vector<ygg::Value>(std::ranges::begin(values), std::ranges::end(values)); }); }
+
+/// The record of a scratch relation's row (its rows are records, held by their handles): the row stays the same row
+/// while this stays.
+template<typename R>
+const void* record_of(const R& row)
+{ return &std::get<2>(row).get_values(); }
+
+/// The value of a row's column, as it is held.
+template<typename R>
+ygg::Value value_of(const R& row, size_t column)
+{ return ygg::with_values(row, [column](const auto& values) { return std::ranges::begin(values)[static_cast<std::ptrdiff_t>(column)]; }); }
+}  // namespace tyr::datalog::tests
 
 /// Test-only query construction on top of checkout + insert_query.
 namespace tyr::datalog::tests::qb
@@ -231,17 +338,19 @@ std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repos
     relation->pool = repository.schema(source.columns());
     auto row = checkout<ygg::Row<ygg::Schema>>(records());
     row->relation = relation->pool;
-    for (std::size_t i = 0; i < source.get_rows().size(); ++i)
-    {
-        const auto values = source.row(i).get_values();
-        row->values.set(values.begin(), values.end());
-        urd::append(relation->rows, repository.insert(*row).first);
-    }
+    for (const auto& held : source.get_rows())
+        ygg::with_values(held,
+                         [&](const auto& values)
+                         {
+                             row->values.set(std::ranges::begin(values), std::ranges::end(values));
+                             urd::append(relation->rows, repository.insert(*row).first);
+                         });
+    ygg::canonicalize(*relation, repository);
     return intern_relation(repository, *relation, source.columns());
 }
 
-inline std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repository, const urd::builder<ygg::Relation<ygg::Schema>>& source)
-{ return intern(repository, repository.view(source)); }
+inline std::pair<ygg::FreeRelationView, bool> intern(ygg::FreeRelationRepository& repository, const Relation& source)
+{ return intern(repository, source.view()); }
 
 /// `source` (of `repository`) under new columns: the same pool and rows.
 inline ygg::FreeRelationView rename(ygg::FreeRelationRepository& repository, ygg::FreeRelationView source, std::span<const ygg::ColumnLayout> labels)
@@ -253,51 +362,51 @@ inline ygg::FreeRelationView rename(ygg::FreeRelationRepository& repository, ygg
 }
 
 template<typename V>
-urd::builder<ygg::Relation<ygg::Schema>> projected(const V& input, std::span<const urd::index<ygg::Column>> labels)
+Relation projected(const V& input, std::span<const urd::index<ygg::Column>> labels)
 {
     const database::ProjectionPlan plan(input.columns(), labels);
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::Workspace workspace;
     database::project(input, plan, out, workspace);
     return out;
 }
 
 template<typename V>
-urd::builder<ygg::Relation<ygg::Schema>> projected(const V& input, std::initializer_list<urd::index<ygg::Column>> labels)
+Relation projected(const V& input, std::initializer_list<urd::index<ygg::Column>> labels)
 { return projected(input, std::span<const urd::index<ygg::Column>>(labels)); }
 
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> joined(const L& left_operand, const R& right_operand)
+Relation joined(const L& left_operand, const R& right_operand)
 {
     const database::JoinPlan plan(left_operand.columns(), right_operand.columns());
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::Workspace workspace;
     database::join(left_operand, right_operand, plan, out, workspace);
     return out;
 }
 
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> unioned(const L& left_operand, const R& right_operand)
+Relation unioned(const L& left_operand, const R& right_operand)
 {
     const database::SetPlan plan(left_operand.columns(), right_operand.columns());
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::union_(left_operand, right_operand, plan, out);
     return out;
 }
 
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> subtracted(const L& left_operand, const R& right_operand)
+Relation subtracted(const L& left_operand, const R& right_operand)
 {
     const database::SetPlan plan(left_operand.columns(), right_operand.columns());
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::difference(left_operand, right_operand, plan, out);
     return out;
 }
 
 template<typename S, typename E, typename T>
-urd::builder<ygg::Relation<ygg::Schema>> distances(const S& sources, const E& edges, const T& targets, const database::DistancePlan& plan)
+Relation distances(const S& sources, const E& edges, const T& targets, const database::DistancePlan& plan)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::DistanceWorkspace workspace(plan);
     database::distance(sources, edges, targets, plan, out, workspace);
     return out;
@@ -307,16 +416,12 @@ urd::builder<ygg::Relation<ygg::Schema>> distances(const S& sources, const E& ed
 /// Shared by the min-distance tests: relations borrowed as views, rows decoded to uint_t values, reference distances.
 namespace tyr::datalog::tests::distances
 {
-inline ygg::FreeRelationBuilderView borrow(const ygg::FreeRelationRepository& repository, const urd::builder<ygg::Relation<ygg::Schema>>& relation)
-{ return repository.view(relation); }
-
-inline urd::Store<urd::sequence<ygg::FreeRelationBuilderView>> borrow_all(const ygg::FreeRelationRepository& repository,
-                                                                          const urd::Store<urd::sequence<urd::builder<ygg::Relation<ygg::Schema>>>>& relations)
+inline urd::Store<urd::sequence<ygg::FreeRelationBuilderView>> borrow_all(const urd::Store<urd::sequence<Relation>>& relations)
 {
     urd::Store<urd::sequence<ygg::FreeRelationBuilderView>> views;
     views.reserve(relations.size());
     for (const auto& relation : relations)
-        views.push_back(borrow(repository, relation));
+        views.push_back(relation.view());
     return views;
 }
 
@@ -329,14 +434,13 @@ inline urd::Store<urd::sequence<ygg::uint_t>> decode(std::span<const ygg::Value>
     return values;
 }
 
-template<ygg::RowViewConcept<ygg::Schema> R>
+/// A row's values, as it is held (a row view, or a builder's row child resolved), decoded.
+template<typename R>
+    requires(!std::convertible_to<const R&, std::span<const ygg::Value>>)
 urd::Store<urd::sequence<ygg::uint_t>> decode(const R& row)
 {
-    urd::Store<urd::sequence<ygg::uint_t>> values;
-    values.reserve(row.get_values().size());
-    for (size_t c = 0; c < row.get_values().size(); ++c)
-        values.push_back(ygg::decode_value<ygg::uint_t>(row.value(c)));
-    return values;
+    const auto values = values_of(row);
+    return decode(std::span<const ygg::Value>(values));
 }
 
 /// Half the distance to the targets in a supergraph of every state: consistent in all of them.

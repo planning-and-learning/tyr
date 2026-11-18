@@ -71,8 +71,8 @@ def test_default_fields_need_no_live_entity() -> None:
     assert list(fp.AtomGroundFluent.Fields.__members__) == ["row"]
     assert fp.Object.Fields.name.name == "name"
     assert fp.Object.Fields.name.value == "name"
-    assert fp.FDRFactFluent.Fields.value.name == "value"
-    assert fp.FDRFactFluent.Fields.value.value == "value"
+    assert fp.FDRFactFluentBorrowed.Fields.value.name == "value"
+    assert fp.FDRFactFluentBorrowed.Fields.value.value == "value"
 
 
 def test_field_enum_selection_validates_the_native_type_before_registration() -> None:
@@ -110,14 +110,14 @@ def test_native_plan_tables_and_lifetime(backend: Literal["ground", "lifted"]) -
         evaluator = ground.AxiomEvaluator(task, execution)
         generator = ground.SuccessorGenerator(task, execution)
         result = brfs.ground.find_solution(task, repository, evaluator, generator, brfs.ground.Options())
-        state_type = ground.State
+        state_type = ground.StateBuilderShared
         node_type = ground.Node
     else:
         repository = lifted.StateRepository(task)
         evaluator = lifted.AxiomEvaluator(task, execution)
         generator = lifted.SuccessorGenerator(task, execution)
         result = brfs.lifted.find_solution(task, repository, evaluator, generator, brfs.lifted.Options())
-        state_type = lifted.State
+        state_type = lifted.StateBuilderShared
         node_type = lifted.Node
     assert result.status == SearchStatus.SOLVED
     plan = result.plan

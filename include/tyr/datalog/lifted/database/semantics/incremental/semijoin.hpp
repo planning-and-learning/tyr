@@ -29,55 +29,70 @@ namespace tyr::datalog::database::incremental
 /// After a failure during mutation, results and deltas are unavailable until initialize().
 class SemijoinEvaluator
 {
-    const ygg::FreeRelationRepository* m_layer;
     JoinPlan m_plan;
     bool m_anti;
-    urd::builder<ygg::Relation<ygg::Schema>> m_left_operand;
-    urd::builder<ygg::Relation<ygg::Schema>> m_right_operand;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_left_index;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_right_index;
-    urd::builder<ygg::Relation<ygg::Schema>> m_result;
+    urd::handle<ygg::FreeScratchRelation> m_left_operand;
+    urd::handle<ygg::FreeScratchRelation> m_right_operand;
+    detail::RowsByKey m_left_index;
+    detail::RowsByKey m_right_index;
+    urd::handle<ygg::FreeScratchRelation> m_result;
     Delta m_delta;
     bool m_initialized = false;
 
-    [[nodiscard]] bool matched(const ygg::RowPool::row_type& left_row) const;
+    /// Whether a row of L, by its values, has a match in the current R on the plan's keys.
+    template<ygg::RowValues Values>
+    [[nodiscard]] bool matched(const Values& left_row) const
+    {
+        const auto left_keys = m_plan.left_keys();
+        const auto right_keys = m_plan.right_keys();
+        if (left_keys.empty())
+            return !m_right_operand->view().empty();
+        for (const auto [first, last] = m_right_index.equal_range(database::detail::join_key_hash(left_row, left_keys));
+             const auto slot : std::ranges::subrange(first, last) | std::views::values)
+            if (database::detail::join_keys_equal(m_right_operand->at(slot).values, right_keys, left_row, left_keys))
+                return true;
+        return false;
+    }
 
-    [[nodiscard]] bool kept(const ygg::RowPool::row_type& left_row) const { return matched(left_row) != m_anti; }
+    template<ygg::RowValues Values>
+    [[nodiscard]] bool kept(const Values& left_row) const
+    { return matched(left_row) != m_anti; }
 
     /// Records the change of a row of the current L against the result before this update.
-    void reconcile(const ygg::RowPool::row_type& row)
+    template<ygg::RowValues Values>
+    void reconcile(const Values& row)
     {
-        const auto was = m_result.contains(row);
+        const auto was = m_result->view().contains(row);
         const auto is = kept(row);
         if (is && !was)
-            m_delta.added.insert(row);
+            m_delta.added->insert(row);
         else if (!is && was)
-            m_delta.removed.insert(row);
+            m_delta.removed->insert(row);
     }
 
     /// Reconciles the rows of the current L that share the key of a changed row of R.
-    template<RelationViewConcept V>
+    template<ygg::RelationViewConcept<ygg::Schema> V>
     void reconcile_matches(const V& right_rows)
     {
         const auto left_keys = m_plan.left_keys();
         const auto right_keys = m_plan.right_keys();
         if (right_rows.get_rows().empty())
             return;
-        const auto current = m_layer->view(m_left_operand);
         if (left_keys.empty())
         {
-            for (size_t i = 0; i < current.size(); ++i)
-                reconcile(current.row(i).get_values());
+            for (const auto& held : m_left_operand->view().get_rows())
+                ygg::with_values(held, [&](const auto& values) { reconcile(values); });
             return;
         }
-        for (size_t i = 0; i < right_rows.size(); ++i)
-        {
-            const auto right_row = right_rows.row(i).get_values();
-            for (const auto [first, last] = m_left_index.equal_range(database::detail::join_key_hash(right_row, right_keys));
-                 const auto position : std::ranges::subrange(first, last) | std::views::values)
-                if (database::detail::join_keys_equal(current.row(position).get_values(), left_keys, right_row, right_keys))
-                    reconcile(current.row(position).get_values());
-        }
+        for (const auto& right_held : right_rows.get_rows())
+            ygg::with_values(right_held,
+                             [&](const auto& right_row)
+                             {
+                                 for (const auto [first, last] = m_left_index.equal_range(database::detail::join_key_hash(right_row, right_keys));
+                                      const auto slot : std::ranges::subrange(first, last) | std::views::values)
+                                     if (const auto& left_row = m_left_operand->at(slot).values; database::detail::join_keys_equal(left_row, left_keys, right_row, right_keys))
+                                         reconcile(left_row);
+                             });
     }
 
     template<RelationChange L, RelationChange R>
@@ -87,15 +102,19 @@ class SemijoinEvaluator
         const auto& [right_added, right_removed] = right_operand;
         m_initialized = false;
         m_delta.clear();
-        for (size_t i = 0; i < left_removed.size(); ++i)
-            if (const auto row = left_removed.row(i).get_values(); m_result.contains(row))
-                m_delta.removed.insert(row);
-        detail::erase_rows(*m_layer, left_removed, m_left_operand, m_plan.left_keys(), m_left_index);
-        detail::erase_rows(*m_layer, right_removed, m_right_operand, m_plan.right_keys(), m_right_index);
-        detail::insert_rows(right_added, m_right_operand, m_plan.right_keys(), m_right_index);
-        detail::insert_rows(left_added, m_left_operand, m_plan.left_keys(), m_left_index);
-        for (size_t i = 0; i < left_added.size(); ++i)
-            reconcile(left_added.row(i).get_values());
+        for (const auto& held : left_removed.get_rows())
+            ygg::with_values(held,
+                             [&](const auto& values)
+                             {
+                                 if (m_result->view().contains(values))
+                                     m_delta.removed->insert(values);
+                             });
+        detail::erase_rows(left_removed, *m_left_operand, m_plan.left_keys(), m_left_index);
+        detail::erase_rows(right_removed, *m_right_operand, m_plan.right_keys(), m_right_index);
+        detail::insert_rows(right_added, *m_right_operand, m_plan.right_keys(), m_right_index);
+        detail::insert_rows(left_added, *m_left_operand, m_plan.left_keys(), m_left_index);
+        for (const auto& held : left_added.get_rows())
+            ygg::with_values(held, [&](const auto& values) { reconcile(values); });
         if (m_plan.left_keys().empty())
             reconcile_matches(right_added.get_rows().empty() ? right_removed : right_added);
         else
@@ -103,7 +122,7 @@ class SemijoinEvaluator
             reconcile_matches(right_removed);
             reconcile_matches(right_added);
         }
-        detail::apply_delta(m_delta, m_result);
+        detail::apply_delta(m_delta, *m_result);
         m_initialized = true;
     }
 
@@ -111,39 +130,41 @@ class SemijoinEvaluator
     friend struct detail::NodeRules;
 
 public:
-    /// Its builders are read through `layer`, which must outlive it.
-    SemijoinEvaluator(const ygg::FreeRelationRepository& layer, JoinPlan plan, bool anti) :
-        m_layer(&layer),
+    /// Its relations are drawn from `scratch`, which must outlive it.
+    SemijoinEvaluator(ygg::FreeScratchRelations& scratch, JoinPlan plan, bool anti) :
         m_plan(std::move(plan)),
         m_anti(anti),
-        m_left_operand(m_plan.left_columns()),
-        m_right_operand(m_plan.right_columns()),
-        m_result(m_plan.left_columns()),
-        m_delta(layer, m_plan.left_columns())
+        m_left_operand(scratch.draw(m_plan.left_columns())),
+        m_right_operand(scratch.draw(m_plan.right_columns())),
+        m_result(scratch.draw(m_plan.left_columns())),
+        m_delta(scratch, m_plan.left_columns())
     {
     }
 
     /// Replace the baseline, retaining buffers, and clear the last output delta.
-    template<RelationViewConcept L, RelationViewConcept R>
+    template<ygg::RelationViewConcept<ygg::Schema> L, ygg::RelationViewConcept<ygg::Schema> R>
     void initialize(const L& left_operand, const R& right_operand)
     {
         assert(std::ranges::equal(left_operand.columns(), m_plan.left_columns()));
         assert(std::ranges::equal(right_operand.columns(), m_plan.right_columns()));
-        detail::require_unaliased(left_operand, m_result, m_delta);
-        detail::require_unaliased(right_operand, m_result, m_delta);
+        detail::require_unaliased(left_operand, *m_result, m_delta);
+        detail::require_unaliased(right_operand, *m_result, m_delta);
         m_initialized = false;
-        m_left_operand.clear();
-        m_right_operand.clear();
+        m_left_operand->clear();
+        m_right_operand->clear();
         m_left_index.clear();
         m_right_index.clear();
-        m_result.clear();
+        m_result->clear();
         m_delta.clear();
-        detail::insert_rows(left_operand, m_left_operand, m_plan.left_keys(), m_left_index);
-        detail::insert_rows(right_operand, m_right_operand, m_plan.right_keys(), m_right_index);
-        const auto current = m_layer->view(m_left_operand);
-        for (size_t i = 0; i < current.size(); ++i)
-            if (kept(current.row(i).get_values()))
-                m_result.insert(current.row(i).get_values());
+        detail::insert_rows(left_operand, *m_left_operand, m_plan.left_keys(), m_left_index);
+        detail::insert_rows(right_operand, *m_right_operand, m_plan.right_keys(), m_right_index);
+        for (const auto& held : m_left_operand->view().get_rows())
+            ygg::with_values(held,
+                             [&](const auto& values)
+                             {
+                                 if (kept(values))
+                                     m_result->insert(values);
+                             });
         m_initialized = true;
     }
 
@@ -152,15 +173,15 @@ public:
     void update(const L& left_operand, const R& right_operand)
     {
         detail::require_initialized(m_initialized);
-        detail::require_change(left_operand, m_plan.left_columns(), m_result, m_delta);
-        detail::require_change(right_operand, m_plan.right_columns(), m_result, m_delta);
+        detail::require_change(left_operand, m_plan.left_columns(), *m_result, m_delta);
+        detail::require_change(right_operand, m_plan.right_columns(), *m_result, m_delta);
         apply(left_operand, right_operand);
     }
 
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&
     {
         detail::require_initialized(m_initialized);
-        return m_layer->view(m_result);
+        return m_result->view();
     }
 
     [[nodiscard]] ygg::FreeRelationBuilderView get_result() const&& = delete;
@@ -175,8 +196,8 @@ public:
 
     [[nodiscard]] size_t memory_usage() const noexcept
     {
-        return m_left_operand.memory_usage() + m_right_operand.memory_usage() + m_result.memory_usage() + m_delta.memory_usage()
-               + urd::memory_usage(m_left_index) + urd::memory_usage(m_right_index);
+        return urd::memory_usage(m_left_operand->relation) + urd::memory_usage(m_right_operand->relation) + urd::memory_usage(m_result->relation)
+               + m_delta.memory_usage() + urd::memory_usage(m_left_index) + urd::memory_usage(m_right_index);
     }
 };
 

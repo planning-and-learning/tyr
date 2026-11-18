@@ -52,7 +52,7 @@ struct BlindDistanceHeuristic
 inline std::span<const ygg::Value> vertex_values(std::span<const ygg::Value> vertex, urd::Store<urd::sequence<ygg::Value>>& /*buffer*/) noexcept
 { return vertex; }
 
-inline std::span<const ygg::Value> vertex_values(const ygg::RowPool::row_type& row, urd::Store<urd::sequence<ygg::Value>>& buffer)
+inline std::span<const ygg::Value> vertex_values(const urd::packed_row<false>& row, urd::Store<urd::sequence<ygg::Value>>& buffer)
 {
     buffer.clear();
     for (size_t i = 0; i < row.size(); ++i)
@@ -60,10 +60,11 @@ inline std::span<const ygg::Value> vertex_values(const ygg::RowPool::row_type& r
     return buffer;
 }
 
-/// A row view's values (its stored row's).
-template<ygg::RowViewConcept<ygg::Schema> R>
+/// A row's values, the row as it is held: a row view, or a builder's row child resolved (a variant of row views).
+template<typename R>
+    requires urd::View<R> || urd::variant_value<R>
 std::span<const ygg::Value> vertex_values(const R& row, urd::Store<urd::sequence<ygg::Value>>& buffer)
-{ return vertex_values(row.get_values(), buffer); }
+{ return ygg::with_values(row, [&buffer](const auto& values) { return vertex_values(values, buffer); }); }
 
 /// A random-access sequence of vertices: get_rows() of them, row(i) the i-th, its values or a stored row (e.g. a relation
 /// view).

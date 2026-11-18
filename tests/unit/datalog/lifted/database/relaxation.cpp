@@ -19,19 +19,15 @@
 namespace
 {
 using Column = urd::index<ygg::Column>;
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
+using tyr::datalog::tests::Change;
 using View = tyr::datalog::database::QueryView<>;
 namespace qb = tyr::datalog::tests::qb;
 const Column x(0), y(1), z(2);
-
-/// The layer the tests read their builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-ygg::FreeRelationBuilderView borrow(const Relation& relation) { return layer().view(relation); }
 
 /// Evaluates a query over the given inputs.
 Relation evaluate(View query, const urd::Store<urd::sequence<const Relation*>>& inputs)
@@ -39,7 +35,7 @@ Relation evaluate(View query, const urd::Store<urd::sequence<const Relation*>>& 
     auto bindings = urd::Store<urd::sequence<ygg::FreeRelationBuilderView>>();
     for (const auto* input : inputs)
         bindings.push_back(borrow(*input));
-    auto evaluator = tyr::datalog::database::QueryEvaluator(layer(), tyr::datalog::database::compile_plan({ query }));
+    auto evaluator = tyr::datalog::database::QueryEvaluator(scratch(), tyr::datalog::database::compile_plan({ query }));
     evaluator.evaluate(bindings);
     auto result = Relation(evaluator.get_result().columns());
     tyr::datalog::database::assign(result, evaluator.get_result());
@@ -81,7 +77,7 @@ void expect_superset(View query, const tyr::datalog::database::Relaxation& relax
     }
     const auto projected = tyr::datalog::tests::ops::projected(borrow(full), std::span<const Column>(labels));
     for (size_t i = 0; i < projected.size(); ++i)
-        EXPECT_TRUE(relaxed.contains(borrow(projected).row(i)));
+        EXPECT_TRUE(relaxed.contains(values_of(borrow(projected).row(i))));
 }
 
 TEST(DatabaseRelaxation, RandomExpressionsAreOverApproximatedAndExactWhenKnown)
@@ -202,7 +198,7 @@ TEST(DatabaseRelaxation, RandomExpressionsAreOverApproximatedAndExactWhenKnown)
         const auto actual = evaluate(all_known->relaxation.queries[0].value(), all);
         EXPECT_EQ(actual.size(), expected.size());
         for (size_t i = 0; i < expected.size(); ++i)
-            EXPECT_TRUE(actual.contains(borrow(expected).row(i)));
+            EXPECT_TRUE(actual.contains(values_of(borrow(expected).row(i))));
     }
 }
 
@@ -292,7 +288,7 @@ TEST(DatabaseRelaxation, RootsShareOneInputNumbering)
     inputs[0].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     inputs[2].insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     const auto plan = tyr::datalog::database::compile_plan({ relaxed->relaxation.queries[0].value(), relaxed->relaxation.queries[1].value() });
-    auto evaluator = tyr::datalog::database::QueryEvaluator(layer(), plan);
+    auto evaluator = tyr::datalog::database::QueryEvaluator(scratch(), plan);
     evaluator.evaluate(std::array { borrow(inputs[0]), borrow(inputs[2]) });
     EXPECT_EQ(evaluator.get_result(0).size(), 1);
     EXPECT_EQ(evaluator.get_result(1).size(), 1);
@@ -313,7 +309,7 @@ TEST(DatabaseRelaxation, ProjectedAwayConjunctsAreTestedOnceByBoundEvaluation)
         edges.insert(std::array { ygg::encode_value(o), ygg::encode_value(static_cast<ygg::uint_t>(0)) });
         identity.insert(std::array { ygg::encode_value(o), ygg::encode_value(o) });
     }
-    auto evaluator = tyr::datalog::database::bound::QueryEvaluator(layer(), query);
+    auto evaluator = tyr::datalog::database::bound::QueryEvaluator(scratch(), query);
     evaluator.bind_slot(0, borrow(edges));
     evaluator.bind_slot(1, borrow(identity));
     const auto predecessors = evaluator.prepare({ 1 });
@@ -337,7 +333,7 @@ TEST(DatabaseRelaxation, ProjectedAwayConjunctsAreTestedOnceByBoundEvaluation)
 urd::Store<urd::sequence<ygg::uint_t>>
 bound_successors(View query, const urd::Store<urd::sequence<const Relation*>>& inputs, size_t limit = std::numeric_limits<size_t>::max())
 {
-    auto evaluator = tyr::datalog::database::bound::QueryEvaluator(layer(), query);
+    auto evaluator = tyr::datalog::database::bound::QueryEvaluator(scratch(), query);
     for (size_t slot = 0; slot < inputs.size(); ++slot)
         evaluator.bind_slot(slot, borrow(*inputs[slot]));
     const auto successors = evaluator.prepare({ 0 });
@@ -448,7 +444,7 @@ void expect_relaxes_to(View query, View expected, const std::array<bool, 4>& kno
     const auto wanted = evaluate(expected, { &inputs[0], &inputs[1], &inputs[2], &inputs[3] });
     EXPECT_EQ(actual.size(), wanted.size());
     for (size_t i = 0; i < wanted.size(); ++i)
-        EXPECT_TRUE(actual.contains(borrow(wanted).row(i)));
+        EXPECT_TRUE(actual.contains(values_of(borrow(wanted).row(i))));
 }
 
 std::array<Relation, 4> sample_inputs()

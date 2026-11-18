@@ -22,7 +22,11 @@
 namespace
 {
 using Column = urd::index<ygg::Column>;
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
 using ygg::uint_t;
 
 using namespace tyr::datalog::tests::distances;
@@ -41,15 +45,14 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
                     Mutate mutate)
 {
     const auto k = sources.columns().size();
-    const ygg::FreeRelationRepository layer;
     const auto plan = tyr::datalog::database::DistancePlan(sources.columns(), columns_of(edges), targets.columns(), Column(99));
-    auto blind = tyr::datalog::database::MinDistance(layer, edges, plan, static_slots);
-    auto guided = tyr::datalog::database::MinDistance<HalfDistance>(layer, edges, plan, static_slots);
-    auto evaluator = tyr::datalog::database::QueryEvaluator(layer, tyr::datalog::database::compile_plan({ edges }));
-    evaluator.evaluate(borrow_all(layer, maximal));
+    auto blind = tyr::datalog::database::MinDistance(scratch(), edges, plan, static_slots);
+    auto guided = tyr::datalog::database::MinDistance<HalfDistance>(scratch(), edges, plan, static_slots);
+    auto evaluator = tyr::datalog::database::QueryEvaluator(scratch(), tyr::datalog::database::compile_plan({ edges }));
+    evaluator.evaluate(borrow_all(maximal));
     auto supergraph = Relation(evaluator.get_result().columns());
     for (size_t i = 0; i < evaluator.get_result().size(); ++i)
-        supergraph.insert(evaluator.get_result().row(i).get_values());
+        supergraph.insert(values_of(evaluator.get_result().row(i)));
     auto heuristic = HalfDistance {};
     heuristic.columns = sources.columns();
     auto workspace = tyr::datalog::database::DistanceWorkspace(plan);
@@ -58,18 +61,18 @@ void check_sequence(tyr::datalog::database::QueryView<> edges,
     for (size_t step = 0; step < steps; ++step)
     {
         mutate(step);
-        const auto views = borrow_all(layer, inputs);
+        const auto views = borrow_all(inputs);
         evaluator.evaluate(views);
         const auto materialized = evaluator.get_result();
         auto edge_relation = Relation(materialized.columns());
         for (size_t i = 0; i < materialized.size(); ++i)
-            edge_relation.insert(materialized.row(i).get_values());
+            edge_relation.insert(values_of(materialized.row(i)));
         const auto expected =
-            tyr::datalog::database::min_distance(borrow(layer, sources), borrow(layer, edge_relation), borrow(layer, targets), plan, result, workspace);
+            tyr::datalog::database::min_distance(borrow(sources), borrow(edge_relation), borrow(targets), plan, result, workspace);
         const auto input = [&](size_t slot) { return views[slot]; };
-        heuristic.distances = distances_to(borrow(layer, supergraph), borrow(layer, targets), k);
-        ASSERT_EQ(blind.min_distance(input, borrow(layer, sources), borrow(layer, targets)), expected) << "step " << step;
-        ASSERT_EQ(guided.min_distance(input, borrow(layer, sources), borrow(layer, targets), heuristic), expected) << "step " << step;
+        heuristic.distances = distances_to(borrow(supergraph), borrow(targets), k);
+        ASSERT_EQ(blind.min_distance(input, borrow(sources), borrow(targets)), expected) << "step " << step;
+        ASSERT_EQ(guided.min_distance(input, borrow(sources), borrow(targets), heuristic), expected) << "step " << step;
         checked += expected != std::numeric_limits<ygg::uint_t>::max();
     }
     EXPECT_GT(checked, steps / 8);
@@ -121,7 +124,7 @@ TEST_P(DatabaseMinDistance, SingleColumnEdgesUnderChanges)
                        {
                            const auto edge = std::array { ygg::encode_value(vertex()), ygg::encode_value(vertex()) };
                            if (inputs[0].contains(edge))
-                               inputs[0].erase(*inputs[0].find(edge));
+                               inputs[0].erase(edge);
                            else
                                inputs[0].insert(edge);
                        }
@@ -177,9 +180,7 @@ TEST_P(DatabaseMinDistance, PairEdgesWithJoinsUnionsSelectionsAndDifferences)
     const auto value = [&] { return static_cast<ygg::uint_t>(random() % n); };
     const auto toggle = [](Relation& relation, auto row)
     {
-        if (const auto position = relation.find(row))
-            relation.erase(*position);
-        else
+        if (!relation.erase(row))
             relation.insert(row);
     };
     auto maximal = urd::Store<urd::sequence<Relation>>();
@@ -224,9 +225,8 @@ TEST_P(DatabaseMinDistance, RelationEdgesUnderChanges)
     auto sources = Relation(tyr::datalog::tests::ops::cols({ x }));
     auto targets = Relation(tyr::datalog::tests::ops::cols({ y }));
     const auto plan = tyr::datalog::database::DistancePlan(sources.columns(), edges.columns(), targets.columns(), Column(99));
-    const ygg::FreeRelationRepository layer;
-    auto blind = tyr::datalog::database::MinDistance(layer, plan);
-    auto guided = tyr::datalog::database::MinDistance<HalfDistance>(layer, plan);
+    auto blind = tyr::datalog::database::MinDistance(scratch(), plan);
+    auto guided = tyr::datalog::database::MinDistance<HalfDistance>(scratch(), plan);
     auto complete = Relation(tyr::datalog::tests::ops::cols({ x, y }));
     for (ygg::uint_t v = 0; v < n; ++v)
         for (ygg::uint_t w = 0; w < n; ++w)
@@ -244,7 +244,7 @@ TEST_P(DatabaseMinDistance, RelationEdgesUnderChanges)
             targets.clear();
             targets.insert(std::array { ygg::encode_value(vertex()) });
             targets.insert(std::array { ygg::encode_value(vertex()) });
-            heuristic.distances = distances_to(borrow(layer, complete), borrow(layer, targets), 1);
+            heuristic.distances = distances_to(borrow(complete), borrow(targets), 1);
         }
         sources.clear();
         sources.insert(std::array { ygg::encode_value(vertex()) });
@@ -254,16 +254,16 @@ TEST_P(DatabaseMinDistance, RelationEdgesUnderChanges)
             {
                 const auto edge = std::array { ygg::encode_value(vertex()), ygg::encode_value(vertex()) };
                 if (edges.contains(edge))
-                    edges.erase(edges.find(edge).value());
+                    edges.erase(edge);
                 else
                     edges.insert(edge);
             }
         const auto expected =
-            tyr::datalog::database::min_distance(borrow(layer, sources), borrow(layer, edges), borrow(layer, targets), plan, result, workspace);
-        const auto edge_view = borrow(layer, edges);
+            tyr::datalog::database::min_distance(borrow(sources), borrow(edges), borrow(targets), plan, result, workspace);
+        const auto edge_view = borrow(edges);
         const auto edge_input = [&](size_t) -> const auto& { return edge_view; };
-        ASSERT_EQ(blind.min_distance(edge_input, borrow(layer, sources), borrow(layer, targets)), expected) << "step " << step;
-        ASSERT_EQ(guided.min_distance(edge_input, borrow(layer, sources), borrow(layer, targets), heuristic), expected) << "step " << step;
+        ASSERT_EQ(blind.min_distance(edge_input, borrow(sources), borrow(targets)), expected) << "step " << step;
+        ASSERT_EQ(guided.min_distance(edge_input, borrow(sources), borrow(targets), heuristic), expected) << "step " << step;
     }
     EXPECT_GT(guided.statistics().tree_hits, 0);
 }

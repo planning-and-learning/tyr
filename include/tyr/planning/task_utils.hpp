@@ -72,7 +72,7 @@ void insert_numeric_variables_to_fact_set(const StateContext<LiftedTag>& state,
                                           formalism::WriteContext<formalism::datalog::Builder, formalism::datalog::Repository>& merge_context,
                                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets);
 
-void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
+void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>::FluentToDerivedPredicateMapping& fluent_to_derived_predicate,
                                       formalism::planning::Builder& planning_builder,
@@ -119,7 +119,7 @@ void insert_extended_state(const StateContext<LiftedTag>& state,
 }
 
 template<datalog::AnnotationPolicyConcept AP, datalog::TerminationPolicyConcept TP, datalog::RuleCostPolicyConcept CP>
-void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>>& state,
+void read_derived_atoms_from_fact_set(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state,
                                       formalism::planning::Repository& repository,
                                       const D2PTranslationContext<LiftedTag>& translation_context,
                                       datalog::ProgramWorkspace<LiftedTag, AP, TP, CP>& workspace,

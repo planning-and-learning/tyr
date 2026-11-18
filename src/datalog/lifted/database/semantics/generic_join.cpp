@@ -79,69 +79,77 @@ void count_generic_join_work(size_t GenericJoinWork::* member) noexcept { ++(gen
 
 namespace tyr::datalog::database::detail
 {
-bool GenericJoinTrie::contains(const ygg::RowPool::row_type& row, std::span<const ColumnSlice> keys) const
+namespace
 {
-    const auto* node = this;
+/// The trie's lookups and changes, for a row as its values are held: a stored row's, or contiguous.
+template<typename Row>
+bool trie_contains(const GenericJoinTrie& trie, const Row& row, std::span<const ColumnSlice> keys)
+{
+    const auto* node = &trie;
     for (const auto key : keys)
     {
-        node = node->find(row.get(key.position));
+        node = node->find(field_value(row, key.position));
         if (!node)
             return false;
     }
     return node->rows != 0;
 }
-}
 
-namespace tyr::datalog::database::detail
-{
-bool GenericJoinTrie::insert(const ygg::RowPool::row_type& row, std::span<const ColumnSlice> keys)
+template<typename Row>
+bool trie_insert(GenericJoinTrie& trie, const Row& row, std::span<const ColumnSlice> keys)
 {
     if (keys.empty())
     {
-        const bool inserted = rows == 0;
-        rows = 1;
+        const bool inserted = trie.rows == 0;
+        trie.rows = 1;
         return inserted;
     }
-    const auto value = row.get(keys.front().position);
-    auto found = children.find(value);
-    if (found == children.end())
-        found = children.emplace(value, std::make_unique<GenericJoinTrie>()).first;
-    if (!found->second->insert(row, keys.subspan(1)))
+    const auto value = field_value(row, keys.front().position);
+    auto found = trie.children.find(value);
+    if (found == trie.children.end())
+        found = trie.children.emplace(value, std::make_unique<GenericJoinTrie>()).first;
+    if (!trie_insert(*found->second, row, keys.subspan(1)))
         return false;
-    ++rows;
+    ++trie.rows;
     return true;
 }
-}
 
-namespace tyr::datalog::database::detail
-{
-bool GenericJoinTrie::erase(const ygg::RowPool::row_type& row, std::span<const ColumnSlice> keys)
+template<typename Row>
+bool trie_erase(GenericJoinTrie& trie, const Row& row, std::span<const ColumnSlice> keys)
 {
     if (keys.empty())
     {
-        const bool erased = rows != 0;
-        rows = 0;
+        const bool erased = trie.rows != 0;
+        trie.rows = 0;
         return erased;
     }
-    const auto value = row.get(keys.front().position);
-    const auto found = children.find(value);
-    if (found == children.end() || !found->second->erase(row, keys.subspan(1)))
+    const auto value = field_value(row, keys.front().position);
+    const auto found = trie.children.find(value);
+    if (found == trie.children.end() || !trie_erase(*found->second, row, keys.subspan(1)))
         return false;
-    --rows;
+    --trie.rows;
     if (found->second->rows == 0)
-        children.erase(found);
+        trie.children.erase(found);
     return true;
 }
+}  // namespace
+
+bool GenericJoinTrie::contains(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys) const { return trie_contains(*this, row, keys); }
+bool GenericJoinTrie::contains(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys) const { return trie_contains(*this, row, keys); }
+bool GenericJoinTrie::insert(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys) { return trie_insert(*this, row, keys); }
+bool GenericJoinTrie::insert(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys) { return trie_insert(*this, row, keys); }
+bool GenericJoinTrie::erase(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys) { return trie_erase(*this, row, keys); }
+bool GenericJoinTrie::erase(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys) { return trie_erase(*this, row, keys); }
 }
 
 namespace tyr::datalog::database
 {
-void GenericJoinWorkspace::enumerate(size_t depth, urd::builder<ygg::Relation<ygg::Schema>>& out)
+void GenericJoinWorkspace::enumerate(size_t depth, ygg::FreeScratchRelation& out)
 {
     detail::count_generic_join_work(&detail::GenericJoinWork::prefixes);
     if (depth == m_plan.variable_order().size())
     {
-        out.insert(m_row.row());
+        out.insert(std::span<const ygg::Value>(m_row));
         return;
     }
     const auto count = m_plan.input_count();
@@ -169,7 +177,7 @@ void GenericJoinWorkspace::enumerate(size_t depth, urd::builder<ygg::Relation<yg
         if (present)
         {
             const auto output = m_plan.output_position(depth);
-            m_row.set(output.position, key);
+            m_row[output.position] = key;
             enumerate(depth + 1, out);
         }
     }

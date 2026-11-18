@@ -32,7 +32,7 @@ QueryView<> checked_edges(QueryView<> edges, const DistancePlan& plan);
 /// An evaluator of a query of one input, slot 0, with the plan's edge columns. It compiles the query when constructed,
 /// so the repository may end afterwards.
 template<typename Evaluator>
-Evaluator relation_edges(const ygg::FreeRelationRepository& layer, const DistancePlan& plan, bool static_edges)
+Evaluator relation_edges(ygg::FreeScratchRelations& scratch, const DistancePlan& plan, bool static_edges)
 {
     QueryRepository repository;
     auto builder = QueryBuilder {};
@@ -44,7 +44,7 @@ Evaluator relation_edges(const ygg::FreeRelationRepository& layer, const Distanc
     auto static_slots = urd::Store<urd::set<size_t>, urd::dense>();
     if (static_edges)
         static_slots.insert(0);
-    return Evaluator(layer, insert_query(repository, builder, *input), static_slots);
+    return Evaluator(scratch, insert_query(repository, builder, *input), static_slots);
 }
 
 /// An edge query bound for search: `Evaluator` (a bound::QueryEvaluator or incremental::bound::QueryEvaluator) over

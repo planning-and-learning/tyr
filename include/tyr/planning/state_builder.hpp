@@ -61,52 +61,29 @@
 namespace urd
 {
 
-/// A state being created, before it is registered: the storage of a data<State<Kind>>, mutable. It compares by its
-/// contents (the fluent facts and numeric values), as the repository deduplicates them; its index is none until it is
-/// registered.
+/// A state's builder: its record's members (state_data.hpp), each storage unpacked (its builder, read through the
+/// formalism repository). A state being created has no index until it is registered; a registered state's pooled builder
+/// (StateView) holds its index. It compares by its contents (the fluent facts and numeric values), as the repository
+/// deduplicates states.
 template<::tyr::TaskKind Kind>
-struct builder<::tyr::planning::State<Kind>> : data<::tyr::planning::State<Kind>>
+struct builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Kind>>
 {
-private:
-    using base = data<::tyr::planning::State<Kind>>;
+    // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes): its record's members, read and written by
+    // name as the record's are.
+    urd::index<::tyr::planning::State<Kind>> index;
+    builder<::tyr::planning::FactStorage<Kind>, ::tyr::formalism::planning::Repository> fact_storage;
+    builder<::tyr::planning::AtomStorage<Kind>, ::tyr::formalism::planning::Repository> atom_storage;
+    builder<::tyr::planning::NumericStorage<Kind>, ::tyr::formalism::planning::Repository> numeric_storage;
+    // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
-public:
-    builder() = default;
+    void set(urd::index<::tyr::planning::State<Kind>> state) { index = state; }
 
-    /// A copy of a builder: its index and its storages (its record is not copied: records are move-only).
-    builder(const builder& other) : base() { copy_from(other); }
-
-    builder& operator=(const builder& other)
-    {
-        if (this != &other)
-            copy_from(other);
-        return *this;
-    }
-
-    builder(builder&& other) noexcept = default;
-    builder& operator=(builder&& other) noexcept = default;
-    ~builder() = default;
-
-    /// What it holds, as a state's view reads it (the builder is the mutable record: it reads its own storages).
-    [[nodiscard]] ::tyr::formalism::planning::FDRValue get(urd::index<::tyr::formalism::planning::FDRVariable<::tyr::formalism::FluentTag>> variable) const
-    { return this->fact_storage.get(variable); }
-
-    [[nodiscard]] ygg::float_t get(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm) const
-    { return this->numeric_storage.get(fterm); }
-
-    [[nodiscard]] bool test(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) const
-    { return this->atom_storage.test(atom); }
-
-    [[nodiscard]] auto get_fluent_fact_index_values() const noexcept { return this->fact_storage.facts(); }
-
-    void set(urd::index<::tyr::planning::State<Kind>> state) { this->index = state; }
-
-    void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact) { this->fact_storage.set(fact); }
+    void set(urd::data<::tyr::formalism::planning::FDRFact<::tyr::formalism::FluentTag>> fact) { fact_storage.set(fact); }
 
     void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> fterm, ygg::float_t value)
-    { this->numeric_storage.set(fterm, value); }
+    { numeric_storage.set(fterm, value); }
 
-    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { this->atom_storage.set(atom); }
+    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> atom) { atom_storage.set(atom); }
 
     /// A fact's view (borrowed or computed): its fact set.
     template<typename V>
@@ -120,61 +97,64 @@ public:
 
     void clear()
     {
-        this->index = {};
+        index = {};
         clear_unextended_part();
         clear_extended_part();
     }
 
     void clear_unextended_part()
     {
-        this->fact_storage.clear();
-        this->numeric_storage.clear();
+        fact_storage.clear();
+        numeric_storage.clear();
     }
 
-    void clear_extended_part() { this->atom_storage.clear(); }
+    void clear_extended_part() { atom_storage.clear(); }
 
     /// Takes a state's facts and numeric values (a view of it: registered, or another builder's).
     template<typename V>
     void assign_unextended_part(const V& state)
     {
-        this->fact_storage = state.get_fact_storage();
-        this->numeric_storage = state.get_numeric_storage();
-    }
-
-    /// Takes another builder's facts and numeric values.
-    void assign_unextended_part(const builder& other)
-    {
-        this->fact_storage = other.fact_storage;
-        this->numeric_storage = other.numeric_storage;
+        fact_storage.assign(state.get_fact_storage());
+        numeric_storage.assign(state.get_numeric_storage());
     }
 
     /// Takes a registered state whole: its storages and its index.
     void assign(const ::tyr::planning::StateView<Kind>& state)
     {
         assign_storages(state);
-        this->index = state.index();
+        index = state.index();
     }
 
     /// Takes a state being built whole: its storages (it has no index).
-    void assign(const ::tyr::planning::BuilderStateView<Kind>& state)
+    void assign(const ::tyr::planning::StateBuilderView<Kind>& state)
     {
         assign_storages(state);
-        this->index = {};
+        index = {};
     }
-
-    /// Takes another builder whole.
-    void assign(const builder& other) { copy_from(other); }
 
     void swap(builder& other) noexcept
     {
         using std::swap;
-        swap(this->index, other.index);
-        this->fact_storage.swap(other.fact_storage);
-        this->atom_storage.swap(other.atom_storage);
-        this->numeric_storage.swap(other.numeric_storage);
+        swap(index, other.index);
+        fact_storage.swap(other.fact_storage);
+        atom_storage.swap(other.atom_storage);
+        numeric_storage.swap(other.numeric_storage);
     }
 
     friend void swap(builder& lhs, builder& rhs) noexcept { lhs.swap(rhs); }
+
+    void resize_fluent_facts(size_t size)
+        requires std::same_as<Kind, ::tyr::GroundTag>
+    { fact_storage.resize(size); }
+
+    static constexpr auto fields() noexcept
+    {
+        return urd::Fields<urd::field<"fact_storage", &builder::fact_storage>,
+                           urd::field<"atom_storage", &builder::atom_storage>,
+                           urd::field<"numeric_storage", &builder::numeric_storage>> {};
+    }
+
+    static constexpr auto identifying_members() noexcept { return urd::Members<&builder::fact_storage, &builder::numeric_storage> {}; }
 
 private:
     /// The storages of a state's view.
@@ -182,26 +162,7 @@ private:
     void assign_storages(const V& state)
     {
         assign_unextended_part(state);
-        this->atom_storage = state.get_atom_storage();
-    }
-
-    void copy_from(const builder& other)
-    {
-        this->index = other.index;
-        this->fact_storage = other.fact_storage;
-        this->atom_storage = other.atom_storage;
-        this->numeric_storage = other.numeric_storage;
-    }
-
-public:
-    void resize_fluent_facts(size_t size)
-        requires std::same_as<Kind, ::tyr::GroundTag>
-    { this->fact_storage.resize(size); }
-
-    static constexpr auto identifying_members() noexcept
-    {
-        return urd::Members<[](const builder& b) -> const auto& { return b.fact_storage; },
-                            [](const builder& b) -> const auto& { return b.numeric_storage; }> {};
+        atom_storage.assign(state.get_atom_storage());
     }
 };
 

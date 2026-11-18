@@ -205,11 +205,11 @@ void expect_worker_chain(const tyr::planning::TaskPtr<Kind>& task)
     EXPECT_FALSE(exhaustive_goal_worker->is_dynamic_goal_satisfied(worker_initial.get_state(), worker_initial.get_state()));
 
     // A state being built is a goal exactly where it is, registered.
-    auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
+    auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>>> {};
     auto building = pool.make_unique();
     building->assign(source_initial.get_state());
     const auto built = urd::resolve(*building, *source_state_repository);
-    static_assert(std::same_as<std::remove_cvref_t<decltype(built)>, tyr::planning::BuilderStateView<Kind>>);
+    static_assert(std::same_as<std::remove_cvref_t<decltype(built)>, tyr::planning::StateBuilderView<Kind>>);
     for (const auto& goal : { tyr::planning::GoalStrategyPtr<Kind>(conjunctive_goal),
                               tyr::planning::GoalStrategyPtr<Kind>(serialized_goal),
                               tyr::planning::GoalStrategyPtr<Kind>(exhaustive_goal) })

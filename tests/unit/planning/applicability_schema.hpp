@@ -137,10 +137,10 @@ inline constexpr std::string_view kPairwiseConditionalEffectProblem = R"(
 )
 )";
 
-template<TaskKind Kind, bool Borrowed = false>
+template<TaskKind Kind, bool Building = false>
 void expect_schema_queries_match_filtered_successors()
 {
-    SCOPED_TRACE(Borrowed ? "borrowed source" : "registered source");
+    SCOPED_TRACE(Building ? "builder source" : "registered source");
     const auto make_lifted_task = []
     {
         return tyr::planning::Task<LiftedTag>::create(tyr::formalism::planning::Parser(std::string(kEffectValidityDomain), "effect-validity-domain.pddl")
@@ -174,15 +174,15 @@ void expect_schema_queries_match_filtered_successors()
     auto source = std::make_shared<tyr::planning::SuccessorGenerator<Kind>>(task, execution_context);
     auto worker = source->make_worker(ygg::ExecutionContext::create(1));
     auto registered_initial = source->get_initial_node(*state_repository, *axiom_evaluator);
-    auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>>>> {};
+    auto pool = urd::Store<urd::slots<urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>>> {};
     auto owned = pool.make_unique();
     owned->assign(registered_initial.get_state());
     owned->set(urd::index<tyr::planning::State<Kind>> {});
     ASSERT_TRUE(owned->index.is_none());
     const auto initial_node = [&]
     {
-        if constexpr (Borrowed)
-            return tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(*owned, *state_repository), registered_initial.get_metric());
+        if constexpr (Building)
+            return tyr::planning::Node<Kind, tyr::planning::StateBuilderView<Kind>>(urd::resolve(*owned, *state_repository), registered_initial.get_metric());
         else
             return registered_initial;
     }();
@@ -293,26 +293,26 @@ void expect_schema_queries_match_filtered_successors()
         }
     }
 
-    using S = std::conditional_t<Borrowed, tyr::planning::BuilderStateView<Kind>, tyr::planning::StateView<Kind>>;
-    auto borrowed_states = urd::Store<urd::sequence<urd::builder<tyr::planning::State<Kind>>>, urd::stable_refs> {};
+    using S = std::conditional_t<Building, tyr::planning::StateBuilderView<Kind>, tyr::planning::StateView<Kind>>;
+    auto borrowed_states = urd::Store<urd::sequence<urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>>, urd::stable_refs> {};
     auto callback_state = pool.make_unique();
     auto& list_storage = [&]() -> auto&
     {
-        if constexpr (Borrowed)
+        if constexpr (Building)
             return borrowed_states;
         else
             return *state_repository;
     }();
     auto& callback_storage = [&]() -> auto&
     {
-        if constexpr (Borrowed)
+        if constexpr (Building)
             return *callback_state;
         else
             return *state_repository;
     }();
     const auto next_storage = [&]() -> auto&
     {
-        if constexpr (Borrowed)
+        if constexpr (Building)
             return borrowed_states.emplace_back();
         else
             return *state_repository;
@@ -330,7 +330,8 @@ void expect_schema_queries_match_filtered_successors()
     const auto num_action_bindings = count_action_bindings(task);
     const auto states_before_streaming = state_repository->num_states();
     auto packed_nodes = tyr::planning::PackedNodeList<Kind> {};
-    auto streamed_states = urd::Store<urd::sequence<std::pair<urd::builder<tyr::planning::State<Kind>>, ygg::float_t>>> {};
+    auto streamed_states =
+        urd::Store<urd::sequence<std::pair<urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>, ygg::float_t>>> {};
     size_t streamed = 0;
     // The storage of the successors' builder: the callback's successors share one builder.
     const void* successor_storage = nullptr;
@@ -342,12 +343,12 @@ void expect_schema_queries_match_filtered_successors()
                                                     static_assert(std::same_as<std::remove_cvref_t<decltype(successor)>, tyr::planning::Node<Kind, S>>);
                                                     if (successor_storage)
                                                     {
-                                                        EXPECT_EQ(&successor.get_state().get_fact_storage(), successor_storage);
+                                                        EXPECT_EQ(&successor.get_state().get_numeric_storage().get_values(), successor_storage);
                                                     }
-                                                    successor_storage = &successor.get_state().get_fact_storage();
-                                                    if constexpr (Borrowed)
+                                                    successor_storage = &successor.get_state().get_numeric_storage().get_values();
+                                                    if constexpr (Building)
                                                     {
-                                                        auto copy = urd::builder<tyr::planning::State<Kind>>();
+                                                        auto copy = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>();
                                                         copy.assign(successor.get_state());
                                                         streamed_states.emplace_back(std::move(copy), successor.get_metric());
                                                     }
@@ -358,16 +359,16 @@ void expect_schema_queries_match_filtered_successors()
                                                 }));
     ASSERT_EQ(streamed, 4);
     EXPECT_EQ(count_action_bindings(task), num_action_bindings);
-    if constexpr (Borrowed)
+    if constexpr (Building)
     {
         EXPECT_EQ(state_repository->num_states(), states_before_streaming);
     }
     const auto expected_packed = source->get_packed_successor_nodes(initial_node, *state_repository, *axiom_evaluator);
-    if constexpr (Borrowed)
+    if constexpr (Building)
     {
         ASSERT_EQ(streamed_states.size(), expected_packed.size());
         for (size_t i = 0; i < streamed_states.size(); ++i)
-            EXPECT_TRUE(same_node(tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(streamed_states[i].first, *state_repository),
+            EXPECT_TRUE(same_node(tyr::planning::Node<Kind, tyr::planning::StateBuilderView<Kind>>(urd::resolve(streamed_states[i].first, *state_repository),
                                                                                                    streamed_states[i].second),
                                   expected_packed[i].unpack()));
     }
@@ -375,10 +376,10 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_EQ(packed_nodes, expected_packed);
     const auto& streamed_nodes = expected_packed;
     EXPECT_EQ(count_action_bindings(task), num_action_bindings);
-    if constexpr (!Borrowed)
+    if constexpr (!Building)
     {
         const auto recycled_builder = state_repository->get_state_builder();
-        EXPECT_EQ(&recycled_builder->fact_storage, successor_storage);
+        EXPECT_EQ(&recycled_builder->numeric_storage.values, successor_storage);
     }
     const auto all_successors = source->get_labeled_successor_nodes(registered_initial, *state_repository, *axiom_evaluator);
     const auto num_states = state_repository->num_states();
@@ -394,8 +395,10 @@ void expect_schema_queries_match_filtered_successors()
         EXPECT_EQ(source->generate_successor_state(initial_node, binding, *actual, actual_delta),
                   source->generate_successor_state(registered_initial, binding, *expected, expected_delta));
         EXPECT_EQ(actual_delta, expected_delta);
-        EXPECT_TRUE(std::ranges::equal(actual->get_fluent_fact_index_values(), expected->get_fluent_fact_index_values()));
-        EXPECT_TRUE(std::ranges::equal(actual->numeric_storage.fterm_values(), expected->numeric_storage.fterm_values()));
+        const auto actual_view = urd::resolve(*actual, *state_repository);
+        const auto expected_view = urd::resolve(*expected, *state_repository);
+        EXPECT_TRUE(std::ranges::equal(actual_view.get_fluent_fact_index_values(), expected_view.get_fluent_fact_index_values()));
+        EXPECT_TRUE(std::ranges::equal(actual_view.get_numeric_storage().fterm_values(), expected_view.get_numeric_storage().fterm_values()));
         EXPECT_EQ(state_repository->num_states(), num_states);
         EXPECT_TRUE(owned->index.is_none());
     }
@@ -490,7 +493,7 @@ void expect_schema_queries_match_filtered_successors()
                     ++inspected;
                     return true;
                 },
-                [&](tyr::planning::BorrowedActionRowView<Kind> binding)
+                [&](tyr::planning::ActionBindingView<Kind> binding)
                 {
                     const auto successor = generator->get_successor_node(initial_node, binding, next_storage(), *axiom_evaluator);
                     const auto retained = generator->materialize_action_binding(binding);
@@ -631,7 +634,7 @@ void expect_schema_queries_match_filtered_successors()
         auto saw_nullary = false;
         EXPECT_TRUE(generator->for_each_borrowed_applicable_action_binding(
             initial_node,
-            [&](tyr::planning::BorrowedActionRowView<Kind> binding)
+            [&](tyr::planning::ActionBindingView<Kind> binding)
             {
                 const auto action = binding.get_relation();
                 const auto values = binding.get_values();
@@ -692,12 +695,12 @@ void expect_schema_queries_match_filtered_successors()
             EXPECT_FALSE(borrowed_exhausted);
             EXPECT_EQ(calls, 1);
             EXPECT_EQ(count_action_bindings(fresh_task), 0);
-            auto scratch = urd::builder<tyr::planning::State<Kind>> {};
-            auto borrowed_state = urd::builder<tyr::planning::State<Kind>>();
+            auto scratch = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>> {};
+            auto borrowed_state = urd::builder<tyr::planning::State<Kind>, tyr::planning::StateRepository<Kind>>();
             borrowed_state.assign(node.get_state());
             const auto borrowed_node =
-                tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(borrowed_state, *fresh_repository), node.get_metric());
-            const auto discard = [&](tyr::planning::BorrowedActionRowView<Kind> binding)
+                tyr::planning::Node<Kind, tyr::planning::StateBuilderView<Kind>>(urd::resolve(borrowed_state, *fresh_repository), node.get_metric());
+            const auto discard = [&](tyr::planning::ActionBindingView<Kind> binding)
             {
                 EXPECT_EQ(fresh_generator->check_action_binding(borrowed_node, binding), tyr::planning::ActionBindingStatus::APPLICABLE);
                 EXPECT_EQ(count_action_bindings(fresh_task), 0);
@@ -709,7 +712,7 @@ void expect_schema_queries_match_filtered_successors()
                                       fresh_generator->for_each_borrowed_applicable_action_binding(borrowed_node, discard));
             EXPECT_EQ(count_action_bindings(fresh_task), 0);
             auto retained = std::optional<tyr::formalism::planning::ActionRowView> {};
-            const auto keep_one = [&](tyr::planning::BorrowedActionRowView<Kind> binding)
+            const auto keep_one = [&](tyr::planning::ActionBindingView<Kind> binding)
             {
                 retained = fresh_generator->materialize_action_binding(binding);
                 EXPECT_EQ(fresh_generator->materialize_action_binding(binding), *retained);
@@ -811,7 +814,7 @@ void expect_schema_queries_match_filtered_successors()
     }();
     const auto foreign_repository = std::make_shared<tyr::planning::StateRepository<Kind>>(foreign_same_kind);
     const auto foreign_node =
-        tyr::planning::Node<Kind, tyr::planning::BuilderStateView<Kind>>(urd::resolve(*owned, *foreign_repository), initial_node.get_metric());
+        tyr::planning::Node<Kind, tyr::planning::StateBuilderView<Kind>>(urd::resolve(*owned, *foreign_repository), initial_node.get_metric());
     EXPECT_THROW(source->get_applicable_action_bindings(foreign_node), std::invalid_argument);
     EXPECT_THROW(source->for_each_borrowed_applicable_action_binding(foreign_node, [](auto) { return true; }), std::invalid_argument);
     EXPECT_THROW(source->check_action_binding(foreign_node, all_bindings.front()), std::invalid_argument);

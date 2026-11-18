@@ -26,9 +26,10 @@ QueryRecord = (
     | db.QuerySemijoinData
     | db.QueryAntijoinData
 )
-Readable = formalism.RelationBuilder | formalism.RelationBuilderView | formalism.RelationSchema
+Readable = db.ScratchRelation | formalism.RelationSchemaBuilder | formalism.RelationSchema
 # Reads the tests' relation builders and evaluator results.
 RELATIONS = formalism.RelationRepository()
+SCRATCH = db.ScratchRelations()
 
 
 def columns(*numbers: int) -> list[formalism.ColumnIndex]:
@@ -37,8 +38,8 @@ def columns(*numbers: int) -> list[formalism.ColumnIndex]:
 
 def relation(
     labels: Sequence[int], values: Iterable[Sequence[object]] = (), types: Sequence[formalism.ColumnType] = ()
-) -> formalism.RelationBuilder:
-    result = formalism.RelationBuilder(
+) -> db.ScratchRelation:
+    result = db.ScratchRelation(
         [
             formalism.ColumnLayout(formalism.ColumnIndex(label), types[index] if types else formalism.ColumnType.UINT32)
             for index, label in enumerate(labels)
@@ -73,25 +74,25 @@ def inputs_of(
     return [query(repo, db.QueryInputData(slot, value.columns())) for slot, value in zip(slots, relations, strict=True)]
 
 
-def rows(value: formalism.RelationBuilderView | formalism.RelationSchema) -> set[tuple[object, ...]]:
+def rows(value: formalism.RelationSchemaBuilder | formalism.RelationSchema) -> set[tuple[object, ...]]:
     return set(tuples(value))
 
 
-def borrow(relations: Iterable[formalism.RelationBuilder]) -> list[formalism.RelationBuilderView]:
-    return [RELATIONS.view(value) for value in relations]
+def borrow(relations: Iterable[db.ScratchRelation]) -> list[formalism.RelationSchemaBuilder]:
+    return [value.view() for value in relations]
 
 
 def change(
-    added: formalism.RelationBuilder, removed: formalism.RelationBuilder
-) -> tuple[formalism.RelationBuilderView, formalism.RelationBuilderView]:
-    return RELATIONS.view(added), RELATIONS.view(removed)
+    added: db.ScratchRelation, removed: db.ScratchRelation
+) -> tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]:
+    return added.view(), removed.view()
 
 
 def changes(
     schemas: Sequence[Sequence[int]],
     additions: Sequence[Iterable[Sequence[object]]],
     removals: Sequence[Iterable[Sequence[object]]],
-) -> list[tuple[formalism.RelationBuilderView, formalism.RelationBuilderView]]:
+) -> list[tuple[formalism.RelationSchemaBuilder, formalism.RelationSchemaBuilder]]:
     return [change(relation(s, a), relation(s, r)) for s, a, r in zip(schemas, additions, removals, strict=True)]
 
 
@@ -120,7 +121,7 @@ def test_optimizer_preserves_typed_shared_roots_and_output_order(measured: bool)
     assert hash(query(repo, record(db.QueryJoinData, left_operand=a, right_operand=b))) == hash(shared)
     original = db.compile_plan(roots)
     optimized = db.optimize(roots, db.collect_statistics(borrow([left, right])) if measured else db.Statistics())
-    baseline, actual = db.QueryEvaluator(RELATIONS, original), db.QueryEvaluator(RELATIONS, optimized)
+    baseline, actual = db.QueryEvaluator(SCRATCH, original), db.QueryEvaluator(SCRATCH, optimized)
     baseline.evaluate(borrow([left, right]))
     actual.evaluate(borrow([left, right]))
     assert optimized.root_count == 3
@@ -192,7 +193,7 @@ def test_semijoin_and_antijoin_filter_their_left_operand() -> None:
     assert isinstance(antijoin, db.QueryAntijoin)
     assert antijoin.get_right_operand() == reached_query
     roots = [repo.insert(db.QueryData(semijoin.index()))[0], repo.insert(db.QueryData(antijoin.index()))[0]]
-    evaluation = db.QueryEvaluator(RELATIONS, db.compile_plan(roots))
+    evaluation = db.QueryEvaluator(SCRATCH, db.compile_plan(roots))
     evaluation.evaluate(borrow([edges, reached]))
     assert rows(evaluation.get_result(0)) == {(1, 7), (3, 9)}
     assert rows(evaluation.get_result(1)) == {(2, 8)}
@@ -206,7 +207,7 @@ def test_difference_projection_barrier_and_nullary_support() -> None:
     difference = query(repo, record(db.QueryDifferenceData, left_operand=source_query, right_operand=removed_query))
     surviving = query(repo, record(db.QueryProjectData, operand=difference, labels=columns(0)))
     roots = [surviving, query(repo, record(db.QueryProjectData, operand=surviving, labels=columns()))]
-    evaluation = db.QueryEvaluator(RELATIONS, db.optimize(roots, db.collect_statistics(borrow([source, removed]))))
+    evaluation = db.QueryEvaluator(SCRATCH, db.optimize(roots, db.collect_statistics(borrow([source, removed]))))
     evaluation.evaluate(borrow([source, removed]))
     assert rows(evaluation.get_result()) == {(1,)}
     assert rows(evaluation.get_result(1)) == {()}
@@ -225,8 +226,8 @@ def test_incremental_batch_changes_projection_union_and_difference() -> None:
     combined = query(repo, record(db.QueryUnionData, left_operand=visible, right_operand=empty))
     roots = [combined, query(repo, record(db.QueryProjectData, operand=visible, labels=columns()))]
     full, maintained = (
-        db.QueryEvaluator(RELATIONS, db.compile_plan(roots)),
-        db.IncrementalQueryEvaluator(RELATIONS, db.optimize(roots, db.collect_statistics(borrow(inputs)))),
+        db.QueryEvaluator(SCRATCH, db.compile_plan(roots)),
+        db.IncrementalQueryEvaluator(SCRATCH, db.optimize(roots, db.collect_statistics(borrow(inputs)))),
     )
     full.evaluate(borrow(inputs))
     maintained.initialize(borrow(inputs))
@@ -271,10 +272,10 @@ def test_triangle_and_self_join() -> None:
         ),
     )
     roots = [triangle, query(repo, record(db.QueryJoinData, left_operand=a, right_operand=a))]
-    evaluator = db.QueryEvaluator(RELATIONS, db.optimize(roots, db.collect_statistics(borrow(inputs))))
+    evaluator = db.QueryEvaluator(SCRATCH, db.optimize(roots, db.collect_statistics(borrow(inputs))))
     evaluator.evaluate(borrow(inputs))
     assert rows(evaluator.get_result()) == {(1, 2, 3), (2, 3, 1), (3, 1, 2)}
-    assert rows(evaluator.get_result(1)) == rows(RELATIONS.view(inputs[0]))
+    assert rows(evaluator.get_result(1)) == rows(inputs[0].view())
 
 
 def test_borrowed_and_interned_inputs_statistics_and_owners() -> None:
@@ -283,22 +284,22 @@ def test_borrowed_and_interned_inputs_statistics_and_owners() -> None:
     interned = intern(store, original)[0]
     repo = db.QueryRepository()
     root = inputs_of(repo, [original])[0]
-    evaluator = db.QueryEvaluator(RELATIONS, db.compile_plan([root]))
+    evaluator = db.QueryEvaluator(SCRATCH, db.compile_plan([root]))
     evaluator.evaluate([interned])
     borrowed = evaluator.get_result()
-    independent = db.assign(formalism.RelationBuilder(), borrowed)
+    independent = db.assign(db.ScratchRelation(), borrowed)
     statistics = db.collect_statistics([borrowed])
     assert statistics.inputs[0].rows == 2
     assert statistics.inputs[0].distinct == {formalism.ColumnIndex(0): 2}
     assert db.collect_statistics([interned]).inputs[0].rows == 2
-    second = db.QueryEvaluator(RELATIONS, db.compile_plan([root]))
+    second = db.QueryEvaluator(SCRATCH, db.compile_plan([root]))
     second.evaluate([borrowed])
     row = second.get_result().row(0)
     assert not hasattr(second.get_result(), "clear")
     del root, repo, evaluator, second, borrowed, original, store, interned
     gc.collect()
     assert values(row) in {(1,), (2,)}
-    assert rows(RELATIONS.view(independent)) == {(1,), (2,)}
+    assert rows(independent.view()) == {(1,), (2,)}
 
 
 def test_query_handle_retains_repository_and_compiled_plan_is_independent() -> None:
@@ -314,7 +315,7 @@ def test_query_handle_retains_repository_and_compiled_plan_is_independent() -> N
     assert labels(handle.get_variant().columns()) == columns(4)
     del handle
     gc.collect()
-    evaluator = db.QueryEvaluator(RELATIONS, plan)
+    evaluator = db.QueryEvaluator(SCRATCH, plan)
     del plan
     evaluator.evaluate(borrow([source]))
     assert rows(evaluator.get_result()) == {(9,)}
@@ -331,16 +332,16 @@ def test_distance_boundary_and_sparse_input_slots(incremental: bool) -> None:
         repo, record(db.QueryDistanceData, sources=s, edges=e, targets=t, distance_column=formalism.ColumnIndex(99))
     )
     optimized = db.optimize([distance])
-    unused = formalism.RelationBuilder()
+    unused = db.ScratchRelation()
     if not incremental:
-        evaluator = db.QueryEvaluator(RELATIONS, optimized)
+        evaluator = db.QueryEvaluator(SCRATCH, optimized)
         evaluator.evaluate(borrow([unused, source, unused, edges, target]))
         assert rows(evaluator.get_result()) == {(0, 2, 2)}
     else:
-        maintained = db.IncrementalQueryEvaluator(RELATIONS, optimized)
+        maintained = db.IncrementalQueryEvaluator(SCRATCH, optimized)
         maintained.initialize(borrow([unused, source, unused, edges, target]))
         assert rows(maintained.get_result()) == {(0, 2, 2)}
-        no_change = change(formalism.RelationBuilder(), formalism.RelationBuilder())
+        no_change = change(db.ScratchRelation(), db.ScratchRelation())
         maintained.update(
             [
                 no_change,
@@ -364,12 +365,12 @@ def test_statistics_and_input_validation() -> None:
     assert db.optimize([source], known).root_count == 1
     with pytest.raises(ValueError, match="Optimizer: invalid row count"):
         db.optimize([source], db.Statistics(inputs={0: db.RelationStatistics(-1, {formalism.ColumnIndex(0): 1})}))
-    evaluator = db.QueryEvaluator(RELATIONS, db.compile_plan([source]))
+    evaluator = db.QueryEvaluator(SCRATCH, db.compile_plan([source]))
     with pytest.raises(TypeError):  # deliberate misuse, rejected by the type hints too
         evaluator.evaluate(cast("Any", [object()]))
     with pytest.raises(IndexError):
         repo.insert(record(db.QueryProjectData, operand=source, labels=columns(5)))
-    incremental = db.IncrementalQueryEvaluator(RELATIONS, db.compile_plan([source]))
+    incremental = db.IncrementalQueryEvaluator(SCRATCH, db.compile_plan([source]))
     incremental.initialize(borrow([value]))
     with pytest.raises(ValueError, match="Incremental query: missing input delta"):
         incremental.update([])
@@ -387,7 +388,7 @@ def test_planning_is_deterministic(measured: bool) -> None:
     first = db.optimize([root], known)
     second = db.optimize([root], known)
     assert first.explain() == second.explain()
-    evaluator = db.QueryEvaluator(RELATIONS, first)
+    evaluator = db.QueryEvaluator(SCRATCH, first)
     evaluator.evaluate(borrow(inputs))
     assert rows(evaluator.get_result()) == {(1, 1, 1, 1, 1), (2, 2, 2, 2, 2)}
 
@@ -417,7 +418,7 @@ def test_selection_constants_follow_column_types_and_equality(
             constant_type=column_type,
         ),
     )
-    evaluator = db.QueryEvaluator(RELATIONS, db.optimize([selected]))
+    evaluator = db.QueryEvaluator(SCRATCH, db.optimize([selected]))
     evaluator.evaluate(borrow([source]))
     assert rows(evaluator.get_result()) == {(constant, constant)}
     with pytest.raises(TypeError):  # deliberate misuse, rejected by the type hints too

@@ -13,6 +13,7 @@
 #include <ranges>
 #include <span>
 #include <urd/elements/hash.hpp>
+#include <urd/repr/containers/schema_rows.hpp>
 #include <urd/memory.hpp>
 #include <urd/repr/maps/postings.hpp>
 #include <urd/repr/maps/std_map.hpp>
@@ -23,10 +24,13 @@
 
 namespace tyr::datalog::database::detail
 {
-/// The value of a row's field: a stored row's, or a row of values' (a query's frame of variables).
-inline ygg::Value field_value(const ygg::RowPool::row_type& row, size_t position) noexcept { return row.get(position); }
+/// The value of a row's field: a stored row's (read without decoding the others), or a row of values' (a built row's, a
+/// query's frame of variables).
+inline ygg::Value field_value(const urd::packed_row<false>& row, size_t position) noexcept { return row.get(position); }
 
-inline ygg::Value field_value(std::span<const ygg::Value> values, size_t position) noexcept { return values[position]; }
+template<ygg::RowValues R>
+ygg::Value field_value(const R& values, size_t position) noexcept
+{ return std::ranges::begin(values)[static_cast<std::ptrdiff_t>(position)]; }
 
 /// Hash the key fields' canonical values in logical key order, without materializing a key: as urd::hash_range of them.
 template<typename R>
@@ -44,13 +48,13 @@ bool join_keys_equal(const L& left, std::span<const ColumnSlice> left_keys, cons
     return true;
 }
 
-template<RelationViewConcept V>
+template<ygg::RelationViewConcept<ygg::Schema> V>
 void build_join_index(const V& build, std::span<const ColumnSlice> keys, urd::Store<urd::map<ygg::hash_t, size_t>, urd::multi, urd::retains>& index)
 {
     index.clear();
     index.reserve(build.get_rows().size());
     for (size_t i = 0; i < build.get_rows().size(); ++i)
-        index.insert({ join_key_hash(build.row(i).get_values(), keys), i });
+        index.insert({ urd::visit_view(build.row(i), [&](const auto& row) { return join_key_hash(row.get_values(), keys); }), i });
 }
 }  // namespace tyr::datalog::database::detail
 

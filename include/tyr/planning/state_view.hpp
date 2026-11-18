@@ -49,6 +49,7 @@
 #include "tyr/planning/ground/task.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_builder.hpp"
+#include "tyr/planning/state_storage_view.hpp"
 #include "tyr/planning/state_view_concepts.hpp"
 
 #include <concepts>
@@ -60,12 +61,12 @@
 #include <utility>
 #include <yggdrasil/formalism/row_view.hpp>
 
-/// A state, registered (StateView: its data<State>, shared from its repository's pool) or being built (BuilderStateView:
-/// its builder; urd's default mixin of a builder is this one): its storages and what it reads from them through its
-/// task. A registered state's view also has its index and packed form (view_mixin<data<State>> below). Its context, the
-/// state repository of its task, must outlive the view and its ranges.
+/// A state's builder, registered (StateView: shared from its repository's pool, its index set) or being built
+/// (StateBuilderView: borrowed, no index): its storages, each a view through the formalism repository, what it reads from
+/// them through its task, and its index and packed form. Its context, the state repository of its task, must outlive the
+/// view and its ranges.
 template<::tyr::TaskKind Kind, typename V>
-struct urd::view_mixin<::tyr::planning::State<Kind>, V>
+struct urd::view_mixin<urd::builder<::tyr::planning::State<Kind>, ::tyr::planning::StateRepository<Kind>>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -123,7 +124,7 @@ public:
         if constexpr (std::same_as<F, ::tyr::formalism::StaticTag>)
             return self().context().get_task()->get_static_state().get_atoms();
         else if constexpr (std::same_as<F, ::tyr::formalism::FluentTag>)
-            return ::tyr::planning::fluent_atoms(get_fact_storage(), *get_formalism_repository());
+            return get_fact_storage().fluent_atoms();
         else if constexpr (std::same_as<F, ::tyr::formalism::DerivedTag>)
             return get_atom_storage().atoms();
         else
@@ -171,10 +172,30 @@ public:
                                        { return std::make_pair(urd::resolve(pair.first, *repository), pair.second); });
     }
 
+    /// Its packed form, a registered state's only (StateView): its index, resolved through its repository
+    /// (StateRepository::view). A state being built has none.
+    [[nodiscard]] ::tyr::planning::PackedStateView<Kind> pack() const noexcept
+        requires std::same_as<V, ::tyr::planning::StateView<Kind>>
+    { return self().template member<&urd::record_of<V>::index>(); }
+
+    /// Its index, a registered state's only (StateView).
+    [[nodiscard]] urd::index<::tyr::planning::State<Kind>> index() const noexcept
+        requires std::same_as<V, ::tyr::planning::StateView<Kind>>
+    { return pack().index(); }
+
+    /// pack() and index(), where it has them (a registered state).
+    static constexpr auto identity_functions() noexcept
+    {
+        if constexpr (std::same_as<V, ::tyr::planning::StateView<Kind>>)
+            return urd::Functions<urd::function<"pack", &view_mixin::pack>, urd::function<"index", &view_mixin::index>> {};
+        else
+            return urd::Functions<> {};
+    }
+
     static constexpr auto functions() noexcept
     {
         using Self = const view_mixin&;
-        return urd::Functions<
+        return identity_functions() + urd::Functions<
             urd::function<"get_formalism_repository", &view_mixin::get_formalism_repository>,
             urd::function<"test",
                           static_cast<bool (view_mixin::*)(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::StaticTag>>) const>(
@@ -258,30 +279,10 @@ public:
     }
 };
 
-/// A registered state (StateView): what every state reads, and its index and packed form in the repository that
-/// registered it. A state being built has neither.
+/// A registered state, packed (PackedStateView: the view of its record's index): its storages packed, and the state
+/// unpacked.
 template<::tyr::TaskKind Kind, typename V>
-struct urd::view_mixin<urd::data<::tyr::planning::State<Kind>>, V> : urd::view_mixin<::tyr::planning::State<Kind>, V>
-{
-private:
-    [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
-
-public:
-    /// Its packed form: its index, resolved through its repository (StateRepository::view).
-    [[nodiscard]] ::tyr::planning::PackedStateView<Kind> pack() const noexcept { return self().template member<&urd::record_of<V>::index>(); }
-
-    [[nodiscard]] urd::index<::tyr::planning::State<Kind>> index() const noexcept { return self().context().state_index(pack().index()); }
-
-    static constexpr auto functions() noexcept
-    {
-        return urd::view_mixin<::tyr::planning::State<Kind>, V>::functions()
-               + urd::Functions<urd::function<"pack", &view_mixin::pack>, urd::function<"index", &view_mixin::index>> {};
-    }
-};
-
-/// A registered state, packed (PackedStateView): its packed storages, its repository, and the state unpacked.
-template<::tyr::TaskKind Kind, typename V>
-struct urd::view_mixin<::tyr::planning::PackedState<Kind>, V>
+struct urd::view_mixin<::tyr::planning::State<Kind>, V>
 {
 private:
     [[nodiscard]] const V& self() const noexcept { return static_cast<const V&>(*this); }
@@ -293,8 +294,7 @@ public:
 
     [[nodiscard]] decltype(auto) get_numeric_storage() const noexcept { return self().template member<&urd::record_of<V>::numeric_storage>(); }
 
-    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const
-    { return self().context().get_registered_state(self().context().state_index(self().index())); }
+    [[nodiscard]] ::tyr::planning::StateView<Kind> unpack() const { return self().context().get_registered_state(self().index()); }
 
     static constexpr auto functions() noexcept { return urd::Functions<urd::function<"unpack", &view_mixin::unpack>> {}; }
 };

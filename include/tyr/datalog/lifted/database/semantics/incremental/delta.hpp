@@ -27,42 +27,40 @@ struct NodeRules;
 
 /// Actual set changes with one ordered schema. Added and removed rows are
 /// disjoint. The caller guarantees additions were absent and removals present.
-/// Exchanging the two inputs to update() reverses the change. Its builders are read through the layer, which must
-/// outlive it.
+/// Exchanging the two inputs to update() reverses the change. Its relations are drawn from scratch relations, which
+/// must outlive it.
 struct Delta
 {
-    const ygg::FreeRelationRepository* layer;
-    urd::builder<ygg::Relation<ygg::Schema>> added;
-    urd::builder<ygg::Relation<ygg::Schema>> removed;
+    urd::handle<ygg::FreeScratchRelation> added;
+    urd::handle<ygg::FreeScratchRelation> removed;
 
-    Delta(const ygg::FreeRelationRepository& layer_, std::span<const ygg::ColumnLayout> columns) : layer(&layer_), added(columns), removed(columns) {}
+    Delta(ygg::FreeScratchRelations& scratch, std::span<const ygg::ColumnLayout> columns) : added(scratch.draw(columns)), removed(scratch.draw(columns)) {}
 
-    void clear() noexcept
+    void clear()
     {
-        added.clear();
-        removed.clear();
+        added->clear();
+        removed->clear();
     }
 
     /// The (added, removed) change, as views.
-    [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change() const noexcept
-    { return { layer->view(added), layer->view(removed) }; }
+    [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change() const { return { added->view(), removed->view() }; }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return added.memory_usage() + removed.memory_usage(); }
+    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(added->relation) + urd::memory_usage(removed->relation); }
 };
 
 /// An actual set change of one input: disjoint (added, removed) relations, read with std::get.
 template<typename C>
 concept RelationChange = requires(const C& change) {
-    { std::get<0>(change) } -> RelationViewConcept;
-    { std::get<1>(change) } -> RelationViewConcept;
+    { std::get<0>(change) } -> ygg::RelationViewConcept<ygg::Schema>;
+    { std::get<1>(change) } -> ygg::RelationViewConcept<ygg::Schema>;
 };
 
 /// The exact changes of a query's inputs by slot: f(slot).added and f(slot).removed are relation views, the rows added to
 /// and removed from input slot `slot`.
 template<typename F>
 concept SlotChanges = std::invocable<const F&, size_t> && requires(const F& change, size_t slot) {
-    { change(slot).added } -> RelationViewConcept;
-    { change(slot).removed } -> RelationViewConcept;
+    { change(slot).added } -> ygg::RelationViewConcept<ygg::Schema>;
+    { change(slot).removed } -> ygg::RelationViewConcept<ygg::Schema>;
 };
 
 /// Sized random-access changes, one per input.
@@ -72,13 +70,13 @@ concept RelationDeltaRange =
 
 namespace detail
 {
-template<RelationViewConcept A, RelationViewConcept R>
+template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R>
 void require_delta(const A& added, const R& removed, [[maybe_unused]] std::span<const ygg::ColumnLayout> columns)
 {
     assert(std::ranges::equal(added.columns(), columns));
     assert(std::ranges::equal(removed.columns(), columns));
-    for (size_t i = 0; i < added.get_rows().size(); ++i)
-        if (removed.contains(added.row(i)))
+    for (const auto& held : added.get_rows())
+        if (ygg::with_values(held, [&](const auto& values) { return removed.contains(values); }))
             throw std::invalid_argument("Incremental evaluation: added and removed rows overlap.");
 }
 
@@ -86,24 +84,25 @@ void require_delta(const A& added, const R& removed, [[maybe_unused]] std::span<
 void require_initialized(bool initialized);
 
 /// Inputs are borrowed during a call and must not be the evaluator's own result or delta.
-template<RelationViewConcept V>
-void require_unaliased(const V& input, const urd::builder<ygg::Relation<ygg::Schema>>& result, const Delta& delta)
+template<ygg::RelationViewConcept<ygg::Schema> V>
+void require_unaliased(const V& input, const ygg::FreeScratchRelation& result, const Delta& delta)
 {
-    if (reads_builder(input, result) || reads_builder(input, delta.added) || reads_builder(input, delta.removed))
+    if (reads(input, result) || reads(input, *delta.added) || reads(input, *delta.removed))
         throw std::invalid_argument("Incremental evaluation: input aliases the evaluator's result or delta.");
 }
 
 /// A change of an input with the given columns is disjoint and borrows no evaluator storage.
 template<RelationChange C>
-void require_change(const C& change, std::span<const ygg::ColumnLayout> columns, const urd::builder<ygg::Relation<ygg::Schema>>& result, const Delta& delta)
+void require_change(const C& change, std::span<const ygg::ColumnLayout> columns, const ygg::FreeScratchRelation& result, const Delta& delta)
 {
-    require_delta(std::get<0>(change), std::get<1>(change), columns);
-    require_unaliased(std::get<0>(change), result, delta);
-    require_unaliased(std::get<1>(change), result, delta);
+    const auto& [added, removed] = change;
+    require_delta(added, removed, columns);
+    require_unaliased(added, result, delta);
+    require_unaliased(removed, result, delta);
 }
 
 /// Applies an exact delta of the result: removed rows are present, added rows absent.
-void apply_delta(const Delta& delta, urd::builder<ygg::Relation<ygg::Schema>>& result);
+void apply_delta(const Delta& delta, ygg::FreeScratchRelation& result);
 }  // namespace detail
 
 }  // namespace tyr::datalog::database::incremental

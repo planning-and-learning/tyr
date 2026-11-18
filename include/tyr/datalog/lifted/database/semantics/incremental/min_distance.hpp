@@ -57,18 +57,18 @@ class MinDistance
 {
 public:
     /// Edges given by a query over inputs. `edges` has the plan's edge columns; `static_slots` marks its inputs that
-    /// never change after the first bind(). Its builders are read through `layer`, which must outlive it.
-    MinDistance(const ygg::FreeRelationRepository& layer,
+    /// never change after the first bind(). Its relations are drawn from `scratch`, which must outlive it.
+    MinDistance(ygg::FreeScratchRelations& scratch,
                 QueryView<> edges,
                 const DistancePlan& plan,
                 const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
-        MinDistance(incremental::bound::QueryEvaluator(layer, database::detail::checked_edges(edges, plan), static_slots), plan)
+        MinDistance(incremental::bound::QueryEvaluator(scratch, database::detail::checked_edges(edges, plan), static_slots), plan)
     {
     }
 
     /// Edges given as a relation with the plan's edge columns, input 0 of bind().
-    MinDistance(const ygg::FreeRelationRepository& layer, const DistancePlan& plan, bool static_edges = false) :
-        MinDistance(database::detail::relation_edges<incremental::bound::QueryEvaluator>(layer, plan, static_edges), plan)
+    MinDistance(ygg::FreeScratchRelations& scratch, const DistancePlan& plan, bool static_edges = false) :
+        MinDistance(database::detail::relation_edges<incremental::bound::QueryEvaluator>(scratch, plan, static_edges), plan)
     {
     }
 
@@ -125,7 +125,7 @@ public:
 
     /// Sets the targets; different targets discard the stored search. Callers that know the targets are unchanged
     /// need not call it again.
-    template<RelationViewConcept T>
+    template<ygg::RelationViewConcept<ygg::Schema> T>
     void set_targets(const T& targets)
     {
         assert(std::ranges::equal(targets.columns(), m_plan.target_columns()));
@@ -138,7 +138,7 @@ public:
 
     /// The minimum distance over the edges of the bound inputs to the targets set last. H must stay the same function
     /// while the targets are unchanged.
-    template<RelationViewConcept S>
+    template<ygg::RelationViewConcept<ygg::Schema> S>
     ygg::uint_t min_distance(const S& sources, const H& heuristic)
     {
         if (!m_edges.evaluator().bound() || !m_targets_set)
@@ -164,7 +164,7 @@ public:
     }
 
     /// set_targets(targets), then min_distance(sources, heuristic).
-    template<RelationViewConcept S, RelationViewConcept T>
+    template<ygg::RelationViewConcept<ygg::Schema> S, ygg::RelationViewConcept<ygg::Schema> T>
     ygg::uint_t min_distance(const S& sources, const T& targets, const H& heuristic = {})
     {
         set_targets(targets);
@@ -233,7 +233,7 @@ private:
             m_added.add(from, to);
     }
 
-    template<RelationViewConcept A, RelationViewConcept R>
+    template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R>
     void seed(size_t slot, const A& added, const R& removed)
     {
         if (!m_reset_pending && !m_edges.evaluator().seed(slot, added, removed, [&](std::span<const ygg::Value> edge) { record_added(edge); }))

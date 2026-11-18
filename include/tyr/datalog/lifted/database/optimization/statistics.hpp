@@ -35,7 +35,7 @@ struct Statistics
 };
 
 /// Row and per-column distinct counts of one relation.
-template<RelationViewConcept Relation>
+template<ygg::RelationViewConcept<ygg::Schema> Relation>
 RelationStatistics measure_relation(const Relation& relation)
 {
     RelationStatistics stats;
@@ -45,8 +45,8 @@ RelationStatistics measure_relation(const Relation& relation)
     for (size_t c = 0; c < columns.size(); ++c)
     {
         seen.clear();
-        for (size_t i = 0; i < relation.get_rows().size(); ++i)
-            seen.insert(relation.row(i).value(c));
+        for (const auto& held : relation.get_rows())
+            ygg::with_values(held, [&](const auto& values) { seen.insert(std::ranges::begin(values)[static_cast<std::ptrdiff_t>(c)]); });
         stats.distinct[columns[c].label] = static_cast<double>(seen.size());
     }
     return stats;

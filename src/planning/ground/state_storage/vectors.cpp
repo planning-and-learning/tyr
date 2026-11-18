@@ -18,6 +18,7 @@
 #include "tyr/planning/ground/state_storage/vectors.hpp"
 
 #include "../../tree_bitset.hpp"
+#include "tyr/planning/state_storage_view.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -44,7 +45,7 @@ void flips_to_writes(const ArraySet& set,
 }
 
 template<typename... Tags, bool ThreadSafe>
-FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::FactStorageBackend(Context& ctx) :
+StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::StateComponentRepository(Context& ctx) :
     m_array_set(&ctx.fluent_array_set),
     m_layout(&ctx.layout),
     m_buffer(ctx.layout.fluent_num_blocks)
@@ -52,7 +53,7 @@ FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::FactStorageBackend(
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
+auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
 {
     const auto& infos = m_layout->fluent_infos;
 
@@ -64,7 +65,7 @@ auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked&,
+auto StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked&,
                                                                          const Packed& parent,
                                                                          std::span<const StateDelta::FluentChange> changes) -> Packed
 {
@@ -82,7 +83,7 @@ auto FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 }
 
 template<typename... Tags, bool ThreadSafe>
-void FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<FactStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto& infos = m_layout->fluent_infos;
     const auto view = m_array_set->at(packed);
@@ -95,14 +96,14 @@ void FactStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const P
 }
 
 template<typename... Tags, bool ThreadSafe>
-AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::AtomStorageBackend(Context& ctx) :
+StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::StateComponentRepository(Context& ctx) :
     m_array_set(&ctx.derived_array_set),
     m_buffer(urd::bits::ceil_div(ctx.layout.derived_num_bits, static_cast<ygg::uint_t>(urd::bits::bits_per_block_v<ygg::uint_t>)))
 {
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
+auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
 {
     const auto words = unpacked.indices.significant_words();
     for (std::size_t i = 0; i < m_buffer.size(); ++i)
@@ -111,11 +112,11 @@ auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 }
 
 template<typename... Tags, bool ThreadSafe>
-auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
+auto StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<GroundTag>& parent_atoms)
     -> Packed
 {
     // Derived atoms lie within the stored row, so the blocks that differ are written there.
-    const auto from = parent_unpacked.indices.significant_words();
+    const auto from = parent_atoms.get_indices().significant_words();
     const auto to = unpacked.indices.significant_words();
     m_writes.clear();
     for (std::size_t i = 0; i < m_buffer.size(); ++i)
@@ -126,7 +127,7 @@ auto AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::insert(const U
 }
 
 template<typename... Tags, bool ThreadSafe>
-void AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<AtomStorage<GroundTag>, Vectors<Tags...>, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     const auto view = m_array_set->at(packed);
     const auto blocks = std::span(view.data(), view.size());
@@ -138,13 +139,13 @@ void AtomStorageBackend<GroundTag, Vectors<Tags...>, ThreadSafe>::unpack(const P
                                   });
 }
 
-template class FactStorageBackend<GroundTag, TreeVector, false>;
-template class FactStorageBackend<GroundTag, TreeVector, true>;
-template class FactStorageBackend<GroundTag, Hashset, false>;
-template class FactStorageBackend<GroundTag, Hashset, true>;
-template class AtomStorageBackend<GroundTag, TreeVector, false>;
-template class AtomStorageBackend<GroundTag, TreeVector, true>;
-template class AtomStorageBackend<GroundTag, Hashset, false>;
-template class AtomStorageBackend<GroundTag, Hashset, true>;
+template class StateComponentRepository<FactStorage<GroundTag>, TreeVector, false>;
+template class StateComponentRepository<FactStorage<GroundTag>, TreeVector, true>;
+template class StateComponentRepository<FactStorage<GroundTag>, Hashset, false>;
+template class StateComponentRepository<FactStorage<GroundTag>, Hashset, true>;
+template class StateComponentRepository<AtomStorage<GroundTag>, TreeVector, false>;
+template class StateComponentRepository<AtomStorage<GroundTag>, TreeVector, true>;
+template class StateComponentRepository<AtomStorage<GroundTag>, Hashset, false>;
+template class StateComponentRepository<AtomStorage<GroundTag>, Hashset, true>;
 
 }

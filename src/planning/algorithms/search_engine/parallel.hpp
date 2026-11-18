@@ -62,7 +62,7 @@ namespace tyr::planning::detail
 template<TaskKind Kind, typename HashKind>
 class HashDistributedStatePolicy
 {
-    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>>>;
+    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>>;
 
 public:
     static constexpr bool uses_owner_repositories = true;
@@ -131,7 +131,7 @@ private:
 template<TaskKind Kind>
 class SharedStatePolicy
 {
-    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>>>;
+    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>>;
 
 public:
     static constexpr bool uses_owner_repositories = false;
@@ -363,7 +363,7 @@ template<TaskKind Kind, SearchPolicyConcept<Kind> SearchPolicy, StateRoutingPoli
     requires std::same_as<SearchTagT<SearchPolicy>, ParallelSearch>
 class ParallelExecutionPolicy
 {
-    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>>>;
+    using BuilderPtr = std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>>;
     using CoordinationPolicy = ParallelLayerCoordinationPolicy<SearchPolicy>;
     using Metadata = SuccessorMetadataT<SearchPolicy>;
 

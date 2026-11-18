@@ -23,19 +23,14 @@
 namespace
 {
 using Column = urd::index<ygg::Column>;
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
 using PlanId = urd::index<tyr::datalog::database::Query<>>;
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
-using Delta = tyr::datalog::database::incremental::Delta;
+using Delta = tyr::datalog::tests::Change;
 using Change = std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView>;
-
-/// The layer the tests read their builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
 const Column w(3), x(0), y(1), z(2);
 
@@ -43,11 +38,11 @@ auto rows(const auto& relation)
 {
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>> result;
     result.reserve(relation.size());
-    for (const auto row : relation.get_rows())
+    for (const auto& row : relation.get_rows())
     {
         auto& values = result.emplace_back();
-        for (size_t c = 0; c < row.get_values().size(); ++c)
-            values.push_back(row.value(c));
+        for (const auto value : values_of(row))
+            values.push_back(value);
     }
     std::ranges::sort(result);
     return result;
@@ -175,10 +170,10 @@ TEST(DatabaseOptimization, YannakakisBoundsIntermediatesByInputTimesOutput)
     nodes.reserve(plan.node_count());
     for (size_t position = 0; position < plan.node_count(); ++position)
         nodes.push_back(plan[PlanId(ygg::to_uint_t(position))]);
-    tyr::datalog::database::QueryEvaluator evaluator(layer(),
+    tyr::datalog::database::QueryEvaluator evaluator(scratch(),
                                                      tyr::datalog::database::compile_plan(std::span<const tyr::datalog::database::QueryView<>>(nodes)));
     evaluator.evaluate(refs);
-    tyr::datalog::database::QueryEvaluator reference(layer(), tyr::datalog::database::compile_plan({ root })), optimized(layer(), plan);
+    tyr::datalog::database::QueryEvaluator reference(scratch(), tyr::datalog::database::compile_plan({ root })), optimized(scratch(), plan);
     reference.evaluate(refs);
     optimized.evaluate(refs);
     EXPECT_EQ(rows(optimized.get_result()), rows(reference.get_result()));
@@ -224,7 +219,7 @@ TEST(DatabaseOptimization, BoundRootsKeepTheirJoinStructure)
     }
     const auto successors = [&](tyr::datalog::database::QueryView<> query)
     {
-        auto evaluator = tyr::datalog::database::bound::QueryEvaluator(layer(), query);
+        auto evaluator = tyr::datalog::database::bound::QueryEvaluator(scratch(), query);
         for (size_t slot = 0; slot < inputs.size(); ++slot)
             evaluator.bind_slot(slot, borrow(inputs[slot]));
         const auto binding = evaluator.prepare({ 0 });
@@ -326,7 +321,7 @@ TEST(DatabaseOptimization, NullaryGenericJoinHasOneRow)
     for (const auto& plan :
          { tyr::datalog::database::optimize(root), tyr::datalog::database::optimize(root, tyr::datalog::database::Statistics { 4, {}, {} }) })
     {
-        tyr::datalog::database::QueryEvaluator evaluator(layer(), plan);
+        tyr::datalog::database::QueryEvaluator evaluator(scratch(), plan);
         evaluator.evaluate(std::array<ygg::FreeRelationBuilderView, 0> {});
         EXPECT_EQ(evaluator.get_result().size(), 1);
     }
@@ -362,7 +357,7 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
     const auto statistics = tyr::datalog::database::collect_statistics(refs);
     const auto unmeasured = tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots));
     const auto measured = tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots), statistics);
-    tyr::datalog::database::QueryEvaluator reference(layer(), tyr::datalog::database::compile_plan(roots));
+    tyr::datalog::database::QueryEvaluator reference(scratch(), tyr::datalog::database::compile_plan(roots));
     reference.evaluate(refs);
     EXPECT_EQ(reference.get_result(0).size(), 1);
     EXPECT_EQ(reference.get_result(1).size(), 1);
@@ -370,8 +365,8 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
     for (const auto* chosen : { &unmeasured, &measured })
     {
         EXPECT_EQ(chosen->roots()[8], chosen->roots()[9]);
-        tyr::datalog::database::QueryEvaluator full(layer(), *chosen);
-        tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), *chosen);
+        tyr::datalog::database::QueryEvaluator full(scratch(), *chosen);
+        tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), *chosen);
         full.evaluate(refs);
         incremental.initialize(refs);
         for (size_t root = 0; root < roots.size(); ++root)
@@ -381,7 +376,7 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
             EXPECT_TRUE(std::ranges::equal(full.get_result(root).columns(), columns_of(roots[root])));
         }
     }
-    tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), measured);
+    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), measured);
     incremental.initialize(refs);
     // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(1597);
@@ -394,17 +389,17 @@ TEST(DatabaseOptimization, BothModesPreserveDifferencesRenamesAndExistentialVari
         urd::Store<urd::sequence<Delta>> deltas;
         for (auto& input : inputs)
         {
-            deltas.emplace_back(layer(), input.columns());
+            deltas.emplace_back(input.columns());
             for (ygg::uint_t first = 0; first < 4; ++first)
                 for (ygg::uint_t second = 0; second < 4; ++second)
                 {
                     if (random() % 4 != 0)
                         continue;
                     const auto row = std::array { ygg::encode_value(first), ygg::encode_value(second) };
-                    if (const auto position = input.find(row))
+                    if (input.contains(row))
                     {
                         deltas.back().removed.insert(row);
-                        input.erase(*position);
+                        input.erase(row);
                     }
                     else
                     {
@@ -524,11 +519,11 @@ TEST(DatabaseOptimization, BothModesMatchRandomRelationalExpressions)
         const auto statistics = tyr::datalog::database::collect_statistics(refs);
         const auto unmeasured = tyr::datalog::database::optimize(root);
         const auto measured = tyr::datalog::database::optimize(root, statistics);
-        tyr::datalog::database::QueryEvaluator reference(layer(), baseline);
+        tyr::datalog::database::QueryEvaluator reference(scratch(), baseline);
         reference.evaluate(refs);
         for (const auto* optimized : { &unmeasured, &measured })
         {
-            tyr::datalog::database::QueryEvaluator evaluator(layer(), *optimized);
+            tyr::datalog::database::QueryEvaluator evaluator(scratch(), *optimized);
             evaluator.evaluate(refs);
             EXPECT_TRUE(std::ranges::equal(evaluator.get_result().columns(), columns_of(root)));
             EXPECT_EQ(rows(evaluator.get_result()), rows(reference.get_result()));
@@ -570,7 +565,7 @@ TEST(DatabaseOptimization, BothModesPreserveFactoredUnionsAndFilteredDifferences
     const auto original = tyr::datalog::database::compile_plan(roots);
     const auto unmeasured = tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots));
     const auto measured = tyr::datalog::database::optimize(std::span<const tyr::datalog::database::QueryView<>>(roots), statistics);
-    tyr::datalog::database::QueryEvaluator reference(layer(), original);
+    tyr::datalog::database::QueryEvaluator reference(scratch(), original);
     reference.evaluate(inputs);
     EXPECT_EQ(rows(reference.get_result(0)), rows(reference.get_result(1)));
     EXPECT_EQ(reference.get_result(2).size(), 1);
@@ -579,8 +574,8 @@ TEST(DatabaseOptimization, BothModesPreserveFactoredUnionsAndFilteredDifferences
     EXPECT_EQ(rows(reference.get_result(5)), rows(borrow(ar)));
     for (const auto* chosen : { &unmeasured, &measured })
     {
-        tyr::datalog::database::QueryEvaluator full(layer(), *chosen);
-        tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), *chosen);
+        tyr::datalog::database::QueryEvaluator full(scratch(), *chosen);
+        tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), *chosen);
         full.evaluate(inputs);
         incremental.initialize(inputs);
         for (size_t root = 0; root < roots.size(); ++root)

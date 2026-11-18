@@ -3,9 +3,13 @@
 #include "pytyr/module.hpp"
 #include "tyr/datalog/lifted/database/semantics/operations.hpp"
 #include "tyr/datalog/lifted/database/semantics/plans.hpp"
+#include "yggdrasil/formalism/scratch_relation.hpp"
+
+#include <nanobind/stl/vector.h>
 
 #include <initializer_list>
 #include <span>
+#include <vector>
 
 namespace tyr
 {
@@ -13,7 +17,7 @@ namespace tyr
 namespace
 {
 using Column = urd::index<ygg::Column>;
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
+using Relation = ygg::FreeScratchRelation;
 using ColumnIndices = std::span<const ygg::ColumnLayout>;
 using Workspace = tyr::datalog::database::Workspace;
 
@@ -61,7 +65,7 @@ void bind_unary(nb::module_& m)
         [](const V& input, const ProjectionPlan& plan, Relation& out, Workspace& workspace)
         {
             require_columns(input.columns(), plan.input_columns());
-            require_columns(out.columns(), plan.output_columns());
+            require_columns(out.view().columns(), plan.output_columns());
             project(input, plan, out, workspace);
         },
         nb::arg("input"),
@@ -73,7 +77,7 @@ void bind_unary(nb::module_& m)
         [](const V& input, const SelectEqualPlan& plan, Relation& out)
         {
             require_columns(input.columns(), plan.output_columns());
-            require_columns(out.columns(), plan.output_columns());
+            require_columns(out.view().columns(), plan.output_columns());
             select_equal_columns(input, plan, out);
         },
         nb::arg("input"),
@@ -84,7 +88,7 @@ void bind_unary(nb::module_& m)
         [](const V& input, const SelectValuePlan& plan, Relation& out)
         {
             require_columns(input.columns(), plan.output_columns());
-            require_columns(out.columns(), plan.output_columns());
+            require_columns(out.view().columns(), plan.output_columns());
             select_equal_value(input, plan, out);
         },
         nb::arg("input"),
@@ -114,7 +118,7 @@ void bind_binary(nb::module_& m)
             {
                 require_columns(left_operand.columns(), plan.left_columns());
                 require_columns(right_operand.columns(), plan.right_columns());
-                require_columns(out.columns(), output_is_left ? plan.left_columns() : plan.output_columns());
+                require_columns(out.view().columns(), output_is_left ? plan.left_columns() : plan.output_columns());
                 operation(left_operand, right_operand, plan, out, workspace);
             },
             nb::arg("left_operand"),
@@ -132,7 +136,7 @@ void bind_binary(nb::module_& m)
             name,
             [operation](const L& left_operand, const R& right_operand, const SetPlan& plan, Relation& out)
             {
-                for (const auto columns : { left_operand.columns(), right_operand.columns(), out.columns() })
+                for (const auto columns : { left_operand.columns(), right_operand.columns(), out.view().columns() })
                     require_columns(columns, plan.output_columns());
                 operation(left_operand, right_operand, plan, out);
             },
@@ -146,10 +150,50 @@ void bind_binary(nb::module_& m)
 }
 }  // namespace
 
+/// The relations the operations write and the evaluators draw: each a builder with a repository of its own rows.
+void bind_scratch_relations(nb::module_& m)
+{
+    nb::class_<Relation>(m, "ScratchRelation", "A relation being built, its rows in tuple order in a repository of its own: an operation's output.")
+        .def(
+            "__init__",
+            [](Relation* self)
+            {
+                new (self) Relation();
+                self->relation.initialize(self->rows, {});
+            },
+            "The nullary relation, empty.")
+        .def(
+            "__init__",
+            [](Relation* self, ColumnIndices columns)
+            {
+                new (self) Relation();
+                self->relation.initialize(self->rows, columns);
+            },
+            nb::arg("columns"))
+        .def("initialize", [](Relation& relation, ColumnIndices columns) { relation.relation.initialize(relation.rows, columns); }, nb::arg("columns"))
+        .def("rename", [](Relation& relation, ColumnIndices columns) { relation.relation.rename(relation.rows, columns); }, nb::arg("columns"))
+        .def(
+            "insert",
+            [](Relation& relation, std::span<const ygg::Value> values) { return relation.insert(values).first; },
+            nb::arg("values"),
+            "Its position in tuple order.")
+        .def("erase", [](Relation& relation, std::span<const ygg::Value> values) { return relation.erase(values); }, nb::arg("values"))
+        .def("clear", [](Relation& relation) { relation.clear(); })
+        .def("columns", [](const Relation& relation) { return std::vector<ygg::ColumnLayout>(relation.view().columns().begin(), relation.view().columns().end()); })
+        .def("size", [](const Relation& relation) { return relation.view().size(); })
+        .def("arity", [](const Relation& relation) { return relation.view().columns().size(); })
+        .def("empty", [](const Relation& relation) { return relation.view().size() == 0; })
+        .def("__len__", [](const Relation& relation) { return relation.view().size(); })
+        .def("contains", [](const Relation& relation, std::span<const ygg::Value> values) { return relation.view().contains(values); }, nb::arg("values"))
+        .def("view", &Relation::view, nb::keep_alive<0, 1>(), "Its builder, read through its repository; the next change invalidates the view.");
+    nb::class_<ygg::FreeScratchRelations>(m, "ScratchRelations", "The scratch relations an evaluator draws; they must outlive it.").def(nb::init<>());
+}
+
 void bind_database_module_definitions(nb::module_& m)
 {
     using RelationView = ygg::FreeRelationView;
     using RelationBuilderView = ygg::FreeRelationBuilderView;
+    bind_scratch_relations(m);
     bind_plans(m);
     bind_unary<RelationView>(m);
     bind_unary<RelationBuilderView>(m);

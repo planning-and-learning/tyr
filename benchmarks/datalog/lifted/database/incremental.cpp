@@ -10,6 +10,7 @@
 
 #ifndef TYR_DATALOG_DATABASE_APPEND_ONLY_PROFILE
 #include "tyr/datalog/lifted/database/semantics/incremental/join.hpp"
+#include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 #include "tyr/datalog/lifted/database/semantics/incremental/projection.hpp"
 #include "tyr/datalog/lifted/database/semantics/relation_view.hpp"
 #endif
@@ -22,6 +23,7 @@
 #include <initializer_list>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -30,6 +32,12 @@
 
 namespace tyr::datalog::benchmarks
 {
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Change;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
 namespace
 {
 using ColumnIndex = urd::index<ygg::Column>;
@@ -49,7 +57,7 @@ void append_only(benchmark::State& state)
 {
     const auto rows = static_cast<size_t>(state.range(0));
     const auto repetitions = static_cast<size_t>(state.range(1));
-    urd::builder<ygg::Relation<ygg::Schema>> relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     const auto refill = [&]
     {
         relation.clear();
@@ -71,15 +79,6 @@ void append_only(benchmark::State& state)
 
 #ifndef TYR_DATALOG_DATABASE_APPEND_ONLY_PROFILE
 
-/// The layer the benchmarks read their builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
-
 /// The transitions of a trace, which return it to its initial rows.
 constexpr size_t num_transitions = 6;
 /// The times a trace is run before it is measured.
@@ -89,13 +88,13 @@ constexpr benchmark::IterationCount latency_iterations = 256;
 
 struct Transition
 {
-    database::incremental::Delta delta { layer(), cols({ ColumnIndex(1), ColumnIndex(2) }) };
-    urd::builder<ygg::Relation<ygg::Schema>> snapshot { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Change delta { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation snapshot { cols({ ColumnIndex(1), ColumnIndex(2) }) };
 };
 
 struct Trace
 {
-    urd::builder<ygg::Relation<ygg::Schema>> initial { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation initial { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     std::array<Transition, num_transitions> transitions {};
     size_t rows;
     size_t changed_rows;
@@ -183,47 +182,45 @@ struct JoinTrace
     }
 };
 
-bool equal_rows(ygg::FreeRelationBuilderView lhs, const urd::builder<ygg::Relation<ygg::Schema>>& rhs)
+bool equal_rows(ygg::FreeRelationBuilderView lhs, const Relation& rhs)
 {
     if (lhs.size() != rhs.size())
         return false;
-    for (const auto row : lhs.get_rows())
-        if (!rhs.contains(row))
+    for (const auto& row : lhs.get_rows())
+        if (!rhs.contains(values_of(row)))
             return false;
     return true;
 }
 
-size_t changed_rows(const urd::builder<ygg::Relation<ygg::Schema>>& before, const urd::builder<ygg::Relation<ygg::Schema>>& after)
+size_t changed_rows(const Relation& before, const Relation& after)
 {
     size_t result = 0;
-    for (const auto row : borrow(before).get_rows())
-        result += !after.contains(row);
-    for (const auto row : borrow(after).get_rows())
-        result += !before.contains(row);
+    for (const auto& row : borrow(before).get_rows())
+        result += !after.contains(values_of(row));
+    for (const auto& row : borrow(after).get_rows())
+        result += !before.contains(values_of(row));
     return result;
 }
 
-bool equal_delta(const database::incremental::Delta& delta,
-                 const urd::builder<ygg::Relation<ygg::Schema>>& before,
-                 const urd::builder<ygg::Relation<ygg::Schema>>& after)
+bool equal_delta(const database::incremental::Delta& delta, const Relation& before, const Relation& after)
 {
     size_t added = 0;
     size_t removed = 0;
-    for (const auto row : borrow(before).get_rows())
-        if (!after.contains(row))
+    for (const auto& row : borrow(before).get_rows())
+        if (!after.contains(values_of(row)))
         {
             ++removed;
-            if (!delta.removed.contains(row))
+            if (!delta.removed->view().contains(values_of(row)))
                 return false;
         }
-    for (const auto row : borrow(after).get_rows())
-        if (!before.contains(row))
+    for (const auto& row : borrow(after).get_rows())
+        if (!before.contains(values_of(row)))
         {
             ++added;
-            if (!delta.added.contains(row))
+            if (!delta.added->view().contains(values_of(row)))
                 return false;
         }
-    return delta.added.size() == added && delta.removed.size() == removed;
+    return delta.added->view().size() == added && delta.removed->view().size() == removed;
 }
 
 template<bool Latency, typename TraceType, typename Update, typename Result, typename Memory>
@@ -293,9 +290,9 @@ void projection(benchmark::State& state)
     auto evaluation = [&]
     {
         if constexpr (Incremental)
-            return database::incremental::ProjectionEvaluator(layer(), plan);
+            return database::incremental::ProjectionEvaluator(scratch(), plan);
         else
-            return urd::builder<ygg::Relation<ygg::Schema>>(plan.output_columns());
+            return Relation(plan.output_columns());
     }();
     if constexpr (Incremental)
         evaluation.initialize(borrow(trace.initial), workspace);
@@ -314,8 +311,8 @@ void projection(benchmark::State& state)
             return borrow(evaluation);
     };
     // Validate every transition outside timing, not just the restored root.
-    urd::builder<ygg::Relation<ygg::Schema>> reference(plan.output_columns());
-    urd::builder<ygg::Relation<ygg::Schema>> previous(plan.output_columns());
+    Relation reference(plan.output_columns());
+    Relation previous(plan.output_columns());
     database::Workspace reference_workspace;
     database::project(borrow(trace.initial), plan, previous, reference_workspace);
     size_t output_delta_rows = 0;
@@ -347,19 +344,19 @@ void fixed_input_join(benchmark::State& state)
     const auto rows = static_cast<size_t>(state.range(0));
     const auto fanout = static_cast<size_t>(state.range(2));
     Trace trace(rows, static_cast<size_t>(state.range(1)), 1, false);
-    auto fixed = layer().get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1), ColumnIndex(3) }));
+    auto fixed = std::optional<Relation>(std::in_place, cols({ ColumnIndex(1), ColumnIndex(3) }));
     for (size_t key = 0; key < rows; ++key)
         for (size_t match = 0; match < fanout; ++match)
             fixed->insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(key)), ygg::encode_value(static_cast<ygg::uint_t>(match)) });
     const database::JoinPlan plan(trace.initial.columns(), fixed->columns());
-    const urd::builder<ygg::Relation<ygg::Schema>> unchanged(fixed->columns());
+    const Relation unchanged(fixed->columns());
     database::Workspace workspace;
     auto evaluation = [&]
     {
         if constexpr (Incremental)
-            return database::incremental::JoinEvaluator(layer(), plan);
+            return database::incremental::JoinEvaluator(scratch(), plan);
         else
-            return urd::builder<ygg::Relation<ygg::Schema>>(plan.output_columns());
+            return Relation(plan.output_columns());
     }();
     if constexpr (Incremental)
         evaluation.initialize(borrow(trace.initial), borrow(*fixed), workspace);
@@ -377,8 +374,8 @@ void fixed_input_join(benchmark::State& state)
         else
             return borrow(evaluation);
     };
-    urd::builder<ygg::Relation<ygg::Schema>> reference(plan.output_columns());
-    urd::builder<ygg::Relation<ygg::Schema>> previous(plan.output_columns());
+    Relation reference(plan.output_columns());
+    Relation previous(plan.output_columns());
     database::Workspace reference_workspace;
     database::join(borrow(trace.initial), borrow(*fixed), plan, previous, reference_workspace);
     size_t output_delta_rows = 0;
@@ -417,9 +414,9 @@ void changing_join(benchmark::State& state)
     auto evaluation = [&]
     {
         if constexpr (Incremental)
-            return database::incremental::JoinEvaluator(layer(), plan);
+            return database::incremental::JoinEvaluator(scratch(), plan);
         else
-            return urd::builder<ygg::Relation<ygg::Schema>>(plan.output_columns());
+            return Relation(plan.output_columns());
     }();
     if constexpr (Incremental)
         evaluation.initialize(borrow(trace.left.initial), borrow(trace.right.initial), workspace);
@@ -441,8 +438,8 @@ void changing_join(benchmark::State& state)
         else
             return borrow(evaluation);
     };
-    urd::builder<ygg::Relation<ygg::Schema>> reference(plan.output_columns());
-    urd::builder<ygg::Relation<ygg::Schema>> previous(plan.output_columns());
+    Relation reference(plan.output_columns());
+    Relation previous(plan.output_columns());
     database::Workspace reference_workspace;
     database::join(borrow(trace.left.initial), borrow(trace.right.initial), plan, previous, reference_workspace);
     size_t output_delta_rows = 0;

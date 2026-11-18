@@ -74,7 +74,7 @@ namespace
 
 template<TaskKind Kind>
 void process_effects(formalism::planning::ActionView<GroundTag> action,
-                     urd::builder<State<Kind>>& successor_state_builder,
+                     urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                      StateContext<Kind>& state_context,
                      urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_del_effects,
                      urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& tmp_add_effects,
@@ -108,7 +108,7 @@ void process_effects(formalism::planning::ActionView<GroundTag> action,
 
 /// Applies the effect of a firing conditional effect whose variables the grounder context's binding already extends.
 void apply_lifted_effect(formalism::planning::ConditionalEffectView<LiftedTag> cond_effect,
-                         urd::builder<State<LiftedTag>>& successor_state_builder,
+                         urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                          StateContext<LiftedTag>& state_context,
                          const ApplicabilityContext& applicability_context,
                          formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder_context,
@@ -173,7 +173,7 @@ void compute_touched_delta(const StateContext<Kind>& parent,
 
 template<TaskKind Kind, typename ProcessEffects>
 ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_context,
-                                            urd::builder<State<Kind>>& successor_state_builder,
+                                            urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                                             urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& del_effects,
                                             urd::flat_vector<urd::data<formalism::planning::FDRFact<formalism::FluentTag>>>& add_effects,
                                             urd::Store<urd::sequence<urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>>>& numeric_writes,
@@ -186,13 +186,14 @@ ygg::float_t apply_action_unregistered_impl(const StateContext<Kind>& state_cont
 
     auto tmp_state_context = state_context;
 
-    successor_state_builder.fact_storage = state_context.fact_storage();
-    successor_state_builder.numeric_storage = state_context.numeric_storage();
+    successor_state_builder.fact_storage.assign(state_context.fact_storage());
+    successor_state_builder.numeric_storage.assign(state_context.numeric_storage());
 
     process_effects(successor_state_builder, tmp_state_context, del_effects, add_effects, numeric_writes);
 
+    const auto successor_facts = FactStorageView<Kind>(&successor_state_builder.fact_storage, state_context.task().get_repository().get());
     for (const auto fact : del_effects)
-        if (successor_state_builder.fact_storage.get(fact.variable) == fact.value)
+        if (successor_facts.get(fact.variable) == fact.value)
             successor_state_builder.set(urd::data<formalism::planning::FDRFact<formalism::FluentTag>> { fact.variable, formalism::planning::FDRValue::none() });
 
     for (const auto fact : add_effects)
@@ -229,7 +230,7 @@ template bool ActionExecutor::is_applicable_if_fires(formalism::planning::Action
 template<TaskKind Kind>
 ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>& state_context,
                                                        formalism::planning::ActionView<GroundTag> action,
-                                                       urd::builder<State<Kind>>& successor_state_builder,
+                                                       urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                                                        StateDelta& delta)
 {
     return apply_action_unregistered_impl(state_context,
@@ -244,11 +245,11 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Kind>&
 
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<LiftedTag>& state_context,
                                                                 formalism::planning::ActionView<GroundTag> action,
-                                                                urd::builder<State<LiftedTag>>& successor_state_builder,
+                                                                urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                                                                 StateDelta& delta);
 template ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<GroundTag>& state_context,
                                                                 formalism::planning::ActionView<GroundTag> action,
-                                                                urd::builder<State<GroundTag>>& successor_state_builder,
+                                                                urd::builder<State<GroundTag>, StateRepository<GroundTag>>& successor_state_builder,
                                                                 StateDelta& delta);
 
 // Action binding API
@@ -277,7 +278,7 @@ ygg::float_t ActionExecutor::apply_action_unregistered(const StateContext<Lifted
                                                        formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
                                                        formalism::planning::FDRContext& fdr,
                                                        ForEachEffectBinding for_each_effect_binding,
-                                                       urd::builder<State<LiftedTag>>& successor_state_builder,
+                                                       urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                                                        StateDelta& delta)
 {
     return apply_action_unregistered_impl(state_context,

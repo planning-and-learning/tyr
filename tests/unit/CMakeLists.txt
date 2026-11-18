@@ -51,6 +51,7 @@ add_gtest(
     "formalism/planning/domain.cpp"
     "formalism/planning/fdr_fact.cpp"
     "formalism/planning/fdr_variable.cpp"
+    "formalism/planning/builders.cpp"
     "formalism/planning/formatter.cpp"
     "formalism/planning/function_term.cpp"
     "formalism/planning/function_term_value.cpp"

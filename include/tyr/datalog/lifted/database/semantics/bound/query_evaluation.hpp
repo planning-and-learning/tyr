@@ -45,20 +45,20 @@ namespace tyr::datalog::database::bound
 ///
 /// Inputs are borrowed during bind() only. incremental::bound::QueryEvaluator wraps one to keep it bound across input
 /// changes, and runs its plans with variables bound by changed rows (plans(), bind_atom(), run_plan()). The snapshots
-/// are builders of `layer`, read through it; it must outlive the evaluator.
+/// are scratch relations drawn from `scratch`, which must outlive the evaluator; its indexes name their rows by record (a
+/// row's position shifts as rows come and go).
 class QueryEvaluator
 {
 public:
     /// `static_slots` marks inputs that never change after the first bind().
-    QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryView<> query, const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
-        m_layer(&layer),
+    QueryEvaluator(ygg::FreeScratchRelations& scratch, QueryView<> query, const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         m_query(union_normal_form(query)),
         m_columns(columns_of(query).begin(), columns_of(query).end()),
         m_static(static_slots)
     {
         m_frame.resize(m_query.variables.size());
         for (const auto& columns : m_query.input_columns)
-            m_inputs.push_back(layer.get_relation_builder<ygg::Schema>(std::span<const ygg::ColumnLayout>(columns)));
+            m_inputs.push_back(scratch.draw(std::span<const ygg::ColumnLayout>(columns)));
     }
 
     // Its snapshots are its own: shared with no copy.
@@ -72,7 +72,7 @@ public:
 
     [[nodiscard]] std::span<const ygg::ColumnLayout> columns() const noexcept { return m_columns; }
 
-    [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_layer->view(*m_inputs.at(slot)); }
+    [[nodiscard]] ygg::FreeRelationBuilderView input(size_t slot) const { return m_inputs.at(slot)->view(); }
 
     [[nodiscard]] bool bound() const noexcept { return m_bound.size() == input_count(); }
 
@@ -94,14 +94,14 @@ public:
     }
 
     /// Replaces the rows of one input slot.
-    template<RelationViewConcept V>
+    template<ygg::RelationViewConcept<ygg::Schema> V>
     void bind_slot(size_t slot, const V& rows)
     {
         assert(std::ranges::equal(rows.columns(), m_query.input_columns[slot]));
         auto& snapshot = *m_inputs[slot];
         snapshot.clear();
-        for (size_t r = 0; r < rows.get_rows().size(); ++r)
-            snapshot.insert(rows.row(r).get_values());
+        for (const auto& held : rows.get_rows())
+            ygg::with_values(held, [&](const auto& values) { snapshot.insert(values); });
         m_bound.insert(slot);
         invalidate(slot);
     }
@@ -109,52 +109,43 @@ public:
     /// Applies a change to a bound input slot: `removed` rows are in it, `added` rows are not. Built indexes of the slot
     /// are updated in place. Every row is checked before any is applied, so a change that throws leaves the slot, its
     /// indexes and version() unchanged; an empty change does not increase version().
-    template<RelationViewConcept A, RelationViewConcept R>
+    template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R>
     void replace(size_t slot, const A& added, const R& removed)
     {
         if (added.get_rows().empty() && removed.get_rows().empty())
             return;
         auto& snapshot = *m_inputs[slot];
-        const auto stored = m_layer->view(snapshot);
-        for (size_t r = 0; r < removed.size(); ++r)
-            if (!snapshot.contains(removed.row(r).get_values()))
+        const auto current = snapshot.view();
+        const auto held_in = [&](const auto& held) { return ygg::with_values(held, [&](const auto& values) { return current.contains(values); }); };
+        for (const auto& held : removed.get_rows())
+            if (!held_in(held))
                 throw std::invalid_argument("bound::QueryEvaluator: removed row is absent from the input.");
-        for (size_t r = 0; r < added.size(); ++r)
-            if (snapshot.contains(added.row(r).get_values()))
+        for (const auto& held : added.get_rows())
+            if (held_in(held))
                 throw std::invalid_argument("bound::QueryEvaluator: added row is already present in the input.");
-        for (size_t r = 0; r < removed.size(); ++r)
-        {
-            const auto found = snapshot.find(removed.row(r).get_values());
-            URD_ASSUME(found.has_value());  // every removed row was checked present above
-            const auto position = *found;
-            const auto last = ygg::to_uint_t(snapshot.size() - 1);
-            const auto erase = [](auto& rows, ygg::hash_t key, ygg::uint_t value)
-            {
-                const auto matches = rows.equal_range(key);
-                const auto match = std::find_if(matches.first, matches.second, [&](const auto& pair) { return pair.second == value; });
-                URD_ASSUME(match != matches.second);  // every indexed row is in its key's entries
-                rows.erase(match);
-            };
-            for_each_index(slot,
-                           [&](KeyIndex& entry)
-                           { erase(entry.rows, database::detail::join_key_hash(stored.row(position).get_values(), entry.keys), position); });
-            snapshot.erase(position);
-            if (position != last)
-                for_each_index(slot,
-                               [&](KeyIndex& entry)
-                               {
-                                   // The last row moved into the erased one's position.
-                                   const auto key = database::detail::join_key_hash(stored.row(position).get_values(), entry.keys);
-                                   erase(entry.rows, key, last);
-                                   entry.rows.insert({ key, position });
-                               });
-        }
-        for (size_t r = 0; r < added.size(); ++r)
-        {
-            const auto position = snapshot.insert(added.row(r).get_values());
-            for_each_index(slot,
-                           [&](KeyIndex& entry) { entry.rows.insert({ database::detail::join_key_hash(added.row(r).get_values(), entry.keys), position }); });
-        }
+        for (const auto& held : removed.get_rows())
+            ygg::with_values(held,
+                             [&](const auto& values)
+                             {
+                                 const auto row = snapshot.slot(values);
+                                 for_each_index(slot,
+                                                [&](KeyIndex& entry)
+                                                {
+                                                    const auto matches = entry.rows.equal_range(database::detail::join_key_hash(values, entry.keys));
+                                                    const auto match = std::find_if(matches.first, matches.second, [&](const auto& pair) { return pair.second == row; });
+                                                    URD_ASSUME(match != matches.second);  // every indexed row is in its key's entries
+                                                    entry.rows.erase(match);
+                                                });
+                                 snapshot.erase(values);
+                             });
+        for (const auto& held : added.get_rows())
+            ygg::with_values(held,
+                             [&](const auto& values)
+                             {
+                                 snapshot.insert(values);
+                                 const auto row = snapshot.slot(values);
+                                 for_each_index(slot, [&](KeyIndex& entry) { entry.rows.insert({ database::detail::join_key_hash(values, entry.keys), row }); });
+                             });
         ++m_version;
     }
 
@@ -191,8 +182,21 @@ public:
     /// One plan per branch, with the variables marked in `bound` bound on arrival, for the current inputs' sizes.
     urd::Store<urd::sequence<ConjunctivePlan>> plans(const VariableSet& bound);
 
-    /// Binds the atom's variables to an input row; false if the row repeats a variable with different values.
-    bool bind_atom(const ConjunctiveAtom& atom, const ygg::RowPool::row_type& row);
+    /// Binds the atom's variables to an input row, by its values; false if the row repeats a variable with different
+    /// values.
+    template<ygg::RowValues Row>
+    bool bind_atom(const ConjunctiveAtom& atom, const Row& row)
+    {
+        for (size_t c = 0; c < atom.vars.size(); ++c)
+        {
+            const auto value = database::detail::field_value(row, c);
+            if (static_cast<size_t>(std::ranges::find(atom.vars, atom.vars[c]) - atom.vars.begin()) == c)
+                m_frame[atom.vars[c]] = value;
+            else if (value != m_frame[atom.vars[c]])
+                return false;
+        }
+        return true;
+    }
 
     /// Runs a plan whose initially bound variables are set, calling on_row(row) for each output row; returns false
     /// once on_row returned false.
@@ -215,7 +219,7 @@ private:
         size_t slot = 0;
         urd::Store<urd::sequence<size_t>> positions;
         urd::Store<urd::sequence<ColumnSlice>> keys;                                    ///< The key columns in the slot's rows.
-        urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> rows;  ///< Row positions by key hash, once built.
+        urd::Store<urd::map<ygg::hash_t, ygg::FreeScratchRelation::Slot>, urd::multi, urd::retains> rows;  ///< Row slots by key hash, once built.
         bool built = false;
     };
 
@@ -226,13 +230,12 @@ private:
         urd::Store<urd::sequence<ColumnSlice>> probe;
     };
 
-    const ygg::FreeRelationRepository* m_layer;
     UnionNormalForm m_query;
     urd::Store<urd::sequence<ygg::ColumnLayout>> m_columns;
-    urd::Store<urd::sequence<ygg::Value>> m_frame;      ///< The variables' values while a branch runs, by variable.
-    urd::Store<urd::set<size_t>, urd::dense> m_static;  ///< The input slots that never change after the first bind().
-    urd::Store<urd::sequence<std::shared_ptr<urd::builder<ygg::Relation<ygg::Schema>>>>> m_inputs;  ///< The input snapshots, from the layer.
-    urd::Store<urd::set<size_t>, urd::dense> m_bound;                                               ///< The input slots bound so far.
+    urd::Store<urd::sequence<ygg::Value>> m_frame;                                  ///< The variables' values while a branch runs, by variable.
+    urd::Store<urd::set<size_t>, urd::dense> m_static;                              ///< The input slots that never change after the first bind().
+    urd::Store<urd::sequence<urd::handle<ygg::FreeScratchRelation>>> m_inputs;  ///< The input snapshots.
+    urd::Store<urd::set<size_t>, urd::dense> m_bound;                               ///< The input slots bound so far.
     urd::Store<urd::sequence<KeyIndex>, urd::stable_refs> m_indexes;
     urd::Store<urd::sequence<Lookup>, urd::stable_refs> m_lookups;  ///< By ConjunctiveStep::index.
     urd::Store<urd::sequence<Binding>> m_bindings;
@@ -295,15 +298,14 @@ private:
             return emit();
         const auto& step = plan.steps[step_index];
         assert(step.index != ConjunctiveStep::unresolved);
-        const auto rows = m_layer->view(*m_inputs[step.slot]);
+        const auto& snapshot = *m_inputs[step.slot];
         auto proceed = true;  // False once emit asked to stop.
-        const auto visit = [&](size_t r)
+        const auto visit = [&](const auto& row)
         {
-            const auto row = rows.row(r).get_values();
             for (const auto& [c, var] : step.assign)
-                m_frame[var] = row.get(c);
+                m_frame[var] = database::detail::field_value(row, c);
             for (const auto& [c, var] : step.compare)
-                if (row.get(c) != m_frame[var])
+                if (database::detail::field_value(row, c) != m_frame[var])
                     return true;
             if (!accepts(plan, step.filters))
                 return true;
@@ -314,24 +316,24 @@ private:
         auto& entry = m_indexes[lookup.index];
         if (entry.positions.empty())
         {
-            for (size_t r = 0; r < rows.get_rows().size(); ++r)
-                if (!visit(r))
+            for (const auto& held : snapshot.view().get_rows())
+                if (!ygg::with_values(held, visit))
                     return proceed;
             return true;
         }
         if (!entry.built)
         {
             entry.rows.clear();
-            entry.rows.reserve(rows.size());
-            for (size_t r = 0; r < rows.get_rows().size(); ++r)
-                entry.rows.insert({ database::detail::join_key_hash(rows.row(r).get_values(), entry.keys), ygg::to_uint_t(r) });
+            entry.rows.reserve(snapshot.view().size());
+            for (const auto& held : snapshot.view().get_rows())
+                ygg::with_values(held, [&](const auto& values) { entry.rows.insert({ database::detail::join_key_hash(values, entry.keys), snapshot.slot(values) }); });
             entry.built = true;
         }
         // The key's variables stay bound while this step iterates, so the frame is the probe.
         const auto probe = std::span<const ygg::Value>(m_frame);
         for (const auto [first, last] = entry.rows.equal_range(database::detail::join_key_hash(probe, lookup.probe));
-             const auto r : std::ranges::subrange(first, last) | std::views::values)
-            if (database::detail::join_keys_equal(rows.row(r).get_values(), entry.keys, probe, lookup.probe) && !visit(r))
+             const auto slot : std::ranges::subrange(first, last) | std::views::values)
+            if (const auto& row = snapshot.at(slot).values; database::detail::join_keys_equal(row, entry.keys, probe, lookup.probe) && !visit(row))
                 return proceed;
         return true;
     }

@@ -35,14 +35,13 @@ void bind_inputs(nb::class_<FullEvaluator>& full, nb::class_<IncrementalEvaluato
 
 void bind_database_evaluation(nb::module_& m)
 {
-    using Repository = ygg::FreeRelationRepository;
     using QueryPlan = tyr::datalog::database::QueryPlan;
 
     auto full = nb::class_<FullEvaluator>(m,
                                           "QueryEvaluator",
-                                          "Evaluate a compiled query DAG; its results are read through the repository. Input relations are "
+                                          "Evaluate a compiled query DAG; its results are drawn from the scratch relations. Input relations are "
                                           "borrowed only during each call.");
-    full.def(nb::init<const Repository&, QueryPlan>(), nb::arg("repository"), nb::arg("plan"), nb::keep_alive<1, 2>())
+    full.def(nb::init<ygg::FreeScratchRelations&, QueryPlan>(), nb::arg("scratch"), nb::arg("plan"), nb::keep_alive<1, 2>())
         .def(
             "get_result",
             [](const FullEvaluator& evaluator, size_t root) { return evaluator.get_result(root); },
@@ -52,7 +51,7 @@ void bind_database_evaluation(nb::module_& m)
         .def("memory_usage", &FullEvaluator::memory_usage);
 
     auto incremental = nb::class_<IncrementalEvaluator>(m, "IncrementalQueryEvaluator", "Maintain a compiled query DAG and exact net root deltas.");
-    incremental.def(nb::init<const Repository&, QueryPlan>(), nb::arg("repository"), nb::arg("plan"), nb::keep_alive<1, 2>())
+    incremental.def(nb::init<ygg::FreeScratchRelations&, QueryPlan>(), nb::arg("scratch"), nb::arg("plan"), nb::keep_alive<1, 2>())
         .def(
             "get_result",
             [](const IncrementalEvaluator& evaluator, size_t root) { return evaluator.get_result(root); },

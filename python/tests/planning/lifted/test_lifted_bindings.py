@@ -14,7 +14,7 @@ from pytyr.formalism import datalog as formalism_datalog, planning as formalism_
 from pytyr.formalism.planning import Parser
 
 Node = planning.lifted.Node
-State = planning.lifted.State
+StateBuilderShared = planning.lifted.StateBuilderShared
 StateBuilder = planning.lifted.StateBuilder
 Plan = planning.lifted.Plan
 IwStatistics = planning.algorithms.iw.lifted.Statistics
@@ -237,11 +237,11 @@ def test_pruning_strategy_subclasses_can_call_super_constructor() -> None:
             super().__init__()
 
         @override
-        def should_prune_state(self, state: State) -> bool:
+        def should_prune_state(self, state: StateBuilderShared) -> bool:
             return False
 
         @override
-        def should_prune_successor_state(self, state: State, succ_state: State, is_new_succ_state: bool) -> bool:
+        def should_prune_successor_state(self, state: StateBuilderShared, succ_state: StateBuilderShared, is_new_succ_state: bool) -> bool:
             return is_new_succ_state
 
     pruning_strategy = PythonPruningStrategy()
@@ -265,8 +265,8 @@ def test_goal_strategy_subclasses_can_call_super_constructor() -> None:
             return True
 
         @override
-        def is_dynamic_goal_satisfied(self, seed_state: State, state: State | StateBuilder) -> bool:
-            self.saw_state = isinstance(state, planning.lifted.State)
+        def is_dynamic_goal_satisfied(self, seed_state: StateBuilderShared, state: StateBuilderShared | StateBuilder) -> bool:
+            self.saw_state = isinstance(state, planning.lifted.StateBuilderShared)
             return False
 
     goal_strategy = PythonGoalStrategy()
@@ -295,8 +295,8 @@ def test_heuristic_subclasses_dispatch_virtual_methods_through_base_binding() ->
             self.goal = goal
 
         @override
-        def evaluate(self, state: State) -> float:
-            self.saw_state = type(state) is planning.lifted.State
+        def evaluate(self, state: StateBuilderShared) -> float:
+            self.saw_state = type(state) is planning.lifted.StateBuilderShared
             return 7.0
 
     heuristic = PythonHeuristic()

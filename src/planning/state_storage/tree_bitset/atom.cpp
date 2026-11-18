@@ -23,6 +23,7 @@
 #include "tyr/planning/lifted/state_storage.hpp"
 #include "tyr/planning/lifted/task.hpp"
 #include "tyr/planning/state_storage/tree_bitset/context.hpp"
+#include "tyr/planning/state_storage_view.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -31,20 +32,20 @@
 namespace tyr::planning
 {
 template<TaskKind Kind, bool ThreadSafe>
-AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::AtomStorageBackend(Context& ctx) : m_context(&ctx)
+StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::StateComponentRepository(Context& ctx) : m_context(&ctx)
 {
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
+typename StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::Packed StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked)
 { return m_context->bitsets.insert(unpacked.indices).first; }
 
 template<TaskKind Kind, bool ThreadSafe>
-typename AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::Packed
-AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const Unpacked& parent_unpacked)
+typename StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::Packed
+StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked, const Packed& parent, const AtomStorageView<Kind>& parent_atoms)
 {
     // One flip per block in which the two rows differ, by increasing position.
-    const auto from = parent_unpacked.indices.significant_words();
+    const auto from = parent_atoms.get_indices().significant_words();
     const auto to = unpacked.indices.significant_words();
     m_flips.clear();
     for (std::size_t i = 0; i < 2 * std::max(from.size(), to.size()); ++i)
@@ -54,12 +55,12 @@ AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacke
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-void AtomStorageBackend<Kind, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<AtomStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 { m_context->bitsets.copy(packed, unpacked.indices); }
 
-template class AtomStorageBackend<GroundTag, TreeBitset, false>;
-template class AtomStorageBackend<GroundTag, TreeBitset, true>;
-template class AtomStorageBackend<LiftedTag, TreeBitset, false>;
-template class AtomStorageBackend<LiftedTag, TreeBitset, true>;
+template class StateComponentRepository<AtomStorage<GroundTag>, TreeBitset, false>;
+template class StateComponentRepository<AtomStorage<GroundTag>, TreeBitset, true>;
+template class StateComponentRepository<AtomStorage<LiftedTag>, TreeBitset, false>;
+template class StateComponentRepository<AtomStorage<LiftedTag>, TreeBitset, true>;
 
 }

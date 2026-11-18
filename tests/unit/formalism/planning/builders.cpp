@@ -1,0 +1,98 @@
+#include "tyr/formalism/atom_builder.hpp"
+#include "tyr/formalism/binary_operator_builder.hpp"
+#include "tyr/formalism/function_builder.hpp"
+#include "tyr/formalism/function_term_builder.hpp"
+#include "tyr/formalism/function_term_value_builder.hpp"
+#include "tyr/formalism/literal_builder.hpp"
+#include "tyr/formalism/multi_operator_builder.hpp"
+#include "tyr/formalism/numeric_effect_builder.hpp"
+#include "tyr/formalism/object_builder.hpp"
+#include "tyr/formalism/parameters_builder.hpp"
+#include "tyr/formalism/planning/action_builder.hpp"
+#include "tyr/formalism/planning/axiom_builder.hpp"
+#include "tyr/formalism/planning/conditional_effect_builder.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_builder.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_builder.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/domain_builder.hpp"
+#include "tyr/formalism/planning/fdr_fact_builder.hpp"
+#include "tyr/formalism/planning/fdr_variable_builder.hpp"
+#include "tyr/formalism/planning/interning.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
+#include "tyr/formalism/planning/metric_builder.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/task_builder.hpp"
+#include "tyr/formalism/predicate_builder.hpp"
+#include "tyr/formalism/unary_operator_builder.hpp"
+#include "tyr/formalism/variable_builder.hpp"
+
+#include <gtest/gtest.h>
+#include <string>
+#include <urd/elements/builder.hpp>
+#include <urd/repr/slots/slots.hpp>
+#include <urd/store.hpp>
+#include <utility>
+#include <variant>
+
+namespace tyr::tests::planning_builders
+{
+
+namespace
+{
+using tyr::LiftedTag;
+using tyr::formalism::FluentTag;
+using tyr::formalism::planning::Repository;
+namespace f = tyr::formalism;
+
+using AtomBuilder = urd::builder<f::Atom<LiftedTag, FluentTag>, Repository>;
+using LiteralBuilder = urd::builder<f::Literal<LiftedTag, FluentTag>, Repository>;
+using ParametersBuilder = urd::builder<f::Parameters, Repository>;
+
+/// The name of a child, interned or built.
+std::string name_of(const auto& child)
+{
+    return std::visit([](const auto& view) { return std::string(view.get_name()); }, child);
+}
+
+}  // namespace
+
+/// A literal built over a built atom, whose predicate and first term are interned and whose parameters are built, reads
+/// as a literal: each child, whichever its form, through its view.
+TEST(TyrFormalismPlanningBuilders, ReadsBuiltAndInternedChildrenAlike)
+{
+    auto repository = Repository();
+    auto predicate_data = urd::data<f::Predicate<FluentTag>>(std::string("at"), 2);
+    const auto [predicate, predicate_created] = ygg::formalism::insert(repository, predicate_data);
+    auto object_data = urd::data<f::Object>(std::string("truck"));
+    const auto [object, object_created] = ygg::formalism::insert(repository, object_data);
+    auto variable_data = urd::data<f::Variable>(std::string("?x"));
+    const auto [variable, variable_created] = ygg::formalism::insert(repository, variable_data);
+    ASSERT_TRUE(predicate_created && object_created && variable_created);
+
+    auto parameter_pool = urd::Store<urd::slots<ParametersBuilder>> {};
+    auto atom_pool = urd::Store<urd::slots<AtomBuilder>> {};
+    auto parameters = parameter_pool.make_handle();
+    parameters->variables.emplace_back(variable);
+    auto atom = atom_pool.make_handle();
+    atom->parameters.emplace<1>(std::move(parameters), &repository);
+    atom->predicate = predicate;
+    atom->terms.emplace_back(std::in_place_index<0>, urd::child<f::Object, Repository>(object));
+    atom->terms.emplace_back(std::in_place_index<1>, f::ParameterIndex(0));
+    auto literal = LiteralBuilder {};
+    literal.atom.emplace<1>(std::move(atom), &repository);
+    literal.polarity = true;
+
+    const auto view = urd::resolve(literal, repository);
+    EXPECT_TRUE(view.get_polarity());
+    const auto atom_view = std::get<1>(view.get_atom());  // built
+    EXPECT_EQ(name_of(atom_view.get_predicate()), "at");
+    const auto parameters_view = std::get<1>(atom_view.get_parameters());  // built
+    ASSERT_EQ(parameters_view.get_variables().size(), 1U);
+    EXPECT_EQ(name_of(parameters_view.get_variables()[0]), "?x");
+    const auto terms = atom_view.get_terms();
+    ASSERT_EQ(terms.size(), 2U);
+    EXPECT_EQ(name_of(std::get<0>(terms[0])), "truck");
+    EXPECT_EQ(std::get<1>(terms[1]), f::ParameterIndex(0));
+}
+
+}  // namespace tyr::tests::planning_builders

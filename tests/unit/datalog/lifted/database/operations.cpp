@@ -11,6 +11,7 @@
 #include <array>
 #include <cista/serialization.h>
 #include <gtest/gtest.h>
+#include <optional>
 #include <initializer_list>
 #include <limits>
 #include <random>
@@ -30,31 +31,22 @@ namespace tyr::datalog::tests
 using Values = boost::mp11::mp_list<ygg::uint_t>;
 using ColumnIndex = urd::index<ygg::Column>;
 
-static_assert(!std::is_copy_constructible_v<urd::builder<ygg::Relation<ygg::Schema>>>);
-static_assert(std::is_move_constructible_v<urd::builder<ygg::Relation<ygg::Schema>>>);
-static_assert(!database::RelationViewConcept<urd::builder<ygg::Relation<ygg::Schema>>>);
-static_assert(database::RelationViewConcept<ygg::FreeRelationBuilderView>);
+static_assert(!std::is_copy_constructible_v<Relation>);
+static_assert(std::is_move_constructible_v<Relation>);
+static_assert(!ygg::RelationViewConcept<Relation, ygg::Schema>);
+static_assert(ygg::RelationViewConcept<ygg::FreeRelationBuilderView, ygg::Schema>);
 
 static_assert(!std::same_as<ColumnIndex, ygg::uint_t>);
 static_assert(!std::is_convertible_v<ygg::uint_t, ColumnIndex> && !std::is_convertible_v<ColumnIndex, ygg::uint_t>);
 static_assert(sizeof(ColumnIndex) == sizeof(ygg::uint_t));
 static_assert(std::is_trivially_copyable_v<ColumnIndex>);
 
-static_assert(std::same_as<decltype(std::declval<const urd::builder<ygg::Relation<ygg::Schema>>&>().columns()), std::span<const ygg::ColumnLayout>>);
+static_assert(std::same_as<decltype(std::declval<const Relation&>().columns()), std::span<const ygg::ColumnLayout>>);
 static_assert(std::same_as<decltype(std::declval<const database::ProjectionPlan&>().output_columns()), std::span<const ygg::ColumnLayout>>);
 static_assert(std::same_as<decltype(std::declval<const database::JoinPlan&>().output_columns()), std::span<const ygg::ColumnLayout>>);
 
 namespace
 {
-
-/// The layer the tests read their builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
 using Layouts = std::vector<ygg::ColumnLayout>;
 
@@ -77,47 +69,47 @@ Layouts cols(std::initializer_list<ColumnIndex> labels) { return columns_of(labe
 
 // Each operation with a plan built from its inputs' columns, into a new output of the plan's columns.
 template<typename V>
-urd::builder<ygg::Relation<ygg::Schema>> projected(const V& input, std::initializer_list<ColumnIndex> labels)
+Relation projected(const V& input, std::initializer_list<ColumnIndex> labels)
 {
     const database::ProjectionPlan plan(input.columns(), std::span<const ColumnIndex>(labels));
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::Workspace workspace;
     database::project(input, plan, out, workspace);
     return out;
 }
 
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> joined(const L& left_operand, const R& right_operand)
+Relation joined(const L& left_operand, const R& right_operand)
 {
     const database::JoinPlan plan(left_operand.columns(), right_operand.columns());
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::Workspace workspace;
     database::join(left_operand, right_operand, plan, out, workspace);
     return out;
 }
 
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> unioned(const L& left_operand, const R& right_operand)
+Relation unioned(const L& left_operand, const R& right_operand)
 {
     const database::SetPlan plan(left_operand.columns(), right_operand.columns());
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::union_(left_operand, right_operand, plan, out);
     return out;
 }
 
 template<typename L, typename R>
-urd::builder<ygg::Relation<ygg::Schema>> subtracted(const L& left_operand, const R& right_operand)
+Relation subtracted(const L& left_operand, const R& right_operand)
 {
     const database::SetPlan plan(left_operand.columns(), right_operand.columns());
-    urd::builder<ygg::Relation<ygg::Schema>> out(plan.output_columns());
+    Relation out(plan.output_columns());
     database::difference(left_operand, right_operand, plan, out);
     return out;
 }
 
 template<typename V, typename Predicate>
-urd::builder<ygg::Relation<ygg::Schema>> selected(const V& input, Predicate predicate)
+Relation selected(const V& input, Predicate predicate)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> out(input.columns());
+    Relation out(input.columns());
     database::select(input, predicate, out);
     return out;
 }
@@ -145,7 +137,7 @@ auto relocated_serialization(T value)
 }
 
 template<typename T = ygg::uint_t>
-void expect_relation(const urd::builder<ygg::Relation<ygg::Schema>>& relation,
+void expect_relation(const Relation& relation,
                      std::initializer_list<ColumnIndex> columns,
                      std::initializer_list<std::initializer_list<std::type_identity_t<T>>> rows)
 {
@@ -158,8 +150,7 @@ void expect_relation(const urd::builder<ygg::Relation<ygg::Schema>>& relation,
         EXPECT_TRUE(relation.contains(packed(std::span<const T>(row.begin(), row.size()))));
 }
 
-std::set<urd::Store<urd::sequence<ygg::uint_t>>> reference_join(const urd::builder<ygg::Relation<ygg::Schema>>& left_builder,
-                                                                const urd::builder<ygg::Relation<ygg::Schema>>& right_builder)
+std::set<urd::Store<urd::sequence<ygg::uint_t>>> reference_join(const Relation& left_builder, const Relation& right_builder)
 {
     const auto left_relation = borrow(left_builder);
     const auto right_relation = borrow(right_builder);
@@ -189,14 +180,14 @@ std::set<urd::Store<urd::sequence<ygg::uint_t>>> reference_join(const urd::build
             for (const auto& [l, r] : keys)
                 matches =
                     matches
-                    && ygg::decode_value<ygg::uint_t>(left_relation.row(left).value(l)) == ygg::decode_value<ygg::uint_t>(right_relation.row(right).value(r));
+                    && ygg::decode_value<ygg::uint_t>(value_of(left_relation.row(left), l)) == ygg::decode_value<ygg::uint_t>(value_of(right_relation.row(right), r));
             if (!matches)
                 continue;
             auto row = urd::Store<urd::sequence<ygg::uint_t>>();
             for (size_t column = 0; column < left_relation.columns().size(); ++column)
-                row.push_back(ygg::decode_value<ygg::uint_t>(left_relation.row(left).value(column)));
+                row.push_back(ygg::decode_value<ygg::uint_t>(value_of(left_relation.row(left), column)));
             for (const auto column : extra)
-                row.push_back(ygg::decode_value<ygg::uint_t>(right_relation.row(right).value(column)));
+                row.push_back(ygg::decode_value<ygg::uint_t>(value_of(right_relation.row(right), column)));
             result.insert(std::move(row));
         }
     }
@@ -208,26 +199,27 @@ std::set<urd::Store<urd::sequence<ygg::uint_t>>> reference_join(const urd::build
 TEST(YggdrasilTests, DatabaseRelationColumnsAreValidatedAndOwned)
 {
     auto labels = cols({ ColumnIndex(4), ColumnIndex(9) });
-    urd::builder<ygg::Relation<ygg::Schema>> relation(labels);
+    Relation relation(labels);
     labels[0].label = ColumnIndex(8);
     EXPECT_EQ(relation.columns()[0].label, ColumnIndex(4));
     EXPECT_EQ(relation.columns().size(), 2);
-    EXPECT_TRUE(urd::builder<ygg::Relation<ygg::Schema>>().columns().empty());
+    EXPECT_TRUE(Relation().columns().empty());
     EXPECT_NE(relation.columns().data(), labels.data());
     const auto duplicates = cols({ ColumnIndex(4), ColumnIndex(4) });
-    EXPECT_THROW((urd::builder<ygg::Relation<ygg::Schema>>(duplicates)), std::invalid_argument);
+    EXPECT_THROW((Relation(duplicates)), std::invalid_argument);
     const auto* storage = relation.columns().data();
     EXPECT_THROW(relation.initialize(duplicates), std::invalid_argument);
     EXPECT_THROW(relation.rename(duplicates), std::invalid_argument);
     EXPECT_EQ(relation.columns().data(), storage);
     EXPECT_EQ(relation.columns()[1].label, ColumnIndex(9));
     const auto invalid = Layouts { { ColumnIndex(1), static_cast<ygg::TypeId>(std::variant_size_v<ygg::ColumnValue>) } };
-    EXPECT_THROW((urd::builder<ygg::Relation<ygg::Schema>>(invalid)), std::invalid_argument);
+    EXPECT_THROW((Relation(invalid)), std::invalid_argument);
 }
 
+/// A relation's columns are an interned record of its rows' repository: the same columns, the same record.
 TEST(YggdrasilTests, DatabaseRelationInitializationRetainsColumnStorageForSelfSubviews)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> relation(cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3), ColumnIndex(4) }));
+    Relation relation(cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3), ColumnIndex(4) }));
     const auto* storage = relation.columns().data();
     relation.initialize(relation.columns());
     EXPECT_EQ(relation.columns().data(), storage);
@@ -236,22 +228,19 @@ TEST(YggdrasilTests, DatabaseRelationInitializationRetainsColumnStorageForSelfSu
     EXPECT_EQ(relation.columns()[0].label, ColumnIndex(1));
     EXPECT_EQ(relation.columns()[1].label, ColumnIndex(2));
     EXPECT_EQ(relation.columns().size(), 2);
-    EXPECT_EQ(relation.columns().data(), storage);
     relation.initialize({});
     EXPECT_TRUE(relation.columns().empty());
     relation.initialize(cols({ ColumnIndex(5), ColumnIndex(6), ColumnIndex(7), ColumnIndex(8) }));
-    EXPECT_EQ(relation.columns().data(), storage);
     EXPECT_EQ(relation.columns()[3].label, ColumnIndex(8));
 }
 
 TEST(YggdrasilTests, DatabaseRelationRenamePreservesRowsAndStorage)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     relation.insert(cells(10, 20));
     relation.insert(cells(30, 40));
-    const auto* columns = relation.columns().data();
-    const auto* first_row = borrow(relation).row(0).get_values().data();
-    const auto* second_row = borrow(relation).row(1).get_values().data();
+    const auto first_row = record_of(borrow(relation).row(0));
+    const auto second_row = record_of(borrow(relation).row(1));
     const auto memory = relation.memory_usage();
     {
         const auto labels = cols({ ColumnIndex(4), ColumnIndex(9) });
@@ -260,20 +249,18 @@ TEST(YggdrasilTests, DatabaseRelationRenamePreservesRowsAndStorage)
     }
     relation.rename(relation.columns());
     expect_relation(relation, { ColumnIndex(4), ColumnIndex(9) }, { { 10, 20 }, { 30, 40 } });
-    EXPECT_EQ(relation.columns().data(), columns);
-    EXPECT_EQ(borrow(relation).row(0).get_values().data(), first_row);
-    EXPECT_EQ(borrow(relation).row(1).get_values().data(), second_row);
+    EXPECT_EQ(record_of(borrow(relation).row(0)), first_row);
+    EXPECT_EQ(record_of(borrow(relation).row(1)), second_row);
     EXPECT_EQ(relation.memory_usage(), memory);
     EXPECT_EQ(relation.insert(cells(10, 20)), 0);
 
     const auto wrong_arity = cols({ ColumnIndex(4) });
     EXPECT_THROW(relation.rename(wrong_arity), std::invalid_argument);
     expect_relation(relation, { ColumnIndex(4), ColumnIndex(9) }, { { 10, 20 }, { 30, 40 } });
-    EXPECT_EQ(relation.columns().data(), columns);
-    EXPECT_EQ(borrow(relation).row(0).get_values().data(), first_row);
-    EXPECT_EQ(borrow(relation).row(1).get_values().data(), second_row);
+    EXPECT_EQ(record_of(borrow(relation).row(0)), first_row);
+    EXPECT_EQ(record_of(borrow(relation).row(1)), second_row);
 
-    urd::builder<ygg::Relation<ygg::Schema>> nullary;
+    Relation nullary;
     nullary.rename({});
     EXPECT_TRUE(nullary.empty());
     nullary.insert(cells());
@@ -283,18 +270,18 @@ TEST(YggdrasilTests, DatabaseRelationRenamePreservesRowsAndStorage)
 
 TEST(YggdrasilTests, DatabaseRelationMaintainsSetAndSchemaInvariants)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> relation(cols({ ColumnIndex(4), ColumnIndex(9) }));
+    Relation relation(cols({ ColumnIndex(4), ColumnIndex(9) }));
     EXPECT_EQ(relation.columns().size(), 2);
     EXPECT_TRUE(relation.empty());
     EXPECT_EQ(relation.insert(cells(1, 2)), 0);
     EXPECT_EQ(relation.insert(cells(1, 2)), 0);
     EXPECT_EQ(relation.insert(cells(3, 4)), 1);
     EXPECT_EQ(relation.size(), 2);
-    EXPECT_EQ(ygg::decode_value<ygg::uint_t>(borrow(relation).row(1).value(size_t { 0 })), 3);
+    EXPECT_EQ(ygg::decode_value<ygg::uint_t>(value_of(borrow(relation).row(1), 0)), 3);
     EXPECT_FALSE(relation.contains(cells(1, 4)));
     EXPECT_THROW(relation.insert(cells(1)), std::invalid_argument);
     EXPECT_FALSE(relation.contains(cells(1)));  // not one value per column: in no row
-    EXPECT_THROW((urd::builder<ygg::Relation<ygg::Schema>>(cols({ ColumnIndex(4), ColumnIndex(4) }))), std::invalid_argument);
+    EXPECT_THROW((Relation(cols({ ColumnIndex(4), ColumnIndex(4) }))), std::invalid_argument);
     const auto view = borrow(relation);
     EXPECT_EQ(view.columns()[1].label, ColumnIndex(9));
     EXPECT_TRUE(view.contains(cells(3, 4)));
@@ -306,18 +293,18 @@ TEST(YggdrasilTests, DatabaseRelationMaintainsSetAndSchemaInvariants)
 TEST(YggdrasilTests, DatabaseBuilderViewsShareSchemasAndObserveRefills)
 {
     ygg::FreeRelationRepository repository;
-    urd::builder<ygg::Relation<ygg::Schema>> relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     relation.insert(cells(7, 8));
-    const auto view = urd::resolve(relation, repository);
+    const auto view = relation.view();
     const auto copy = view;
     EXPECT_EQ(view.columns().data(), relation.columns().data());
     EXPECT_EQ(copy.columns().data(), relation.columns().data());
-    const auto* first_row = view.row(0).get_values().data();
+    const auto first_row = record_of(view.row(0));
     const auto labels = cols({ ColumnIndex(3), ColumnIndex(4) });
     relation.rename(labels);
     EXPECT_EQ(view.columns()[1].label, ColumnIndex(4));
     EXPECT_EQ(copy.columns()[0].label, ColumnIndex(3));
-    EXPECT_EQ(view.row(0).get_values().data(), first_row);
+    EXPECT_EQ(record_of(view.row(0)), first_row);
     relation.clear();
     EXPECT_TRUE(view.get_rows().empty());
     relation.insert(cells(9, 10));
@@ -327,7 +314,7 @@ TEST(YggdrasilTests, DatabaseBuilderViewsShareSchemasAndObserveRefills)
 
 TEST(YggdrasilTests, DatabaseRelationReinitializationRetainsCompatibleStorage)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     relation.insert(cells(3, 4));
     const auto memory = relation.memory_usage();
     EXPECT_THROW(relation.initialize(cols({ ColumnIndex(5), ColumnIndex(5) })), std::invalid_argument);
@@ -348,39 +335,9 @@ TEST(YggdrasilTests, DatabaseRelationReinitializationRetainsCompatibleStorage)
     expect_relation(relation, {}, { {} });
 }
 
-TEST(YggdrasilTests, DatabasePoolKeepsLiveRelationsDistinctAndReusesByArity)
-{
-    const ygg::FreeRelationRepository builders;
-    auto first = builders.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1), ColumnIndex(2) }));
-    first->insert(cells(3, 4));
-    auto second = builders.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1), ColumnIndex(2) }));
-    second->insert(cells(5, 6));
-    EXPECT_NE(first.get(), second.get());
-    const auto* released = second.get();
-    const auto memory = second->memory_usage();
-    second = {};
-    // The released slot comes back first, with its row storage.
-    const auto validated = cols({ ColumnIndex(7), ColumnIndex(8) });
-    auto reused = builders.get_relation_builder<ygg::Schema>(validated);
-    EXPECT_EQ(reused.get(), released);
-    auto unary = builders.get_relation_builder<ygg::Schema>(cols({ ColumnIndex(1) }));
-    unary->insert(cells(8));
-    EXPECT_NE(unary.get(), released);
-    EXPECT_EQ(reused->memory_usage(), memory);
-    expect_relation(*reused, { ColumnIndex(7), ColumnIndex(8) }, {});
-    expect_relation(*first, { ColumnIndex(1), ColumnIndex(2) }, { { 3, 4 } });
-    const std::array<ColumnIndex, 2> duplicates { ColumnIndex(9), ColumnIndex(9) };
-    EXPECT_THROW((void) builders.get_relation_builder<ygg::Schema>(columns_of(duplicates)), std::invalid_argument);
-    expect_relation(*first, { ColumnIndex(1), ColumnIndex(2) }, { { 3, 4 } });
-    expect_relation(*reused, { ColumnIndex(7), ColumnIndex(8) }, {});
-    auto boolean = builders.get_relation_builder<ygg::Schema>({});
-    boolean->insert(cells());
-    expect_relation(*boolean, {}, { {} });
-}
-
 TEST(YggdrasilTests, DatabaseProjectionReordersDeduplicatesAndOwnsResults)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> relation { cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) }) };
+    Relation relation { cols({ ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) }) };
     relation.insert(cells(7, 8, 1));
     relation.insert(cells(7, 8, 2));
     relation.insert(cells(9, 8, 3));
@@ -390,7 +347,7 @@ TEST(YggdrasilTests, DatabaseProjectionReordersDeduplicatesAndOwnsResults)
     EXPECT_THROW((database::ProjectionPlan(relation.columns(), duplicates)), std::invalid_argument);
     EXPECT_THROW((database::ProjectionPlan(relation.columns(), std::array { ColumnIndex(4) })), std::out_of_range);
     const database::ProjectionPlan plan(relation.columns(), std::array { ColumnIndex(2), ColumnIndex(1) });
-    urd::builder<ygg::Relation<ygg::Schema>> output(plan.output_columns());
+    Relation output(plan.output_columns());
     output.insert(cells(99, 99));
     database::Workspace workspace;
     database::project(borrow(relation), plan, output, workspace);
@@ -416,10 +373,10 @@ TEST(YggdrasilTests, DatabasePlansOwnSchemasAndReuseResolvedPositions)
     }();
     auto copied = plans;
     auto [projection, joining] = std::move(copied);
-    urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ large, ColumnIndex(1), ColumnIndex(2) }) };
-    urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ ColumnIndex(2), ColumnIndex(3), large }) };
-    urd::builder<ygg::Relation<ygg::Schema>> projected { cols({ ColumnIndex(2), large }) };
-    urd::builder<ygg::Relation<ygg::Schema>> joined { cols({ large, ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) }) };
+    Relation left_operand { cols({ large, ColumnIndex(1), ColumnIndex(2) }) };
+    Relation right_operand { cols({ ColumnIndex(2), ColumnIndex(3), large }) };
+    Relation projected { cols({ ColumnIndex(2), large }) };
+    Relation joined { cols({ large, ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) }) };
     database::Workspace workspace;
     for (ygg::uint_t generation = 0; generation < 3; ++generation)
     {
@@ -434,7 +391,7 @@ TEST(YggdrasilTests, DatabasePlansOwnSchemasAndReuseResolvedPositions)
         expect_relation(joined, { large, ColumnIndex(1), ColumnIndex(2), ColumnIndex(3) }, { { 7 + generation, 8, 9, 11 }, { 7 + generation, 10, 9, 11 } });
     }
     const database::ProjectionPlan guard(left_operand.columns(), std::span<const ColumnIndex>());
-    urd::builder<ygg::Relation<ygg::Schema>> exists;
+    Relation exists;
     database::project(borrow(left_operand), guard, exists, workspace);
     expect_relation(exists, {}, { {} });
     left_operand.clear();
@@ -476,15 +433,15 @@ TEST(YggdrasilTests, DatabasePlansSurviveCistaRelocation)
     EXPECT_EQ(offsets(joining->right_payload()), (urd::Store<urd::sequence<size_t>> { 1 }));
 
     // Keep the relocated buffers unchanged and alive while using decoded plans.
-    urd::builder<ygg::Relation<ygg::Schema>> left_operand(joining->left_columns());
-    urd::builder<ygg::Relation<ygg::Schema>> right_operand(joining->right_columns());
+    Relation left_operand(joining->left_columns());
+    Relation right_operand(joining->right_columns());
     left_operand.insert(cells(10, 1, 2));
     left_operand.insert(cells(11, 1, 3));
     right_operand.insert(cells(2, 20, 1));
     right_operand.insert(cells(3, 30, 1));
     right_operand.insert(cells(2, 99, 9));
-    urd::builder<ygg::Relation<ygg::Schema>> joined(joining->output_columns());
-    urd::builder<ygg::Relation<ygg::Schema>> projected(projection->output_columns());
+    Relation joined(joining->output_columns());
+    Relation projected(projection->output_columns());
     database::Workspace workspace;
     database::join(borrow(left_operand), borrow(right_operand), *joining, joined, workspace);
     expect_relation(joined, { ColumnIndex(3), ColumnIndex(1), ColumnIndex(2), ColumnIndex(4) }, { { 10, 1, 2, 20 }, { 11, 1, 3, 30 } });
@@ -508,7 +465,7 @@ TEST(YggdrasilTests, DatabaseDefaultPlansRoundTripAndEvaluateNullaryRelations)
     EXPECT_TRUE(joining->right_keys().empty());
     EXPECT_TRUE(joining->right_payload().empty());
 
-    urd::builder<ygg::Relation<ygg::Schema>> left_operand, right_operand, projected, joined;
+    Relation left_operand, right_operand, projected, joined;
     database::Workspace workspace;
     for (const bool left_nonempty : { false, true })
         for (const bool right_nonempty : { false, true })
@@ -530,7 +487,7 @@ TEST(YggdrasilTests, DatabaseDefaultPlansRoundTripAndEvaluateNullaryRelations)
 
 TEST(YggdrasilTests, DatabasePlansValidateSchemasAndOperationsRejectAliasedOutputs)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> left { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation left { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     left.insert(cells(7, 8));
     database::Workspace workspace;
 
@@ -565,14 +522,14 @@ TEST(YggdrasilTests, DatabasePlansValidateSchemasAndOperationsRejectAliasedOutpu
 
 TEST(YggdrasilTests, DatabaseSelectionsSupportColumnsConstantsAndPredicates)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation relation { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     relation.insert(cells(1, 1));
     relation.insert(cells(1, 2));
     relation.insert(cells(2, 2));
     const database::SelectEqualPlan equal(relation.columns(), ColumnIndex(1), ColumnIndex(2));
     const database::SelectValuePlan first_one(relation.columns(), ColumnIndex(1), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t { 1 }));
     const database::SelectValuePlan second_two(relation.columns(), ColumnIndex(2), ygg::type_id<ygg::uint_t>, ygg::encode_value(ygg::uint_t { 2 }));
-    urd::builder<ygg::Relation<ygg::Schema>> output { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation output { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     output.insert(cells(99, 99));
     database::select_equal_columns(borrow(relation), equal, output);
     expect_relation(output, { ColumnIndex(1), ColumnIndex(2) }, { { 1, 1 }, { 2, 2 } });
@@ -580,15 +537,15 @@ TEST(YggdrasilTests, DatabaseSelectionsSupportColumnsConstantsAndPredicates)
     expect_relation(output, { ColumnIndex(1), ColumnIndex(2) }, { { 1, 1 }, { 1, 2 } });
     database::select_equal_value(borrow(relation), second_two, output);
     expect_relation(output, { ColumnIndex(1), ColumnIndex(2) }, { { 1, 2 }, { 2, 2 } });
-    const auto less = [](const auto& row) { return ygg::decode_value<ygg::uint_t>(row.value(0)) < ygg::decode_value<ygg::uint_t>(row.value(1)); };
+    const auto less = [](const auto& row) { return ygg::decode_value<ygg::uint_t>(value_of(row, 0)) < ygg::decode_value<ygg::uint_t>(value_of(row, 1)); };
     database::select(borrow(relation), less, output);
     expect_relation(output, { ColumnIndex(1), ColumnIndex(2) }, { { 1, 2 } });
 }
 
 TEST(YggdrasilTests, DatabaseJoinPreservesAllMatchingRowsAndLogicalColumnOrder)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ ColumnIndex(3), ColumnIndex(1), ColumnIndex(2) }) };
-    urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ ColumnIndex(2), ColumnIndex(4), ColumnIndex(1) }) };
+    Relation left_operand { cols({ ColumnIndex(3), ColumnIndex(1), ColumnIndex(2) }) };
+    Relation right_operand { cols({ ColumnIndex(2), ColumnIndex(4), ColumnIndex(1) }) };
     left_operand.insert(cells(10, 1, 2));
     left_operand.insert(cells(11, 1, 2));
     left_operand.insert(cells(12, 1, 3));
@@ -603,7 +560,7 @@ TEST(YggdrasilTests, DatabaseJoinPreservesAllMatchingRowsAndLogicalColumnOrder)
     expect_relation(joined(borrow(right_operand), borrow(left_operand)),
                     { ColumnIndex(2), ColumnIndex(4), ColumnIndex(1), ColumnIndex(3) },
                     { { 2, 20, 1, 10 }, { 2, 20, 1, 11 }, { 2, 21, 1, 10 }, { 2, 21, 1, 11 }, { 3, 23, 1, 12 } });
-    urd::builder<ygg::Relation<ygg::Schema>> output { cols({ ColumnIndex(3), ColumnIndex(1), ColumnIndex(2), ColumnIndex(4) }) };
+    Relation output { cols({ ColumnIndex(3), ColumnIndex(1), ColumnIndex(2), ColumnIndex(4) }) };
     output.insert(cells(99, 99, 99, 99));
     const database::JoinPlan plan(left_operand.columns(), right_operand.columns());
     database::Workspace workspace;
@@ -616,15 +573,15 @@ TEST(YggdrasilTests, DatabaseJoinPreservesAllMatchingRowsAndLogicalColumnOrder)
 
 TEST(YggdrasilTests, DatabaseJoinHandlesCartesianProductsAndAllSharedColumns)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ ColumnIndex(1) }) };
-    urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ ColumnIndex(2) }) };
+    Relation left_operand { cols({ ColumnIndex(1) }) };
+    Relation right_operand { cols({ ColumnIndex(2) }) };
     left_operand.insert(cells(3));
     left_operand.insert(cells(4));
     right_operand.insert(cells(5));
     right_operand.insert(cells(6));
     expect_relation(joined(borrow(left_operand), borrow(right_operand)), { ColumnIndex(1), ColumnIndex(2) }, { { 3, 5 }, { 3, 6 }, { 4, 5 }, { 4, 6 } });
     auto pairs = joined(borrow(left_operand), borrow(right_operand));
-    urd::builder<ygg::Relation<ygg::Schema>> reversed { cols({ ColumnIndex(2), ColumnIndex(1) }) };
+    Relation reversed { cols({ ColumnIndex(2), ColumnIndex(1) }) };
     reversed.insert(cells(5, 3));
     reversed.insert(cells(8, 3));
     expect_relation(joined(borrow(pairs), borrow(reversed)), { ColumnIndex(1), ColumnIndex(2) }, { { 3, 5 } });
@@ -632,8 +589,8 @@ TEST(YggdrasilTests, DatabaseJoinHandlesCartesianProductsAndAllSharedColumns)
 
 TEST(YggdrasilTests, DatabaseSetOperationsRequireAlignedSignatures)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> left_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
-    urd::builder<ygg::Relation<ygg::Schema>> right_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation left_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation right_operand { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     left_operand.insert(cells(1, 2));
     left_operand.insert(cells(3, 4));
     right_operand.insert(cells(3, 4));
@@ -641,7 +598,7 @@ TEST(YggdrasilTests, DatabaseSetOperationsRequireAlignedSignatures)
     expect_relation(unioned(borrow(left_operand), borrow(right_operand)), { ColumnIndex(1), ColumnIndex(2) }, { { 1, 2 }, { 3, 4 }, { 5, 6 } });
     expect_relation(subtracted(borrow(left_operand), borrow(right_operand)), { ColumnIndex(1), ColumnIndex(2) }, { { 1, 2 } });
     expect_relation(subtracted(borrow(left_operand), borrow(left_operand)), { ColumnIndex(1), ColumnIndex(2) }, {});
-    urd::builder<ygg::Relation<ygg::Schema>> output { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation output { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     output.insert(cells(99, 99));
     const database::SetPlan plan(left_operand.columns(), right_operand.columns());
     database::union_(borrow(left_operand), borrow(right_operand), plan, output);
@@ -657,8 +614,8 @@ TEST(YggdrasilTests, DatabaseSetOperationsRequireAlignedSignatures)
 
 TEST(YggdrasilTests, DatabaseNullaryRelationsObeyBooleanLaws)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> false_;
-    urd::builder<ygg::Relation<ygg::Schema>> true_;
+    Relation false_;
+    Relation true_;
     EXPECT_EQ(true_.insert(cells()), 0);
     EXPECT_EQ(true_.insert(cells()), 0);
     EXPECT_EQ(true_.size(), 1);
@@ -670,14 +627,14 @@ TEST(YggdrasilTests, DatabaseNullaryRelationsObeyBooleanLaws)
     expect_relation(unioned(borrow(true_), borrow(false_)), {}, { {} });
     expect_relation(subtracted(borrow(true_), borrow(false_)), {}, { {} });
     expect_relation(subtracted(borrow(true_), borrow(true_)), {}, {});
-    urd::builder<ygg::Relation<ygg::Schema>> objects { cols({ ColumnIndex(1) }) };
+    Relation objects { cols({ ColumnIndex(1) }) };
     objects.insert(cells(7));
     expect_relation(joined(borrow(objects), borrow(true_)), { ColumnIndex(1) }, { { 7 } });
     expect_relation(joined(borrow(true_), borrow(objects)), { ColumnIndex(1) }, { { 7 } });
     expect_relation(joined(borrow(false_), borrow(objects)), { ColumnIndex(1) }, {});
     expect_relation(projected(borrow(objects), std::initializer_list<ColumnIndex> {}), {}, { {} });
     const database::ProjectionPlan nothing(objects.columns(), std::span<const ColumnIndex>());
-    urd::builder<ygg::Relation<ygg::Schema>> output;
+    Relation output;
     database::Workspace workspace;
     database::project(borrow(objects), nothing, output, workspace);
     expect_relation(output, {}, { {} });
@@ -690,7 +647,7 @@ TEST(YggdrasilTests, DatabaseNullaryRelationsObeyBooleanLaws)
 
 TEST(YggdrasilTests, DatabaseOutputGuardsPreserveExistingResults)
 {
-    urd::builder<ygg::Relation<ygg::Schema>> input { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation input { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     input.insert(cells(3, 4));
     const auto keep = [](const auto&) { return true; };
     const database::SelectEqualPlan equal(input.columns(), ColumnIndex(1), ColumnIndex(2));
@@ -706,14 +663,14 @@ TEST(YggdrasilTests, DatabaseOutputGuardsPreserveExistingResults)
     EXPECT_THROW(database::join(borrow(input), borrow(input), joining, input, workspace), std::invalid_argument);
     EXPECT_THROW(database::union_(borrow(input), borrow(input), sets, input), std::invalid_argument);
     EXPECT_THROW(database::difference(borrow(input), borrow(input), sets, input), std::invalid_argument);
-    urd::builder<ygg::Relation<ygg::Schema>> right_only { cols({ ColumnIndex(1), ColumnIndex(2) }) };
+    Relation right_only { cols({ ColumnIndex(1), ColumnIndex(2) }) };
     right_only.insert(cells(9, 10));
     EXPECT_THROW(database::join(borrow(input), borrow(right_only), joining, right_only, workspace), std::invalid_argument);
     EXPECT_THROW(database::union_(borrow(input), borrow(right_only), sets, right_only), std::invalid_argument);
     EXPECT_THROW(database::difference(borrow(input), borrow(right_only), sets, right_only), std::invalid_argument);
     expect_relation(right_only, { ColumnIndex(1), ColumnIndex(2) }, { { 9, 10 } });
     ygg::FreeRelationRepository repository;
-    const auto alias = urd::resolve(input, repository);
+    const auto alias = input.view();
     EXPECT_THROW(database::select(alias, keep, input), std::invalid_argument);
     expect_relation(input, { ColumnIndex(1), ColumnIndex(2) }, { { 3, 4 } });
 }
@@ -724,8 +681,8 @@ TEST(YggdrasilTests, DatabaseOperatorsRespectCanonicalEquality)
     const ygg::FreeRelationRepository builders;
     const auto left_columns = columns_of<double>({ ColumnIndex(1), ColumnIndex(2) });
     const auto right_columns = columns_of<double>({ ColumnIndex(1), ColumnIndex(3) });
-    auto left_operand = builders.get_relation_builder<ygg::Schema>(left_columns);
-    auto right_operand = builders.get_relation_builder<ygg::Schema>(right_columns);
+    auto left_operand = std::optional<Relation>(std::in_place, left_columns);
+    auto right_operand = std::optional<Relation>(std::in_place, right_columns);
     left_operand->insert(std::array { ygg::encode_value(0.0), ygg::encode_value(2.0) });
     left_operand->insert(std::array { ygg::encode_value(3.0), ygg::encode_value(4.0) });
     EXPECT_EQ(left_operand->insert(std::array { ygg::encode_value(-0.0), ygg::encode_value(2.0) }), 0);
@@ -740,14 +697,14 @@ TEST(YggdrasilTests, DatabaseOperatorsRespectCanonicalEquality)
     EXPECT_EQ(result.size(), 1);
     EXPECT_TRUE(result.contains(std::array { ygg::encode_value(-0.0), ygg::encode_value(2.0), ygg::encode_value(5.0) }));
     const database::SelectValuePlan zero(left_operand->columns(), ColumnIndex(1), ygg::type_id<double>, ygg::encode_value(-0.0));
-    urd::builder<ygg::Relation<ygg::Schema>> selected(left_operand->columns());
+    Relation selected(left_operand->columns());
     database::select_equal_value(borrow(*left_operand), zero, selected);
     EXPECT_EQ(selected.size(), 1);
     EXPECT_TRUE(selected.contains(std::array { ygg::encode_value(0.0), ygg::encode_value(2.0) }));
-    urd::builder<ygg::Relation<ygg::Schema>> pairs(columns_of<double>({ ColumnIndex(1), ColumnIndex(2) }));
+    Relation pairs(columns_of<double>({ ColumnIndex(1), ColumnIndex(2) }));
     pairs.insert(std::array { ygg::encode_value(0.0), ygg::encode_value(-0.0) });
     pairs.insert(std::array { ygg::encode_value(2.0), ygg::encode_value(3.0) });
-    urd::builder<ygg::Relation<ygg::Schema>> equal(pairs.columns());
+    Relation equal(pairs.columns());
     database::select_equal_columns(borrow(pairs), database::SelectEqualPlan(pairs.columns(), ColumnIndex(1), ColumnIndex(2)), equal);
     EXPECT_EQ(equal.size(), 1);
     EXPECT_TRUE(equal.contains(std::array { ygg::encode_value(0.0), ygg::encode_value(0.0) }));
@@ -775,9 +732,9 @@ TEST(YggdrasilTests, DatabaseNaturalJoinMatchesSmallReferenceAcrossSchemas)
         for (size_t trial = 0; trial < 25; ++trial)
         {
             SCOPED_TRACE(trial);
-            auto left_operand = builders.get_relation_builder<ygg::Schema>(columns_of(left_columns));
-            auto right_operand = builders.get_relation_builder<ygg::Schema>(columns_of(right_columns));
-            for (auto* relation : { left_operand.get(), right_operand.get() })
+            auto left_operand = std::optional<Relation>(std::in_place, columns_of(left_columns));
+            auto right_operand = std::optional<Relation>(std::in_place, columns_of(right_columns));
+            for (auto* relation : { &*left_operand, &*right_operand })
             {
                 const auto count = random() % 9;
                 urd::Store<urd::sequence<ygg::uint_t>> row(relation->columns().size());
@@ -789,12 +746,12 @@ TEST(YggdrasilTests, DatabaseNaturalJoinMatchesSmallReferenceAcrossSchemas)
                 }
             }
             const auto expected = reference_join(*left_operand, *right_operand);
-            urd::builder<ygg::Relation<ygg::Schema>> result(join_plan.output_columns());
+            Relation result(join_plan.output_columns());
             database::join(borrow(*left_operand), borrow(*right_operand), join_plan, result, workspace);
             ASSERT_EQ(result.size(), expected.size());
             for (const auto& row : expected)
                 EXPECT_TRUE(result.contains(packed(std::span<const ygg::uint_t>(row))));
-            urd::builder<ygg::Relation<ygg::Schema>> projected(columns_of(left_columns));
+            Relation projected(columns_of(left_columns));
             database::project(borrow(result), project_plan, projected, workspace);
             std::set<urd::Store<urd::sequence<ygg::uint_t>>> expected_projection;
             for (const auto& row : expected)
@@ -820,7 +777,7 @@ TEST(YggdrasilTests, DatabaseNaturalJoinMatchesSmallReferenceAcrossSchemas)
 }
 
 template<typename R>
-concept CanInsertTypedRow = requires(urd::builder<ygg::Relation<ygg::Schema>>& relation, const R& row) { relation.insert(row); };
+concept CanInsertTypedRow = requires(Relation& relation, const R& row) { relation.insert(row); };
 
 static_assert(CanInsertTypedRow<std::span<const ygg::Value>>);
 static_assert(!CanInsertTypedRow<std::span<const ygg::uint_t>>);
@@ -831,7 +788,7 @@ concept CanQueryTypedRow = requires(const V& view, const R& row) {
 };
 
 using TypedRelationRepository = ygg::FreeRelationRepository;
-using TypedBuilderView = urd::borrowed_view<ygg::Relation<ygg::Schema>, TypedRelationRepository, urd::builder<ygg::Relation<ygg::Schema>>>;
+using TypedBuilderView = urd::borrowed_view<ygg::Relation<ygg::Schema>, TypedRelationRepository, ygg::FreeRelationBuilder>;
 using TypedDataView = urd::borrowed_view<ygg::Relation<ygg::Schema>, TypedRelationRepository>;
 using TypedIndexView = urd::index_view<ygg::Relation<ygg::Schema>, TypedRelationRepository>;
 static_assert(CanQueryTypedRow<TypedBuilderView, std::span<const ygg::Value>>);
@@ -844,28 +801,28 @@ static_assert(!CanQueryTypedRow<TypedIndexView, std::span<const ygg::uint_t>>);
 TEST(YggdrasilTests, DatabaseRelationInsertsTypedTuplesAndCanonicalBytesWithoutStaging)
 {
     const auto values = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }), ygg::encode_value(ygg::uint_t { 7 }) };
-    auto relation = urd::builder<ygg::Relation<ygg::Schema>>(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
+    auto relation = Relation(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
     EXPECT_EQ(relation.insert(values), 0);
     const auto encoded = borrow(relation).row(0);
-    EXPECT_EQ(relation.insert(encoded.get_values()), 0);
+    EXPECT_EQ(relation.insert(values_of(encoded)), 0);
     EXPECT_EQ(relation.size(), 1);
     EXPECT_TRUE(relation.contains(values));
-    EXPECT_TRUE(relation.contains(encoded.get_values()));
+    EXPECT_TRUE(relation.contains(values_of(encoded)));
     for (size_t c = 0; c < values.size(); ++c)
-        EXPECT_EQ(borrow(relation).row(0).value(c), values[c]);
+        EXPECT_EQ(value_of(borrow(relation).row(0), c), values[c]);
 }
 
 TEST(YggdrasilTests, DatabaseRelationViewsQueryTypedRowsWithinTheirOwnRows)
 {
     ygg::FreeRelationRepository repository;
-    auto relation = urd::builder<ygg::Relation<ygg::Schema>>(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
+    auto relation = Relation(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
     const auto values = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }), ygg::encode_value(ygg::uint_t { 7 }) };
     relation.insert(values);
     const auto encoded = borrow(relation).row(0);
     const auto indexed = tyr::datalog::tests::ops::intern(repository, relation).first;
     const auto data_view = urd::resolve(repository[indexed.index()], repository);
-    const auto builder_view = urd::resolve(relation, repository);
-    auto other = urd::builder<ygg::Relation<ygg::Schema>>(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
+    const auto builder_view = relation.view();
+    auto other = Relation(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1), ColumnIndex(2) }));
     const auto other_row = std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }), ygg::encode_value(ygg::uint_t { 6 }) };
     other.insert(other_row);
     const auto other_indexed = tyr::datalog::tests::ops::intern(repository, other).first;
@@ -874,7 +831,7 @@ TEST(YggdrasilTests, DatabaseRelationViewsQueryTypedRowsWithinTheirOwnRows)
     const auto verify = [&](const auto& view)
     {
         EXPECT_TRUE(view.contains(values));
-        EXPECT_TRUE(view.contains(encoded));
+        EXPECT_TRUE(view.contains(values_of(encoded)));
         EXPECT_FALSE(view.contains(other_row));
         EXPECT_FALSE(view.contains(missing));
         EXPECT_FALSE(view.contains(std::array { ygg::encode_value(ygg::uint_t { 2 }), ygg::encode_value(ygg::uint_t { 5 }) }));  // not one value per column
@@ -887,15 +844,15 @@ TEST(YggdrasilTests, DatabaseRelationViewsQueryTypedRowsWithinTheirOwnRows)
 TEST(YggdrasilTests, DatabaseRelationViewsQueryEmptyTypedRows)
 {
     ygg::FreeRelationRepository repository;
-    auto relation = urd::builder<ygg::Relation<ygg::Schema>>();
+    auto relation = Relation();
     const auto row = std::array<ygg::Value, 0> {};
     const auto empty = tyr::datalog::tests::ops::intern(repository, relation).first;
-    EXPECT_FALSE(urd::resolve(relation, repository).contains(row));
+    EXPECT_FALSE(relation.view().contains(row));
     EXPECT_FALSE(urd::resolve(repository[empty.index()], repository).contains(row));
     EXPECT_FALSE(empty.contains(row));
     relation.insert(row);
     const auto unit = tyr::datalog::tests::ops::intern(repository, relation).first;
-    EXPECT_TRUE(urd::resolve(relation, repository).contains(row));
+    EXPECT_TRUE(relation.view().contains(row));
     EXPECT_TRUE(urd::resolve(repository[unit.index()], repository).contains(row));
     EXPECT_TRUE(unit.contains(row));
     EXPECT_FALSE(empty.contains(row));
@@ -903,7 +860,7 @@ TEST(YggdrasilTests, DatabaseRelationViewsQueryEmptyTypedRows)
 
 TEST(YggdrasilTests, DatabaseRelationRejectedInsertStoresNothing)
 {
-    auto relation = urd::builder<ygg::Relation<ygg::Schema>>(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1) }));
+    auto relation = Relation(columns_of<ygg::uint_t>({ ColumnIndex(0), ColumnIndex(1) }));
     EXPECT_THROW(relation.insert(std::array { ygg::encode_value(ygg::uint_t { 2 }) }), std::invalid_argument);
     EXPECT_THROW(relation.insert(std::array { ygg::encode_value(2.0), ygg::encode_value(5.0) }), std::out_of_range);  // too wide for the columns
     EXPECT_TRUE(relation.empty());

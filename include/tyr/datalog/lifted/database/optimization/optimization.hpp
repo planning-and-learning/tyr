@@ -57,7 +57,7 @@ class StatisticsAccumulator
 {
 public:
     /// Adds one sample of key's relation.
-    template<RelationViewConcept Relation>
+    template<ygg::RelationViewConcept<ygg::Schema> Relation>
     void add(const Key& key, const Relation& relation)
     {
         auto& total = m_totals[key];

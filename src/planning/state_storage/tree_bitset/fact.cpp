@@ -31,7 +31,7 @@ using Blocks = urd::Store<urd::sequence<tree_bitset::Block>>;
 using Flips = urd::Store<urd::sequence<tree_bitset::Flip>>;
 
 template<typename Set>
-auto insert_facts(Set& bitsets, const StateLayout<GroundTag>& layout, const FactUnpackedStorage<GroundTag>& unpacked, Blocks& blocks)
+auto insert_facts(Set& bitsets, const StateLayout<GroundTag>& layout, const urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>& unpacked, Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
     blocks.assign(layout.fluent_num_blocks, tree_bitset::Block { 0 });
@@ -43,7 +43,7 @@ auto insert_facts(Set& bitsets, const StateLayout<GroundTag>& layout, const Fact
 }
 
 template<typename Set>
-auto insert_facts(Set& bitsets, const StateLayout<LiftedTag>&, const FactUnpackedStorage<LiftedTag>& unpacked, Blocks&)
+auto insert_facts(Set& bitsets, const StateLayout<LiftedTag>&, const urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>& unpacked, Blocks&)
 { return bitsets.insert(unpacked.indices).first; }
 
 /// XOR-ing old and new value into a variable's bits turns its old encoding into the new one.
@@ -65,7 +65,7 @@ template<typename Set>
 void unpack_facts(Set& bitsets,
                   const StateLayout<GroundTag>& layout,
                   typename Set::handle_type packed,
-                  FactUnpackedStorage<GroundTag>& unpacked,
+                  urd::builder<FactStorage<GroundTag>, formalism::planning::Repository>& unpacked,
                   Blocks& blocks)
 {
     const auto& infos = layout.fluent_infos;
@@ -80,21 +80,21 @@ void unpack_facts(Set& bitsets,
 }
 
 template<typename Set>
-void unpack_facts(Set& bitsets, const StateLayout<LiftedTag>&, typename Set::handle_type packed, FactUnpackedStorage<LiftedTag>& unpacked, Blocks&)
+void unpack_facts(Set& bitsets, const StateLayout<LiftedTag>&, typename Set::handle_type packed, urd::builder<FactStorage<LiftedTag>, formalism::planning::Repository>& unpacked, Blocks&)
 { bitsets.copy(packed, unpacked.indices); }
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-FactStorageBackend<Kind, TreeBitset, ThreadSafe>::FactStorageBackend(Context& ctx) : m_context(&ctx)
+StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::StateComponentRepository(Context& ctx) : m_context(&ctx)
 {
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-auto FactStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked& unpacked) -> Packed
 { return insert_facts(m_context->bitsets, m_context->layout, unpacked, m_blocks); }
 
 template<TaskKind Kind, bool ThreadSafe>
-auto FactStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes)
+auto StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::insert(const Unpacked&, const Packed& parent, std::span<const StateDelta::FluentChange> changes)
     -> Packed
 {
     m_flips.clear();
@@ -106,12 +106,12 @@ auto FactStorageBackend<Kind, TreeBitset, ThreadSafe>::insert(const Unpacked&, c
 }
 
 template<TaskKind Kind, bool ThreadSafe>
-void FactStorageBackend<Kind, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<FactStorage<Kind>, TreeBitset, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 { unpack_facts(m_context->bitsets, m_context->layout, packed, unpacked, m_blocks); }
 
-template class FactStorageBackend<GroundTag, TreeBitset, false>;
-template class FactStorageBackend<GroundTag, TreeBitset, true>;
-template class FactStorageBackend<LiftedTag, TreeBitset, false>;
-template class FactStorageBackend<LiftedTag, TreeBitset, true>;
+template class StateComponentRepository<FactStorage<GroundTag>, TreeBitset, false>;
+template class StateComponentRepository<FactStorage<GroundTag>, TreeBitset, true>;
+template class StateComponentRepository<FactStorage<LiftedTag>, TreeBitset, false>;
+template class StateComponentRepository<FactStorage<LiftedTag>, TreeBitset, true>;
 
 }

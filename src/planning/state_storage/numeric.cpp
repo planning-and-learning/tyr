@@ -27,14 +27,14 @@ namespace tyr::planning
 {
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-NumericStorageBackend<Kind, Tag, ThreadSafe>::NumericStorageBackend(Context& ctx) : m_float_vectors(&ctx.float_vectors)
+StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::StateComponentRepository(Context& ctx) : m_float_vectors(&ctx.float_vectors)
 {
 }
 
 namespace
 {
 template<TaskKind Kind>
-void canonicalize(NumericUnpackedStorage<Kind>& unpacked)
+void canonicalize(urd::builder<NumericStorage<Kind>, formalism::planning::Repository>& unpacked)
 {
     for (auto& value : unpacked.values)
         value = ygg::FloatTolerance<ygg::float_t>::canonicalize(value);
@@ -42,14 +42,14 @@ void canonicalize(NumericUnpackedStorage<Kind>& unpacked)
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-auto NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked) -> Packed
+auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked) -> Packed
 {
     canonicalize(unpacked);
     return m_float_vectors->insert(unpacked.values).first;
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-auto NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes)
+auto StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::insert(Unpacked& unpacked, const Packed& parent, std::span<const StateDelta::NumericChange> changes)
     -> Packed
 {
     canonicalize(unpacked);
@@ -71,23 +71,23 @@ auto NumericStorageBackend<Kind, Tag, ThreadSafe>::insert(Unpacked& unpacked, co
 }
 
 template<TaskKind Kind, typename Tag, bool ThreadSafe>
-void NumericStorageBackend<Kind, Tag, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
+void StateComponentRepository<NumericStorage<Kind>, Tag, ThreadSafe>::unpack(const Packed& packed, Unpacked& unpacked)
 {
     unpacked.values.resize(m_float_vectors->row_size(packed));
     m_float_vectors->copy(packed, unpacked.values);
 }
 
-template class NumericStorageBackend<GroundTag, TreeBitset, false>;
-template class NumericStorageBackend<GroundTag, TreeBitset, true>;
-template class NumericStorageBackend<GroundTag, TreeVector, false>;
-template class NumericStorageBackend<GroundTag, TreeVector, true>;
-template class NumericStorageBackend<GroundTag, Hashset, false>;
-template class NumericStorageBackend<GroundTag, Hashset, true>;
-template class NumericStorageBackend<LiftedTag, TreeBitset, false>;
-template class NumericStorageBackend<LiftedTag, TreeBitset, true>;
-template class NumericStorageBackend<LiftedTag, TreeVector, false>;
-template class NumericStorageBackend<LiftedTag, TreeVector, true>;
-template class NumericStorageBackend<LiftedTag, Hashset, false>;
-template class NumericStorageBackend<LiftedTag, Hashset, true>;
+template class StateComponentRepository<NumericStorage<GroundTag>, TreeBitset, false>;
+template class StateComponentRepository<NumericStorage<GroundTag>, TreeBitset, true>;
+template class StateComponentRepository<NumericStorage<GroundTag>, TreeVector, false>;
+template class StateComponentRepository<NumericStorage<GroundTag>, TreeVector, true>;
+template class StateComponentRepository<NumericStorage<GroundTag>, Hashset, false>;
+template class StateComponentRepository<NumericStorage<GroundTag>, Hashset, true>;
+template class StateComponentRepository<NumericStorage<LiftedTag>, TreeBitset, false>;
+template class StateComponentRepository<NumericStorage<LiftedTag>, TreeBitset, true>;
+template class StateComponentRepository<NumericStorage<LiftedTag>, TreeVector, false>;
+template class StateComponentRepository<NumericStorage<LiftedTag>, TreeVector, true>;
+template class StateComponentRepository<NumericStorage<LiftedTag>, Hashset, false>;
+template class StateComponentRepository<NumericStorage<LiftedTag>, Hashset, true>;
 
 }

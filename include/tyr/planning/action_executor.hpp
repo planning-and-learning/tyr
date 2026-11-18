@@ -78,7 +78,7 @@ public:
     template<TaskKind Kind>
     ygg::float_t apply_action_unregistered(const StateContext<Kind>& state_context,
                                            formalism::planning::ActionView<GroundTag> action,
-                                           urd::builder<State<Kind>>& successor_state_builder,
+                                           urd::builder<State<Kind>, StateRepository<Kind>>& successor_state_builder,
                                            StateDelta& delta);
 
     // Lifted action API
@@ -101,7 +101,7 @@ public:
                                            formalism::WriteContext<formalism::planning::Builder, formalism::planning::Repository>& grounder,
                                            formalism::planning::FDRContext& fdr,
                                            ForEachEffectBinding for_each_effect_binding,
-                                           urd::builder<State<LiftedTag>>& successor_state_builder,
+                                           urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& successor_state_builder,
                                            StateDelta& delta);
 
 private:

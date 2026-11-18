@@ -31,22 +31,6 @@ urd::Store<urd::sequence<ConjunctivePlan>> QueryEvaluator::plans(const VariableS
 
 namespace tyr::datalog::database::bound
 {
-bool QueryEvaluator::bind_atom(const ConjunctiveAtom& atom, const ygg::RowPool::row_type& row)
-{
-    for (size_t c = 0; c < atom.vars.size(); ++c)
-    {
-        const auto value = row.get(c);
-        if (static_cast<size_t>(std::ranges::find(atom.vars, atom.vars[c]) - atom.vars.begin()) == c)
-            m_frame[atom.vars[c]] = value;
-        else if (value != m_frame[atom.vars[c]])
-            return false;
-    }
-    return true;
-}
-}
-
-namespace tyr::datalog::database::bound
-{
 size_t QueryEvaluator::index_id(size_t slot, std::span<const std::pair<size_t, uint32_t>> key)
 {
     auto positions = urd::Store<urd::sequence<size_t>>();

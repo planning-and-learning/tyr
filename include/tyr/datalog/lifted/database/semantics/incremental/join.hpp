@@ -20,65 +20,45 @@ namespace tyr::datalog::database::incremental
 {
 namespace detail
 {
-/// Inserts rows absent from `rows`, indexing their positions by the hash of `keys`.
-template<RelationViewConcept V>
-void insert_rows(const V& input,
-                 urd::builder<ygg::Relation<ygg::Schema>>& rows,
-                 std::span<const ColumnSlice> keys,
-                 urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains>& index)
+/// The rows of a scratch relation by the hash of their join keys: each entry a row's slot in its records, which stays
+/// while the relation holds the row (its position does not: its rows are sorted).
+using RowsByKey = urd::Store<urd::map<ygg::hash_t, ygg::FreeScratchRelation::Slot>, urd::multi, urd::retains>;
+
+/// Inserts rows absent from `rows`, indexing their records by the hash of `keys`.
+template<ygg::RelationViewConcept<ygg::Schema> V>
+void insert_rows(const V& input, ygg::FreeScratchRelation& rows, std::span<const ColumnSlice> keys, RowsByKey& index)
 {
     if (!keys.empty())
-        index.reserve(rows.size() + input.get_rows().size());
-    for (size_t i = 0; i < input.get_rows().size(); ++i)
-    {
-        const auto row = input.row(i).get_values();
-        const auto previous_size = rows.size();
-        const auto position = rows.insert(row);
-        if (position != previous_size)
-            throw std::invalid_argument("Incremental evaluation: added row is already present in the input.");
-        if (!keys.empty())
-            index.insert({ database::detail::join_key_hash(row, keys), position });
-    }
+        index.reserve(rows.view().size() + input.size());
+    for (const auto& held : input.get_rows())
+        ygg::with_values(held,
+                         [&](const auto& values)
+                         {
+                             if (!rows.insert(values).second)
+                                 throw std::invalid_argument("Incremental evaluation: added row is already present in the input.");
+                             if (!keys.empty())
+                                 index.insert({ database::detail::join_key_hash(values, keys), rows.slot(values) });
+                         });
 }
 
-/// Erases rows present in `rows` (read through `layer`), keeping the position index of insert_rows() current.
-template<RelationViewConcept V>
-void erase_rows(const ygg::FreeRelationRepository& layer,
-                const V& input,
-                urd::builder<ygg::Relation<ygg::Schema>>& rows,
-                std::span<const ColumnSlice> keys,
-                urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains>& index)
+/// Erases rows present in `rows`, and their entries of the index of insert_rows().
+template<ygg::RelationViewConcept<ygg::Schema> V>
+void erase_rows(const V& input, ygg::FreeScratchRelation& rows, std::span<const ColumnSlice> keys, RowsByKey& index)
 {
-    const auto stored = layer.view(rows);
-    for (size_t i = 0; i < input.size(); ++i)
-    {
-        const auto position = rows.find(input.row(i).get_values());
-        if (!position)
-            throw std::invalid_argument("Incremental evaluation: removed row is absent from the input.");
-        const auto last = ygg::to_uint_t(rows.size() - 1);
-        if (keys.empty())
-        {
-            rows.erase(*position);
-            continue;
-        }
-        const auto removed_key = database::detail::join_key_hash(stored.row(*position).get_values(), keys);
-        rows.erase(*position);
-        const auto erase = [&](ygg::hash_t key, ygg::uint_t value)
-        {
-            const auto matches = index.equal_range(key);
-            const auto found = std::find_if(matches.first, matches.second, [&](const auto& entry) { return entry.second == value; });
-            assert(found != matches.second);
-            index.erase(found);
-        };
-        erase(removed_key, *position);
-        if (*position != last)
-        {
-            // The last row moved into the erased one's position.
-            const auto moved_key = database::detail::join_key_hash(stored.row(*position).get_values(), keys);
-            erase(moved_key, last);
-            index.insert({ moved_key, *position });
-        }
-    }
+    for (const auto& held : input.get_rows())
+        ygg::with_values(held,
+                         [&](const auto& values)
+                         {
+                             const auto slot = rows.slot(values);
+                             if (!rows.erase(values))
+                                 throw std::invalid_argument("Incremental evaluation: removed row is absent from the input.");
+                             if (keys.empty())
+                                 return;
+                             const auto matches = index.equal_range(database::detail::join_key_hash(values, keys));
+                             const auto found = std::find_if(matches.first, matches.second, [&](const auto& entry) { return entry.second == slot; });
+                             assert(found != matches.second);
+                             index.erase(found);
+                         });
 }
 
 }  // namespace detail
@@ -95,18 +75,17 @@ void erase_rows(const ygg::FreeRelationRepository& layer,
 /// No repository publication is required.
 class JoinEvaluator
 {
-    const ygg::FreeRelationRepository* m_layer;
     JoinPlan m_plan;
-    urd::builder<ygg::Relation<ygg::Schema>> m_left_operand;
-    urd::builder<ygg::Relation<ygg::Schema>> m_right_operand;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_left_index;
-    urd::Store<urd::map<ygg::hash_t, ygg::uint_t>, urd::multi, urd::retains> m_right_index;
-    urd::builder<ygg::Relation<ygg::Schema>> m_result;
+    urd::handle<ygg::FreeScratchRelation> m_left_operand;
+    urd::handle<ygg::FreeScratchRelation> m_right_operand;
+    detail::RowsByKey m_left_index;
+    detail::RowsByKey m_right_index;
+    urd::handle<ygg::FreeScratchRelation> m_result;
     Delta m_delta;
     bool m_initialized = false;
 
-    template<RelationViewConcept L, RelationViewConcept R>
-    void join(const L& left_operand, const R& right_operand, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace) const;
+    template<ygg::RelationViewConcept<ygg::Schema> L, ygg::RelationViewConcept<ygg::Schema> R>
+    void join(const L& left_operand, const R& right_operand, bool build_left, ygg::FreeScratchRelation& output, Workspace& workspace) const;
 
     /// Applies changes that are known to be valid.
     template<RelationChange L, RelationChange R>
@@ -115,11 +94,11 @@ class JoinEvaluator
     friend struct detail::NodeRules<QueryJoinTag>;
 
 public:
-    /// Its builders are read through `layer`, which must outlive it.
-    JoinEvaluator(const ygg::FreeRelationRepository& layer, JoinPlan plan);
+    /// Its relations are drawn from `scratch`, which must outlive it.
+    JoinEvaluator(ygg::FreeScratchRelations& scratch, JoinPlan plan);
 
     /// Replace the baseline, retaining buffers, and clear the last output delta.
-    template<RelationViewConcept L, RelationViewConcept R>
+    template<ygg::RelationViewConcept<ygg::Schema> L, ygg::RelationViewConcept<ygg::Schema> R>
     void initialize(const L& left_operand, const R& right_operand, Workspace& workspace);
 
     /// Each change describes actual set changes in that input's original column
@@ -137,29 +116,34 @@ public:
     [[nodiscard]] size_t memory_usage() const noexcept;
 };
 
-template<RelationViewConcept L, RelationViewConcept R>
-void JoinEvaluator::join(const L& left_operand, const R& right_operand, bool build_left, urd::builder<ygg::Relation<ygg::Schema>>& output, Workspace& workspace)
-    const
-{ database::detail::join_rows(left_operand, right_operand, m_plan, build_left, build_left ? m_left_index : m_right_index, output, workspace); }
+template<ygg::RelationViewConcept<ygg::Schema> L, ygg::RelationViewConcept<ygg::Schema> R>
+void JoinEvaluator::join(const L& left_operand, const R& right_operand, bool build_left, ygg::FreeScratchRelation& output, Workspace& workspace) const
+{
+    const auto& build = build_left ? *m_left_operand : *m_right_operand;
+    const auto row_at = [&build](const auto& /*operand*/, ygg::FreeScratchRelation::Slot slot) -> const auto& { return build.at(slot).values; };
+    database::detail::join_rows(left_operand, right_operand, m_plan, build_left, build_left ? m_left_index : m_right_index, row_at, output, workspace);
+}
 
-template<RelationViewConcept L, RelationViewConcept R>
+template<ygg::RelationViewConcept<ygg::Schema> L, ygg::RelationViewConcept<ygg::Schema> R>
 void JoinEvaluator::initialize(const L& left_operand, const R& right_operand, Workspace& workspace)
 {
     assert(std::ranges::equal(left_operand.columns(), m_plan.left_columns()));
     assert(std::ranges::equal(right_operand.columns(), m_plan.right_columns()));
-    detail::require_unaliased(left_operand, m_result, m_delta);
-    detail::require_unaliased(right_operand, m_result, m_delta);
+    detail::require_unaliased(left_operand, *m_result, m_delta);
+    detail::require_unaliased(right_operand, *m_result, m_delta);
     m_initialized = false;
-    m_left_operand.clear();
-    m_right_operand.clear();
+    m_left_operand->clear();
+    m_right_operand->clear();
     m_left_index.clear();
     m_right_index.clear();
-    m_result.clear();
+    m_result->clear();
     m_delta.clear();
-    detail::insert_rows(left_operand, m_left_operand, m_plan.left_keys(), m_left_index);
-    detail::insert_rows(right_operand, m_right_operand, m_plan.right_keys(), m_right_index);
+    detail::insert_rows(left_operand, *m_left_operand, m_plan.left_keys(), m_left_index);
+    detail::insert_rows(right_operand, *m_right_operand, m_plan.right_keys(), m_right_index);
     // Both indexes are ready, so probe the smaller input.
-    join(m_layer->view(m_left_operand), m_layer->view(m_right_operand), m_left_operand.size() >= m_right_operand.size(), m_result, workspace);
+    const auto left = m_left_operand->view();
+    const auto right = m_right_operand->view();
+    join(left, right, left.size() >= right.size(), *m_result, workspace);
     m_initialized = true;
 }
 
@@ -167,8 +151,8 @@ template<RelationChange L, RelationChange R>
 void JoinEvaluator::update(const L& left_operand, const R& right_operand, Workspace& workspace)
 {
     detail::require_initialized(m_initialized);
-    detail::require_change(left_operand, m_plan.left_columns(), m_result, m_delta);
-    detail::require_change(right_operand, m_plan.right_columns(), m_result, m_delta);
+    detail::require_change(left_operand, m_plan.left_columns(), *m_result, m_delta);
+    detail::require_change(right_operand, m_plan.right_columns(), *m_result, m_delta);
     apply(left_operand, right_operand, workspace);
 }
 
@@ -182,18 +166,18 @@ void JoinEvaluator::apply(const L& left_operand, const R& right_operand, Workspa
 
     // Remove from both sides before inserting. Each old/new pair is visited
     // once, and no temporary match between an added and removed row is emitted.
-    const auto current_left = m_layer->view(m_left_operand);
-    const auto current_right = m_layer->view(m_right_operand);
-    join(left_removed, current_right, false, m_delta.removed, workspace);
-    detail::erase_rows(*m_layer, left_removed, m_left_operand, m_plan.left_keys(), m_left_index);
-    join(current_left, right_removed, true, m_delta.removed, workspace);
-    detail::erase_rows(*m_layer, right_removed, m_right_operand, m_plan.right_keys(), m_right_index);
-    join(left_added, current_right, false, m_delta.added, workspace);
-    detail::insert_rows(left_added, m_left_operand, m_plan.left_keys(), m_left_index);
-    join(current_left, right_added, true, m_delta.added, workspace);
-    detail::insert_rows(right_added, m_right_operand, m_plan.right_keys(), m_right_index);
+    const auto current_left = m_left_operand->view();
+    const auto current_right = m_right_operand->view();
+    join(left_removed, current_right, false, *m_delta.removed, workspace);
+    detail::erase_rows(left_removed, *m_left_operand, m_plan.left_keys(), m_left_index);
+    join(current_left, right_removed, true, *m_delta.removed, workspace);
+    detail::erase_rows(right_removed, *m_right_operand, m_plan.right_keys(), m_right_index);
+    join(left_added, current_right, false, *m_delta.added, workspace);
+    detail::insert_rows(left_added, *m_left_operand, m_plan.left_keys(), m_left_index);
+    join(current_left, right_added, true, *m_delta.added, workspace);
+    detail::insert_rows(right_added, *m_right_operand, m_plan.right_keys(), m_right_index);
 
-    detail::apply_delta(m_delta, m_result);
+    detail::apply_delta(m_delta, *m_result);
     m_initialized = true;
 }
 

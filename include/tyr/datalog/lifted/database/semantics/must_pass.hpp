@@ -83,15 +83,15 @@ class MustPass
 {
 public:
     /// Edges given by a query over inputs with the plan's edge columns; `static_slots` marks its inputs that never
-    /// change, which are then read on the first call only. Its input snapshots are builders of `layer`, which must outlive
-    /// it.
-    MustPass(const ygg::FreeRelationRepository& layer,
+    /// change, which are then read on the first call only. Its input snapshots are drawn from `scratch`, which must
+    /// outlive it.
+    MustPass(ygg::FreeScratchRelations& scratch,
              QueryView<> edges,
              const MustPassPlan& plan,
              const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
         m_plan(plan),
         m_probe_positions(plan.probe_positions()),
-        m_edges(bound::QueryEvaluator(layer, checked(edges, plan), static_slots), plan.edge_columns(), plan.keys(), plan.arity()),
+        m_edges(bound::QueryEvaluator(scratch, checked(edges, plan), static_slots), plan.edge_columns(), plan.keys(), plan.arity()),
         m_keys(),
         m_probes(),
         m_starts(),
@@ -109,14 +109,14 @@ public:
 
     /// Appends to `out`, which has the plan's output columns, the must-pass probe objects of every key of the sources and
     /// targets over the edges of the inputs: input(slot) returns slot's relation view.
-    template<SlotRelations Input, RelationViewConcept S, RelationViewConcept T, RelationViewConcept P>
-    void must_pass(const Input& input, const S& sources, const T& targets, const P& probes, urd::builder<ygg::Relation<ygg::Schema>>& out, H& heuristic)
+    template<SlotRelations Input, ygg::RelationViewConcept<ygg::Schema> S, ygg::RelationViewConcept<ygg::Schema> T, ygg::RelationViewConcept<ygg::Schema> P>
+    void must_pass(const Input& input, const S& sources, const T& targets, const P& probes, ygg::FreeScratchRelation& out, H& heuristic)
     {
         m_heuristic = &heuristic;
         assert(std::ranges::equal(sources.columns(), m_plan.source_columns()));
         assert(std::ranges::equal(targets.columns(), m_plan.target_columns()));
         assert(std::ranges::equal(probes.columns(), m_plan.probe_columns()));
-        assert(std::ranges::equal(out.columns(), m_plan.output_columns()));
+        assert(std::ranges::equal(out.view().columns(), m_plan.output_columns()));
         m_edges.evaluator().bind(input);
         m_probes.clear();
         for (size_t r = 0; r < probes.get_rows().size(); ++r)
@@ -129,9 +129,9 @@ public:
                 verify(sources, targets, key, out);
     }
 
-    template<SlotRelations Input, RelationViewConcept S, RelationViewConcept T, RelationViewConcept P>
+    template<SlotRelations Input, ygg::RelationViewConcept<ygg::Schema> S, ygg::RelationViewConcept<ygg::Schema> T, ygg::RelationViewConcept<ygg::Schema> P>
         requires std::default_initializable<H>
-    void must_pass(const Input& input, const S& sources, const T& targets, const P& probes, urd::builder<ygg::Relation<ygg::Schema>>& out)
+    void must_pass(const Input& input, const S& sources, const T& targets, const P& probes, ygg::FreeScratchRelation& out)
     {
         auto heuristic = H {};
         must_pass(input, sources, targets, probes, out, heuristic);
@@ -219,7 +219,7 @@ private:
 
     /// The row positions of the sources and targets of each key; keys are numbered by their first source. Without key
     /// columns every row has the one empty key.
-    template<RelationViewConcept S, RelationViewConcept T>
+    template<ygg::RelationViewConcept<ygg::Schema> S, ygg::RelationViewConcept<ygg::Schema> T>
     void group(const S& sources, const T& targets)
     {
         m_keys.clear();
@@ -301,8 +301,8 @@ private:
         return reachable;
     }
 
-    template<RelationViewConcept S, RelationViewConcept T>
-    void verify(const S& sources, const T& targets, VertexSet::handle_type key, urd::builder<ygg::Relation<ygg::Schema>>& out)
+    template<ygg::RelationViewConcept<ygg::Schema> S, ygg::RelationViewConcept<ygg::Schema> T>
+    void verify(const S& sources, const T& targets, VertexSet::handle_type key, ygg::FreeScratchRelation& out)
     {
         const auto key_values = key_of(vertex_values(sources.row(m_key_sources[key].front()), m_values));
         m_key_values.assign(key_values.begin(), key_values.end());

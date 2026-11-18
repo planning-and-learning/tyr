@@ -138,8 +138,8 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
     second_numeric->set(numeric_index, second_value);
     EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *first_numeric, ygg::float_t { 0 } }),
               dist_hash.hash(tyr::planning::StateContext { *task, *second_numeric, ygg::float_t { 0 } }));
-    EXPECT_EQ(first_numeric->get(numeric_index), first_value);
-    EXPECT_EQ(second_numeric->get(numeric_index), ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
+    EXPECT_EQ(urd::resolve(first_numeric->numeric_storage, *task->get_repository()).get(numeric_index), first_value);
+    EXPECT_EQ(urd::resolve(second_numeric->numeric_storage, *task->get_repository()).get(numeric_index), ygg::FloatTolerance<ygg::float_t>::canonicalize(second_value));
     second_numeric->set(numeric_index, ygg::float_t { 2 });
     EXPECT_NE(dist_hash.hash(tyr::planning::StateContext { *task, *first_numeric, ygg::float_t { 0 } }),
               dist_hash.hash(tyr::planning::StateContext { *task, *second_numeric, ygg::float_t { 0 } }));
@@ -157,7 +157,7 @@ void expect_state_routing(const tyr::planning::TaskPtr<Kind>& task)
             urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue { 1 }));
         trailing_zero_facts->set(
             urd::data<tyr::formalism::planning::FDRFact<tyr::formalism::FluentTag>>(high_variable, tyr::formalism::planning::FDRValue::none()));
-        EXPECT_EQ(trailing_zero_facts->get(low_variable), tyr::formalism::planning::FDRValue { 1 });
+        EXPECT_EQ(urd::resolve(trailing_zero_facts->fact_storage, *task->get_repository()).get(low_variable), tyr::formalism::planning::FDRValue { 1 });
         EXPECT_EQ(dist_hash.hash(tyr::planning::StateContext { *task, *canonical_facts, ygg::float_t { 0 } }),
                   dist_hash.hash(tyr::planning::StateContext { *task, *trailing_zero_facts, ygg::float_t { 0 } }));
 

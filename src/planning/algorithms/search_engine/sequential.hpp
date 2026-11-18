@@ -158,7 +158,7 @@ public:
     AcceptanceResult route(Engine& engine,
                            WorkerData& worker,
                            const Node<Kind>& source,
-                           std::shared_ptr<urd::builder<State<Kind>>> target,
+                           std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> target,
                            const StateDelta& delta,
                            ygg::float_t auxiliary_value,
                            formalism::planning::ActionRowView action,

@@ -27,11 +27,10 @@ VertexSet::handle_type DistanceGraph::insert_vertex(std::span<const ygg::Value> 
 
 namespace tyr::datalog::database::detail
 {
-std::pair<VertexSet::handle_type, VertexSet::handle_type> DistanceGraph::insert_endpoints(const ygg::RowPool::row_type& edge)
+std::pair<VertexSet::handle_type, VertexSet::handle_type> DistanceGraph::insert_endpoints(std::span<const ygg::Value> edge)
 {
-    const auto values = vertex_values(edge, scratch);
-    const auto from = insert_vertex(values.first(tuple_size));
-    return { from, insert_vertex(values.subspan(tuple_size, tuple_size)) };
+    const auto from = insert_vertex(edge.first(tuple_size));
+    return { from, insert_vertex(edge.subspan(tuple_size, tuple_size)) };
 }
 }
 

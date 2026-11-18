@@ -18,8 +18,8 @@
 #include "tyr/planning/state_builder.hpp"
 #include "tyr/planning/state_repository.hpp"
 
-template struct urd::builder<::tyr::planning::State<::tyr::GroundTag>>;
-template struct urd::builder<::tyr::planning::State<::tyr::LiftedTag>>;
+template struct urd::builder<::tyr::planning::State<::tyr::GroundTag>, ::tyr::planning::StateRepository<::tyr::GroundTag>>;
+template struct urd::builder<::tyr::planning::State<::tyr::LiftedTag>, ::tyr::planning::StateRepository<::tyr::LiftedTag>>;
 
 namespace tyr::planning
 {

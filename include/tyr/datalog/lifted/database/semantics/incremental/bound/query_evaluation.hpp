@@ -33,8 +33,8 @@ namespace tyr::datalog::database::incremental::bound
 struct InputChange
 {
     size_t slot = 0;
-    urd::builder<ygg::Relation<ygg::Schema>> added;
-    urd::builder<ygg::Relation<ygg::Schema>> removed;
+    urd::handle<ygg::FreeScratchRelation> added;
+    urd::handle<ygg::FreeScratchRelation> removed;
     SetPlan plan;  ///< Of the slot's columns: what diffs the slot's rows.
 };
 
@@ -52,18 +52,14 @@ struct InputChange
 class QueryEvaluator
 {
 public:
-    /// Its builders are read through `layer`, which must outlive it.
-    QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryView<> query, const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
-        m_layer(&layer),
-        m_base(layer, query, static_slots)
+    /// Its relations are drawn from `scratch`, which must outlive it.
+    QueryEvaluator(ygg::FreeScratchRelations& scratch, QueryView<> query, const urd::Store<urd::set<size_t>, urd::dense>& static_slots = {}) :
+        m_base(scratch, query, static_slots)
     {
         for (size_t slot = 0; slot < input_count(); ++slot)
         {
             const auto columns = std::span<const ygg::ColumnLayout>(m_base.query().input_columns[slot]);
-            m_changes.push_back(InputChange { slot,
-                                              urd::builder<ygg::Relation<ygg::Schema>>(columns),
-                                              urd::builder<ygg::Relation<ygg::Schema>>(columns),
-                                              SetPlan(columns, columns) });
+            m_changes.push_back(InputChange { slot, scratch.draw(columns), scratch.draw(columns), SetPlan(columns, columns) });
         }
         m_changed.reserve(input_count());
         const auto mark = [&](auto&& self, const database::bound::ConjunctiveBranch& branch, bool negated) -> void
@@ -126,9 +122,9 @@ public:
                 continue;
             auto& change = m_changes[slot];
             diff(input(slot), change);
-            if (change.added.empty() && change.removed.empty())
+            if (change.added->view().empty() && change.removed->view().empty())
                 continue;
-            apply(slot, m_layer->view(change.added), m_layer->view(change.removed));
+            apply(slot, change.added->view(), change.removed->view());
             m_changed.push_back(slot);
         }
         return m_changed;
@@ -138,12 +134,12 @@ public:
     [[nodiscard]] std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView> change(size_t slot) const
     {
         const auto& change = m_changes.at(slot);
-        return { m_layer->view(change.added), m_layer->view(change.removed) };
+        return { change.added->view(), change.removed->view() };
     }
 
     /// Applies an exact change to a bound, non-static slot: `removed` rows are in it, `added` rows are not. A change
     /// that throws leaves the slot and version() unchanged (bound::QueryEvaluator::replace).
-    template<RelationViewConcept A, RelationViewConcept R>
+    template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R>
     void update(size_t slot, const A& added, const R& removed)
     {
         if (slot >= input_count())
@@ -158,7 +154,7 @@ public:
     /// Calls on_row(row) for every output row the slot's change (applied before) can add, with repetitions and rows
     /// that existed before. Returns false if a changed row binds variables outside its branch's atoms, which delta
     /// rules cannot express; then the added rows are unknown.
-    template<RelationViewConcept A, RelationViewConcept R, typename OnRow>
+    template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R, typename OnRow>
         requires std::invocable<const OnRow&, std::span<const ygg::Value>>
     bool seed(size_t slot, const A& added, const R& removed, const OnRow& on_row)
     {
@@ -174,7 +170,6 @@ public:
     }
 
 private:
-    const ygg::FreeRelationRepository* m_layer;
     database::bound::QueryEvaluator m_base;
     /// By the variables bound on arrival, as database::bound::QueryEvaluator::plans() returns them.
     urd::Store<urd::map<database::bound::VariableSet, urd::Store<urd::sequence<database::bound::ConjunctivePlan>>>> m_seed_plans;
@@ -187,7 +182,7 @@ private:
     database::bound::VariableSet m_top_vars;
 
     /// Applies a change that is known to be valid (see update()).
-    template<RelationViewConcept A, RelationViewConcept R>
+    template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R>
     void apply(size_t slot, const A& added, const R& removed)
     {
         m_base.replace(slot, added, removed);
@@ -196,12 +191,12 @@ private:
     }
 
     /// Replaces `change` by the difference of `rows` from the slot's snapshot.
-    template<RelationViewConcept V>
+    template<ygg::RelationViewConcept<ygg::Schema> V>
     void diff(const V& rows, InputChange& change) const
     {
         const auto snapshot = m_base.input(change.slot);
-        database::difference(rows, snapshot, change.plan, change.added);
-        database::difference(snapshot, rows, change.plan, change.removed);
+        database::difference(rows, snapshot, change.plan, *change.added);
+        database::difference(snapshot, rows, change.plan, *change.removed);
     }
 
     /// The plan of a branch with the atom's variables bound; valid until the next call.
@@ -215,7 +210,7 @@ private:
         return found->second[branch];
     }
 
-    template<RelationViewConcept A, RelationViewConcept R, RowPredicate OnRow>
+    template<ygg::RelationViewConcept<ygg::Schema> A, ygg::RelationViewConcept<ygg::Schema> R, RowPredicate OnRow>
     bool seed_branch(size_t b, size_t slot, const A& added, const R& removed, const OnRow& on_row)
     {
         const auto& query = m_base.query();
@@ -231,9 +226,13 @@ private:
             if (!std::ranges::all_of(atom.vars, [&](uint32_t var) { return top_vars.contains(var); }))
                 return false;
             const auto& plan = seed_plan(b, atom);
-            for (size_t r = 0; r < rows.size(); ++r)
-                if (m_base.bind_atom(atom, rows.row(r).get_values()))
-                    m_base.run_plan(plan, on_row);
+            for (const auto& held : rows.get_rows())
+                ygg::with_values(held,
+                                 [&](const auto& values)
+                                 {
+                                     if (m_base.bind_atom(atom, values))
+                                         m_base.run_plan(plan, on_row);
+                                 });
             return true;
         };
         const auto walk = [&](auto&& self, const database::bound::ConjunctiveBranch& branch, bool negated) -> bool

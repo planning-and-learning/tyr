@@ -28,40 +28,32 @@ namespace detail
 {
 struct QueryValue
 {
-    const ygg::FreeRelationRepository* layer;
-    urd::builder<ygg::Relation<ygg::Schema>> result;
+    urd::handle<ygg::FreeScratchRelation> result;
     Delta delta;
 
-    QueryValue(const ygg::FreeRelationRepository& layer_, std::span<const ygg::ColumnLayout> columns) : layer(&layer_), result(columns), delta(layer_, columns)
-    {
-    }
+    QueryValue(ygg::FreeScratchRelations& scratch, std::span<const ygg::ColumnLayout> columns) : result(scratch.draw(columns)), delta(scratch, columns) {}
 
-    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const noexcept { return layer->view(result); }
+    [[nodiscard]] ygg::FreeRelationBuilderView get_result() const { return result->view(); }
 
     [[nodiscard]] const auto& get_delta() const noexcept { return delta; }
 
-    [[nodiscard]] size_t memory_usage() const noexcept { return result.memory_usage() + delta.memory_usage(); }
+    [[nodiscard]] size_t memory_usage() const noexcept { return urd::memory_usage(result->relation) + delta.memory_usage(); }
 
-    /// Adds the row to the result and delta where `present` and absent, removes it where not `present` and present:
-    /// a row of a relation of the same column types, or its values.
-    void set(const ygg::RowPool::row_type& row, bool present) { apply(row, present); }
-
-    void set(std::span<const ygg::Value> row, bool present) { apply(row, present); }
-
-private:
-    template<typename R>
-    void apply(const R& row, bool present)
+    /// Adds the row to the result and delta where `present` and absent, removes it where not `present` and present: a
+    /// row's values (a stored row's, or contiguous).
+    template<ygg::RowValues R>
+    void set(const R& row, bool present)
     {
-        const auto position = result.find(row);
-        if (present && !position)
+        const bool held = result->view().contains(row);
+        if (present && !held)
         {
-            result.insert(row);
-            delta.added.insert(row);
+            result->insert(row);
+            delta.added->insert(row);
         }
-        else if (!present && position)
+        else if (!present && held)
         {
-            delta.removed.insert(row);
-            result.erase(*position);
+            delta.removed->insert(row);
+            result->erase(row);
         }
     }
 };
@@ -80,13 +72,13 @@ struct NodeRules
 {
     using State = QueryValue;
 
-    static State make(const ygg::FreeRelationRepository& layer, QueryView<Tag> operation) { return State(layer, operation.columns()); }
+    static State make(ygg::FreeScratchRelations& scratch, QueryView<Tag> operation) { return State(scratch, operation.columns()); }
 
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<Tag> operation, const Graph& graph, const R& bindings, Workspace&)
     {
         state.delta.clear();
-        database::detail::evaluate_stateless(operation, bindings, [&](QueryView<> query) { return graph.result(query); }, state.result);
+        database::detail::evaluate_stateless(operation, bindings, [&](QueryView<> query) { return graph.result(query); }, *state.result);
     }
 
     template<RelationDeltaRange R, std::same_as<QueryEvaluator> Graph>
@@ -101,13 +93,14 @@ struct NodeRules
             const auto right_operand = graph.result(operation.get_right_operand());
             const auto reconcile = [&](const auto& rows)
             {
-                for (size_t i = 0; i < rows.get_rows().size(); ++i)
-                {
-                    const auto row = rows.row(i);
-                    const bool present = std::same_as<Tag, QueryUnionTag> ? left_operand.contains(row) || right_operand.contains(row) :
-                                                                            left_operand.contains(row) && !right_operand.contains(row);
-                    state.set(row.get_values(), present);
-                }
+                for (const auto& held : rows.get_rows())
+                    ygg::with_values(held,
+                                     [&](const auto& row)
+                                     {
+                                         const bool present = std::same_as<Tag, QueryUnionTag> ? left_operand.contains(row) || right_operand.contains(row) :
+                                                                                                 left_operand.contains(row) && !right_operand.contains(row);
+                                         state.set(row, present);
+                                     });
             };
             for_each_child(operation,
                            [&](QueryView<> child)
@@ -121,14 +114,15 @@ struct NodeRules
         {
             const auto apply = [&](const auto& rows, bool present)
             {
-                for (size_t i = 0; i < rows.get_rows().size(); ++i)
-                {
-                    const auto row = rows.row(i).get_values();
-                    if constexpr (std::same_as<Tag, QuerySelectEqualTag> || std::same_as<Tag, QuerySelectValueTag>)
-                        if (!database::detail::query_accepts(operation, row))
-                            continue;
-                    state.set(row, present);
-                }
+                for (const auto& held : rows.get_rows())
+                    ygg::with_values(held,
+                                     [&](const auto& row)
+                                     {
+                                         if constexpr (std::same_as<Tag, QuerySelectEqualTag> || std::same_as<Tag, QuerySelectValueTag>)
+                                             if (!database::detail::query_accepts(operation, row))
+                                                 return;
+                                         state.set(row, present);
+                                     });
             };
             if constexpr (std::same_as<Tag, QueryInputTag>)
             {
@@ -151,7 +145,7 @@ struct NodeRules<QueryProjectTag>
 {
     using State = ProjectionEvaluator;
 
-    static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryProjectTag> operation) { return State(layer, operation.get_plan()); }
+    static State make(ygg::FreeScratchRelations& scratch, QueryView<QueryProjectTag> operation) { return State(scratch, operation.get_plan()); }
 
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryProjectTag> operation, const Graph& graph, const R&, Workspace& workspace)
@@ -167,7 +161,7 @@ struct NodeRules<QueryJoinTag>
 {
     using State = JoinEvaluator;
 
-    static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryJoinTag> operation) { return State(layer, operation.get_plan()); }
+    static State make(ygg::FreeScratchRelations& scratch, QueryView<QueryJoinTag> operation) { return State(scratch, operation.get_plan()); }
 
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryJoinTag> operation, const Graph& graph, const R&, Workspace& workspace)
@@ -184,8 +178,8 @@ struct NodeRules<Tag>
 {
     using State = SemijoinEvaluator;
 
-    static State make(const ygg::FreeRelationRepository& layer, QueryView<Tag> operation)
-    { return State(layer, operation.get_plan(), std::same_as<Tag, QueryAntijoinTag>); }
+    static State make(ygg::FreeScratchRelations& scratch, QueryView<Tag> operation)
+    { return State(scratch, operation.get_plan(), std::same_as<Tag, QueryAntijoinTag>); }
 
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<Tag> operation, const Graph& graph, const R&, Workspace&)
@@ -201,7 +195,7 @@ struct NodeRules<QueryGenericJoinTag>
 {
     using State = GenericJoinEvaluator;
 
-    static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryGenericJoinTag> operation) { return State(layer, operation.get_plan()); }
+    static State make(ygg::FreeScratchRelations& scratch, QueryView<QueryGenericJoinTag> operation) { return State(scratch, operation.get_plan()); }
 
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryGenericJoinTag> operation, const Graph& graph, const R&, Workspace&)
@@ -221,7 +215,7 @@ struct NodeRules<QueryDistanceTag>
 {
     using State = QueryDistance;
 
-    static State make(const ygg::FreeRelationRepository& layer, QueryView<QueryDistanceTag> operation) { return State(layer, operation.get_plan()); }
+    static State make(ygg::FreeScratchRelations& scratch, QueryView<QueryDistanceTag> operation) { return State(scratch, operation.get_plan()); }
 
     template<RelationViewRange R, std::same_as<QueryEvaluator> Graph>
     static void initialize(State& state, QueryView<QueryDistanceTag> operation, const Graph& graph, const R&, Workspace&)
@@ -243,19 +237,18 @@ struct QueryNode
 /// Maintains a prepared DAG from exact input deltas. Shared nodes update once.
 /// initialize() borrows inputs only during the call; update() receives actual,
 /// disjoint added/removed sets. Reversing every pair undoes a complete batch.
-/// Input validation leaves results intact; execution failures require initialize(). Its builders are read through the
-/// layer, which must outlive it.
+/// Input validation leaves results intact; execution failures require initialize(). Its relations are drawn from scratch
+/// relations, which must outlive it.
 class QueryEvaluator
 {
     using NodeId = urd::index<Query<>>;
     template<typename Tag>
     using Rules = detail::NodeRules<Tag>;
     using Node = boost::mp11::mp_apply<std::variant, boost::mp11::mp_transform<detail::QueryNode, QueryConstructorTags>>;
-    const ygg::FreeRelationRepository* m_layer;
     QueryPlan m_plan;
     urd::Store<urd::sequence<Node, NodeId>> m_nodes;
     Workspace m_workspace;
-    urd::Store<urd::sequence<const urd::builder<ygg::Relation<ygg::Schema>>*>> m_builders;  ///< its results and deltas, since its last initialization
+    urd::Store<urd::sequence<const ygg::FreeRelationRepository*>> m_contexts;  ///< what its results and deltas are read through
     bool m_initialized = false;
 
     template<typename>
@@ -276,19 +269,20 @@ class QueryEvaluator
     [[nodiscard]] const Delta& delta(QueryView<> query) const { return delta(query.index()); }
 
     /// Whether an input reads one of its results or deltas.
-    template<RelationViewConcept V>
+    template<ygg::RelationViewConcept<ygg::Schema> V>
     [[nodiscard]] bool is_internal(const V& input) const
     {
-        return std::ranges::any_of(m_builders, [&](const auto* builder) { return reads_builder(input, *builder); });
+        return std::ranges::any_of(m_contexts, [&](const auto* context) { return &input.context() == context; });
     }
 
 public:
-    QueryEvaluator(const ygg::FreeRelationRepository& layer, QueryPlan plan) : m_layer(&layer), m_plan(std::move(plan))
+    /// Its relations are drawn from `scratch`, which must outlive it.
+    QueryEvaluator(ygg::FreeScratchRelations& scratch, QueryPlan plan) : m_plan(std::move(plan))
     {
         m_nodes.reserve(m_plan.node_count());
         for (size_t i = 0; i < m_plan.node_count(); ++i)
             std::visit([&]<typename Tag>(QueryView<Tag> operation)
-                       { m_nodes.emplace_back(std::in_place_type<detail::QueryNode<Tag>>, Rules<Tag>::make(layer, operation)); },
+                       { m_nodes.emplace_back(std::in_place_type<detail::QueryNode<Tag>>, Rules<Tag>::make(scratch, operation)); },
                        m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
     }
 
@@ -304,14 +298,14 @@ public:
                     Rules<Tag>::initialize(std::get<detail::QueryNode<Tag>>(m_nodes[NodeId(ygg::to_uint_t(i))]).state, operation, *this, bindings, m_workspace);
                 },
                 m_plan[NodeId(ygg::to_uint_t(i))].get_variant());
-        // Its builders stay where they are, including after a failed update.
-        m_builders.clear();
+        // Its relations stay where they are, including after a failed update.
+        m_contexts.clear();
         for (size_t i = 0; i < m_nodes.size(); ++i)
         {
             const NodeId id(ygg::to_uint_t(i));
-            m_builders.push_back(&result(id).get_builder());
-            m_builders.push_back(&delta(id).added);
-            m_builders.push_back(&delta(id).removed);
+            m_contexts.push_back(&result(id).context());
+            m_contexts.push_back(&delta(id).added->rows);
+            m_contexts.push_back(&delta(id).removed->rows);
         }
         m_initialized = true;
     }
@@ -334,11 +328,12 @@ public:
             if (is_internal(added) || is_internal(removed))
                 throw std::invalid_argument("Incremental query: input aliases evaluator storage.");
             const auto baseline = result(query);
-            for (size_t row = 0; row < added.get_rows().size(); ++row)
-                if (baseline.contains(added.row(row)))
+            const auto in_baseline = [&](const auto& held) { return ygg::with_values(held, [&](const auto& values) { return baseline.contains(values); }); };
+            for (const auto& held : added.get_rows())
+                if (in_baseline(held))
                     throw std::invalid_argument("Incremental query: added row is already present.");
-            for (size_t row = 0; row < removed.get_rows().size(); ++row)
-                if (!baseline.contains(removed.row(row)))
+            for (const auto& held : removed.get_rows())
+                if (!in_baseline(held))
                     throw std::invalid_argument("Incremental query: removed row is absent.");
         }
         m_initialized = false;
@@ -373,7 +368,7 @@ public:
     /// Retained runtime storage; excludes the immutable query plan.
     [[nodiscard]] size_t memory_usage() const noexcept
     {
-        size_t result = m_workspace.memory_usage() + urd::memory_usage(m_builders);
+        size_t result = m_workspace.memory_usage() + urd::memory_usage(m_contexts);
         // get_if rather than std::visit, which throws for a valueless variant; nodes are never valueless.
         const auto node_usage = []<typename... Nodes>(const std::variant<Nodes...>& node) noexcept
         { return ((std::get_if<Nodes>(&node) ? std::get_if<Nodes>(&node)->state.memory_usage() : size_t { 0 }) + ...); };

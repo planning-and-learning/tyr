@@ -75,6 +75,19 @@ namespace tyr::planning
 namespace
 {
 
+/// The handle a storage's record holds, in the storage of its policy.
+const auto& handle_of(const urd::data<FactStorage<GroundTag>>& record) noexcept { return record.values; }
+
+const auto& handle_of(const urd::data<FactStorage<LiftedTag>>& record) noexcept { return record.indices; }
+
+template<TaskKind Kind>
+const auto& handle_of(const urd::data<AtomStorage<Kind>>& record) noexcept
+{ return record.indices; }
+
+template<TaskKind Kind>
+const auto& handle_of(const urd::data<NumericStorage<Kind>>& record) noexcept
+{ return record.values; }
+
 /// Identifies the storage cohorts of a task kind; repositories share storage iff their identities match.
 template<TaskKind Kind>
 ygg::uint_t next_state_storage_identity() noexcept
@@ -83,25 +96,25 @@ ygg::uint_t next_state_storage_identity() noexcept
     return next.fetch_add(1, std::memory_order_relaxed);
 }
 
-void insert_initial_fluent_facts(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
+void insert_initial_fluent_facts(const Task<GroundTag>& task, urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state)
 {
     for (const auto fact : task.get_task().get_fluent_facts())
         state.set(fact);
 }
 
-void insert_initial_fluent_facts(const Task<LiftedTag>& task, urd::builder<State<LiftedTag>>& state)
+void insert_initial_fluent_facts(const Task<LiftedTag>& task, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state)
 {
     for (const auto atom : task.get_task().template get_atoms<formalism::FluentTag>())
         state.set(task.get_fdr_context()->get_fact(atom));
 }
 
-void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>>& state)
+void prepare_builder(const Task<GroundTag>& task, urd::builder<State<GroundTag>, StateRepository<GroundTag>>& state)
 {
     state.clear();
     state.resize_fluent_facts(task.get_task().get_fluent_variables().size());
 }
 
-void prepare_builder(const Task<LiftedTag>&, urd::builder<State<LiftedTag>>& state) { state.clear(); }
+void prepare_builder(const Task<LiftedTag>&, urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state) { state.clear(); }
 
 }
 
@@ -111,9 +124,9 @@ struct StateRepository<Kind>::Impl
     template<bool ThreadSafe>
     struct Storage
     {
-        /// The packed states, interned whole in a urd pool (references stay valid; thread-safe where ThreadSafe): its
-        /// handle is the packed state's index (StateRepository::state_index gives the state's).
-        using PackedStates = urd::Store<urd::pool<urd::data<PackedState<Kind>>, urd::index<PackedState<Kind>>>,
+        /// The states' records, interned whole in a urd pool (references stay valid; thread-safe where ThreadSafe): its
+        /// handle is the state's index.
+        using PackedStates = urd::Store<urd::pool<urd::data<State<Kind>>, urd::index<State<Kind>>>,
                                         urd::stable_refs,
                                         std::conditional_t<ThreadSafe, urd::concurrent, urd::single_threaded>>;
 
@@ -132,44 +145,47 @@ struct StateRepository<Kind>::Impl
     {
         explicit Evaluator(StoragePtr<ThreadSafe> storage_) :
             storage(std::move(storage_)),
-            fluent_backend(storage->context),
-            derived_backend(storage->context),
-            numeric_backend(storage->context),
+            fact_repository(storage->context),
+            atom_repository(storage->context),
+            numeric_repository(storage->context),
             state_builder_pool()
         {
         }
 
         StoragePtr<ThreadSafe> storage;
-        FactStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> fluent_backend;
-        AtomStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> derived_backend;
-        NumericStorageBackend<Kind, StateStoragePolicyTag, ThreadSafe> numeric_backend;
-        urd::Store<urd::slots<urd::builder<State<Kind>>>, urd::concurrent> state_builder_pool;
+        StateComponentRepository<FactStorage<Kind>, StateStoragePolicyTag, ThreadSafe> fact_repository;
+        StateComponentRepository<AtomStorage<Kind>, StateStoragePolicyTag, ThreadSafe> atom_repository;
+        StateComponentRepository<NumericStorage<Kind>, StateStoragePolicyTag, ThreadSafe> numeric_repository;
+        urd::Store<urd::slots<urd::builder<State<Kind>, StateRepository<Kind>>>, urd::concurrent> state_builder_pool;
 
         /// Inserts the fluent facts of `state`, as `delta` to `parent` if given.
-        auto insert_fluents(const urd::data<State<Kind>>& state, const urd::data<PackedState<Kind>>* parent, const StateDelta* delta)
+        auto insert_fluents(const urd::builder<State<Kind>, StateRepository<Kind>>& state, const urd::data<State<Kind>>* parent, const StateDelta* delta)
         {
             const auto& unpacked = state.fact_storage;
-            return parent ? fluent_backend.insert(unpacked, parent->fact_storage, std::span(delta->fluents)) : fluent_backend.insert(unpacked);
+            return urd::data<FactStorage<Kind>>(parent ? fact_repository.insert(unpacked, handle_of(parent->fact_storage), std::span(delta->fluents))
+                                                       : fact_repository.insert(unpacked));
         }
 
         /// Inserts the derived atoms of `state`, as a difference to `parent_state` if given.
         /// Axioms recompute derived atoms, so their changes are not part of a StateDelta.
-        auto insert_derived(const urd::data<State<Kind>>& state, const urd::data<PackedState<Kind>>* parent, const StateView<Kind>* parent_state)
+        auto insert_derived(const urd::builder<State<Kind>, StateRepository<Kind>>& state, const urd::data<State<Kind>>* parent, const StateView<Kind>* parent_state)
         {
             const auto& unpacked = state.atom_storage;
-            return parent ? derived_backend.insert(unpacked, parent->atom_storage, parent_state->get_atom_storage()) : derived_backend.insert(unpacked);
+            return urd::data<AtomStorage<Kind>>(parent ? atom_repository.insert(unpacked, handle_of(parent->atom_storage), parent_state->get_atom_storage())
+                                                       : atom_repository.insert(unpacked));
         }
 
         /// Inserts the numeric values of `state`, as `delta` to `parent` if given.
-        auto insert_numeric(urd::builder<State<Kind>>& state, const urd::data<PackedState<Kind>>* parent, const StateDelta* delta)
+        auto insert_numeric(urd::builder<State<Kind>, StateRepository<Kind>>& state, const urd::data<State<Kind>>* parent, const StateDelta* delta)
         {
             auto& unpacked = state.numeric_storage;
-            return parent ? numeric_backend.insert(unpacked, parent->numeric_storage, std::span(delta->numerics)) : numeric_backend.insert(unpacked);
+            return urd::data<NumericStorage<Kind>>(parent ? numeric_repository.insert(unpacked, handle_of(parent->numeric_storage), std::span(delta->numerics))
+                                                          : numeric_repository.insert(unpacked));
         }
 
         /// `parent_state` and `delta` are either both null, or a registered state of this storage and the exact changes from it to `state`.
         template<typename ExtendState>
-        void register_state(urd::builder<State<Kind>>& state,
+        void register_state(urd::builder<State<Kind>, StateRepository<Kind>>& state,
                             ExtendState&& extend_state,
                             const StateView<Kind>* parent_state = nullptr,
                             const StateDelta* delta = nullptr)
@@ -186,35 +202,35 @@ struct StateRepository<Kind>::Impl
             }
 #endif
             auto& packed_states = storage->packed_states;
-            const auto* parent = parent_state ? &packed_states[StateRepository::packed_index(parent_state->index())] : nullptr;
+            const auto* parent = parent_state ? &packed_states[parent_state->index()] : nullptr;
             const auto fluent = insert_fluents(state, parent, delta);
             const auto numeric = insert_numeric(state, parent, delta);
-            const auto key = urd::data<PackedState<Kind>>(fluent, {}, numeric);
-            const auto hash = urd::Hash<urd::data<PackedState<Kind>>> {}(key);
-            const auto found = packed_states.find(urd::prehashed<urd::data<PackedState<Kind>>> { key, hash });
-            auto packed_index = found.is_none() ? std::optional<urd::index<PackedState<Kind>>>() : std::optional(found);
+            const auto key = urd::data<State<Kind>>(fluent, {}, numeric);
+            const auto hash = urd::Hash<urd::data<State<Kind>>> {}(key);
+            const auto found = packed_states.find(urd::prehashed<urd::data<State<Kind>>> { key, hash });
+            auto stored_index = found.is_none() ? std::optional<urd::index<State<Kind>>>() : std::optional(found);
 
-            if (!packed_index)
+            if (!stored_index)
             {
                 std::forward<ExtendState>(extend_state)();
                 const auto derived = insert_derived(state, parent, parent_state);
-                const auto [inserted_index, inserted] = packed_states.insert(urd::prehashed<urd::data<PackedState<Kind>>> { key, hash },
-                                                                             [&](urd::index<PackedState<Kind>> new_index)
+                const auto [inserted_index, inserted] = packed_states.insert(urd::prehashed<urd::data<State<Kind>>> { key, hash },
+                                                                             [&](urd::index<State<Kind>> new_index)
                                                                              {
-                                                                                 auto data = urd::data<PackedState<Kind>>(fluent, derived, numeric);
+                                                                                 auto data = urd::data<State<Kind>>(fluent, derived, numeric);
                                                                                  data.index = new_index;
                                                                                  return data;
                                                                              });
-                packed_index = inserted_index;
+                stored_index = inserted_index;
                 if (inserted)
                 {
-                    state.set(StateRepository::state_index(inserted_index));
+                    state.set(inserted_index);
                     return;
                 }
             }
 
-            derived_backend.unpack(packed_states[*packed_index].atom_storage, state.atom_storage);
-            state.set(StateRepository::state_index(*packed_index));
+            atom_repository.unpack(handle_of(packed_states[*stored_index].atom_storage), state.atom_storage);
+            state.set(*stored_index);
         }
     };
 
@@ -309,10 +325,10 @@ StateView<Kind> StateRepository<Kind>::get_registered_state(urd::index<State<Kin
     m_impl->visit_evaluator(
         [&](auto& evaluator)
         {
-            const auto& packed_state = (*this)[packed_index(state_index)];
-            evaluator.fluent_backend.unpack(packed_state.fact_storage, state_builder->fact_storage);
-            evaluator.derived_backend.unpack(packed_state.atom_storage, state_builder->atom_storage);
-            evaluator.numeric_backend.unpack(packed_state.numeric_storage, state_builder->numeric_storage);
+            const auto& packed_state = (*this)[state_index];
+            evaluator.fact_repository.unpack(handle_of(packed_state.fact_storage), state_builder->fact_storage);
+            evaluator.atom_repository.unpack(handle_of(packed_state.atom_storage), state_builder->atom_storage);
+            evaluator.numeric_repository.unpack(handle_of(packed_state.numeric_storage), state_builder->numeric_storage);
         });
 
     return StateView<Kind>(std::move(state_builder), this);
@@ -353,14 +369,14 @@ StateView<Kind> StateRepository<Kind>::create_state(
 }
 
 template<TaskKind Kind>
-const urd::data<PackedState<Kind>>& StateRepository<Kind>::operator[](urd::index<PackedState<Kind>> packed_index) const
+const urd::data<State<Kind>>& StateRepository<Kind>::operator[](urd::index<State<Kind>> state_index) const
 {
-    return m_impl->visit_evaluator([&](const auto& evaluator) -> const urd::data<PackedState<Kind>>&
-                                   { return evaluator.storage->packed_states[packed_index]; });
+    return m_impl->visit_evaluator([&](const auto& evaluator) -> const urd::data<State<Kind>>&
+                                   { return evaluator.storage->packed_states[state_index]; });
 }
 
 template<TaskKind Kind>
-std::shared_ptr<urd::builder<State<Kind>>> StateRepository<Kind>::get_state_builder() const
+std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> StateRepository<Kind>::get_state_builder() const
 {
     // Each owner keeps the repository alive; the slot goes back to the pool with the last one.
     auto state_builder = m_impl->visit_evaluator([this](auto& evaluator) { return evaluator.state_builder_pool.make_shared(this->shared_from_this()); });
@@ -369,7 +385,8 @@ std::shared_ptr<urd::builder<State<Kind>>> StateRepository<Kind>::get_state_buil
 }
 
 template<TaskKind Kind>
-StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axiom_evaluator, std::shared_ptr<urd::builder<State<Kind>>> state)
+StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axiom_evaluator,
+                                                      std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state)
 {
     if (axiom_evaluator.get_task() != m_impl->task)
         throw std::invalid_argument("StateRepository::register_state(...): axiom evaluator belongs to a different task.");
@@ -379,7 +396,7 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
 
 template<TaskKind Kind>
 StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axiom_evaluator,
-                                                      std::shared_ptr<urd::builder<State<Kind>>> state,
+                                                      std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state,
                                                       const StateView<Kind>& parent,
                                                       const StateDelta& delta)
 {
@@ -396,14 +413,14 @@ StateView<Kind> StateRepository<Kind>::register_state(AxiomEvaluator<Kind>& axio
 }
 
 template<TaskKind Kind>
-StateView<Kind> StateRepository<Kind>::register_extended_state(std::shared_ptr<urd::builder<State<Kind>>> state)
+StateView<Kind> StateRepository<Kind>::register_extended_state(std::shared_ptr<urd::builder<State<Kind>, StateRepository<Kind>>> state)
 {
     m_impl->visit_evaluator([&](auto& evaluator) { evaluator.register_state(*state, [] {}); });
     return StateView<Kind>(std::move(state), this);
 }
 
 template<TaskKind Kind>
-StateView<Kind> StateRepository<Kind>::register_extended_state(const BuilderStateView<Kind>& source)
+StateView<Kind> StateRepository<Kind>::register_extended_state(const StateBuilderView<Kind>& source)
 {
     if (source.context().get_task().get() != get_task().get())
         throw std::invalid_argument("StateRepository::register_extended_state(...): source state belongs to a different task.");

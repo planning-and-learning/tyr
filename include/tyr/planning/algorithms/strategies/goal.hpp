@@ -44,7 +44,7 @@ public:
     virtual bool is_static_goal_satisfied(const Task<Kind>& task) = 0;
     virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) = 0;
     /// Of a state being built, not registered.
-    virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) = 0;
+    virtual bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateBuilderView<Kind>& state) = 0;
 
 protected:
     GoalStrategy(const GoalStrategy&) = default;
@@ -74,7 +74,7 @@ public:
 
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override { return satisfies(seed_state, state); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override { return satisfies(seed_state, state); }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateBuilderView<Kind>& state) override { return satisfies(seed_state, state); }
 
 private:
     template<typename V>
@@ -106,7 +106,7 @@ public:
 
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override { return satisfies(seed_state, state); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override { return satisfies(seed_state, state); }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateBuilderView<Kind>& state) override { return satisfies(seed_state, state); }
 
 private:
     template<typename V>
@@ -155,7 +155,7 @@ public:
 
     bool is_dynamic_goal_satisfied(const StateView<Kind>&, const StateView<Kind>&) override { return false; }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>&, const BuilderStateView<Kind>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const StateView<Kind>&, const StateBuilderView<Kind>&) override { return false; }
 };
 
 }

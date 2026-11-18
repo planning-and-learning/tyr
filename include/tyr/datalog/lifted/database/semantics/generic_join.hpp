@@ -13,6 +13,7 @@
 #include <cista/containers/vector.h>
 #include <memory>
 #include <tuple>
+#include <vector>
 #include <urd/memory.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
@@ -60,11 +61,14 @@ struct GenericJoinTrie
         return found == children.end() ? nullptr : found->second.get();
     }
 
-    [[nodiscard]] bool contains(const ygg::RowPool::row_type& row, std::span<const ColumnSlice> keys) const;
+    [[nodiscard]] bool contains(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys) const;
+    [[nodiscard]] bool contains(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys) const;
 
-    bool insert(const ygg::RowPool::row_type& row, std::span<const ColumnSlice> keys);
+    bool insert(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys);
+    bool insert(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys);
 
-    bool erase(const ygg::RowPool::row_type& row, std::span<const ColumnSlice> keys);
+    bool erase(const urd::packed_row<false>& row, std::span<const ColumnSlice> keys);
+    bool erase(std::span<const ygg::Value> row, std::span<const ColumnSlice> keys);
 
     void clear()
     {
@@ -95,13 +99,13 @@ class GenericJoinWorkspace
     GenericJoinPlan m_plan;
     urd::Store<urd::sequence<detail::GenericJoinTrie>> m_tries;
     urd::Store<urd::sequence<const detail::GenericJoinTrie*>> m_cursors;
-    ygg::RowPool::row_builder_type m_row;  ///< An output row, built in the output's widths.
+    std::vector<ygg::Value> m_row;  ///< An output row's values, set column by column.
 
-    void enumerate(size_t depth, urd::builder<ygg::Relation<ygg::Schema>>& out);
+    void enumerate(size_t depth, ygg::FreeScratchRelation& out);
 
     /// Appends the full assignments over the tries returned by root(input).
     template<std::invocable<size_t> Root>
-    void append(urd::builder<ygg::Relation<ygg::Schema>>& out, Root root)
+    void append(ygg::FreeScratchRelation& out, Root root)
     {
         for (size_t input = 0; input < m_tries.size(); ++input)
         {
@@ -110,17 +114,17 @@ class GenericJoinWorkspace
                 return;
             m_cursors[input] = &trie;
         }
-        m_row.reset(out.widths());
+        m_row.assign(out.view().arity(), ygg::Value {});
         enumerate(0, out);
     }
 
-    void append(urd::builder<ygg::Relation<ygg::Schema>>& out)
+    void append(ygg::FreeScratchRelation& out)
     {
         append(out, [&](size_t input) -> const auto& { return m_tries[input]; });
     }
 
     /// Appends the assignments that read the replacement trie for the replaced input.
-    void append(urd::builder<ygg::Relation<ygg::Schema>>& out, size_t replaced, const detail::GenericJoinTrie& replacement)
+    void append(ygg::FreeScratchRelation& out, size_t replaced, const detail::GenericJoinTrie& replacement)
     {
         append(out, [&](size_t input) -> const auto& { return input == replaced ? replacement : m_tries[input]; });
     }
@@ -141,14 +145,14 @@ public:
 
     /// Indexes the inputs, which match the plan, and appends their join to out.
     template<RelationViewRange R>
-    void append_join(const R& inputs, urd::builder<ygg::Relation<ygg::Schema>>& out)
+    void append_join(const R& inputs, ygg::FreeScratchRelation& out)
     {
         for (size_t input = 0; input < m_plan.input_count(); ++input)
         {
             auto& trie = m_tries[input];
             trie.clear();
-            for (size_t row = 0; row < inputs[input].get_rows().size(); ++row)
-                trie.insert(inputs[input].row(row).get_values(), m_plan.input_keys(input));
+            for (const auto& held : inputs[input].get_rows())
+                ygg::with_values(held, [&](const auto& values) { trie.insert(values, m_plan.input_keys(input)); });
         }
         append(out);
     }
@@ -162,14 +166,14 @@ public:
 /// Output replaces its rows; an output aliasing an input throws before mutation. The inputs, the output and the
 /// workspace are the plan's (asserted in debug builds).
 template<RelationViewRange R>
-void generic_join(const R& inputs, const GenericJoinPlan& plan, urd::builder<ygg::Relation<ygg::Schema>>& out, GenericJoinWorkspace& workspace)
+void generic_join(const R& inputs, const GenericJoinPlan& plan, ygg::FreeScratchRelation& out, GenericJoinWorkspace& workspace)
 {
     assert(std::ranges::size(inputs) == plan.input_count() && workspace.matches(plan));
-    assert(std::ranges::equal(out.columns(), plan.output_columns()));
+    assert(std::ranges::equal(out.view().columns(), plan.output_columns()));
     for (size_t input = 0; input < plan.input_count(); ++input)
     {
         assert(std::ranges::equal(inputs[input].columns(), plan.input_columns(input)));
-        if (reads_builder(inputs[input], out))
+        if (reads(inputs[input], out))
             throw std::invalid_argument("Generic join: output aliases an input.");
     }
     out.clear();

@@ -19,14 +19,16 @@
 #define TYR_PLANNING_APPLICABILITY_DECL_HPP_
 
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/state_storage_view.hpp"
 
+#include <urd/elements/view.hpp>
 #include <yggdrasil/core/config.hpp>
 
 namespace tyr::planning
 {
 
-/// What applicability reads of a state: its task, its storages (its fluent facts, derived atoms and numeric values) and
-/// an auxiliary value. The state must outlive the context.
+/// What applicability reads of a state: its task, its storages (its fluent facts, derived atoms and numeric values, each
+/// a view through the task's formalism repository) and an auxiliary value. The state must outlive the context.
 template<TaskKind Kind>
 class StateContext
 {
@@ -39,19 +41,23 @@ public:
     {
     }
 
-    /// From a state being built (its builder: a data<State>), its storages.
-    StateContext(const Task<Kind>& task, const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value) :
-        StateContext(task, state.fact_storage, state.atom_storage, state.numeric_storage, auxiliary_value)
+    /// From a state being built (its builder), its storages, read through the task's formalism repository.
+    StateContext(const Task<Kind>& task, const urd::builder<State<Kind>, StateRepository<Kind>>& state, ygg::float_t auxiliary_value) :
+        StateContext(task,
+                     FactStorageView<Kind>(&state.fact_storage, task.get_repository().get()),
+                     AtomStorageView<Kind>(&state.atom_storage, task.get_repository().get()),
+                     NumericStorageView<Kind>(&state.numeric_storage, task.get_repository().get()),
+                     auxiliary_value)
     {
     }
 
     [[nodiscard]] const Task<Kind>& task() const noexcept { return *m_task; }
 
-    [[nodiscard]] const FactUnpackedStorage<Kind>& fact_storage() const noexcept { return *m_fact_storage; }
+    [[nodiscard]] const FactStorageView<Kind>& fact_storage() const noexcept { return m_fact_storage; }
 
-    [[nodiscard]] const AtomUnpackedStorage<Kind>& atom_storage() const noexcept { return *m_atom_storage; }
+    [[nodiscard]] const AtomStorageView<Kind>& atom_storage() const noexcept { return m_atom_storage; }
 
-    [[nodiscard]] const NumericUnpackedStorage<Kind>& numeric_storage() const noexcept { return *m_numeric_storage; }
+    [[nodiscard]] const NumericStorageView<Kind>& numeric_storage() const noexcept { return m_numeric_storage; }
 
     [[nodiscard]] ygg::float_t auxiliary_value() const noexcept { return m_auxiliary_value; }
 
@@ -59,22 +65,22 @@ public:
 
 private:
     StateContext(const Task<Kind>& task,
-                 const FactUnpackedStorage<Kind>& fact_storage,
-                 const AtomUnpackedStorage<Kind>& atom_storage,
-                 const NumericUnpackedStorage<Kind>& numeric_storage,
+                 FactStorageView<Kind> fact_storage,
+                 AtomStorageView<Kind> atom_storage,
+                 NumericStorageView<Kind> numeric_storage,
                  ygg::float_t auxiliary_value) :
         m_task(&task),
-        m_fact_storage(&fact_storage),
-        m_atom_storage(&atom_storage),
-        m_numeric_storage(&numeric_storage),
+        m_fact_storage(fact_storage),
+        m_atom_storage(atom_storage),
+        m_numeric_storage(numeric_storage),
         m_auxiliary_value(auxiliary_value)
     {
     }
 
     const Task<Kind>* m_task;
-    const FactUnpackedStorage<Kind>* m_fact_storage;
-    const AtomUnpackedStorage<Kind>* m_atom_storage;
-    const NumericUnpackedStorage<Kind>* m_numeric_storage;
+    FactStorageView<Kind> m_fact_storage;
+    AtomStorageView<Kind> m_atom_storage;
+    NumericStorageView<Kind> m_numeric_storage;
     ygg::float_t m_auxiliary_value;
 };
 

@@ -48,7 +48,7 @@ ygg::float_t evaluate_metric(
 }
 
 template<TaskKind Kind>
-ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const urd::data<State<Kind>>& state, ygg::float_t auxiliary_value)
+ygg::float_t evaluate_successor_metric(const Task<Kind>& task, const urd::builder<State<Kind>, StateRepository<Kind>>& state, ygg::float_t auxiliary_value)
 {
     auto context = StateContext<Kind> { task, state, auxiliary_value };
     if (const auto metric = task.get_task().get_metric())

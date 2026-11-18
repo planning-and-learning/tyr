@@ -14,7 +14,7 @@ namespace tyr
 
 namespace
 {
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
+using Relation = ygg::FreeScratchRelation;
 using Column = urd::index<ygg::Column>;
 using ColumnIndices = std::span<const ygg::ColumnLayout>;
 using Plan = tyr::datalog::database::DistancePlan;
@@ -34,7 +34,7 @@ void bind_inputs(nb::class_<Evaluator>& evaluator, nb::module_& m)
             require_columns(sources.columns(), plan.source_columns());
             require_columns(edges.columns(), plan.edge_columns());
             require_columns(targets.columns(), plan.target_columns());
-            require_columns(out.columns(), plan.output_columns());
+            require_columns(out.view().columns(), plan.output_columns());
             if (!workspace.matches(plan))
                 throw std::invalid_argument("Distance: workspace vertex size does not match the plan.");
             tyr::datalog::database::distance(sources, edges, targets, plan, out, workspace);
@@ -58,7 +58,7 @@ void bind_inputs(nb::class_<Evaluator>& evaluator, nb::module_& m)
 
 void bind_database_distance(nb::module_& m)
 {
-    using Borrowed = ygg::FreeRelationBuilderView;
+    using RelationBuilderView = ygg::FreeRelationBuilderView;
 
     nb::class_<Plan>(m, "DistancePlan", "Validated schemas for directed, unweighted distances between endpoint tuples.")
         .def(nb::init<ColumnIndices, ColumnIndices, ColumnIndices, Column>(),
@@ -82,19 +82,19 @@ void bind_database_distance(nb::module_& m)
 
     auto evaluator =
         nb::class_<Evaluator>(m, "DistanceEvaluator", "Maintains distances and exact output deltas. Input relations are borrowed only during each call.");
-    evaluator.def(nb::init<const ygg::FreeRelationRepository&, Plan>(), nb::arg("repository"), nb::arg("plan"), nb::keep_alive<1, 2>())
+    evaluator.def(nb::init<ygg::FreeScratchRelations&, Plan>(), nb::arg("scratch"), nb::arg("plan"), nb::keep_alive<1, 2>())
         .def(
             "get_result",
             [](const Evaluator& self) { return self.get_result(); },
             nb::keep_alive<0, 1>(),
-            "Borrowed result; the next initialize or update invalidates it.")
+            "A view of the result builder; the next initialize or update invalidates it.")
         .def(
             "get_delta",
             [](const Evaluator& self) -> const Delta& { return self.get_delta(); },
             nb::rv_policy::reference_internal)
         .def("memory_usage", &Evaluator::memory_usage);
 
-    bind_inputs<Borrowed>(evaluator, m);
+    bind_inputs<RelationBuilderView>(evaluator, m);
     bind_inputs<ygg::FreeRelationView>(evaluator, m);
 }
 }  // namespace tyr

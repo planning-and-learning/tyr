@@ -8,7 +8,9 @@
 
 #include "tyr/datalog/lifted/database/declarations.hpp"
 #include "yggdrasil/formalism/relation_view.hpp"
+#include "yggdrasil/formalism/relation_view_concepts.hpp"
 #include "yggdrasil/formalism/repository.hpp"
+#include "yggdrasil/formalism/scratch_relation.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -25,36 +27,10 @@
 
 namespace tyr::datalog::database
 {
-/// Read access shared by the relation views (formalism/relation_view.hpp): interned (index) views and builder views.
-/// A row is a Row<Schema> view: its values by position (value(i); get_values() the stored row); its columns give their
-/// labels and types.
-/// Whether a relation's view reads `builder`: a builder's view reads its own builder, an interned relation's view reads
-/// none (it is immutable). What tells an operation's output, a builder, from its inputs.
-template<typename C>
-[[nodiscard]] bool reads_builder(const ygg::RelationBuilderView<ygg::Schema, C>& view, const urd::builder<ygg::Relation<ygg::Schema>>& builder) noexcept
-{ return &view.get_builder() == &builder; }
-
-template<typename C, typename K>
-[[nodiscard]] constexpr bool reads_builder(const urd::index_view<ygg::Relation<ygg::Schema>, C, K>& /*view*/,
-                                           const urd::builder<ygg::Relation<ygg::Schema>>& /*builder*/) noexcept
-{ return false; }
-
-template<typename V>
-concept RelationViewConcept =
-    requires(const std::remove_reference_t<V>& view, size_t i, std::span<const ygg::Value> values, const urd::builder<ygg::Relation<ygg::Schema>>& builder) {
-        { view.columns() } -> std::same_as<std::span<const ygg::ColumnLayout>>;
-        { view.get_rows() } -> std::ranges::random_access_range;
-        { reads_builder(view, builder) } -> std::same_as<bool>;
-        { view.row(i) } -> ygg::RowViewConcept<ygg::Schema>;
-        { view.row(i).get_values() } -> std::same_as<ygg::RowPool::row_type>;
-        { view.contains(values) } -> std::same_as<bool>;
-        { view.contains(view.row(i)) } -> std::same_as<bool>;
-    };
-
 /// Sized random-access inputs whose elements, possibly references, are relation views.
 template<typename R>
 concept RelationViewRange =
-    std::ranges::random_access_range<const R> && std::ranges::sized_range<const R> && RelationViewConcept<std::ranges::range_reference_t<const R>>;
+    std::ranges::random_access_range<const R> && std::ranges::sized_range<const R> && ygg::RelationViewConcept<std::ranges::range_reference_t<const R>, ygg::Schema>;
 
 /// A row consumer: called with the canonical values of each row, one per column; returning false stops the
 /// enumeration.
@@ -63,8 +39,13 @@ concept RowPredicate = std::predicate<const F&, std::span<const ygg::Value>>;
 
 /// The inputs of a query by slot: f(slot) returns the relation view bound to input slot `slot`.
 template<typename F>
-concept SlotRelations = std::invocable<const F&, size_t> && RelationViewConcept<std::invoke_result_t<const F&, size_t>>;
+concept SlotRelations = std::invocable<const F&, std::size_t> && ygg::RelationViewConcept<std::invoke_result_t<const F&, std::size_t>, ygg::Schema>;
 
+/// Whether a relation's view reads the scratch relation `out`: its context is out's repository (a builder's view of out;
+/// an interned view of a relation of another repository reads none). An operation's output is none of its inputs.
+template<ygg::RelationViewConcept<ygg::Schema> V>
+[[nodiscard]] bool reads(const V& view, const ygg::FreeScratchRelation& out) noexcept
+{ return &view.context() == &out.rows; }
 }  // namespace tyr::datalog::database
 
 #endif

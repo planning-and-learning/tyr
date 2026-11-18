@@ -537,7 +537,7 @@ public:
     bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateView<Kind>& state) override
     { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
 
-    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const BuilderStateView<Kind>& state) override
+    bool is_dynamic_goal_satisfied(const StateView<Kind>& seed_state, const StateBuilderView<Kind>& state) override
     { NB_OVERRIDE_PURE(is_dynamic_goal_satisfied, seed_state, state); }
 };
 
@@ -556,7 +556,7 @@ void bind_goal_strategy(nb::module_& m, const std::string& name)
              "seed_state"_a,
              "state"_a)
         .def("is_dynamic_goal_satisfied",
-             nb::overload_cast<const StateView<Kind>&, const BuilderStateView<Kind>&>(&T::is_dynamic_goal_satisfied),
+             nb::overload_cast<const StateView<Kind>&, const StateBuilderView<Kind>&>(&T::is_dynamic_goal_satisfied),
              "seed_state"_a,
              "state"_a);
 }
@@ -705,10 +705,9 @@ template<TaskKind Kind>
 void bind_kind_definitions(nb::module_& m)
 {
     urd::python::bind_data<State<Kind>>(m);
-    urd::python::bind_data<PackedState<Kind>>(m);
     urd::python::bind_view<PackedStateView<Kind>>(m);
     urd::python::bind_view<StateView<Kind>>(m);
-    urd::python::bind_view<BuilderStateView<Kind>>(m);
+    urd::python::bind_view<StateBuilderView<Kind>>(m);
     bind_node<Kind>(m, "Node");
     bind_packed_node<Kind>(m, "PackedNode");
     bind_labeled_node<Kind>(m, "LabeledNode");

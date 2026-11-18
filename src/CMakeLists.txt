@@ -93,7 +93,6 @@ add_library(
     datalog/lifted/database/semantics/incremental/distance.cpp
     datalog/lifted/database/semantics/incremental/join.cpp
     datalog/lifted/database/semantics/incremental/projection.cpp
-    datalog/lifted/database/semantics/incremental/semijoin.cpp
     datalog/lifted/database/semantics/query_evaluation.cpp
     datalog/lifted/database/semantics/search/backward_frontier.cpp
     datalog/lifted/database/syntax/copy.cpp

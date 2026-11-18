@@ -8,25 +8,26 @@ from typing import Any
 
 from pyyggdrasil import formalism
 
+from pytyr.datalog.lifted import database
+
 
 def labels(columns: Iterable[formalism.ColumnLayout]) -> list[formalism.ColumnIndex]:
     """The labels of `columns` (a relation's or a plan's)."""
     return [column.label for column in columns]
 
 
-def insert(builder: formalism.RelationBuilder, values: Sequence[Any]) -> int:
+def insert(builder: database.ScratchRelation, values: Sequence[Any]) -> int:
     """Inserts `values`, each encoded by the type of its column."""
     return builder.insert([formalism.encode(v, c.type) for v, c in zip(values, builder.columns(), strict=True)])
 
 
-# `row` is a row of a builder (RowBuilderView) or of an interned relation (RowSchema); the bindings give them no common
-# base.
+# `row` is a row of a relation, of a builder's view (RelationSchemaBuilder) or of an interned relation (RelationSchema).
 def values(row: Any) -> tuple[object, ...]:  # noqa: ANN401
     """The decoded values of `row`."""
     return tuple(row.get(i) for i in range(len(row.get_values())))
 
 
-# `relation` is a relation view (RelationBuilderView) or an interned relation (RelationSchema).
+# `relation` is a builder's view (RelationSchemaBuilder) or an interned relation (RelationSchema).
 def tuples(relation: Any) -> list[tuple[object, ...]]:  # noqa: ANN401
     """The decoded rows of `relation`, in its order."""
     return [values(row) for row in relation.get_rows()]
@@ -35,8 +36,8 @@ def tuples(relation: Any) -> list[tuple[object, ...]]:  # noqa: ANN401
 # `relation` is any of the forms the docstring names; the bindings give them no common base.
 def intern(repository: formalism.RelationRepository, relation: Any) -> tuple[formalism.RelationSchema, bool]:  # noqa: ANN401
     """Interns `relation` (a builder, a borrowed or an interned relation of any repository) in `repository`."""
-    if isinstance(relation, formalism.RelationBuilder):
-        relation = repository.view(relation)
+    if isinstance(relation, database.ScratchRelation):
+        relation = relation.view()
     columns = relation.columns()
     pool = repository.schema([column.type for column in columns])
     rows = [repository.insert(formalism.RowSchemaData(pool, row.get_values()))[0] for row in relation.get_rows()]

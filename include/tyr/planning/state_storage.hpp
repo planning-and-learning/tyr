@@ -28,6 +28,7 @@
 #include <limits>
 #include <ranges>
 #include <tuple>
+#include <urd/elements/builder.hpp>
 #include <urd/elements/flat.hpp>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
@@ -47,17 +48,14 @@ template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
 struct StateStorageContext;
 
 /**
- * Backend
+ * Repositories
  */
 
-template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
-class AtomStorageBackend;
-
-template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
-class FactStorageBackend;
-
-template<TaskKind Kind, typename Tag, bool ThreadSafe = false>
-class NumericStorageBackend;
+/// What interns a state component's builder (urd::builder<T, Task<Kind>>: a FactStorage, AtomStorage or NumericStorage)
+/// into its record (insert: the handle the record holds) and opens a record as its builder (unpack), in the storage of
+/// the policy Tag.
+template<typename T, typename Tag, bool ThreadSafe = false>
+class StateComponentRepository;
 
 /**
  * Unpacked
@@ -75,74 +73,58 @@ struct StateLayout
 /// their words.
 using StateBits = urd::Store<urd::set<ygg::uint_t>, urd::dense, urd::sorted>;
 
-template<TaskKind Kind>
-struct AtomUnpackedStorage
+}
+
+namespace urd
 {
-    StateBits indices;
 
-    [[nodiscard]] bool test(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) const
-    { return indices.contains(static_cast<ygg::uint_t>(index.value)); }
+/// A state's derived atoms being built, unpacked: their bits (its record holds them packed, state_data.hpp).
+template<::tyr::TaskKind Kind, typename C>
+struct builder<::tyr::planning::AtomStorage<Kind>, C>
+{
+    ::tyr::planning::StateBits indices;
 
-    /// Its derived atoms, by their bits.
-    [[nodiscard]] auto atoms() const noexcept
-    {
-        return urd::transform(indices, [](ygg::uint_t i) { return urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> { i }; });
-    }
-
-    void set(urd::index<formalism::Atom<GroundTag, formalism::DerivedTag>> index) { indices.insert(static_cast<ygg::uint_t>(index.value)); }
+    void set(urd::index<::tyr::formalism::Atom<::tyr::GroundTag, ::tyr::formalism::DerivedTag>> index) { indices.insert(static_cast<ygg::uint_t>(index.value)); }
 
     void clear() { indices.clear(); }
 
-    void swap(AtomUnpackedStorage& other) noexcept { indices.swap(other.indices); }
+    /// Takes the bits of a view of a builder of its kind (another state's).
+    void assign(const urd::borrowed_view<::tyr::planning::AtomStorage<Kind>, C, builder>& storage) { indices = storage.get_indices(); }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&AtomUnpackedStorage::indices> {}; }
+    void swap(builder& other) noexcept { indices.swap(other.indices); }
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"indices", &builder::indices>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
-template<TaskKind Kind>
-struct FactUnpackedStorage;
-
-/// The fluent atoms of a fact storage: each fact's atom, through the repository that owns its variable.
-template<TaskKind Kind>
-[[nodiscard]] auto fluent_atoms(const FactUnpackedStorage<Kind>& storage, const formalism::planning::Repository& repository)
-{
-    return storage.facts() | std::views::transform([repository = &repository](auto fact) { return *urd::resolve(fact, *repository).get_atom_index(); });
-}
-
-template<TaskKind Kind>
-struct NumericUnpackedStorage
+/// A state's numeric values being built, unpacked: a value per function term, NaN where it has none (its record holds
+/// them packed, state_data.hpp).
+template<::tyr::TaskKind Kind, typename C>
+struct builder<::tyr::planning::NumericStorage<Kind>, C>
 {
     urd::Store<urd::sequence<ygg::float_t>> values;
 
-    [[nodiscard]] ygg::float_t get(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index) const
-    { return tyr::get(static_cast<ygg::uint_t>(index.value), values, std::numeric_limits<ygg::float_t>::quiet_NaN()); }
-
-    void set(urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>> index, ygg::float_t value)
+    void set(urd::index<::tyr::formalism::FunctionTerm<::tyr::GroundTag, ::tyr::formalism::FluentTag>> index, ygg::float_t value)
     {
-        tyr::set(static_cast<ygg::uint_t>(index.value),
-                 ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
-                 values,
-                 std::numeric_limits<ygg::float_t>::quiet_NaN());
-    }
-
-    /// The function terms with a value (not NaN) and their values, by ascending function term.
-    [[nodiscard]] auto fterm_values() const noexcept
-    {
-        return std::views::iota(std::size_t { 0 }, values.size()) | std::views::filter([this](std::size_t i) { return !std::isnan(values[i]); })
-               | std::views::transform(
-                   [this](std::size_t i)
-                   {
-                       using FunctionTermIndex = urd::index<formalism::FunctionTerm<GroundTag, formalism::FluentTag>>;
-                       return std::pair<FunctionTermIndex, ygg::float_t> { FunctionTermIndex { static_cast<ygg::uint_t>(i) }, values[i] };
-                   });
+        ::tyr::set(static_cast<ygg::uint_t>(index.value),
+                   ygg::FloatTolerance<ygg::float_t>::canonicalize(value),
+                   values,
+                   std::numeric_limits<ygg::float_t>::quiet_NaN());
     }
 
     void clear() { values.clear(); }
 
-    void swap(NumericUnpackedStorage& other) noexcept { values.swap(other.values); }
+    /// Takes the values of a view of a builder of its kind (another state's).
+    void assign(const urd::borrowed_view<::tyr::planning::NumericStorage<Kind>, C, builder>& storage) { values = storage.get_values(); }
 
-    static constexpr auto identifying_members() noexcept { return urd::Members<&NumericUnpackedStorage::values> {}; }
+    void swap(builder& other) noexcept { values.swap(other.values); }
+
+    static constexpr auto fields() noexcept { return urd::Fields<urd::field<"values", &builder::values>> {}; }
+
+    static constexpr auto identifying_members() noexcept { return urd::members_of(fields()); }
 };
 
-}
+}  // namespace urd
 
 #endif

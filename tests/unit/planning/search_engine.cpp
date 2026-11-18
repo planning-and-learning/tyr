@@ -453,7 +453,7 @@ public:
 
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&) override { return true; }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::BuilderStateView<Kind>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateBuilderView<Kind>&) override { return true; }
 };
 
 template<TaskKind Kind>
@@ -467,7 +467,7 @@ public:
 
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateView<Kind>&) override { return false; }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::BuilderStateView<Kind>&) override { return false; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateBuilderView<Kind>&) override { return false; }
 };
 
 template<TaskKind Kind>
@@ -483,7 +483,7 @@ public:
     { return seed_state.index() != state.index(); }
 
     // A state being built is no seed: the seed is registered.
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::BuilderStateView<Kind>&) override { return true; }
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>&, const tyr::planning::StateBuilderView<Kind>&) override { return true; }
 };
 
 template<TaskKind Kind>
@@ -519,7 +519,7 @@ public:
     bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const tyr::planning::StateView<Kind>& state) override
     { return record(seed_state, state); }
 
-    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const tyr::planning::BuilderStateView<Kind>& state) override
+    bool is_dynamic_goal_satisfied(const tyr::planning::StateView<Kind>& seed_state, const tyr::planning::StateBuilderView<Kind>& state) override
     { return record(seed_state, state); }
 
     [[nodiscard]] bool observed_expected_seeds() const

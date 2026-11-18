@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #include "tyr/datalog/lifted/database/semantics/incremental/query.hpp"
+#include "../../../../tests/unit/datalog/lifted/database/query_helpers.hpp"
 
 #include "tyr/datalog/lifted/database/optimization/optimization.hpp"
 #include "tyr/datalog/lifted/database/semantics/generic_join.hpp"
@@ -21,19 +22,15 @@
 
 namespace tyr::datalog::benchmarks
 {
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Change;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
 namespace
 {
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
 using Column = urd::index<ygg::Column>;
-
-/// The layer the benchmarks read their builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-ygg::FreeRelationBuilderView borrow(const Relation& relation) { return layer().view(relation); }
 
 /// ygg::Columns of type ygg::uint_t with these labels.
 std::vector<ygg::ColumnLayout> cols(std::initializer_list<Column> labels)
@@ -114,8 +111,8 @@ bool equal(ygg::FreeRelationBuilderView left, ygg::FreeRelationBuilderView right
 {
     if (left.size() != right.size() || !std::ranges::equal(left.columns(), right.columns()))
         return false;
-    for (const auto row : left.get_rows())
-        if (!right.contains(row))
+    for (const auto& row : left.get_rows())
+        if (!right.contains(values_of(row)))
             return false;
     return true;
 }
@@ -123,21 +120,21 @@ bool equal(ygg::FreeRelationBuilderView left, ygg::FreeRelationBuilderView right
 bool exact_delta(const database::incremental::Delta& delta, const Relation& before, const Relation& after)
 {
     size_t added = 0, removed = 0;
-    for (const auto row : borrow(after).get_rows())
-        if (!before.contains(row))
+    for (const auto& row : borrow(after).get_rows())
+        if (!before.contains(values_of(row)))
         {
             ++added;
-            if (!delta.added.contains(row))
+            if (!delta.added->view().contains(values_of(row)))
                 return false;
         }
-    for (const auto row : borrow(before).get_rows())
-        if (!after.contains(row))
+    for (const auto& row : borrow(before).get_rows())
+        if (!after.contains(values_of(row)))
         {
             ++removed;
-            if (!delta.removed.contains(row))
+            if (!delta.removed->view().contains(values_of(row)))
                 return false;
         }
-    return added == delta.added.size() && removed == delta.removed.size();
+    return added == delta.added->view().size() && removed == delta.removed->view().size();
 }
 
 enum class Planning : std::uint8_t
@@ -179,7 +176,7 @@ void query_updates(benchmark::State& state)
     const auto initial = borrow_all(trace.initial);
     const auto changed = borrow_all(trace.changed);
     const auto forward = trace.deltas(true), backward = trace.deltas(false);
-    database::QueryEvaluator reference(layer(), database::compile_plan({ trace.root }));
+    database::QueryEvaluator reference(scratch(), database::compile_plan({ trace.root }));
     reference.evaluate(initial);
     Relation before(reference.get_result().columns());
     database::assign(before, reference.get_result());
@@ -189,9 +186,9 @@ void query_updates(benchmark::State& state)
     auto evaluator = [&]
     {
         if constexpr (Incremental)
-            return database::incremental::QueryEvaluator(layer(), plan);
+            return database::incremental::QueryEvaluator(scratch(), plan);
         else
-            return database::QueryEvaluator(layer(), plan);
+            return database::QueryEvaluator(scratch(), plan);
     }();
     if constexpr (Incremental)
         evaluator.initialize(initial);
@@ -256,7 +253,7 @@ void generic_join_full(benchmark::State& state)
     database::GenericJoinWorkspace workspace(plan);
     Relation output(plan.output_columns());
     database::generic_join(input, plan, output, workspace);
-    database::QueryEvaluator reference(layer(), database::compile_plan({ trace.root }));
+    database::QueryEvaluator reference(scratch(), database::compile_plan({ trace.root }));
     reference.evaluate(input);
     if (!equal(borrow(output), reference.get_result()))
     {

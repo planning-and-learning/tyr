@@ -17,18 +17,13 @@
 namespace
 {
 using Column = urd::index<ygg::Column>;
-using Relation = urd::builder<ygg::Relation<ygg::Schema>>;
-using Delta = tyr::datalog::database::incremental::Delta;
+using tyr::datalog::tests::borrow;
+using tyr::datalog::tests::Relation;
+using tyr::datalog::tests::scratch;
+using tyr::datalog::tests::value_of;
+using tyr::datalog::tests::values_of;
+using Delta = tyr::datalog::tests::Change;
 using Change = std::pair<ygg::FreeRelationBuilderView, ygg::FreeRelationBuilderView>;
-
-/// The layer the tests read their builders through.
-const ygg::FreeRelationRepository& layer()
-{
-    static const ygg::FreeRelationRepository repository;
-    return repository;
-}
-
-ygg::FreeRelationBuilderView borrow(const urd::builder<ygg::Relation<ygg::Schema>>& relation) { return layer().view(relation); }
 
 const Column x(0), y(1), z(2), d(3);
 
@@ -36,11 +31,11 @@ auto rows(const auto& relation)
 {
     urd::Store<urd::sequence<urd::Store<urd::sequence<ygg::Value>>>> result;
     result.reserve(relation.size());
-    for (const auto row : relation.get_rows())
+    for (const auto& row : relation.get_rows())
     {
         auto& values = result.emplace_back();
-        for (size_t c = 0; c < row.get_values().size(); ++c)
-            values.push_back(row.value(c));
+        for (const auto value : values_of(row))
+            values.push_back(value);
     }
     std::ranges::sort(result);
     return result;
@@ -56,10 +51,10 @@ auto minus(const auto& left_operand, const auto& right_operand)
 void apply(Relation& relation, const Delta& change)
 {
     const auto [added, removed] = change.change();
-    for (const auto row : removed.get_rows())
-        relation.erase(relation.find(row).value());
-    for (const auto row : added.get_rows())
-        relation.insert(row);
+    for (const auto& row : removed.get_rows())
+        EXPECT_TRUE(relation.erase(values_of(row)));
+    for (const auto& row : added.get_rows())
+        relation.insert(values_of(row));
 }
 
 void reverse(Delta& change) { std::swap(change.added, change.removed); }
@@ -214,7 +209,7 @@ TEST(DatabaseQuery, InternsValidatedNodesAndCompilesIndependentReachablePlan)
     Relation input { tyr::datalog::tests::ops::cols({ x, y }) };
     input.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     input.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(4)) });
-    tyr::datalog::database::QueryEvaluator evaluator(layer(), plan);
+    tyr::datalog::database::QueryEvaluator evaluator(scratch(), plan);
     EXPECT_THROW((void) evaluator.get_result(), std::logic_error);
     evaluator.evaluate(std::array { borrow(input) });
     EXPECT_EQ(evaluator.get_result(0).size(), 1);
@@ -246,8 +241,8 @@ TEST(DatabaseQuery, IncrementalDagMatchesFullAndExactDeltasForwardBackward)
                                     tyr::datalog::tests::qb::semijoin(repository, a, c),
                                     tyr::datalog::tests::qb::antijoin(repository, a, c) };
     const auto plan = tyr::datalog::database::compile_plan(roots);
-    tyr::datalog::database::QueryEvaluator full(layer(), plan);
-    tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
+    tyr::datalog::database::QueryEvaluator full(scratch(), plan);
+    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), plan);
     Relation first(tyr::datalog::tests::ops::cols({ x, y })), second(tyr::datalog::tests::ops::cols({ x, y })), third(tyr::datalog::tests::ops::cols({ y, z }));
     first.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     first.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
@@ -266,17 +261,18 @@ TEST(DatabaseQuery, IncrementalDagMatchesFullAndExactDeltasForwardBackward)
         }
     };
     compare();
-    Delta da(layer(), first.columns()), dbb(layer(), second.columns()), dc(layer(), third.columns());
+    Delta da(first.columns()), dbb(second.columns()), dc(third.columns());
     da.removed.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     da.added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     dbb.removed.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     dbb.added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     dc.added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(7)) });
-    const auto changes = std::array { std::pair { borrow(da.added), borrow(da.removed) },
-                                      std::pair { borrow(dbb.added), borrow(dbb.removed) },
-                                      std::pair { borrow(dc.added), borrow(dc.removed) } };
     for (int iteration = 0; iteration < 2; ++iteration)
     {
+        // Read each iteration: reverse swaps a change's relations, not their contents.
+        const auto changes = std::array { std::pair { borrow(da.added), borrow(da.removed) },
+                                          std::pair { borrow(dbb.added), borrow(dbb.removed) },
+                                          std::pair { borrow(dc.added), borrow(dc.removed) } };
         urd::Store<urd::sequence<decltype(rows(borrow(first)))>> before;
         before.reserve(roots.size());
         for (size_t i = 0; i < roots.size(); ++i)
@@ -297,15 +293,15 @@ TEST(DatabaseQuery, IncrementalDagMatchesFullAndExactDeltasForwardBackward)
         reverse(dc);
     }
     // A replaced projection witness keeps membership and must emit no change.
-    EXPECT_TRUE(incremental.get_delta(1).added.empty());
-    EXPECT_TRUE(incremental.get_delta(1).removed.empty());
+    EXPECT_TRUE(incremental.get_delta(1).added->view().empty());
+    EXPECT_TRUE(incremental.get_delta(1).removed->view().empty());
     EXPECT_GT(incremental.memory_usage(), 0);
     EXPECT_GT(full.memory_usage(), 0);
 }
 
 TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
 {
-    using TypedRelation = urd::builder<ygg::Relation<ygg::Schema>>;
+    using TypedRelation = Relation;
     const std::vector<ygg::ColumnLayout> schema { { x, ygg::type_id<std::uint32_t> }, { y, ygg::type_id<double> } };
     auto mixed = tyr::datalog::tests::qb::repository();
     auto input = tyr::datalog::tests::qb::input(mixed, 0, schema);
@@ -318,7 +314,7 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     TypedRelation relation(schema);
     relation.insert(std::array { ygg::encode_value(static_cast<std::uint32_t>(4)), ygg::encode_value(0.0) });
     relation.insert(std::array { ygg::encode_value(static_cast<std::uint32_t>(5)), ygg::encode_value(2.0) });
-    tyr::datalog::database::QueryEvaluator evaluator(layer(),
+    tyr::datalog::database::QueryEvaluator evaluator(scratch(),
                                                      tyr::datalog::database::compile_plan({ tyr::datalog::tests::qb::project(mixed, selected, { y, x }) }));
     evaluator.evaluate(std::array { borrow(relation) });
     EXPECT_TRUE(evaluator.get_result().contains(std::array { ygg::encode_value(0.0), ygg::encode_value(std::uint32_t(4)) }));
@@ -336,14 +332,14 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     e.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     t.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     const auto inputs = std::array { borrow(s), borrow(e), borrow(t) };
-    tyr::datalog::database::QueryEvaluator full(layer(), plan);
-    tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
+    tyr::datalog::database::QueryEvaluator full(scratch(), plan);
+    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), plan);
     full.evaluate(inputs);
     incremental.initialize(inputs);
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
     ASSERT_TRUE(incremental.get_result(1).contains(
         std::array { ygg::encode_value(ygg::uint_t(1)), ygg::encode_value(ygg::uint_t(3)), ygg::encode_value(ygg::uint_t(2)) }));
-    Delta ds(layer(), s.columns()), de(layer(), e.columns()), dt(layer(), t.columns());
+    Delta ds(s.columns()), de(e.columns()), dt(t.columns());
     de.added.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
     incremental.update(std::array { std::pair { borrow(ds.added), borrow(ds.removed) },
                                     std::pair { borrow(de.added), borrow(de.removed) },
@@ -352,8 +348,8 @@ TEST(DatabaseQuery, MixedTypesConstantsAndDistanceComposition)
     full.evaluate(inputs);
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
     EXPECT_TRUE(incremental.get_result(1).get_rows().empty());
-    EXPECT_EQ(incremental.get_delta().added.size(), 1);
-    EXPECT_EQ(incremental.get_delta().removed.size(), 1);
+    EXPECT_EQ(incremental.get_delta().added->view().size(), 1);
+    EXPECT_EQ(incremental.get_delta().removed->view().size(), 1);
 }
 
 TEST(DatabaseQuery, RejectsInvalidBatchesBeforeMutatingAndSupportsNonDistanceTypeFamilies)
@@ -361,15 +357,15 @@ TEST(DatabaseQuery, RejectsInvalidBatchesBeforeMutatingAndSupportsNonDistanceTyp
     const auto schema = tyr::datalog::tests::qb::columns_of<double>({ x });
     auto repository = tyr::datalog::tests::qb::repository();
     const auto input = tyr::datalog::tests::qb::input(repository, 0, schema);
-    urd::builder<ygg::Relation<ygg::Schema>> relation(schema);
+    Relation relation(schema);
     relation.insert(std::array { ygg::encode_value(1.0) });
     const auto plan = tyr::datalog::database::compile_plan({ tyr::datalog::tests::qb::select_value(repository, input, x, 1.0) });
-    tyr::datalog::database::QueryEvaluator full(layer(), plan);
-    tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
+    tyr::datalog::database::QueryEvaluator full(scratch(), plan);
+    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), plan);
     const auto inputs = std::array { borrow(relation) };
     full.evaluate(inputs);
     incremental.initialize(inputs);
-    tyr::datalog::database::incremental::Delta invalid(layer(), relation.columns());
+    Delta invalid(relation.columns());
     invalid.added.insert(std::array { ygg::encode_value(1.0) });
     const auto changes = std::array { std::pair { borrow(invalid.added), borrow(invalid.removed) } };
     EXPECT_THROW(incremental.update(changes), std::invalid_argument);
@@ -417,8 +413,8 @@ TEST(DatabaseQuery, RandomizedSharedSetDagMaintainsExactNetChanges)
                                      Relation(tyr::datalog::tests::ops::cols({ y, z })),
                                      Relation() };
     const auto refs = std::array { borrow(inputs[0]), borrow(inputs[1]), borrow(inputs[2]), borrow(inputs[3]) };
-    tyr::datalog::database::QueryEvaluator full(layer(), plan);
-    tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
+    tyr::datalog::database::QueryEvaluator full(scratch(), plan);
+    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), plan);
     incremental.initialize(refs);
     // NOLINTNEXTLINE(bugprone-random-generator-seed): a fixed seed keeps the test reproducible
     std::mt19937 random(741);
@@ -431,17 +427,17 @@ TEST(DatabaseQuery, RandomizedSharedSetDagMaintainsExactNetChanges)
         urd::Store<urd::sequence<Delta>> changes;
         for (size_t input = 0; input < inputs.size(); ++input)
         {
-            changes.emplace_back(layer(), inputs[input].columns());
+            changes.emplace_back(inputs[input].columns());
             auto& relation = inputs[input];
             auto& change = changes.back();
             const auto toggle = [&](const auto& tuple)
             {
                 if (random() % 3 != 0)
                     return;
-                if (const auto position = relation.find(tuple))
+                if (relation.contains(tuple))
                 {
                     change.removed.insert(tuple);
-                    relation.erase(*position);
+                    relation.erase(tuple);
                 }
                 else
                 {
@@ -487,8 +483,8 @@ TEST(DatabaseQuery, GenericJoinPlanExecutesInBothModesAndPrunesAlternatives)
     const auto root = tyr::datalog::tests::qb::generic_join(repository, { ai, bi, ci }, { z, x, y });
     const auto plan = tyr::datalog::database::compile_plan({ root });
     ASSERT_EQ(plan.node_count(), 4);
-    tyr::datalog::database::QueryEvaluator full(layer(), plan);
-    tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
+    tyr::datalog::database::QueryEvaluator full(scratch(), plan);
+    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), plan);
     Relation ar(tyr::datalog::tests::ops::cols({ x, y })), br(tyr::datalog::tests::ops::cols({ y, z })), cr(tyr::datalog::tests::ops::cols({ z, x }));
     ar.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(1)), ygg::encode_value(static_cast<ygg::uint_t>(2)) });
     br.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(2)), ygg::encode_value(static_cast<ygg::uint_t>(3)) });
@@ -498,13 +494,13 @@ TEST(DatabaseQuery, GenericJoinPlanExecutesInBothModesAndPrunesAlternatives)
     incremental.initialize(inputs);
     ASSERT_EQ(incremental.get_result().size(), 1);
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
-    Delta da(layer(), ar.columns()), dbb(layer(), br.columns()), dc(layer(), cr.columns());
+    Delta da(ar.columns()), dbb(br.columns()), dc(cr.columns());
     dc.removed.insert(std::array { ygg::encode_value(static_cast<ygg::uint_t>(3)), ygg::encode_value(static_cast<ygg::uint_t>(1)) });
     incremental.update(std::array { std::pair { borrow(da.added), borrow(da.removed) },
                                     std::pair { borrow(dbb.added), borrow(dbb.removed) },
                                     std::pair { borrow(dc.added), borrow(dc.removed) } });
     EXPECT_TRUE(incremental.get_result().get_rows().empty());
-    EXPECT_EQ(incremental.get_delta().removed.size(), 1);
+    EXPECT_EQ(incremental.get_delta().removed->view().size(), 1);
     apply(cr, dc);
     full.evaluate(inputs);
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
@@ -517,8 +513,8 @@ TEST(DatabaseQuery, NullaryGenericJoinIsIdentityInBothModes)
     const auto plan = tyr::datalog::database::compile_plan({ root, root });
     ASSERT_EQ(plan.node_count(), 1);
     EXPECT_EQ(plan.roots().front(), plan.roots().back());
-    tyr::datalog::database::QueryEvaluator full(layer(), plan);
-    tyr::datalog::database::incremental::QueryEvaluator incremental(layer(), plan);
+    tyr::datalog::database::QueryEvaluator full(scratch(), plan);
+    tyr::datalog::database::incremental::QueryEvaluator incremental(scratch(), plan);
     const std::array<ygg::FreeRelationBuilderView, 0> no_inputs;
     full.evaluate(no_inputs);
     incremental.initialize(no_inputs);
@@ -527,8 +523,8 @@ TEST(DatabaseQuery, NullaryGenericJoinIsIdentityInBothModes)
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result()));
     incremental.update(std::array<Change, 0> {});
     EXPECT_EQ(rows(full.get_result()), rows(incremental.get_result(1)));
-    EXPECT_TRUE(incremental.get_delta().added.empty());
-    EXPECT_TRUE(incremental.get_delta().removed.empty());
+    EXPECT_TRUE(incremental.get_delta().added->view().empty());
+    EXPECT_TRUE(incremental.get_delta().removed->view().empty());
 }
 
 TEST(DatabaseQuery, InterningUsesArgumentsAndCanonicalOrders)

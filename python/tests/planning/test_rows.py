@@ -610,7 +610,7 @@ def _check_lazy_gbfs_relaxed_plan_requests_ground(task: planning.ground.Task) ->
                 pass
 
             @override
-            def evaluate(self, state: planning.ground.State) -> float:
+            def evaluate(self, state: planning.ground.StateBuilderShared) -> float:
                 return 0.0
 
             def make_worker(self, _execution_context: ExecutionContext) -> Self:
@@ -651,7 +651,7 @@ def _check_lazy_gbfs_relaxed_plan_requests_lifted(task: planning.lifted.Task) ->
                 pass
 
             @override
-            def evaluate(self, state: planning.lifted.State) -> float:
+            def evaluate(self, state: planning.lifted.StateBuilderShared) -> float:
                 return 0.0
 
             def make_worker(self, _execution_context: ExecutionContext) -> Self:
@@ -865,7 +865,7 @@ def _check_null_python_heuristic_workers_ground(task: planning.ground.Task) -> N
             pass
 
         @override
-        def evaluate(self, state: planning.ground.State) -> float:
+        def evaluate(self, state: planning.ground.StateBuilderShared) -> float:
             return 0.0
 
         def make_worker(self, _execution_context: ExecutionContext) -> None:
@@ -896,7 +896,7 @@ def _check_null_python_heuristic_workers_lifted(task: planning.lifted.Task) -> N
             pass
 
         @override
-        def evaluate(self, state: planning.lifted.State) -> float:
+        def evaluate(self, state: planning.lifted.StateBuilderShared) -> float:
             return 0.0
 
         def make_worker(self, _execution_context: ExecutionContext) -> None:
@@ -931,7 +931,7 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}
     retained_snapshots: list[
-        tuple[planning.ground.State | planning.ground.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
+        tuple[planning.ground.StateBuilderShared | planning.ground.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
     ] = []
 
     class PythonGoalStrategy(planning.ground.GoalStrategy):
@@ -953,7 +953,7 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.ground.State, state: planning.ground.State | planning.ground.StateBuilder
+            self, seed_state: planning.ground.StateBuilderShared, state: planning.ground.StateBuilderShared | planning.ground.StateBuilder
         ) -> bool:
             callback_indices["goal"].append(self.worker_index)
             if len(callback_indices["goal"]) > 2 and not retained_snapshots:
@@ -973,13 +973,13 @@ def _check_python_goal_and_pruning_workers_ground(task: planning.ground.Task) ->
             return worker
 
         @override
-        def should_prune_state(self, state: planning.ground.State) -> bool:
+        def should_prune_state(self, state: planning.ground.StateBuilderShared) -> bool:
             callback_indices["pruning"].append(self.worker_index)
             return False
 
         @override
         def should_prune_successor_state(
-            self, state: planning.ground.State, succ_state: planning.ground.State, is_new_succ_state: bool
+            self, state: planning.ground.StateBuilderShared, succ_state: planning.ground.StateBuilderShared, is_new_succ_state: bool
         ) -> bool:
             callback_indices["pruning"].append(self.worker_index)
             return False
@@ -1013,7 +1013,7 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
     worker_ids: dict[str, set[int]] = {"goal": set(), "pruning": set()}
     callback_indices: dict[str, list[int | None]] = {"goal": [], "pruning": []}
     retained_snapshots: list[
-        tuple[planning.lifted.State | planning.lifted.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
+        tuple[planning.lifted.StateBuilderShared | planning.lifted.StateBuilder, tuple[formalism_planning.FDRValue, ...]]
     ] = []
 
     class PythonGoalStrategy(planning.lifted.GoalStrategy):
@@ -1035,7 +1035,7 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.lifted.State, state: planning.lifted.State | planning.lifted.StateBuilder
+            self, seed_state: planning.lifted.StateBuilderShared, state: planning.lifted.StateBuilderShared | planning.lifted.StateBuilder
         ) -> bool:
             callback_indices["goal"].append(self.worker_index)
             if len(callback_indices["goal"]) > 2 and not retained_snapshots:
@@ -1055,13 +1055,13 @@ def _check_python_goal_and_pruning_workers_lifted(task: planning.lifted.Task) ->
             return worker
 
         @override
-        def should_prune_state(self, state: planning.lifted.State) -> bool:
+        def should_prune_state(self, state: planning.lifted.StateBuilderShared) -> bool:
             callback_indices["pruning"].append(self.worker_index)
             return False
 
         @override
         def should_prune_successor_state(
-            self, state: planning.lifted.State, succ_state: planning.lifted.State, is_new_succ_state: bool
+            self, state: planning.lifted.StateBuilderShared, succ_state: planning.lifted.StateBuilderShared, is_new_succ_state: bool
         ) -> bool:
             callback_indices["pruning"].append(self.worker_index)
             return False
@@ -1101,7 +1101,7 @@ def _check_missing_or_null_python_strategy_workers_ground(task: planning.ground.
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.ground.State, state: planning.ground.State | planning.ground.StateBuilder
+            self, seed_state: planning.ground.StateBuilderShared, state: planning.ground.StateBuilderShared | planning.ground.StateBuilder
         ) -> bool:
             return False
 
@@ -1136,7 +1136,7 @@ def _check_missing_or_null_python_strategy_workers_lifted(task: planning.lifted.
 
         @override
         def is_dynamic_goal_satisfied(
-            self, seed_state: planning.lifted.State, state: planning.lifted.State | planning.lifted.StateBuilder
+            self, seed_state: planning.lifted.StateBuilderShared, state: planning.lifted.StateBuilderShared | planning.lifted.StateBuilder
         ) -> bool:
             return False
 
@@ -1297,7 +1297,7 @@ def test_state_repository_create_state_uses_plural_fluent_facts_argument() -> No
 
 
 def test_state_get_names_its_parameter() -> None:
-    docstring = planning.ground.State.get.__doc__ or ""
+    docstring = planning.ground.StateBuilderShared.get.__doc__ or ""
 
     assert "view" in docstring
     assert "index" in docstring
@@ -1360,7 +1360,7 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
     state_text = str(state)
     packed = state.pack()
 
-    assert type(packed) is planning.ground.PackedState
+    assert type(packed) is planning.ground.State
     assert packed.index().value == state_index.value
     assert packed.context() == state_repository
     assert packed.unpack() == state
@@ -1371,7 +1371,7 @@ def _check_packed_state_roundtrip_ground(task: planning.ground.Task) -> None:
     gc.collect()
 
     unpacked = packed.unpack()
-    assert type(unpacked) is planning.ground.State
+    assert type(unpacked) is planning.ground.StateBuilderShared
     assert unpacked.index() == state_index
     assert str(unpacked) == state_text
     assert unpacked.pack() == packed
@@ -1388,7 +1388,7 @@ def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
     state_text = str(state)
     packed = state.pack()
 
-    assert type(packed) is planning.lifted.PackedState
+    assert type(packed) is planning.lifted.State
     assert packed.index().value == state_index.value
     assert packed.context() == state_repository
     assert packed.unpack() == state
@@ -1399,7 +1399,7 @@ def _check_packed_state_roundtrip_lifted(task: planning.lifted.Task) -> None:
     gc.collect()
 
     unpacked = packed.unpack()
-    assert type(unpacked) is planning.lifted.State
+    assert type(unpacked) is planning.lifted.StateBuilderShared
     assert unpacked.index() == state_index
     assert str(unpacked) == state_text
     assert unpacked.pack() == packed
@@ -1427,7 +1427,7 @@ def _check_packed_nodes_ground(task: planning.ground.Task) -> None:
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.ground.PackedNode
-    assert type(packed.get_state()) is planning.ground.PackedState
+    assert type(packed.get_state()) is planning.ground.State
     assert packed.get_metric() == 17.5
     assert packed == planning.ground.PackedNode(node.get_state().pack(), 17.5)
     assert hash(packed) == hash(node.pack())
@@ -1464,7 +1464,7 @@ def _check_packed_nodes_lifted(task: planning.lifted.Task) -> None:
     packed_labeled = labeled.pack()
 
     assert type(packed) is planning.lifted.PackedNode
-    assert type(packed.get_state()) is planning.lifted.PackedState
+    assert type(packed.get_state()) is planning.lifted.State
     assert packed.get_metric() == 17.5
     assert packed == planning.lifted.PackedNode(node.get_state().pack(), 17.5)
     assert hash(packed) == hash(node.pack())

@@ -109,7 +109,7 @@ struct AxiomWorkspace<LiftedTag>
 }
 
 template<>
-void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>>& state_builder)
+void AxiomEvaluator<LiftedTag>::compute_extended_state(urd::builder<State<LiftedTag>, StateRepository<LiftedTag>>& state_builder)
 {
     auto& evaluator = m_impl->evaluator;
     if (!evaluator.workspace)

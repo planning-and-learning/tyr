@@ -7,18 +7,6 @@
 
 #include <variant>
 
-namespace tyr::datalog::database::detail
-{
-bool query_accepts(QueryView<QuerySelectEqualTag> selection, const ygg::RowPool::row_type& row)
-{ return row.get(selection.get_plan().left_position()) == row.get(selection.get_plan().right_position()); }
-}
-
-namespace tyr::datalog::database::detail
-{
-bool query_accepts(QueryView<QuerySelectValueTag> selection, const ygg::RowPool::row_type& row)
-{ return row.get(selection.get_plan().position()) == selection.get_plan().value(); }
-}
-
 namespace tyr::datalog::database
 {
 size_t QueryEvaluator::memory_usage() const noexcept
@@ -34,7 +22,7 @@ size_t QueryEvaluator::memory_usage() const noexcept
     const auto state_usage = [&]<typename... States>(const std::variant<States...>& state) noexcept { return (usage(std::get_if<States>(&state)) + ...); };
     size_t result = m_workspace.memory_usage();
     for (const auto& node : m_nodes)
-        result += node.result.memory_usage() + state_usage(node.state);
+        result += urd::memory_usage(node.result->relation) + state_usage(node.state);
     return result;
 }
 }
