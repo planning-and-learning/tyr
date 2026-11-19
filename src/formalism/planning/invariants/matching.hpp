@@ -15,22 +15,38 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MATCHING_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHING_HPP_
 
-#include "tyr/formalism/planning/mutable/atom.hpp"
-#include "tyr/formalism/planning/mutable/invariant.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
+
+#include <cstddef>
+#include <optional>
 
 namespace tyr::formalism::planning::invariant
 {
 
 using InvariantSubstitution = unification::SubstitutionFunction<Term>;
 
-bool covers(const MutableInvariant& inv, const MutableAtom<FluentTag>& element);
+/// Whether `pattern`, an atom of an invariant with these numbers of rigid and counted variables, covers `element`: some
+/// instance of its counted variables makes it `element`, its rigid variables as they are.
+bool covers(std::size_t num_rigid_variables,
+            std::size_t num_counted_variables,
+            const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+            const urd::data<Atom<LiftedTag, FluentTag>>& element);
 
-std::optional<InvariantSubstitution>
-match_invariant_against_ground_atom(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& ground_atom);
+/// Whether some atom of the candidate covers `element`.
+bool covers(const urd::builder<Invariant, Repository>& inv, const urd::data<Atom<LiftedTag, FluentTag>>& element);
+
+/// The substitution of every variable of the invariant that makes `pattern` the ground atom, if any.
+std::optional<InvariantSubstitution> match_invariant_against_ground_atom(std::size_t num_rigid_variables,
+                                                                         std::size_t num_counted_variables,
+                                                                         const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+                                                                         const urd::data<Atom<LiftedTag, FluentTag>>& ground_atom);
 
 }  // namespace tyr::formalism::planning::invariant
 

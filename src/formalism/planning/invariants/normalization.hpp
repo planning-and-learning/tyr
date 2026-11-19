@@ -15,15 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_NORMALIZATION_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_NORMALIZATION_HPP_
 
-#include "tyr/formalism/planning/mutable/invariant.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 namespace tyr::formalism::planning::invariant
 {
 
-void normalize_invariant(MutableInvariant& inv);
+/// Drops atoms another atom covers and variables no atom uses (renumbering the rest), then sorts the atoms.
+void normalize_invariant(urd::builder<Invariant, Repository>& inv);
 
 }
 

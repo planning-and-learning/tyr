@@ -63,12 +63,6 @@ void bind_module_definitions(nb::module_& m)
     invariant::bind_invariants(m);
 
     /**
-     * Mutable
-     */
-
-    bind_mutable(m);
-
-    /**
      * Domains
      */
 

@@ -277,7 +277,9 @@ ConstraintTerm make_constraint_term(const Term& term)
 
 ConstraintTerm make_invariant_parameter_term(size_t index) { return InvariantParameter { index }; }
 
-EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv)
+EqualityConjunction make_cover_equality_conjunction(const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+                                                    const urd::data<Atom<LiftedTag, FluentTag>>& atom,
+                                                    const urd::builder<Invariant, Repository>& inv)
 {
     assert(pattern.predicate == atom.predicate);
     assert(pattern.terms.size() == atom.terms.size());
@@ -304,10 +306,13 @@ EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>
     return EqualityConjunction(std::move(equalities));
 }
 
-void ensure_cover(ConstraintSystem& system, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv)
+void ensure_cover(ConstraintSystem& system,
+                  const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+                  const urd::data<Atom<LiftedTag, FluentTag>>& atom,
+                  const urd::builder<Invariant, Repository>& inv)
 { system.add_equality_conjunction(make_cover_equality_conjunction(pattern, atom, inv)); }
 
-void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& lhs, const MutableAtom<FluentTag>& rhs)
+void ensure_inequality(ConstraintSystem& system, const urd::data<Atom<LiftedTag, FluentTag>>& lhs, const urd::data<Atom<LiftedTag, FluentTag>>& rhs)
 {
     if (lhs.predicate != rhs.predicate || lhs.terms.empty())
         return;
@@ -321,25 +326,25 @@ void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& l
     system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
 }
 
-namespace
-{
 template<FactKind T>
-void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& literals)
+void ensure_literals_sat(ConstraintSystem& system, const std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>& literals, const Repository& repository)
 {
-    urd::Store<urd::map<PredicateView<T>, urd::Store<urd::sequence<const MutableLiteral<T>*>>>> pos;
-    urd::Store<urd::map<PredicateView<T>, urd::Store<urd::sequence<const MutableLiteral<T>*>>>> neg;
+    using Entry = std::pair<urd::data<Atom<LiftedTag, T>>, bool>;
+    urd::Store<urd::map<urd::index<Predicate<T>>, urd::Store<urd::sequence<const Entry*>>>> pos;
+    urd::Store<urd::map<urd::index<Predicate<T>>, urd::Store<urd::sequence<const Entry*>>>> neg;
 
     for (const auto& literal : literals)
     {
+        const auto& [atom, polarity] = literal;
         if constexpr (std::is_same_v<T, StaticTag>)
         {
-            if (literal.atom.predicate.get_name().view() == "=")
+            if (repository.view(atom.predicate).get_name().view() == "=")
             {
                 urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts;
-                if (literal.atom.terms.size() == 2)
-                    parts.emplace_back(make_constraint_term(literal.atom.terms[0]), make_constraint_term(literal.atom.terms[1]));
+                if (atom.terms.size() == 2)
+                    parts.emplace_back(make_constraint_term(atom.terms[0]), make_constraint_term(atom.terms[1]));
 
-                if (literal.polarity)
+                if (polarity)
                     system.add_equality_DNF({ EqualityConjunction(std::move(parts)) });
                 else
                     system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
@@ -348,7 +353,7 @@ void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& 
             }
         }
 
-        (literal.polarity ? pos : neg)[literal.atom.predicate].push_back(&literal);
+        (polarity ? pos : neg)[atom.predicate].push_back(&literal);
     }
 
     for (const auto& [predicate, positives] : pos)
@@ -362,10 +367,10 @@ void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& 
             for (const auto* negative : neg_it->second)
             {
                 urd::Store<urd::sequence<std::pair<ConstraintTerm, ConstraintTerm>>> parts;
-                parts.reserve(positive->atom.terms.size());
+                parts.reserve(positive->first.terms.size());
 
-                for (size_t i = 0; i < positive->atom.terms.size(); ++i)
-                    parts.emplace_back(make_constraint_term(negative->atom.terms[i]), make_constraint_term(positive->atom.terms[i]));
+                for (size_t i = 0; i < positive->first.terms.size(); ++i)
+                    parts.emplace_back(make_constraint_term(negative->first.terms[i]), make_constraint_term(positive->first.terms[i]));
 
                 if (!parts.empty())
                     system.add_inequality_disjunction(InequalityDisjunction(std::move(parts)));
@@ -373,13 +378,9 @@ void ensure_literals_sat(ConstraintSystem& system, const MutableLiteralList<T>& 
         }
     }
 }
-}  // namespace
 
-void ensure_conjunction_sat(ConstraintSystem& system, const MutableConjunctiveCondition& conjunction)
-{
-    ensure_literals_sat(system, conjunction.static_literals);
-    ensure_literals_sat(system, conjunction.fluent_literals);
-    ensure_literals_sat(system, conjunction.derived_literals);
-}
+template void ensure_literals_sat(ConstraintSystem&, const std::vector<std::pair<urd::data<Atom<LiftedTag, StaticTag>>, bool>>&, const Repository&);
+template void ensure_literals_sat(ConstraintSystem&, const std::vector<std::pair<urd::data<Atom<LiftedTag, FluentTag>>, bool>>&, const Repository&);
+template void ensure_literals_sat(ConstraintSystem&, const std::vector<std::pair<urd::data<Atom<LiftedTag, DerivedTag>>, bool>>&, const Repository&);
 
 }  // namespace tyr::formalism::planning::invariant

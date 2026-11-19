@@ -21,6 +21,7 @@
 #include "normalization.hpp"
 #include "proof.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include <urd/elements/clone.hpp>
 #include "utils.hpp"
 
 #include <algorithm>
@@ -36,8 +37,9 @@ namespace
 
 using PositionMapping = urd::Store<urd::sequence<std::pair<size_t, std::optional<ParameterIndex>>>>;
 
-urd::Store<urd::map<ParameterIndex, Term>, urd::sorted>
-get_parameters_from_part(const MutableAtom<FluentTag>& part, const MutableAtom<FluentTag>& literal, size_t num_rigid_variables)
+urd::Store<urd::map<ParameterIndex, Term>, urd::sorted> get_parameters_from_part(const urd::data<Atom<LiftedTag, FluentTag>>& part,
+                                                                                 const urd::data<Atom<LiftedTag, FluentTag>>& literal,
+                                                                                 size_t num_rigid_variables)
 {
     urd::Store<urd::map<ParameterIndex, Term>, urd::sorted> result;
 
@@ -108,9 +110,9 @@ urd::Store<urd::sequence<PositionMapping>> instantiate_factored_mapping(
     return result;
 }
 
-urd::Store<urd::sequence<PositionMapping>> possible_mappings(const MutableAtom<FluentTag>& part,
-                                                             const MutableAtom<FluentTag>& own_literal,
-                                                             const MutableAtom<FluentTag>& other_literal,
+urd::Store<urd::sequence<PositionMapping>> possible_mappings(const urd::data<Atom<LiftedTag, FluentTag>>& part,
+                                                             const urd::data<Atom<LiftedTag, FluentTag>>& own_literal,
+                                                             const urd::data<Atom<LiftedTag, FluentTag>>& other_literal,
                                                              size_t num_rigid_variables)
 {
     size_t allowed_omissions = other_literal.terms.size() - part_arity(part, num_rigid_variables);
@@ -155,66 +157,73 @@ urd::Store<urd::sequence<PositionMapping>> possible_mappings(const MutableAtom<F
     return instantiate_factored_mapping(factored_mapping);
 }
 
-MutableAtomList<FluentTag> possible_matches(const MutableAtom<FluentTag>& part,
-                                            const MutableAtom<FluentTag>& own_literal,
-                                            const MutableAtom<FluentTag>& other_literal,
-                                            size_t num_rigid_variables)
+std::vector<urd::data<Atom<LiftedTag, FluentTag>>> possible_matches(const urd::data<Atom<LiftedTag, FluentTag>>& part,
+                                                                    const urd::data<Atom<LiftedTag, FluentTag>>& own_literal,
+                                                                    const urd::data<Atom<LiftedTag, FluentTag>>& other_literal,
+                                                                    size_t num_rigid_variables)
 {
-    MutableAtomList<FluentTag> result;
+    auto result = std::vector<urd::data<Atom<LiftedTag, FluentTag>>>();
 
     for (const auto& mapping : possible_mappings(part, own_literal, other_literal, num_rigid_variables))
     {
-        urd::Store<urd::sequence<Term>> args(other_literal.terms.size(), Term(ParameterIndex(num_rigid_variables)));
+        auto match = urd::data<Atom<LiftedTag, FluentTag>>();
+        match.predicate = other_literal.predicate;
+        match.terms.resize(other_literal.terms.size(), Term(ParameterIndex(num_rigid_variables)));
 
         for (const auto& [other_pos, inv_var] : mapping)
-            args[other_pos] = Term(inv_var.value_or(ParameterIndex(num_rigid_variables)));
+            match.terms[other_pos] = Term(inv_var.value_or(ParameterIndex(num_rigid_variables)));
 
-        result.emplace_back(other_literal.predicate, std::move(args));
+        result.push_back(std::move(match));
     }
 
     return result;
 }
 }  // namespace
 
-MutableInvariantList refine_candidate(const MutableInvariant& inv, const Threat& threat, const MutableActionList& ops, PredicateListView<FluentTag>)
+std::vector<urd::builder<Invariant, Repository>> refine_candidate(const urd::builder<Invariant, Repository>& inv,
+                                                                  const Threat& threat,
+                                                                  const std::vector<ActionView<LiftedTag>>& ops,
+                                                                  CandidateStorage& storage)
 {
-    MutableInvariantList result;
+    auto result = std::vector<urd::builder<Invariant, Repository>>();
 
-    const auto& op = ops[threat.op_index];
-    const auto& effect = op.effects[threat.effect_index];
-    const auto& add_literal = effect.effect.literals[threat.add_index];
-    assert(add_literal.polarity);
-    const auto& add_atom = add_literal.atom;
+    const auto op = ops[threat.op_index];
+    const auto effect = op.get_effects()[threat.effect_index];
+    const auto add_literal = effect.get_effect().get_literals()[threat.add_index];
+    assert(add_literal.get_polarity());
+    const auto& add_atom = add_literal.get_atom().context()[add_literal.get_atom().index()];
 
-    const MutableAtom<FluentTag>* part = find_part(inv, add_atom.predicate);
+    const auto* part = find_part(inv, add_atom.predicate);
     if (part == nullptr)
         return result;
 
-    for (const auto& conj_effect : op.effects)
+    for (const auto conj_effect : op.get_effects())
     {
-        for (const auto& literal : conj_effect.effect.literals)
+        for (const auto literal : conj_effect.get_effect().get_literals())
         {
-            if (literal.polarity)
+            if (literal.get_polarity() || is_overridden_delete(conj_effect, literal))
                 continue;
 
-            const auto& del_atom = literal.atom;
+            const auto& del_atom = literal.get_atom().context()[literal.get_atom().index()];
 
-            if (inv.predicates.contains(del_atom.predicate))
+            if (has_predicate(inv, del_atom.predicate))
                 continue;
 
-            for (const auto& phi_prime : possible_matches(*part, add_atom, del_atom, inv.num_rigid_variables))
+            for (auto& phi_prime : possible_matches(*part, add_atom, del_atom, inv.num_rigid_variables))
             {
                 if (covers(inv, phi_prime))
                     continue;
 
-                const size_t new_num_counted_variables =
-                    std::max(inv.num_counted_variables,
-                             atom_uses_counted(phi_prime, inv.num_rigid_variables) ? static_cast<size_t>(1) : static_cast<size_t>(0));
+                const std::size_t new_num_counted_variables =
+                    std::max(static_cast<std::size_t>(inv.num_counted_variables),
+                             atom_uses_counted(phi_prime, inv.num_rigid_variables) ? static_cast<std::size_t>(1) : static_cast<std::size_t>(0));
 
-                auto atoms = inv.atoms;
-                atoms.push_back(phi_prime);
+                auto atoms = std::vector<urd::data<Atom<LiftedTag, FluentTag>>>();
+                for (const auto& existing : inv.atoms)
+                    atoms.push_back(urd::clone(atom_of(existing)));
+                atoms.push_back(std::move(phi_prime));
 
-                auto refined = MutableInvariant(inv.num_rigid_variables, new_num_counted_variables, std::move(atoms));
+                auto refined = make_candidate(inv.num_rigid_variables, new_num_counted_variables, std::move(atoms), storage);
                 normalize_invariant(refined);
 
                 // Every match becomes a candidate, also one that does not balance this add effect yet: it can be refined
@@ -227,18 +236,24 @@ MutableInvariantList refine_candidate(const MutableInvariant& inv, const Threat&
     return result;
 }
 
-MutableInvariantList make_initial_candidates(PredicateListView<FluentTag> predicates)
+std::vector<urd::builder<Invariant, Repository>> make_initial_candidates(PredicateListView<FluentTag> predicates, CandidateStorage& storage)
 {
-    MutableInvariantList result;
+    auto result = std::vector<urd::builder<Invariant, Repository>>();
 
     for (const auto predicate : predicates)
     {
-        const auto arity = static_cast<size_t>(predicate.get_arity());
+        const auto arity = static_cast<std::size_t>(predicate.get_arity());
 
-        result.emplace_back(arity, 0, MutableAtomList<FluentTag> { make_initial_atom(predicate, arity) });
+        auto atoms = std::vector<urd::data<Atom<LiftedTag, FluentTag>>>();
+        atoms.push_back(make_initial_atom(predicate, arity));
+        result.push_back(make_candidate(arity, 0, std::move(atoms), storage));
 
-        for (size_t counted_position = 0; counted_position < arity; ++counted_position)
-            result.emplace_back(arity - 1, 1, MutableAtomList<FluentTag> { make_initial_atom(predicate, counted_position) });
+        for (std::size_t counted_position = 0; counted_position < arity; ++counted_position)
+        {
+            auto counted_atoms = std::vector<urd::data<Atom<LiftedTag, FluentTag>>>();
+            counted_atoms.push_back(make_initial_atom(predicate, counted_position));
+            result.push_back(make_candidate(arity - 1, 1, std::move(counted_atoms), storage));
+        }
     }
 
     return result;

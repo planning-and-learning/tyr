@@ -18,10 +18,12 @@
 #ifndef TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_IMPL_HPP_
 #define TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_IMPL_HPP_
 
+#include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
 
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <cstddef>
 #include <vector>
 
 namespace tyr::formalism::unification
@@ -54,6 +56,35 @@ struct structure_traits<urd::Store<urd::sequence<T>>>
         for (const auto& value : values)
             result.push_back(tyr::formalism::unification::transform_terms(value, f));
 
+        return result;
+    }
+};
+
+/// An atom's record unifies by its predicate and terms.
+template<FactKind K>
+struct structure_traits<urd::data<Atom<LiftedTag, K>>>
+{
+    using Type = urd::data<Atom<LiftedTag, K>>;
+
+    template<typename F>
+    static bool zip_terms(const Type& lhs, const Type& rhs, F f)
+    {
+        if (lhs.predicate != rhs.predicate || lhs.terms.size() != rhs.terms.size())
+            return false;
+        for (std::size_t i = 0; i < lhs.terms.size(); ++i)
+            if (!f(lhs.terms[i], rhs.terms[i]))
+                return false;
+        return true;
+    }
+
+    template<typename F>
+    static Type transform_terms(const Type& value, F f)
+    {
+        auto result = Type();
+        result.parameters = value.parameters;
+        result.predicate = value.predicate;
+        for (const auto& term : value.terms)
+            result.terms.push_back(f(term));
         return result;
     }
 };

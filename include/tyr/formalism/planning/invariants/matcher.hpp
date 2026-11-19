@@ -19,8 +19,7 @@
 #define TYR_FORMALISM_PLANNING_INVARIANTS_MATCHER_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/mutable/atom.hpp"
-#include "tyr/formalism/planning/mutable/invariant.hpp"
+#include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 
@@ -29,6 +28,7 @@
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/repr/values/dense_set.hpp>
 #include <urd/store.hpp>
+#include <vector>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -42,7 +42,6 @@ public:
 
     [[nodiscard]] auto invariant() const noexcept { return m_invariant; }
 
-    [[nodiscard]] const auto& mutable_invariant() const noexcept { return m_inv; }
 
     [[nodiscard]] const auto& rigid_variable_bindings() const noexcept { return m_rigid_variable_bindings; }
 
@@ -53,7 +52,6 @@ private:
 
 private:
     InvariantView m_invariant;
-    MutableInvariant m_inv;
     urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> m_rigid_variable_bindings;
 
     /// postings[p][o] holds b iff the b-th binding binds object o to rigid parameter p.
@@ -84,11 +82,9 @@ class Matcher
 public:
     Matcher(InvariantMatchDataList invariant_match_data);
 
-    void query(const MutableAtom<FluentTag>& atom, QueryResult& result, QueryWorkspace& ws) const;
 
     void query(AtomView<GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const;
 
-    [[nodiscard]] QueryResult query(const MutableAtom<FluentTag>& atom) const;
     [[nodiscard]] QueryResult query(AtomView<GroundTag, FluentTag> atom) const;
 
 private:

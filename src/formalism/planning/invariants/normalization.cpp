@@ -15,12 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+
 #include "normalization.hpp"
 
 #include "matching.hpp"
+#include "utils.hpp"
 
+#include <algorithm>
+#include <cstddef>
+#include <optional>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
+#include <vector>
 
 namespace tyr::formalism::planning::invariant
 {
@@ -41,54 +48,46 @@ bool uses_parameter(const Term& term, ParameterIndex parameter)
         term);
 }
 
-bool uses_parameter(const MutableAtom<FluentTag>& atom, ParameterIndex parameter)
+bool uses_parameter(const urd::builder<Invariant, Repository>& inv, ParameterIndex parameter)
 {
-    return std::ranges::any_of(atom.terms, [&](const auto& term) { return uses_parameter(term, parameter); });
+    return std::ranges::any_of(inv.atoms,
+                               [&](const auto& part)
+                               { return std::ranges::any_of(atom_of(part).terms, [&](const Term& term) { return uses_parameter(term, parameter); }); });
 }
 
-bool uses_parameter(const MutableInvariant& inv, ParameterIndex parameter)
+void remove_covered_atoms(urd::builder<Invariant, Repository>& inv)
 {
-    return std::ranges::any_of(inv.atoms, [&](const auto& atom) { return uses_parameter(atom, parameter); });
-}
+    auto covered = std::vector<bool>(inv.atoms.size(), false);
 
-void remove_covered_atoms(MutableInvariant& inv)
-{
-    MutableAtomList<FluentTag> kept;
-    kept.reserve(inv.atoms.size());
-
-    for (size_t i = 0; i < inv.atoms.size(); ++i)
+    for (std::size_t i = 0; i < inv.atoms.size(); ++i)
     {
-        bool covered_by_other = false;
-
-        for (size_t j = 0; j < inv.atoms.size(); ++j)
+        for (std::size_t j = 0; j < inv.atoms.size(); ++j)
         {
-            if (i == j)
-                continue;
-
-            const auto singleton = MutableInvariant(inv.num_rigid_variables, inv.num_counted_variables, MutableAtomList<FluentTag> { inv.atoms[j] });
-
-            if (covers(singleton, inv.atoms[i]))
+            if (i != j && covers(inv.num_rigid_variables, inv.num_counted_variables, atom_of(inv.atoms[j]), atom_of(inv.atoms[i])))
             {
-                covered_by_other = true;
+                covered[i] = true;
                 break;
             }
         }
-
-        if (!covered_by_other)
-            kept.push_back(inv.atoms[i]);
     }
+
+    auto kept = std::vector<urd::child<Atom<LiftedTag, FluentTag>, Repository>>();
+    kept.reserve(inv.atoms.size());
+    for (std::size_t i = 0; i < inv.atoms.size(); ++i)
+        if (!covered[i])
+            kept.push_back(std::move(inv.atoms[i]));
 
     inv.atoms = std::move(kept);
 }
 
-void remove_unused_parameters(MutableInvariant& inv)
+void remove_unused_parameters(urd::builder<Invariant, Repository>& inv)
 {
-    const size_t total = inv.num_rigid_variables + inv.num_counted_variables;
+    const std::size_t total = inv.num_rigid_variables + inv.num_counted_variables;
     urd::Store<urd::sequence<std::optional<ParameterIndex>>> remap(total, std::nullopt);
-    size_t next = 0;
-    size_t new_num_rigid = 0;
+    std::size_t next = 0;
+    std::size_t new_num_rigid = 0;
 
-    for (size_t p = 0; p < total; ++p)
+    for (std::size_t p = 0; p < total; ++p)
     {
         if (!uses_parameter(inv, ParameterIndex(p)))
             continue;
@@ -99,9 +98,9 @@ void remove_unused_parameters(MutableInvariant& inv)
         ++next;
     }
 
-    for (auto& atom : inv.atoms)
+    for (auto& part : inv.atoms)
     {
-        for (auto& term : atom.terms)
+        for (auto& term : atom_of(part).terms)
         {
             term = std::visit(
                 [&]<typename T>(const T& arg) -> Term
@@ -117,17 +116,17 @@ void remove_unused_parameters(MutableInvariant& inv)
         }
     }
 
-    inv.num_rigid_variables = new_num_rigid;
-    inv.num_counted_variables = next - new_num_rigid;
+    inv.num_rigid_variables = static_cast<ygg::uint_t>(new_num_rigid);
+    inv.num_counted_variables = static_cast<ygg::uint_t>(next - new_num_rigid);
 }
 
 }
 
-void normalize_invariant(MutableInvariant& inv)
+void normalize_invariant(urd::builder<Invariant, Repository>& inv)
 {
     remove_covered_atoms(inv);
     remove_unused_parameters(inv);
-    inv.canonicalize();
+    canonicalize(inv);
 }
 
 }

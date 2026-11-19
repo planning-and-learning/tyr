@@ -21,9 +21,8 @@
 #include "refinement.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/interning.hpp"
-#include "tyr/formalism/planning/mutable/action.hpp"
-#include "tyr/formalism/planning/mutable/formatter.hpp"
-#include "tyr/formalism/planning/mutable/invariant.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
+#include "utils.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 
@@ -50,30 +49,10 @@ namespace
 /// keeps the limit deterministic, unlike a time limit.
 constexpr size_t max_candidates = 100'000;
 
-/// PDDL's add-after-delete semantics: an atom that one effect both deletes and adds under the same condition is added, so
-/// the delete must not balance anything. Literals with the same condition share one conditional effect, and the delete is
-/// dropped there, as Fast Downward's parser does.
-MutableAction without_overridden_deletes(MutableAction action)
+/// The candidate interned (its held atoms first): its atoms' parameters its rigid, then its counted variables, named ?v0,
+/// ?v1, ... in that order.
+InvariantView intern(urd::builder<Invariant, Repository>& invariant, Builder& builder, Repository& repository)
 {
-    for (auto& effect : action.effects)
-    {
-        auto& literals = effect.effect.literals;
-        auto added = MutableAtomList<FluentTag> {};
-        for (const auto& literal : literals)
-            if (literal.polarity)
-                added.push_back(literal.atom);
-        erase_if(literals,
-                 [&](const MutableLiteral<FluentTag>& literal) { return !literal.polarity && std::ranges::find(added, literal.atom) != added.end(); });
-    }
-    return action;
-}
-
-InvariantView intern(const MutableInvariant& invariant, Builder& builder, Repository& repository)
-{
-    auto data = checkout<Invariant>(builder);
-    data->num_rigid_variables = invariant.num_rigid_variables;
-    data->num_counted_variables = invariant.num_counted_variables;
-    // Its atoms' parameters: its rigid variables, then its counted ones, named ?v0, ?v1, ... in that order.
     auto parameters = checkout<Parameters>(builder);
     for (std::size_t position = 0; position < invariant.num_rigid_variables + invariant.num_counted_variables; ++position)
     {
@@ -81,44 +60,37 @@ InvariantView intern(const MutableInvariant& invariant, Builder& builder, Reposi
         variable->name = fmt::format("?v{}", position);
         parameters->variables.push_back(repository.insert(*variable, builder).first);
     }
-    const auto parameters_view = repository.insert(*parameters, builder).first;
-    for (const auto& atom : invariant.atoms)
-    {
-        auto atom_data = checkout<Atom<LiftedTag, FluentTag>>(builder);
-        atom_data->parameters = parameters_view;
-        atom_data->predicate = atom.predicate;
-        for (const auto& term : atom.terms)
-            urd::build_member(atom_data->terms.emplace_back(), term, repository);
-        data->atoms.push_back(repository.insert(*atom_data, builder).first);
-    }
-    return repository.insert(*data, builder).first;
+    const auto parameters_index = repository.insert(*parameters, builder).first.index();
+    for (auto& part : invariant.atoms)
+        atom_of(part).parameters = parameters_index;
+    return repository.insert(invariant, builder).first;
 }
 
-MutableInvariantList synthesize_mutable_invariants(DomainView domain)
+/// The invariants of the domain, as candidates held in `storage`.
+std::vector<urd::builder<Invariant, Repository>> synthesize_candidates(DomainView domain, CandidateStorage& storage)
 {
-    auto ops = MutableActionList {};
-    for (const auto& action : domain.get_actions())
-        ops.push_back(without_overridden_deletes(MutableAction(action)));
+    auto ops = std::vector<ActionView<LiftedTag>>();
+    for (const auto action : domain.get_actions())
+        ops.push_back(action);
 
     // Breadth-first search with a closed list (Helmert 2009, Section 5). A candidate is refined on the first unbalanced
     // add effect in domain order, so its successors depend only on the candidate, and the result is deterministic.
-    auto queue = urd::Store<urd::queue<MutableInvariant>, urd::fifo> {};
-    auto seen = urd::Store<urd::set<MutableInvariant>> {};
+    auto queue = urd::Store<urd::queue<urd::builder<Invariant, Repository>>, urd::fifo> {};
+    auto seen = urd::Store<urd::set<urd::builder<Invariant, Repository>>> {};
 
-    const auto enqueue = [&](MutableInvariant candidate)
+    const auto enqueue = [&](urd::builder<Invariant, Repository> candidate)
     {
-        candidate = MutableInvariant(candidate.num_rigid_variables, candidate.num_counted_variables, std::move(candidate.atoms));
         normalize_invariant(candidate);
         if (seen.size() >= max_candidates)
             return;
-        if (seen.insert(candidate).second)
+        if (seen.insert(urd::clone(candidate)).second)
             queue.push(std::move(candidate));
     };
 
-    for (auto& candidate : make_initial_candidates(domain.get_predicates<FluentTag>()))
+    for (auto& candidate : make_initial_candidates(domain.get_predicates<FluentTag>(), storage))
         enqueue(std::move(candidate));
 
-    auto accepted = MutableInvariantList {};
+    auto accepted = std::vector<urd::builder<Invariant, Repository>>();
 
     while (!queue.empty())
     {
@@ -135,7 +107,7 @@ MutableInvariantList synthesize_mutable_invariants(DomainView domain)
         {
             // prove_invariant names the threatening add effect of an unbalanced candidate.
             URD_ASSUME(result.threat.has_value());
-            for (auto& refined : refine_candidate(candidate, *result.threat, ops, domain.get_predicates<FluentTag>()))
+            for (auto& refined : refine_candidate(candidate, *result.threat, ops, storage))
                 enqueue(std::move(refined));
         }
     }
@@ -146,9 +118,10 @@ MutableInvariantList synthesize_mutable_invariants(DomainView domain)
 
 InvariantViewList synthesize_invariants(DomainView domain, Repository& repository)
 {
+    auto storage = CandidateStorage { .repository = &repository, .atoms = {} };
     auto builder = Builder();
     auto result = InvariantViewList {};
-    for (const auto& invariant : synthesize_mutable_invariants(domain))
+    for (auto& invariant : synthesize_candidates(domain, storage))
         result.push_back(intern(invariant, builder, repository));
     return result;
 }

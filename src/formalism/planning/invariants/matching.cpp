@@ -17,7 +17,7 @@
 
 #include "matching.hpp"
 
-#include "tyr/formalism/planning/mutable/atom.hpp"
+#include "utils.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
@@ -49,11 +49,13 @@ std::optional<State> match_structure(const T& pattern, const T& element, State s
     return state;
 }
 
-std::optional<InvariantSubstitution>
-match_cover_against_atom(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& element)
+std::optional<InvariantSubstitution> match_cover_against_atom(std::size_t num_rigid_variables,
+                                                              std::size_t num_counted_variables,
+                                                              const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+                                                              const urd::data<Atom<LiftedTag, FluentTag>>& element)
 {
     auto state = TermMatchState {
-        .sigma = InvariantSubstitution::from_range(ParameterIndex { static_cast<ygg::uint_t>(inv.num_rigid_variables) }, inv.num_counted_variables),
+        .sigma = InvariantSubstitution::from_range(ParameterIndex { static_cast<ygg::uint_t>(num_rigid_variables) }, num_counted_variables),
         .counted = InvariantSubstitution {},
     };
 
@@ -71,22 +73,25 @@ match_cover_against_atom(const MutableInvariant& inv, const MutableAtom<FluentTa
 
 }  // namespace
 
-bool covers(const MutableInvariant& inv, const MutableAtom<FluentTag>& element)
-{
-    for (const auto& atom : inv.atoms)
-    {
-        if (match_cover_against_atom(inv, atom, element).has_value())
-            return true;
-    }
+bool covers(std::size_t num_rigid_variables,
+            std::size_t num_counted_variables,
+            const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+            const urd::data<Atom<LiftedTag, FluentTag>>& element)
+{ return match_cover_against_atom(num_rigid_variables, num_counted_variables, pattern, element).has_value(); }
 
-    return false;
+bool covers(const urd::builder<Invariant, Repository>& inv, const urd::data<Atom<LiftedTag, FluentTag>>& element)
+{
+    return std::ranges::any_of(inv.atoms,
+                               [&](const auto& part) { return covers(inv.num_rigid_variables, inv.num_counted_variables, atom_of(part), element); });
 }
 
-std::optional<InvariantSubstitution>
-match_invariant_against_ground_atom(const MutableInvariant& inv, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& ground_atom)
+std::optional<InvariantSubstitution> match_invariant_against_ground_atom(std::size_t num_rigid_variables,
+                                                                         std::size_t num_counted_variables,
+                                                                         const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+                                                                         const urd::data<Atom<LiftedTag, FluentTag>>& ground_atom)
 {
     auto state = TermMatchState {
-        .sigma = InvariantSubstitution::from_range(ParameterIndex { 0 }, inv.num_rigid_variables + inv.num_counted_variables),
+        .sigma = InvariantSubstitution::from_range(ParameterIndex { 0 }, num_rigid_variables + num_counted_variables),
         .counted = InvariantSubstitution {},
     };
 

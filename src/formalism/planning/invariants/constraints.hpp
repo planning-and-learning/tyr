@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_CONSTRAINTS_HPP_
 
-#include "tyr/formalism/planning/mutable/atom.hpp"
-#include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
-#include "tyr/formalism/planning/mutable/invariant.hpp"
-#include "tyr/formalism/planning/mutable/literal.hpp"
+#include "tyr/formalism/planning/invariant_builder.hpp"
+#include "tyr/formalism/atom_data.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 #include <map>
 #include <optional>
 #include <urd/repr/sequences/sequence.hpp>
 #include <urd/store.hpp>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -116,14 +117,21 @@ ConstraintTerm make_constraint_term(ParameterIndex parameter);
 ConstraintTerm make_constraint_term(urd::index<Object> object);
 ConstraintTerm make_constraint_term(const Term& term);
 ConstraintTerm make_invariant_parameter_term(size_t index);
-EqualityConjunction make_cover_equality_conjunction(const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv);
+EqualityConjunction make_cover_equality_conjunction(const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+                                                    const urd::data<Atom<LiftedTag, FluentTag>>& atom,
+                                                    const urd::builder<Invariant, Repository>& inv);
 
-void ensure_cover(ConstraintSystem& system, const MutableAtom<FluentTag>& pattern, const MutableAtom<FluentTag>& atom, const MutableInvariant& inv);
-void ensure_inequality(ConstraintSystem& system, const MutableAtom<FluentTag>& lhs, const MutableAtom<FluentTag>& rhs);
-/// Requires the conjunction to be satisfiable: `=` literals become (in)equalities, and a positive and a negative literal
-/// of the same predicate must differ in some argument. Static (including types and `=`), fluent and derived literals all
-/// constrain when an action applies, as in Helmert (2009, Fig. 7).
-void ensure_conjunction_sat(ConstraintSystem& system, const MutableConjunctiveCondition& conjunction);
+void ensure_cover(ConstraintSystem& system,
+                  const urd::data<Atom<LiftedTag, FluentTag>>& pattern,
+                  const urd::data<Atom<LiftedTag, FluentTag>>& atom,
+                  const urd::builder<Invariant, Repository>& inv);
+void ensure_inequality(ConstraintSystem& system, const urd::data<Atom<LiftedTag, FluentTag>>& lhs, const urd::data<Atom<LiftedTag, FluentTag>>& rhs);
+/// Requires the literals of a conjunction, each an atom and its polarity, to be satisfiable together: `=` literals become
+/// (in)equalities, and a positive and a negative literal of the same predicate must differ in some argument. Static
+/// (including types and `=`), fluent and derived literals all constrain when an action applies, as in Helmert (2009,
+/// Fig. 7); each kind is required on its own. `repository` names the predicates.
+template<FactKind T>
+void ensure_literals_sat(ConstraintSystem& system, const std::vector<std::pair<urd::data<Atom<LiftedTag, T>>, bool>>& literals, const Repository& repository);
 }
 
 #endif

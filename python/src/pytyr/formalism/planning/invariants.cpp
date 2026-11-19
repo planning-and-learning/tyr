@@ -177,16 +177,10 @@ void bind_matcher(nb::module_& m, const std::string& name)
     nb::class_<V>(m, name.c_str())
         .def(nb::init<MatchDataList>(), "invariant_match_data"_a)
         .def("query",
-             nb::overload_cast<const MutableAtom<FluentTag>&, QueryResult&, QueryWorkspace&>(&V::query, nb::const_),
-             "atom"_a,
-             "result"_a,
-             "workspace"_a)
-        .def("query",
              nb::overload_cast<AtomView<GroundTag, FluentTag>, QueryResult&, QueryWorkspace&>(&V::query, nb::const_),
              "atom"_a,
              "result"_a,
              "workspace"_a)
-        .def("query", nb::overload_cast<const MutableAtom<FluentTag>&>(&V::query, nb::const_), "atom"_a)
         .def("query", nb::overload_cast<AtomView<GroundTag, FluentTag>>(&V::query, nb::const_), "atom"_a);
 }
 }

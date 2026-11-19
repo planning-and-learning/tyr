@@ -18,8 +18,6 @@
 #include "tyr/formalism/planning/invariants/matcher.hpp"
 
 #include "matching.hpp"
-#include "tyr/formalism/planning/mutable/atom.hpp"
-#include "tyr/formalism/planning/mutable/invariant.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/structure_traits_impl.hpp"
@@ -27,6 +25,9 @@
 #include "tyr/formalism/unification/term_operations.hpp"
 
 #include <cassert>
+#include <cstddef>
+#include <urd/elements/clone.hpp>
+#include <vector>
 #include <ranges>
 #include <urd/config.hpp>
 #include <urd/repr/sequences/sequence.hpp>
@@ -38,27 +39,27 @@ namespace tyr::formalism::planning::invariant
 
 namespace
 {
-/// The matcher's queries take MutableAtoms, so it matches against a mutable copy of the invariant.
-MutableInvariant to_mutable(InvariantView invariant)
+/// A ground atom as a lifted atom's record: its objects as its terms, so that it is matched against the patterns.
+urd::data<Atom<LiftedTag, FluentTag>> lifted_record(AtomView<GroundTag, FluentTag> atom)
 {
-    auto atoms = MutableAtomList<FluentTag> {};
-    for (const auto atom : invariant.get_atoms())
-        atoms.emplace_back(atom);
-    return MutableInvariant(invariant.get_num_rigid_variables(), invariant.get_num_counted_variables(), std::move(atoms));
+    auto result = urd::data<Atom<LiftedTag, FluentTag>>();
+    result.predicate = atom.get_predicate().index();
+    for (const auto object : atom.get_row().get_objects())
+        result.terms.push_back(Term(object.index()));
+    return result;
 }
 }
 
 InvariantMatchData::InvariantMatchData(InvariantView invariant,
                                        urd::Store<urd::sequence<unification::SubstitutionFunction<urd::index<Object>>>> rigid_variable_bindings) :
     m_invariant(invariant),
-    m_inv(to_mutable(invariant)),
     m_rigid_variable_bindings(std::move(rigid_variable_bindings)),
     m_postings()
 { build_postings(); }
 
 void InvariantMatchData::build_postings()
 {
-    const auto num_rigid = m_inv.num_rigid_variables;
+    const std::size_t num_rigid = m_invariant.get_num_rigid_variables();
     const auto num_bindings = m_rigid_variable_bindings.size();
 
     m_postings.clear();
@@ -92,11 +93,10 @@ namespace
 /// The bindings that bind each rigid parameter sigma binds to the same object, into candidates; whether there is one.
 bool intersect_matching_bindings(const InvariantMatchData& data, const InvariantSubstitution& sigma, BindingSet& candidates)
 {
-    const auto& inv = data.mutable_invariant();
     const auto& postings = data.postings();
 
     auto first = true;
-    for (size_t p = 0; p < inv.num_rigid_variables; ++p)
+    for (size_t p = 0; p < data.invariant().get_num_rigid_variables(); ++p)
     {
         const auto parameter = ParameterIndex(static_cast<ygg::uint_t>(p));
 
@@ -134,14 +134,14 @@ bool intersect_matching_bindings(const InvariantMatchData& data, const Invariant
 
 Matcher::Matcher(InvariantMatchDataList invariant_match_data) : m_invariant_match_data(std::move(invariant_match_data)) {}
 
-void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, QueryWorkspace& ws) const
+void Matcher::query(AtomView<GroundTag, FluentTag> ground_atom, QueryResult& result, QueryWorkspace& ws) const
 {
     result.matches.clear();
+    const auto atom = lifted_record(ground_atom);
 
     for (size_t invariant_index = 0; invariant_index < m_invariant_match_data.size(); ++invariant_index)
     {
         const auto& data = m_invariant_match_data[invariant_index];
-        const auto& inv = data.mutable_invariant();
         const auto num_bindings = data.rigid_variable_bindings().size();
 
         if (num_bindings == 0)
@@ -149,15 +149,20 @@ void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, Que
 
         ws.matches.clear();
 
-        for (const auto& pattern : inv.atoms)
+        // Each atom of the invariant is a pattern, read as its record.
+        for (const auto part : data.invariant().get_atoms())
         {
+            const auto& pattern = part.context()[part.index()];
             if (pattern.predicate != atom.predicate)
                 continue;
 
             if (pattern.terms.size() != atom.terms.size())
                 continue;
 
-            auto sigma = match_invariant_against_ground_atom(inv, pattern, atom);
+            auto sigma = match_invariant_against_ground_atom(data.invariant().get_num_rigid_variables(),
+                                                             data.invariant().get_num_counted_variables(),
+                                                             pattern,
+                                                             atom);
             if (!sigma.has_value())
                 continue;
 
@@ -168,17 +173,6 @@ void Matcher::query(const MutableAtom<FluentTag>& atom, QueryResult& result, Que
         for (const auto binding_index : ws.matches)
             result.matches.push_back({ invariant_index, binding_index });
     }
-}
-
-void Matcher::query(AtomView<GroundTag, FluentTag> atom, QueryResult& result, QueryWorkspace& workspace) const
-{ query(MutableAtom<FluentTag>(atom), result, workspace); }
-
-QueryResult Matcher::query(const MutableAtom<FluentTag>& atom) const
-{
-    QueryResult result;
-    QueryWorkspace workspace;
-    query(atom, result, workspace);
-    return result;
 }
 
 QueryResult Matcher::query(AtomView<GroundTag, FluentTag> atom) const

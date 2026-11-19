@@ -51,7 +51,6 @@
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
-#include "tyr/formalism/planning/mutable/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
